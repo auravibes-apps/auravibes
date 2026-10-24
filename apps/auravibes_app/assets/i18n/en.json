@@ -277,7 +277,7 @@
     },
     "create": {
       "type_label": "Connection type",
-    "connector_label": "Connector",
+      "connector_label": "Connector",
       "name_label": "Name",
       "api_key_label": "API key",
       "base_url_label": "Instance base URL"
@@ -2020,6 +2020,19 @@
     "increase_minute": "Increase minute",
     "advanced_value": "Edit exact value",
     "utc_time": "Time in UTC",
-    "weekdays": "M,T,W,T,F,S,S"
+    "weekdays": "M,T,W,T,F,S,S",
+    "type_reference": "Linked record",
+    "reference_table": "Target table",
+    "reference_multiple": "Allow multiple records",
+    "reference_choose": "Choose records",
+    "reference_search": "Search records",
+    "reference_details": "Open details",
+    "reference_reverse": "Related records",
+    "reference_unavailable": "Linked records are unavailable with your current access.",
+    "reference_next": "Next page",
+    "reference_previous": "First page",
+    "reference_empty": "No matching records",
+    "reference_remove": "Clear selection",
+    "reference_choose_target": "Choose a target table first."
   }
 }

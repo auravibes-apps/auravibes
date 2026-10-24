@@ -1,3 +1,5 @@
+import 'workspace_reference_visibility.dart';
+
 import 'dart:convert';
 
 import 'package:serverpod/serverpod.dart';
@@ -25,6 +27,20 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
     ).canSeeEvent(event);
 
     return visible ? event : _hiddenEvent(event);
+  }
+
+  Future<bool> canReadTable(
+    Session session,
+    WorkspaceMember member,
+    WorkspaceResource table,
+  ) async {
+    if (table.resourceKind != .table ||
+        table.workspaceId != member.workspaceId ||
+        table.deletedAt != null) {
+      return false;
+    }
+    return await _TableReader(session, member, transaction).level(table) !=
+        null;
   }
 
   Future<void> requireWrite(
@@ -82,9 +98,7 @@ class const _TableReader(
     if (!_isTableResource(resource.resourceKind)) return resource;
     final access = await level(resource);
     if (access == null) return null;
-    if (resource.resourceKind != WorkspaceResourceKind.table) return resource;
-
-    return _visibleTable(resource, access);
+    return await _project(resource, access);
   }
 
   Future<bool> canSeeEvent(WorkspaceEvent event) async {
@@ -97,6 +111,24 @@ class const _TableReader(
     );
 
     return row != null && await level(row) != null;
+  }
+
+  Future<WorkspaceResource> _project(
+    WorkspaceResource resource,
+    String access,
+  ) async {
+    if (resource.resourceKind == WorkspaceResourceKind.table) {
+      return await WorkspaceReferenceVisibility(
+        session,
+        member,
+        transaction,
+      ).table(_visibleTable(resource, access));
+    }
+    return await WorkspaceReferenceVisibility(
+      session,
+      member,
+      transaction,
+    ).record(resource);
   }
 }
 

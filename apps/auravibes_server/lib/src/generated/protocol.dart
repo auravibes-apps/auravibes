@@ -274,6 +274,12 @@ import 'features/workspace_state/models/workspace_patch_operation.dart'
     as _iolo6w4a;
 import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
     as _ihbarnlu;
+import 'features/workspace_state/models/workspace_reference_record_request.dart'
+    as _izw41l59;
+import 'features/workspace_state/models/workspace_reference_table_request.dart'
+    as _i25xbz7v;
+import 'features/workspace_state/models/workspace_reference_target_request.dart'
+    as _ib7agc3j;
 import 'features/workspace_state/models/workspace_resource.dart' as _iqzfyfs9;
 import 'features/workspace_state/models/workspace_resource_kind.dart'
     as _i8d1xr9g;
@@ -481,6 +487,9 @@ export 'features/workspace_state/models/read_workspace_state_request.dart';
 export 'features/workspace_state/models/read_workspace_state_response.dart';
 export 'features/workspace_state/models/workspace_patch_operation.dart';
 export 'features/workspace_state/models/workspace_patch_operation_kind.dart';
+export 'features/workspace_state/models/workspace_reference_record_request.dart';
+export 'features/workspace_state/models/workspace_reference_table_request.dart';
+export 'features/workspace_state/models/workspace_reference_target_request.dart';
 export 'features/workspace_state/models/workspace_resource.dart';
 export 'features/workspace_state/models/workspace_resource_kind.dart';
 export 'features/workspace_state/models/workspace_resource_page.dart';
@@ -5594,6 +5603,15 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ihbarnlu.WorkspacePatchOperationKind) {
       return _ihbarnlu.WorkspacePatchOperationKind.fromJson(data) as T;
     }
+    if (t == _izw41l59.WorkspaceReferenceRecordRequest) {
+      return _izw41l59.WorkspaceReferenceRecordRequest.fromJson(data) as T;
+    }
+    if (t == _i25xbz7v.WorkspaceReferenceTableRequest) {
+      return _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data) as T;
+    }
+    if (t == _ib7agc3j.WorkspaceReferenceTargetRequest) {
+      return _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data) as T;
+    }
     if (t == _iqzfyfs9.WorkspaceResource) {
       return _iqzfyfs9.WorkspaceResource.fromJson(data) as T;
     }
@@ -6496,6 +6514,24 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_izw41l59.WorkspaceReferenceRecordRequest?>()) {
+      return (data != null
+              ? _izw41l59.WorkspaceReferenceRecordRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i25xbz7v.WorkspaceReferenceTableRequest?>()) {
+      return (data != null
+              ? _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ib7agc3j.WorkspaceReferenceTargetRequest?>()) {
+      return (data != null
+              ? _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_iqzfyfs9.WorkspaceResource?>()) {
       return (data != null ? _iqzfyfs9.WorkspaceResource.fromJson(data) : null)
           as T;
@@ -7077,6 +7113,12 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iqk6zto1.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
       _iolo6w4a.WorkspacePatchOperation => 'WorkspacePatchOperation',
       _ihbarnlu.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
+      _izw41l59.WorkspaceReferenceRecordRequest =>
+        'WorkspaceReferenceRecordRequest',
+      _i25xbz7v.WorkspaceReferenceTableRequest =>
+        'WorkspaceReferenceTableRequest',
+      _ib7agc3j.WorkspaceReferenceTargetRequest =>
+        'WorkspaceReferenceTargetRequest',
       _iqzfyfs9.WorkspaceResource => 'WorkspaceResource',
       _i8d1xr9g.WorkspaceResourceKind => 'WorkspaceResourceKind',
       _iilez6xa.WorkspaceResourcePage => 'WorkspaceResourcePage',
@@ -7423,6 +7465,12 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkspacePatchOperation';
       case _ihbarnlu.WorkspacePatchOperationKind():
         return 'WorkspacePatchOperationKind';
+      case _izw41l59.WorkspaceReferenceRecordRequest():
+        return 'WorkspaceReferenceRecordRequest';
+      case _i25xbz7v.WorkspaceReferenceTableRequest():
+        return 'WorkspaceReferenceTableRequest';
+      case _ib7agc3j.WorkspaceReferenceTargetRequest():
+        return 'WorkspaceReferenceTargetRequest';
       case _iqzfyfs9.WorkspaceResource():
         return 'WorkspaceResource';
       case _i8d1xr9g.WorkspaceResourceKind():
@@ -7993,6 +8041,21 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'WorkspacePatchOperationKind') {
       return deserialize<_ihbarnlu.WorkspacePatchOperationKind>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceReferenceRecordRequest') {
+      return deserialize<_izw41l59.WorkspaceReferenceRecordRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'WorkspaceReferenceTableRequest') {
+      return deserialize<_i25xbz7v.WorkspaceReferenceTableRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'WorkspaceReferenceTargetRequest') {
+      return deserialize<_ib7agc3j.WorkspaceReferenceTargetRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'WorkspaceResource') {
       return deserialize<_iqzfyfs9.WorkspaceResource>(data['data']);
