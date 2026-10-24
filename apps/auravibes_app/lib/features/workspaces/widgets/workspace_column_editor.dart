@@ -82,7 +82,7 @@ abstract final class _ColumnActions {
   ) => (
     table: editor.table,
     column: _column(
-      draft.replacement.value ? null : editor.column,
+      draft.replacement.value ? '' : editor.column?.id ?? '',
       draft.fields,
     ),
   );
@@ -120,14 +120,11 @@ abstract final class _ColumnActions {
     targetTableId: useState(column?.targetTableId),
     referenceMultiple: useState(column?.referenceMultiple ?? false),
   );
-  static WorkspaceColumn _column(
-    WorkspaceColumn? column,
-    _ColumnFields fields,
-  ) {
+  static WorkspaceColumn _column(String id, _ColumnFields fields) {
     final constraints = fields.constraints;
 
     return WorkspaceColumn(
-      id: column?.id ?? '',
+      id: id,
       name: fields.name.text,
       type: fields.type.value,
       options: _options(fields),
@@ -195,7 +192,7 @@ class const _ColumnConstraintInputs({
   @override
   Widget build(BuildContext context) => WorkspaceColumnConstraints(
     draft: draft.fields.constraints,
-    column: _ColumnActions._column(editor.column, draft.fields),
+    column: _ColumnActions._column(editor.column?.id ?? '', draft.fields),
     disabled: draft.action.pending,
   );
 }

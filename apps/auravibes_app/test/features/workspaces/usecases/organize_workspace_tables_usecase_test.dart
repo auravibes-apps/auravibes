@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -988,7 +988,10 @@ void main() {
         'amount': '9007199254740993.010000000000000002',
         'currency': 'EUR',
       });
-      final unchanged = await tables.saveColumn(table: typed, column: typed.columns.last);
+      final unchanged = await tables.saveColumn(
+        table: typed,
+        column: typed.columns.last,
+      );
       expect(unchanged.schemaRevision, typed.schemaRevision);
       typed = unchanged;
       final moved = await tables.updateMetadata(
