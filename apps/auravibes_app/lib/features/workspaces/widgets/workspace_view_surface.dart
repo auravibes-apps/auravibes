@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface_data.dart';
@@ -20,7 +18,6 @@ class WorkspaceViewSurface extends StatefulWidget {
 
 class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
   SurfaceController _controller = .new(catalogs: auraChatCatalogs());
-  StreamSubscription<SurfaceUpdate>? _updates;
   var _failed = false;
   @override
   void initState() {
@@ -30,7 +27,6 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
 
   @override
   void dispose() {
-    unawaited(_updates?.cancel());
     _disposeController();
     super.dispose();
   }
@@ -44,7 +40,7 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
   @override
   Widget build(BuildContext context) => _failed
       ? const TextLocale(LocaleKeys.workspace_views_repair)
-      : _ReadySurface(_controller);
+      : _SurfaceUpdates(_controller);
 
   void _load() {
     _reset();
@@ -53,11 +49,9 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
     } on Object {
       _failed = true;
     }
-    _updates = _controller.surfaceUpdates.listen(_surfaceUpdated);
   }
 
   void _reset() {
-    unawaited(_updates?.cancel());
     _disposeController();
     _controller = .new(catalogs: auraChatCatalogs());
     _failed = false;
@@ -80,14 +74,15 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
     }
     _controller.handleMessage(.fromJson(operation.json));
   }
+}
 
-  void _surfaceUpdated(SurfaceUpdate _) {
-    if (mounted) {
-      setState(() {
-        const _ = 0;
-      });
-    }
-  }
+class const _SurfaceUpdates(final SurfaceController controller)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => StreamBuilder<SurfaceUpdate>(
+    stream: controller.surfaceUpdates,
+    builder: (_, _) => _ReadySurface(controller),
+  );
 }
 
 class _ReadOnlyActions implements ActionDelegate {
