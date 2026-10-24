@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:uuid/v7.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
+import 'package:uuid/v7.dart';
 
 const _maximumColumns = 100;
 const _maximumNameLength = 200;
@@ -10,7 +10,7 @@ const _minimumPhoneDigits = 3;
 
 abstract final class WorkspaceColumnValidation {
   static WorkspaceColumn normalized(WorkspaceColumn column) => WorkspaceColumn(
-    id: column.id.isEmpty ? const UuidV7().generate() : column.id,
+    id: _ColumnConfiguration.id(column),
     name: column.name.trim(),
     type: column.type,
     options: column.options.map((name) => name.trim()).toList(),
@@ -63,10 +63,7 @@ abstract final class WorkspaceColumnValidation {
 
   static void _column(WorkspaceColumn column) {
     _require(column.id.isNotEmpty && _name(column.name));
-    if (column.defaultValue != null) {
-      _require(_ValueValidation.valid(column, column.defaultValue));
-    }
-    _require(WorkspaceTimeZones.valid(column.timeZone));
+    _require(_ColumnConfiguration.valid(column));
     if (column.type != .singleSelect && column.type != .multiSelect) {
       _require(column.options.isEmpty);
 
@@ -89,6 +86,16 @@ abstract final class WorkspaceColumnValidation {
       throw const WorkspaceTableException();
     }
   }
+}
+
+abstract final class _ColumnConfiguration {
+  static String id(WorkspaceColumn column) =>
+      column.id.isEmpty ? const UuidV7().generate() : column.id;
+
+  static bool valid(WorkspaceColumn column) =>
+      WorkspaceTimeZones.valid(column.timeZone) &&
+      (column.defaultValue == null ||
+          _ValueValidation.valid(column, column.defaultValue));
 }
 
 abstract final class _ValueValidation {
