@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
@@ -17,6 +18,7 @@ class const WorkspaceItemCreation({
   required final String? parentId,
   required final bool table,
   required final ValueChanged<String> onOpenTable,
+  final ValueChanged<WorkspaceFolder>? onOpenFolder,
   super.key,
 }) extends HookWidget {
   @override
@@ -27,22 +29,30 @@ class const WorkspaceItemCreation({
     WidgetRef ref,
     WorkspaceItemFormState state,
   ) async {
-    final id = table
+    final created = table
         ? await _table(ref, state.name.text)
         : await _folder(ref, state.name.text);
     if (!context.mounted) return;
     state.name.clear();
     _refresh(ref);
-    if (id != null) onOpenTable(id);
+    _open(created);
   }
 
-  Future<String?> _folder(WidgetRef ref, String name) async {
+  void _open(Object created) {
+    switch (created) {
+      case final WorkspaceFolder folder:
+        onOpenFolder?.call(folder);
+      case final String id:
+        onOpenTable(id);
+    }
+  }
+
+  Future<WorkspaceFolder> _folder(WidgetRef ref, String name) async {
     final usecase = await ref.read(
       workspaceFolderUsecaseProvider(workspaceId).future,
     );
-    final _ = await usecase.create(name: name, parentId: parentId);
 
-    return null;
+    return await usecase.create(name: name, parentId: parentId);
   }
 
   Future<String> _table(WidgetRef ref, String name) async {
@@ -76,14 +86,24 @@ class const _Form(
     Future<void> submit() =>
         state.run(context, () => creation._save(context, ref, state));
 
-    return Column(
-      children: [
-        _Input(creation, state, submit),
-        _Button(creation, state, submit),
-        _Failure(state),
-      ],
-    );
+    return _FormFields(creation, state, submit);
   }
+}
+
+class const _FormFields(
+  final WorkspaceItemCreation creation,
+  final WorkspaceItemFormState state,
+  final Future<void> Function() submit,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _Input(creation, state, submit),
+      _Button(creation, state, submit),
+      _Failure(state),
+    ],
+  );
 }
 
 class const _Failure(final WorkspaceItemFormState state)

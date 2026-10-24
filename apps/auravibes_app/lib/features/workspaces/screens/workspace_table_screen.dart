@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_access_panel.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
@@ -13,6 +16,7 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -63,15 +67,29 @@ class const _TableState({required final WorkspaceTableScreen screen})
       workspaceTableProvider(screen.workspaceId, screen.tableId),
     );
 
-    return switch (table) {
-      AsyncData(:final value) => _LoadedTable(screen: screen, table: value),
-      AsyncError(:final error) => _TableFailure(
-        onBack: screen.onBack,
-        error: error,
-      ),
-      AsyncLoading() => const Center(child: CircularProgressIndicator()),
-    };
+    if (table case AsyncError(:final error)) {
+      return _TableFailure(onBack: screen.onBack, error: error);
+    }
+    final current = table.value;
+    if (current != null) return _LoadedTable(screen: screen, table: current);
+
+    return _PendingTable(screen, table);
   }
+}
+
+class const _PendingTable(
+  final WorkspaceTableScreen screen,
+  final AsyncValue<WorkspaceTable> table,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (table) {
+    AsyncData(:final value) => _LoadedTable(screen: screen, table: value),
+    AsyncError(:final error) => _TableFailure(
+      onBack: screen.onBack,
+      error: error,
+    ),
+    AsyncLoading() => const Center(child: CircularProgressIndicator()),
+  };
 }
 
 class const _TableFailure({
@@ -126,7 +144,9 @@ abstract final class _TableNavigationActions {
   static void refresh(WidgetRef ref, String workspaceId, String tableId) {
     ref
       ..invalidate(workspaceTableProvider(workspaceId, tableId))
-      ..invalidate(workspaceTableRecordsProvider(workspaceId, tableId));
+      ..invalidate(workspaceTableRecordsProvider(workspaceId, tableId))
+      ..invalidate(workspaceReferencesUsecaseProvider(workspaceId))
+      ..invalidate(workspaceRecordQueryProvider);
   }
 }
 
@@ -142,9 +162,19 @@ class const _TableSelectionView({
   required final _TableNavigation navigation,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => navigation.selected.value == null
-      ? _BrowsingPage(owner: owner, navigation: navigation)
-      : _EditingPage(owner: owner, navigation: navigation);
+  Widget build(BuildContext context) => Stack(
+    fit: .expand,
+    children: [
+      Offstage(
+        offstage: navigation.selected.value != null,
+        child: _BrowsingPage(owner: owner, navigation: navigation),
+      ),
+      if (navigation.selected.value != null)
+        Positioned.fill(
+          child: _EditingPage(owner: owner, navigation: navigation),
+        ),
+    ],
+  );
 }
 
 class const _EditingPage({
@@ -223,22 +253,112 @@ class const _TableBrowser({
   required final VoidCallback onChanged,
   required final ValueChanged<WorkspaceRecord?> onRecord,
   required final ValueChanged<WorkspaceColumn?> onColumn,
-}) extends StatelessWidget {
+}) extends HookWidget {
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) {
+    final settings = useState(false);
+
+    return Column(
+      children: [
+        _BrowserToolbar(this, settings),
+        Expanded(child: _BrowserContent(this, settings)),
+      ],
+    );
+  }
+}
+
+class const _BrowserContent(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: .expand,
     children: [
-      ListTile(
-        leading: const Icon(Icons.arrow_back),
-        title: Text(table.name),
-        onTap: onBack,
+      Offstage(
+        offstage: settings.value,
+        child: WorkspaceRecordBrowser(
+          workspaceId: browser.workspaceId,
+          table: browser.table,
+          onRecord: browser.onRecord,
+        ),
       ),
-      if (table.canManage)
-        _TableManagement(browser: this)
-      else
-        _TableAccessStatus(table: table),
-      _TableRecords(workspaceId: workspaceId, table: table, onRecord: onRecord),
+      if (settings.value)
+        Positioned.fill(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [_TableManagement(browser: browser)],
+          ),
+        ),
     ],
+  );
+}
+
+class const _BrowserToolbar(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      _TableBackButton(browser, settings),
+      Expanded(child: Text(browser.table.name)),
+      if (browser.table.canEditRecords) _NewRecordButton(browser, settings),
+      if (browser.table.canManage) _SettingsButton(settings),
+    ],
+  );
+}
+
+class const _TableBackButton(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: _back,
+    identifier: 'workspace_table_back',
+    semanticLabel: LocaleKeys.workspace_items_title.tr(),
+    tooltip: LocaleKeys.workspace_items_title.tr(),
+  );
+  void _back() {
+    if (settings.value) {
+      settings.value = false;
+    } else {
+      browser.onBack();
+    }
+  }
+}
+
+class const _NewRecordButton(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.add,
+    onPressed: _create,
+    identifier: 'workspace_record_create',
+    tooltip: LocaleKeys.workspace_items_create_record.tr(),
+  );
+  void _create() {
+    settings.value = false;
+    browser.onRecord(null);
+  }
+}
+
+class const _SettingsButton(final ValueNotifier<bool> settings)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPopupMenuButton(
+    items: [
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_settings),
+        onTap: () => settings.value = !settings.value,
+      ),
+    ],
+    identifier: 'workspace_table_overflow',
+    tooltip: LocaleKeys.workspace_items_settings.tr(),
   );
 }
 
@@ -373,85 +493,6 @@ class const _ColumnList({
           onTap: () => onColumn(column),
         ),
     ],
-  );
-}
-
-class const _TableRecords({
-  required final String workspaceId,
-  required final WorkspaceTable table,
-  required final ValueChanged<WorkspaceRecord?> onRecord,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final records = ref.watch(
-      workspaceTableRecordsProvider(workspaceId, table.id),
-    );
-
-    return Column(
-      children: [
-        if (table.canEditRecords) _CreateRecord(onRecord: onRecord),
-        _RecordState(table: table, records: records, onRecord: onRecord),
-      ],
-    );
-  }
-}
-
-class const _CreateRecord({
-  required final ValueChanged<WorkspaceRecord?> onRecord,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => onRecord(null),
-    child: const TextLocale(LocaleKeys.workspace_items_create_record),
-    identifier: 'workspace_record_create',
-  );
-}
-
-class const _RecordState({
-  required final WorkspaceTable table,
-  required final AsyncValue<List<WorkspaceRecord>> records,
-  required final ValueChanged<WorkspaceRecord?> onRecord,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => switch (records) {
-    AsyncData(:final value) => _RecordRows(
-      table: table,
-      records: value,
-      onRecord: onRecord,
-    ),
-    AsyncError(:final error) => WorkspaceItemFailure(error: error),
-    AsyncLoading() => const Center(child: CircularProgressIndicator()),
-  };
-}
-
-class const _RecordRows({
-  required final WorkspaceTable table,
-  required final List<WorkspaceRecord> records,
-  required final ValueChanged<WorkspaceRecord?> onRecord,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => records.isEmpty
-      ? const TextLocale(LocaleKeys.workspace_items_no_records)
-      : Column(
-          children: [
-            for (final record in records)
-              ListTile(
-                title: Text(
-                  record.values[table.labelColumnId]?.toString() ?? '',
-                ),
-                onTap: () => onRecord(record),
-              ),
-          ],
-        );
-}
-
-class const _TableAccessStatus({required final WorkspaceTable table})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => TextLocale(
-    table.canEditRecords
-        ? LocaleKeys.workspace_items_access_edit
-        : LocaleKeys.workspace_items_access_read,
   );
 }
 

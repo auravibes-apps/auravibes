@@ -2987,6 +2987,41 @@ class _WorkspaceStateEndpoint {
 
   final _is.SerializationManager _serializationManager;
 
+  _ida.Future<List<_ixyz6pla.WorkspaceResource>> queryRecords(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String tableId,
+    String queryJson,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'queryRecords',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'queryRecords',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'tableId': tableId,
+            'queryJson': queryJson,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_iwsbsne8.ReadWorkspaceStateResponse> read(
     _ist.TestSessionBuilder sessionBuilder,
     _i2v5creq.ReadWorkspaceStateRequest request,

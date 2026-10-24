@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/cloud_workspace_table_access_repository.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
@@ -137,6 +139,10 @@ void main() {
             onBack: () => fail('Unexpected back navigation'),
           ),
           overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [], hasMore: false),
+            ),
             workspaceTableAccessUsecaseProvider('one').overrideWith(
               (ref) async => ManageWorkspaceTableAccessUsecase(
                 CloudWorkspaceTableAccessRepository(.new(gateway)),
@@ -160,6 +166,10 @@ void main() {
       final _ = await tester.pumpAndSettle();
     }
 
+    await flush();
+    await tester.tap(find.byType(AuraPopupMenuButton).last);
+    await flush();
+    await tester.tap(find.text('Table settings'));
     await flush();
     Finder button(String access) => find.byWidgetPredicate(
       (widget) =>

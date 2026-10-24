@@ -92,6 +92,7 @@ workspaceReference:
 workspaceSecret:
   - put:
 workspaceState:
+  - queryRecords:
   - read:
   - patch:
   - duplicateAgent:
