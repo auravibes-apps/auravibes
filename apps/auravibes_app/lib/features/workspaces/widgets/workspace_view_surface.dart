@@ -66,10 +66,9 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
   void _disposeController() => _controller.dispose();
 
   void _render() {
-    final messages = activeA2uiWireCodec.decodeAll(
-      WorkspaceViewSurfaceData.envelope(widget.data),
-    );
-    messages.forEach(_handle);
+    activeA2uiWireCodec
+        .decodeAll(WorkspaceViewSurfaceData.envelope(widget.data))
+        .forEach(_handle);
   }
 
   void _handle(A2uiDecodeResult decoded) {
