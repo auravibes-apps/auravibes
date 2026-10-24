@@ -31,8 +31,11 @@ class const WorkspaceViewChatButton({
     );
     if (!context.mounted || id == null) return;
     ref
-        .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
-        .open(id);
+            .read(
+              workspaceOpenViewProvider(workspaceId, conversationId).notifier,
+            )
+            .selected =
+        id;
   }
 }
 

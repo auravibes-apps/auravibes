@@ -1,14 +1,13 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
-import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
-import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 
 class const LocalWorkspaceViewRepository(
   final AppDatabase database,
@@ -78,15 +77,18 @@ class const _LocalViewWriter(
     database.workspaceViews,
   )..where((row) => row.id.equals(view.id))).getSingleOrNull();
   void _checkWorkspace(WorkspaceViewRow? current) {
-    if (current != null && current.workspaceId != workspaceId)
+    if (current != null && current.workspaceId != workspaceId) {
       throw const WorkspaceTableException(denied: true);
+    }
   }
 
   void _checkRevision(WorkspaceViewRow? current) {
-    if (current != null && current.workspaceId != workspaceId)
+    if (current != null && current.workspaceId != workspaceId) {
       throw const WorkspaceTableException(denied: true);
-    if ((current?.revision ?? 0) != view.revision)
+    }
+    if ((current?.revision ?? 0) != view.revision) {
       throw const WorkspaceTableException(conflict: true);
+    }
   }
 
   Future<void> _checkParent() async {
@@ -94,8 +96,9 @@ class const _LocalViewWriter(
     if (id == null) return;
     final query = database.select(database.workspaceFolders)
       ..where((row) => _parentMatches(row, id));
-    if (await query.getSingleOrNull() == null)
+    if (await query.getSingleOrNull() == null) {
       throw const WorkspaceTableException();
+    }
   }
 
   Expression<bool> _parentMatches(WorkspaceFolders row, String id) =>
@@ -149,8 +152,9 @@ Future<void> _authorize(AppDatabase database, String workspaceId) async {
   final row = await (database.select(
     database.workspaces,
   )..where((row) => row.id.equals(workspaceId))).getSingleOrNull();
-  if (row == null || row.type != .local)
+  if (row == null || row.type != .local) {
     throw const WorkspaceTableException(denied: true);
+  }
 }
 
 WorkspaceView _decodeRow(WorkspaceViewRow row) => _decode(row.data);
@@ -173,8 +177,10 @@ WorkspaceView? _replay(WorkspaceViewRow? row, _ViewOperation operation) {
   if (row == null) return null;
   final receipt = _mutations(row)[operation.id] as Map?;
   if (receipt == null) return null;
-  if (receipt['hash'] != operation.hash)
+  if (receipt['hash'] != operation.hash) {
     throw const WorkspaceTableException(conflict: true);
+  }
+
   return _snapshots(row.history)
       .firstWhere((view) => view.revision == receipt['revision']);
 }

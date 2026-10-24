@@ -4,7 +4,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_layout.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -34,7 +33,6 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            workspaceId: 'one',
             child: const _Harness(),
             overrides: [
               workspaceViewDataProvider(
@@ -42,6 +40,7 @@ void main() {
                 'view',
               ).overrideWith((ref) async => data),
             ],
+            workspaceId: 'one',
           ),
         );
         await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -65,14 +64,14 @@ void main() {
   );
 }
 
-WorkspaceViewData _data() => WorkspaceViewData(
-  view: WorkspaceView(
+WorkspaceViewData _data() => .new(
+  view: .new(
     id: 'view',
     name: 'Overview',
     tableId: 'table',
     bindings: const {'title': 'label'},
     columnTypes: const {'label': 'text'},
-    definition: A2uiSavedDefinition.fromJson({
+    definition: .fromJson({
       'version': 1,
       'components': [
         {'id': 'root', 'component': 'Text', 'text': 'Saved surface'},
@@ -100,18 +99,20 @@ WorkspaceViewData _data() => WorkspaceViewData(
   needsRepair: false,
 );
 
-class _Harness extends HookConsumerWidget {
-  const _Harness();
+class const _Harness() extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController();
+
     return Scaffold(
       body: Column(
         children: [
           AuraButton(
-            onPressed: () => ref
-                .read(workspaceOpenViewProvider('one', 'chat').notifier)
-                .open('view'),
+            onPressed: () =>
+                ref
+                        .read(workspaceOpenViewProvider('one', 'chat').notifier)
+                        .selected =
+                    'view',
             child: const Text('Open view'),
           ),
           Expanded(
@@ -119,7 +120,7 @@ class _Harness extends HookConsumerWidget {
               workspaceId: 'one',
               conversationId: 'chat',
               mainContent: TextField(controller: controller),
-              fallbackSidePanel: ResponsiveConversationSidePanel(
+              fallbackSidePanel: .new(
                 visible: false,
                 mounted: false,
                 widthPercent: 0.4,

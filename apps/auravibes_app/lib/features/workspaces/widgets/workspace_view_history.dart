@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:uuid/v7.dart';
-
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
@@ -11,6 +9,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:uuid/v7.dart';
 
 class const WorkspaceViewHistory({
   required final String workspaceId,
@@ -68,14 +67,17 @@ class const _Revision(
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final operationId = useMemoized(const UuidV7().generate);
+
     return ListTile(
       title: Text('${revision.name} (${revision.revision})'),
       subtitle: const TextLocale(LocaleKeys.workspace_views_restore),
       enabled: !action.pending,
-      onTap: () =>
-          unawaited(action.run(() => _restore(context, ref, operationId))),
+      onTap: () => _submit(context, ref, operationId),
     );
   }
+
+  void _submit(BuildContext context, WidgetRef ref, String operationId) =>
+      unawaited(action.run(() => _restore(context, ref, operationId)));
 
   Future<void> _restore(
     BuildContext context,

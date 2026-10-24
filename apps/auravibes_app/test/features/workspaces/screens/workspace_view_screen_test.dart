@@ -2,7 +2,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,19 +19,19 @@ void main() {
     testWidgets(
       'saved view displays approved surface and returns at width $width',
       (tester) async {
-        tester.view.physicalSize = Size(width, 900);
+        tester.view.physicalSize = .new(width, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         var returned = false;
         final data = WorkspaceViewData(
-          view: WorkspaceView(
+          view: .new(
             id: 'view',
             name: 'Overview',
             tableId: 'table',
             bindings: {'title': 'label'},
             columnTypes: {'label': 'text'},
-            definition: A2uiSavedDefinition.fromJson({
+            definition: .fromJson({
               'version': 1,
               'components': [
                 {
@@ -67,7 +66,6 @@ void main() {
         await tester.runAsync(() async {
           await tester.pumpWidget(
             TestableApp(
-              workspaceId: 'one',
               child: WorkspaceViewScreen(
                 workspaceId: 'one',
                 viewId: 'view',
@@ -79,6 +77,7 @@ void main() {
                   'view',
                 ).overrideWith((ref) async => data),
               ],
+              workspaceId: 'one',
             ),
           );
           await Future<void>.delayed(const Duration(milliseconds: 30));

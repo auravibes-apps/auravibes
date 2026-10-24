@@ -87,7 +87,7 @@ class const _Tables(
   @override
   Widget build(BuildContext context) => switch (tables) {
     AsyncData(:final value) =>
-      value.isEmpty
+      _noEditableTables(value)
           ? const TextLocale(LocaleKeys.workspace_views_no_tables)
           : Column(
               mainAxisSize: .min,
@@ -109,8 +109,8 @@ class const _Table(
   Widget build(BuildContext context) => ListTile(
     leading: const Icon(Icons.table_chart_outlined),
     title: Text(table.name),
-    selected: owner.selected?.id == table.id,
     onTap: () => owner.onSelected(table),
+    selected: owner.selected?.id == table.id,
   );
 }
 
@@ -121,3 +121,6 @@ class const _PathTitle(final List<WorkspaceFolder> path)
       ? const TextLocale(LocaleKeys.workspace_items_title)
       : Text(path.last.name);
 }
+
+bool _noEditableTables(List<WorkspaceTable> tables) =>
+    !tables.any((table) => table.canManage);

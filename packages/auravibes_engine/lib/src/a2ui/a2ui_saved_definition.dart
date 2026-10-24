@@ -91,12 +91,14 @@ void _validateSavedValue(Object? value, int depth) {
   if (depth > _maximumDepth) _invalid();
   if (value is Map) {
     _validateMap(value, depth);
+
     return;
   }
   if (value is List) {
     for (final item in value) {
       _validateSavedValue(item, depth + 1);
     }
+
     return;
   }
   if (!_scalar(value)) _invalid();

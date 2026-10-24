@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:uuid/v7.dart';
-
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
@@ -14,6 +12,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:uuid/v7.dart';
 
 class const WorkspaceViewEditor({
   required final String workspaceId,
@@ -119,6 +118,7 @@ class const _Name(final _EditState state) extends StatelessWidget {
   Widget build(BuildContext context) => AuraInput(
     controller: state.name,
     label: const TextLocale(LocaleKeys.workspace_views_name),
+    identifier: 'workspace_view_edit_name',
   );
 }
 
@@ -138,11 +138,11 @@ class const _Field(final _EditState state, final String id, final String name)
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CheckboxListTile(
-    title: Text(name),
     value: state.selected.value.contains(id),
     onChanged: state.action.pending
         ? null
         : (value) => state.toggle(id, checked: value == true),
+    title: Text(name),
   );
 }
 
@@ -159,15 +159,18 @@ class const _Save(final WorkspaceViewEditor owner, final _EditState state)
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final operationId = useMemoized(const UuidV7().generate);
+
     return AuraButton(
-      onPressed: () =>
-          unawaited(state.action.run(() => _save(context, ref, operationId))),
+      onPressed: () => _submit(context, ref, operationId),
       child: const TextLocale(LocaleKeys.workspace_views_save),
       isLoading: state.action.pending,
       disabled: state.action.pending,
       identifier: 'workspace_view_save',
     );
   }
+
+  void _submit(BuildContext context, WidgetRef ref, String operationId) =>
+      unawaited(state.action.run(() => _save(context, ref, operationId)));
 
   Future<void> _save(
     BuildContext context,

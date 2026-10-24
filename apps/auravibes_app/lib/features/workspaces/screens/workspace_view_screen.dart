@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -56,9 +57,19 @@ class const _Toolbar(
   @override
   Widget build(BuildContext context, WidgetRef ref) => Row(
     children: [
-      AuraIconButton(icon: Icons.arrow_back, onPressed: owner.onBack),
+      AuraIconButton(
+        icon: Icons.arrow_back,
+        onPressed: owner.onBack,
+        identifier: 'workspace_view_back',
+        tooltip: LocaleKeys.common_back.tr(),
+      ),
       const Expanded(child: TextLocale(LocaleKeys.workspace_views_title)),
-      AuraIconButton(icon: Icons.refresh, onPressed: () => owner.refresh(ref)),
+      AuraIconButton(
+        icon: Icons.refresh,
+        onPressed: () => owner.refresh(ref),
+        identifier: 'workspace_view_refresh',
+        tooltip: LocaleKeys.common_reload.tr(),
+      ),
       _Menu(owner, selected),
     ],
   );
@@ -87,11 +98,11 @@ class const _Popup(
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
-    onSelected: (mode) => selected.value = (mode: mode, data: data),
     itemBuilder: _items,
+    onSelected: (mode) => selected.value = (mode: mode, data: data),
   );
 
-  List<PopupMenuEntry<String>> _items(BuildContext context) => [
+  List<PopupMenuEntry<String>> _items(BuildContext _) => [
     const PopupMenuItem(
       value: 'edit',
       child: TextLocale(LocaleKeys.workspace_views_edit),

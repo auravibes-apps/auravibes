@@ -1,13 +1,3 @@
-import 'package:auravibes_app/features/workspaces/widgets/workspace_view_browser_toggle.dart';
-import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_button.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_layout.dart';
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: UI callbacks stay local to their widgets.
-// Required: Existing code repeats lookups where extraction adds noise.
-// Required: Feature widgets keep closely related private widgets together.
-// Required: Existing helpers remain top-level for local feature use.
-
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/side_panel_preferences_repository.dart';
@@ -62,8 +52,12 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_browser_toggle.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_button.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_layout.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -73,12 +67,6 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show
-        AgentIterationDecision,
-        ConversationToolAccessMode,
-        ReasoningConfiguration,
-        ReasoningOption,
-        SelectedModelNotFoundException;
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -87,6 +75,20 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Required: Existing test and UI helpers keep compact return flow.
+// Required: UI callbacks stay local to their widgets.
+// Required: Existing code repeats lookups where extraction adds noise.
+// Required: Feature widgets keep closely related private widgets together.
+// Required: Existing helpers remain top-level for local feature use.
+
+
+    show
+        AgentIterationDecision,
+        ConversationToolAccessMode,
+        ReasoningConfiguration,
+        ReasoningOption,
+        SelectedModelNotFoundException;
 
 final _logger = Logger('chat_conversation_screen');
 
@@ -1634,7 +1636,11 @@ class const _LoadedChatConversationLayout({
       workspaceId: data.workspaceId,
       conversationId: data.conversation.id,
       mainContent: _LoadedChatConversationMain(data: data, actions: actions),
-      fallbackSidePanel: _loadedChatConversationSidePanel(data, values, actions),
+      fallbackSidePanel: _loadedChatConversationSidePanel(
+        data,
+        values,
+        actions,
+      ),
     );
   }
 }
@@ -1658,10 +1664,19 @@ class const _LoadedChatConversationMain({
   required final _LoadedSidePanelActions actions,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context,WidgetRef ref) => _ChatConversationBody(
-    data:data,onOpenToolResult:(tab)=>_open(ref,tab));
-  void _open(WidgetRef ref,SidebarToolResultTab tab) {
-    ref.read(workspaceOpenViewProvider(data.workspaceId,data.conversation.id).notifier).close();
+  Widget build(BuildContext context, WidgetRef ref) => _ChatConversationBody(
+    data: data,
+    onOpenToolResult: (tab) => _open(ref, tab),
+  );
+  void _open(WidgetRef ref, SidebarToolResultTab tab) {
+    ref
+        .read(
+          workspaceOpenViewProvider(
+            data.workspaceId,
+            data.conversation.id,
+          ).notifier,
+        )
+        .close();
     actions.onOpenToolResult(tab);
   }
 }
@@ -1689,7 +1704,10 @@ class _ChatConversationAppBarActions({
   required VoidCallback onSidebarToggle,
 }) {
   final List<Widget> widgets = [
-    WorkspaceViewChatButton(workspaceId:workspaceId,conversationId:conversationId),
+    WorkspaceViewChatButton(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
     ModelUsageHeaderButton(conversationId: conversationId),
     BackgroundWorkHeaderButton(
       workspaceId: workspaceId,
@@ -1700,8 +1718,8 @@ class _ChatConversationAppBarActions({
       conversationId: conversationId,
     ),
     WorkspaceViewBrowserToggle(
-      workspaceId:workspaceId,
-      conversationId:conversationId,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
       isPanelVisible: sidePanelVisible,
       tabCount: tabCount,
       onPressed: onSidebarToggle,

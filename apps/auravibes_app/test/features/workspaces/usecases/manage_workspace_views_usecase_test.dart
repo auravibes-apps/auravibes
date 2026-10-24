@@ -1,20 +1,19 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('saved View reopens stable bindings, refreshes records, rejects stale edit and restores a new revision', () async {
+  test('saved View reopens stable bindings, refreshes records, '
+      'rejects stale edit and restores a new revision', () async {
     final database = AppDatabase(connection: NativeDatabase.memory());
     addTearDown(database.close);
     final _ = await database
@@ -33,12 +32,8 @@ void main() {
     final views = ManageWorkspaceViewsUsecase(
       LocalWorkspaceViewRepository(database, 'workspace'),
       tables,
-      QueryWorkspaceRecordsUsecase(
-        LocalWorkspaceRecordQueryRepository(database, 'workspace'),
-      ),
-      BrowseWorkspaceReferencesUsecase(
-        LocalWorkspaceReferenceRepository(database, 'workspace'),
-      ),
+      .new(LocalWorkspaceRecordQueryRepository(database, 'workspace')),
+      .new(LocalWorkspaceReferenceRepository(database, 'workspace')),
     );
     final first = await views.create(
       name: 'Overview',
@@ -68,7 +63,7 @@ void main() {
     );
     table = await tables.saveColumn(
       table: table,
-      column: WorkspaceColumn(id: amountId, name: 'Amount', type: .text),
+      column: .new(id: amountId, name: 'Amount'),
     );
     expect((await views.open(typedView.id)).needsRepair, isTrue);
     await expectLater(
@@ -105,12 +100,8 @@ void main() {
     final other = ManageWorkspaceViewsUsecase(
       LocalWorkspaceViewRepository(database, 'foreign'),
       foreignTables,
-      QueryWorkspaceRecordsUsecase(
-        LocalWorkspaceRecordQueryRepository(database, 'foreign'),
-      ),
-      BrowseWorkspaceReferencesUsecase(
-        LocalWorkspaceReferenceRepository(database, 'foreign'),
-      ),
+      .new(LocalWorkspaceRecordQueryRepository(database, 'foreign')),
+      .new(LocalWorkspaceReferenceRepository(database, 'foreign')),
     );
     final foreignTable = await foreignTables.create(
       name: 'Foreign',
@@ -120,10 +111,10 @@ void main() {
       id: first.id,
       name: 'Forged',
       tableId: foreignTable.id,
-      revision: 0,
-      definition: first.definition,
       bindings: {'field0': foreignTable.labelColumnId},
       columnTypes: {foreignTable.labelColumnId: 'text'},
+      definition: first.definition,
+      revision: 0,
     );
     await expectLater(
       other.save(forged),

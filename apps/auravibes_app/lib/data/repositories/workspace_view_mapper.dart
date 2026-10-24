@@ -12,30 +12,48 @@ abstract final class WorkspaceViewMapper {
     'definition': view.definition.toJson(),
     'revision': view.revision,
   };
-  static WorkspaceView fromJson(Map<String, dynamic> data) => data._view();
+  static WorkspaceView fromJson(Map<String, dynamic> data) =>
+      _view(_identity(data), _content(data));
 }
 
-extension _ViewFields on Map<String, dynamic> {
-  String get id => this['id'] as String;
-  String get name => this['name'] as String;
-  String get tableId => this['tableId'] as String;
-  String? get parentId => this['parentId'] as String?;
-  int get revision => this['revision'] as int;
-  Map<String, String> get bindings =>
-      Map<String, String>.from(this['bindings'] as Map);
-  Map<String, String> get columnTypes =>
-      Map<String, String>.from(this['columnTypes'] as Map);
-  A2uiSavedDefinition get definition => A2uiSavedDefinition.fromJson(
-    Map<String, Object?>.from(this['definition'] as Map),
-  );
-  WorkspaceView _view() => .new(
-    id: id,
-    name: name,
-    tableId: tableId,
-    bindings: bindings,
-    columnTypes: columnTypes,
-    definition: definition,
-    revision: revision,
-    parentId: parentId,
-  );
-}
+typedef _ViewIdentity = ({
+  String id,
+  String name,
+  String tableId,
+  String? parentId,
+  int revision,
+});
+typedef _ViewContent = ({
+  Map<String, String> bindings,
+  Map<String, String> columnTypes,
+  A2uiSavedDefinition definition,
+});
+
+_ViewIdentity _identity(Map<String, dynamic> data) => (
+  id: data['id'] as String,
+  name: data['name'] as String,
+  tableId: data['tableId'] as String,
+  parentId: data['parentId'] as String?,
+  revision: data['revision'] as int,
+);
+_ViewContent _content(Map<String, dynamic> data) => (
+  bindings: _strings(data, 'bindings'),
+  columnTypes: _strings(data, 'columnTypes'),
+  definition: _definition(data),
+);
+Map<String, String> _strings(Map<String, dynamic> data, String key) =>
+    Map<String, String>.from(data[key] as Map);
+A2uiSavedDefinition _definition(Map<String, dynamic> data) =>
+    A2uiSavedDefinition.fromJson(
+      Map<String, Object?>.from(data['definition'] as Map),
+    );
+WorkspaceView _view(_ViewIdentity identity, _ViewContent content) => .new(
+  id: identity.id,
+  name: identity.name,
+  tableId: identity.tableId,
+  bindings: content.bindings,
+  columnTypes: content.columnTypes,
+  definition: content.definition,
+  revision: identity.revision,
+  parentId: identity.parentId,
+);

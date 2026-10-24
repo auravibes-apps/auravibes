@@ -192,7 +192,8 @@ class AppDatabase extends _$AppDatabase {
       _workspaceFoldersSchemaVersion + 1;
   static const int _connectorWritesSchemaVersion =
       _workspaceTablesSchemaVersion + 1;
-  static const int _workspaceViewsSchemaVersion = _connectorWritesSchemaVersion + 1;
+  static const int _workspaceViewsSchemaVersion =
+      _connectorWritesSchemaVersion + 1;
   static const int _currentSchemaVersion = _workspaceViewsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.

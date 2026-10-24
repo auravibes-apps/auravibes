@@ -1,12 +1,10 @@
 import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
-
-import '../workspace_state/domain/workspace_resource_validation.dart';
-
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../workspace_state/domain/workspace_resource_validation.dart';
 import '../workspace_state/workspace_table_access.dart';
 import 'workspace_view_validation.dart';
 
@@ -125,6 +123,7 @@ class const _ViewWriter(final _ViewContext context) {
     await _checkBindings(input);
     final replay = await _ViewReceipts(context).replay(request);
     if (replay != null) return replay;
+
     return await _saveNew(request, input);
   }
 
@@ -139,6 +138,7 @@ class const _ViewWriter(final _ViewContext context) {
       current == null,
     );
     await _ViewReceipts(context).save(request, saved);
+
     return saved;
   }
 
@@ -231,13 +231,10 @@ const _endpoint = 'workspaceView.save';
 
 class const _ViewReceipts(final _ViewContext context) {
   Future<WorkspaceView?> replay(WorkspaceViewSaveRequest request) async {
-    final receipt = await WorkspaceMutationReceipt.db.findFirstRow(
-      context.session,
-      where: _ReceiptKey(context, request.requestId).matches,
-      transaction: context.transaction,
-    );
+    final receipt = await _find(request.requestId);
     if (receipt == null) return null;
     if (receipt.requestHash != await _requestHash(request)) _receiptConflict();
+
     return WorkspaceView.fromJson(
       jsonDecode(receipt.responseJson) as Map<String, dynamic>,
     );
@@ -254,6 +251,13 @@ class const _ViewReceipts(final _ViewContext context) {
       transaction: context.transaction,
     );
   }
+
+  Future<WorkspaceMutationReceipt?> _find(String id) =>
+      WorkspaceMutationReceipt.db.findFirstRow(
+        context.session,
+        where: _ReceiptKey(context, id).matches,
+        transaction: context.transaction,
+      );
 
   Future<WorkspaceMutationReceipt> _receipt(
     WorkspaceViewSaveRequest request,
@@ -285,6 +289,7 @@ String _scope(_ViewContext context) =>
     WorkspaceResourceValidation.receiptScopeKey(context.member.workspaceId);
 Future<String> _requestHash(WorkspaceViewSaveRequest request) async {
   final hash = await Sha256().hash(utf8.encode(jsonEncode(request.toJson())));
+
   return base64UrlEncode(hash.bytes);
 }
 

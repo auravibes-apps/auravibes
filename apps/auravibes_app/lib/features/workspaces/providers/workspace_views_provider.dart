@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/repositories/cloud_workspace_view_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
@@ -90,7 +90,8 @@ Future<WorkspaceViewData> workspaceViewData(
   String workspaceId,
   String viewId,
 ) async {
-  // Table providers invalidate on ordinary record edits; cloud reads always reauthorize.
+  // Record edits invalidate the table providers.
+  // Cloud reads always reauthorize.
   final usecase = await ref.watch(
     workspaceViewUsecaseProvider(workspaceId).future,
   );

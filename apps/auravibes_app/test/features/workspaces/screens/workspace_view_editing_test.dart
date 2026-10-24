@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_creation.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,55 +31,53 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
-  testWidgets(
-    'editing pins the original revision and keeps draft after refresh and conflict',
-    (tester) async {
-      final views = _Views(conflict: true);
-      var revision = 1;
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          TestableApp(
+  testWidgets('editing pins the original revision and keeps draft '
+      'after refresh and conflict', (tester) async {
+    final views = _Views(conflict: true);
+    var revision = 1;
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceViewScreen(
             workspaceId: 'one',
-            child: WorkspaceViewScreen(
-              workspaceId: 'one',
-              viewId: 'view',
-              onBack: () => fail('Unexpected close'),
-            ),
-            overrides: [
-              workspaceViewDataProvider(
-                'one',
-                'view',
-              ).overrideWith((ref) async => _data(revision)),
-              workspaceViewUsecaseProvider('one')
-                  .overrideWith((ref) async => views),
-            ],
+            viewId: 'view',
+            onBack: () => fail('Unexpected close'),
           ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      });
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.byType(PopupMenuButton<String>));
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.text(LocaleKeys.workspace_views_edit.tr()));
-      final _ = await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Keep this draft');
-      await tester.pump(const Duration(seconds: 11));
-      revision = 2;
-      final container = ProviderScope.containerOf(
-        tester.element(find.byType(WorkspaceViewScreen)),
-        listen: false,
+          overrides: [
+            workspaceViewDataProvider(
+              'one',
+              'view',
+            ).overrideWith((ref) async => _data(revision)),
+            workspaceViewUsecaseProvider('one')
+                .overrideWith((ref) async => views),
+          ],
+          workspaceId: 'one',
+        ),
       );
-      container.invalidate(workspaceViewDataProvider('one', 'view'));
-      final _ = await tester.pumpAndSettle();
-      expect(find.text('Keep this draft'), findsOneWidget);
-      await tester.tap(_button('workspace_view_save'));
-      final _ = await tester.pumpAndSettle();
-      expect(views.saved?.revision, 1);
-      expect(find.text('Keep this draft'), findsOneWidget);
-      expect(find.text(LocaleKeys.cloud_errors_conflict.tr()), findsOneWidget);
-      await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text(LocaleKeys.workspace_views_edit.tr()));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(AuraInput).first, 'Keep this draft');
+    await tester.pump(const Duration(seconds: 11));
+    revision = 2;
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(WorkspaceViewScreen)),
+      listen: false,
+    );
+    container.invalidate(workspaceViewDataProvider('one', 'view'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Keep this draft'), findsOneWidget);
+    await tester.tap(_button('workspace_view_save'));
+    final _ = await tester.pumpAndSettle();
+    expect(views.saved?.revision, 1);
+    expect(find.text('Keep this draft'), findsOneWidget);
+    expect(find.text(LocaleKeys.cloud_errors_conflict.tr()), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets(
     'View creation browses source folders and creates in the current folder',
     (tester) async {
@@ -89,7 +86,6 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            workspaceId: 'one',
             child: Scaffold(
               body: SingleChildScrollView(
                 child: WorkspaceViewCreation(
@@ -124,12 +120,13 @@ void main() {
                 'source',
               ).overrideWith((ref) async => [_table]),
             ],
+            workspaceId: 'one',
           ),
         );
         await Future<void>.delayed(const Duration(milliseconds: 20));
       });
       final _ = await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Overview');
+      await tester.enterText(find.byType(AuraInput).first, 'Overview');
       await tester.tap(find.text('Source folder'));
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Items'));
@@ -148,14 +145,14 @@ void main() {
 Finder _button(String id) => find.byWidgetPredicate(
   (widget) => widget is AuraButton && widget.identifier == id,
 );
-WorkspaceViewData _data(int revision) => WorkspaceViewData(
-  view: WorkspaceView(
+WorkspaceViewData _data(int revision) => .new(
+  view: .new(
     id: 'view',
     name: 'Overview',
     tableId: 'table',
     bindings: const {'field0': 'label'},
     columnTypes: const {'label': 'text'},
-    definition: A2uiSavedDefinition.fromJson({
+    definition: .fromJson({
       'version': 1,
       'components': [
         {'id': 'root', 'component': 'Text', 'text': 'Preview'},
@@ -176,7 +173,7 @@ WorkspaceViewData _data(int revision) => WorkspaceViewData(
 );
 
 class _Views extends Fake implements ManageWorkspaceViewsUsecase {
-  _Views({required this.conflict});
+  new({required this.conflict});
   final bool conflict;
   WorkspaceView? saved;
   String? requestId;
@@ -185,6 +182,7 @@ class _Views extends Fake implements ManageWorkspaceViewsUsecase {
     saved = view;
     this.requestId = requestId;
     if (conflict) throw const WorkspaceTableException(conflict: true);
+
     return view.withRevision(view.revision + 1);
   }
 }

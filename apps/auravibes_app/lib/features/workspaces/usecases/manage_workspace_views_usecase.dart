@@ -38,12 +38,7 @@ class const ManageWorkspaceViewsUsecase(
     required List<String> columnIds,
     String? parentId,
   }) => save(
-    WorkspaceView.create(
-      name: name,
-      table: table,
-      columnIds: columnIds,
-      parentId: parentId,
-    ),
+    .create(name: name, table: table, columnIds: columnIds, parentId: parentId),
   );
 
   Future<WorkspaceView> save(WorkspaceView view, {String? requestId}) async {
@@ -113,6 +108,11 @@ WorkspaceViewData _snapshot(
 
 String _operationId(String? requested) {
   final id = requested ?? const UuidV7().generate();
-  if (id.isEmpty || id.length > 100) throw const WorkspaceTableException();
+  if (id.isEmpty || id.length > _maximumOperationIdLength) {
+    throw const WorkspaceTableException();
+  }
+
   return id;
 }
+
+const _maximumOperationIdLength = 100;

@@ -16,7 +16,7 @@ class const CloudWorkspaceViewRepository(
   }) => CloudAppErrors.guardCall(
     .state,
     () async => (await client.workspaceView.list(
-      cloud.WorkspaceViewListRequest(
+      .new(
         workspaceId: workspaceId,
         parentId: parentId,
         allFolders: allFolders,

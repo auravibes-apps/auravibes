@@ -78,7 +78,14 @@ Object? _formatted(WorkspaceViewData data, WorkspaceRecord record, String id) {
       .where((column) => column.id == id)
       .firstOrNull;
   final value = record.values[id];
-  if (column?.type == .timestamp && value is String)
+
+  return _columnValue(column, value);
+}
+
+Object? _columnValue(WorkspaceColumn? column, Object? value) {
+  if (column?.type == .timestamp && value is String) {
     return WorkspaceTimeZones.display(value, column?.timeZone ?? 'UTC');
+  }
+
   return _scalar(value);
 }

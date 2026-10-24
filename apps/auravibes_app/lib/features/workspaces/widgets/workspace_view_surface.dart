@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface_data.dart';
@@ -32,7 +31,7 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
   @override
   void dispose() {
     unawaited(_updates?.cancel());
-    _controller.dispose();
+    _disposeController();
     super.dispose();
   }
 
@@ -59,10 +58,12 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
 
   void _reset() {
     unawaited(_updates?.cancel());
-    _controller.dispose();
+    _disposeController();
     _controller = .new(catalogs: auraChatCatalogs());
     _failed = false;
   }
+
+  void _disposeController() => _controller.dispose();
 
   void _render() {
     final messages = activeA2uiWireCodec.decodeAll(
@@ -75,12 +76,13 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
     final operation = decoded.envelope?.operation;
     if (operation == null) {
       _failed = true;
+
       return;
     }
     _controller.handleMessage(.fromJson(operation.json));
   }
 
-  void _surfaceUpdated(SurfaceUpdate update) {
+  void _surfaceUpdated(SurfaceUpdate _) {
     if (mounted) {
       setState(() {
         const _ = 0;

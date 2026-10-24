@@ -73,15 +73,21 @@ class const _Create(
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = useState<WorkspaceView?>(null);
+
     return AuraButton(
-      onPressed: () =>
-          unawaited(state.run(context, () => _save(context, ref, draft))),
+      onPressed: () => _submit(context, ref, draft),
       child: const TextLocale(LocaleKeys.workspace_views_create),
       isLoading: state.pending.value,
       disabled: _disabled,
       identifier: 'workspace_view_create',
     );
   }
+
+  void _submit(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<WorkspaceView?> draft,
+  ) => unawaited(state.run(context, () => _save(context, ref, draft)));
 
   Future<void> _save(
     BuildContext context,
@@ -94,6 +100,10 @@ class const _Create(
     draft.value = view;
     final id = await _create(ref, view);
     if (!context.mounted) return;
+    _complete(ref, id);
+  }
+
+  void _complete(WidgetRef ref, String id) {
     ref.invalidate(workspaceViewsProvider(owner.workspaceId, owner.parentId));
     owner.onOpenView(id);
   }
@@ -101,8 +111,10 @@ class const _Create(
   WorkspaceView _draft(WorkspaceTable table, WorkspaceView? previous) {
     if (previous != null &&
         previous.name == state.name.text &&
-        previous.tableId == table.id)
+        previous.tableId == table.id) {
       return previous;
+    }
+
     return WorkspaceView.create(
       name: state.name.text,
       table: table,
@@ -116,6 +128,7 @@ class const _Create(
       workspaceViewUsecaseProvider(owner.workspaceId).future,
     );
     final created = await usecase.save(view, requestId: view.id);
+
     return created.id;
   }
 }

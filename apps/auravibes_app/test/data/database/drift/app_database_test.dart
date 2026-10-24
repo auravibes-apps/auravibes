@@ -44,15 +44,25 @@ void main() {
       expect(fixture.database.schemaVersion, 37);
     });
 
-    test('migration from schema36 preserves data and creates View storage',() async {
-      final sqliteDb=sqlite.sqlite3.openInMemory()..userVersion=36
-        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
-        ..execute('INSERT INTO workspaces VALUES (?)',['existing']);
-      final database=_MigrationAppDatabase<_MigrationCaseViews>(connection:NativeDatabase.opened(sqliteDb));
-      addTearDown(database.close);
-      expect(await database.select(database.workspaceViews).get(),isEmpty);
-      expect((await database.customSelect('SELECT id FROM workspaces').getSingle()).read<String>('id'),'existing');
-    });
+    test(
+      'migration from schema36 preserves data and creates View storage',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 36
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCaseViews>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        expect(await database.select(database.workspaceViews).get(), isEmpty);
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
+        );
+      },
+    );
 
     test(
       'migration from schema 32 keeps existing bookmark snapshots',
@@ -1245,4 +1255,4 @@ final class _DatabaseBeforeRecreation extends AppDatabase {
   new(QueryExecutor connection) : super(connection: connection);
 }
 
-final class _MigrationCaseViews {}
+final class _MigrationCaseViews;

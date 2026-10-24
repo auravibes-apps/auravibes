@@ -16,6 +16,7 @@ class const WorkspaceViewBrowserToggle({
     final open =
         ref.watch(workspaceOpenViewProvider(workspaceId, conversationId)) !=
         null;
+
     return ConversationSidebarToggleButton(
       isPanelVisible: isPanelVisible && !open,
       tabCount: tabCount,
@@ -26,6 +27,7 @@ class const WorkspaceViewBrowserToggle({
   void _toggle(WidgetRef ref, bool open) {
     if (!open) {
       onPressed();
+
       return;
     }
     ref
