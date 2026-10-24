@@ -7,7 +7,7 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 - Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
 - Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
 - Active implementers: #1675 Directory/table browsing, #1673 relationships, #1688 Connector writes. Each owns a separate worktree.
-- Latest published verified head: `69f361501`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933); current-head CI and remaining children are incomplete.
+- Latest published verified head: `05a844a59`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 at69f361501 passed every gate except format; the one-line formatter repair is published. Current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
 
@@ -318,3 +318,5 @@ Clean committed generated-artifact gate at `fd7c849d` passes, including Serverpo
 Publication checkpoint: root `69f361501e5429d0408f21e987837d8d944f3af7` pushed after dry-run and remote-SHA verification. Full Flutter Test CI40057406933 at `ea6dcb2f4` subsequently completed successfully. Current-head CI remains pending. Both isolated UI manifests are gone; no UI app or own bridge remains running.
 
 Current-head CI40058728216 exposed one formatting-only indentation in `workspace_table.dart` (_columnTimeZone continuation). Root applied pinned formatter to that file; exact full `format:check` now passes, whitespace clean. No behavior changed or snapshots updated. Job log: `/tmp/auravibes-1693-format-69f-job-clean.log`. Other current-head CI results remain pending.
+
+Formatter repair `05a844a59381d861acde90d3022c0036e22fb316` pushed after dry-run; remote SHA matches. Completed CI40058728216 at69f361501 failed only format and its aggregate success gate; all other checks passed. No additional test/analysis failure was observed. Current repair-head CI remains pending.
