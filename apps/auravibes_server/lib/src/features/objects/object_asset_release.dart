@@ -47,12 +47,7 @@ class const ObjectAssetRelease(
   }
 
   Future<void> _queue(WorkspaceObject object) async {
-    final existing = await ObjectDeletion.db.findFirstRow(
-      session,
-      where: (row) => row.objectId.equals(object.id),
-      transaction: transaction,
-    );
-    if (existing != null) return;
+    if (await _queued(object.id!)) return;
     final now = DateTime.now().toUtc();
     await _markDeleted(object, now);
     await ObjectDeletion.db.insertRow(
@@ -61,6 +56,14 @@ class const ObjectAssetRelease(
       transaction: transaction,
     );
   }
+
+  Future<bool> _queued(int id) async =>
+      await ObjectDeletion.db.findFirstRow(
+        session,
+        where: (row) => row.objectId.equals(id),
+        transaction: transaction,
+      ) !=
+      null;
 
   Future<void> _markDeleted(WorkspaceObject object, DateTime now) =>
       WorkspaceObject.db.updateRow(

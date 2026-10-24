@@ -82,18 +82,26 @@ Iterable<LocalRetainedData> _viewHistory(QueryRow row) =>
 LocalRetainedData _viewSnapshot(QueryRow row, Map<String, dynamic> data) =>
     (data: data, view: true, kind: 'view', id: row.read<String>('id'));
 
-LocalRetainedData _snapshot(WorkspaceRevisionRow row) => (
-  data: jsonDecode(row.data) as Map<String, dynamic>,
-  view: false,
-  kind: row.kind,
-  id: row.resourceId,
-);
+LocalRetainedData _snapshot(WorkspaceRevisionRow row) =>
+    (data: _snapshotData(row), view: false, kind: row.kind, id: row.resourceId);
+
+Map<String, dynamic> _snapshotData(WorkspaceRevisionRow row) {
+  final data = jsonDecode(row.data) as Map<String, dynamic>;
+  if (row.kind == 'record' && data['historyAttachmentColumns'] is! List) {
+    data['historyAttachmentColumns'] = <String>[];
+  }
+
+  return data;
+}
 
 List<LocalRetainedData> _retainedSnapshots(
   List<WorkspaceRevisionRow> rows,
   Set<String> scope,
 ) => rows
-    .where((row) => !scope.contains('${row.kind}:${row.resourceId}'))
+    .where(
+      (row) =>
+          row.revision > 0 && !scope.contains('${row.kind}:${row.resourceId}'),
+    )
     .map(_snapshot)
     .toList();
 

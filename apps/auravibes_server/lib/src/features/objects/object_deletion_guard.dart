@@ -8,18 +8,58 @@ class const ObjectDeletionGuard() {
     Session session,
     ObjectDeletion deletion,
     WorkerCoordinatorLease coordinator,
-  ) => session.db.transaction((transaction) async {
+  ) => session.db.transaction(
+    (transaction) => _authorized(session, deletion, transaction, coordinator),
+  );
+
+  static Future<bool> ownsCoordinator(
+    Session session,
+    Transaction transaction,
+    WorkerCoordinatorLease coordinator,
+  ) async {
+    final lease = await WorkerCoordinatorLease.db.findFirstRow(
+      session,
+      where: (row) => row.key.equals('global'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final now = await _databaseNow(session, transaction);
+
+    return _owns(lease, coordinator, now);
+  }
+
+  Future<bool> _authorized(
+    Session session,
+    ObjectDeletion deletion,
+    Transaction transaction,
+    WorkerCoordinatorLease coordinator,
+  ) async {
     if (!await ownsCoordinator(session, transaction, coordinator)) return false;
+
+    return await _validated(session, deletion, transaction);
+  }
+
+  Future<bool> _validated(
+    Session session,
+    ObjectDeletion deletion,
+    Transaction transaction,
+  ) async {
     if (!await _pending(session, deletion, transaction)) return false;
     final object = await _object(session, deletion, transaction);
     if (!_matches(object, deletion)) return false;
 
-    return !await ObjectRetainedAssets(
-      session,
-      deletion.workspaceId,
-      transaction,
-    ).retained(deletion.objectId);
-  });
+    return await _unreferenced(session, deletion, transaction);
+  }
+
+  Future<bool> _unreferenced(
+    Session session,
+    ObjectDeletion deletion,
+    Transaction transaction,
+  ) async => !await ObjectRetainedAssets(
+    session,
+    deletion.workspaceId,
+    transaction,
+  ).retained(deletion.objectId);
 
   Future<bool> _pending(
     Session session,
@@ -58,22 +98,6 @@ class const ObjectDeletionGuard() {
       object.deletedAt != null &&
       object.objectKey == deletion.objectKey &&
       object.revision == deletion.expectedRevision + 1;
-
-  static Future<bool> ownsCoordinator(
-    Session session,
-    Transaction transaction,
-    WorkerCoordinatorLease coordinator,
-  ) async {
-    final lease = await WorkerCoordinatorLease.db.findFirstRow(
-      session,
-      where: (row) => row.key.equals('global'),
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    final now = await _databaseNow(session, transaction);
-
-    return _owns(lease, coordinator, now);
-  }
 
   static bool _owns(
     WorkerCoordinatorLease? lease,

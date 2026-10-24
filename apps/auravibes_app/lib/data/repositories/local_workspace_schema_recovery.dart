@@ -55,7 +55,7 @@ class const LocalWorkspaceSchemaRecovery(
       await _references.values(
         columns,
         record.values,
-        previous: retainedWorkspaceAttachmentValues(previous, record.values),
+        previous: LocalWorkspaceAssetValues.retained(previous, record.values),
       );
     }
   }

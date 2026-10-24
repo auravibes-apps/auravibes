@@ -1483,13 +1483,16 @@ void main() {
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pump();
 
-    expect(
-      find.byTooltip(
-        '''The selected model doesn't support file input. '''
-        'Switch to a model that accepts files.',
-      ),
-      findsOneWidget,
+    final fileReason = find.byTooltip(
+      '''The selected model doesn't support file input. '''
+      'Switch to a model that accepts files.',
     );
+    for (final label in ['Attach file', 'Choose from Directory']) {
+      final row = find
+          .ancestor(of: find.text(label), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: row, matching: fileReason), findsOneWidget);
+    }
     expect(
       find.byTooltip(
         '''The selected model doesn't support image input. '''

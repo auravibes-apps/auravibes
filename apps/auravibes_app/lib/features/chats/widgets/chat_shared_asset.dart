@@ -55,7 +55,7 @@ class const _ReadyAsset(final ChatSharedAsset owner, final WorkspaceAsset asset)
       workspaceAssetPreviewProvider(owner.workspaceId, owner.assetId),
     );
     unawaited(
-      showWorkspaceAssetPreviewDialog(
+      WorkspaceAssetPreviewDialog.show(
         context,
         workspaceId: owner.workspaceId,
         assetId: owner.assetId,

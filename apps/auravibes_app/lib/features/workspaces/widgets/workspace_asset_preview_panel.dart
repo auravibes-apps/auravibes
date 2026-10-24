@@ -26,34 +26,83 @@ class const WorkspaceAssetPreviewPanel({
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: AuraButton(
-            onPressed: () => ref.invalidate(
-              workspaceAssetPreviewProvider(workspaceId, assetId),
-            ),
-            child: const TextLocale(LocaleKeys.common_reload),
-            identifier: 'workspace_asset_reload',
-          ),
-        ),
-        if (value.isLoading)
-          const Center(child: CircularProgressIndicator())
-        else
-          switch (value) {
-            AsyncData(:final value) => _PreviewContent(this, value),
-            AsyncError(:final error) => WorkspaceItemFailure(error: error),
-            AsyncLoading() => const Center(child: CircularProgressIndicator()),
-          },
-      ],
+      children: [_ReloadAsset(this), _PreviewResult(this, value)],
     );
+  }
+}
+
+class const _ReloadAsset(final WorkspaceAssetPreviewPanel owner)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Align(
+    alignment: Alignment.centerRight,
+    child: AuraButton(
+      onPressed: () => ref.invalidate(
+        workspaceAssetPreviewProvider(owner.workspaceId, owner.assetId),
+      ),
+      child: const TextLocale(LocaleKeys.common_reload),
+      identifier: 'workspace_asset_reload',
+    ),
+  );
+}
+
+class const _PreviewResult(
+  final WorkspaceAssetPreviewPanel owner,
+  final AsyncValue<WorkspaceAssetPreview> state,
+) extends StatelessWidget {
+  static const _loading = Center(child: CircularProgressIndicator());
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoading) return _loading;
+
+    return switch (state) {
+      AsyncData(:final value) => _PreviewContent(owner, value),
+      AsyncError(:final error) => WorkspaceItemFailure(error: error),
+      AsyncLoading() => _loading,
+    };
   }
 }
 
 class const _PreviewContent(
   final WorkspaceAssetPreviewPanel owner,
   final WorkspaceAssetPreview preview,
-) extends HookConsumerWidget {
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      Text(preview.asset.name),
+      Text(preview.asset.mimeType),
+      _AssetBody(preview),
+      _SaveAsset(owner),
+    ],
+  );
+}
+
+class const _AssetBody(final WorkspaceAssetPreview preview)
+    extends StatelessWidget {
+  static const _decodeWidth = 640;
+
+  @override
+  Widget build(BuildContext context) => switch (preview.kind) {
+    .image => Image.memory(
+      preview.bytes,
+      errorBuilder: (_, _, _) =>
+          const TextLocale(LocaleKeys.workspace_assets_unavailable),
+      fit: .contain,
+      cacheWidth: _decodeWidth,
+    ),
+    .text => _TextPreview(utf8.decode(preview.bytes)),
+    .downloadOnly => const TextLocale(
+      LocaleKeys.workspace_assets_download_only,
+    ),
+  };
+}
+
+class const _SaveAsset(final WorkspaceAssetPreviewPanel owner)
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = WorkspaceTableActions.use(context);
@@ -63,39 +112,34 @@ class const _PreviewContent(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
       children: [
-        Text(preview.asset.name),
-        Text(preview.asset.mimeType),
-        switch (preview.kind) {
-          .image => Image.memory(
-            preview.bytes,
-            errorBuilder: (_, _, _) =>
-                const TextLocale(LocaleKeys.workspace_assets_unavailable),
-            fit: .contain,
-          ),
-          .text => _TextPreview(utf8.decode(preview.bytes)),
-          .downloadOnly => const TextLocale(
-            LocaleKeys.workspace_assets_download_only,
-          ),
-        },
-        AuraButton(
-          onPressed: () => unawaited(
-            action.run(() async {
-              final save = await ref.read(
-                saveWorkspaceAssetUsecaseProvider(owner.workspaceId).future,
-              );
-              final copied = await save(owner.assetId);
-              if (context.mounted) saved.value = copied;
-            }),
-          ),
-          child: const TextLocale(LocaleKeys.workspace_assets_save),
-          isLoading: action.pending,
-          disabled: action.pending,
-          identifier: 'workspace_asset_save',
-        ),
+        _SaveButton(owner, action, saved),
         if (saved.value) const TextLocale(LocaleKeys.workspace_assets_saved),
         if (action.error case final error?) WorkspaceItemFailure(error: error),
       ],
     );
+  }
+}
+
+class const _SaveButton(
+  final WorkspaceAssetPreviewPanel owner,
+  final WorkspaceTableAction action,
+  final ValueNotifier<bool> saved,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraButton(
+    onPressed: () => unawaited(action.run(() => _save(context, ref))),
+    child: const TextLocale(LocaleKeys.workspace_assets_save),
+    isLoading: action.pending,
+    disabled: action.pending,
+    identifier: 'workspace_asset_save',
+  );
+
+  Future<void> _save(BuildContext context, WidgetRef ref) async {
+    final save = await ref.read(
+      saveWorkspaceAssetUsecaseProvider(owner.workspaceId).future,
+    );
+    final copied = await save(owner.assetId);
+    if (context.mounted) saved.value = copied;
   }
 }
 

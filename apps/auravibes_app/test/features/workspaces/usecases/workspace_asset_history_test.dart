@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_retention.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
@@ -9,6 +10,51 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'legacy history without attachment provenance cannot retain guessed IDs',
+    () async {
+      final fixture = _Fixture();
+      addTearDown(fixture.database.close);
+      await fixture.prepare();
+      fixture.table = await fixture.tables.saveColumn(
+        table: fixture.table,
+        column: const WorkspaceColumn(
+          id: 'files',
+          name: 'Attachments',
+          type: .attachment,
+        ),
+      );
+      final _ = await fixture.tables.updateRecord(
+        table: fixture.table,
+        record: fixture.first,
+        values: {fixture.table.labelColumnId: 'Cleared'},
+      );
+      final _ = await fixture.database
+          .delete(fixture.database.workspaceRevisions)
+          .go();
+      final _ = await fixture.database
+          .into(fixture.database.workspaceRevisions)
+          .insert(
+            WorkspaceRevisionsCompanion.insert(
+              workspaceId: 'local',
+              kind: 'record',
+              resourceId: fixture.first.id,
+              revision: 1,
+              data: jsonEncode({
+                'tableId': fixture.table.id,
+                'values': {
+                  'files': ['asset'],
+                },
+              }),
+            ),
+          );
+      expect(
+        await LocalWorkspaceAssetRetention(fixture.database, 'local').ids(),
+        isEmpty,
+      );
+    },
+  );
+
   test(
     'configured history expiry queues only assets with no retained use',
     () async {

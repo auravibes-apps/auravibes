@@ -122,13 +122,17 @@ Future<void> runObjectCleanupWorker(
       ),
     ).runOnce(session, isActive: isActive, coordinator: coordinator);
   } on Object catch (error, stackTrace) {
-    session.log(
-      'Object cleanup failed.',
-      level: LogLevel.warning,
-      exception: error.runtimeType,
-      stackTrace: stackTrace,
-    );
+    _cleanupError(session, error, stackTrace);
   }
 }
 
 const objectCleanupInterval = Duration(hours: 12);
+
+void _cleanupError(Session session, Object error, StackTrace stackTrace) {
+  session.log(
+    'Object cleanup failed.',
+    level: LogLevel.warning,
+    exception: error.runtimeType,
+    stackTrace: stackTrace,
+  );
+}

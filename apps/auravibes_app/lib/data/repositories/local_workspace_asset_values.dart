@@ -16,14 +16,7 @@ class const LocalWorkspaceAssetValues(
     for (final column in columns.where(
       (column) => column.type == .attachment,
     )) {
-      final value = values[column.id];
-      if (value is! List) continue;
-      for (final id in value) {
-        if (!await _active(id)) {
-          result.add(column.id);
-          break;
-        }
-      }
+      if (await _unavailable(values[column.id])) result.add(column.id);
     }
 
     return result;
@@ -38,13 +31,9 @@ class const LocalWorkspaceAssetValues(
     return WorkspaceRecord(
       id: record.id,
       tableId: record.tableId,
-      values: Map.of(record.values)
-        ..removeWhere((key, _) => hidden.contains(key)),
+      values: _without(record.values, hidden),
       revision: record.revision,
-      restrictedReferenceColumns: {
-        ...record.restrictedReferenceColumns,
-        ...hidden,
-      }.toList(),
+      restrictedReferenceColumns: _hidden(record, hidden),
     );
   }
 
@@ -53,28 +42,16 @@ class const LocalWorkspaceAssetValues(
     if (values is! Map<String, dynamic>) return await schema(data);
     final hidden = await restricted(_historicalColumns(data), values);
 
-    return Map.of(data)
-      ..['values'] = (Map.of(values)
-        ..removeWhere((key, _) => hidden.contains(key)));
+    return Map.of(data)..['values'] = _without(values, hidden);
   }
 
   Future<Map<String, dynamic>> schema(Map<String, dynamic> data) async {
     final raw = data['columns'];
     if (raw is! List) return data;
-    final columns = raw
-        .cast<Map<String, dynamic>>()
-        .map(WorkspaceColumn.fromJson)
-        .toList();
+    final columns = _parseColumns(raw);
     final hidden = await restricted(columns, _defaults(columns));
 
-    return Map.of(data)
-      ..['columns'] = [
-        for (final column in raw.cast<Map<String, dynamic>>())
-          if (hidden.contains(column['id'] as String))
-            Map.of(column)..remove('defaultValue')
-          else
-            column,
-      ];
+    return Map.of(data)..['columns'] = _hideDefaults(raw, hidden);
   }
 
   Future<List<WorkspaceColumn>> preserveDefaults(
@@ -101,16 +78,28 @@ class const LocalWorkspaceAssetValues(
     }
   }
 
+  static Map<String, Object?> retained(
+    List<WorkspaceColumn> columns,
+    Map<String, Object?> values,
+  ) => {
+    for (final column in columns.where((column) => column.type == .attachment))
+      if (values.containsKey(column.id)) column.id: values[column.id],
+  };
+
+  Future<bool> _unavailable(Object? value) async {
+    if (value is! List) return false;
+    for (final id in value) {
+      if (!await _active(id)) return true;
+    }
+
+    return false;
+  }
+
   Future<bool> _active(Object? id) async {
     if (id is! String) return false;
-    final asset =
-        await (database.select(database.workspaceAssets)..where(
-              (row) =>
-                  row.workspaceId.equals(workspaceId) &
-                  row.id.equals(id) &
-                  row.status.equals('active'),
-            ))
-            .getSingleOrNull();
+    final asset = await (database.select(
+      database.workspaceAssets,
+    )..where((row) => _matchesAsset(row, workspaceId, id))).getSingleOrNull();
 
     return asset != null;
   }
@@ -130,14 +119,6 @@ WorkspaceColumn _withDefault(
       })
     : column;
 
-Map<String, Object?> retainedWorkspaceAttachmentValues(
-  List<WorkspaceColumn> columns,
-  Map<String, Object?> values,
-) => {
-  for (final column in columns.where((column) => column.type == .attachment))
-    if (values.containsKey(column.id)) column.id: values[column.id],
-};
-
 List<WorkspaceColumn> _historicalColumns(Map<String, dynamic> data) {
   final ids = data['historyAttachmentColumns'];
   if (ids is! List) return [];
@@ -147,3 +128,30 @@ List<WorkspaceColumn> _historicalColumns(Map<String, dynamic> data) {
       .map((id) => WorkspaceColumn(id: id, name: '', type: .attachment))
       .toList();
 }
+
+Map<String, Object?> _without(
+  Map<String, Object?> values,
+  List<String> hidden,
+) => Map.of(values)..removeWhere((key, _) => hidden.contains(key));
+List<String> _hidden(WorkspaceRecord record, List<String> hidden) =>
+    {...record.restrictedReferenceColumns, ...hidden}.toList();
+List<WorkspaceColumn> _parseColumns(List<dynamic> raw) =>
+    raw.cast<Map<String, dynamic>>().map(WorkspaceColumn.fromJson).toList();
+List<Map<String, dynamic>> _hideDefaults(
+  List<dynamic> raw,
+  List<String> hidden,
+) => [
+  for (final column in raw.cast<Map<String, dynamic>>())
+    if (hidden.contains(column['id'] as String))
+      Map.of(column)..remove('defaultValue')
+    else
+      column,
+];
+Expression<bool> _matchesAsset(
+  $WorkspaceAssetsTable row,
+  String workspaceId,
+  String id,
+) =>
+    row.id.equals(id) &
+    row.workspaceId.equals(workspaceId) &
+    row.status.equals('active');

@@ -488,7 +488,7 @@ class const _TableWriter(
       await LocalWorkspaceReferenceValidation(_database, _workspaceId).values(
         columns,
         _record(row).values,
-        previous: retainedWorkspaceAttachmentValues(
+        previous: LocalWorkspaceAssetValues.retained(
           previous,
           _record(row).values,
         ),
