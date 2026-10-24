@@ -251,7 +251,7 @@ mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
   Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String _,
     String id,
-    String? config,
+    String config,
   ) async => [await _patchTool(id, (data) => data['config'] = config)];
 }
 
