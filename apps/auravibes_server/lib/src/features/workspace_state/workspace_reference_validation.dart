@@ -4,8 +4,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import 'repositories/workspace_state_repository.dart';
-import 'workspace_table_access.dart';
 import 'workspace_dependent_validation.dart';
+import 'workspace_table_access.dart';
 
 class const WorkspaceReferenceValidation(
   final WorkspaceStateRepository repository,
@@ -27,8 +27,9 @@ class const WorkspaceReferenceValidation(
   Future<void> values(
     Map<String, Object?> schema,
     Map<String, Object?> values,
-    Map<String, Object?> previous,
-  ) async {
+    Map<String, Object?> previous, {
+    bool preserveOnly = false,
+  }) async {
     for (final column in _columns(schema)) {
       final _ = await _preserve((
         column: column,
@@ -36,6 +37,7 @@ class const WorkspaceReferenceValidation(
         previous: previous,
       ));
     }
+    if (preserveOnly) return;
     for (final column in _columns(schema)) {
       await _column(column, values, previous);
     }

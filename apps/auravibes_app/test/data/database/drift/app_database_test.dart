@@ -41,8 +41,31 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 38);
+      expect(fixture.database.schemaVersion, 39);
     });
+
+    test(
+      'schema38 migration preserves stored data and adds batch receipts',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 38
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCaseRecordBatch>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        expect(
+          await database.select(database.workspaceRecordBatchReceipts).get(),
+          isEmpty,
+        );
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
+        );
+      },
+    );
 
     test(
       'migration from schema37 preserves Views and adds recoverable trash',
@@ -1304,3 +1327,5 @@ final class _DatabaseBeforeRecreation extends AppDatabase {
 final class _MigrationCaseViews;
 
 final class _MigrationCaseTrash;
+
+final class _MigrationCaseRecordBatch;

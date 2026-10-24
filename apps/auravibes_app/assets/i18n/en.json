@@ -2076,7 +2076,13 @@
     "reference_deleted": "Deleted record",
     "trash_cancel": "Cancel",
     "trash_close": "Close",
-    "trash_refresh": "Refresh"
+    "trash_refresh": "Refresh",
+    "bulk_edit": "Edit selected records",
+    "bulk_scope": "Edit {count} selected records",
+    "bulk_approval": "Apply all changes together? If any record fails, no changes will be saved.",
+    "bulk_selected": "{count} selected",
+    "bulk_select": "Select records",
+    "bulk_limit": "Select up to 50 records for one atomic edit."
   },
   "workspace_views": {
     "title": "View",
