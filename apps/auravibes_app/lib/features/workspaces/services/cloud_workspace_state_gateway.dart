@@ -303,6 +303,7 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
   Future<PatchWorkspaceStateResponse> patch({
     required String requestId,
     required List<WorkspacePatchOperation> operations,
+    List<WorkspaceViewMove>? viewMoves,
   }) => CloudAppErrors.guardCall(
     .state,
     () => _requireClient(_client).workspaceState.patch(
@@ -310,6 +311,7 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
         workspaceId: _workspace.cloudWorkspaceId,
         requestId: requestId,
         operations: operations,
+        viewMoves: viewMoves,
       ),
     ),
   );

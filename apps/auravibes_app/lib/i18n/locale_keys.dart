@@ -2691,6 +2691,12 @@ abstract class LocaleKeys {
       'workspace_items.reference_incompatible';
   static const workspace_items_reference_select_parent =
       'workspace_items.reference_select_parent';
+  static const workspace_items_move = 'workspace_items.move';
+  static const workspace_items_move_here = 'workspace_items.move_here';
+  static const workspace_items_selection_move_limit =
+      'workspace_items.selection_move_limit';
+  static const workspace_items_selection_move_denied =
+      'workspace_items.selection_move_denied';
   static const workspace_views_title = 'workspace_views.title';
   static const workspace_views_create = 'workspace_views.create';
   static const workspace_views_name = 'workspace_views.name';

@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_access_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
@@ -11,12 +13,15 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_tables_pro
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
+import 'package:auravibes_app/features/workspaces/usecases/move_workspace_directory_items_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_directory_move_button.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_folder_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_creation.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_lists.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_creation.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_metadata_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -38,7 +43,9 @@ class const WorkspaceItemsScreen({required final String workspaceId, super.key})
       workspaceId,
       state,
       actions,
-      useState<Set<String>?>(null),
+      useState<Map<WorkspaceDirectoryItemKey, WorkspaceDirectoryMoveItem>?>(
+        null,
+      ),
     );
   }
 }
@@ -47,7 +54,10 @@ class const _Navigation(
   final String workspaceId,
   final DirectoryNavigation state,
   final DirectoryNavigationNotifier actions,
-  final ValueNotifier<Set<String>?> selection,
+  final ValueNotifier<
+    Map<WorkspaceDirectoryItemKey, WorkspaceDirectoryMoveItem>?
+  >
+  selection,
 ) extends ConsumerWidget {
   String? get _parentId => state.path.lastOrNull?.id;
   String? get _parentName => state.path.lastOrNull?.name;
@@ -110,6 +120,7 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
       switch (navigation.state.selected) {
         final WorkspaceFolder folder => _FolderEditor(navigation, folder),
         final WorkspaceTable table => _TableEditor(navigation, table),
+        final WorkspaceView view => _ViewEditor(navigation, view),
         final String id => _OpenedTable(navigation, id),
         DirectoryViewLocation(:final id) => _OpenedView(navigation, id),
         _ => _Browser(navigation),
@@ -175,6 +186,19 @@ class const _TableEditor(
   );
 }
 
+class const _ViewEditor(final _Navigation navigation, final WorkspaceView view)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AppScreen(
+    child: WorkspaceViewMetadataEditor(
+      workspaceId: navigation.workspaceId,
+      view: view,
+      parentName: navigation._parentName,
+      onBack: () => navigation.actions.open(null),
+    ),
+  );
+}
+
 class const _Browser(final _Navigation navigation) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppScreen(
@@ -204,11 +228,12 @@ class const _DirectoryMore(final _Navigation navigation)
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       navigation.selection.value != null
-      ? _SelectionButton(navigation)
+      ? _SelectionActions(navigation)
       : AuraPopupMenuButton(items: [_select(), _reload(ref)]);
   AuraPopupMenuItem _select() => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_select),
-    onTap: () => navigation.selection.value = <String>{},
+    onTap: () => navigation.selection.value =
+        <WorkspaceDirectoryItemKey, WorkspaceDirectoryMoveItem>{},
   );
   AuraPopupMenuItem _reload(WidgetRef ref) => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.common_reload),
@@ -226,6 +251,52 @@ class const _DirectoryBack(final _Navigation navigation)
   );
 }
 
+class const _SelectionActions(final _Navigation navigation)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Row(
+    mainAxisSize: .min,
+    children: [
+      WorkspaceDirectoryMoveButton(
+        workspaceId: navigation.workspaceId,
+        items: navigation.selection.value?.values.toList() ?? const [],
+        onMoved: (destination) => _moved(ref, destination),
+      ),
+      _SelectionButton(navigation),
+    ],
+  );
+  void _moved(WidgetRef ref, String? destination) {
+    final items =
+        navigation.selection.value?.values.toList() ??
+        const <WorkspaceDirectoryMoveItem>[];
+    _refreshFolder(ref, navigation._parentId);
+    _refreshFolder(ref, destination);
+    for (final item in items) {
+      _refreshItem(ref, item);
+    }
+    navigation.selection.value = null;
+  }
+
+  void _refreshFolder(WidgetRef ref, String? parent) {
+    final workspace = navigation.workspaceId;
+    ref
+      ..invalidate(workspaceFoldersProvider(workspace, parent))
+      ..invalidate(workspaceTablesProvider(workspace, parent))
+      ..invalidate(workspaceViewsProvider(workspace, parent));
+  }
+
+  void _refreshItem(WidgetRef ref, WorkspaceDirectoryMoveItem item) {
+    final workspace = navigation.workspaceId;
+    final id = item.key.id;
+    if (item.key.kind == .table) {
+      ref.invalidate(workspaceTableProvider(workspace, id));
+    }
+    if (item.key.kind == .view) {
+      ref.invalidate(workspaceViewDataProvider(workspace, id));
+    }
+  }
+}
+
 class const _SelectionButton(final _Navigation navigation)
     extends StatelessWidget {
   @override
@@ -237,8 +308,10 @@ class const _SelectionButton(final _Navigation navigation)
           : LocaleKeys.workspace_items_done,
     ),
   );
-  void _toggle() => navigation.selection.value =
-      navigation.selection.value == null ? <String>{} : null;
+  void _toggle() =>
+      navigation.selection.value = navigation.selection.value == null
+      ? <WorkspaceDirectoryItemKey, WorkspaceDirectoryMoveItem>{}
+      : null;
 }
 
 class const _BrowserBody(final _Navigation navigation, {super.key})
@@ -315,14 +388,33 @@ class const _DirectoryStatus(final _Navigation navigation)
         const TextLocale(LocaleKeys.workspace_items_location_recovered),
       if (navigation.state.failure case final failure?)
         WorkspaceItemFailure(error: failure),
-      if (navigation.selection.value case final selected?)
-        Text(
-          LocaleKeys.workspace_items_selected.tr(
-            args: [selected.length.toString()],
-          ),
-        ),
+      if (navigation.selection.value case final selected?) ...[
+        _SelectionStatus(selected.values.toList()),
+        _SelectionCount(selected.length),
+      ],
     ],
   );
+}
+
+class const _SelectionCount(final int count) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Text(LocaleKeys.workspace_items_selected.tr(args: [count.toString()]));
+}
+
+class const _SelectionStatus(final List<WorkspaceDirectoryMoveItem> items)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (items.length > MoveWorkspaceDirectoryItemsUsecase.maxItems) {
+      return const TextLocale(LocaleKeys.workspace_items_selection_move_limit);
+    }
+    if (items.any((item) => !item.canManage)) {
+      return const TextLocale(LocaleKeys.workspace_items_selection_move_denied);
+    }
+
+    return const SizedBox.shrink();
+  }
 }
 
 void _rememberScroll(
@@ -489,14 +581,16 @@ class const _Items(final _Navigation navigation) extends StatelessWidget {
     onOpenTable: navigation.actions.open,
     onOpenView: _view,
     onEdit: navigation.actions.open,
-    selection: navigation.selection.value,
+    selection: navigation.selection.value?.keys.toSet(),
     onSelect: _select,
   );
   void _view(String id) => navigation.actions.open(DirectoryViewLocation(id));
-  void _select(String id) {
-    final selected = navigation.selection.value?.toSet() ?? <String>{};
-    if (!selected.add(id)) {
-      final _ = selected.remove(id);
+  void _select(WorkspaceDirectoryMoveItem item) {
+    final selected = {...?navigation.selection.value};
+    if (selected.containsKey(item.key)) {
+      final _ = selected.remove(item.key);
+    } else {
+      selected[item.key] = item;
     }
     navigation.selection.value = selected;
   }

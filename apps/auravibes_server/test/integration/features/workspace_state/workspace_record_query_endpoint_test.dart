@@ -653,7 +653,6 @@ void main() {
               operation: .create,
               resourceKind: .tableRecord,
               resourceId: 'source-other-$index',
-              fieldMask: const [],
               data: jsonEncode({
                 'tableId': 'reference-source',
                 'schemaRevision': 1,
@@ -662,6 +661,7 @@ void main() {
                   'tags': ['One'],
                 },
               }),
+              fieldMask: const [],
             ),
         ];
         await patch(otherRecords.take(50).toList());
@@ -705,6 +705,31 @@ void main() {
           jsonDecode(revokedReference.data),
           containsPair('restrictedReferenceColumns', ['link', 'links']),
         );
+        final malformedSource = (await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(workspace.id!) &
+              row.resourceKind.equals(WorkspaceResourceKind.table) &
+              row.resourceId.equals('reference-source'),
+        ))!;
+        final malformedData =
+            jsonDecode(malformedSource.data) as Map<String, dynamic>;
+        final _ = await WorkspaceResource.db.updateRow(
+          session,
+          malformedSource.copyWith(
+            data: jsonEncode({
+              ...malformedData,
+              'columns': [
+                for (final column in malformedData['columns'] as List<dynamic>)
+                  if ((column as Map<String, dynamic>)['id'] == 'link')
+                    {...column, 'targetTableId': null}
+                  else
+                    column,
+              ],
+            }),
+          ),
+        );
+        await deniedFilter();
         await expectLater(
           endpoints.workspaceState.queryRecords(
             authenticated,

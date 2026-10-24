@@ -12,6 +12,15 @@ class const WorkspaceRecordQueryReferenceAccess(
   final int workspaceId,
   final Transaction transaction,
 ) {
+  static void requireSchema(WorkspaceResource table) {
+    final data = jsonDecode(table.data) as Map<String, dynamic>;
+    for (final column
+        in (data['columns'] as List<dynamic>)
+            .whereType<Map<String, dynamic>>()) {
+      if (_invalidTarget(column)) _denied();
+    }
+  }
+
   Future<void> require(String tableId, String recordId) async {
     final table = await _resource(.table, tableId);
     await _visible(table);
@@ -29,16 +38,20 @@ class const WorkspaceRecordQueryReferenceAccess(
   ) async {
     final resource = await WorkspaceResource.db.findFirstRow(
       session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) &
-          row.resourceKind.equals(kind) &
-          row.resourceId.equals(id) &
-          row.deletedAt.equals(null),
+      where: (row) => _scope(row, kind) & _identity(row, id),
       transaction: transaction,
     );
     if (resource == null) _denied();
+
     return resource;
   }
+
+  Expression _scope(
+    WorkspaceResourceTable row,
+    WorkspaceResourceKind kind,
+  ) => row.workspaceId.equals(workspaceId) & row.resourceKind.equals(kind);
+  Expression _identity(WorkspaceResourceTable row, String id) =>
+      row.resourceId.equals(id) & row.deletedAt.equals(null);
 
   Future<void> _visible(WorkspaceResource resource) async {
     final visible = await WorkspaceTableAccess(transaction: transaction)
@@ -48,3 +61,10 @@ class const WorkspaceRecordQueryReferenceAccess(
 }
 
 Never _denied() => throw CloudWorkspaceException(code: .permissionDenied);
+
+bool _invalidTarget(Map<String, dynamic> column) {
+  if (column['type'] != 'reference') return false;
+  final target = column['targetTableId'];
+
+  return target is! String || target.isEmpty;
+}

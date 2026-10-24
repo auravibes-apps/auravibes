@@ -2060,7 +2060,11 @@
     "reference_no_dependency": "Sin filtro dependiente",
     "reference_dependency_hint": "Las opciones deben enlazar al mismo registro padre. Cambia o borra ambos campos juntos cuando sea necesario.",
     "reference_incompatible": "Elige registros relacionados que coincidan con el padre seleccionado o borra ambos campos explícitamente antes de guardar.",
-    "reference_select_parent": "Selecciona un padre antes de elegir registros relacionados."
+    "reference_select_parent": "Selecciona un padre antes de elegir registros relacionados.",
+    "move": "Mover",
+    "move_here": "Mover aquí",
+    "selection_move_limit": "Selecciona hasta 50 elementos para moverlos juntos.",
+    "selection_move_denied": "No se puede mover uno o más elementos seleccionados."
   },
   "workspace_views": {
     "title": "Vista",

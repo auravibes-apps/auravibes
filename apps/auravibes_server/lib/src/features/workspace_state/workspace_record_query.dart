@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
-import 'repositories/workspace_state_repository.dart';
-import 'workspace_table_access.dart';
-import 'workspace_record_query_sql.dart';
-import 'workspace_record_query_reference_access.dart';
 import 'domain/workspace_query_filter_validation.dart';
+import 'repositories/workspace_state_repository.dart';
+import 'workspace_record_query_reference_access.dart';
+import 'workspace_record_query_sql.dart';
+import 'workspace_table_access.dart';
 
 typedef WorkspaceRecordQueryInput = ({
   int workspaceId,
@@ -40,14 +40,7 @@ class const _QueryScope(
       transaction,
     ).read();
     final query = _QueryParameters(input.encoded, source.table).read();
-    if (query.remove('referenceTarget') case final String targetId) {
-      await WorkspaceRecordQueryReferenceAccess(
-        session,
-        source.member,
-        input.workspaceId,
-        transaction,
-      ).require(targetId, query['value'] as String);
-    }
+    await _target(source.member, query);
 
     return await _QueryReader(
       session,
@@ -55,6 +48,21 @@ class const _QueryScope(
       transaction,
       source.member,
     ).read(query);
+  }
+
+  Future<void> _target(
+    WorkspaceMember member,
+    Map<String, Object?> query,
+  ) async {
+    final target = query.remove('referenceTarget');
+    if (query['filterType'] != 'reference') return;
+    if (target is! String || target.isEmpty) _denied();
+    await WorkspaceRecordQueryReferenceAccess(
+      session,
+      member,
+      input.workspaceId,
+      transaction,
+    ).require(target, query['value'] as String);
   }
 }
 
@@ -97,6 +105,7 @@ class const _AuthorizedTable(
       transaction: transaction,
     );
     if (table == null) _denied();
+    WorkspaceRecordQueryReferenceAccess.requireSchema(table);
     final visible = await WorkspaceTableAccess(transaction: transaction)
         .visible(
           session,
@@ -277,15 +286,15 @@ class _QueryParameters {
       _invalid();
     }
 
-    final filter = input['filterColumnId'] as String?;
-    final normalized =
-        filter != null &&
-            filter.isNotEmpty &&
-            _column(filter)['type'] == 'number'
-        ? num.parse(value).toString()
-        : value;
+    return {'search': _fold(search), 'value': _normalized(value)};
+  }
 
-    return {'search': _fold(search), 'value': normalized};
+  String _normalized(String value) {
+    final filter = input['filterColumnId'] as String?;
+    if (filter == null || filter.isEmpty) return value;
+    if (_column(filter)['type'] != 'number') return value;
+
+    return num.parse(value).toString();
   }
 
   Map<String, dynamic> _column(String id) {

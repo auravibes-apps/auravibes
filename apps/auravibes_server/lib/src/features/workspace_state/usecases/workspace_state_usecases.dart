@@ -10,6 +10,7 @@ import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
+import '../workspace_directory_move_batch.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
@@ -98,14 +99,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required PatchWorkspaceStateRequest request,
     Future<void> Function(Transaction transaction)? guard,
   }) async {
-    if (request.requestId.isEmpty ||
-        request.viewMoves?.isNotEmpty == true ||
-        request.operations.isEmpty ||
-        request.operations.length > _maxOperations) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.validationFailed,
-      );
-    }
+    final moves = WorkspaceDirectoryMoveBatch(request)..validate();
     try {
       for (final operation in request.operations) {
         final data = operation.data;
@@ -116,7 +110,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
-    final requestJson = jsonEncode(request.toJson());
+    final requestJson = jsonEncode(moves.canonicalRequest());
     final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
     final hash = base64UrlEncode(requestHash);
 
@@ -146,6 +140,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation,
         );
       }
+      await moves.authorize(session, member, transaction);
       final receipt = await _findReceipt(
         session,
         request.workspaceId,
@@ -167,6 +162,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       }
 
       await guard?.call(transaction);
+      await moves.apply(session, member, transaction);
       return _commitOperations(
         session,
         workspace: workspace,

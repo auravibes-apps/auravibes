@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
@@ -56,6 +57,7 @@ class const _ReferenceEditor({
   void _saved(WidgetRef ref, WorkspaceRecord record) {
     ref
       ..invalidate(workspaceReferencesUsecaseProvider(workspaceId))
+      ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId))
       ..invalidate(workspaceTableRecordsProvider(workspaceId, input.table.id));
     input.onSaved?.call(record);
   }
