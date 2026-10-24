@@ -63,6 +63,7 @@ class const _TargetDependency({
     if (parent == null) return const SizedBox.shrink();
 
     return Column(
+      crossAxisAlignment: .start,
       children: [
         if (target case AsyncData(value: final table))
           _MatchDependency(field: field, table: table, parent: parent),
