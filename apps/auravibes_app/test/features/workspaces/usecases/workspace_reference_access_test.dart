@@ -10,8 +10,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('cloud use case edits unrelated fields with required hidden links '
-      'and refuses redacted schema preview', () async {
+  test('cloud edits retain hidden links and deny redacted previews', () async {
     final now = DateTime.utc(2026);
     WorkspaceResource resource(
       WorkspaceResourceKind kind,

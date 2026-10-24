@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -169,6 +168,20 @@ void main() {
       );
       expect(lastPage.records.length, 2);
       expect(lastPage.nextId, isNull);
+      final accent = await tables.createRecord(
+        table: target,
+        values: {target.labelColumnId: '\u00c9va'},
+      );
+      for (final search in ['\u00c9', '\u00e9']) {
+        final matches = await references.tableTargets(
+          tableId: target.id,
+          search: search,
+        );
+        expect(
+          matches.records.map((record) => record.id),
+          search == '\u00c9' ? [accent.id] : isEmpty,
+        );
+      }
       await database.close();
       database = AppDatabase(connection: NativeDatabase(file));
       final reopened = OrganizeWorkspaceTablesUsecase(

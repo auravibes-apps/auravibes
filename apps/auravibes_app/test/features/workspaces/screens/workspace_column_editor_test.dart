@@ -184,11 +184,10 @@ void main() {
       expect(find.text('Count'), findsOneWidget);
       await tester.tap(button('workspace_record_create'));
       await flush();
-      await tester.tap(find.text('Count'));
-      await flush();
       final number = find.byWidgetPredicate(
         (widget) => widget is AuraInput && widget.keyboardType?.index == 2,
       );
+      expect(tester.widget<AuraInput>(number).controller?.text, '2.5');
       await tester.enterText(number, 'bad');
       await tester.runAsync(() => tester.tap(button('workspace_record_save')));
       await flush();
