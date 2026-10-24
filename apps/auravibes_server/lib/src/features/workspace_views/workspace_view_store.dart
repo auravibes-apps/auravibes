@@ -361,13 +361,15 @@ Never _receiptConflict() => throw CloudWorkspaceException(
   code: CloudWorkspaceErrorCode.idempotencyConflict,
 );
 
-Map<String, Object?> _movedMetadata(WorkspaceView current, WorkspaceViewMove move) =>
-    {
-      ..._data(current.data),
-      'parentId': move.parentId,
-      'name': _metadataName(current, move.name),
-      'revision': current.revision + 1,
-    };
+Map<String, Object?> _movedMetadata(
+  WorkspaceView current,
+  WorkspaceViewMove move,
+) => {
+  ..._data(current.data),
+  'parentId': move.parentId,
+  'name': _metadataName(current, move.name),
+  'revision': current.revision + 1,
+};
 
 const _maximumMetadataNameLength = 200;
 String _metadataName(WorkspaceView current, String? proposed) {
@@ -378,9 +380,11 @@ String _metadataName(WorkspaceView current, String? proposed) {
   }
   return name;
 }
+
 bool _sameMetadata(WorkspaceView current, WorkspaceViewMove move) {
   final data = _data(current.data);
-  return data['parentId'] == move.parentId && data['name'] == _metadataName(current, move.name);
+  return data['parentId'] == move.parentId &&
+      data['name'] == _metadataName(current, move.name);
 }
 
 WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
