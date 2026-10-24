@@ -1,0 +1,15 @@
+class: WorkspaceTrashBatch
+table: workspace_trash_batch
+fields:
+  workspaceId: int
+  batchId: String
+  targetJson: String
+  name: String
+  membersJson: String
+  createdAt: DateTime
+  restoredAt: DateTime?
+  restoredResultJson: String?
+indexes:
+  workspace_trash_identity_idx:
+    fields: workspaceId, batchId
+    unique: true

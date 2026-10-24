@@ -35,6 +35,8 @@ import 'package:auravibes_server/src/generated/features/skills/models/skill_reso
     as _i8gs5y5r;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
     as _ixyz6pla;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view.dart'
+    as _i7rt6swg;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i78h3alq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -73,6 +75,7 @@ import 'features/conversations/models/bookmark_message_request.dart'
 import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
 import 'features/conversations/models/compact_conversation_request.dart'
     as _isyd7s84;
+import 'features/conversations/models/connector_write.dart' as _ik5xiz1a;
 import 'features/conversations/models/continue_conversation_request.dart'
     as _ialxa16r;
 import 'features/conversations/models/continue_turn_request.dart' as _iwrs6sde;
@@ -253,6 +256,8 @@ import 'features/workers/models/recurring_worker_schedule.dart' as _ivj0myfi;
 import 'features/workers/models/worker_coordinator_lease.dart' as _ifhsy8zv;
 import 'features/workspace_state/models/duplicate_workspace_agent_request.dart'
     as _i887etaa;
+import 'features/workspace_state/models/duplicate_workspace_item_request.dart'
+    as _i1oaqjf3;
 import 'features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _io0q4g8e;
 import 'features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -269,10 +274,22 @@ import 'features/workspace_state/models/read_workspace_state_request.dart'
     as _iz7boq8w;
 import 'features/workspace_state/models/read_workspace_state_response.dart'
     as _iqk6zto1;
+import 'features/workspace_state/models/workspace_history_policy_request.dart'
+    as _i6ina439;
+import 'features/workspace_state/models/workspace_history_restore_request.dart'
+    as _iveci0ok;
 import 'features/workspace_state/models/workspace_patch_operation.dart'
     as _iolo6w4a;
 import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
     as _ihbarnlu;
+import 'features/workspace_state/models/workspace_record_summary_request.dart'
+    as _istj5rvl;
+import 'features/workspace_state/models/workspace_reference_record_request.dart'
+    as _izw41l59;
+import 'features/workspace_state/models/workspace_reference_table_request.dart'
+    as _i25xbz7v;
+import 'features/workspace_state/models/workspace_reference_target_request.dart'
+    as _ib7agc3j;
 import 'features/workspace_state/models/workspace_resource.dart' as _iqzfyfs9;
 import 'features/workspace_state/models/workspace_resource_kind.dart'
     as _i8d1xr9g;
@@ -280,11 +297,22 @@ import 'features/workspace_state/models/workspace_resource_page.dart'
     as _iilez6xa;
 import 'features/workspace_state/models/workspace_resource_page_request.dart'
     as _i0vhsjed;
+import 'features/workspace_state/models/workspace_revision.dart' as _ihvrwgom;
 import 'features/workspace_state/models/workspace_secret.dart' as _iyjw9v2c;
 import 'features/workspace_state/models/workspace_secret_kind.dart'
     as _iq96p1l9;
 import 'features/workspace_state/models/workspace_secret_scope.dart'
     as _ioqbiy3d;
+import 'features/workspace_state/models/workspace_trash_batch.dart'
+    as _il63fuk7;
+import 'features/workspace_state/models/workspace_trash_request.dart'
+    as _i49vb0x7;
+import 'features/workspace_state/models/workspace_view_move.dart' as _i00jdb9n;
+import 'features/workspace_views/models/workspace_view.dart' as _i97j1as2;
+import 'features/workspace_views/models/workspace_view_list_request.dart'
+    as _ihx1e06e;
+import 'features/workspace_views/models/workspace_view_save_request.dart'
+    as _io73c0ad;
 import 'features/workspaces/models/accept_workspace_invite_request.dart'
     as _ib7b2bmq;
 import 'features/workspaces/models/cloud_workspace.dart' as _iyfjt29r;
@@ -353,6 +381,7 @@ export 'features/conversations/models/background_work_view.dart';
 export 'features/conversations/models/bookmark_message_request.dart';
 export 'features/conversations/models/cancel_turn_request.dart';
 export 'features/conversations/models/compact_conversation_request.dart';
+export 'features/conversations/models/connector_write.dart';
 export 'features/conversations/models/continue_conversation_request.dart';
 export 'features/conversations/models/continue_turn_request.dart';
 export 'features/conversations/models/conversation.dart';
@@ -469,6 +498,7 @@ export 'features/sync/stream/models/workspace_subscribe_request.dart';
 export 'features/workers/models/recurring_worker_schedule.dart';
 export 'features/workers/models/worker_coordinator_lease.dart';
 export 'features/workspace_state/models/duplicate_workspace_agent_request.dart';
+export 'features/workspace_state/models/duplicate_workspace_item_request.dart';
 export 'features/workspace_state/models/mutate_workspace_credential_request.dart';
 export 'features/workspace_state/models/mutate_workspace_credential_response.dart';
 export 'features/workspace_state/models/patch_workspace_state_request.dart';
@@ -477,15 +507,28 @@ export 'features/workspace_state/models/put_workspace_secret_request.dart';
 export 'features/workspace_state/models/put_workspace_secret_response.dart';
 export 'features/workspace_state/models/read_workspace_state_request.dart';
 export 'features/workspace_state/models/read_workspace_state_response.dart';
+export 'features/workspace_state/models/workspace_history_policy_request.dart';
+export 'features/workspace_state/models/workspace_history_restore_request.dart';
 export 'features/workspace_state/models/workspace_patch_operation.dart';
 export 'features/workspace_state/models/workspace_patch_operation_kind.dart';
+export 'features/workspace_state/models/workspace_record_summary_request.dart';
+export 'features/workspace_state/models/workspace_reference_record_request.dart';
+export 'features/workspace_state/models/workspace_reference_table_request.dart';
+export 'features/workspace_state/models/workspace_reference_target_request.dart';
 export 'features/workspace_state/models/workspace_resource.dart';
 export 'features/workspace_state/models/workspace_resource_kind.dart';
 export 'features/workspace_state/models/workspace_resource_page.dart';
 export 'features/workspace_state/models/workspace_resource_page_request.dart';
+export 'features/workspace_state/models/workspace_revision.dart';
 export 'features/workspace_state/models/workspace_secret.dart';
 export 'features/workspace_state/models/workspace_secret_kind.dart';
 export 'features/workspace_state/models/workspace_secret_scope.dart';
+export 'features/workspace_state/models/workspace_trash_batch.dart';
+export 'features/workspace_state/models/workspace_trash_request.dart';
+export 'features/workspace_state/models/workspace_view_move.dart';
+export 'features/workspace_views/models/workspace_view.dart';
+export 'features/workspace_views/models/workspace_view_list_request.dart';
+export 'features/workspace_views/models/workspace_view_save_request.dart';
 export 'features/workspaces/models/accept_workspace_invite_request.dart';
 export 'features/workspaces/models/cloud_workspace.dart';
 export 'features/workspaces/models/cloud_workspace_capabilities.dart';
@@ -1105,6 +1148,100 @@ class Protocol extends _is.DatabaseSerializationManager {
             _isp.IndexElementDefinition(
               type: _isp.IndexElementDefinitionType.column,
               definition: 'expiresAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'connector_write',
+      dartName: 'ConnectorWrite',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'operationId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'requestDigest',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'outcome',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'statusCode',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'connector_write_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'connector_write_operation_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'operationId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'connector_write_digest_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'requestDigest',
             ),
           ],
           type: 'btree',
@@ -4889,6 +5026,86 @@ class Protocol extends _is.DatabaseSerializationManager {
       managed: true,
     ),
     _isp.TableDefinition(
+      name: 'workspace_revision',
+      dartName: 'WorkspaceRevision',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'resourceKind',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'protocol:WorkspaceResourceKind',
+        ),
+        _isp.ColumnDefinition(
+          name: 'resourceId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'revision',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'data',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'capturedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'workspace_revision_identity_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'resourceKind',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'resourceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'revision',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
       name: 'workspace_secret',
       dartName: 'WorkspaceSecret',
       schema: 'public',
@@ -5026,6 +5243,173 @@ class Protocol extends _is.DatabaseSerializationManager {
       ],
       managed: true,
     ),
+    _isp.TableDefinition(
+      name: 'workspace_trash_batch',
+      dartName: 'WorkspaceTrashBatch',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'batchId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'targetJson',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'name',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'membersJson',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _isp.ColumnDefinition(
+          name: 'restoredAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'restoredResultJson',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'workspace_trash_identity_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'batchId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'workspace_view',
+      dartName: 'WorkspaceView',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'stableId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'data',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'revision',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'history',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'deletedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'workspace_view_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'workspace_view_stable_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'stableId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     ..._iacs.Protocol.targetTableDefinitions,
     ..._iais.Protocol.targetTableDefinitions,
     ..._isp.Protocol.targetTableDefinitions,
@@ -5111,6 +5495,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _isyd7s84.CompactConversationRequest) {
       return _isyd7s84.CompactConversationRequest.fromJson(data) as T;
+    }
+    if (t == _ik5xiz1a.ConnectorWrite) {
+      return _ik5xiz1a.ConnectorWrite.fromJson(data) as T;
     }
     if (t == _ialxa16r.ContinueConversationRequest) {
       return _ialxa16r.ContinueConversationRequest.fromJson(data) as T;
@@ -5465,6 +5852,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _i887etaa.DuplicateWorkspaceAgentRequest) {
       return _i887etaa.DuplicateWorkspaceAgentRequest.fromJson(data) as T;
     }
+    if (t == _i1oaqjf3.DuplicateWorkspaceItemRequest) {
+      return _i1oaqjf3.DuplicateWorkspaceItemRequest.fromJson(data) as T;
+    }
     if (t == _io0q4g8e.MutateWorkspaceCredentialRequest) {
       return _io0q4g8e.MutateWorkspaceCredentialRequest.fromJson(data) as T;
     }
@@ -5489,11 +5879,29 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iqk6zto1.ReadWorkspaceStateResponse) {
       return _iqk6zto1.ReadWorkspaceStateResponse.fromJson(data) as T;
     }
+    if (t == _i6ina439.WorkspaceHistoryPolicyRequest) {
+      return _i6ina439.WorkspaceHistoryPolicyRequest.fromJson(data) as T;
+    }
+    if (t == _iveci0ok.WorkspaceHistoryRestoreRequest) {
+      return _iveci0ok.WorkspaceHistoryRestoreRequest.fromJson(data) as T;
+    }
     if (t == _iolo6w4a.WorkspacePatchOperation) {
       return _iolo6w4a.WorkspacePatchOperation.fromJson(data) as T;
     }
     if (t == _ihbarnlu.WorkspacePatchOperationKind) {
       return _ihbarnlu.WorkspacePatchOperationKind.fromJson(data) as T;
+    }
+    if (t == _istj5rvl.WorkspaceRecordSummaryRequest) {
+      return _istj5rvl.WorkspaceRecordSummaryRequest.fromJson(data) as T;
+    }
+    if (t == _izw41l59.WorkspaceReferenceRecordRequest) {
+      return _izw41l59.WorkspaceReferenceRecordRequest.fromJson(data) as T;
+    }
+    if (t == _i25xbz7v.WorkspaceReferenceTableRequest) {
+      return _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data) as T;
+    }
+    if (t == _ib7agc3j.WorkspaceReferenceTargetRequest) {
+      return _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data) as T;
     }
     if (t == _iqzfyfs9.WorkspaceResource) {
       return _iqzfyfs9.WorkspaceResource.fromJson(data) as T;
@@ -5507,6 +5915,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _i0vhsjed.WorkspaceResourcePageRequest) {
       return _i0vhsjed.WorkspaceResourcePageRequest.fromJson(data) as T;
     }
+    if (t == _ihvrwgom.WorkspaceRevision) {
+      return _ihvrwgom.WorkspaceRevision.fromJson(data) as T;
+    }
     if (t == _iyjw9v2c.WorkspaceSecret) {
       return _iyjw9v2c.WorkspaceSecret.fromJson(data) as T;
     }
@@ -5515,6 +5926,24 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _ioqbiy3d.WorkspaceSecretScope) {
       return _ioqbiy3d.WorkspaceSecretScope.fromJson(data) as T;
+    }
+    if (t == _il63fuk7.WorkspaceTrashBatch) {
+      return _il63fuk7.WorkspaceTrashBatch.fromJson(data) as T;
+    }
+    if (t == _i49vb0x7.WorkspaceTrashRequest) {
+      return _i49vb0x7.WorkspaceTrashRequest.fromJson(data) as T;
+    }
+    if (t == _i00jdb9n.WorkspaceViewMove) {
+      return _i00jdb9n.WorkspaceViewMove.fromJson(data) as T;
+    }
+    if (t == _i97j1as2.WorkspaceView) {
+      return _i97j1as2.WorkspaceView.fromJson(data) as T;
+    }
+    if (t == _ihx1e06e.WorkspaceViewListRequest) {
+      return _ihx1e06e.WorkspaceViewListRequest.fromJson(data) as T;
+    }
+    if (t == _io73c0ad.WorkspaceViewSaveRequest) {
+      return _io73c0ad.WorkspaceViewSaveRequest.fromJson(data) as T;
     }
     if (t == _ib7b2bmq.AcceptWorkspaceInviteRequest) {
       return _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data) as T;
@@ -5694,6 +6123,10 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data != null
               ? _isyd7s84.CompactConversationRequest.fromJson(data)
               : null)
+          as T;
+    }
+    if (t == _is.getType<_ik5xiz1a.ConnectorWrite?>()) {
+      return (data != null ? _ik5xiz1a.ConnectorWrite.fromJson(data) : null)
           as T;
     }
     if (t == _is.getType<_ialxa16r.ContinueConversationRequest?>()) {
@@ -6333,6 +6766,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i1oaqjf3.DuplicateWorkspaceItemRequest?>()) {
+      return (data != null
+              ? _i1oaqjf3.DuplicateWorkspaceItemRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_io0q4g8e.MutateWorkspaceCredentialRequest?>()) {
       return (data != null
               ? _io0q4g8e.MutateWorkspaceCredentialRequest.fromJson(data)
@@ -6381,6 +6820,18 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i6ina439.WorkspaceHistoryPolicyRequest?>()) {
+      return (data != null
+              ? _i6ina439.WorkspaceHistoryPolicyRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iveci0ok.WorkspaceHistoryRestoreRequest?>()) {
+      return (data != null
+              ? _iveci0ok.WorkspaceHistoryRestoreRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_iolo6w4a.WorkspacePatchOperation?>()) {
       return (data != null
               ? _iolo6w4a.WorkspacePatchOperation.fromJson(data)
@@ -6390,6 +6841,30 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_ihbarnlu.WorkspacePatchOperationKind?>()) {
       return (data != null
               ? _ihbarnlu.WorkspacePatchOperationKind.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_istj5rvl.WorkspaceRecordSummaryRequest?>()) {
+      return (data != null
+              ? _istj5rvl.WorkspaceRecordSummaryRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_izw41l59.WorkspaceReferenceRecordRequest?>()) {
+      return (data != null
+              ? _izw41l59.WorkspaceReferenceRecordRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i25xbz7v.WorkspaceReferenceTableRequest?>()) {
+      return (data != null
+              ? _i25xbz7v.WorkspaceReferenceTableRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ib7agc3j.WorkspaceReferenceTargetRequest?>()) {
+      return (data != null
+              ? _ib7agc3j.WorkspaceReferenceTargetRequest.fromJson(data)
               : null)
           as T;
     }
@@ -6415,6 +6890,10 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_ihvrwgom.WorkspaceRevision?>()) {
+      return (data != null ? _ihvrwgom.WorkspaceRevision.fromJson(data) : null)
+          as T;
+    }
     if (t == _is.getType<_iyjw9v2c.WorkspaceSecret?>()) {
       return (data != null ? _iyjw9v2c.WorkspaceSecret.fromJson(data) : null)
           as T;
@@ -6428,6 +6907,38 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_ioqbiy3d.WorkspaceSecretScope?>()) {
       return (data != null
               ? _ioqbiy3d.WorkspaceSecretScope.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_il63fuk7.WorkspaceTrashBatch?>()) {
+      return (data != null
+              ? _il63fuk7.WorkspaceTrashBatch.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i49vb0x7.WorkspaceTrashRequest?>()) {
+      return (data != null
+              ? _i49vb0x7.WorkspaceTrashRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i00jdb9n.WorkspaceViewMove?>()) {
+      return (data != null ? _i00jdb9n.WorkspaceViewMove.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i97j1as2.WorkspaceView?>()) {
+      return (data != null ? _i97j1as2.WorkspaceView.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ihx1e06e.WorkspaceViewListRequest?>()) {
+      return (data != null
+              ? _ihx1e06e.WorkspaceViewListRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_io73c0ad.WorkspaceViewSaveRequest?>()) {
+      return (data != null
+              ? _io73c0ad.WorkspaceViewSaveRequest.fromJson(data)
               : null)
           as T;
     }
@@ -6665,6 +7176,20 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_i00jdb9n.WorkspaceViewMove>) {
+      return (data as List)
+              .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+              .toList()
+          as T;
+    }
+    if (t == _is.getType<List<_i00jdb9n.WorkspaceViewMove>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+                    .toList()
+              : null)
+          as T;
+    }
     if (t == List<_iqzfyfs9.WorkspaceResource>) {
       return (data as List)
               .map((e) => deserialize<_iqzfyfs9.WorkspaceResource>(e))
@@ -6769,6 +7294,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_i7rt6swg.WorkspaceView>) {
+      return (data as List)
+              .map((e) => deserialize<_i7rt6swg.WorkspaceView>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_iyxk4tde.CloudWorkspaceSummary>) {
       return (data as List)
               .map((e) => deserialize<_iyxk4tde.CloudWorkspaceSummary>(e))
@@ -6827,6 +7358,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ihrj16d1.BookmarkMessageRequest => 'BookmarkMessageRequest',
       _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
       _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
+      _ik5xiz1a.ConnectorWrite => 'ConnectorWrite',
       _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
       _iwrs6sde.ContinueTurnRequest => 'ContinueTurnRequest',
       _iivijtsr.Conversation => 'Conversation',
@@ -6961,6 +7493,8 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ifhsy8zv.WorkerCoordinatorLease => 'WorkerCoordinatorLease',
       _i887etaa.DuplicateWorkspaceAgentRequest =>
         'DuplicateWorkspaceAgentRequest',
+      _i1oaqjf3.DuplicateWorkspaceItemRequest =>
+        'DuplicateWorkspaceItemRequest',
       _io0q4g8e.MutateWorkspaceCredentialRequest =>
         'MutateWorkspaceCredentialRequest',
       _ipy8xct6.MutateWorkspaceCredentialResponse =>
@@ -6971,15 +7505,34 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iavc361v.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
       _iz7boq8w.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
       _iqk6zto1.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
+      _i6ina439.WorkspaceHistoryPolicyRequest =>
+        'WorkspaceHistoryPolicyRequest',
+      _iveci0ok.WorkspaceHistoryRestoreRequest =>
+        'WorkspaceHistoryRestoreRequest',
       _iolo6w4a.WorkspacePatchOperation => 'WorkspacePatchOperation',
       _ihbarnlu.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
+      _istj5rvl.WorkspaceRecordSummaryRequest =>
+        'WorkspaceRecordSummaryRequest',
+      _izw41l59.WorkspaceReferenceRecordRequest =>
+        'WorkspaceReferenceRecordRequest',
+      _i25xbz7v.WorkspaceReferenceTableRequest =>
+        'WorkspaceReferenceTableRequest',
+      _ib7agc3j.WorkspaceReferenceTargetRequest =>
+        'WorkspaceReferenceTargetRequest',
       _iqzfyfs9.WorkspaceResource => 'WorkspaceResource',
       _i8d1xr9g.WorkspaceResourceKind => 'WorkspaceResourceKind',
       _iilez6xa.WorkspaceResourcePage => 'WorkspaceResourcePage',
       _i0vhsjed.WorkspaceResourcePageRequest => 'WorkspaceResourcePageRequest',
+      _ihvrwgom.WorkspaceRevision => 'WorkspaceRevision',
       _iyjw9v2c.WorkspaceSecret => 'WorkspaceSecret',
       _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
       _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _il63fuk7.WorkspaceTrashBatch => 'WorkspaceTrashBatch',
+      _i49vb0x7.WorkspaceTrashRequest => 'WorkspaceTrashRequest',
+      _i00jdb9n.WorkspaceViewMove => 'WorkspaceViewMove',
+      _i97j1as2.WorkspaceView => 'WorkspaceView',
+      _ihx1e06e.WorkspaceViewListRequest => 'WorkspaceViewListRequest',
+      _io73c0ad.WorkspaceViewSaveRequest => 'WorkspaceViewSaveRequest',
       _ib7b2bmq.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
       _iyfjt29r.CloudWorkspace => 'CloudWorkspace',
       _i1uzipdf.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
@@ -7065,6 +7618,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'CancelTurnRequest';
       case _isyd7s84.CompactConversationRequest():
         return 'CompactConversationRequest';
+      case _ik5xiz1a.ConnectorWrite():
+        return 'ConnectorWrite';
       case _ialxa16r.ContinueConversationRequest():
         return 'ContinueConversationRequest';
       case _iwrs6sde.ContinueTurnRequest():
@@ -7297,6 +7852,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkerCoordinatorLease';
       case _i887etaa.DuplicateWorkspaceAgentRequest():
         return 'DuplicateWorkspaceAgentRequest';
+      case _i1oaqjf3.DuplicateWorkspaceItemRequest():
+        return 'DuplicateWorkspaceItemRequest';
       case _io0q4g8e.MutateWorkspaceCredentialRequest():
         return 'MutateWorkspaceCredentialRequest';
       case _ipy8xct6.MutateWorkspaceCredentialResponse():
@@ -7313,10 +7870,22 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'ReadWorkspaceStateRequest';
       case _iqk6zto1.ReadWorkspaceStateResponse():
         return 'ReadWorkspaceStateResponse';
+      case _i6ina439.WorkspaceHistoryPolicyRequest():
+        return 'WorkspaceHistoryPolicyRequest';
+      case _iveci0ok.WorkspaceHistoryRestoreRequest():
+        return 'WorkspaceHistoryRestoreRequest';
       case _iolo6w4a.WorkspacePatchOperation():
         return 'WorkspacePatchOperation';
       case _ihbarnlu.WorkspacePatchOperationKind():
         return 'WorkspacePatchOperationKind';
+      case _istj5rvl.WorkspaceRecordSummaryRequest():
+        return 'WorkspaceRecordSummaryRequest';
+      case _izw41l59.WorkspaceReferenceRecordRequest():
+        return 'WorkspaceReferenceRecordRequest';
+      case _i25xbz7v.WorkspaceReferenceTableRequest():
+        return 'WorkspaceReferenceTableRequest';
+      case _ib7agc3j.WorkspaceReferenceTargetRequest():
+        return 'WorkspaceReferenceTargetRequest';
       case _iqzfyfs9.WorkspaceResource():
         return 'WorkspaceResource';
       case _i8d1xr9g.WorkspaceResourceKind():
@@ -7325,12 +7894,26 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkspaceResourcePage';
       case _i0vhsjed.WorkspaceResourcePageRequest():
         return 'WorkspaceResourcePageRequest';
+      case _ihvrwgom.WorkspaceRevision():
+        return 'WorkspaceRevision';
       case _iyjw9v2c.WorkspaceSecret():
         return 'WorkspaceSecret';
       case _iq96p1l9.WorkspaceSecretKind():
         return 'WorkspaceSecretKind';
       case _ioqbiy3d.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
+      case _il63fuk7.WorkspaceTrashBatch():
+        return 'WorkspaceTrashBatch';
+      case _i49vb0x7.WorkspaceTrashRequest():
+        return 'WorkspaceTrashRequest';
+      case _i00jdb9n.WorkspaceViewMove():
+        return 'WorkspaceViewMove';
+      case _i97j1as2.WorkspaceView():
+        return 'WorkspaceView';
+      case _ihx1e06e.WorkspaceViewListRequest():
+        return 'WorkspaceViewListRequest';
+      case _io73c0ad.WorkspaceViewSaveRequest():
+        return 'WorkspaceViewSaveRequest';
       case _ib7b2bmq.AcceptWorkspaceInviteRequest():
         return 'AcceptWorkspaceInviteRequest';
       case _iyfjt29r.CloudWorkspace():
@@ -7468,6 +8051,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'CompactConversationRequest') {
       return deserialize<_isyd7s84.CompactConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'ConnectorWrite') {
+      return deserialize<_ik5xiz1a.ConnectorWrite>(data['data']);
     }
     if (dataClassName == 'ContinueConversationRequest') {
       return deserialize<_ialxa16r.ContinueConversationRequest>(data['data']);
@@ -7851,6 +8437,9 @@ class Protocol extends _is.DatabaseSerializationManager {
         data['data'],
       );
     }
+    if (dataClassName == 'DuplicateWorkspaceItemRequest') {
+      return deserialize<_i1oaqjf3.DuplicateWorkspaceItemRequest>(data['data']);
+    }
     if (dataClassName == 'MutateWorkspaceCredentialRequest') {
       return deserialize<_io0q4g8e.MutateWorkspaceCredentialRequest>(
         data['data'],
@@ -7879,11 +8468,37 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ReadWorkspaceStateResponse') {
       return deserialize<_iqk6zto1.ReadWorkspaceStateResponse>(data['data']);
     }
+    if (dataClassName == 'WorkspaceHistoryPolicyRequest') {
+      return deserialize<_i6ina439.WorkspaceHistoryPolicyRequest>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceHistoryRestoreRequest') {
+      return deserialize<_iveci0ok.WorkspaceHistoryRestoreRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'WorkspacePatchOperation') {
       return deserialize<_iolo6w4a.WorkspacePatchOperation>(data['data']);
     }
     if (dataClassName == 'WorkspacePatchOperationKind') {
       return deserialize<_ihbarnlu.WorkspacePatchOperationKind>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceRecordSummaryRequest') {
+      return deserialize<_istj5rvl.WorkspaceRecordSummaryRequest>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceReferenceRecordRequest') {
+      return deserialize<_izw41l59.WorkspaceReferenceRecordRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'WorkspaceReferenceTableRequest') {
+      return deserialize<_i25xbz7v.WorkspaceReferenceTableRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'WorkspaceReferenceTargetRequest') {
+      return deserialize<_ib7agc3j.WorkspaceReferenceTargetRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'WorkspaceResource') {
       return deserialize<_iqzfyfs9.WorkspaceResource>(data['data']);
@@ -7897,6 +8512,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'WorkspaceResourcePageRequest') {
       return deserialize<_i0vhsjed.WorkspaceResourcePageRequest>(data['data']);
     }
+    if (dataClassName == 'WorkspaceRevision') {
+      return deserialize<_ihvrwgom.WorkspaceRevision>(data['data']);
+    }
     if (dataClassName == 'WorkspaceSecret') {
       return deserialize<_iyjw9v2c.WorkspaceSecret>(data['data']);
     }
@@ -7905,6 +8523,24 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'WorkspaceSecretScope') {
       return deserialize<_ioqbiy3d.WorkspaceSecretScope>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceTrashBatch') {
+      return deserialize<_il63fuk7.WorkspaceTrashBatch>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceTrashRequest') {
+      return deserialize<_i49vb0x7.WorkspaceTrashRequest>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewMove') {
+      return deserialize<_i00jdb9n.WorkspaceViewMove>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceView') {
+      return deserialize<_i97j1as2.WorkspaceView>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewListRequest') {
+      return deserialize<_ihx1e06e.WorkspaceViewListRequest>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewSaveRequest') {
+      return deserialize<_io73c0ad.WorkspaceViewSaveRequest>(data['data']);
     }
     if (dataClassName == 'AcceptWorkspaceInviteRequest') {
       return deserialize<_ib7b2bmq.AcceptWorkspaceInviteRequest>(data['data']);
@@ -8046,6 +8682,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _ify5ufwn.CodexOAuthTransaction.t;
       case _i76zqh14.BackgroundWorkRecord:
         return _i76zqh14.BackgroundWorkRecord.t;
+      case _ik5xiz1a.ConnectorWrite:
+        return _ik5xiz1a.ConnectorWrite.t;
       case _iivijtsr.Conversation:
         return _iivijtsr.Conversation.t;
       case _i77s958n.ConversationEvent:
@@ -8098,8 +8736,14 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _ifhsy8zv.WorkerCoordinatorLease.t;
       case _iqzfyfs9.WorkspaceResource:
         return _iqzfyfs9.WorkspaceResource.t;
+      case _ihvrwgom.WorkspaceRevision:
+        return _ihvrwgom.WorkspaceRevision.t;
       case _iyjw9v2c.WorkspaceSecret:
         return _iyjw9v2c.WorkspaceSecret.t;
+      case _il63fuk7.WorkspaceTrashBatch:
+        return _il63fuk7.WorkspaceTrashBatch.t;
+      case _i97j1as2.WorkspaceView:
+        return _i97j1as2.WorkspaceView.t;
       case _iyfjt29r.CloudWorkspace:
         return _iyfjt29r.CloudWorkspace.t;
       case _ifp2sq2r.WorkspaceAuditRecord:

@@ -46,12 +46,15 @@ class const CloudAccountAuthScreen({
       .connections => LocaleKeys.navigation_connections,
       .appSettings => LocaleKeys.settings_screen_title,
       .cloudAccounts => LocaleKeys.cloud_accounts_title,
-      null =>
-        uri.pathSegments.lastOrNull == 'workspace-settings'
-            ? LocaleKeys.navigation_workspace_settings
-            : LocaleKeys.workspace_management_title,
+      .items => LocaleKeys.workspace_items_title,
+      null => _workspaceTaskKey(uri),
     };
   }
+
+  String _workspaceTaskKey(Uri uri) =>
+      uri.pathSegments.lastOrNull == 'workspace-settings'
+      ? LocaleKeys.navigation_workspace_settings
+      : LocaleKeys.workspace_management_title;
 
   bool _ownsNavigation(BuildContext context, Uri? routeUri) =>
       context.mounted &&

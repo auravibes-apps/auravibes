@@ -757,6 +757,101 @@ const _workspaceSetupDynamicKeys = <String>{
 /// Dynamic translations are listed by source call site and finite key family.
 const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
+    family: 'workspace-history-approval',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_history_approval.dart',
+        method: 'TextLocale',
+        keyExpression: 'notice',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_history_approval.dart',
+        method: 'TextLocale',
+        keyExpression: 'action',
+      ),
+    ],
+    keys: {
+      'workspace_items.history.purge_notice',
+      'workspace_items.history.restore_notice',
+      'workspace_items.history.policy_notice',
+      'workspace_items.history.purge',
+      'workspace_items.history.restore',
+      'common.save',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'workspace-item-typed-errors',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'failure.localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'failure.localizationKey',
+        occurrence: 1,
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'failure.localizationKey',
+        occurrence: 2,
+      ),
+    ],
+    keys: {
+      'cloud_errors.conflict',
+      'cloud_errors.permission_denied',
+      'workspace_items.invalid_folder',
+      'workspace_items.invalid_table',
+      'workspace_csv.invalid_file',
+      'workspace_csv.too_large',
+      'workspace_csv.invalid_mapping',
+      'workspace_csv.validation_failed',
+      'workspace_csv.invalid_value',
+    },
+  ),
+  LocalizationDynamicRegistry(
+    family: 'workspace-csv-actions',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_csv_dialog.dart',
+        method: 'TextLocale',
+        keyExpression: '_label',
+      ),
+    ],
+    keys: {
+      'workspace_csv.save',
+      'workspace_csv.choose',
+      'workspace_csv.validate',
+      'workspace_csv.commit',
+    },
+  ),
+  LocalizationDynamicRegistry(
+    family: 'workspace-csv-row-validation',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_csv_dialog.dart',
+        method: 'TextLocale',
+        keyExpression: 'error.localizationKey',
+      ),
+    ],
+    keys: {'workspace_csv.invalid_value'},
+  ),
+  LocalizationDynamicRegistry(
+    family: 'workspace-table-save-actions',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_table_editor.dart',
+        method: 'TextLocale',
+        keyExpression: 'kind.label',
+      ),
+    ],
+    keys: {'workspace_items.save_record', 'workspace_items.save_typed_column'},
+  ),
+  LocalizationDynamicRegistry(
     family: 'agent-form-validation-keys',
     sites: [
       DynamicTranslationSite(
@@ -1580,6 +1675,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
     family: 'cloud-application-error-keys',
     sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
+      ),
       DynamicTranslationSite(
         file: 'features/skills/screens/skills_screen.dart',
         method: 'TextLocale',

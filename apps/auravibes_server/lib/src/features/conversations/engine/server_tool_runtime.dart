@@ -5,13 +5,13 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
-import 'conversation_host_effects.dart';
-import 'server_agent_guidance.dart';
-import 'background_work_result_reader.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
-import '../../sync/stream/sync_wakeups.dart';
+import 'background_work_result_reader.dart';
+import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
 
 enum ServerToolDisposition {
   completed,
@@ -453,9 +453,6 @@ AgentToolPermissionResult resolveCloudToolPermission({
   String? agentPermissionMode,
   String? conversationPermissionMode,
 }) {
-  if (conversationPermissionMode == 'alwaysAllow') {
-    return AgentToolPermissionResult.granted;
-  }
   if (conversationPermissionMode == 'alwaysDeny') {
     return AgentToolPermissionResult.disabledInWorkspace;
   }
@@ -467,6 +464,9 @@ AgentToolPermissionResult resolveCloudToolPermission({
   if (agentPermissionMode == 'alwaysDeny') {
     return AgentToolPermissionResult.disabledInWorkspace;
   }
+  if (conversationPermissionMode == 'alwaysAllow') {
+    return AgentToolPermissionResult.granted;
+  }
   if (conversationPermissionMode == 'alwaysAsk') {
     return AgentToolPermissionResult.needsConfirmation;
   }
@@ -476,6 +476,18 @@ AgentToolPermissionResult resolveCloudToolPermission({
     _ => workspacePermission,
   };
 }
+
+AgentToolPermissionResult connectorCommandApprovalPermission(
+  AgentToolPermissionResult permission,
+  AgentResolvedToolName descriptor,
+  Map<String, dynamic> arguments,
+) =>
+    descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+        descriptor.toolIdentifier == executeConnectorToolName &&
+        permission == AgentToolPermissionResult.granted &&
+        connectorCommandMayWrite(arguments, connectorDefinitions)
+    ? AgentToolPermissionResult.needsConfirmation
+    : permission;
 
 AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
@@ -833,7 +845,11 @@ class ServerToolRuntime({
       conversation: conversation,
     );
     final permission = applyConversationToolAccessMode(
-      configuredPermission,
+      connectorCommandApprovalPermission(
+        configuredPermission,
+        permissionDescriptor,
+        request.arguments,
+      ),
       mode:
           existing == null &&
               conversation != null &&
@@ -969,7 +985,7 @@ class ServerToolRuntime({
       await _finish(
         session,
         call,
-        'executionError',
+        _failureStatus(failure),
         _boundedRawJson(failure.responseRaw),
       );
       session.log(
@@ -1072,7 +1088,7 @@ class ServerToolRuntime({
       await _completeCancellableToolRecord(
         executionSession,
         call,
-        status: 'executionError',
+        status: _failureStatus(failure),
         result: _boundedRawJson(failure.responseRaw),
         errorCode: serverToolExecutionFailureCode(failure),
         languageCode: languageCode,
@@ -1606,6 +1622,19 @@ class ServerToolRuntime({
       return AgentToolPermissionResult.granted;
     }
     final toolId = descriptor.tableId;
+    if (descriptor.kind == AgentResolvedToolKind.connectorCommand) {
+      final configured = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.tool) &
+            table.resourceId.equals(toolId) &
+            table.deletedAt.equals(null),
+      );
+      if (configured != null && _data(configured)['isEnabled'] == false) {
+        return AgentToolPermissionResult.disabledInWorkspace;
+      }
+    }
     final permissions = await WorkspaceResource.db.find(
       session,
       where: (table) =>
@@ -1844,6 +1873,39 @@ class ServerToolRuntime({
     );
   });
 
+  String _writeOperationId(ConversationToolCall call) =>
+      switch (_jsonMap(call.argumentsJson)['operationId']) {
+        final String id when id.isNotEmpty => id,
+        _ => call.stableId,
+      };
+
+  bool _isConnectorWrite(ConversationToolCall call) =>
+      call.name == executeConnectorToolName &&
+      connectorCommandMayWrite(call.argumentsJson, connectorDefinitions);
+
+  String _interruptedStatus(ConversationToolCall call) =>
+      _isConnectorWrite(call) ? 'uncertain' : 'executionError';
+
+  String _interruptedResult(ConversationToolCall call) => projectToolOutput(
+    _boundedJson({
+      'error': 'Tool execution was interrupted before completion.',
+      if (_isConnectorWrite(call)) ..._writeRecovery(call),
+    }),
+  ).persistedText;
+
+  Map<String, Object?> _writeRecovery(ConversationToolCall call) => {
+    'kind': 'connectorWrite',
+    'operationId': _writeOperationId(call),
+    'outcome': 'uncertain',
+    'retryBlocked': true,
+    'undoSupported': false,
+  };
+
+  String _failureStatus(AgentToolExecutionFailure failure) =>
+      failure.resultStatus == AgentToolResultStatus.uncertain
+      ? 'uncertain'
+      : 'executionError';
+
   Future<void> _recoverStaleRunning(
     Session session,
     ConversationToolCall call,
@@ -1871,16 +1933,11 @@ class ServerToolRuntime({
       transaction: transaction,
     );
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
-    final projection = projectToolOutput(
-      jsonEncode({
-        'error': 'Tool execution was interrupted before completion.',
-      }),
-    );
     await ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
-        status: 'executionError',
-        resultJson: projection.persistedText,
+        status: _interruptedStatus(current),
+        resultJson: _interruptedResult(current),
         revision: current.revision + 1,
         updatedAt: now,
       ),

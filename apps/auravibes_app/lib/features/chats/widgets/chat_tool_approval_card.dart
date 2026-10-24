@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/connector_write_approval_preview.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
@@ -26,7 +27,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
     show AgentToolGrantLevel, toolCallApprovalDigest;
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show normalizeToolCallUserFacingDescription;
+    show executeConnectorToolName, normalizeToolCallUserFacingDescription;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -824,6 +825,10 @@ class _ApprovalCardBodyChildren {
            onPrev: request.actions.onPrev,
            onNext: request.actions.onNext,
          ),
+         if (request.current.toolCall.name == executeConnectorToolName)
+           ConnectorWriteApprovalPreview(
+             argumentsRaw: request.current.toolCall.argumentsRaw,
+           ),
          _ToolCallInfo(
            displayName: displayName,
            description: description,

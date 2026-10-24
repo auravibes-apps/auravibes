@@ -8,6 +8,7 @@ enum AgentToolResultStatus {
   success,
   toolNotFound,
   executionError,
+  uncertain,
   disabledInConversation,
   disabledByAgent,
   disabledInWorkspace,
@@ -26,6 +27,8 @@ extension AgentToolResultStatusX on AgentToolResultStatus {
     .success => '',
     .toolNotFound => 'Tool not found.',
     .executionError => 'Tool execution failed.',
+    .uncertain =>
+      'Write outcome is uncertain. Do not retry before reconciliation.',
     .disabledInConversation => 'Tool is disabled for this conversation.',
     .disabledByAgent => 'Tool is denied by the selected agent.',
     .disabledInWorkspace => 'Tool is disabled in workspace.',
@@ -60,6 +63,8 @@ class const AgentToolExecutionFailure({
   required final Object error,
   required final StackTrace stackTrace,
   required final String failurePhase,
+  final AgentToolResultStatus resultStatus =
+      AgentToolResultStatus.executionError,
 }) implements Exception;
 
 typedef AgentToolExecutionErrorRequest<TTool extends Object> = ({
@@ -191,7 +196,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
               outputPolicyForTool?.call(tool) ?? const AgentToolOutputPolicy(),
         );
         return AgentToolExecutionResult(
-          resultStatus: .executionError,
+          resultStatus: failure.resultStatus,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
           outputTruncated: projection.truncated,

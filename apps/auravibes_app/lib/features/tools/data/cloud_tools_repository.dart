@@ -18,6 +18,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resou
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
@@ -150,8 +151,18 @@ class CloudToolsRepository extends _CloudToolsRepositoryBase
        );
 
   @override
-  Future<List<WorkspaceToolEntity>> getWorkspaceTools(String _) async =>
-      (await _read(.tool)).where(_isCloudTool).map(_tool).toList();
+  Future<List<WorkspaceToolEntity>> getWorkspaceTools(
+    String workspaceId,
+  ) async {
+    final tools = (await _read(.tool)).where(_isCloudTool).map(_tool).toList();
+    final ids = tools.map((tool) => tool.toolId).toSet();
+
+    return [
+      ...tools,
+      for (final tool in _connectorCatalogTools(workspaceId))
+        if (!ids.contains(tool.toolId)) tool,
+    ];
+  }
 }
 
 mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
@@ -240,7 +251,7 @@ mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
   Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String _,
     String id,
-    String? config,
+    String config,
   ) async => [await _patchTool(id, (data) => data['config'] = config)];
 }
 
@@ -873,11 +884,23 @@ extension on _CloudToolsRepositoryBase {
     void Function(Map<String, dynamic>)? patch,
   ) async {
     final resource = await _find(.tool, id);
-    if (resource == null) throw StateError('Cloud tool not found: $id');
+    if (resource == null) return await _createCatalogTool(id, patch);
     final data = _data(resource);
     patch?.call(data);
 
     return _tool(await _update(resource, data));
+  }
+
+  Future<WorkspaceToolEntity> _createCatalogTool(
+    String id,
+    void Function(Map<String, dynamic>)? patch,
+  ) async {
+    final target = _requireCatalogTool(id);
+    final data = _catalogToolData(target);
+    patch?.call(data);
+    final result = await _patch([_catalogCreateOperation(id, data)]);
+
+    return _tool(result.resources.single);
   }
 
   WorkspaceToolEntity _tool(WorkspaceResource resource) =>
@@ -898,9 +921,9 @@ extension on _CloudToolsRepositoryBase {
   ])).resources.single;
 
   WorkspacePatchOperation _resetToolResource(WorkspaceResource resource) {
-    final data = _data(resource)
-      ..['isEnabled'] = true
-      ..['permissionMode'] = ToolPermissionMode.alwaysAsk.name;
+    final data = _data(resource);
+    data['isEnabled'] = _defaultToolEnabled(data);
+    data['permissionMode'] = ToolPermissionMode.alwaysAsk.name;
 
     return WorkspacePatchOperation(
       operation: .update,
@@ -1304,3 +1327,78 @@ String? _mcpBearerToken(McpServerFormToCreate server) =>
     server.authenticationType == McpAuthenticationTypeOptions.bearerToken
     ? server.bearerToken
     : null;
+
+final _catalogTimestamp = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+List<WorkspaceToolEntity> _connectorCatalogTools(String workspaceId) => [
+  for (final spec in buildConnectorCommandToolSpecs())
+    _catalogCommand(workspaceId, spec),
+  for (final connector in connectorDefinitions)
+    ..._catalogTargets(workspaceId, connector),
+];
+WorkspaceToolEntity _catalogCommand(String workspaceId, ToolSpec spec) =>
+    WorkspaceToolEntity(
+      id: spec.name,
+      workspaceId: workspaceId,
+      toolId: spec.name,
+      isEnabled: true,
+      permissionMode: .alwaysAsk,
+      createdAt: _catalogTimestamp,
+      updatedAt: _catalogTimestamp,
+      description: spec.description,
+      inputSchema: jsonEncode(spec.inputJsonSchema),
+    );
+Iterable<WorkspaceToolEntity> _catalogTargets(
+  String workspaceId,
+  ConnectorDefinition connector,
+) => connector.tools
+    .where((tool) => tool.urlTemplate != null)
+    .map(
+      (tool) =>
+          _catalogTarget(workspaceId, connectorToolId(connector, tool), tool),
+    );
+WorkspaceToolEntity _catalogTarget(
+  String workspaceId,
+  String id,
+  ConnectorToolDefinition tool,
+) => WorkspaceToolEntity(
+  id: id,
+  workspaceId: workspaceId,
+  toolId: id,
+  isEnabled: false,
+  permissionMode: .alwaysAllow,
+  createdAt: _catalogTimestamp,
+  updatedAt: _catalogTimestamp,
+  description: tool.description,
+  inputSchema: jsonEncode(tool.inputJsonSchema),
+);
+
+bool _defaultToolEnabled(Map<String, dynamic> data) =>
+    !((data['toolId'] as String?)?.startsWith('connector/') ?? false) &&
+    data['mcpServerId'] == null;
+Map<String, dynamic> _catalogToolData(WorkspaceToolEntity target) => {
+  'toolId': target.toolId,
+  'name': target.toolId,
+  'description': target.description,
+  'inputSchema': target.inputSchema,
+  'isEnabled': target.isEnabled,
+  'permissionMode': target.permissionMode.name,
+};
+WorkspacePatchOperation _catalogCreateOperation(
+  String id,
+  Map<String, dynamic> data,
+) => WorkspacePatchOperation(
+  operation: .create,
+  resourceKind: .tool,
+  resourceId: id,
+  data: jsonEncode(data),
+  fieldMask: const [],
+);
+
+WorkspaceToolEntity _requireCatalogTool(String id) {
+  final target = _connectorCatalogTools('')
+      .where((tool) => tool.id == id)
+      .firstOrNull;
+  if (target == null) throw StateError('Cloud tool not found: $id');
+
+  return target;
+}

@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
+import 'package:auravibes_ui/src/colors/color_contrast.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
@@ -13,6 +14,47 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraPopupMenu', () {
+    for (final entry in [
+      (name: 'light', theme: AuraTheme.light),
+      (name: 'dark', theme: AuraTheme.dark),
+    ]) {
+      testWidgets('error actions remain readable in ${entry.name} theme', (
+        tester,
+      ) async {
+        var activated = false;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AuraThemeScope(
+              theme: entry.theme,
+              child: ColoredBox(
+                color: entry.theme.colors.surface,
+                child: Builder(
+                  builder: AuraPopupMenuItem(
+                    title: const Text('Context action'),
+                    onTap: () => activated = true,
+                    variant: .error,
+                  ).build,
+                ),
+              ),
+            ),
+          ),
+        );
+        final style = DefaultTextStyle.of(
+          tester.element(find.text('Context action')),
+        ).style;
+        expect(
+          ColorContrast.wcagContrastRatio(
+            style.color ?? (throw StateError('Missing menu foreground')),
+            entry.theme.colors.surface,
+          ),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(style.fontFamily, entry.theme.typography.bodyFontFamily);
+        await tester.tap(find.text('Context action'));
+        expect(activated, isTrue);
+      });
+    }
+
     for (final activation in <({String name, LogicalKeyboardKey key})>[
       (name: 'Enter', key: .enter),
       (name: 'Space', key: .space),

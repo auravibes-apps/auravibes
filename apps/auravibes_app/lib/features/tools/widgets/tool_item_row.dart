@@ -4,8 +4,10 @@
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/connector_tool_member_access.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -35,6 +37,7 @@ class const ToolItemRow({
   /// Whether to show the delete button.
   /// Should be false for MCP tools (they can't be individually deleted).
   final bool showDeleteButton = true,
+  final bool isMcp = false,
   final bool isSelected = false,
   final bool isSelectionEnabled = false,
   final bool isWorking = false,
@@ -46,11 +49,13 @@ class const ToolItemRow({
     required String workspaceId,
     required ToolItemSelection selection,
     bool showDeleteButton = true,
+    bool isMcp = false,
     Key? key,
   }) : this(
          tool: tool,
          workspaceId: workspaceId,
          showDeleteButton: showDeleteButton,
+         isMcp: isMcp,
          isSelected: selection.isSelected,
          isSelectionEnabled: true,
          isWorking: selection.isWorking,
@@ -66,15 +71,19 @@ class const ToolItemRow({
       tool: tool,
       workspaceId: workspaceId,
       showDeleteButton: showDeleteButton,
+      isMcp: isMcp,
       isSelected: isSelected,
       isSelectionEnabled: isSelectionEnabled,
-      isWorking: isWorking,
+      isWorking: _working(ref),
       onSelectionChanged: onSelectionChanged,
       isExpanded: isExpanded.value,
       onEnabledChanged: _enabledChanged(ref),
       onToggleExpanded: _toggleExpanded(isExpanded),
     );
   }
+
+  bool _working(WidgetRef ref) =>
+      isWorking || !ref.watch(canManageWorkspaceProvider(workspaceId));
 
   ValueChanged<bool> _enabledChanged(WidgetRef ref) =>
       (value) => _setToolEnabled(ref, value);
@@ -93,6 +102,7 @@ class const _ToolItemBody({
   required final WorkspaceToolEntity tool,
   required final String workspaceId,
   required final bool showDeleteButton,
+  required final bool isMcp,
   required final bool isSelected,
   required final bool isSelectionEnabled,
   required final bool isWorking,
@@ -136,6 +146,7 @@ class const _OptionalExpandedToolOptions({required final _ToolItemBody body})
       isEnabled: body.tool.isEnabled,
       permissionMode: body.tool.permissionMode,
       showDeleteButton: body.showDeleteButton,
+      isMcp: body.isMcp,
     );
   }
 }
@@ -146,6 +157,7 @@ class const _ExpandedToolOptions({
   required final bool isEnabled,
   required final ToolPermissionMode permissionMode,
   required final bool showDeleteButton,
+  required final bool isMcp,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -157,6 +169,7 @@ class const _ExpandedToolOptions({
         isEnabled: isEnabled,
         permissionMode: permissionMode,
         showDeleteButton: showDeleteButton,
+        isMcp: isMcp,
       ),
     );
   }
@@ -174,20 +187,20 @@ class const _ToolOptions({
   required final bool isEnabled,
   required final ToolPermissionMode permissionMode,
   required final bool showDeleteButton,
+  required final bool isMcp,
 }) extends HookConsumerWidget {
+  bool get _hasMemberAccess =>
+      isEnabled && (isMcp || tool.toolId.startsWith('connector/'));
+  bool get _hasDelete => showDeleteButton && !tool.isNative;
+  bool get _hasApproval => isEnabled && !tool.toolId.startsWith('connector/');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(
       children: [
-        if (isEnabled)
-          _ToolPermissionModeRow(
-            permissionMode: permissionMode,
-            onChanged: (mode) => _setPermissionMode(ref, mode),
-          ),
-        if (showDeleteButton && !tool.isNative)
-          _RemoveToolButton(
-            onPressed: () => _confirmDelete(context, ref, tool),
-          ),
+        if (_hasMemberAccess) _MemberToolOption(options: this),
+        if (_hasApproval) _ApprovalToolOption(options: this),
+        if (_hasDelete) _DeleteToolOption(options: this),
       ],
       spacing: .sm,
       crossAxisAlignment: .start,
@@ -422,5 +435,31 @@ Future<bool?> _showDeleteConfirmation(BuildContext context) {
       cancelLabel: TextLocale(LocaleKeys.common_cancel),
     ),
     isDestructive: true,
+  );
+}
+
+class const _MemberToolOption({required final _ToolOptions options})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConnectorToolMemberAccess(
+    tool: options.tool,
+    workspaceId: options.workspaceId,
+  );
+}
+
+class const _ApprovalToolOption({required final _ToolOptions options})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _ToolPermissionModeRow(
+    permissionMode: options.permissionMode,
+    onChanged: (mode) => options._setPermissionMode(ref, mode),
+  );
+}
+
+class const _DeleteToolOption({required final _ToolOptions options})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _RemoveToolButton(
+    onPressed: () => options._confirmDelete(context, ref, options.tool),
   );
 }

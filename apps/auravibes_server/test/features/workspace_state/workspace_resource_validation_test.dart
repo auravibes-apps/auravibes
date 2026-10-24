@@ -238,6 +238,14 @@ void main() {
         resourceId: 'resource-1',
         workspaceId: 1,
         data: switch (kind) {
+          WorkspaceResourceKind.folder => '{"name":"Folder","parentId":null}',
+          WorkspaceResourceKind.table =>
+            '{"name":"Table","parentId":null,'
+                '"labelColumnId":"column-1","schemaRevision":1,'
+                '"columns":[{"id":"column-1","name":"Name","type":"text"}]}',
+          WorkspaceResourceKind.tableRecord =>
+            '{"tableId":"table-1",'
+                '"schemaRevision":1,"values":{"column-1":"Record"}}',
           WorkspaceResourceKind.agentAssociation =>
             '{"agentId":"agent-1","toolId":"tool-1",'
                 '"permissionMode":"alwaysAsk"}',

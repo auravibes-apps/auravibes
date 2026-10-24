@@ -266,6 +266,7 @@ class const AppResolvedToolProvider({
       workspaceId: request.workspaceId,
       commandName: request.toolIdentifier,
       arguments: request.arguments,
+      operationId: request.toolCallId,
     );
   }
 

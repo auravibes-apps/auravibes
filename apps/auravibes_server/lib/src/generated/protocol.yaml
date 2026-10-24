@@ -84,13 +84,41 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceCsv:
+  - preview:
+workspaceHistory:
+  - policy:
+  - configurePolicy:
+  - permanentlyDelete:
+  - history:
+  - restore:
+workspaceReference:
+  - targets:
+  - tableTargets:
+  - record:
+  - reverse:
 workspaceSecret:
   - put:
 workspaceState:
+  - summarizeRecords:
+  - queryRecords:
   - read:
   - patch:
+  - duplicateTable:
   - duplicateAgent:
   - mutateCredential:
+workspaceTrash:
+  - deletedReference:
+  - preview:
+  - trash:
+  - list:
+  - restore:
+workspaceView:
+  - duplicate:
+  - list:
+  - read:
+  - history:
+  - save:
 cloudWorkspace:
   - listAuthorizedWorkspaces:
   - listPendingInvites:

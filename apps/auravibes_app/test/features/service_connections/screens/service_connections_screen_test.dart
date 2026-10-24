@@ -24,6 +24,7 @@ import 'package:auravibes_app/features/service_connections/usecases/delete_servi
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_navigation.dart';
@@ -1215,6 +1216,7 @@ void main() {
 ProviderContainer _syncTestContainer(
   ModelSyncService service, {
   WorkspaceSession? session,
+  bool canManage = true,
   List<ServiceConnectionListItem> connections = const [],
   List<ApiModelProviderEntity>? modelProviders,
   TestMcpConnectionUsecase? testUsecase,
@@ -1228,6 +1230,7 @@ ProviderContainer _syncTestContainer(
 
   return ProviderContainer(
     overrides: [
+      canManageWorkspaceProvider(_syncWorkspaceId).overrideWithValue(canManage),
       workspaceSessionForRouteProvider(_syncWorkspaceId)
           .overrideWithValue(AsyncData(workspaceSession)),
       serviceConnectionsProvider(_syncWorkspaceId).overrideWith(

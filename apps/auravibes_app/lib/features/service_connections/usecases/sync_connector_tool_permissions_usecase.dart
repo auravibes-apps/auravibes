@@ -12,6 +12,7 @@ class const SyncConnectorToolPermissionsUsecase(final AppDatabase _database) {
 
   Future<void> call({required String workspaceId}) async {
     final _ = await _syncTools(workspaceId);
+    await _syncConnectorTargets(workspaceId);
   }
 
   Future<String?> permissionTableIdFor({
@@ -43,14 +44,14 @@ class const SyncConnectorToolPermissionsUsecase(final AppDatabase _database) {
   Future<ToolsGroupsTable> _getOrCreateGroup(String workspaceId) async {
     final current = await _database.toolsGroupsDao.getToolsGroupByName(
       workspaceId: workspaceId,
-      name: groupName,
+      name: SyncConnectorToolPermissionsUsecase.groupName,
     );
     if (current != null) return current;
 
     return await _database.toolsGroupsDao.insertToolsGroup(
       .insert(
         workspaceId: workspaceId,
-        name: groupName,
+        name: SyncConnectorToolPermissionsUsecase.groupName,
         permissions: PermissionAccess.ask,
       ),
     );
@@ -131,3 +132,112 @@ final syncConnectorToolPermissionsUsecaseProvider =
       (ref) =>
           SyncConnectorToolPermissionsUsecase(ref.watch(appDatabaseProvider)),
     );
+
+extension ConnectorTargetPermissions on SyncConnectorToolPermissionsUsecase {
+  Future<void> requireEnabledTarget({
+    required String workspaceId,
+    required String toolId,
+  }) async {
+    final tool = await _database.workspaceToolsDao.getWorkspaceToolByToolId(
+      workspaceId,
+      toolId,
+    );
+    final group = await _database.toolsGroupsDao.getToolsGroupByName(
+      workspaceId: workspaceId,
+      name: SyncConnectorToolPermissionsUsecase.groupName,
+    );
+    await _requireCommandEnabled(group);
+
+    if (_targetDenied(tool)) {
+      _denyTarget();
+    }
+  }
+
+  Never _denyTarget() => throw AgentToolExecutionFailure(
+    responseRaw: jsonEncode({
+      'error': {
+        'code': 'tool_access_denied',
+        'message': 'This Connector tool is disabled in workspace settings.',
+      },
+      'recoverable': true,
+    }),
+    error: StateError('Connector tool access denied'),
+    stackTrace: .current,
+    failurePhase: 'connector.authorization',
+  );
+
+  Future<void> _syncConnectorTargets(String workspaceId) =>
+      _database.transaction(() async {
+        for (final connector in connectorDefinitions) {
+          await _syncConnector(workspaceId, connector);
+        }
+      });
+
+  Future<void> _requireCommandEnabled(ToolsGroupsTable? group) async {
+    if (_groupDenied(group)) _denyTarget();
+    final command = await _executeCommand(group);
+    if (command?.isEnabled == false ||
+        command?.permissions == PermissionAccess.denied) {
+      _denyTarget();
+    }
+  }
+
+  bool _groupDenied(ToolsGroupsTable? group) =>
+      group?.isEnabled == false ||
+      group?.permissions == PermissionAccess.denied;
+  Future<void> _syncConnector(
+    String workspaceId,
+    ConnectorDefinition connector,
+  ) async {
+    for (final tool in connector.tools) {
+      if (tool.urlTemplate == null) continue;
+      await _syncTarget(workspaceId, connectorToolId(connector, tool), tool);
+    }
+  }
+
+  Future<void> _syncTarget(
+    String workspaceId,
+    String id,
+    ConnectorToolDefinition tool,
+  ) async {
+    final existing = await _database.workspaceToolsDao.getWorkspaceToolByToolId(
+      workspaceId,
+      id,
+    );
+    if (existing != null) return;
+    await _database.workspaceToolsDao.insertToolsBatch([
+      _targetCompanion(workspaceId, id, tool),
+    ]);
+  }
+
+  ToolsCompanion _targetCompanion(
+    String workspaceId,
+    String id,
+    ConnectorToolDefinition tool,
+  ) => ToolsCompanion.insert(
+    workspaceId: workspaceId,
+    toolId: id,
+    description: .new(tool.description),
+    inputSchema: .new(jsonEncode(tool.inputJsonSchema)),
+    isEnabled: const Value(false),
+    permissions: const Value(PermissionAccess.granted),
+  );
+}
+
+bool _targetDenied(ToolsTable? tool) =>
+    tool == null ||
+    !tool.isEnabled ||
+    tool.permissions == PermissionAccess.denied;
+
+extension ConnectorCommandLookup on SyncConnectorToolPermissionsUsecase {
+  Future<ToolsTable?> _executeCommand(ToolsGroupsTable? group) async {
+    if (group == null) return null;
+    final commands = await _database.workspaceToolsDao.getToolsByGroupId(
+      group.id,
+    );
+
+    return commands
+        .where((item) => item.toolId == executeConnectorToolName)
+        .firstOrNull;
+  }
+}

@@ -320,12 +320,14 @@ void main() {
           ],
         );
 
-        expect(
-          () => verify(
-            () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
-          ).called(1),
-          returnsNormally,
-        );
+        final inserted =
+            verify(
+                  () => fixture.mockWorkspaceToolsDao.insertToolsBatch(
+                    captureAny(),
+                  ),
+                ).captured.single
+                as List<ToolsCompanion>;
+        expect(inserted.single.isEnabled.value, false);
         expect(
           () => verify(
             () => fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById('t1'),
@@ -585,7 +587,8 @@ void main() {
             : null;
         if (connection != null) {
           when(
-            () => fixture.mockEncryptionService.decrypt('encrypted-oauth'),
+            () =>
+                fixture.mockEncryptionService.readCredential('encrypted-oauth'),
           ).thenAnswer((_) async => '{"type":"oauth2","access_token":"token"}');
         }
         final summary = McpConnectionTestSummary(
@@ -773,6 +776,10 @@ class const _McpServersRepositoryFixture._({
     reset(mockToolsGroupsDao);
     reset(mockWorkspaceToolsDao);
     reset(mockEncryptionService);
+    when(() => mockEncryptionService.isCredentialReference(any()))
+        .thenReturn(false);
+    when(() => mockEncryptionService.storeCredential(any()))
+        .thenAnswer((_) async => 'service-credential:synthetic');
     if (clearDatabase) await clearAppDatabase(database);
   }
 }

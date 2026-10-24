@@ -1,4 +1,5 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'package:auravibes_app/features/chats/widgets/connector_write_approval_preview.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -10,6 +11,7 @@ void main() {
   Widget buildSubject({
     required String content,
     TextScaler? textScaler,
+    Widget? subject,
     VoidCallback? onShowMore,
   }) {
     return EasyLocalization(
@@ -23,10 +25,12 @@ void main() {
                 child: MediaQuery(
                   data: .new(textScaler: textScaler ?? TextScaler.noScaling),
                   child: Scaffold(
-                    body: ToolCallResponsePreview(
-                      content: content,
-                      onShowMore: onShowMore ?? _noop,
-                    ),
+                    body:
+                        subject ??
+                        ToolCallResponsePreview(
+                          content: content,
+                          onShowMore: onShowMore ?? _noop,
+                        ),
                   ),
                 ),
               ),
@@ -55,6 +59,62 @@ void main() {
   }
 
   group('ToolCallResponsePreview', () {
+    testWidgets(
+      'uncertain writes show localized review state without an undo action',
+      (tester) async {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            content:
+                '{"kind":"connectorWrite","operationId":"write-1",'
+                '"outcome":"uncertain","retryBlocked":true,'
+                '"undoSupported":false}',
+          ),
+        );
+        expect(
+          find.textContaining('Outcome uncertain. Check the source.'),
+          findsOneWidget,
+        );
+        expect(find.text('Undo'), findsNothing);
+      },
+    );
+
+    testWidgets('write preview shows destination; read has no warning', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          content: '',
+          subject: const ConnectorWriteApprovalPreview(
+            argumentsRaw: '{"toolId":"connector/duckduckgo/search","args":{"query":"preview-input"}}',
+          ),
+        ),
+      );
+      expect(
+        find.textContaining('POST https://html.duckduckgo.com/html/'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('preview-input'), findsOneWidget);
+      expect(
+        find.textContaining('Review the destination and inputs'),
+        findsOneWidget,
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          content: '',
+          subject: const ConnectorWriteApprovalPreview(
+            argumentsRaw: '{"toolId":"connector/brave/web_search","args":{"query":"read-input"}}',
+          ),
+        ),
+      );
+      expect(
+        find.textContaining('Review the destination and inputs'),
+        findsNothing,
+      );
+    });
+
     testWidgets('renders content text', (tester) async {
       await pumpAndInit(tester, buildSubject(content: 'Hello world'));
 

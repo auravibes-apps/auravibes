@@ -17,6 +17,14 @@ QueryExecutor _testConnection() => DatabaseConnection.delayed(
 
 class _FakeEncryptionService implements EncryptionService {
   @override
+  Future<String> storeCredential(String plaintext) => encrypt(plaintext);
+  @override
+  Future<String> readCredential(String reference) => decrypt(reference);
+  @override
+  Future<void> deleteCredential(String? reference) => Future.value();
+  @override
+  bool isCredentialReference(String value) => false;
+  @override
   Future<String> encrypt(String plaintext) async => plaintext;
 
   @override

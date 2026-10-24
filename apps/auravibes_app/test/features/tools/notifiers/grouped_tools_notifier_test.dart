@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
@@ -25,6 +26,9 @@ void main() {
     var workspaceToolsRepository = _FakeWorkspaceToolsRepository();
     var container = ProviderContainer(
       overrides: [
+        syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+          _FakeConnectorSync(),
+        ),
         toolsGroupsRepositoryProvider(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
@@ -87,6 +91,9 @@ void main() {
       workspaceToolsRepository = _FakeWorkspaceToolsRepository();
       container = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           toolsGroupsRepositoryProvider(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
@@ -437,4 +444,10 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   Future<bool> validateWorkspaceToolSetting(String _, String _) {
     throw UnimplementedError();
   }
+}
+
+class _FakeConnectorSync extends Fake
+    implements SyncConnectorToolPermissionsUsecase {
+  @override
+  Future<void> call({required String workspaceId}) => Future.value();
 }

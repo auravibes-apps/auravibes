@@ -37,7 +37,9 @@ import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.d
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -217,6 +219,10 @@ void main() {
     addTearDown(messagesSubscription.close);
     addTearDown(compactionSubscription.close);
 
+    expect(
+      await container.read(workspaceTableUsecaseProvider('mirror-a').future),
+      isA<OrganizeWorkspaceTablesUsecase>(),
+    );
     expect(await container.read(conversations.future), hasLength(1));
     expect(await container.read(messages.future), isEmpty);
     expect(

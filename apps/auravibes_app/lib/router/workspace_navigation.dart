@@ -18,6 +18,7 @@ abstract final class WorkspaceNavigation {
     ['service-connections', ...] || ['tools'] || ['models'] => .connections,
     ['settings'] => .appSettings,
     ['cloud-accounts', ...] => .cloudAccounts,
+    ['items'] => .items,
     _ => null,
   };
 
@@ -53,6 +54,7 @@ enum WorkspaceDestination {
   connections,
   appSettings,
   cloudAccounts,
+  items,
 }
 
 enum AgentDestination { agents, skills }

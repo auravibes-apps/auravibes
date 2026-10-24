@@ -1,6 +1,13 @@
 import 'dart:io';
 
-Future<int> main() async {
+import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
+import 'package:path/path.dart' as p;
+
+Future<void> main() async {
+  exitCode = await _validateChangedDart();
+}
+
+Future<int> _validateChangedDart() async {
   try {
     final rootResult = Process.runSync('git', ['rev-parse', '--show-toplevel']);
     if (rootResult.exitCode != 0) {
@@ -52,12 +59,15 @@ Future<int> main() async {
       ...paths,
     ];
     final formatExitCode = await _runDart(dart, formatArguments, root);
+    final analyzePaths = await _analyzedPaths(root, paths);
+    if (analyzePaths.isEmpty) return formatExitCode;
+
     final analyzeArguments = [
       'analyze',
       '--fatal-infos',
       '--fatal-warnings',
       '--format=machine',
-      ...paths,
+      ...analyzePaths,
     ];
     final analyzeExitCode = await _runDart(dart, analyzeArguments, root);
 
@@ -66,6 +76,24 @@ Future<int> main() async {
     stderr.writeln('Changed Dart preflight failed: $error');
 
     return 2;
+  }
+}
+
+Future<List<String>> _analyzedPaths(Directory root, List<String> paths) async {
+  final collection = AnalysisContextCollection(
+    includedPaths: [p.normalize(root.path)],
+  );
+  try {
+    return paths
+        .where(
+          (path) => collection.contexts.any(
+            (context) =>
+                context.contextRoot.isAnalyzed(p.join(root.path, path)),
+          ),
+        )
+        .toList();
+  } finally {
+    await collection.dispose();
   }
 }
 

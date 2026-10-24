@@ -2,6 +2,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -45,6 +46,11 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     final repository = ref.watch(workspaceToolsRepositoryProvider(session));
     _repository = repository;
     _workspaceId = workspaceId;
+    if (session.cloud == null) {
+      await ref
+          .read(syncConnectorToolPermissionsUsecaseProvider)
+          .call(workspaceId: workspaceId);
+    }
 
     return await repository.getWorkspaceTools(workspaceId);
   }
@@ -64,7 +70,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   }
 
   /// Update workspace tool configuration.
-  Future<void> updateToolConfig(String toolId, String? config) async {
+  Future<void> updateToolConfig(String toolId, String config) async {
     final success = await _requiredWorkspaceToolsRepository(this)
         .patchWorkspaceToolConfig(_workspaceId, toolId, config);
     _replaceTools(success);

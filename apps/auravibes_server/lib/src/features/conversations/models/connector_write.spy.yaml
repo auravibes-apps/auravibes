@@ -1,0 +1,14 @@
+class: ConnectorWrite
+table: connector_write
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  operationId: String
+  requestDigest: String
+  outcome: String
+  statusCode: int?
+indexes:
+  connector_write_operation_idx:
+    fields: workspaceId, operationId
+    unique: true
+  connector_write_digest_idx:
+    fields: workspaceId, requestDigest

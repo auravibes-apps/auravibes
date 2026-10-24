@@ -13,6 +13,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../data/database/drift/database_test_utils.dart';
@@ -36,12 +37,14 @@ final class _FakeHttpClientAdapter({
 }
 
 void main() {
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
   group('OAuthCredentialService', () {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     var isFirstTest = true;
     setUp(() async {
+      FlutterSecureStorage.setMockInitialValues({});
       if (isFirstTest) {
         isFirstTest = false;
 
@@ -85,7 +88,7 @@ void main() {
         )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
         final encrypted = credential.encryptedAuthValue;
         if (encrypted == null) fail('Bearer credential was not encrypted.');
-        final decrypted = await fixture.encryption.decrypt(encrypted);
+        final decrypted = await fixture.encryption.readCredential(encrypted);
         final secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
 
         expect(credential.kind, ServiceConnectionKindTable.mcpServer);
@@ -168,7 +171,7 @@ void main() {
       final encrypted = row.encryptedAuthValue;
       if (encrypted == null) fail('OAuth credential was not encrypted.');
       final secret = ServiceConnectionAuthCodec.decodeSecret(
-        await fixture.encryption.decrypt(encrypted),
+        await fixture.encryption.readCredential(encrypted),
       );
       expect(secret, isA<ServiceConnectionSecretOAuth2>());
       expect(
@@ -217,7 +220,7 @@ void main() {
       final encrypted = row.encryptedAuthValue;
       if (encrypted == null) fail('OAuth credential was not encrypted.');
       final secret = ServiceConnectionAuthCodec.decodeSecret(
-        await fixture.encryption.decrypt(encrypted),
+        await fixture.encryption.readCredential(encrypted),
       );
 
       expect(secret, isA<ServiceConnectionSecretOAuth2>());
