@@ -99,6 +99,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Future<void> Function(Transaction transaction)? guard,
   }) async {
     if (request.requestId.isEmpty ||
+        request.viewMoves?.isNotEmpty == true ||
         request.operations.isEmpty ||
         request.operations.length > _maxOperations) {
       throw CloudWorkspaceException(

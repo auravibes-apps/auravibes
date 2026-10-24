@@ -35,6 +35,8 @@ import 'package:auravibes_server/src/generated/features/skills/models/skill_reso
     as _i8gs5y5r;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_resource.dart'
     as _ixyz6pla;
+import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view.dart'
+    as _i7rt6swg;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i78h3alq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -292,6 +294,12 @@ import 'features/workspace_state/models/workspace_secret_kind.dart'
     as _iq96p1l9;
 import 'features/workspace_state/models/workspace_secret_scope.dart'
     as _ioqbiy3d;
+import 'features/workspace_state/models/workspace_view_move.dart' as _i00jdb9n;
+import 'features/workspace_views/models/workspace_view.dart' as _i97j1as2;
+import 'features/workspace_views/models/workspace_view_list_request.dart'
+    as _ihx1e06e;
+import 'features/workspace_views/models/workspace_view_save_request.dart'
+    as _io73c0ad;
 import 'features/workspaces/models/accept_workspace_invite_request.dart'
     as _ib7b2bmq;
 import 'features/workspaces/models/cloud_workspace.dart' as _iyfjt29r;
@@ -497,6 +505,10 @@ export 'features/workspace_state/models/workspace_resource_page_request.dart';
 export 'features/workspace_state/models/workspace_secret.dart';
 export 'features/workspace_state/models/workspace_secret_kind.dart';
 export 'features/workspace_state/models/workspace_secret_scope.dart';
+export 'features/workspace_state/models/workspace_view_move.dart';
+export 'features/workspace_views/models/workspace_view.dart';
+export 'features/workspace_views/models/workspace_view_list_request.dart';
+export 'features/workspace_views/models/workspace_view_save_request.dart';
 export 'features/workspaces/models/accept_workspace_invite_request.dart';
 export 'features/workspaces/models/cloud_workspace.dart';
 export 'features/workspaces/models/cloud_workspace_capabilities.dart';
@@ -5131,6 +5143,83 @@ class Protocol extends _is.DatabaseSerializationManager {
       ],
       managed: true,
     ),
+    _isp.TableDefinition(
+      name: 'workspace_view',
+      dartName: 'WorkspaceView',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'stableId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'data',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'revision',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'history',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'workspace_view_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'workspace_view_stable_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'stableId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     ..._iacs.Protocol.targetTableDefinitions,
     ..._iais.Protocol.targetTableDefinitions,
     ..._isp.Protocol.targetTableDefinitions,
@@ -5632,6 +5721,18 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _ioqbiy3d.WorkspaceSecretScope) {
       return _ioqbiy3d.WorkspaceSecretScope.fromJson(data) as T;
+    }
+    if (t == _i00jdb9n.WorkspaceViewMove) {
+      return _i00jdb9n.WorkspaceViewMove.fromJson(data) as T;
+    }
+    if (t == _i97j1as2.WorkspaceView) {
+      return _i97j1as2.WorkspaceView.fromJson(data) as T;
+    }
+    if (t == _ihx1e06e.WorkspaceViewListRequest) {
+      return _ihx1e06e.WorkspaceViewListRequest.fromJson(data) as T;
+    }
+    if (t == _io73c0ad.WorkspaceViewSaveRequest) {
+      return _io73c0ad.WorkspaceViewSaveRequest.fromJson(data) as T;
     }
     if (t == _ib7b2bmq.AcceptWorkspaceInviteRequest) {
       return _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data) as T;
@@ -6570,6 +6671,26 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i00jdb9n.WorkspaceViewMove?>()) {
+      return (data != null ? _i00jdb9n.WorkspaceViewMove.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_i97j1as2.WorkspaceView?>()) {
+      return (data != null ? _i97j1as2.WorkspaceView.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ihx1e06e.WorkspaceViewListRequest?>()) {
+      return (data != null
+              ? _ihx1e06e.WorkspaceViewListRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_io73c0ad.WorkspaceViewSaveRequest?>()) {
+      return (data != null
+              ? _io73c0ad.WorkspaceViewSaveRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_ib7b2bmq.AcceptWorkspaceInviteRequest?>()) {
       return (data != null
               ? _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data)
@@ -6804,6 +6925,20 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_i00jdb9n.WorkspaceViewMove>) {
+      return (data as List)
+              .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+              .toList()
+          as T;
+    }
+    if (t == _is.getType<List<_i00jdb9n.WorkspaceViewMove>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+                    .toList()
+              : null)
+          as T;
+    }
     if (t == List<_iqzfyfs9.WorkspaceResource>) {
       return (data as List)
               .map((e) => deserialize<_iqzfyfs9.WorkspaceResource>(e))
@@ -6905,6 +7040,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == List<_i8gs5y5r.SkillResourceView>) {
       return (data as List)
               .map((e) => deserialize<_i8gs5y5r.SkillResourceView>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i7rt6swg.WorkspaceView>) {
+      return (data as List)
+              .map((e) => deserialize<_i7rt6swg.WorkspaceView>(e))
               .toList()
           as T;
     }
@@ -7126,6 +7267,10 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iyjw9v2c.WorkspaceSecret => 'WorkspaceSecret',
       _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
       _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _i00jdb9n.WorkspaceViewMove => 'WorkspaceViewMove',
+      _i97j1as2.WorkspaceView => 'WorkspaceView',
+      _ihx1e06e.WorkspaceViewListRequest => 'WorkspaceViewListRequest',
+      _io73c0ad.WorkspaceViewSaveRequest => 'WorkspaceViewSaveRequest',
       _ib7b2bmq.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
       _iyfjt29r.CloudWorkspace => 'CloudWorkspace',
       _i1uzipdf.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
@@ -7485,6 +7630,14 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkspaceSecretKind';
       case _ioqbiy3d.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
+      case _i00jdb9n.WorkspaceViewMove():
+        return 'WorkspaceViewMove';
+      case _i97j1as2.WorkspaceView():
+        return 'WorkspaceView';
+      case _ihx1e06e.WorkspaceViewListRequest():
+        return 'WorkspaceViewListRequest';
+      case _io73c0ad.WorkspaceViewSaveRequest():
+        return 'WorkspaceViewSaveRequest';
       case _ib7b2bmq.AcceptWorkspaceInviteRequest():
         return 'AcceptWorkspaceInviteRequest';
       case _iyfjt29r.CloudWorkspace():
@@ -8078,6 +8231,18 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'WorkspaceSecretScope') {
       return deserialize<_ioqbiy3d.WorkspaceSecretScope>(data['data']);
     }
+    if (dataClassName == 'WorkspaceViewMove') {
+      return deserialize<_i00jdb9n.WorkspaceViewMove>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceView') {
+      return deserialize<_i97j1as2.WorkspaceView>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewListRequest') {
+      return deserialize<_ihx1e06e.WorkspaceViewListRequest>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewSaveRequest') {
+      return deserialize<_io73c0ad.WorkspaceViewSaveRequest>(data['data']);
+    }
     if (dataClassName == 'AcceptWorkspaceInviteRequest') {
       return deserialize<_ib7b2bmq.AcceptWorkspaceInviteRequest>(data['data']);
     }
@@ -8274,6 +8439,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _iqzfyfs9.WorkspaceResource.t;
       case _iyjw9v2c.WorkspaceSecret:
         return _iyjw9v2c.WorkspaceSecret.t;
+      case _i97j1as2.WorkspaceView:
+        return _i97j1as2.WorkspaceView.t;
       case _iyfjt29r.CloudWorkspace:
         return _iyfjt29r.CloudWorkspace.t;
       case _ifp2sq2r.WorkspaceAuditRecord:

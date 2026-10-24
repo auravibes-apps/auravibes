@@ -1996,7 +1996,7 @@
     "settings": "Ajustes de tabla",
     "search": "Buscar registros",
     "query_controls": "Filtros, orden y columnas",
-    "filter_value": "Valor del filtro",
+    "filter_value": "Valor igual a",
     "all_columns": "Sin filtro",
     "ascending": "Ascendente",
     "descending": "Descendente",
@@ -2005,7 +2005,7 @@
     "select": "Seleccionar elementos",
     "done": "Listo",
     "selected": "Seleccionados: {}",
-    "query_type_unavailable": "El orden y los filtros no están disponibles para registros vinculados, adjuntos y valores de selección múltiple.",
+    "query_type_unavailable": "El orden y los filtros no están disponibles para valores complejos y marcas de tiempo.",
     "location_recovered": "Esta ubicación ya no está disponible. Se volvió al Directorio.",
     "type_date_only": "Fecha",
     "type_timestamp": "Fecha y hora",
@@ -2061,5 +2061,23 @@
     "filter_apply": "Aplicar filtro",
     "filter_clear": "Quitar filtro",
     "filter_invalid_value": "Introduce un valor válido para este campo."
+  },
+  "workspace_views": {
+    "title": "Vista",
+    "create": "Crear vista",
+    "name": "Nombre de la vista",
+    "bindings": "Origen y campos",
+    "repair": "Algunos campos no están disponibles o no son compatibles. Edita la vista para corregirlos.",
+    "edit": "Editar vista",
+    "history": "Historial de revisiones",
+    "restore": "Restaurar como nueva revisión",
+    "empty": "Aún no hay registros",
+    "display_only": "Abrir esta vista no comparte sus datos con la IA.",
+    "definition": "Definición avanzada del diseño",
+    "unavailable": "No disponible",
+    "limit": "Se muestran los primeros 100 registros.",
+    "save": "Guardar vista",
+    "no_tables": "No hay tablas en esta carpeta. Explora otra carpeta o crea una tabla en Directorio.",
+    "no_views": "No hay vistas guardadas disponibles."
   }
 }

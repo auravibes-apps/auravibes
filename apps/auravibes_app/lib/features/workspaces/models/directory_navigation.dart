@@ -28,3 +28,6 @@ class const DirectoryNavigation({
         failure: failure,
       );
 }
+
+/// Identifies an opened saved View without confusing its ID with a table ID.
+class const DirectoryViewLocation(final String id);

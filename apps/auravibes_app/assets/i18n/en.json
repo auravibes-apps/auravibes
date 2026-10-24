@@ -1996,7 +1996,7 @@
     "settings": "Table settings",
     "search": "Search records",
     "query_controls": "Filter, sort and columns",
-    "filter_value": "Filter value",
+    "filter_value": "Value equals",
     "all_columns": "No filter",
     "ascending": "Ascending",
     "descending": "Descending",
@@ -2005,7 +2005,7 @@
     "select": "Select items",
     "done": "Done",
     "selected": "Selected: {}",
-    "query_type_unavailable": "Sorting and filtering are unavailable for linked records, attachments and multiple-choice values.",
+    "query_type_unavailable": "Sorting and filtering are unavailable for complex values and timestamps.",
     "location_recovered": "This location is no longer available. Returned to Directory.",
     "type_date_only": "Date",
     "type_timestamp": "Date and time",
@@ -2061,5 +2061,23 @@
     "filter_apply": "Apply filter",
     "filter_clear": "Clear filter",
     "filter_invalid_value": "Enter a valid value for this field."
+  },
+  "workspace_views": {
+    "title": "View",
+    "create": "Create view",
+    "name": "View name",
+    "bindings": "Source and fields",
+    "repair": "Some fields are unavailable or incompatible. Edit the view to repair its bindings.",
+    "edit": "Edit view",
+    "history": "Revision history",
+    "restore": "Restore as new revision",
+    "empty": "No records yet",
+    "display_only": "Opening this view does not share its data with AI.",
+    "definition": "Advanced layout definition",
+    "unavailable": "Unavailable",
+    "limit": "Showing the first 100 records.",
+    "save": "Save view",
+    "no_tables": "No tables in this folder. Browse another folder or create a table in Directory.",
+    "no_views": "No saved views are available."
   }
 }

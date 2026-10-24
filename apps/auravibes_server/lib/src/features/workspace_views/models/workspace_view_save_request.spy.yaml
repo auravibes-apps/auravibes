@@ -1,0 +1,7 @@
+class: WorkspaceViewSaveRequest
+fields:
+  workspaceId: int
+  requestId: String
+  viewId: String
+  expectedRevision: int
+  definition: String
