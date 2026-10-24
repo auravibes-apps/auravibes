@@ -410,7 +410,7 @@ void main() {
                 .having(
                   (failure) => failure.responseRaw,
                   'responseRaw',
-                  contains('Connector tool failed'),
+                  contains('Connector command failed'),
                 )
                 .having(
                   (failure) => failure.responseRaw,
