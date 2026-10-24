@@ -24,6 +24,13 @@ abstract final class WorkspaceTableSchemaIdentity {
     values['timeZone'] ??= 'UTC';
     if (values['defaultValue'] == null) values.remove('defaultValue');
 
+    return _referenceDefaults(values);
+  }
+
+  static Map<String, Object?> _referenceDefaults(Map<String, Object?> values) {
+    values['referenceMultiple'] ??= false;
+    if (values['targetTableId'] == null) values.remove('targetTableId');
+
     return values;
   }
 }

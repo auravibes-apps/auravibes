@@ -937,6 +937,7 @@ void main() {
           >[
             (type: .number, value: 0, options: []),
             (type: .checkbox, value: false, options: []),
+            (type: .reference, value: first.id, options: []),
             (type: .singleSelect, value: 'A', options: ['A', 'B']),
             (type: .multiSelect, value: ['A', 'B'], options: ['A', 'B']),
             (type: .url, value: 'https://example.com', options: []),
@@ -960,6 +961,7 @@ void main() {
             name: example.type.name,
             type: example.type,
             options: example.options,
+            targetTableId: example.type == .reference ? typed.id : null,
           ),
         );
         typedValues[typed.columns.last.id] = example.value;

@@ -307,6 +307,50 @@ void main() {
           )).single.resourceId,
           'person',
         );
+        final legacyMetadata = schema('Renamed people');
+        legacyMetadata['columns'] = [
+          for (final column in legacyMetadata['columns'] as List)
+            <String, Object?>{
+              ...(column as Map).cast<String, Object?>(),
+              'targetTableId': null,
+              'referenceMultiple': false,
+            },
+        ];
+        final renamedLegacy = await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'target',
+            expectedRevision: 3,
+            data: jsonEncode(legacyMetadata),
+            fieldMask: const [],
+          ),
+        ]);
+        expect(_data(renamedLegacy.resources.single)['schemaRevision'], 1);
+        expect(_data(renamedLegacy.resources.single)['name'], 'Renamed people');
+        final capitalAccent = String.fromCharCode(0x00c9);
+        final lowerAccent = String.fromCharCode(0x00e9);
+        await patch([
+          _create(.tableRecord, 'accent-person', {
+            'tableId': 'target',
+            'schemaRevision': 1,
+            'values': {'label': '${capitalAccent}va'},
+          }),
+        ]);
+        for (final search in [capitalAccent, lowerAccent]) {
+          final matches = await endpoints.workspaceReference.tableTargets(
+            member,
+            WorkspaceReferenceTableRequest(
+              workspaceId: wid,
+              tableId: 'target',
+              search: search,
+            ),
+          );
+          expect(
+            matches.map((row) => row.resourceId),
+            search == capitalAccent ? ['accent-person'] : isEmpty,
+          );
+        }
         await patch([
           _create(
             .table,

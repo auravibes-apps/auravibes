@@ -301,15 +301,25 @@ class const _BrowserToolbar(
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      IconButton(
-        onPressed: _back,
-        tooltip: LocaleKeys.workspace_items_title.tr(),
-        icon: const Icon(Icons.arrow_back),
-      ),
+      _TableBackButton(browser, settings),
       Expanded(child: Text(browser.table.name)),
       if (browser.table.canEditRecords) _NewRecordButton(browser, settings),
       if (browser.table.canManage) _SettingsButton(settings),
     ],
+  );
+}
+
+class const _TableBackButton(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> settings,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: _back,
+    identifier: 'workspace_table_back',
+    semanticLabel: LocaleKeys.workspace_items_title.tr(),
+    tooltip: LocaleKeys.workspace_items_title.tr(),
   );
   void _back() {
     if (settings.value) {
@@ -347,6 +357,8 @@ class const _SettingsButton(final ValueNotifier<bool> settings)
         onTap: () => settings.value = !settings.value,
       ),
     ],
+    identifier: 'workspace_table_overflow',
+    tooltip: LocaleKeys.workspace_items_settings.tr(),
   );
 }
 

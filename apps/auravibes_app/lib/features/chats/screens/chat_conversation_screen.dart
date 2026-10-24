@@ -1831,19 +1831,61 @@ class const _ChatConversationBodyLayout({
       _IncompleteImportedAgentContextNotice(data: data),
       _ChatConversationControls(data: data),
       _CloudConversationStreamRecovery(conversationKey: _conversationKey),
-      _ChatConversationMessageList(
-        data: data,
-        onOpenToolResult: onOpenToolResult,
-      ),
-      if (hasStatusArea)
-        _ChatConversationStatusArea(
+      Expanded(
+        child: _ChatConversationBodyContent(
           data: data,
-          backgroundWorkStatus: backgroundWorkStatus,
-          hasOtherStatus: hasOtherStatus,
+          onOpenToolResult: onOpenToolResult,
+          statusArea: hasStatusArea
+              ? _ChatConversationStatusArea(
+                  data: data,
+                  backgroundWorkStatus: backgroundWorkStatus,
+                  hasOtherStatus: hasOtherStatus,
+                )
+              : null,
         ),
+      ),
     ],
     spacing: .none,
   );
+}
+
+class const _ChatConversationBodyContent({
+  required final _LoadedChatConversationData data,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
+  required final Widget? statusArea,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => AuraColumn(
+      children: [
+        _ChatConversationMessageList(
+          data: data,
+          onOpenToolResult: onOpenToolResult,
+        ),
+        _ScrollableConversationStatus(
+          maxHeight: constraints.maxHeight,
+          child: statusArea,
+        ),
+      ],
+      spacing: .none,
+    ),
+  );
+}
+
+class const _ScrollableConversationStatus({
+  required final double maxHeight,
+  required final Widget? child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final child = this.child;
+    if (child == null) return const SizedBox.shrink();
+
+    return ConstrainedBox(
+      constraints: .new(maxHeight: maxHeight),
+      child: SingleChildScrollView(primary: false, child: child),
+    );
+  }
 }
 
 class const _CloudConversationStreamRecovery({
@@ -2547,14 +2589,16 @@ class const _ChatControlsAlignment({
   required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => Wrap(
+    spacing: context.auraTheme.fromSpacing(.sm),
+    runSpacing: context.auraTheme.fromSpacing(.xs),
+    crossAxisAlignment: .center,
     children: [
-      Expanded(child: idleActivitySummary),
+      idleActivitySummary,
       ActiveSubAgentStatusWidget(
         workspaceId: workspaceId,
         conversationId: conversationId,
       ),
-      const AuraSizedBox(width: .sm),
       ConversationContextUsagePill(
         workspaceId: workspaceId,
         conversationId: conversationId,

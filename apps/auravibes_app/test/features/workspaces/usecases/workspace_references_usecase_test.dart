@@ -168,6 +168,22 @@ void main() {
       );
       expect(lastPage.records.length, 2);
       expect(lastPage.nextId, isNull);
+      final capitalAccent = String.fromCharCode(0x00c9);
+      final lowerAccent = String.fromCharCode(0x00e9);
+      final accent = await tables.createRecord(
+        table: target,
+        values: {target.labelColumnId: '${capitalAccent}va'},
+      );
+      for (final search in [capitalAccent, lowerAccent]) {
+        final matches = await references.tableTargets(
+          tableId: target.id,
+          search: search,
+        );
+        expect(
+          matches.records.map((record) => record.id),
+          search == capitalAccent ? [accent.id] : isEmpty,
+        );
+      }
       await database.close();
       database = AppDatabase(connection: NativeDatabase(file));
       final reopened = OrganizeWorkspaceTablesUsecase(

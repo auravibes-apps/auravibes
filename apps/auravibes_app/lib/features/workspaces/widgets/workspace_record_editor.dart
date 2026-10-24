@@ -169,6 +169,7 @@ class const _RecordConstraintHints({required final WorkspaceColumn column})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
     children: [
       if (column.isRequired)
         const TextLocale(LocaleKeys.workspace_items_required),

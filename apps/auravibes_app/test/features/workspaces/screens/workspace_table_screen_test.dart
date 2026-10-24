@@ -78,6 +78,18 @@ void main() {
     Finder button(String id) => find.byWidgetPredicate(
       (widget) => widget is AuraButton && widget.identifier == id,
     );
+    for (final id in [
+      'workspace_table_back',
+      'workspace_records_previous',
+      'workspace_records_next',
+    ]) {
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is AuraIconButton && widget.identifier == id,
+        ),
+        findsOneWidget,
+      );
+    }
     expect(button('workspace_label_save'), findsNothing);
     expect(button('workspace_record_create'), findsNothing);
     await tester.tap(find.text('Readable'));
@@ -231,9 +243,6 @@ void main() {
     (tester) async {
       final database = AppDatabase(connection: NativeDatabase.memory());
       addTearDown(database.close);
-      late WorkspaceTable schema;
-      late WorkspaceRecord target;
-      late OrganizeWorkspaceTablesUsecase tables;
       await tester.runAsync(() async {
         final _ = await database
             .into(database.workspaces)
@@ -244,20 +253,20 @@ void main() {
                 type: .local,
               ),
             );
-        tables = OrganizeWorkspaceTablesUsecase(
+        final tables = OrganizeWorkspaceTablesUsecase(
           LocalWorkspaceTableRepository(database, 'one'),
         );
         final table = await tables.create(name: 'Targets', labelName: 'Title');
-        schema = await tables.saveColumn(
+        final schema = await tables.saveColumn(
           table: table,
-          column: WorkspaceColumn(
+          column: .new(
             id: '',
             name: 'Related',
             type: .reference,
             targetTableId: table.id,
           ),
         );
-        target = await tables.createRecord(
+        final target = await tables.createRecord(
           table: schema,
           values: {schema.labelColumnId: 'Old target'},
         );
@@ -270,12 +279,6 @@ void main() {
         );
         await tester.pumpWidget(
           TestableApp(
-            workspaceId: 'one',
-            overrides: [
-              appDatabaseProvider.overrideWithValue(database),
-              workspaceTableUsecaseProvider('one')
-                  .overrideWith((ref) async => tables),
-            ],
             child: Column(
               children: [
                 Expanded(
@@ -296,6 +299,12 @@ void main() {
                 ),
               ],
             ),
+            overrides: [
+              appDatabaseProvider.overrideWithValue(database),
+              workspaceTableUsecaseProvider('one')
+                  .overrideWith((ref) async => tables),
+            ],
+            workspaceId: 'one',
           ),
         );
       });
