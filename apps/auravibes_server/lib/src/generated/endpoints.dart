@@ -142,6 +142,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/w
     as _iv6a6cze;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_target_request.dart'
     as _if6l00dz;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_trash_request.dart'
+    as _ip7efsct;
 import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_list_request.dart'
     as _izm33ufy;
 import 'package:auravibes_server/src/generated/features/workspace_views/models/workspace_view_save_request.dart'
@@ -195,11 +197,13 @@ import '../features/model_connections/model_connection_endpoint.dart'
 import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
+import '../features/workspace_state/workspace_csv_endpoint.dart' as _iml0si8c;
 import '../features/workspace_state/workspace_reference_endpoint.dart'
     as _it87m04z;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
     as _i2j4mlvu;
 import '../features/workspace_state/workspace_state_endpoint.dart' as _iv99006q;
+import '../features/workspace_state/workspace_trash_endpoint.dart' as _i6eal2kg;
 import '../features/workspace_views/workspace_view_endpoint.dart' as _i1itox65;
 import '../features/workspaces/cloud_workspace_endpoint.dart' as _ij5poshv;
 
@@ -279,6 +283,12 @@ class Endpoints extends _is.EndpointDispatch {
           'workspaceStream',
           null,
         ),
+      'workspaceCsv': _iml0si8c.WorkspaceCsvEndpoint()
+        ..initialize(
+          server,
+          'workspaceCsv',
+          null,
+        ),
       'workspaceReference': _it87m04z.WorkspaceReferenceEndpoint()
         ..initialize(
           server,
@@ -295,6 +305,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceState',
+          null,
+        ),
+      'workspaceTrash': _i6eal2kg.WorkspaceTrashEndpoint()
+        ..initialize(
+          server,
+          'workspaceTrash',
           null,
         ),
       'workspaceView': _i1itox65.WorkspaceViewEndpoint()
@@ -1863,6 +1879,32 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
+    connectors['workspaceCsv'] = _is.EndpointConnector(
+      name: 'workspaceCsv',
+      endpoint: endpoints['workspaceCsv']!,
+      methodConnectors: {
+        'preview': _is.MethodConnector(
+          name: 'preview',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iti8d4cu.PatchWorkspaceStateRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceCsv'] as _iml0si8c.WorkspaceCsvEndpoint)
+                      .preview(
+                        session,
+                        params['request'],
+                      ),
+        ),
+      },
+    );
     connectors['workspaceReference'] = _is.EndpointConnector(
       name: 'workspaceReference',
       endpoint: endpoints['workspaceReference']!,
@@ -2099,6 +2141,141 @@ class Endpoints extends _is.EndpointDispatch {
                       .mutateCredential(
                         session,
                         params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceTrash'] = _is.EndpointConnector(
+      name: 'workspaceTrash',
+      endpoint: endpoints['workspaceTrash']!,
+      methodConnectors: {
+        'deletedReference': _is.MethodConnector(
+          name: 'deletedReference',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'tableId': _is.ParameterDescription(
+              name: 'tableId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'recordId': _is.ParameterDescription(
+              name: 'recordId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceTrash']
+                          as _i6eal2kg.WorkspaceTrashEndpoint)
+                      .deletedReference(
+                        session,
+                        params['workspaceId'],
+                        params['tableId'],
+                        params['recordId'],
+                      ),
+        ),
+        'preview': _is.MethodConnector(
+          name: 'preview',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceTrash']
+                          as _i6eal2kg.WorkspaceTrashEndpoint)
+                      .preview(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                      ),
+        ),
+        'trash': _is.MethodConnector(
+          name: 'trash',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ip7efsct.WorkspaceTrashRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceTrash']
+                          as _i6eal2kg.WorkspaceTrashEndpoint)
+                      .trash(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceTrash']
+                          as _i6eal2kg.WorkspaceTrashEndpoint)
+                      .list(
+                        session,
+                        params['workspaceId'],
+                      ),
+        ),
+        'restore': _is.MethodConnector(
+          name: 'restore',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'batchId': _is.ParameterDescription(
+              name: 'batchId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceTrash']
+                          as _i6eal2kg.WorkspaceTrashEndpoint)
+                      .restore(
+                        session,
+                        params['workspaceId'],
+                        params['batchId'],
                       ),
         ),
       },

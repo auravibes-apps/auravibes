@@ -84,6 +84,8 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceCsv:
+  - preview:
 workspaceReference:
   - targets:
   - tableTargets:
@@ -97,6 +99,12 @@ workspaceState:
   - patch:
   - duplicateAgent:
   - mutateCredential:
+workspaceTrash:
+  - deletedReference:
+  - preview:
+  - trash:
+  - list:
+  - restore:
 workspaceView:
   - list:
   - read:

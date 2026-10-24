@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -181,24 +185,48 @@ class const _Leading(final _ItemRow row) extends StatelessWidget {
   };
 }
 
-class const _Menu(final _ItemRow row) extends StatelessWidget {
+class const _Menu(final _ItemRow row) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (row.owner.selection != null || !row.item.canManage) {
       return const SizedBox.shrink();
     }
 
     return AuraPopupMenuButton(
-      items: [
-        AuraPopupMenuItem(
-          title: const TextLocale(LocaleKeys.workspace_items_edit_item),
-          onTap: row.onEdit,
-        ),
-      ],
+      items: [_edit(), const AuraPopupMenuDivider(), _trash(context, ref)],
       identifier: 'workspace_item_edit_${row.item.key.id}',
       tooltip: LocaleKeys.common_show_more.tr(),
     );
   }
+
+  AuraPopupMenuItem _edit() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_edit_item),
+    onTap: row.onEdit,
+  );
+  AuraPopupMenuItem _trash(BuildContext context, WidgetRef ref) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_trash_action),
+        onTap: () => unawaited(_delete(context, ref)),
+        variant: .error,
+        identifier: 'workspace_item_trash_${row.item.key.id}',
+      );
+  Future<bool> _delete(BuildContext context, WidgetRef ref) =>
+      WorkspaceTrashActions.trash(
+        context,
+        ref,
+        row.owner.workspaceId,
+        _trashTarget(row.item),
+      );
 }
 
 int _compare(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
+
+WorkspaceTrashTarget _trashTarget(WorkspaceDirectoryMoveItem item) => .new(
+  kind: switch (item.key.kind) {
+    .folder => .folder,
+    .table => .table,
+    .view => .view,
+  },
+  id: item.key.id,
+  revision: item.revision,
+);
