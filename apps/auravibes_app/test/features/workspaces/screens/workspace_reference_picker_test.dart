@@ -19,8 +19,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
-  testWidgets('picker pages and searches, retains selection '
-      'and hides unauthorized creation', (tester) async {
+  testWidgets('picker searches, pages and retains authorized selections', (
+    tester,
+  ) async {
     final repository = _References();
     List<String>? selected;
     await tester.pumpWidget(

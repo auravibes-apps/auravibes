@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
