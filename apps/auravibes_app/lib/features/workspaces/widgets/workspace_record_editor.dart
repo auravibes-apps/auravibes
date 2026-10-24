@@ -87,6 +87,7 @@ class const _RecordForm({
       record: record,
       onTrashed: editor.onBack,
       canTrash: editor.table.canEditRecords,
+      onRestored: editor.onBack,
     ),
     _ => null,
   };
