@@ -26,13 +26,13 @@ class const WorkspaceTableGrantCleanup(
   ) async {
     final data = _withoutGrant(table, removal.userId);
     if (data == null) return;
-    await captureWorkspaceRevision(_session, table, _transaction);
+    await WorkspaceRevisionCapture(_session, _transaction).save(table);
     final updated = await WorkspaceResource.db.updateRow(
       _session,
       _updatedTable(table, data, removal.now),
       transaction: _transaction,
     );
-    await captureWorkspaceRevision(_session, updated, _transaction);
+    await WorkspaceRevisionCapture(_session, _transaction).save(updated);
   }
 }
 

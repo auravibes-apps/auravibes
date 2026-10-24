@@ -211,6 +211,10 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/r
     as _i2v5creq;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_response.dart'
     as _iwsbsne8;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_policy_request.dart'
+    as _ii3fyw7y;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_restore_request.dart'
+    as _i1gme7yv;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
     as _irm41t6a;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
@@ -2892,6 +2896,64 @@ class _WorkspaceHistoryEndpoint {
 
   final _is.SerializationManager _serializationManager;
 
+  _ida.Future<String> policy(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceHistory',
+            method: 'policy',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceHistory',
+          methodName: 'policy',
+          parameters: _ist.testObjectToJson({'workspaceId': workspaceId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> configurePolicy(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ii3fyw7y.WorkspaceHistoryPolicyRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceHistory',
+            method: 'configurePolicy',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceHistory',
+          methodName: 'configurePolicy',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<void> permanentlyDelete(
     _ist.TestSessionBuilder sessionBuilder,
     int workspaceId,
@@ -2960,10 +3022,7 @@ class _WorkspaceHistoryEndpoint {
 
   _ida.Future<void> restore(
     _ist.TestSessionBuilder sessionBuilder,
-    int workspaceId,
-    String targetJson,
-    int revision,
-    String requestId,
+    _i1gme7yv.WorkspaceHistoryRestoreRequest request,
   ) async {
     return _ist.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2976,12 +3035,7 @@ class _WorkspaceHistoryEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'workspaceHistory',
           methodName: 'restore',
-          parameters: _ist.testObjectToJson({
-            'workspaceId': workspaceId,
-            'targetJson': targetJson,
-            'revision': revision,
-            'requestId': requestId,
-          }),
+          parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
         var _localReturnValue = await (_localCallContext.method.call(

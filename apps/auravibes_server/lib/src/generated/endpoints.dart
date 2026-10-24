@@ -136,6 +136,10 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/p
     as _ixodmwhe;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
     as _i2v5creq;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_policy_request.dart'
+    as _ii3fyw7y;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_history_restore_request.dart'
+    as _i1gme7yv;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
     as _irm41t6a;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
@@ -1917,6 +1921,48 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceHistory',
       endpoint: endpoints['workspaceHistory']!,
       methodConnectors: {
+        'policy': _is.MethodConnector(
+          name: 'policy',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .policy(
+                        session,
+                        params['workspaceId'],
+                      ),
+        ),
+        'configurePolicy': _is.MethodConnector(
+          name: 'configurePolicy',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ii3fyw7y.WorkspaceHistoryPolicyRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceHistory']
+                          as _iro98jgh.WorkspaceHistoryEndpoint)
+                      .configurePolicy(
+                        session,
+                        params['request'],
+                      ),
+        ),
         'permanentlyDelete': _is.MethodConnector(
           name: 'permanentlyDelete',
           params: {
@@ -1974,24 +2020,9 @@ class Endpoints extends _is.EndpointDispatch {
         'restore': _is.MethodConnector(
           name: 'restore',
           params: {
-            'workspaceId': _is.ParameterDescription(
-              name: 'workspaceId',
-              type: _is.getType<int>(),
-              nullable: false,
-            ),
-            'targetJson': _is.ParameterDescription(
-              name: 'targetJson',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'revision': _is.ParameterDescription(
-              name: 'revision',
-              type: _is.getType<int>(),
-              nullable: false,
-            ),
-            'requestId': _is.ParameterDescription(
-              name: 'requestId',
-              type: _is.getType<String>(),
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i1gme7yv.WorkspaceHistoryRestoreRequest>(),
               nullable: false,
             ),
           },
@@ -2004,10 +2035,7 @@ class Endpoints extends _is.EndpointDispatch {
                           as _iro98jgh.WorkspaceHistoryEndpoint)
                       .restore(
                         session,
-                        params['workspaceId'],
-                        params['targetJson'],
-                        params['revision'],
-                        params['requestId'],
+                        params['request'],
                       ),
         ),
       },

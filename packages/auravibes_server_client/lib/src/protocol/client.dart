@@ -208,6 +208,10 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_history_policy_request.dart'
+    as _if7x0ut8;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_history_restore_request.dart'
+    as _ih19x2zu;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
     as _iic7z6j2;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_table_request.dart'
@@ -1121,6 +1125,21 @@ class EndpointWorkspaceHistory extends _isc.EndpointRef {
   @override
   String get name => 'workspaceHistory';
 
+  _ida.Future<String> policy(int workspaceId) =>
+      caller.callServerEndpoint<String>(
+        'workspaceHistory',
+        'policy',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<void> configurePolicy(
+    _if7x0ut8.WorkspaceHistoryPolicyRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'configurePolicy',
+    {'request': request},
+  );
+
   _ida.Future<void> permanentlyDelete(
     int workspaceId,
     String targetJson,
@@ -1145,21 +1164,12 @@ class EndpointWorkspaceHistory extends _isc.EndpointRef {
     },
   );
 
-  _ida.Future<void> restore(
-    int workspaceId,
-    String targetJson,
-    int revision,
-    String requestId,
-  ) => caller.callServerEndpoint<void>(
-    'workspaceHistory',
-    'restore',
-    {
-      'workspaceId': workspaceId,
-      'targetJson': targetJson,
-      'revision': revision,
-      'requestId': requestId,
-    },
-  );
+  _ida.Future<void> restore(_ih19x2zu.WorkspaceHistoryRestoreRequest request) =>
+      caller.callServerEndpoint<void>(
+        'workspaceHistory',
+        'restore',
+        {'request': request},
+      );
 }
 
 /// {@category Endpoint}

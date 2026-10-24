@@ -1,3 +1,4 @@
+import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
 import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
@@ -114,6 +115,7 @@ part 'app_database.g.dart';
     WorkspaceViews,
     WorkspaceTrashBatches,
     WorkspaceRevisions,
+    WorkspaceHistoryPolicies,
     WorkspaceRecordBatchReceipts,
   ],
   daos: [
@@ -241,7 +243,7 @@ extension on AppDatabase {
       onUpgrade: _runUpgrades,
       beforeOpen: (_) async {
         await customStatement('PRAGMA foreign_keys = ON');
-        await installWorkspaceRevisionCapture(this);
+        await WorkspaceRevisionCapture.install(this);
       },
     );
   }
@@ -268,6 +270,7 @@ extension on AppDatabase {
     await _upgradeWorkspaceTrashSchema(m, from);
     if (from < AppDatabase._workspaceHistorySchemaVersion) {
       await m.createTable(workspaceRevisions);
+      await m.createTable(workspaceHistoryPolicies);
     }
     if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
       await m.createTable(workspaceRecordBatchReceipts);

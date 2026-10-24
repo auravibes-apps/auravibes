@@ -1,3 +1,4 @@
+import 'workspace_history_retention_validation.dart';
 import 'dart:convert';
 
 import '../../../generated/protocol.dart';
@@ -66,6 +67,9 @@ class WorkspaceResourceValidation {
       throw const FormatException();
     }
     _validateKind(kind, decoded);
+    if (kind == .workspaceSetting && resourceId == 'history-retention') {
+      WorkspaceHistoryRetentionValidation.data(decoded);
+    }
 
     return decoded;
   }

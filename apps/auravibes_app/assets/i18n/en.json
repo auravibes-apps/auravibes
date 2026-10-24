@@ -1955,12 +1955,18 @@
   "workspace_items": {
     "history": {
       "title": "Revision history",
-      "retention": "Saved revisions remain available until explicitly deleted. Automatic retention is not configured.",
+      "retention": "Automatic expiry of record and table revisions is unset. Saved revisions remain until explicitly deleted.",
       "empty": "No saved revisions are available.",
       "restore": "Restore revision",
       "restore_notice": "Restore this saved content as a new revision? Current access and data rules still apply.",
       "purge": "Delete permanently",
-      "purge_notice": "Permanently delete this trashed item, its batch contents and their saved revisions? This cannot be undone. Retained links can block deletion."
+      "purge_notice": "Permanently delete this trashed item, its batch contents and their saved revisions? This cannot be undone. Retained links can block deletion.",
+      "policy_title": "History retention",
+      "policy_hint": "Leave days empty to keep saved revisions until explicit deletion. A positive number expires older record and table revisions when history is used or data changes.",
+      "policy_days": "Days (optional)",
+      "policy_summary": "Record and table revisions expire after {} days.",
+      "policy_notice": "Older saved revisions may become unavailable immediately. Current records and tables stay available. Apply this retention policy?",
+      "policy_invalid": "Enter a positive whole number of days, or leave the field empty."
     },
     "edit_item": "Rename or move",
     "item_name": "Name",

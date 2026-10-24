@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_history_provider.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_history_panel.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_history_approval.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
@@ -20,20 +20,11 @@ class const WorkspacePermanentDeleteButton({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = WorkspaceTableActions.use(context);
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        AuraButton(
-          identifier: 'workspace_permanent_delete_${target.id}',
-          variant: .outlined,
-          disabled: action.pending,
-          isLoading: action.pending,
-          onPressed: () => unawaited(action.run(() => _delete(context, ref))),
-          child: const TextLocale(LocaleKeys.workspace_items_history_purge),
-        ),
-        if (action.error case final Object error)
-          WorkspaceItemFailure(error: error),
-      ],
+
+    return _PurgeControls(
+      action: action,
+      id: target.id,
+      onPressed: () => unawaited(action.run(() => _delete(context, ref))),
     );
   }
 
@@ -44,8 +35,40 @@ class const WorkspacePermanentDeleteButton({
     if (!context.mounted) return;
     final deleted = await usecase.permanentlyDelete(
       target,
-      approve: () => approveWorkspaceHistory(context, purge: true),
+      approve: () => WorkspaceHistoryApproval.ask(context, purge: true),
     );
     if (context.mounted && deleted) WorkspaceTrashActions.refresh(ref);
   }
+}
+
+class const _PurgeControls({
+  required final WorkspaceTableAction action,
+  required final String id,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _PurgeAction(action: action, id: id, onPressed: onPressed),
+      if (action.error case final Object error)
+        WorkspaceItemFailure(error: error),
+    ],
+  );
+}
+
+class const _PurgeAction({
+  required final WorkspaceTableAction action,
+  required final String id,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(LocaleKeys.workspace_items_history_purge),
+    variant: .outlined,
+    isLoading: action.pending,
+    disabled: action.pending,
+    identifier: 'workspace_permanent_delete_$id',
+  );
 }

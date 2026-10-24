@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'workspace_history_purge_writer.dart';
+import 'workspace_history_receipts.dart';
+import 'workspace_history_retained_reader.dart';
 import 'workspace_retained_references.dart';
 import 'workspace_trash_access.dart';
 import 'workspace_trash_context.dart';
@@ -13,166 +16,106 @@ class const WorkspacePermanentDelete(
   final int workspaceId,
   final String userId,
 ) {
-  Future<void> call(String targetJson) => session.db.transaction((
-    transaction,
-  ) async {
-    final context = await WorkspaceTrashContext.load(
-      session,
-      workspaceId,
-      userId,
-      transaction,
-    );
+  Future<void> call(String targetJson) =>
+      session.db.transaction((transaction) async {
+        final context = await WorkspaceTrashContext.load(
+          session,
+          workspaceId,
+          userId,
+          transaction,
+        );
+        await _PurgeOperation(context).run(targetJson);
+      });
+}
+
+class const _PurgeOperation(final WorkspaceTrashContext context) {
+  Future<void> run(String targetJson) async {
+    final selection = await _selection(targetJson);
+    await context.requireBatch(selection.batch, selection.rows);
+    await _validate(selection);
+    await _erase(selection);
+  }
+
+  Future<_PurgeSelection> _selection(String targetJson) async {
     final target = jsonDecode(targetJson) as Map<String, dynamic>;
     final batches = await context.store.batches();
-    final batch = batches
-        .where(
-          (row) =>
-              _same(jsonDecode(row.targetJson) as Map<String, dynamic>, target),
-        )
-        .firstOrNull;
-    if (batch == null) trashDenied();
-    final rows = await context.store.resources();
-    await context.requireBatch(batch, rows);
-    final members = trashMembers(batch);
-    final scope = {for (final item in members) '${item['kind']}:${item['id']}'};
-    final ids = {for (final item in members) item['id'] as String};
-    final retained = await _retained(rows, scope, transaction);
-    final columns = workspaceReferenceColumns(
-      retained.map((item) => item.data),
-    );
-    if (retained.any(
-      (item) =>
-          workspaceRetainedReference(item.data, ids, columns, view: item.view),
-    )) {
-      trashInvalid();
+    final batch = _findBatch(batches, target);
+
+    return _PurgeSelection(batch, await context.store.resources());
+  }
+
+  Future<void> _validate(_PurgeSelection selection) async {
+    final retained = await WorkspaceHistoryRetainedReader(context)
+        .read(selection.rows, selection.scope());
+    if (_blocked(retained, selection.ids())) trashInvalid();
+  }
+
+  Future<void> _erase(_PurgeSelection selection) async {
+    final writer = WorkspaceHistoryPurgeWriter(context.store);
+    for (final resource in selection.resources()) {
+      await writer.delete(resource);
     }
-    for (final member in members.reversed) {
-      final resource = trashMemberResource(rows, member);
-      if (resource == null || resource.deletedAt == null) trashConflict();
-      await _delete(resource, transaction);
-    }
-    await _redactReceipts(scope, transaction);
+    await _finish(selection);
+  }
+
+  Future<void> _finish(_PurgeSelection selection) async {
+    final store = context.store;
+    await WorkspaceHistoryReceipts(
+      store.session,
+      store.workspaceId,
+      store.transaction,
+    ).redact(selection.scope());
     final _ = await WorkspaceTrashBatch.db.deleteRow(
-      session,
-      batch,
-      transaction: transaction,
-    );
-  });
-
-  Future<List<({Map<String, dynamic> data, bool view})>> _retained(
-    List<WorkspaceResource> rows,
-    Set<String> scope,
-    Transaction transaction,
-  ) async {
-    final result = <({Map<String, dynamic> data, bool view})>[
-      for (final row in rows)
-        if (!scope.contains('${_kind(row.resourceKind)}:${row.resourceId}'))
-          (data: trashData(row), view: row.resourceKind == .view),
-    ];
-    final snapshots = await WorkspaceRevision.db.find(
-      session,
-      where: (row) => row.workspaceId.equals(workspaceId),
-      transaction: transaction,
-    );
-    for (final row in snapshots) {
-      if (!scope.contains('${_kind(row.resourceKind)}:${row.resourceId}')) {
-        result.add((
-          data: jsonDecode(row.data) as Map<String, dynamic>,
-          view: false,
-        ));
-      }
-    }
-    final views = await WorkspaceView.db.find(
-      session,
-      where: (row) => row.workspaceId.equals(workspaceId),
-      transaction: transaction,
-    );
-    for (final view in views) {
-      if (scope.contains('view:${view.stableId}')) continue;
-      for (final data
-          in (jsonDecode(view.history) as List).cast<Map<String, dynamic>>()) {
-        result.add((data: data, view: true));
-      }
-    }
-    return result;
-  }
-
-  Future<void> _redactReceipts(
-    Set<String> scope,
-    Transaction transaction,
-  ) async {
-    final receipts = await WorkspaceMutationReceipt.db.find(
-      session,
-      where: (row) => row.workspaceId.equals(workspaceId),
-      transaction: transaction,
-    );
-    for (final receipt in receipts) {
-      final response = jsonDecode(receipt.responseJson) as Map<String, dynamic>;
-      final resources = response['resources'];
-      if (resources is! List) continue;
-      response['resources'] = resources.where((item) {
-        final row = item as Map<String, dynamic>;
-        final kind = row['resourceKind'] == 'tableRecord'
-            ? 'record'
-            : row['resourceKind'];
-        return !scope.contains('$kind:${row['resourceId']}');
-      }).toList();
-      final _ = await WorkspaceMutationReceipt.db.updateRow(
-        session,
-        receipt.copyWith(responseJson: jsonEncode(response)),
-        transaction: transaction,
-      );
-    }
-  }
-
-  Future<void> _delete(WorkspaceResource row, Transaction transaction) async {
-    if (row.resourceKind == .view) {
-      final view = await WorkspaceView.db.findById(
-        session,
-        row.id!,
-        transaction: transaction,
-      );
-      if (view == null) trashConflict();
-      final _ = await WorkspaceView.db.deleteRow(
-        session,
-        view,
-        transaction: transaction,
-      );
-    } else {
-      final _ = await WorkspaceResource.db.deleteRow(
-        session,
-        row,
-        transaction: transaction,
-      );
-    }
-    final _ = await WorkspaceRevision.db.deleteWhere(
-      session,
-      where: (item) =>
-          item.workspaceId.equals(workspaceId) &
-          item.resourceKind.equals(row.resourceKind) &
-          item.resourceId.equals(row.resourceId),
-      transaction: transaction,
-    );
-    final _ = await WorkspaceRevision.db.insertRow(
-      session,
-      WorkspaceRevision(
-        workspaceId: workspaceId,
-        resourceKind: row.resourceKind,
-        resourceId: row.resourceId,
-        revision: 0,
-        data: '{}',
-        capturedAt: DateTime.now().toUtc(),
-      ),
-      transaction: transaction,
+      store.session,
+      selection.batch,
+      transaction: store.transaction,
     );
   }
 }
 
-String _kind(WorkspaceResourceKind kind) =>
-    kind == .tableRecord ? 'record' : kind.name;
+class const _PurgeSelection(
+  final WorkspaceTrashBatch batch,
+  final List<WorkspaceResource> rows,
+) {
+  List<Map<String, dynamic>> members() => trashMembers(batch);
+  Set<String> scope() => {
+    for (final item in members()) '${_kind(item)}:${item['id']}',
+  };
+  Set<String> ids() => members().map((item) => item['id'] as String).toSet();
+  Iterable<WorkspaceResource> resources() => members().reversed.map(
+    (member) => trashMemberResource(rows, member) ?? trashConflict(),
+  );
+}
+
+Map<String, dynamic> _decode(String data) =>
+    jsonDecode(data) as Map<String, dynamic>;
+String _kind(Map<String, dynamic> member) =>
+    member['kind'] == 'tableRecord' ? 'record' : member['kind'] as String;
 bool _same(Map<String, dynamic> left, Map<String, dynamic> right) => [
   'kind',
   'id',
   'revision',
   'tableId',
 ].every((key) => left[key] == right[key]);
+bool _blocked(List<HistoryRetainedData> retained, Set<String> ids) {
+  final columns = WorkspaceRetainedReferences.columns(
+    retained.map((item) => item.data),
+  );
+
+  return retained.any(
+    (row) => WorkspaceRetainedReferences.references(
+      row.data,
+      ids,
+      (columns: columns, view: row.view),
+    ),
+  );
+}
+
+WorkspaceTrashBatch _findBatch(
+  List<WorkspaceTrashBatch> batches,
+  Map<String, dynamic> target,
+) =>
+    batches
+        .where((row) => _same(_decode(row.targetJson), target))
+        .firstOrNull ??
+    trashDenied();

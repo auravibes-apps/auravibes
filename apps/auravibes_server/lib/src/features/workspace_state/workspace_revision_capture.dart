@@ -3,81 +3,115 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'workspace_history_retention.dart';
 
-Future<void> captureWorkspaceRevision(
-  Session session,
-  WorkspaceResource resource,
-  Transaction transaction,
-) async {
-  if (resource.resourceKind != .table &&
-      resource.resourceKind != .tableRecord) {
-    return;
+class const WorkspaceRevisionCapture(
+  final Session session,
+  final Transaction transaction,
+) {
+  Future<void> save(WorkspaceResource resource) async {
+    if (!_historical(resource.resourceKind)) return;
+    final key = _RevisionKey.resource(resource);
+    if (await _existing(key) != null) return;
+    final data = await _data(resource);
+    final _ = await WorkspaceRevision.db.insertRow(
+      session,
+      _snapshot(resource, data),
+      transaction: transaction,
+    );
+    await WorkspaceHistoryRetention(session, resource.workspaceId, transaction).prune();
   }
-  final existing = await WorkspaceRevision.db.findFirstRow(
-    session,
-    where: (row) =>
-        row.workspaceId.equals(resource.workspaceId) &
-        row.resourceKind.equals(resource.resourceKind) &
-        row.resourceId.equals(resource.resourceId) &
-        row.revision.equals(resource.revision),
-    transaction: transaction,
+
+  Future<void> requireView(WorkspaceViewSaveRequest request) async {
+    final key = _RevisionKey(request.workspaceId, .view, request.viewId, 0);
+    if (await _existing(key) != null) {
+      throw CloudWorkspaceException(code: .conflict);
+    }
+  }
+
+  Future<void> requirePatch(PatchWorkspaceStateRequest request) async {
+    for (final operation in request.operations) {
+      final key = _RevisionKey(
+        request.workspaceId,
+        operation.resourceKind,
+        operation.resourceId,
+        0,
+      );
+      if (await _existing(key) != null) {
+        throw CloudWorkspaceException(code: .conflict);
+      }
+    }
+  }
+
+  Future<WorkspaceRevision?> _existing(_RevisionKey key) => WorkspaceRevision.db
+      .findFirstRow(session, where: key.matches, transaction: transaction);
+
+  Future<String> _data(WorkspaceResource resource) async {
+    if (resource.resourceKind != .tableRecord) return resource.data;
+    final data = jsonDecode(resource.data) as Map<String, dynamic>;
+    final table = await _table(resource.workspaceId, data['tableId'] as String);
+    data['historyReferenceTargets'] = _referenceTargets(table);
+
+    return jsonEncode(data);
+  }
+
+  Future<WorkspaceResource> _table(int workspaceId, String id) async {
+    final table = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (row) => _tableMatches(row, workspaceId, id),
+      transaction: transaction,
+    );
+
+    return table ?? (throw CloudWorkspaceException(code: .validationFailed));
+  }
+}
+
+class const _RevisionKey(
+  final int workspaceId,
+  final WorkspaceResourceKind kind,
+  final String id,
+  final int revision,
+) {
+  factory resource(WorkspaceResource resource) => .new(
+    resource.workspaceId,
+    resource.resourceKind,
+    resource.resourceId,
+    resource.revision,
   );
-  if (existing != null) return;
-  final _ = await WorkspaceRevision.db.insertRow(
-    session,
+  Expression matches(WorkspaceRevisionTable row) =>
+      row.workspaceId.equals(workspaceId) &
+      row.resourceKind.equals(kind) &
+      row.resourceId.equals(id) &
+      row.revision.equals(revision);
+}
+
+bool _historical(WorkspaceResourceKind kind) =>
+    kind == .table || kind == .tableRecord;
+WorkspaceRevision _snapshot(WorkspaceResource resource, String data) =>
     WorkspaceRevision(
       workspaceId: resource.workspaceId,
       resourceKind: resource.resourceKind,
       resourceId: resource.resourceId,
       revision: resource.revision,
-      data: await _revisionData(session, resource, transaction),
-      capturedAt: resource.updatedAt,
-    ),
-    transaction: transaction,
-  );
-}
-
-Future<void> requireUnpurgedWorkspaceResource(
-  Session session,
+      data: data,
+      capturedAt: DateTime.now().toUtc(),
+    );
+Expression _tableMatches(
+  WorkspaceResourceTable row,
   int workspaceId,
-  WorkspaceResourceKind kind,
-  String resourceId,
-  Transaction transaction,
-) async {
-  final marker = await WorkspaceRevision.db.findFirstRow(
-    session,
-    where: (row) =>
-        row.workspaceId.equals(workspaceId) &
-        row.resourceKind.equals(kind) &
-        row.resourceId.equals(resourceId) &
-        row.revision.equals(0),
-    transaction: transaction,
-  );
-  if (marker != null) throw CloudWorkspaceException(code: .conflict);
+  String id,
+) =>
+    row.workspaceId.equals(workspaceId) &
+    row.resourceKind.equals(.table) &
+    row.resourceId.equals(id);
+Map<String, Object?> _referenceTargets(WorkspaceResource table) {
+  final data = jsonDecode(table.data) as Map<String, dynamic>;
+  final columns = (data['columns'] as List).cast<Map<String, dynamic>>();
+
+  return {
+    for (final column in columns.where(_reference))
+      column['id'] as String: column['targetTableId'],
+  };
 }
 
-Future<String> _revisionData(
-  Session session,
-  WorkspaceResource resource,
-  Transaction transaction,
-) async {
-  if (resource.resourceKind != .tableRecord) return resource.data;
-  final data = jsonDecode(resource.data) as Map<String, dynamic>;
-  final table = await WorkspaceResource.db.findFirstRow(
-    session,
-    where: (row) =>
-        row.workspaceId.equals(resource.workspaceId) &
-        row.resourceKind.equals(.table) &
-        row.resourceId.equals(data['tableId'] as String),
-    transaction: transaction,
-  );
-  if (table == null) throw CloudWorkspaceException(code: .validationFailed);
-  final schema = jsonDecode(table.data) as Map<String, dynamic>;
-  data['historyReferenceTargets'] = {
-    for (final column
-        in (schema['columns'] as List).cast<Map<String, dynamic>>())
-      if (column['type'] == 'reference')
-        column['id'] as String: column['targetTableId'],
-  };
-  return jsonEncode(data);
-}
+bool _reference(Map<String, dynamic> column) => column['type'] == 'reference';

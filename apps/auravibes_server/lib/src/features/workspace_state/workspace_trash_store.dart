@@ -84,14 +84,15 @@ class const WorkspaceTrashStore(
       resource.id!,
       transaction: transaction,
     );
-    if (previous != null)
-      await captureWorkspaceRevision(session, previous, transaction);
+    if (previous != null) {
+      await WorkspaceRevisionCapture(session, transaction).save(previous);
+    }
     final _ = await WorkspaceResource.db.updateRow(
       session,
       resource,
       transaction: transaction,
     );
-    await captureWorkspaceRevision(session, resource, transaction);
+    await WorkspaceRevisionCapture(session, transaction).save(resource);
   }
 
   Future<void> _event(

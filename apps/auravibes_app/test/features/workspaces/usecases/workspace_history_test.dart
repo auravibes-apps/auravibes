@@ -1,3 +1,7 @@
+import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -367,6 +371,34 @@ void main() {
     await fixture.history.permanentlyDelete(own!.target);
     expect((await trash.list()).map((batch) => batch.target.id), [target.id]);
   });
+  test('restore rejects newly required values without rewriting current content', () async {
+    final fixture = await _fixture();
+    var table = await fixture.tables.create(name: 'Data', labelName: 'Name');
+    table = await fixture.tables.saveColumn(table: table, column: .new(id: '', name: 'Extra'));
+    final extra = table.columns.last;
+    final original = await fixture.tables.createRecord(table: table, values: {table.labelColumnId: 'Original'});
+    final current = await fixture.tables.updateRecord(table: table, record: original, values: {table.labelColumnId: 'Current', extra.id: 'Required now'});
+    table = await fixture.tables.saveColumn(table: table, column: WorkspaceColumn.fromJson({...extra.toJson(), 'required': true}));
+    await expectLater(fixture.history.restore(.new(kind: .record, id: original.id, tableId: table.id, revision: current.revision), 1), throwsA(isA<WorkspaceTableException>()));
+    expect((await fixture.tables.record(table.id, original.id)).values, {table.labelColumnId: 'Current', extra.id: 'Required now'});
+    expect((await fixture.history.history(.new(kind: .record, id: original.id, tableId: table.id, revision: current.revision))).length, 2);
+  });
+
+  test('purging a View removes its own history and prevents receipt replay or identity reuse', () async {
+    final fixture = await _fixture();
+    final views = ManageWorkspaceViewsUsecase(LocalWorkspaceViewRepository(fixture.database, 'local'), fixture.tables, .new(LocalWorkspaceRecordQueryRepository(fixture.database, 'local')), .new(LocalWorkspaceReferenceRepository(fixture.database, 'local')));
+    final table = await fixture.tables.create(name: 'Data', labelName: 'Name');
+    final original = await views.create(name: 'Overview', table: table, columnIds: [table.labelColumnId]);
+    final saved = await views.save(original, requestId: 'view-save');
+    final trash = ManageWorkspaceTrashUsecase(LocalWorkspaceTrashRepository(fixture.database, 'local'));
+    final batch = await trash.apply(.new(kind: .view, id: saved.id, revision: saved.revision), approve: (_) async => true);
+    await fixture.history.permanentlyDelete(batch!.target);
+    expect(await views.list(allFolders: true), isEmpty);
+    await expectLater(views.save(original, requestId: 'view-save'), throwsA(isA<WorkspaceTableException>()));
+    await expectLater(views.save(original.withRevision(0), requestId: 'view-recreate'), throwsA(isA<WorkspaceTableException>()));
+    expect(await trash.list(), isEmpty);
+  });
+
 }
 
 Future<

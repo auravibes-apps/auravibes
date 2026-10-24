@@ -19113,6 +19113,285 @@ class WorkspaceRevisionsCompanion
   }
 }
 
+class $WorkspaceHistoryPoliciesTable extends WorkspaceHistoryPolicies
+    with TableInfo<$WorkspaceHistoryPoliciesTable, WorkspaceHistoryPolicyRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceHistoryPoliciesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _daysMeta = const VerificationMeta('days');
+  @override
+  late final GeneratedColumn<int> days = GeneratedColumn<int>(
+    'days',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [workspaceId, days, revision];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_history_policies';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceHistoryPolicyRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('days')) {
+      context.handle(
+        _daysMeta,
+        days.isAcceptableOrUnknown(data['days']!, _daysMeta),
+      );
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId};
+  @override
+  WorkspaceHistoryPolicyRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceHistoryPolicyRow(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      days: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}days'],
+      ),
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceHistoryPoliciesTable createAlias(String alias) {
+    return $WorkspaceHistoryPoliciesTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceHistoryPolicyRow extends DataClass
+    implements Insertable<WorkspaceHistoryPolicyRow> {
+  final String workspaceId;
+  final int? days;
+  final int revision;
+  const WorkspaceHistoryPolicyRow({
+    required this.workspaceId,
+    this.days,
+    required this.revision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    if (!nullToAbsent || days != null) {
+      map['days'] = Variable<int>(days);
+    }
+    map['revision'] = Variable<int>(revision);
+    return map;
+  }
+
+  WorkspaceHistoryPoliciesCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceHistoryPoliciesCompanion(
+      workspaceId: Value(workspaceId),
+      days: days == null && nullToAbsent ? const Value.absent() : Value(days),
+      revision: Value(revision),
+    );
+  }
+
+  factory WorkspaceHistoryPolicyRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceHistoryPolicyRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      days: serializer.fromJson<int?>(json['days']),
+      revision: serializer.fromJson<int>(json['revision']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'days': serializer.toJson<int?>(days),
+      'revision': serializer.toJson<int>(revision),
+    };
+  }
+
+  WorkspaceHistoryPolicyRow copyWith({
+    String? workspaceId,
+    Value<int?> days = const Value.absent(),
+    int? revision,
+  }) => WorkspaceHistoryPolicyRow(
+    workspaceId: workspaceId ?? this.workspaceId,
+    days: days.present ? days.value : this.days,
+    revision: revision ?? this.revision,
+  );
+  WorkspaceHistoryPolicyRow copyWithCompanion(
+    WorkspaceHistoryPoliciesCompanion data,
+  ) {
+    return WorkspaceHistoryPolicyRow(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      days: data.days.present ? data.days.value : this.days,
+      revision: data.revision.present ? data.revision.value : this.revision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceHistoryPolicyRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('days: $days, ')
+          ..write('revision: $revision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, days, revision);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceHistoryPolicyRow &&
+          other.workspaceId == this.workspaceId &&
+          other.days == this.days &&
+          other.revision == this.revision);
+}
+
+class WorkspaceHistoryPoliciesCompanion
+    extends UpdateCompanion<WorkspaceHistoryPolicyRow> {
+  final Value<String> workspaceId;
+  final Value<int?> days;
+  final Value<int> revision;
+  final Value<int> rowid;
+  const WorkspaceHistoryPoliciesCompanion({
+    this.workspaceId = const Value.absent(),
+    this.days = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceHistoryPoliciesCompanion.insert({
+    required String workspaceId,
+    this.days = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId);
+  static Insertable<WorkspaceHistoryPolicyRow> custom({
+    Expression<String>? workspaceId,
+    Expression<int>? days,
+    Expression<int>? revision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (days != null) 'days': days,
+      if (revision != null) 'revision': revision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceHistoryPoliciesCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<int?>? days,
+    Value<int>? revision,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceHistoryPoliciesCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      days: days ?? this.days,
+      revision: revision ?? this.revision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (days.present) {
+      map['days'] = Variable<int>(days.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceHistoryPoliciesCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('days: $days, ')
+          ..write('revision: $revision, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WorkspaceRecordBatchReceiptsTable extends WorkspaceRecordBatchReceipts
     with
         TableInfo<
@@ -19456,6 +19735,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceTrashBatchesTable(this);
   late final $WorkspaceRevisionsTable workspaceRevisions =
       $WorkspaceRevisionsTable(this);
+  late final $WorkspaceHistoryPoliciesTable workspaceHistoryPolicies =
+      $WorkspaceHistoryPoliciesTable(this);
   late final $WorkspaceRecordBatchReceiptsTable workspaceRecordBatchReceipts =
       $WorkspaceRecordBatchReceiptsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
@@ -19598,6 +19879,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceViews,
     workspaceTrashBatches,
     workspaceRevisions,
+    workspaceHistoryPolicies,
     workspaceRecordBatchReceipts,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
@@ -19916,6 +20198,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('workspace_revisions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_history_policies', kind: UpdateKind.delete),
+      ],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -20308,6 +20599,31 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceRevisionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceHistoryPoliciesTable,
+    List<WorkspaceHistoryPolicyRow>
+  >
+  _workspaceHistoryPoliciesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceHistoryPolicies,
+        aliasName: 'workspaces__id__workspace_history_policies__workspace_id',
+      );
+
+  $$WorkspaceHistoryPoliciesTableProcessedTableManager
+  get workspaceHistoryPoliciesRefs {
+    final manager = $$WorkspaceHistoryPoliciesTableTableManager(
+      $_db,
+      $_db.workspaceHistoryPolicies,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceHistoryPoliciesRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -20821,6 +21137,33 @@ class $$WorkspacesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceHistoryPoliciesRefs(
+    Expression<bool> Function($$WorkspaceHistoryPoliciesTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceHistoryPoliciesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceHistoryPolicies,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceHistoryPoliciesTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceHistoryPolicies,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -21376,6 +21719,33 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> workspaceHistoryPoliciesRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceHistoryPoliciesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceHistoryPoliciesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceHistoryPolicies,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceHistoryPoliciesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceHistoryPolicies,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> workspaceRecordBatchReceiptsRefs<T extends Object>(
     Expression<T> Function(
       $$WorkspaceRecordBatchReceiptsTableAnnotationComposer a,
@@ -21437,6 +21807,7 @@ class $$WorkspacesTableTableManager
             bool workspaceViewsRefs,
             bool workspaceTrashBatchesRefs,
             bool workspaceRevisionsRefs,
+            bool workspaceHistoryPoliciesRefs,
             bool workspaceRecordBatchReceiptsRefs,
           })
         > {
@@ -21522,6 +21893,7 @@ class $$WorkspacesTableTableManager
                 workspaceViewsRefs = false,
                 workspaceTrashBatchesRefs = false,
                 workspaceRevisionsRefs = false,
+                workspaceHistoryPoliciesRefs = false,
                 workspaceRecordBatchReceiptsRefs = false,
               }) {
                 return PrefetchHooks(
@@ -21546,6 +21918,8 @@ class $$WorkspacesTableTableManager
                     if (workspaceViewsRefs) db.workspaceViews,
                     if (workspaceTrashBatchesRefs) db.workspaceTrashBatches,
                     if (workspaceRevisionsRefs) db.workspaceRevisions,
+                    if (workspaceHistoryPoliciesRefs)
+                      db.workspaceHistoryPolicies,
                     if (workspaceRecordBatchReceiptsRefs)
                       db.workspaceRecordBatchReceipts,
                   ],
@@ -21909,6 +22283,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceHistoryPoliciesRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceHistoryPolicyRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceHistoryPoliciesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceHistoryPoliciesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (workspaceRecordBatchReceiptsRefs)
                         await $_getPrefetchedData<
                           WorkspacesTable,
@@ -21968,6 +22363,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceViewsRefs,
         bool workspaceTrashBatchesRefs,
         bool workspaceRevisionsRefs,
+        bool workspaceHistoryPoliciesRefs,
         bool workspaceRecordBatchReceiptsRefs,
       })
     >;
@@ -37923,6 +38319,311 @@ typedef $$WorkspaceRevisionsTableProcessedTableManager =
       WorkspaceRevisionRow,
       PrefetchHooks Function({bool workspaceId})
     >;
+typedef $$WorkspaceHistoryPoliciesTableCreateCompanionBuilder =
+    WorkspaceHistoryPoliciesCompanion Function({
+      required String workspaceId,
+      Value<int?> days,
+      Value<int> revision,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceHistoryPoliciesTableUpdateCompanionBuilder =
+    WorkspaceHistoryPoliciesCompanion Function({
+      Value<String> workspaceId,
+      Value<int?> days,
+      Value<int> revision,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceHistoryPoliciesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceHistoryPoliciesTable,
+          WorkspaceHistoryPolicyRow
+        > {
+  $$WorkspaceHistoryPoliciesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('workspace_history_policies__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceHistoryPoliciesTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceHistoryPoliciesTable> {
+  $$WorkspaceHistoryPoliciesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceHistoryPoliciesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceHistoryPoliciesTable> {
+  $$WorkspaceHistoryPoliciesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get days => $composableBuilder(
+    column: $table.days,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceHistoryPoliciesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceHistoryPoliciesTable> {
+  $$WorkspaceHistoryPoliciesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get days =>
+      $composableBuilder(column: $table.days, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceHistoryPoliciesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceHistoryPoliciesTable,
+          WorkspaceHistoryPolicyRow,
+          $$WorkspaceHistoryPoliciesTableFilterComposer,
+          $$WorkspaceHistoryPoliciesTableOrderingComposer,
+          $$WorkspaceHistoryPoliciesTableAnnotationComposer,
+          $$WorkspaceHistoryPoliciesTableCreateCompanionBuilder,
+          $$WorkspaceHistoryPoliciesTableUpdateCompanionBuilder,
+          (
+            WorkspaceHistoryPolicyRow,
+            $$WorkspaceHistoryPoliciesTableReferences,
+          ),
+          WorkspaceHistoryPolicyRow,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceHistoryPoliciesTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceHistoryPoliciesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceHistoryPoliciesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceHistoryPoliciesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceHistoryPoliciesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<int?> days = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceHistoryPoliciesCompanion(
+                workspaceId: workspaceId,
+                days: days,
+                revision: revision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                Value<int?> days = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceHistoryPoliciesCompanion.insert(
+                workspaceId: workspaceId,
+                days: days,
+                revision: revision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceHistoryPoliciesTable,
+                    WorkspaceHistoryPolicyRow
+                  >(table),
+                  $$WorkspaceHistoryPoliciesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$WorkspaceHistoryPoliciesTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceHistoryPoliciesTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceHistoryPoliciesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceHistoryPoliciesTable,
+      WorkspaceHistoryPolicyRow,
+      $$WorkspaceHistoryPoliciesTableFilterComposer,
+      $$WorkspaceHistoryPoliciesTableOrderingComposer,
+      $$WorkspaceHistoryPoliciesTableAnnotationComposer,
+      $$WorkspaceHistoryPoliciesTableCreateCompanionBuilder,
+      $$WorkspaceHistoryPoliciesTableUpdateCompanionBuilder,
+      (WorkspaceHistoryPolicyRow, $$WorkspaceHistoryPoliciesTableReferences),
+      WorkspaceHistoryPolicyRow,
+      PrefetchHooks Function({bool workspaceId})
+    >;
 typedef $$WorkspaceRecordBatchReceiptsTableCreateCompanionBuilder =
     WorkspaceRecordBatchReceiptsCompanion Function({
       required String workspaceId,
@@ -38309,6 +39010,11 @@ class $AppDatabaseManager {
       $$WorkspaceTrashBatchesTableTableManager(_db, _db.workspaceTrashBatches);
   $$WorkspaceRevisionsTableTableManager get workspaceRevisions =>
       $$WorkspaceRevisionsTableTableManager(_db, _db.workspaceRevisions);
+  $$WorkspaceHistoryPoliciesTableTableManager get workspaceHistoryPolicies =>
+      $$WorkspaceHistoryPoliciesTableTableManager(
+        _db,
+        _db.workspaceHistoryPolicies,
+      );
   $$WorkspaceRecordBatchReceiptsTableTableManager
   get workspaceRecordBatchReceipts =>
       $$WorkspaceRecordBatchReceiptsTableTableManager(

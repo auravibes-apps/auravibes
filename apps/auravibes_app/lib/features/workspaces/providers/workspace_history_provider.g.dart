@@ -68,7 +68,7 @@ final class WorkspaceHistoryUsecaseProvider
 }
 
 String _$workspaceHistoryUsecaseHash() =>
-    r'd2810af47c365c31584681a916b32c03e2a64944';
+    r'b5790ec091b7a86d182cccc3bc92d9aec3b8e003';
 
 final class WorkspaceHistoryUsecaseFamily extends $Family
     with
@@ -90,4 +90,83 @@ final class WorkspaceHistoryUsecaseFamily extends $Family
 
   @override
   String toString() => r'workspaceHistoryUsecaseProvider';
+}
+
+@ProviderFor(workspaceHistoryPolicy)
+final workspaceHistoryPolicyProvider = WorkspaceHistoryPolicyFamily._();
+
+final class WorkspaceHistoryPolicyProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<WorkspaceHistoryPolicy>,
+          WorkspaceHistoryPolicy,
+          FutureOr<WorkspaceHistoryPolicy>
+        >
+    with
+        $FutureModifier<WorkspaceHistoryPolicy>,
+        $FutureProvider<WorkspaceHistoryPolicy> {
+  WorkspaceHistoryPolicyProvider._({
+    required WorkspaceHistoryPolicyFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceHistoryPolicyProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceHistoryPolicyHash();
+
+  @override
+  String toString() {
+    return r'workspaceHistoryPolicyProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<WorkspaceHistoryPolicy> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WorkspaceHistoryPolicy> create(Ref ref) {
+    final argument = this.argument as String;
+    return workspaceHistoryPolicy(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceHistoryPolicyProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceHistoryPolicyHash() =>
+    r'3d89341642d1ade4afda27d120d0e29bed292f7f';
+
+final class WorkspaceHistoryPolicyFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<WorkspaceHistoryPolicy>, String> {
+  WorkspaceHistoryPolicyFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceHistoryPolicyProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceHistoryPolicyProvider call(String workspaceId) =>
+      WorkspaceHistoryPolicyProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workspaceHistoryPolicyProvider';
 }
