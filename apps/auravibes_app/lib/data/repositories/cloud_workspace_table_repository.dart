@@ -252,6 +252,8 @@ Future<Map<String, dynamic>> _currentData(
 
   return CloudResourceMapper.decode(
     rows.firstWhere((row) => row.resourceId == id),
+  )..removeWhere(
+    (key, _) => key == 'canManageTable' || key == 'canEditRecords',
   );
 }
 

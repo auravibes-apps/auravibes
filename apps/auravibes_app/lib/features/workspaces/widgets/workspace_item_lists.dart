@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
@@ -19,8 +20,8 @@ class const WorkspaceItemLists({
   required final ValueChanged<String> onOpenTable,
   required final ValueChanged<String> onOpenView,
   required final ValueChanged<Object> onEdit,
-  final Set<String>? selection,
-  final ValueChanged<String>? onSelect,
+  final Set<WorkspaceDirectoryItemKey>? selection,
+  final ValueChanged<WorkspaceDirectoryMoveItem>? onSelect,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -115,12 +116,10 @@ class const _ViewRow(final WorkspaceItemLists owner, final WorkspaceView view)
   @override
   Widget build(BuildContext context) => _ItemRow(
     owner,
-    id: view.id,
-    name: view.name,
+    item: .view(view),
     icon: Icons.dashboard_outlined,
-    canManage: false,
     onOpen: () => owner.onOpenView(view.id),
-    onEdit: () => owner.onOpenView(view.id),
+    onEdit: () => owner.onEdit(view),
   );
 }
 
@@ -131,10 +130,8 @@ class const _FolderRow(
   @override
   Widget build(BuildContext context) => _ItemRow(
     owner,
-    id: folder.id,
-    name: folder.name,
+    item: .folder(folder),
     icon: Icons.folder_outlined,
-    canManage: folder.canManage,
     onOpen: () => owner.onOpenFolder(folder),
     onEdit: () => owner.onEdit(folder),
   );
@@ -147,10 +144,8 @@ class const _TableRow(
   @override
   Widget build(BuildContext context) => _ItemRow(
     owner,
-    id: table.id,
-    name: table.name,
+    item: .table(table),
     icon: Icons.table_chart_outlined,
-    canManage: table.canManage,
     onOpen: () => owner.onOpenTable(table.id),
     onEdit: () => owner.onEdit(table),
   );
@@ -158,30 +153,28 @@ class const _TableRow(
 
 class const _ItemRow(
   final WorkspaceItemLists owner, {
-  required final String id,
-  required final String name,
+  required final WorkspaceDirectoryMoveItem item,
   required final IconData icon,
-  required final bool canManage,
   required final VoidCallback onOpen,
   required final VoidCallback onEdit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
-    key: ValueKey('directory_item_$id'),
+    key: ValueKey(item.key),
     leading: _Leading(this),
-    title: Text(name),
+    title: Text(item.name),
     trailing: _Menu(this),
     onTap: owner.selection == null ? onOpen : _select,
     onLongPress: _select,
   );
-  void _select() => owner.onSelect?.call(id);
+  void _select() => owner.onSelect?.call(item);
 }
 
 class const _Leading(final _ItemRow row) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (row.owner.selection) {
-    final Set<String> selected => Checkbox(
-      value: selected.contains(row.id),
+    final Set<WorkspaceDirectoryItemKey> selected => Checkbox(
+      value: selected.contains(row.item.key),
       onChanged: (_) => row._select(),
     ),
     null => Icon(row.icon),
@@ -191,7 +184,7 @@ class const _Leading(final _ItemRow row) extends StatelessWidget {
 class const _Menu(final _ItemRow row) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (row.owner.selection != null || !row.canManage) {
+    if (row.owner.selection != null || !row.item.canManage) {
       return const SizedBox.shrink();
     }
 
@@ -202,7 +195,7 @@ class const _Menu(final _ItemRow row) extends StatelessWidget {
           onTap: row.onEdit,
         ),
       ],
-      identifier: 'workspace_item_edit_${row.id}',
+      identifier: 'workspace_item_edit_${row.item.key.id}',
       tooltip: LocaleKeys.common_show_more.tr(),
     );
   }

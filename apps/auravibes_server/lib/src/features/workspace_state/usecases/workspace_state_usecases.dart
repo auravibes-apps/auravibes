@@ -10,6 +10,7 @@ import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
+import '../workspace_directory_move_batch.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
@@ -76,7 +77,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             afterSequence: after,
             limit: request.eventLimit,
           );
-
     return ReadWorkspaceStateResponse(
       pages: pages,
       currentSequence: workspace.sequence,
@@ -100,14 +100,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Future<void> Function(Transaction transaction)? guard,
     bool previewOnly = false,
   }) async {
-    if (request.requestId.isEmpty ||
-        request.viewMoves?.isNotEmpty == true ||
-        request.operations.isEmpty ||
-        request.operations.length > _maxOperations) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.validationFailed,
-      );
-    }
+    final moves = WorkspaceDirectoryMoveBatch(request)..validate();
     try {
       for (final operation in request.operations) {
         final data = operation.data;
@@ -118,7 +111,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
-    final requestJson = jsonEncode(request.toJson());
+    final requestJson = jsonEncode(moves.canonicalRequest());
     final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
     final hash = base64UrlEncode(requestHash);
 
@@ -149,6 +142,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             operation,
           );
         }
+        await moves.authorize(session, member, transaction);
         final receipt = await _findReceipt(
           session,
           request.workspaceId,
@@ -171,6 +165,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         }
 
         await guard?.call(transaction);
+        await moves.apply(session, member, transaction);
         final response = await _commitOperations(
           session,
           workspace: workspace,
@@ -232,7 +227,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
-
         return PatchWorkspaceStateResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -243,7 +237,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request,
         transaction,
       );
-
       return _commitOperations(
         session,
         workspace: workspace,
@@ -324,7 +317,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       transaction: transaction,
     );
     if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
-
     return await _visiblePatch(session, member, transaction, response);
   }
 
@@ -340,7 +332,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           .visible(session, member, row);
       if (visible != null) resources.add(visible);
     }
-
     return response.copyWith(resources: resources);
   }
 
@@ -358,7 +349,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
-
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -386,7 +376,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
-
         return PutWorkspaceSecretResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -491,7 +480,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
-
       return response;
     });
   }
@@ -533,7 +521,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
-
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -562,7 +549,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
-
         return MutateWorkspaceCredentialResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -707,7 +693,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           now: now,
           transaction: transaction,
         );
-
         return response;
       }
       final box = secret == null
@@ -806,7 +791,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
-
       return response;
     });
   }
@@ -836,7 +820,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ..['hasSecret'] = configured;
     if (displaySuffix != null) decoded['keySuffix'] = displaySuffix;
     if (secretRevision != null) decoded['secretRevision'] = secretRevision;
-
     return WorkspacePatchOperation(
       operation: operation.operation,
       resourceKind: operation.resourceKind,
@@ -1031,7 +1014,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (value is List) return value.any(_containsSecretData);
     if (value is! Map) return false;
     const secretKeys = {'secret', 'token', 'apiKey', 'password', 'credential'};
-
     return value.entries.any(
       (entry) =>
           (entry.key is String && secretKeys.contains(entry.key)) ||
@@ -1062,7 +1044,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
-
     return member;
   }
 
@@ -1138,7 +1119,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ),
     ];
     if (operations.length > _maxOperations) _validationFailed();
-
     return operations;
   }
 
@@ -1326,7 +1306,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation.expectedRevision != null) {
         throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
       }
-
       return WorkspaceResource.db.insertRow(
         session,
         WorkspaceResource(
@@ -1378,7 +1357,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
-
     return WorkspaceResource.db.updateRow(
       session,
       updated,

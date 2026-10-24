@@ -130,11 +130,51 @@ void main() {
       await expectLater(
         session.db.transaction<void>((transaction) async {
           final store = WorkspaceViewStore(session, ownerMember!, transaction);
-          final move = WorkspaceViewMove(id: 'view', expectedRevision: 1);
+          final current = await WorkspaceView.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.stableId.equals('view'),
+            transaction: transaction,
+          );
+          final broken = {
+            ...jsonDecode(current!.data) as Map<String, dynamic>,
+            'bindings': {'title': 'missing'},
+            'columnTypes': {'missing': 'text'},
+          };
+          final _ = await WorkspaceView.db.updateRow(
+            session,
+            current.copyWith(data: jsonEncode(broken)),
+            transaction: transaction,
+          );
+          final move = WorkspaceViewMove(
+            id: 'view',
+            expectedRevision: 1,
+            name: 'Renamed through metadata',
+          );
           await store.authorizeMove(move);
           final moved = await store.move(move);
           expect(moved.revision, 2);
-          expect(jsonDecode(moved.data)['bindings'], {'title': 'label'});
+          expect(jsonDecode(moved.data)['bindings'], {'title': 'missing'});
+          expect(jsonDecode(moved.data)['definition'], broken['definition']);
+          expect(jsonDecode(moved.data)['name'], 'Renamed through metadata');
+          final noop = await store.move(
+            WorkspaceViewMove(id: 'view', expectedRevision: 2),
+          );
+          expect(noop.revision, 2);
+          expect(jsonDecode(noop.history), isEmpty);
+          await expectLater(
+            store.move(
+              WorkspaceViewMove(id: 'view', expectedRevision: 2, name: '  '),
+            ),
+            throwsA(isA<CloudWorkspaceException>()),
+          );
+          await expectLater(
+            store.move(
+              WorkspaceViewMove(id: 'view', expectedRevision: 1, name: 'Stale'),
+            ),
+            throwsA(isA<CloudWorkspaceException>()),
+          );
           throw StateError('Force outer rollback');
         }),
         throwsStateError,
