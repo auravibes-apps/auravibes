@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_table_action
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const WorkspaceTableEditor({
@@ -21,7 +22,12 @@ class const WorkspaceTableEditor({
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16),
     children: [
-      _EditorBack(name: table.name, disabled: action.pending, onBack: onBack),
+      _EditorBack(
+        kind: kind,
+        name: table.name,
+        disabled: action.pending,
+        onBack: onBack,
+      ),
       ...children,
       if (kind.canSave(table))
         _SaveTableButton(action: action, onSave: onSave, kind: kind),
@@ -46,15 +52,20 @@ class const _SaveTableButton({
 }
 
 class const _EditorBack({
+  required final WorkspaceTableEditorKind kind,
   required final String name,
   required final bool disabled,
   required final VoidCallback onBack,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: const Icon(Icons.arrow_back),
-    title: Text(name),
-    onTap: disabled ? null : onBack,
+  Widget build(BuildContext context) => Tooltip(
+    message: LocaleKeys.common_back.tr(),
+    child: ListTile(
+      key: ValueKey('workspace_${kind.name}_back'),
+      leading: const Icon(Icons.arrow_back),
+      title: Text(name),
+      onTap: disabled ? null : onBack,
+    ),
   );
 }
 
