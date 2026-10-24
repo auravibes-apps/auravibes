@@ -34,24 +34,31 @@ credentials file.
 ## Integration tests
 
 Set `test.database` in `config/passwords.yaml` to the same value as
-`POSTGRES_PASSWORD` in `.env`. Start the test database from the server package:
+`POSTGRES_PASSWORD` in `.env`. Start the test database from the repository root:
 
 ```sh
+source scripts/serverpod_worktree_env.sh
 cd apps/auravibes_server
-docker compose up -d --remove-orphans postgres_test
+docker compose --project-name "$AURAVIBES_SERVER_PROJECT" up -d postgres_test
 ```
+
+Keep the explicit project name on every Compose command. Omitting it shares
+containers across worktrees even when their selected host ports differ.
 
 Run the suite from the repository root:
 
 ```sh
-fvm dart run melos run test:integration
+source scripts/serverpod_worktree_env.sh
+SERVERPOD_DATABASE_PORT="$AURAVIBES_SERVER_TEST_POSTGRES_PORT" \
+  python3 tool/validation_lease.py -- fvm dart run melos run test:integration
 ```
 
 Stop the test database without deleting its volume:
 
 ```sh
+source scripts/serverpod_worktree_env.sh
 cd apps/auravibes_server
-docker compose stop postgres_test
+docker compose --project-name "$AURAVIBES_SERVER_PROJECT" stop postgres_test
 ```
 
 Print the ports selected for this worktree without starting services:
