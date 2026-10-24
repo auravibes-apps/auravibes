@@ -6,6 +6,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -50,7 +51,9 @@ void main() {
       ),
     );
     await _flush(tester);
-    await tester.tap(find.text('No dependent filter'));
+    await tester.tap(
+      find.byKey(const ValueKey('workspace_reference_dependency_parent')),
+    );
     await _flush(tester);
     expect(find.text('Source group'), findsOneWidget);
     expect(find.text('Many groups'), findsNothing);
@@ -58,15 +61,23 @@ void main() {
     await tester.tap(find.text('Source group'));
     await _flush(tester);
     expect(parent, 'parent');
-    await tester.tap(find.text('No dependent filter'));
+    await tester.tap(
+      find.byKey(const ValueKey('workspace_reference_dependency_match')),
+    );
     await _flush(tester);
-    expect(find.text('Matching group'), findsOneWidget);
+    expect(find.text('Source group'), findsNWidgets(2));
     expect(find.text('Other group type'), findsNothing);
     expect(find.text('Multiple groups'), findsNothing);
-    await tester.tap(find.text('Matching group'));
+    await tester.tap(
+      find.byKey(
+        const ValueKey('workspace_reference_dependency_match_option_matching'),
+      ),
+    );
     await _flush(tester);
     expect(match, 'matching');
-    await tester.tap(find.text('Source group'));
+    await tester.tap(
+      find.byKey(const ValueKey('workspace_reference_dependency_parent')),
+    );
     await _flush(tester);
     await tester.tap(find.text('No dependent filter'));
     await _flush(tester);
@@ -155,7 +166,7 @@ const _target = WorkspaceTable(
     WorkspaceColumn(id: 'label', name: 'Name'),
     WorkspaceColumn(
       id: 'matching',
-      name: 'Matching group',
+      name: 'Source group',
       type: .reference,
       targetTableId: 'groups',
     ),

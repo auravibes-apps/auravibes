@@ -2,6 +2,7 @@ export 'src/a2ui/a2ui_action.dart';
 export 'src/a2ui/a2ui_catalog.dart';
 export 'src/a2ui/a2ui_chat_contract.dart';
 export 'src/a2ui/a2ui_form_validation.dart';
+export 'src/a2ui/a2ui_saved_definition.dart';
 export 'src/a2ui/a2ui_skill_definition.dart';
 export 'src/a2ui/a2ui_stream_decoder.dart';
 export 'src/a2ui/a2ui_validation.dart';
@@ -114,5 +115,3 @@ export 'src/transcript_selection.dart';
 export 'src/url_content_format.dart';
 export 'src/url_content_transformer.dart';
 export 'src/url_tool.dart';
-
-export 'src/a2ui/a2ui_saved_definition.dart';

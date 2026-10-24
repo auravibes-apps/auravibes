@@ -23,10 +23,19 @@ class const WorkspaceViewScreen({
   required final String viewId,
   required final VoidCallback onBack,
   super.key,
-}) extends HookConsumerWidget {
+}) extends StatelessWidget {
   void refresh(WidgetRef ref) =>
       ref.invalidate(workspaceViewDataProvider(workspaceId, viewId));
 
+  @override
+  Widget build(BuildContext context) => _ViewSession(
+    this,
+    key: ValueKey((workspaceId: workspaceId, viewId: viewId)),
+  );
+}
+
+class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = useState<_Selection?>(null);
@@ -34,20 +43,25 @@ class const WorkspaceViewScreen({
 
     return Column(
       children: [
-        _Toolbar(this, selected),
-        Expanded(child: _Contents(this, selected)),
+        _Toolbar(owner, selected),
+        Expanded(child: _Contents(owner, selected)),
       ],
     );
   }
 
   void _useRefresh(WidgetRef ref, ValueNotifier<_Selection?> selected) =>
-      useEffect(() {
-        final timer = Timer.periodic(_refreshInterval, (_) {
-          if (selected.value == null) refresh(ref);
-        });
+      useEffect(() => _subscribe(ref, selected), [
+        owner.workspaceId,
+        owner.viewId,
+      ]);
 
-        return timer.cancel;
-      }, [workspaceId, viewId]);
+  VoidCallback _subscribe(WidgetRef ref, ValueNotifier<_Selection?> selected) {
+    final timer = Timer.periodic(_refreshInterval, (_) {
+      if (selected.value == null) owner.refresh(ref);
+    });
+
+    return timer.cancel;
+  }
 }
 
 class const _Toolbar(

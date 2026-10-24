@@ -88,13 +88,15 @@ class const _TargetTables(final _TargetState state) extends ConsumerWidget {
     AsyncLoading() => const CircularProgressIndicator(),
   };
   Widget _table(WorkspaceTable table) => AuraCheckboxListTile(
-    value: state.picker.targetTableId.value == table.id,
+    value: _isSelected(table),
     onChanged: (_) => state.picker.targetTableId.value = table.id,
     title: Text(table.name),
     key: ValueKey('workspace_reference_target_${table.id}'),
     disabled: state.picker.disabled,
     semanticLabel: table.name,
   );
+  bool _isSelected(WorkspaceTable table) =>
+      state.picker.targetTableId.value == table.id;
 }
 
 class const _Cardinality(final _TargetState state) extends StatelessWidget {

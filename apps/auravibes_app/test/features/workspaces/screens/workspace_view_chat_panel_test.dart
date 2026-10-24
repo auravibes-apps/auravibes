@@ -107,11 +107,9 @@ class const _Harness() extends HookConsumerWidget {
       body: Column(
         children: [
           AuraButton(
-            onPressed: () =>
-                ref
-                        .read(workspaceOpenViewProvider('one', 'chat').notifier)
-                        .selected =
-                    'view',
+            onPressed: () => ref
+                .read(workspaceOpenViewProvider('one', 'chat').notifier)
+                .open('view'),
             child: const Text('Open view'),
           ),
           Expanded(

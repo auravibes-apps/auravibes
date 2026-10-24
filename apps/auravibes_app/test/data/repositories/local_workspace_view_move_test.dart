@@ -3,7 +3,6 @@ import 'package:auravibes_app/data/repositories/local_workspace_folder_repositor
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -33,7 +32,7 @@ void main() {
       ).create(name: 'Items', labelName: 'Title');
       final views = LocalWorkspaceViewRepository(database, 'one');
       final first = await views.save(
-        WorkspaceView.create(
+        .create(
           name: 'Overview',
           table: table,
           columnIds: [table.labelColumnId],

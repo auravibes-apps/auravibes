@@ -14,8 +14,12 @@ void main() {
       ],
     });
     expect(definition.components.single['id'], 'root');
-    final path = definition.components.single['text'] as Map;
-    expect(() => path['path'] = '/other', throwsUnsupportedError);
+    if (definition.components.single['text']
+        case final Map<String, Object?> path) {
+      expect(() => path['path'] = '/other', throwsUnsupportedError);
+    } else {
+      fail('Expected immutable path map');
+    }
     for (final component in [
       {
         'id': 'root',
