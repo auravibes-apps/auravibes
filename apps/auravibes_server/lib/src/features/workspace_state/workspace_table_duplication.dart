@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import 'repositories/workspace_state_repository.dart';
+import 'workspace_revision_capture.dart';
 
 const _pageSize = 100;
 const _maximumRecords = 49;
@@ -37,6 +38,19 @@ class const WorkspaceTableDuplication(
 
     return row;
   }
+
+  Future<void> requireTarget() => requireOperations([
+    _create(.table, request.targetId, const {}),
+  ]);
+
+  Future<void> requireOperations(List<WorkspacePatchOperation> operations) =>
+      WorkspaceRevisionCapture(session, transaction).requirePatch(
+        .new(
+          workspaceId: request.workspaceId,
+          requestId: request.requestId,
+          operations: operations,
+        ),
+      );
 
   Future<void> requireLiveTargets(List<WorkspaceResource> resources) async {
     for (final resource in resources) {

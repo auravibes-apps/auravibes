@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_item_duplication_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
@@ -16,6 +17,79 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'permanent purge blocks duplicate Table and View replay and identity reuse',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('purge-copy'),
+              name: 'Copies',
+              type: .local,
+            ),
+          );
+      final tables = LocalWorkspaceTableRepository(database, 'purge-copy');
+      final source = await tables.create(name: 'Source', labelName: 'Title');
+      final views = LocalWorkspaceViewRepository(database, 'purge-copy');
+      final view = await views.save(
+        .create(
+          name: 'Source View',
+          table: source,
+          columnIds: [source.labelColumnId],
+        ),
+        requestId: 'source-view',
+      );
+      final copies = LocalWorkspaceItemDuplicationRepository(
+        database,
+        'purge-copy',
+      );
+      final trash = ManageWorkspaceTrashUsecase(
+        LocalWorkspaceTrashRepository(database, 'purge-copy'),
+      );
+      final history = LocalWorkspaceHistoryRepository(database, 'purge-copy');
+      for (final kind in WorkspaceDuplicateKind.values) {
+        final request = WorkspaceItemDuplication(
+          kind: kind,
+          sourceId: kind == .table ? source.id : view.id,
+          expectedRevision: kind == .table ? source.revision : view.revision,
+          targetId: 'purged-${kind.name}',
+          requestId: 'copy-${kind.name}',
+          name: 'Copy',
+        );
+        await copies.copy(request);
+        final batch = await trash.apply(
+          .new(
+            kind: kind == .table ? .table : .view,
+            id: request.targetId,
+            revision: 1,
+          ),
+          approve: (_) async => true,
+        );
+        if (batch == null) fail('Expected Trash batch');
+        await history.permanentlyDelete(batch.target);
+        await expectLater(
+          copies.copy(request),
+          throwsA(isA<WorkspaceTableException>()),
+        );
+        await expectLater(
+          copies.copy(
+            .new(
+              kind: kind,
+              sourceId: request.sourceId,
+              expectedRevision: request.expectedRevision,
+              targetId: request.targetId,
+              requestId: 'new-${kind.name}',
+              name: 'Copy',
+            ),
+          ),
+          throwsA(isA<WorkspaceTableException>()),
+        );
+      }
+    },
+  );
   test(
     'table duplication copies schema, not records, unless explicitly chosen',
     () async {

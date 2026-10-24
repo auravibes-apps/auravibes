@@ -50,6 +50,31 @@ void main() {
           operations: operations,
         ),
       );
+      Future<void> purge(Map<String, Object?> target) async {
+        final targetJson = jsonEncode(target);
+        final plan = jsonDecode(
+          await endpoints.workspaceTrash.preview(
+            authenticated,
+            workspaceId,
+            targetJson,
+          ),
+        ) as Map;
+        final _ = await endpoints.workspaceTrash.trash(
+          authenticated,
+          WorkspaceTrashRequest(
+            workspaceId: workspaceId,
+            requestId: const Uuid().v4().toString(),
+            targetJson: targetJson,
+            planToken: plan['planToken'] as String,
+          ),
+        );
+        await endpoints.workspaceHistory.permanentlyDelete(
+          authenticated,
+          workspaceId,
+          targetJson,
+        );
+      }
+
       WorkspacePatchOperation create(
         WorkspaceResourceKind kind,
         String id,
@@ -123,6 +148,48 @@ void main() {
       final emptyData = jsonDecode(empty.resources.single.data) as Map;
       expect(emptyData['labelColumnId'], 'empty-c0');
       expect(emptyData.containsKey('memberAccess'), isFalse);
+      await purge({'kind': 'table', 'id': 'empty', 'revision': 1});
+      for (final id in ['empty', 'empty-new-request']) {
+        await expectLater(
+          endpoints.workspaceState.duplicateTable(
+            authenticated,
+            request('empty').copyWith(requestId: id),
+          ),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.conflict,
+            ),
+          ),
+        );
+      }
+      await patch([
+        create(.tableRecord, 'future-r0', {
+          'tableId': 'source',
+          'schemaRevision': 2,
+          'values': {'label': 'Purged identity'},
+        }),
+      ]);
+      await purge({
+        'kind': 'record',
+        'id': 'future-r0',
+        'tableId': 'source',
+        'revision': 1,
+      });
+      await expectLater(
+        endpoints.workspaceState.duplicateTable(
+          authenticated,
+          request('future', records: true),
+        ),
+        throwsA(
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.conflict,
+          ),
+        ),
+      );
       final full = await endpoints.workspaceState.duplicateTable(
         authenticated,
         request('full', records: true),
@@ -394,6 +461,34 @@ void main() {
         authenticated,
         viewRequest,
       );
+      final purgeViewRequest = viewRequest.copyWith(
+        targetId: 'purged-copy-view',
+        requestId: 'purged-copy-view',
+      );
+      final purgeView = await endpoints.workspaceView.duplicate(
+        authenticated,
+        purgeViewRequest,
+      );
+      await purge({
+        'kind': 'view',
+        'id': purgeView.stableId,
+        'revision': purgeView.revision,
+      });
+      for (final id in ['purged-copy-view', 'purged-copy-view-new-request']) {
+        await expectLater(
+          endpoints.workspaceView.duplicate(
+            authenticated,
+            purgeViewRequest.copyWith(requestId: id),
+          ),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.conflict,
+            ),
+          ),
+        );
+      }
       final copiedData = jsonDecode(copiedView.data) as Map;
       expect(copiedData['bindings'], definition['bindings']);
       expect(copiedData['columnTypes'], definition['columnTypes']);

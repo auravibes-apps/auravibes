@@ -1596,16 +1596,16 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Transaction transaction,
   ) async {
     final context = await _tableCopyContext(session, input, transaction);
-    final source = await context.copy.source();
+    final copy = context.copy;
+    final source = await copy.source();
+    await copy.requireTarget();
     final replay = await _tableCopyReplay(session, input, context);
     if (replay != null) return replay;
 
-    return await _commitTableCopy(
-      session,
-      input,
-      context,
-      await context.copy.operations(source),
-    );
+    final operations = await copy.operations(source);
+    await copy.requireOperations(operations);
+
+    return await _commitTableCopy(session, input, context, operations);
   }
 
   Future<_TableCopyContext> _tableCopyContext(

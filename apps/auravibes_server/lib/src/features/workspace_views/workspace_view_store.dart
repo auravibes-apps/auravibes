@@ -5,10 +5,10 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../workspace_state/domain/workspace_resource_validation.dart';
+import '../workspace_state/workspace_history_receipts.dart';
+import '../workspace_state/workspace_revision_capture.dart';
 import '../workspace_state/workspace_table_access.dart';
 import '../workspace_state/workspace_table_duplication.dart';
-
-import '../workspace_state/workspace_revision_capture.dart';
 import 'workspace_view_validation.dart';
 
 class const WorkspaceViewStore(
@@ -349,12 +349,14 @@ class const _ViewReceipts(
     );
   }
 
-  Future<WorkspaceMutationReceipt?> _find(String id) =>
-      WorkspaceMutationReceipt.db.findFirstRow(
+  Future<WorkspaceMutationReceipt?> _find(String id) => WorkspaceMutationReceipt
+      .db
+      .findFirstRow(
         context.session,
         where: _ReceiptKey(context, id, endpoint).matches,
         transaction: context.transaction,
-      );
+      )
+      .then(WorkspaceHistoryReceipts.available);
 
   WorkspaceMutationReceipt _receipt(
     String requestId,
@@ -459,12 +461,23 @@ class const _ViewDuplicator(final _ViewContext context) {
     return saved;
   }
 
-  Future<WorkspaceView> _source(DuplicateWorkspaceItemRequest request) {
+  Future<WorkspaceView> _source(DuplicateWorkspaceItemRequest request) async {
     WorkspaceTableDuplication.validate(request);
     if (context.member.role != 'owner' || request.copyRecords) _denied();
 
-    return _ViewReader(context).read(request.sourceId);
+    final source = await _ViewReader(context).read(request.sourceId);
+    await _requireTarget(source, request);
+
+    return source;
   }
+
+  Future<void> _requireTarget(
+    WorkspaceView source,
+    DuplicateWorkspaceItemRequest request,
+  ) => WorkspaceRevisionCapture(
+    context.session,
+    context.transaction,
+  ).requireView(_copySaveRequest(source, request));
 
   Future<WorkspaceView?> _replay(
     DuplicateWorkspaceItemRequest request,
