@@ -381,6 +381,27 @@ void main() {
             }),
           ),
         );
+        expect(
+          await call('explicit-conversation-grant-agent-deny'),
+          'disabledInWorkspace',
+        );
+        expect(executions, 1);
+        final deniedAgentPolicy = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('deny-agent'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          deniedAgentPolicy.copyWith(
+            data: jsonEncode({
+              'agentId': 'agent',
+              'toolId': listConnectorConnectionsToolName,
+              'permissionMode': 'alwaysAsk',
+            }),
+          ),
+        );
         expect(await call('explicit-conversation-grant'), 'success');
         expect(executions, 2);
         await resource(
