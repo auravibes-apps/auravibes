@@ -31,6 +31,7 @@ void main() {
       final database = AppDatabase(connection: NativeDatabase.memory());
       addTearDown(database.close);
       String? folderId;
+      String? savedViewId;
       await tester.runAsync(() async {
         final _ = await database
             .into(database.workspaces)
@@ -115,10 +116,60 @@ void main() {
           database,
           'one',
         ).list(parentId: folderId);
+        savedViewId = views.single.id;
         expect(views.single.name, 'A report');
         expect(views.single.parentId, folderId);
+      });
+      await tester.tap(back);
+      await flush();
+      final menu = find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraPopupMenuButton &&
+            widget.identifier == 'workspace_item_edit_$savedViewId',
+      );
+      await tester.tap(menu);
+      await flush();
+      await tester.tap(find.text('Rename or move'));
+      await flush();
+      final itemName = find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraInput && widget.identifier == 'workspace_item_name',
+      );
+      expect(itemName, findsOneWidget);
+      await tester.enterText(itemName, 'Renamed report');
+      await tester.tap(find.text('Workspace root'));
+      await flush();
+      final save = find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton && widget.identifier == 'workspace_item_save',
+      );
+      await tester.ensureVisible(save);
+      await flush();
+      await tester.runAsync(() => tester.tap(save));
+      await flush();
+      expect(find.text('Renamed report'), findsNothing);
+      final _ = await tester.binding.handlePopRoute();
+      await flush();
+      expect(find.text('Renamed report'), findsOneWidget);
+      await tester.tap(find.text('Renamed report'));
+      await flush();
+      expect(find.text('Ada'), findsWidgets);
+      await tester.runAsync(() async {
+        final moved = await LocalWorkspaceViewRepository(
+          database,
+          'one',
+        ).read(_required(savedViewId));
+        expect(moved.name, 'Renamed report');
+        expect(moved.parentId, isNull);
+        expect(moved.revision, 2);
       });
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+}
+
+String _required(String? value) {
+  if (value == null) throw StateError('Missing fixture ID');
+
+  return value;
 }

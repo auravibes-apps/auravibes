@@ -51,7 +51,7 @@ class const _Frame(
   Widget build(BuildContext context) => Column(
     children: [
       _Search(draft),
-      if (draft.controls.value) _Controls(owner.table, draft),
+      if (draft.controls.value) _Controls(owner, draft),
       Expanded(child: _RecordState(owner, draft, records)),
       _Pages(draft.query, more: records.value?.hasMore ?? false),
     ],
@@ -142,14 +142,19 @@ class const _PageButton(final _Pages pages, {required final bool previous})
   );
 }
 
-class const _Controls(final WorkspaceTable table, final _Draft draft)
+class const _Controls(final WorkspaceRecordBrowser owner, final _Draft draft)
     extends StatelessWidget {
+  WorkspaceTable get table => owner.table;
   @override
   Widget build(BuildContext context) => SizedBox(
     height: 220,
     child: ListView(
       children: [
-        WorkspaceQueryFilter(table: table, query: draft.query),
+        WorkspaceQueryFilter(
+          table: table,
+          workspaceId: owner.workspaceId,
+          query: draft.query,
+        ),
         _SortColumn(table, draft),
         _Direction(draft),
         _QueryAvailability(table),
