@@ -5,9 +5,9 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 ## Current checkpoint
 
 - Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
-- Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
+- Integrated pending acceptance follow-up: #1676 rename/move awaits final Directory acceptance; #1672 record-editor default and hint repairs are integrated with #1673 and await live confirmation. #1673 relationships are integrated at `77a429121`; combined Directory query privacy and live acceptance remain pending.
 - Integrated #1688 Connector writes at `c8a0e6ae5`; isolated live UI acceptance and final standards review remain before closure.
-- Active implementers: #1675 Directory/table browsing, #1673 relationships and #1682 persistent A2UI views. Each owns a separate worktree. #1682 is based on integrated #1688 at `29a973065`; native blocker #1669 is closed, and its preflight only matched this coordinated draft PR.
+- Active implementers: #1675 Directory/table browsing and #1682 persistent A2UI views. Each owns a separate worktree. #1673 final worker tip `0636c0251` is integrated. #1682 is based on integrated #1688 at `29a973065`; native blocker #1669 is closed, and its preflight only matched this coordinated draft PR.
 - Latest published head: `e5019c835`, verified against `git ls-remote`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 failed only format; repaired run40060362461 passed formatting but was superseded/cancelled before all app tests finished. Current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
@@ -345,3 +345,12 @@ The isolated UI checkout combines References `ce605febf` and Directory `ab6439f4
 - No application error logs were collected. One automation argument failed schema validation (`text` instead of `input`); it performed no app mutation, was captured, and was corrected.
 
 Evidence under `/tmp/auravibes-1665-ui-evidence/`: `directory-start-0.png`, `directory-created-table-0.png`, `directory-moved-table-0.png` and tree, `constraints-visible-default-0.png` and tree, `directory-selection-0.png` and tree. Native phone-width verification, final permission/relationship picker flows, final combined slice acceptance and current-head CI remain open.
+
+
+### References integration — 2026-10-24
+
+- Merged final #1673 worker tip `0636c0251` without conflicts as `77a429121`. Preserved original folder commit `4eee5ba18` and integration history through `e5019c835`. No Directory candidate was merged.
+- Root integrated checks passed: 9 app tests covering file-backed relationship reopen, invalid targets, hidden-link source edits and denied previews, bounded picker/search/create/read-only behavior, unsaved reference default selection, new-record defaults and field-hint alignment; 4 authenticated server tests covering relationships, constraints and legacy table/schema identity. Full logs: `/tmp/merge1673-app.log`, `/tmp/merge1673-server.log`. Pinned FVM 3.47.7 commands used the root validation lease.
+- Review confirmed current grants and workspace-lock transactions on reference reads; record link and schema default projection; server retention of persisted hidden links with forged mutation denial; current projection on idempotent receipt replay; optional reference defaults normalized for legacy schema identity; typed generated endpoint/client request compatibility. Whitespace and ancestry checks passed.
+- Worker evidence remains in `/Users/davidlondono/.codex/implementation-checkpoints/workspace-references-1673.md`: 24 app cases, 4 authenticated endpoint tests, handwritten fatal analysis, strict new/reference DCL, localization audit and clean generated-artifact gate. The conflict-free merge changed no generator input beyond the verified worker state, so broad generation was not repeated.
+- #1673 and #1672 remain open pending root live UI acceptance and final combined Directory query projection/decoder/grid-label verification. Per-row grant projection remains secure; request-scope performance measurement belongs to #1680. Existing monolithic use-case DCL findings and baseline goldens remain unchanged. No push, issue closure, snapshot update or UI automation occurred during integration.
