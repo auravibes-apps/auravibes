@@ -69,8 +69,8 @@ void main() {
           'a': 'Zulu',
           'b': 'Alpha',
           'c': 'Other',
-          'd': '\u00c9cho',
-          'e': '\u00e9cho',
+          'd': '${String.fromCharCode(0xc9)}cho',
+          'e': '${String.fromCharCode(0xe9)}cho',
         }.entries) {
           await patch([
             WorkspacePatchOperation(
@@ -187,7 +187,7 @@ void main() {
           authenticated,
           workspace.id!,
           'query-table',
-          jsonEncode({'search': '\u00c9'}),
+          jsonEncode({'search': String.fromCharCode(0xc9)}),
         );
         expect(accented.single.resourceId, 'd');
         await patch([
@@ -207,7 +207,12 @@ void main() {
             fieldMask: const [],
           ),
         ]);
-        for (final amount in [10, 2]) {
+        for (final amount in [
+          10,
+          2,
+          -9007199254740992,
+          int.parse('-9007199254740993'),
+        ]) {
           await patch([
             WorkspacePatchOperation(
               operation: .create,
@@ -229,6 +234,8 @@ void main() {
           jsonEncode({'sortColumnId': 'quantity'}),
         );
         expect(numeric.map((row) => row.resourceId), [
+          'numeric--9007199254740993',
+          'numeric--9007199254740992',
           'numeric-2',
           'numeric-10',
         ]);

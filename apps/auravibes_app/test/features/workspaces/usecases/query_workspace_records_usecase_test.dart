@@ -25,7 +25,13 @@ void main() {
       LocalWorkspaceTableRepository(database, 'one'),
     );
     final table = await tables.create(name: 'List', labelName: 'Title');
-    for (final value in ['Zulu', 'Alpha', 'Other', '\u00c9cho', '\u00e9cho']) {
+    for (final value in [
+      'Zulu',
+      'Alpha',
+      'Other',
+      '${String.fromCharCode(0xc9)}cho',
+      '${String.fromCharCode(0xe9)}cho',
+    ]) {
       final _ = await tables.createRecord(
         table: table,
         values: {table.labelColumnId: value},
@@ -48,25 +54,35 @@ void main() {
     );
     expect(search.records.single.values[table.labelColumnId], 'Zulu');
     expect(search.hasMore, isFalse);
-    final accented = await query(
-      table.id,
-      const WorkspaceRecordQuery(search: '\u00c9'),
+    final accented = await query(table.id, .new(search: .fromCharCode(0xc9)));
+    expect(
+      accented.records.single.values[table.labelColumnId],
+      '${String.fromCharCode(0xc9)}cho',
     );
-    expect(accented.records.single.values[table.labelColumnId], '\u00c9cho');
     final numeric = await tables.create(name: 'Numbers', labelName: 'Title');
     final schema = await tables.saveColumn(
       table: numeric,
       column: const WorkspaceColumn(id: '', name: 'Quantity', type: .number),
     );
     final quantity = schema.columns.last.id;
-    for (final amount in [10, 2]) {
+    for (final amount in [
+      10,
+      2,
+      -9007199254740992,
+      int.parse('-9007199254740993'),
+    ]) {
       final _ = await tables.createRecord(
         table: schema,
         values: {schema.labelColumnId: 'Value $amount', quantity: amount},
       );
     }
     final sorted = await query(schema.id, .new(sortColumnId: quantity));
-    expect(sorted.records.map((record) => record.values[quantity]), [2, 10]);
+    expect(sorted.records.map((record) => record.values[quantity]), [
+      int.parse('-9007199254740993'),
+      -9007199254740992,
+      2,
+      10,
+    ]);
     final filtered = await query(
       schema.id,
       .new(filterColumnId: quantity, filterValue: '10'),

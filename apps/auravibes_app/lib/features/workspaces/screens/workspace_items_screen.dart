@@ -85,6 +85,10 @@ class const _Navigation(
     );
     await actions.refreshPath(folders);
     if (!ref.context.mounted) return;
+    _invalidate(ref);
+  }
+
+  void _invalidate(WidgetRef ref) {
     final parent = ref
         .read(directoryNavigationProvider(workspaceId))
         .path
@@ -289,12 +293,14 @@ void _rememberScroll(
   _Navigation navigation,
   String? parent,
 ) {
-  useEffect(() {
+  Dispose listen() {
     void remember() => navigation.actions.rememberOffset(parent, scroll.offset);
     scroll.addListener(remember);
 
     return () => scroll.removeListener(remember);
-  }, [scroll, parent]);
+  }
+
+  useEffect(listen, [scroll, parent]);
 }
 
 class const _Breadcrumb(final _Navigation navigation) extends StatelessWidget {

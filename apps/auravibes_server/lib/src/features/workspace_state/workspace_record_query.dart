@@ -211,8 +211,12 @@ class _QueryParameters {
   Map<String, Object?> _pagination() {
     final limit = input['limit'] as int? ?? 50;
     final offset = input['offset'] as int? ?? 0;
-    if (limit < 1 || limit > _maxPageSize || offset < 0 || offset > _maxOffset)
+    if (limit < 1 ||
+        limit > _maxPageSize ||
+        offset < 0 ||
+        offset > _maxOffset) {
       _invalid();
+    }
 
     return {'limit': limit + 1, 'offset': offset};
   }
@@ -220,8 +224,9 @@ class _QueryParameters {
   Map<String, Object?> _text() {
     final search = input['search'] as String? ?? '';
     final value = input['filterValue'] as String? ?? '';
-    if (search.length > _maxTextLength || value.length > _maxTextLength)
+    if (search.length > _maxTextLength || value.length > _maxTextLength) {
       _invalid();
+    }
 
     return {'search': _fold(search), 'value': value};
   }
@@ -266,7 +271,7 @@ String _fold(String value) => value.replaceAllMapped(
 );
 
 String _order(bool numeric) => numeric
-    ? "(data::jsonb->'values'->>@sort)::double precision"
+    ? "(data::jsonb->'values'->>@sort)::numeric"
     : "(data::jsonb->'values'->>@sort) COLLATE \"C\"";
 
 Map<String, dynamic> _decodeInput(String encoded) {

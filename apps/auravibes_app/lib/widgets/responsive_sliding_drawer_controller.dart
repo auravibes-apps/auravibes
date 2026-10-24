@@ -94,7 +94,7 @@ class _ResponsiveSlidingDrawerState
   static const _scrimGradientWidth = 16.0;
 
   // Keep editor state when responsive layouts reparent the body.
-  final _bodyKey = GlobalKey();
+  final GlobalKey _bodyKey = .new();
   AnimationController? _controller;
   double? _desktopDrawerWidth;
   double _resizeOvershoot = 0;

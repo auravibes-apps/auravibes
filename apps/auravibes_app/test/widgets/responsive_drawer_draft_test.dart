@@ -92,7 +92,13 @@ void main() {
     for (final width in [400.0, 1200.0]) {
       tester.view.physicalSize = .new(width, 900);
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Unsaved record'), findsOneWidget);
+      expect(
+        tester
+            .widget<AuraInput>(_input('workspace_record_value'))
+            .controller
+            ?.text,
+        'Unsaved record',
+      );
       expect(
         find.byWidgetPredicate(
           (widget) =>
@@ -124,9 +130,15 @@ void main() {
       'Unsaved column',
     );
     for (final width in [400.0, 1200.0]) {
-      tester.view.physicalSize = Size(width, 900);
+      tester.view.physicalSize = .new(width, 900);
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Unsaved column'), findsOneWidget);
+      expect(
+        tester
+            .widget<AuraInput>(_input('workspace_column_name'))
+            .controller
+            ?.text,
+        'Unsaved column',
+      );
       expect(
         find.byWidgetPredicate(
           (widget) =>
@@ -138,3 +150,7 @@ void main() {
     }
   });
 }
+
+Finder _input(String identifier) => find.byWidgetPredicate(
+  (widget) => widget is AuraInput && widget.identifier == identifier,
+);

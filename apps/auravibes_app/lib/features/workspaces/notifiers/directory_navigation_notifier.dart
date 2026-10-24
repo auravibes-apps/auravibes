@@ -18,14 +18,21 @@ class DirectoryNavigationNotifier extends _$DirectoryNavigationNotifier {
   void rememberOffset(String? parent, double offset) =>
       state = state.scroll(parent, offset);
 
-  Future<void> refreshPath(Future<OrganizeWorkspaceFoldersUsecase> folders) async {
+  Future<void> refreshPath(
+    Future<OrganizeWorkspaceFoldersUsecase> folders,
+  ) async {
     final original = state.path;
     try {
       final path = await _PathReader(await folders).read(original);
       _apply(original, path);
     } on Object catch (error) {
-      if (ref.mounted) state = state.location(original, failure: error);
+      _fail(original, error);
     }
+  }
+
+  void _fail(List<WorkspaceFolder> original, Object error) {
+    if (!ref.mounted || !identical(state.path, original)) return;
+    state = state.location(original, failure: error);
   }
 
   void _apply(List<WorkspaceFolder> original, List<WorkspaceFolder> path) {

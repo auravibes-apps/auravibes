@@ -19,8 +19,7 @@ class const LocalWorkspaceRecordQueryRepository(
       database,
       workspaceId,
     ).table(tableId);
-    final statement = _QueryStatement(workspaceId, table, query);
-    statement._validate();
+    final statement = _QueryStatement(workspaceId, table, query).._validate();
     final rows = await _read(statement);
 
     return _page(rows, query.limit);
@@ -62,8 +61,9 @@ void _requireSupported(WorkspaceTable table, String columnId) {
     'multiSelect',
     'attachment',
     'reference',
-  }.contains(column.type.name))
+  }.contains(column.type.name)) {
     throw const WorkspaceTableException();
+  }
 }
 
 Map<String, Object?> _values(String encoded) =>
@@ -87,8 +87,9 @@ class const _QueryStatement(
   }
 
   void _column(String id) {
-    if (!table.columns.any((column) => column.id == id))
+    if (!table.columns.any((column) => column.id == id)) {
       throw const WorkspaceTableException();
+    }
     _requireSupported(table, id);
   }
 

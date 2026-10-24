@@ -64,7 +64,7 @@ final class DirectoryNavigationNotifierProvider
 }
 
 String _$directoryNavigationNotifierHash() =>
-    r'3de3164693b37db69b52d5f11ef3baabcbddc621';
+    r'0a6f62ed0a61bf22c318a642a66f69139437d8f6';
 
 /// Keeps in-memory navigation when the responsive shell remounts its content.
 
