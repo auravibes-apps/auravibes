@@ -615,3 +615,7 @@ The worker's clean generated proof at integrated product `3eb8de01`, full quick/
 ### Bulk accepted; shared assets started
 
 #1679 closed at2026-10-24T08:24:31Z after publication and remote-SHA verification of306ef14e6. Sixteen of26 children are resolved. Hosted CI40076361452 completed successfully for prior published0b70b5b5; current306ef14e6 CI remains pending. #1681 native blockers are closed, assignment is coordinated through draftPR1693, and managed worktree workspace-assets-1681 starts from306ef14e6. Current History and relational View owners continue independently. Native Mac verification remains unrun while locked.
+
+### Published bulk CI contract repair
+
+Flutter CI40077878013 at306ef14e6 reported one unnecessary nullable parameter: EditWorkspaceRecordsUsecase.apply.requestId. The production dialog already supplies a stable request ID. The use case now requires it and removes the unused UUID fallback; three test callers supply explicit IDs. Nine bulk behavior/UI tests, the full unnecessary:nullable gate, focused fatal analysis and pinned formatting passed. Logs: /tmp/auravibes-bulk-required-id-{tests,nullable,static-final}.log. The first focused analyzer caught required-parameter ordering; corrected and rerun successfully. No generator input, schema or approval behavior changed. Hosted CI for the repaired commit remains required.
