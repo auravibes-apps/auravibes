@@ -1946,6 +1946,10 @@
     }
   },
   "workspace_items": {
+    "edit_item": "Edit item",
+    "item_name": "Name",
+    "destination": "Destination folder",
+    "root": "Workspace root",
     "table_access": "Table access",
     "access_read": "Read only",
     "access_edit": "Read and edit",

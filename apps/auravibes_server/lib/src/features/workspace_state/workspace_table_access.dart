@@ -76,6 +76,9 @@ class const _TableReader(
   }
 
   Future<WorkspaceResource?> visible(WorkspaceResource resource) async {
+    if (resource.resourceKind == WorkspaceResourceKind.folder) {
+      return _visibleFolder(resource, member.role);
+    }
     if (!_isTableResource(resource.resourceKind)) return resource;
     final access = await level(resource);
     if (access == null) return null;
@@ -217,6 +220,15 @@ void _validateGrants(Object grants) {
 Never _invalid() => throw CloudWorkspaceException(
   code: CloudWorkspaceErrorCode.validationFailed,
 );
+
+WorkspaceResource _visibleFolder(WorkspaceResource resource, String role) =>
+    resource.copyWith(
+      data: jsonEncode({
+        ..._data(resource),
+        'canManageFolder':
+            role == WorkspaceRoles.owner || role == WorkspaceRoles.admin,
+      }),
+    );
 
 WorkspaceEvent _hiddenEvent(WorkspaceEvent event) => event.copyWith(
   id: null,

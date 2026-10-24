@@ -186,3 +186,19 @@ Treat it as one coherent feature specification that can be delivered in ordered 
 Launch countries, minimum age, retention durations, actual AI/hosting/Connector providers and permitted tools, numerical capacity limits, and any payments remain explicit release blockers. Resolve matching disclosures, separate consent, contracts, moderation, deletion, and store declarations before launch. The existing policy research is dated and does not certify compliance.
 
 No prototype established a physical schema or new runtime. No production behavior, migration, live provider integration, or test execution is claimed by this specification. Related existing issues concerning tool modes, workspace policies, local-network disclosure, and shared-Conversation visibility should be coordinated during implementation rather than overwritten or silently closed.
+
+## Approved Directory UX amendment
+
+Confirmed requirements from the 2026-10-23 follow-up supersede transitional creation-heavy layouts:
+
+- Name the workspace navigation destination **Directory**.
+- Browse one folder at a time, with folder entry, item opening, breadcrumbs/path and Back navigation that restores location and scroll context.
+- Create through a toolbar + type menu in the current folder. Include only available types and accommodate future types without redesigning the browser.
+- Default to a simple folders-first list, then alphabetically ordered items, with an icon, name and minimal useful metadata.
+- Keep content primary in Directory and every item editor. Put schema, permissions and settings in menus or separate panels.
+- Put permitted item actions in contextual row menus. Reveal bulk controls after selection; use submenus for meaningful groups rather than hiding ordinary actions behind unnecessary levels.
+- Use minimal creation sheets on narrow screens and dialogs on wide screens. Ask only for names and unavoidable required fields before opening the new item.
+- Make + contextual: create items in Directory, add records inside tables. Keep column/schema configuration separate.
+- Enter selection mode through touch long-press or Select in the toolbar menu; show checkboxes and a contextual action bar within that mode.
+
+Q73–Q81 are confirmed. Apply this amendment through the Directory/table browsing slice #1675 and carry the same content-first controls into later item types. Existing database hierarchy, stable IDs, current-user permissions and local/cloud boundaries remain required; this amendment does not authorize executable file types or change release gates.

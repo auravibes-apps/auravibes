@@ -1,205 +1,150 @@
-import 'dart:async';
-
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_folder_metadata_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_creation.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_lists.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_metadata_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
-
-final _logger = Logger('workspace_items_screen');
 
 class const WorkspaceItemsScreen({required final String workspaceId, super.key})
     extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final path = useState(<WorkspaceFolder>[]);
-    final selectedTable = useState<String?>(null);
-    final tableName = useTextEditingController();
-    final name = useTextEditingController();
-    final pending = useState(false);
-    final error = useState<Object?>(null);
-    final parentId = path.value.lastOrNull?.id;
-    final provider = workspaceFoldersProvider(workspaceId, parentId);
-    final folders = ref.watch(provider);
-    final tablesProvider = workspaceTablesProvider(workspaceId, parentId);
-    final tables = ref.watch(tablesProvider);
-
-    Future<void> createTable() async {
-      if (pending.value) {
-        return;
-      }
-      pending.value = true;
-      error.value = null;
-      try {
-        final usecase = await ref.read(
-          workspaceTableUsecaseProvider(workspaceId).future,
-        );
-        final created = await usecase.create(
-          name: tableName.text,
-          labelName: LocaleKeys.workspace_items_default_label.tr(),
-          parentId: parentId,
-        );
-        if (!context.mounted) {
-          return;
-        }
-        tableName.clear();
-        ref.invalidate(tablesProvider);
-        selectedTable.value = created.id;
-      } on Object catch (failure, stackTrace) {
-        _logger.warning(
-          'Table creation failed: ${failure.runtimeType}',
-          null,
-          stackTrace,
-        );
-        if (context.mounted) error.value = failure;
-      } finally {
-        if (context.mounted) pending.value = false;
-      }
-    }
-
-    Future<void> create() async {
-      if (pending.value) {
-        return;
-      }
-      pending.value = true;
-      error.value = null;
-      try {
-        final usecase = await ref.read(
-          workspaceFolderUsecaseProvider(workspaceId).future,
-        );
-        final _ = await usecase.create(name: name.text, parentId: parentId);
-        if (!context.mounted) {
-          return;
-        }
-        name.clear();
-        ref.invalidate(provider);
-      } on Object catch (failure, stackTrace) {
-        _logger.warning(
-          'Folder creation failed: ${failure.runtimeType}',
-          null,
-          stackTrace,
-        );
-        if (context.mounted) error.value = failure;
-      } finally {
-        if (context.mounted) pending.value = false;
-      }
-    }
-
-    void refresh() {
-      ref
-        ..invalidate(provider)
-        ..invalidate(tablesProvider);
-    }
-
-    if (selectedTable.value case final id?) {
-      return WorkspaceTableScreen(
-        workspaceId: workspaceId,
-        tableId: id,
-        onBack: () {
-          selectedTable.value = null;
-          ref.invalidate(tablesProvider);
-        },
-      );
-    }
-
-    return AppScreen(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (path.value.isNotEmpty)
-            ListTile(
-              leading: const Icon(Icons.arrow_upward),
-              title: Text(path.value.last.name),
-              onTap: pending.value
-                  ? null
-                  : () {
-                      path.value = path.value.sublist(0, path.value.length - 1);
-                      error.value = null;
-                    },
-            ),
-          AuraInput(
-            controller: name,
-            label: const TextLocale(LocaleKeys.workspace_items_folder_name),
-            enabled: !pending.value,
-            onSubmitted: (_) => unawaited(create()),
-            identifier: 'workspace_folder_name',
-          ),
-          AuraButton(
-            onPressed: () => unawaited(create()),
-            child: const TextLocale(LocaleKeys.workspace_items_create_folder),
-            isLoading: pending.value,
-            disabled: pending.value,
-            identifier: 'workspace_folder_create',
-          ),
-          AuraInput(
-            controller: tableName,
-            label: const TextLocale(LocaleKeys.workspace_items_table_name),
-            enabled: !pending.value,
-            identifier: 'workspace_table_name',
-          ),
-          AuraButton(
-            onPressed: () => unawaited(createTable()),
-            child: const TextLocale(LocaleKeys.workspace_items_create_table),
-            isLoading: pending.value,
-            disabled: pending.value,
-            identifier: 'workspace_table_create',
-          ),
-          switch (tables) {
-            AsyncData(:final value) => Column(
-              children: [
-                for (final table in value)
-                  ListTile(
-                    leading: const Icon(Icons.table_chart_outlined),
-                    title: Text(table.name),
-                    onTap: pending.value
-                        ? null
-                        : () => selectedTable.value = table.id,
-                  ),
-              ],
-            ),
-            AsyncError(:final error) => WorkspaceItemFailure(error: error),
-            AsyncLoading() => const Center(child: CircularProgressIndicator()),
-          },
-          if (error.value case final failure?)
-            WorkspaceItemFailure(error: failure),
-          switch (folders) {
-            AsyncData(:final value) when value.isEmpty => const TextLocale(
-              LocaleKeys.workspace_items_empty,
-            ),
-            AsyncData(:final value) => Column(
-              children: [
-                for (final folder in value)
-                  ListTile(
-                    leading: const Icon(Icons.folder_outlined),
-                    title: Text(folder.name),
-                    onTap: pending.value
-                        ? null
-                        : () {
-                            path.value = [...path.value, folder];
-                            error.value = null;
-                          },
-                  ),
-              ],
-            ),
-            AsyncError(:final error) => WorkspaceItemFailure(error: error),
-            AsyncLoading() => const Center(child: CircularProgressIndicator()),
-          },
-        ],
-      ),
-      appBar: AuraAppBarWithDrawer(
-        title: const TextLocale(LocaleKeys.workspace_items_title),
-        actions: [AuraIconButton(icon: Icons.refresh, onPressed: refresh)],
-      ),
-    );
+    return _Navigation(workspaceId, useState([]), useState(null));
   }
+}
+
+class const _Navigation(
+  final String workspaceId,
+  final ValueNotifier<List<WorkspaceFolder>> path,
+  final ValueNotifier<Object?> selected,
+) extends ConsumerWidget {
+  String? get _parentId => path.value.lastOrNull?.id;
+  String? get _parentName => path.value.lastOrNull?.name;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => switch (selected.value) {
+    final WorkspaceFolder folder => _FolderEditor(this, folder),
+    final WorkspaceTable table => _TableEditor(this, table),
+    final String id => WorkspaceTableScreen(
+      workspaceId: workspaceId,
+      tableId: id,
+      onBack: () {
+        selected.value = null;
+        _refresh(ref);
+      },
+    ),
+    _ => _Browser(this),
+  };
+
+  void _folder(WorkspaceFolder folder) => path.value = [...path.value, folder];
+  void _up() => path.value = path.value.sublist(0, path.value.length - 1);
+
+  void _refresh(WidgetRef ref) {
+    ref
+      ..invalidate(workspaceFoldersProvider(workspaceId, _parentId))
+      ..invalidate(workspaceTablesProvider(workspaceId, _parentId));
+  }
+}
+
+class const _FolderEditor(
+  final _Navigation navigation,
+  final WorkspaceFolder folder,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AppScreen(
+    child: WorkspaceFolderMetadataEditor(
+      workspaceId: navigation.workspaceId,
+      folder: folder,
+      parentName: navigation._parentName,
+      onBack: () => navigation.selected.value = null,
+    ),
+  );
+}
+
+class const _TableEditor(
+  final _Navigation navigation,
+  final WorkspaceTable table,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AppScreen(
+    child: WorkspaceTableMetadataEditor(
+      workspaceId: navigation.workspaceId,
+      table: table,
+      parentName: navigation._parentName,
+      onBack: () => navigation.selected.value = null,
+    ),
+  );
+}
+
+class const _Browser(final _Navigation navigation) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AppScreen(
+    child: _BrowserBody(navigation),
+    appBar: AuraAppBarWithDrawer(
+      title: const TextLocale(LocaleKeys.workspace_items_title),
+      actions: [
+        AuraIconButton(
+          icon: Icons.refresh,
+          onPressed: () => navigation._refresh(ref),
+        ),
+      ],
+    ),
+  );
+}
+
+class const _BrowserBody(final _Navigation navigation) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      if (navigation.path.value.isNotEmpty) _ParentFolder(navigation),
+      _Creation(navigation, table: false),
+      _Creation(navigation, table: true),
+      _Items(navigation),
+    ],
+  );
+}
+
+class const _ParentFolder(final _Navigation navigation)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.arrow_upward),
+    title: Text(navigation.path.value.last.name),
+    onTap: navigation._up,
+  );
+}
+
+class const _Creation(final _Navigation navigation, {required final bool table})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceItemCreation(
+    workspaceId: navigation.workspaceId,
+    parentId: navigation._parentId,
+    table: table,
+    onOpenTable: (id) => navigation.selected.value = id,
+    key: ValueKey((parentId: navigation._parentId, table: table)),
+  );
+}
+
+class const _Items(final _Navigation navigation) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceItemLists(
+    workspaceId: navigation.workspaceId,
+    parentId: navigation._parentId,
+    onOpenFolder: navigation._folder,
+    onOpenTable: (id) => navigation.selected.value = id,
+    onEdit: (item) => navigation.selected.value = item,
+  );
 }

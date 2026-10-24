@@ -14,6 +14,70 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
+    'table rename and move preserve record identity and open schema drafts',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final folders = OrganizeWorkspaceFoldersUsecase(
+        LocalWorkspaceFolderRepository(database, 'one'),
+      );
+      final destination = await folders.create(name: 'Archive');
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      final original = await tables.create(
+        name: 'Original',
+        labelName: 'Title',
+      );
+      final record = await tables.createRecord(
+        table: original,
+        values: {original.labelColumnId: 'Preserved'},
+      );
+      final moved = await tables.updateMetadata(
+        table: original,
+        name: '  Renamed  ',
+        parentId: destination.id,
+      );
+      expect(
+        (id: moved.id, name: moved.name, parentId: moved.parentId),
+        (id: original.id, name: 'Renamed', parentId: destination.id),
+      );
+      expect(
+        (schema: moved.schemaRevision, label: moved.labelColumnId),
+        (schema: original.schemaRevision, label: original.labelColumnId),
+      );
+      expect((await tables.record(moved.id, record.id)).values, {
+        original.labelColumnId: 'Preserved',
+      });
+      final second = await tables.createRecord(
+        table: original,
+        values: {original.labelColumnId: 'Open draft'},
+      );
+      expect((await tables.record(moved.id, second.id)).values, {
+        original.labelColumnId: 'Open draft',
+      });
+      expect(await tables.list(), isEmpty);
+      expect(
+        (await tables.list(parentId: destination.id)).single.id,
+        original.id,
+      );
+      await expectLater(
+        tables.updateMetadata(table: original, name: 'Stale', parentId: null),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+
+  test(
     'temporal and exact currency values survive local persistence',
     () async {
       final directory = await Directory.systemTemp.createTemp(

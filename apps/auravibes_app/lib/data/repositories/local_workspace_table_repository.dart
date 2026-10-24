@@ -7,16 +7,10 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 
-class LocalWorkspaceTableRepository implements WorkspaceTableRepository {
-  new(this._database, this._workspaceId)
-    : _tableWriter = _TableWriter(_database, _workspaceId),
-      _recordWriter = _RecordWriter(_database, _workspaceId);
-
-  final AppDatabase _database;
-  final String _workspaceId;
-  final _TableWriter _tableWriter;
-  final _RecordWriter _recordWriter;
-
+class const LocalWorkspaceTableRepository(
+  final AppDatabase _database,
+  final String _workspaceId,
+) implements WorkspaceTableRepository {
   @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
     final query = _tables(_database, _workspaceId)
@@ -35,7 +29,17 @@ class LocalWorkspaceTableRepository implements WorkspaceTableRepository {
     required String name,
     required String labelName,
     String? parentId,
-  }) => _tableWriter.create(name, labelName, parentId);
+  }) => _TableWriter(_database, _workspaceId).create(name, labelName, parentId);
+  @override
+  Future<WorkspaceTable> updateMetadata({
+    required WorkspaceTable table,
+    required String name,
+    required String? parentId,
+  }) => _TableWriter(
+    _database,
+    _workspaceId,
+  ).updateMetadata(table, name, parentId);
+
   @override
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
@@ -49,7 +53,7 @@ class LocalWorkspaceTableRepository implements WorkspaceTableRepository {
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
     required WorkspaceColumn column,
-  }) => _tableWriter.saveColumn(table, column);
+  }) => _TableWriter(_database, _workspaceId).saveColumn(table, column);
 
   @override
   Future<List<WorkspaceRecord>> records(String tableId) async {
@@ -78,13 +82,13 @@ class LocalWorkspaceTableRepository implements WorkspaceTableRepository {
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
-  }) => _recordWriter.create(table, values);
+  }) => _RecordWriter(_database, _workspaceId).create(table, values);
   @override
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
     required Map<String, Object?> values,
-  }) => _recordWriter.update(table, record, values);
+  }) => _RecordWriter(_database, _workspaceId).update(table, record, values);
 }
 
 WorkspaceTable _table(WorkspaceTableRow row) => WorkspaceTable(
@@ -359,10 +363,33 @@ class const _TableWriter(
     ));
   });
 
+  Future<WorkspaceTable> updateMetadata(
+    WorkspaceTable table,
+    String name,
+    String? parentId,
+  ) => _database.transaction(() async {
+    final row = await _metadataTarget(table, parentId);
+    await _writeMetadata(_database, row, (name: name, parentId: parentId));
+
+    return await _read(table.id);
+  });
+
   Future<WorkspaceTable> saveColumn(
     WorkspaceTable table,
     WorkspaceColumn column,
   ) => _database.transaction(() => _saveColumn(table, column));
+
+  Future<WorkspaceTableRow> _metadataTarget(
+    WorkspaceTable table,
+    String? parentId,
+  ) async {
+    await _checkLocalWorkspace(_database, _workspaceId);
+    final row = await _tableRow(_database, _workspaceId, table.id);
+    _checkTableRevision(_table(row), table);
+    await _checkParent(_database, _workspaceId, parentId);
+
+    return row;
+  }
 
   Future<WorkspaceTable> _insert(
     ({String name, String labelName, String? parentId}) input,
@@ -386,8 +413,11 @@ class const _TableWriter(
     await _checkRecords(table.id, columns);
     await _writeColumns(_database, row, columns);
 
-    return _table(await _tableRow(_database, _workspaceId, table.id));
+    return await _read(table.id);
   }
+
+  Future<WorkspaceTable> _read(String id) async =>
+      _table(await _tableRow(_database, _workspaceId, id));
 
   Future<void> _checkRecords(
     String tableId,
@@ -453,3 +483,22 @@ class const _RecordWriter(
     return _record(row);
   }
 }
+
+Future<void> _writeMetadata(
+  AppDatabase database,
+  WorkspaceTableRow row,
+  ({String name, String? parentId}) input,
+) async {
+  final update = database.update(database.workspaceTables)
+    ..where((value) => _tableTarget(value, row));
+  final _ = await update.write(_metadataChanges(row, input));
+}
+
+WorkspaceTablesCompanion _metadataChanges(
+  WorkspaceTableRow row,
+  ({String name, String? parentId}) input,
+) => WorkspaceTablesCompanion(
+  name: .new(input.name),
+  parentId: .new(input.parentId),
+  revision: .new(row.revision + 1),
+);
