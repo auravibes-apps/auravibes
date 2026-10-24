@@ -18,6 +18,7 @@ abstract interface class WorkspaceReferenceRepository {
     WorkspaceReferenceSource source, {
     required String search,
     String? afterId,
+    String? parentId,
   });
   Future<WorkspaceReferencePage> reverse({
     required String tableId,

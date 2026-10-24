@@ -2048,6 +2048,12 @@
     "reference_previous": "Primera página",
     "reference_empty": "No hay registros coincidentes",
     "reference_remove": "Borrar selección",
-    "reference_choose_target": "Elige primero una tabla de destino."
+    "reference_choose_target": "Elige primero una tabla de destino.",
+    "reference_parent": "Filtrar por campo seleccionado",
+    "reference_match": "Campo coincidente en la tabla de destino",
+    "reference_no_dependency": "Sin filtro dependiente",
+    "reference_dependency_hint": "Las opciones deben enlazar al mismo registro padre. Cambia o borra ambos campos juntos cuando sea necesario.",
+    "reference_incompatible": "Elige registros relacionados que coincidan con el padre seleccionado o borra ambos campos explícitamente antes de guardar.",
+    "reference_select_parent": "Selecciona un padre antes de elegir registros relacionados."
   }
 }

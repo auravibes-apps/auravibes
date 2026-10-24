@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_col
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_violations.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_dependency.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_target.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
@@ -310,10 +311,14 @@ class const _ColumnTimeZone({required final _ColumnDraft draft})
 typedef _ColumnReferenceDraft = ({
   ValueNotifier<String?> tableId,
   ValueNotifier<bool> multiple,
+  ValueNotifier<String?> parent,
+  ValueNotifier<String?> match,
 });
 _ColumnReferenceDraft _referenceDraft(WorkspaceColumn? column) => (
   tableId: useState(column?.targetTableId),
   multiple: useState(column?.referenceMultiple ?? false),
+  parent: useState(column?.dependsOnColumnId),
+  match: useState(column?.targetMatchColumnId),
 );
 ({String? tableId, bool multiple}) _referenceConfiguration(
   _ColumnFields fields,
@@ -331,12 +336,45 @@ class const _ColumnDraftReference({
   @override
   Widget build(BuildContext context) => draft.fields.type.value != .reference
       ? const SizedBox.shrink()
-      : WorkspaceReferenceTarget(
-          workspaceId: editor.workspaceId,
-          targetTableId: draft.fields.reference.tableId,
-          multiple: draft.fields.reference.multiple,
-          disabled: draft.action.pending,
+      : Column(
+          children: [
+            _ReferenceTargetDraft(editor: editor, draft: draft),
+            _ReferenceDependencyDraft(editor: editor, draft: draft),
+          ],
         );
+}
+
+class const _ReferenceTargetDraft({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceReferenceTarget(
+    workspaceId: editor.workspaceId,
+    targetTableId: draft.fields.reference.tableId,
+    multiple: draft.fields.reference.multiple,
+    disabled: draft.action.pending,
+  );
+}
+
+class const _ReferenceDependencyDraft({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final reference = draft.fields.reference;
+
+    return WorkspaceReferenceDependency(
+      workspaceId: editor.workspaceId,
+      table: editor.table,
+      columnId: editor.column?.id,
+      targetTableId: reference.tableId.value,
+      parent: reference.parent,
+      match: reference.match,
+      disabled: draft.action.pending,
+    );
+  }
 }
 
 class const _ColumnBasicInputs({
@@ -356,11 +394,22 @@ class const _ColumnBasicInputs({
   );
 }
 
-class const _ColumnValue(
-  final String id,
-  final _ColumnFields fields,
-  final ({String? tableId, bool multiple}) reference,
-) {
+class _ColumnValue {
+  new(this.id, this.fields, ({String? tableId, bool multiple}) reference)
+    : _target = reference.tableId,
+      _multiple = reference.multiple,
+      _parent = fields.type.value == .reference
+          ? fields.reference.parent.value
+          : null,
+      _match = fields.type.value == .reference
+          ? fields.reference.match.value
+          : null;
+  final String id;
+  final _ColumnFields fields;
+  final String? _target;
+  final bool _multiple;
+  final String? _parent;
+  final String? _match;
   String get _name => fields.name.text;
   WorkspaceColumnType get _type => fields.type.value;
   List<String> get _options => _ColumnActions._options(fields);
@@ -376,8 +425,10 @@ class const _ColumnValue(
     isUnique: _unique,
     defaultValue: _defaultValue(fields),
     timeZone: _timeZone,
-    targetTableId: reference.tableId,
-    referenceMultiple: reference.multiple,
+    targetTableId: _target,
+    referenceMultiple: _multiple,
+    dependsOnColumnId: _parent,
+    targetMatchColumnId: _match,
   );
 }
 

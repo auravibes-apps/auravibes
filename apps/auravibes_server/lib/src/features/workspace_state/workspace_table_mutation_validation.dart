@@ -38,6 +38,7 @@ class WorkspaceTableMutationValidation(
     if (_schemaRevision(data, existing)) return;
     final references = await _references();
     await references.columns(data);
+    await references.dependents.schema(id, data);
     final records = await _records(id);
     WorkspaceTableConstraints.records(data, records.values);
     for (final values in records.values) {
@@ -53,7 +54,7 @@ class WorkspaceTableMutationValidation(
     final id = data['tableId'] as String;
     final schema = await _recordSchema(id, data);
     final values = _values(operation, schema, data);
-    await _checkReferences(schema, values, existing);
+    await _checkReferences(schema, data, existing, operation.resourceId);
     await _checkValues(id, operation.resourceId, schema, values);
     _recordTable(existing, id);
   }
@@ -64,16 +65,20 @@ class WorkspaceTableMutationValidation(
   ) async {
     final schema = await _schema(id);
     if (data['schemaRevision'] != schema['schemaRevision']) _stale();
+
     return schema;
   }
 
   Future<void> _checkReferences(
     Map<String, Object?> schema,
-    Map<String, Object?> values,
+    Map<String, Object?> data,
     WorkspaceResource? existing,
+    String recordId,
   ) async {
     final references = await _references();
+    final values = (data['values'] as Map).cast<String, Object?>();
     await references.values(schema, values, _previousValues(existing));
+    await references.dependents.record(recordId, data, existing);
   }
 
   Future<void> _checkValues(
@@ -95,6 +100,7 @@ class WorkspaceTableMutationValidation(
       transaction: _transaction,
     );
     if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
+
     return WorkspaceReferenceValidation(
       _repository,
       _session,
@@ -151,6 +157,7 @@ void _recordTable(WorkspaceResource? existing, String id) {
 bool _schemaRevision(Map<String, Object?> data, WorkspaceResource? existing) {
   if (existing == null) {
     if (data['schemaRevision'] != 1) throw const FormatException();
+
     return false;
   }
   final previous = _decode(existing);
@@ -160,6 +167,7 @@ bool _schemaRevision(Map<String, Object?> data, WorkspaceResource? existing) {
       data['schemaRevision'] != revision + (changed ? 1 : 0)) {
     _stale();
   }
+
   return !changed;
 }
 

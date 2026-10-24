@@ -30,6 +30,9 @@ abstract final class WorkspaceTableSchemaIdentity {
   static Map<String, Object?> _referenceDefaults(Map<String, Object?> values) {
     values['referenceMultiple'] ??= false;
     if (values['targetTableId'] == null) values.remove('targetTableId');
+    for (final key in ['dependsOnColumnId', 'targetMatchColumnId']) {
+      if (values[key] == null) values.remove(key);
+    }
 
     return values;
   }
