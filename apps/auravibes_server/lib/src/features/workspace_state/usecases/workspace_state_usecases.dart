@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../objects/object_file_mutation.dart';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
@@ -1385,6 +1386,11 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           userId,
           deferRecordState: deferRecordState,
         ).validate(operation, decoded, existing);
+        if (operation.resourceKind == WorkspaceResourceKind.file) {
+          await ObjectFileMutation(session, workspaceId, userId, transaction)
+              .validate(decoded, existing);
+          validatedData = jsonEncode(decoded);
+        }
         if (operation.resourceKind == WorkspaceResourceKind.tableRecord) {
           validatedData = jsonEncode(decoded);
         }

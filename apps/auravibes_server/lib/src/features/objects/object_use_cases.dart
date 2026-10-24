@@ -7,6 +7,7 @@ import '../../generated/protocol.dart';
 import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'object_policy.dart';
+import 'object_item_access.dart';
 import 'object_repository.dart';
 import 'object_scanner.dart';
 import 'object_store.dart';
@@ -324,24 +325,7 @@ class ObjectUseCases {
     required String userId,
     required GetDownloadRequest request,
   }) async {
-    await authorize(session, workspaceId: request.workspaceId, userId: userId);
-    final object = await repository.findObject(
-      session,
-      workspaceId: request.workspaceId,
-      objectId: request.objectId,
-    );
-    if (object == null ||
-        object.status != 'active' ||
-        object.deletedAt != null) {
-      throw ObjectException(code: ObjectErrorCode.objectNotFound);
-    }
-    if (!await repository.hasReadableMessageReference(
-      session,
-      workspaceId: request.workspaceId,
-      objectId: request.objectId,
-    )) {
-      throw ObjectException(code: ObjectErrorCode.objectNotFound);
-    }
+    final object = await _readableObject(session, userId, request);
     final signed = await store.signGet(
       key: object.objectKey,
       contentDisposition: safeContentDisposition(object.displayName),
@@ -353,6 +337,58 @@ class ObjectUseCases {
     );
   }
 
+  Future<ObjectResult> describe(
+    Session session, {
+    required String userId,
+    required GetDownloadRequest request,
+  }) async => _result(await _readableObject(session, userId, request));
+
+  Future<WorkspaceObject> _readableObject(
+    Session session,
+    String userId,
+    GetDownloadRequest request,
+  ) async {
+    await authorize(session, workspaceId: request.workspaceId, userId: userId);
+    final object = await repository.findObject(
+      session,
+      workspaceId: request.workspaceId,
+      objectId: request.objectId,
+    );
+    if (object == null ||
+        object.status != 'active' ||
+        object.deletedAt != null) {
+      throw ObjectException(code: ObjectErrorCode.objectNotFound);
+    }
+    final member = await _member(session, request.workspaceId, userId);
+    if (!await repository.hasReadableMessageReference(
+          session,
+          workspaceId: request.workspaceId,
+          objectId: request.objectId,
+        ) &&
+        !await ObjectItemAccess(session, member).canRead(request.objectId)) {
+      throw ObjectException(code: ObjectErrorCode.objectNotFound);
+    }
+    return object;
+  }
+
+  Future<WorkspaceMember> _member(
+    Session session,
+    int workspaceId,
+    String userId, {
+    Transaction? transaction,
+  }) async {
+    final member = await workspaceRepository.findActiveMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (member == null) {
+      throw CloudWorkspaceException(code: .membershipRequired);
+    }
+    return member;
+  }
+
   Future<void> delete(
     Session session, {
     required String userId,
@@ -360,6 +396,12 @@ class ObjectUseCases {
   }) async {
     await authorize(session, workspaceId: request.workspaceId, userId: userId);
     await session.db.transaction((transaction) async {
+      final member = await _member(
+        session,
+        request.workspaceId,
+        userId,
+        transaction: transaction,
+      );
       final replay = await repository.findDeletionByRequest(
         session,
         workspaceId: request.workspaceId,
@@ -387,12 +429,17 @@ class ObjectUseCases {
         throw ObjectException(code: ObjectErrorCode.staleRevision);
       }
       if (await repository.hasLiveReference(
-        session,
-        workspaceId: request.workspaceId,
-        objectId: request.objectId,
-        transaction: transaction,
-        lock: true,
-      )) {
+            session,
+            workspaceId: request.workspaceId,
+            objectId: request.objectId,
+            transaction: transaction,
+            lock: true,
+          ) ||
+          await ObjectItemAccess(
+            session,
+            member,
+            transaction: transaction,
+          ).retained(request.objectId)) {
         throw ObjectException(code: ObjectErrorCode.objectReferenced);
       }
       final workspace = await workspaceRepository.findActiveWorkspace(

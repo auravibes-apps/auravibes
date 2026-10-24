@@ -1717,6 +1717,25 @@ class Endpoints extends _is.EndpointDispatch {
                     params['request'],
                   ),
         ),
+        'describe': _is.MethodConnector(
+          name: 'describe',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_itlqxnii.GetDownloadRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['object'] as _ia0f4jqg.ObjectEndpoint).describe(
+                    session,
+                    params['request'],
+                  ),
+        ),
         'delete': _is.MethodConnector(
           name: 'delete',
           params: {

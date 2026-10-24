@@ -43,6 +43,27 @@ void main() {
     }
   });
 
+  test('stable asset bytes survive adapter reopen and reject paths', () async {
+    const first = AttachmentFileStore(storageNamespace: 'asset-tests');
+    await first.writeAsset('asset-one', .fromList([1, 2, 255]));
+    const reopened = AttachmentFileStore(storageNamespace: 'asset-tests');
+    expect(await reopened.readAsset('asset-one'), [1, 2, 255]);
+    const other = AttachmentFileStore(storageNamespace: 'other-tests');
+    await expectLater(
+      other.readAsset('asset-one'),
+      throwsA(isA<FileSystemException>()),
+    );
+    await expectLater(
+      first.writeAsset('../escape', .new(1)),
+      throwsArgumentError,
+    );
+    await reopened.deleteAsset('asset-one');
+    await expectLater(
+      reopened.readAsset('asset-one'),
+      throwsA(isA<FileSystemException>()),
+    );
+  });
+
   test('persistDraftFile copies draft file into support storage', () async {
     const store = AttachmentFileStore();
     final draftDirectory = Directory(

@@ -42,8 +42,15 @@ class WorkspaceTableMutationValidation(
     await references.dependents.schema(id, data);
     final records = await _records(id);
     WorkspaceTableConstraints.records(data, records.values);
-    for (final values in records.values) {
-      await references.values(data, values, const {});
+    final oldAttachmentColumns = existing == null ? <String>{} :
+      (_decode(existing)['columns'] as List).whereType<Map>()
+        .where((column) => column['type'] == 'attachment')
+        .map((column) => column['id'] as String).toSet();
+    for (final entry in records.entries) {
+      await references.values(data, entry.value, {
+        for (final id in oldAttachmentColumns)
+          if (entry.value.containsKey(id)) id: entry.value[id],
+      }, recordId: entry.key, tableId: id);
     }
   }
 
@@ -56,7 +63,13 @@ class WorkspaceTableMutationValidation(
     final schema = await _recordSchema(id, data);
     final values = _values(operation, schema, data);
     _recordTable(existing, id);
-    await _checkReferences(schema, data, existing, operation.resourceId);
+    await _checkReferences(
+      schema,
+      data,
+      existing,
+      operation.resourceId,
+      (jsonDecode(operation.data!) as Map)['assetSharingApproved'] == true,
+    );
     await _checkValues(id, operation.resourceId, schema, values);
   }
 
@@ -75,6 +88,7 @@ class WorkspaceTableMutationValidation(
     Map<String, Object?> data,
     WorkspaceResource? existing,
     String recordId,
+    bool assetSharingApproved,
   ) async {
     final references = await _references();
     final values = (data['values'] as Map).cast<String, Object?>();
@@ -83,7 +97,11 @@ class WorkspaceTableMutationValidation(
       values,
       _previousValues(existing),
       preserveOnly: deferRecordState,
+      recordId: recordId,
+      tableId: data['tableId'] as String,
+      assetSharingApproved: assetSharingApproved,
     );
+    data.remove('assetSharingApproved');
     if (!deferRecordState) {
       await references.dependents.record(recordId, data, existing);
     }

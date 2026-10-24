@@ -20,6 +20,7 @@ abstract final class WorkspaceTableValidation {
     'timestamp',
     'money',
     'reference',
+    'attachment',
   };
 
   static void schema(Map<String, Object?> data) =>
@@ -205,5 +206,8 @@ bool _exact(Map<String, Object?> column, Object? value) =>
       'timestamp' => WorkspaceExactValueValidation.timestamp(value),
       'money' => WorkspaceExactValueValidation.money(value),
       'reference' => WorkspaceReferenceValue.valid(column, value),
+      'attachment' => value is List && value.length <= 100 &&
+          value.toSet().length == value.length && value.every((id) =>
+            id is String && RegExp(r'^[0-9]{1,20}$').hasMatch(id)),
       _ => false,
     };

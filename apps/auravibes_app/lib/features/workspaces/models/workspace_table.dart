@@ -94,6 +94,7 @@ enum WorkspaceColumnType {
   timestamp,
   money,
   reference,
+  attachment,
 }
 
 class const WorkspaceRecord({

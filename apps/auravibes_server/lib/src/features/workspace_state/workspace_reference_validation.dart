@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../objects/object_record_attachments.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_dependent_validation.dart';
 import 'workspace_table_access.dart';
@@ -22,6 +23,15 @@ class const WorkspaceReferenceValidation(
       await dependent.schema(schema, column);
       await dependent.defaults(schema, column);
     }
+    final defaults = <String, Object?>{
+      for (final column in (schema['columns'] as List).whereType<Map>())
+        if (column['type'] == 'attachment' && column['defaultValue'] != null)
+          column['id'] as String: column['defaultValue'],
+    };
+    await ObjectRecordAttachments(session, member, transaction).validate(
+      schema: schema, values: defaults, previous: const {},
+      recordId: '', tableId: '',
+    );
   }
 
   Future<void> values(
@@ -29,7 +39,18 @@ class const WorkspaceReferenceValidation(
     Map<String, Object?> values,
     Map<String, Object?> previous, {
     bool preserveOnly = false,
+    String recordId = '',
+    String tableId = '',
+    bool assetSharingApproved = false,
   }) async {
+    await ObjectRecordAttachments(session, member, transaction).validate(
+      schema: schema,
+      values: values,
+      previous: previous,
+      recordId: recordId,
+      tableId: tableId,
+      sharingApproved: assetSharingApproved,
+    );
     for (final column in _columns(schema)) {
       final _ = await _preserve((
         column: column,

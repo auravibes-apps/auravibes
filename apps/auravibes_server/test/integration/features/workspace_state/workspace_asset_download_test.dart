@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_server/src/features/objects/object_scanner.dart';
 import 'package:auravibes_server/src/features/objects/object_store.dart';
 import 'package:auravibes_server/src/features/objects/object_use_cases.dart';
@@ -24,6 +26,9 @@ void main() {
           session,
           .new(id: .fromString(user), scopeNames: const {}),
         );
+        await EmailAccount.db.insertRow(session, .new(
+          authUserId: .fromString(user), email: '$user@example.invalid', passwordHash: 'unused',
+        ));
         final now = DateTime.now().toUtc();
         final workspace = await workspace_repo.CloudWorkspaceRepository()
             .createWorkspace(
@@ -96,6 +101,83 @@ void main() {
           (await download()).downloadUrl,
           'https://example.invalid/private',
         );
+        final unlinked = await WorkspaceObject.db.insertRow(session, object.copyWith(
+          id: null, objectKey: 'private/unlinked',
+        ));
+        Future<PatchWorkspaceStateResponse> createFile() => endpoints.workspaceState.patch(
+          authenticated, .new(workspaceId: workspace.id!, requestId: 'create-file', operations: [
+            .new(operation: .create, resourceKind: .file, resourceId: 'shared-file',
+              fieldMask: const [], data: jsonEncode({'name': 'Shared file', 'assetId': '${unlinked.id}'})),
+          ]),
+        );
+        final _ = await expectLater(createFile(), throwsA(isA<CloudWorkspaceException>().having(
+          (error) => error.code, 'guessed asset is not shareable', CloudWorkspaceErrorCode.permissionDenied,
+        )));
+        await ObjectUpload.db.insertRow(session, .new(
+          workspaceId: workspace.id!, objectId: unlinked.id!, actorUserId: user,
+          requestId: 'upload-unlinked', requestHash: 'fixture',
+          expiresAt: now.add(const Duration(minutes: 10)), completedAt: now, createdAt: now,
+        ));
+        final created = await createFile();
+        expect(created.resources.single.resourceId, 'shared-file');
+        final described = await endpoints.object.describe(authenticated,
+          .new(workspaceId: workspace.id!, objectId: unlinked.id!));
+        expect(described.displayName, 'photo.png');
+        final privateObject = await WorkspaceObject.db.insertRow(session, object.copyWith(
+          id: null, objectKey: 'private/table',
+        ));
+        await ObjectUpload.db.insertRow(session, .new(
+          workspaceId: workspace.id!, objectId: privateObject.id!, actorUserId: user,
+          requestId: 'private-upload', requestHash: 'fixture',
+          expiresAt: now.add(const Duration(minutes: 10)), completedAt: now, createdAt: now,
+        ));
+        final schema = <String, Object?>{'name': 'Private', 'labelColumnId': 'label',
+          'schemaRevision': 1, 'columns': [
+            {'id': 'label', 'name': 'Title', 'type': 'text'},
+            {'id': 'assets', 'name': 'Attachments', 'type': 'attachment'},
+          ]};
+        Future<PatchWorkspaceStateResponse> patch(WorkspacePatchOperation operation) =>
+          endpoints.workspaceState.patch(authenticated, .new(workspaceId: workspace.id!,
+            requestId: const Uuid().v4().toString(), operations: [operation]));
+        final _ = await patch(.new(operation: .create, resourceKind: .table,
+          resourceId: 'private-table', data: jsonEncode(schema), fieldMask: const []));
+        final guessed = await WorkspaceObject.db.insertRow(session, object.copyWith(
+          id: null, objectKey: 'private/guessed-record',
+        ));
+        final _ = await expectLater(patch(.new(operation: .create, resourceKind: .tableRecord,
+          resourceId: 'guessed-record', fieldMask: const [], data: jsonEncode({
+            'tableId': 'private-table', 'schemaRevision': 1,
+            'values': {'label': 'Guessed', 'assets': ['${guessed.id}']},
+          }))), throwsA(isA<CloudWorkspaceException>()));
+        final _ = await patch(.new(operation: .create, resourceKind: .tableRecord,
+          resourceId: 'private-record', fieldMask: const [], data: jsonEncode({
+            'tableId': 'private-table', 'schemaRevision': 1,
+            'values': {'label': 'A record', 'assets': ['${privateObject.id}']},
+          })));
+        final memberUser = const Uuid().v4().toString();
+        await AuthUser.db.insertRow(session, .new(id: .fromString(memberUser), scopeNames: const {}));
+        await EmailAccount.db.insertRow(session, .new(authUserId: .fromString(memberUser),
+          email: '$memberUser@example.invalid', passwordHash: 'unused'));
+        await WorkspaceMember.db.insertRow(session, .new(workspaceId: workspace.id!, userId: memberUser,
+          role: 'member', revision: 1, createdAt: now, updatedAt: now));
+        final memberSession = builder.copyWith(authentication: .authenticationInfo(memberUser, const {}));
+        Future<ObjectResult> memberDescribe() => endpoints.object.describe(memberSession,
+          .new(workspaceId: workspace.id!, objectId: privateObject.id!));
+        final _ = await expectLater(memberDescribe(), throwsA(isA<ObjectException>()));
+        final _ = await patch(.new(operation: .update, resourceKind: .table,
+          resourceId: 'private-table', expectedRevision: 1, fieldMask: const [],
+          data: jsonEncode({...schema, 'memberAccess': {memberUser: 'read'}})));
+        expect((await memberDescribe()).objectId, privateObject.id);
+        final _ = await patch(.new(operation: .update, resourceKind: .table,
+          resourceId: 'private-table', expectedRevision: 2, fieldMask: const [], data: jsonEncode(schema)));
+        final _ = await expectLater(memberDescribe(), throwsA(isA<ObjectException>()));
+        Future<PatchWorkspaceStateResponse> share(bool approved) => patch(.new(operation: .create,
+          resourceKind: .file, resourceId: 'broader-file', fieldMask: const [],
+          data: jsonEncode({'name': 'Broader', 'assetId': '${privateObject.id}', 'sharingApproved': approved})));
+        final _ = await expectLater(share(false), throwsA(isA<CloudWorkspaceException>()));
+        final shared = await share(true);
+        expect(jsonDecode(shared.resources.single.data), isNot(contains('sharingApproved')));
+        expect((await memberDescribe()).objectId, privateObject.id);
         await Conversation.db.updateRow(
           session,
           conversation.copyWith(deletedAt: now),

@@ -3,6 +3,7 @@ serialized: byName
 values:
   - view
   - folder
+  - file
   - table
   - tableRecord
   - conversation

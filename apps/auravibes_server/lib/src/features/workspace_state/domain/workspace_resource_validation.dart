@@ -75,7 +75,8 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     if (kind == WorkspaceResourceKind.folder ||
-        kind == WorkspaceResourceKind.table) {
+        kind == WorkspaceResourceKind.table ||
+        kind == WorkspaceResourceKind.file) {
       final name = data['name'];
       final parentId = data['parentId'];
       if (name is! String ||
@@ -123,6 +124,11 @@ class WorkspaceResourceValidation {
     }
     if (kind == WorkspaceResourceKind.table) {
       WorkspaceTableValidation.schema(data);
+    }
+    if (kind == WorkspaceResourceKind.file &&
+        (data['assetId'] is! String ||
+            int.tryParse(data['assetId'] as String) == null)) {
+      throw const FormatException();
     }
     if (kind == WorkspaceResourceKind.tableRecord) {
       final values = data['values'];
@@ -196,7 +202,9 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     final fields = switch (kind) {
-      WorkspaceResourceKind.folder || WorkspaceResourceKind.table => const {
+      WorkspaceResourceKind.folder ||
+      WorkspaceResourceKind.table ||
+      WorkspaceResourceKind.file => const {
         'parentId': WorkspaceResourceKind.folder,
       },
       WorkspaceResourceKind.tableRecord => const {

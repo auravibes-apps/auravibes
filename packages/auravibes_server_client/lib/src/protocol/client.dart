@@ -1022,6 +1022,14 @@ class EndpointObject extends _isc.EndpointRef {
     {'request': request},
   );
 
+  _ida.Future<_iw6nkrbk.ObjectResult> describe(
+    _ijxvxgh5.GetDownloadRequest request,
+  ) => caller.callServerEndpoint<_iw6nkrbk.ObjectResult>(
+    'object',
+    'describe',
+    {'request': request},
+  );
+
   _ida.Future<void> delete(_i65avykf.DeleteObjectRequest request) =>
       caller.callServerEndpoint<void>(
         'object',

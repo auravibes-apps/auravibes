@@ -75,6 +75,7 @@ object:
   - beginUpload:
   - completeUpload:
   - getDownload:
+  - describe:
   - delete:
 skillResource:
   - list:

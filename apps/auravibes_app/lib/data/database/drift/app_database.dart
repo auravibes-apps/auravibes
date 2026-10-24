@@ -43,6 +43,7 @@ import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_receipts.dart';
@@ -112,6 +113,8 @@ part 'app_database.g.dart';
     WorkspaceViews,
     WorkspaceTrashBatches,
     WorkspaceRecordBatchReceipts,
+    WorkspaceAssets,
+    WorkspaceFiles,
   ],
   daos: [
     WorkspaceDao,
@@ -202,7 +205,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceViewsSchemaVersion + 1;
   static const int _workspaceRecordBatchSchemaVersion =
       _workspaceTrashSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceRecordBatchSchemaVersion;
+  // Schema 40 belongs to record/schema history (#1678).
+  static const int _workspaceAssetsSchemaVersion = 41;
+  static const int _currentSchemaVersion = _workspaceAssetsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -262,6 +267,10 @@ extension on AppDatabase {
     await _upgradeWorkspaceTrashSchema(m, from);
     if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
       await m.createTable(workspaceRecordBatchReceipts);
+    }
+    if (from < AppDatabase._workspaceAssetsSchemaVersion) {
+      await m.createTable(workspaceAssets);
+      await m.createTable(workspaceFiles);
     }
     if (from < AppDatabase._connectorWritesSchemaVersion) {
       await m.createTable(connectorWrites);

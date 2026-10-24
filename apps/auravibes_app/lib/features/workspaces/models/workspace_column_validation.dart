@@ -171,9 +171,13 @@ abstract final class _ValueValidation {
       scheme == 'https' || scheme == 'http';
 }
 
-bool _extra(WorkspaceColumn column, Object? value) => column.type == .reference
-    ? WorkspaceReferenceValue.valid(column, value)
-    : _ValueValidation._exact(column.type, value);
+bool _extra(WorkspaceColumn column, Object? value) => switch (column.type) {
+  .reference => WorkspaceReferenceValue.valid(column, value),
+  .attachment => value is List && value.length <= _maximumColumns &&
+      value.toSet().length == value.length && value.every((id) =>
+        id is String && RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(id)),
+  _ => _ValueValidation._exact(column.type, value),
+};
 
 bool _validParent(WorkspaceColumn? parent, String id) =>
     parent != null &&

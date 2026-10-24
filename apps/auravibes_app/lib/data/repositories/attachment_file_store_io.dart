@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:auravibes_app/data/repositories/attachment_asset_key.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -8,6 +11,22 @@ import 'package:uuid/v7.dart';
 class const AttachmentFileStoreIo({
   final String storageNamespace = 'auravibes_app',
 }) {
+  Future<void> writeAsset(String assetId, Uint8List bytes) async {
+    final file = await _assetFile(assetId);
+    final _ = await file.parent.create(recursive: true);
+    final _ = await file.writeAsBytes(bytes, flush: true);
+  }
+
+  Future<Uint8List> readAsset(String assetId) async =>
+      await (await _assetFile(assetId)).readAsBytes();
+
+  Future<void> deleteAsset(String assetId) async {
+    final file = await _assetFile(assetId);
+    if (file.existsSync()) {
+      final _ = await file.delete();
+    }
+  }
+
   Future<String> persistDraftFile(String localPath) async {
     if (!await _isDraftFile(localPath)) return localPath;
 
@@ -26,6 +45,15 @@ class const AttachmentFileStoreIo({
     if (file.existsSync()) {
       final _ = await file.delete();
     }
+  }
+
+  Future<File> _assetFile(String assetId) async {
+    validateAttachmentAssetKey(assetId);
+    final support = await getApplicationSupportDirectory();
+
+    return File(
+      p.join(_storagePath(support.path, 'workspace_assets'), assetId),
+    );
   }
 
   Future<String> _persistedPath(String localPath) async {

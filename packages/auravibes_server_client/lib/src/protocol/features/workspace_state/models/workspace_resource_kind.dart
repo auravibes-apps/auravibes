@@ -15,6 +15,7 @@ import 'package:serverpod_client/serverpod_client.dart' as _isc;
 enum WorkspaceResourceKind implements _isc.SerializableModel {
   view,
   folder,
+  file,
   table,
   tableRecord,
   conversation,
@@ -43,6 +44,8 @@ enum WorkspaceResourceKind implements _isc.SerializableModel {
         return WorkspaceResourceKind.view;
       case 'folder':
         return WorkspaceResourceKind.folder;
+      case 'file':
+        return WorkspaceResourceKind.file;
       case 'table':
         return WorkspaceResourceKind.table;
       case 'tableRecord':

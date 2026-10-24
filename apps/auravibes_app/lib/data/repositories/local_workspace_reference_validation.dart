@@ -23,6 +23,13 @@ class const LocalWorkspaceReferenceValidation(
           .column(columns, column, retained: retained);
       if (!retained) await _defaults(columns, column);
     }
+    for (final column in columns.where(
+      (column) => column.type == .attachment,
+    )) {
+      if (!retained && column.defaultValue != null) {
+        await values([column], {column.id: column.defaultValue});
+      }
+    }
   }
 
   Future<void> values(
@@ -32,6 +39,23 @@ class const LocalWorkspaceReferenceValidation(
   }) async {
     for (final column in columns.where((column) => column.type == .reference)) {
       await _LocalReferenceValues(this).column(column, values, previous);
+    }
+    for (final column in columns.where(
+      (column) => column.type == .attachment,
+    )) {
+      final ids = values[column.id];
+      if (ids is! List) continue;
+      for (final id in ids.cast<String>()) {
+        final asset =
+            await (database.select(database.workspaceAssets)..where(
+                  (row) =>
+                      row.workspaceId.equals(workspaceId) &
+                      row.id.equals(id) &
+                      row.status.equals('active'),
+                ))
+                .getSingleOrNull();
+        if (asset == null) throw const WorkspaceTableException(denied: true);
+      }
     }
   }
 
