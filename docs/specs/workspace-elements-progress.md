@@ -227,6 +227,14 @@ The turn interruption removed live agent contexts; source changes and background
 - Worker evidence includes 15 app and 15 server regressions, strict DCL for 11 owned behavior files, full `validate:app`, server domain fatal analysis, clean generation and localization audit. Worker changed-file validation still reported baseline generated LocaleKeys long lines; generated files were not hand-edited.
 - Joint acceptance remains explicit: #1672 owns server schema DCL cleanup and column-aware timestamp uniqueness normalization so equivalent UTC strings compare as the same instant. Root owns live acceptance and final workspace/CI/platform gates. #1671 remains open; no push, closure, release or UI automation occurred in this merge.
 
+### Constraints and safe schema changes integration
+
+- Integrated #1672 tip `f282367f4` as `faa72712a`, without conflicts, preserving root `f7b66e41`, temporal values, original folder commit `4eee5ba18`, ACL/grants, metadata and event redaction.
+- Required/unique/default column constraints now share local/cloud validation, preview existing violations and reject unsafe schema changes transactionally. Defaults apply only to missing fields on record creation. Stable IDs, explicit empty/zero/false values and no-op schema revisions remain preserved. Timestamp uniqueness compares instants; exact-money equality normalizes decimal representations while preserving stored precision and currency.
+- Postmerge checks passed: 19 combined constraints/temporal/editor/model/metadata app regressions and three authenticated schema/concurrency/table endpoint regressions. Pinned FVM 3.47.7 ran through the root validation lease. Logs: `/tmp/auravibes-1672-merger-app.log` and `/tmp/auravibes-1672-merger-server.log`. Whitespace and ancestry checks passed; untracked evidence remains preserved.
+- Worker evidence includes strict combined DCL, fatal analysis across 60 handwritten paths, clean generation, changed-file validation and localization audit. The earlier #1671 timestamp-uniqueness and server schema DCL integration gaps are addressed. No broad checks were repeated after this conflict-free merge.
+- Capacity remains unverified: cloud validation scans workspace records and retains matching rows; local uniqueness scans may be quadratic. #1680 measurement must establish supported bounds; this is not a scalability claim. Root owns live acceptance and final CI/platform/spec review. #1672 remains open; no push, closure or UI automation occurred.
+
 ### Live rendering recovery and Connections integration follow-up
 
 - Approved native `cua-driver` exact-window binding succeeded for the UI-worktree executable. Focusing that isolated window changed Marionette from zero controls to 33. Refocusing after stalled actions advanced rendering consistently; no production routing fix is justified by the prior blank/stalled captures.
