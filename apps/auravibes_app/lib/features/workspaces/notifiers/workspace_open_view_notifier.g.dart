@@ -60,7 +60,7 @@ final class WorkspaceOpenViewNotifierProvider
 }
 
 String _$workspaceOpenViewNotifierHash() =>
-    r'a250f192143be4dc5e0f3deb14c1c38d1364ce21';
+    r'7a031d73dddb2248bbfcb990de9ebc2fa6b5d192';
 
 final class WorkspaceOpenViewNotifierFamily extends $Family
     with
