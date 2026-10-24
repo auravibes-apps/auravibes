@@ -6,7 +6,8 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 
 - Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
 - Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
-- Active implementers: #1675 Directory/table browsing, #1673 relationships, #1688 Connector writes. Each owns a separate worktree.
+- Integrated #1688 Connector writes at `c8a0e6ae5`; isolated live UI acceptance and final standards review remain before closure.
+- Active implementers: #1675 Directory/table browsing and #1673 relationships. Each owns a separate worktree.
 - Latest published verified head: `05a844a59`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 at69f361501 passed every gate except format; the one-line formatter repair is published. Current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
@@ -320,3 +321,12 @@ Publication checkpoint: root `69f361501e5429d0408f21e987837d8d944f3af7` pushed a
 Current-head CI40058728216 exposed one formatting-only indentation in `workspace_table.dart` (_columnTimeZone continuation). Root applied pinned formatter to that file; exact full `format:check` now passes, whitespace clean. No behavior changed or snapshots updated. Job log: `/tmp/auravibes-1693-format-69f-job-clean.log`. Other current-head CI results remain pending.
 
 Formatter repair `05a844a59381d861acde90d3022c0036e22fb316` pushed after dry-run; remote SHA matches. Completed CI40058728216 at69f361501 failed only format and its aggregate success gate; all other checks passed. No additional test/analysis failure was observed. Current repair-head CI remains pending.
+
+## #1688 root integration checkpoint
+
+- Merged verified worker tip `d3818b3f6` (feature `8bacbe132`) into integration as `c8a0e6ae5`; original folder commit `4eee5ba18` remains an ancestor. Merge required no conflict resolution.
+- Reviewed shared executor, metadata-only local/cloud journals, schema 35-to-36 forward migration, cloud workspace foreign-key cascade, generated server/client protocol and uncertain status/approval UI propagation. Journals persist operation identity, request digest, outcome and HTTP status; no request payloads or credentials. Current authorization precedes receipt replay; Default asks for writes, allow-all skips approval without overriding denial. Accepted/partial responses and interrupted requests remain uncertain and block blind duplicate effects. Unsupported reconciliation and compensation remain unavailable rather than claiming success or undo.
+- Integrated pinned FVM 3.47.7 checks through the root validation lease: app database migrations, local write persistence/reopen, approval matrix and result/preview widgets passed **76 tests** (`/tmp/merge-1688-app.log`, test runtime 6 seconds). Engine executor replay, identity, reconciliation, accepted-response and failed-persistence regressions passed **9 tests** (`/tmp/merge-1688-engine.log`, test runtime under 1 second). `git diff --check 9bcae9736..HEAD` passed.
+- Worker evidence retained in `/Users/davidlondono/.codex/implementation-checkpoints/workspace-writes-1688.md`: app128, engine45 plus final9, server49, authenticated full26 plus final focused recovery regression; handwritten fatal analyzer, localization, nullable/unused, scoped new-helper DCL and clean generated-drift gate passed. No new full-suite claim is made for this integration check.
+- Existing server orchestration DCL excess remains: changed methods were compared against baseline and recorded in the worker checkpoint. New helpers pass their configured volume ceiling; whole server monolith files do not. No metric ignore or broad unrelated refactor was added.
+- Remaining acceptance: parent-owned isolated app smoke for write approval, allow-all and uncertainty UI; final standards/spec review and repository issue workflow. No live provider writes, push, issue closure, automation or golden updates occurred during integration. Release/provider/retention decisions remain unresolved.
