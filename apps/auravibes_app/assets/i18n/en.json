@@ -2054,6 +2054,12 @@
     "filter_contains": "Contains",
     "filter_apply": "Apply filter",
     "filter_clear": "Clear filter",
-    "filter_invalid_value": "Enter a valid value for this field."
+    "filter_invalid_value": "Enter a valid value for this field.",
+    "reference_parent": "Filter by selected field",
+    "reference_match": "Matching field in target table",
+    "reference_no_dependency": "No dependent filter",
+    "reference_dependency_hint": "Candidates must link to the same parent. Change or clear both fields together when needed.",
+    "reference_incompatible": "Choose related records matching the selected parent, or explicitly clear both fields before saving.",
+    "reference_select_parent": "Select a parent before choosing related records."
   }
 }

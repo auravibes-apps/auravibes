@@ -356,6 +356,8 @@ class const _TableWriter(
   final AppDatabase _database,
   final String _workspaceId,
 ) {
+  LocalWorkspaceReferenceValidation get _references =>
+      LocalWorkspaceReferenceValidation(_database, _workspaceId);
   Future<WorkspaceTable> create(
     String name,
     String labelName,
@@ -418,12 +420,10 @@ class const _TableWriter(
   ) async {
     final row = await _tableRow(_database, _workspaceId, table.id);
     final columns = _updatedColumns(row, table, column);
-    await LocalWorkspaceReferenceValidation(
-      _database,
-      _workspaceId,
-    ).columns(columns);
+    await _references.columns(columns);
     await _checkRecords(table.id, columns);
     await _writeColumns(_database, row, columns);
+    await _references.allDependencies();
 
     return await _read(table.id);
   }
@@ -437,6 +437,12 @@ class const _TableWriter(
   ) async {
     final rows = await _records(_database, _workspaceId, tableId).get();
     _validateRecords(columns, rows.map(_record).toList());
+    for (final row in rows) {
+      await LocalWorkspaceReferenceValidation(
+        _database,
+        _workspaceId,
+      ).values(columns, _record(row).values);
+    }
   }
 }
 
@@ -511,6 +517,10 @@ class const _RecordWriter(
   ) async {
     final target = (workspaceId: _workspaceId, record: current);
     await _writeRecord(_database, target, values);
+    await LocalWorkspaceReferenceValidation(
+      _database,
+      _workspaceId,
+    ).allDependencies();
 
     return await _read(current.tableId, current.id);
   }

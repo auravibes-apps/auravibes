@@ -5,3 +5,4 @@ fields:
   columnId: String
   search: String, default=''
   afterId: String?
+  parentId: String?

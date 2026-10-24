@@ -2679,4 +2679,16 @@ abstract class LocaleKeys {
   static const workspace_items_filter_clear = 'workspace_items.filter_clear';
   static const workspace_items_filter_invalid_value =
       'workspace_items.filter_invalid_value';
+  static const workspace_items_reference_parent =
+      'workspace_items.reference_parent';
+  static const workspace_items_reference_match =
+      'workspace_items.reference_match';
+  static const workspace_items_reference_no_dependency =
+      'workspace_items.reference_no_dependency';
+  static const workspace_items_reference_dependency_hint =
+      'workspace_items.reference_dependency_hint';
+  static const workspace_items_reference_incompatible =
+      'workspace_items.reference_incompatible';
+  static const workspace_items_reference_select_parent =
+      'workspace_items.reference_select_parent';
 }

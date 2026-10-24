@@ -19,6 +19,73 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+  testWidgets(
+    'dependent picker receives draft parent without changing selections',
+    (tester) async {
+      final repository = _References();
+      List<String>? selected;
+      await tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceReferencePicker(
+            workspaceId: 'one',
+            table: _source,
+            column: _source.columns.last,
+            selected: const ['first'],
+            onSelected: (ids) => selected = ids,
+            parentId: 'parent-two',
+          ),
+          overrides: [
+            workspaceReferencesUsecaseProvider('one').overrideWith(
+              (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+            ),
+            workspaceTableProvider(
+              'one',
+              'target',
+            ).overrideWith((ref) async => _target),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+      await _flush(tester);
+      expect(repository.parents, ['parent-two']);
+      await tester.tap(find.text('Done'));
+      expect(selected, ['first']);
+    },
+  );
+  testWidgets(
+    'query filter uses target table with one choice and no creation',
+    (tester) async {
+      final repository = _References();
+      List<String>? selected;
+      await tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceReferencePicker(
+            workspaceId: 'one',
+            table: _source,
+            column: _source.columns.last,
+            selected: const ['first', 'second'],
+            onSelected: (ids) => selected = ids,
+            queryFilter: true,
+          ),
+          overrides: [
+            workspaceReferencesUsecaseProvider('one').overrideWith(
+              (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+            ),
+            workspaceTableProvider(
+              'one',
+              'target',
+            ).overrideWith((ref) async => _target),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+      await _flush(tester);
+      expect(repository.tableRequests, ['target']);
+      expect(find.text('Add record'), findsNothing);
+      await tester.tap(find.text('Done'));
+      expect(selected, ['first']);
+    },
+  );
   testWidgets('picker searches, pages and retains authorized selections', (
     tester,
   ) async {
@@ -248,6 +315,7 @@ const _source = WorkspaceTable(
 );
 
 class _References implements WorkspaceReferenceRepository {
+  final parents = <String?>[];
   final cursors = <String?>[];
   final searches = <String>[];
   final tableRequests = <String>[];
@@ -286,7 +354,9 @@ class _References implements WorkspaceReferenceRepository {
     WorkspaceReferenceSource source, {
     required String search,
     String? afterId,
+    String? parentId,
   }) async {
+    parents.add(parentId);
     cursors.add(afterId);
     searches.add(search);
 

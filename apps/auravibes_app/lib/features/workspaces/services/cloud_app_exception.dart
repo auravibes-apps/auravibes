@@ -101,6 +101,7 @@ const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
   .permissionDenied: LocaleKeys.cloud_errors_permission_denied,
   .ownerRequired: LocaleKeys.cloud_errors_permission_denied,
   .validationFailed: LocaleKeys.cloud_errors_validation,
+  .incompatibleRelationship: LocaleKeys.workspace_items_reference_incompatible,
   .invalidRole: LocaleKeys.cloud_errors_validation,
   .confirmationNameMismatch: LocaleKeys.cloud_errors_validation,
   .invalidCursor: LocaleKeys.cloud_errors_validation,

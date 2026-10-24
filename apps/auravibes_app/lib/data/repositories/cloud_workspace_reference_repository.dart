@@ -29,6 +29,7 @@ class const CloudWorkspaceReferenceRepository(
     WorkspaceReferenceSource source, {
     required String search,
     String? afterId,
+    String? parentId,
   }) async {
     final connection = await _connection();
 
@@ -38,6 +39,7 @@ class const CloudWorkspaceReferenceRepository(
           workspaceId: connection.workspaceId,
           sourceTableId: source.tableId,
           columnId: source.columnId,
+          parentId: parentId,
           search: search,
           afterId: afterId,
         ),

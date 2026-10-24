@@ -10,28 +10,22 @@ const _maximumTextLength = 16384;
 const _minimumPhoneDigits = 3;
 
 abstract final class WorkspaceColumnValidation {
-  static WorkspaceColumn normalized(WorkspaceColumn column) => WorkspaceColumn(
-    id: _ColumnConfiguration.id(column),
-    name: _ColumnConfiguration.name(column),
-    type: column.type,
-    options: _ColumnConfiguration.options(column),
-    isRequired: column.isRequired,
-    isUnique: column.isUnique,
-    defaultValue: column.defaultValue,
-    timeZone: column.timeZone,
-    targetTableId: column.targetTableId,
-    referenceMultiple: column.referenceMultiple,
-  );
+  static WorkspaceColumn normalized(WorkspaceColumn column) =>
+      WorkspaceColumn.fromJson({
+        ...column.toJson(),
+        'id': _ColumnConfiguration.id(column),
+        'name': _ColumnConfiguration.name(column),
+        'options': _ColumnConfiguration.options(column),
+      });
 
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
     _require(columns.isNotEmpty && columns.length <= _maximumColumns);
     _require(_uniqueIds(columns));
-    _require(
-      columns.any(
-        (column) => column.id == labelColumnId && column.type == .text,
-      ),
-    );
+    _require(_validLabel(columns, labelColumnId));
     columns.forEach(_column);
+    for (final column in columns) {
+      _dependency(columns, column);
+    }
   }
 
   static void values(
@@ -180,3 +174,27 @@ abstract final class _ValueValidation {
 bool _extra(WorkspaceColumn column, Object? value) => column.type == .reference
     ? WorkspaceReferenceValue.valid(column, value)
     : _ValueValidation._exact(column.type, value);
+
+bool _validParent(WorkspaceColumn? parent, String id) =>
+    parent != null &&
+    parent.id != id &&
+    parent.type == .reference &&
+    !parent.referenceMultiple &&
+    parent.dependsOnColumnId == null;
+
+void _dependency(List<WorkspaceColumn> columns, WorkspaceColumn column) {
+  if (column.dependsOnColumnId == null && column.targetMatchColumnId == null) {
+    return;
+  }
+  final parent = _findParent(columns, column.dependsOnColumnId);
+  WorkspaceColumnValidation._require(
+    column.type == .reference && column.targetMatchColumnId?.isNotEmpty == true,
+  );
+  WorkspaceColumnValidation._require(_validParent(parent, column.id));
+}
+
+bool _validLabel(List<WorkspaceColumn> columns, String id) =>
+    columns.any((column) => column.id == id && column.type == .text);
+
+WorkspaceColumn? _findParent(List<WorkspaceColumn> columns, String? id) =>
+    columns.where((column) => column.id == id).firstOrNull;

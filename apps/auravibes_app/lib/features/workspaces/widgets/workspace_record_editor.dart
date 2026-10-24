@@ -190,6 +190,7 @@ class const _ReferenceRecordValue(final _RecordValue field)
     restricted: field.restricted,
     onChanged: field.change,
     onUnset: field.unset,
+    parentId: field.draft.value[field.column.dependsOnColumnId] as String?,
   );
 }
 
