@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_csv_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_csv_input.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -44,6 +45,53 @@ void main() {
             .map((row) => row.values[table.labelColumnId]),
         ['Hello,\nworld', 'A "quote"'],
       );
+    },
+  );
+  test(
+    'trashed target exports retained IDs through explicit read proof',
+    () async {
+      final db = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(db.close);
+      final _ = await db
+          .into(db.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('csv'),
+              name: 'CSV',
+              type: .local,
+            ),
+          );
+      final tables = LocalWorkspaceTableRepository(db, 'csv');
+      final target = await tables.create(name: 'Target', labelName: 'Name');
+      final linked = await tables.createRecord(
+        table: target,
+        values: {target.labelColumnId: 'Private deleted label'},
+      );
+      var source = await tables.create(name: 'Source', labelName: 'Name');
+      source = await tables.saveColumn(
+        table: source,
+        column: .new(
+          id: 'link',
+          name: 'Link',
+          type: .reference,
+          targetTableId: target.id,
+        ),
+      );
+      final _ = await tables.createRecord(
+        table: source,
+        values: {source.columns.last.id: linked.id},
+      );
+      final trash = LocalWorkspaceTrashRepository(db, 'csv');
+      final plan = await trash.preview(
+        .new(kind: .table, id: target.id, revision: target.revision),
+      );
+      final _ = await trash.trash(plan.target, planToken: plan.planToken);
+      final csv = LocalWorkspaceCsvRepository(db, 'csv');
+      expect(await csv.readableDeletedReference(target.id, linked.id), isTrue);
+      expect(await csv.readableDeletedReference(target.id, 'missing'), isFalse);
+      final output = await ExportWorkspaceCsvUsecase(csv)(source.id);
+      expect(output, contains(linked.id));
+      expect(output, isNot(contains('Private deleted label')));
     },
   );
   test('CSV rejects invalid typed values without writes', () async {
@@ -262,16 +310,13 @@ void main() {
       ),
     );
   });
-  test(
-    'unavailable linked table keeps permitted source IDs without labels',
-    () async {
-      final output = await const ExportWorkspaceCsvUsecase(
-        _RestrictedExport(restricted: false, missingTarget: true),
-      )('source');
-      expect(output, contains('secret-record'));
-      expect(output, isNot(contains('Secret label')));
-    },
-  );
+  test('deleted-reference proof keeps authorized IDs without labels', () async {
+    final output = await const ExportWorkspaceCsvUsecase(
+      _RestrictedExport(restricted: false, deletedProof: true),
+    )('source');
+    expect(output, contains('secret-record'));
+    expect(output, isNot(contains('Secret label')));
+  });
   test('denied target lookup fails closed for a stale projection', () async {
     await expectLater(
       const ExportWorkspaceCsvUsecase(_RestrictedExport(restricted: false))(
@@ -290,11 +335,17 @@ void main() {
 
 class const _RestrictedExport({
   final bool restricted = true,
-  final bool missingTarget = false,
+  final bool deletedProof = false,
 }) implements WorkspaceCsvRepository {
   @override
+  Future<bool> readableDeletedReference(
+    String tableId,
+    String recordId,
+  ) async => deletedProof;
+
+  @override
   Future<WorkspaceTable> table(String id) async {
-    if (id != 'source') throw WorkspaceTableException(denied: !missingTarget);
+    if (id != 'source') throw const WorkspaceTableException(denied: true);
 
     return const WorkspaceTable(
       id: 'source',

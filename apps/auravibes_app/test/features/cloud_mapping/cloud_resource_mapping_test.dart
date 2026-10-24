@@ -71,6 +71,7 @@ void main() {
       WorkspaceResourceKind.values
           .where(
             (kind) => !const {
+              WorkspaceResourceKind.view,
               WorkspaceResourceKind.conversation,
               WorkspaceResourceKind.message,
               WorkspaceResourceKind.attachment,
@@ -85,6 +86,7 @@ void main() {
 
   test('dedicated resources and malformed required fields fail typed', () {
     for (final kind in const {
+      WorkspaceResourceKind.view,
       WorkspaceResourceKind.conversation,
       WorkspaceResourceKind.message,
       WorkspaceResourceKind.attachment,

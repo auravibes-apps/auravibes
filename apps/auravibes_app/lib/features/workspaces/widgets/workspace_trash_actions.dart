@@ -5,32 +5,34 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_references
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_trash_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 abstract final class WorkspaceTrashActions {
+  static final _logger = Logger('workspace_trash_action');
+
   static Future<bool> trash(
     BuildContext context,
     WidgetRef ref,
     String workspaceId,
     WorkspaceTrashTarget target,
   ) async {
-    final usecase = await ref.read(
-      workspaceTrashUsecaseProvider(workspaceId).future,
+    final result = await AsyncValue.guard(
+      () => _apply(context, ref, workspaceId, target),
     );
     if (!context.mounted) return false;
-    final result = await usecase.apply(
-      target,
-      approve: (plan) => _approve(context, plan),
-    );
 
-    if (!context.mounted) return false;
-
-    return _complete(context, ref, result);
+    return switch (result) {
+      AsyncData(:final value) => value,
+      final AsyncError<bool> failure => await _failure(context, failure),
+      AsyncLoading() => false,
+    };
   }
 
   static Future<WorkspaceTrashRestoration> restore(
@@ -61,6 +63,43 @@ abstract final class WorkspaceTrashActions {
       ..invalidate(workspaceViewDataProvider)
       ..invalidate(workspaceViewChoicesProvider)
       ..invalidate(workspaceViewHistoryProvider);
+  }
+
+  static Future<bool> _apply(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+    WorkspaceTrashTarget target,
+  ) async {
+    final usecase = await ref.read(
+      workspaceTrashUsecaseProvider(workspaceId).future,
+    );
+    if (!context.mounted) return false;
+    final result = await usecase.apply(
+      target,
+      approve: (plan) => _approve(context, plan),
+    );
+
+    if (!context.mounted) return false;
+
+    return _complete(context, ref, result);
+  }
+
+  static Future<bool> _failure(
+    BuildContext context,
+    AsyncError<bool> failure,
+  ) async {
+    _logger.warning(
+      'Trash failed: ${failure.error.runtimeType}',
+      null,
+      failure.stackTrace,
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _TrashFailureDialog(error: failure.error),
+    );
+
+    return false;
   }
 
   static Future<bool> _approve(
@@ -138,5 +177,38 @@ class const _ImpactCancel() extends StatelessWidget {
     child: const TextLocale(LocaleKeys.workspace_items_trash_cancel),
     variant: .ghost,
     identifier: 'workspace_trash_cancel',
+  );
+}
+
+class const _TrashFailureDialog({required final Object error})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Dialog(
+    child: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _FailureContent(error: error),
+      ),
+    ),
+  );
+}
+
+class const _FailureContent({required final Object error})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      WorkspaceItemFailure(error: error),
+      const _FailureClose(),
+    ],
+  );
+}
+
+class const _FailureClose() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => Navigator.of(context).pop(),
+    child: const TextLocale(LocaleKeys.workspace_items_trash_close),
   );
 }

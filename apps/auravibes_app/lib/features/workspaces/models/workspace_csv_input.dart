@@ -48,6 +48,7 @@ class const WorkspaceCsvError({
 
 abstract interface class WorkspaceCsvRepository {
   Future<WorkspaceTable> table(String id);
+  Future<bool> readableDeletedReference(String tableId, String recordId);
   Future<WorkspaceRecordPage> query(String tableId, WorkspaceRecordQuery query);
   Future<void> write(WorkspaceCsvPreview preview, {required bool previewOnly});
 }

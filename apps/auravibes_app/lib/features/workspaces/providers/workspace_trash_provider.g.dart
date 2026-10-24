@@ -67,7 +67,7 @@ final class WorkspaceTrashUsecaseProvider
 }
 
 String _$workspaceTrashUsecaseHash() =>
-    r'eff60642b03848025cb62b2d8e3cc0d5aa4bb9d5';
+    r'2f51fb3fdcb0995a5617cebf23137b5cd79e19dd';
 
 final class WorkspaceTrashUsecaseFamily extends $Family
     with

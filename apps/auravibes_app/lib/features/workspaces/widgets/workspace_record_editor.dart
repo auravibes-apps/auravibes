@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table_constra
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_fields.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_trash_menu.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reverse_references.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
@@ -80,6 +81,16 @@ class const _RecordForm({
   required final _RecordDraft draft,
   required final Future<void> Function() onSave,
 }) extends StatelessWidget {
+  Widget? get _trailing => switch (editor.record) {
+    final WorkspaceRecord record when editor.table.canEditRecords =>
+      WorkspaceRecordTrashMenu(
+        workspaceId: editor.workspaceId,
+        record: record,
+        onTrashed: editor.onBack,
+      ),
+    _ => null,
+  };
+
   @override
   Widget build(BuildContext context) => WorkspaceTableEditor(
     table: editor.table,
@@ -95,6 +106,7 @@ class const _RecordForm({
           record: record,
         ),
     ],
+    trailing: _trailing,
   );
 }
 
