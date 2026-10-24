@@ -40,6 +40,8 @@ class const WorkspaceColumn({
   final WorkspaceColumnType type = WorkspaceColumnType.text,
   final List<String> options = const [],
   final String timeZone = 'UTC',
+  final String? targetTableId,
+  final bool referenceMultiple = false,
 }) {
   factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
     id: data['id'] as String,
@@ -47,6 +49,8 @@ class const WorkspaceColumn({
     type: WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text'),
     options: _columnOptions(data),
     timeZone: data['timeZone'] as String? ?? 'UTC',
+    targetTableId: data['targetTableId'] as String?,
+    referenceMultiple: data['referenceMultiple'] as bool? ?? false,
   );
 
   Map<String, Object?> toJson() => {
@@ -55,6 +59,8 @@ class const WorkspaceColumn({
     'type': type.name,
     'options': options,
     'timeZone': timeZone,
+    'targetTableId': targetTableId,
+    'referenceMultiple': referenceMultiple,
   };
 }
 
@@ -70,6 +76,7 @@ enum WorkspaceColumnType {
   dateOnly,
   timestamp,
   money,
+  reference,
 }
 
 class const WorkspaceRecord({
@@ -77,6 +84,7 @@ class const WorkspaceRecord({
   required final String tableId,
   required final Map<String, Object?> values,
   required final int revision,
+  final List<String> restrictedReferenceColumns = const [],
 });
 
 class const WorkspaceTableException({

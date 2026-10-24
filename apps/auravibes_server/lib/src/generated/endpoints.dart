@@ -185,6 +185,8 @@ import '../features/model_connections/model_connection_endpoint.dart'
 import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
+import '../features/workspace_state/workspace_reference_endpoint.dart'
+    as _it87m04z;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
     as _i2j4mlvu;
 import '../features/workspace_state/workspace_state_endpoint.dart' as _iv99006q;
@@ -264,6 +266,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceStream',
+          null,
+        ),
+      'workspaceReference': _it87m04z.WorkspaceReferenceEndpoint()
+        ..initialize(
+          server,
+          'workspaceReference',
           null,
         ),
       'workspaceSecret': _i2j4mlvu.WorkspaceSecretEndpoint()
@@ -1834,6 +1842,96 @@ class Endpoints extends _is.EndpointDispatch {
                       .subscribe(
                         session,
                         params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceReference'] = _is.EndpointConnector(
+      name: 'workspaceReference',
+      endpoint: endpoints['workspaceReference']!,
+      methodConnectors: {
+        'targets': _is.MethodConnector(
+          name: 'targets',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'sourceTableId': _is.ParameterDescription(
+              name: 'sourceTableId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'columnId': _is.ParameterDescription(
+              name: 'columnId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'search': _is.ParameterDescription(
+              name: 'search',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'afterId': _is.ParameterDescription(
+              name: 'afterId',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .targets(
+                        session,
+                        params['workspaceId'],
+                        params['sourceTableId'],
+                        params['columnId'],
+                        params['search'],
+                        params['afterId'],
+                      ),
+        ),
+        'reverse': _is.MethodConnector(
+          name: 'reverse',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'tableId': _is.ParameterDescription(
+              name: 'tableId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'recordId': _is.ParameterDescription(
+              name: 'recordId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'afterId': _is.ParameterDescription(
+              name: 'afterId',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .reverse(
+                        session,
+                        params['workspaceId'],
+                        params['tableId'],
+                        params['recordId'],
+                        params['afterId'],
                       ),
         ),
       },

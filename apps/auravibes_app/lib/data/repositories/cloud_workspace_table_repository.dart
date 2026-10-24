@@ -206,6 +206,7 @@ WorkspaceRecord _record(WorkspaceResource row) {
     tableId: data['tableId'] as String,
     values: (data['values'] as Map<String, dynamic>).cast<String, Object?>(),
     revision: row.revision,
+    restrictedReferenceColumns: (data['restrictedReferenceColumns'] as List<dynamic>? ?? const []).cast<String>(),
   );
 }
 

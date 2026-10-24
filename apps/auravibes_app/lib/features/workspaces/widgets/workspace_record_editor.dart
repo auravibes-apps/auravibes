@@ -1,3 +1,5 @@
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reverse_references.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
@@ -13,6 +15,7 @@ class const WorkspaceRecordEditor({
   required final WorkspaceTable table,
   required final WorkspaceRecord? record,
   required final VoidCallback onBack,
+  final ValueChanged<WorkspaceRecord>? onSaved,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -46,7 +49,8 @@ abstract final class _RecordActions {
     final usecase = await ref.read(
       workspaceTableUsecaseProvider(editor.workspaceId).future,
     );
-    final _ = await _write(usecase, editor, .of(draft.values.value));
+    final saved = await _write(usecase, editor, .of(draft.values.value));
+    if (ref.context.mounted) editor.onSaved?.call(saved);
     if (ref.context.mounted) editor.onBack();
   }
 
@@ -76,7 +80,9 @@ class const _RecordForm({
     action: draft.action,
     onSave: onSave,
     kind: .record,
-    children: [_RecordDraftFields(editor: editor, draft: draft)],
+    children: [_RecordDraftFields(editor: editor, draft: draft),
+      if (editor.record case final record?) WorkspaceReverseReferences(workspaceId: editor.workspaceId, record: record),
+    ],
   );
 }
 
@@ -87,6 +93,8 @@ class const _RecordDraftFields({
   @override
   Widget build(BuildContext context) => _RecordFields(
     table: editor.table,
+    workspaceId: editor.workspaceId,
+    restricted: editor.record?.restrictedReferenceColumns ?? const [],
     draft: draft.values,
     disabled: draft.action.pending || !editor.table.canEditRecords,
   );
@@ -94,6 +102,8 @@ class const _RecordDraftFields({
 
 class const _RecordFields({
   required final WorkspaceTable table,
+  required final String workspaceId,
+  required final List<String> restricted,
   required final ValueNotifier<Map<String, Object?>> draft,
   required final bool disabled,
 }) extends StatelessWidget {
@@ -103,6 +113,8 @@ class const _RecordFields({
       for (final column in table.columns)
         _RecordValue(
           table: table,
+          workspaceId: workspaceId,
+          restricted: restricted.contains(column.id),
           column: column,
           draft: draft,
           disabled: disabled,
@@ -114,11 +126,17 @@ class const _RecordFields({
 class const _RecordValue({
   required final WorkspaceTable table,
   required final WorkspaceColumn column,
+  required final String workspaceId,
+  required final bool restricted,
   required final ValueNotifier<Map<String, Object?>> draft,
   required final bool disabled,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => WorkspaceRecordField(
+  Widget build(BuildContext context) => column.type == .reference
+    ? WorkspaceReferenceField(workspaceId: workspaceId, table: table, column: column,
+        value: draft.value[column.id], disabled: disabled, restricted: restricted,
+        onChanged: _change, onUnset: _unset)
+    : WorkspaceRecordField(
     column: column,
     value: draft.value[column.id],
     present: draft.value.containsKey(column.id),

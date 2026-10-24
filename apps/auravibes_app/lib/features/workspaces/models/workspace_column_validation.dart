@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
@@ -37,6 +38,9 @@ abstract final class WorkspaceColumnValidation {
   static void _column(WorkspaceColumn column) {
     _require(column.id.isNotEmpty && _name(column.name));
     _require(WorkspaceTimeZones.valid(column.timeZone));
+    _require(column.type == .reference
+        ? column.targetTableId?.isNotEmpty == true
+        : column.targetTableId == null && !column.referenceMultiple);
     if (column.type != .singleSelect && column.type != .multiSelect) {
       _require(column.options.isEmpty);
 
@@ -75,6 +79,7 @@ abstract final class _ValueValidation {
         .checkbox ||
         .singleSelect ||
         .multiSelect => _basic(column, value),
+        .reference => WorkspaceReferenceValue.valid(column, value),
         .url => _formatted(value, _url),
         .email => _formatted(value, _email.hasMatch),
         .phone => _formatted(value, _phone),

@@ -277,7 +277,7 @@
     },
     "create": {
       "type_label": "Tipo de conexión",
-    "connector_label": "Connector",
+      "connector_label": "Connector",
       "name_label": "Nombre",
       "api_key_label": "Clave API",
       "base_url_label": "URL base de la instancia"
@@ -2007,6 +2007,18 @@
     "increase_minute": "Aumentar minuto",
     "advanced_value": "Editar valor exacto",
     "utc_time": "Hora en UTC",
-    "weekdays": "L,M,X,J,V,S,D"
+    "weekdays": "L,M,X,J,V,S,D",
+    "type_reference": "Registro relacionado",
+    "reference_table": "Tabla de destino",
+    "reference_multiple": "Permitir varios registros",
+    "reference_choose": "Elegir registros",
+    "reference_search": "Buscar registros",
+    "reference_details": "Abrir detalles",
+    "reference_reverse": "Registros relacionados",
+    "reference_unavailable": "Los registros relacionados no están disponibles con tu acceso actual.",
+    "reference_next": "Página siguiente",
+    "reference_previous": "Primera página",
+    "reference_empty": "No hay registros coincidentes",
+    "reference_remove": "Borrar selección"
   }
 }

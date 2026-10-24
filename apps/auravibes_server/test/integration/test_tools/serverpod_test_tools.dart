@@ -414,6 +414,8 @@ class TestEndpoints {
 
   late final _WorkspaceStreamEndpoint workspaceStream;
 
+  late final _WorkspaceReferenceEndpoint workspaceReference;
+
   late final _WorkspaceSecretEndpoint workspaceSecret;
 
   late final _WorkspaceStateEndpoint workspaceState;
@@ -473,6 +475,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceStream = _WorkspaceStreamEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceReference = _WorkspaceReferenceEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2795,6 +2801,93 @@ class _WorkspaceStreamEndpoint {
       _localTestStreamManager.outputStreamController,
     );
     return _localTestStreamManager.outputStreamController.stream;
+  }
+}
+
+class _WorkspaceReferenceEndpoint {
+  _WorkspaceReferenceEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<List<_ixyz6pla.WorkspaceResource>> targets(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String sourceTableId,
+    String columnId,
+    String search,
+    String? afterId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceReference',
+            method: 'targets',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceReference',
+          methodName: 'targets',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'sourceTableId': sourceTableId,
+            'columnId': columnId,
+            'search': search,
+            'afterId': afterId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_ixyz6pla.WorkspaceResource>> reverse(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String tableId,
+    String recordId,
+    String? afterId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceReference',
+            method: 'reverse',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceReference',
+          methodName: 'reverse',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'tableId': tableId,
+            'recordId': recordId,
+            'afterId': afterId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
   }
 }
 

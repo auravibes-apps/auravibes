@@ -1,3 +1,4 @@
+import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -240,6 +241,7 @@ Future<void> _checkSchema(
 ) async {
   final current = await _tableRow(database, workspaceId, input.table.id);
   WorkspaceColumnValidation.values(_table(current).columns, input.values);
+  await LocalWorkspaceReferenceValidation(database, workspaceId).values(_table(current).columns, input.values);
   if (current.schemaRevision != input.table.schemaRevision) {
     throw const WorkspaceTableException(conflict: true);
   }
@@ -410,6 +412,7 @@ class const _TableWriter(
   ) async {
     final row = await _tableRow(_database, _workspaceId, table.id);
     final columns = _updatedColumns(row, table, column);
+    await LocalWorkspaceReferenceValidation(_database, _workspaceId).columns(columns);
     await _checkRecords(table.id, columns);
     await _writeColumns(_database, row, columns);
 

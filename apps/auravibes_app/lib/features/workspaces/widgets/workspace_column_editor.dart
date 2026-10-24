@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_target.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -34,6 +35,8 @@ typedef _ColumnFields = ({
   TextEditingController name,
   TextEditingController options,
   ValueNotifier<String> timeZone,
+  ValueNotifier<String?> targetTableId,
+  ValueNotifier<bool> referenceMultiple,
   ValueNotifier<WorkspaceColumnType> type,
 });
 typedef _ColumnDraft = ({_ColumnFields fields, WorkspaceTableAction action});
@@ -63,6 +66,8 @@ abstract final class _ColumnActions {
     options: useTextEditingController(text: column?.options.join('\n') ?? ''),
     type: useState(column?.type ?? WorkspaceColumnType.text),
     timeZone: useState(column?.timeZone ?? 'UTC'),
+    targetTableId: useState(column?.targetTableId),
+    referenceMultiple: useState(column?.referenceMultiple ?? false),
   );
   static WorkspaceColumn _column(
     WorkspaceColumn? column,
@@ -73,6 +78,8 @@ abstract final class _ColumnActions {
     type: fields.type.value,
     options: _options(fields),
     timeZone: fields.timeZone.value,
+    targetTableId: fields.type.value == .reference ? fields.targetTableId.value : null,
+    referenceMultiple: fields.type.value == .reference && fields.referenceMultiple.value,
   );
   static List<String> _options(_ColumnFields fields) =>
       hasOptions(fields.type.value)
@@ -113,6 +120,9 @@ class const _ColumnInputs({
       _ColumnDraftType(editor: editor, draft: draft),
       _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
       _ColumnTimeZone(draft: draft),
+      if (draft.fields.type.value == .reference) WorkspaceReferenceTarget(
+        workspaceId: editor.workspaceId, targetTableId: draft.fields.targetTableId,
+        multiple: draft.fields.referenceMultiple, disabled: draft.action.pending),
     ],
   );
 }

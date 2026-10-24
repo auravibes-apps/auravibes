@@ -1085,6 +1085,48 @@ class EndpointWorkspaceStream extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceReference extends _isc.EndpointRef {
+  EndpointWorkspaceReference(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceReference';
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> targets(
+    int workspaceId,
+    String sourceTableId,
+    String columnId,
+    String search,
+    String? afterId,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'targets',
+    {
+      'workspaceId': workspaceId,
+      'sourceTableId': sourceTableId,
+      'columnId': columnId,
+      'search': search,
+      'afterId': afterId,
+    },
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> reverse(
+    int workspaceId,
+    String tableId,
+    String recordId,
+    String? afterId,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'reverse',
+    {
+      'workspaceId': workspaceId,
+      'tableId': tableId,
+      'recordId': recordId,
+      'afterId': afterId,
+    },
+  );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceSecret extends _isc.EndpointRef {
   EndpointWorkspaceSecret(_isc.EndpointCaller caller) : super(caller);
 
@@ -1334,6 +1376,7 @@ class Client extends _isc.ServerpodClientShared {
     object = EndpointObject(this);
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
+    workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
     cloudWorkspace = EndpointCloudWorkspace(this);
@@ -1364,6 +1407,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceStream workspaceStream;
 
+  late final EndpointWorkspaceReference workspaceReference;
+
   late final EndpointWorkspaceSecret workspaceSecret;
 
   late final EndpointWorkspaceState workspaceState;
@@ -1386,6 +1431,7 @@ class Client extends _isc.ServerpodClientShared {
     'object': object,
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
+    'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,
     'cloudWorkspace': cloudWorkspace,

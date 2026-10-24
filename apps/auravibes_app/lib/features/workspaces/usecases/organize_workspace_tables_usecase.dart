@@ -100,6 +100,8 @@ WorkspaceColumn _normalizeColumn(WorkspaceColumn column) => WorkspaceColumn(
   type: column.type,
   options: column.options.map(_name).toList(),
   timeZone: column.timeZone,
+  targetTableId: column.targetTableId,
+  referenceMultiple: column.referenceMultiple,
 );
 
 String _name(String value) {

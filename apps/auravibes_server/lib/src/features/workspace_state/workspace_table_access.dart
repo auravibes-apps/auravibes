@@ -1,3 +1,4 @@
+import 'workspace_reference_visibility.dart';
 import 'dart:convert';
 
 import 'package:serverpod/serverpod.dart';
@@ -82,7 +83,9 @@ class const _TableReader(
     if (!_isTableResource(resource.resourceKind)) return resource;
     final access = await level(resource);
     if (access == null) return null;
-    if (resource.resourceKind != WorkspaceResourceKind.table) return resource;
+    if (resource.resourceKind != WorkspaceResourceKind.table) {
+      return await WorkspaceReferenceVisibility(session, member, transaction).record(resource);
+    }
 
     return _visibleTable(resource, access);
   }

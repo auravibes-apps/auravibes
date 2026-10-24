@@ -84,6 +84,9 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceReference:
+  - targets:
+  - reverse:
 workspaceSecret:
   - put:
 workspaceState:
