@@ -192,6 +192,8 @@ import 'package:auravibes_server_client/src/protocol/features/sync/stream/models
     as _ihte0iyb;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/duplicate_workspace_agent_request.dart'
     as _ipz1c0ew;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/duplicate_workspace_item_request.dart'
+    as _itjnussb;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i2aip5sd;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -1217,6 +1219,14 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
     {'request': request},
   );
 
+  _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> duplicateTable(
+    _itjnussb.DuplicateWorkspaceItemRequest request,
+  ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
+    'workspaceState',
+    'duplicateTable',
+    {'request': request},
+  );
+
   _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> duplicateAgent(
     _ipz1c0ew.DuplicateWorkspaceAgentRequest request,
   ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
@@ -1300,6 +1310,14 @@ class EndpointWorkspaceView extends _isc.EndpointRef {
 
   @override
   String get name => 'workspaceView';
+
+  _ida.Future<_i3ruzhns.WorkspaceView> duplicate(
+    _itjnussb.DuplicateWorkspaceItemRequest request,
+  ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
+    'workspaceView',
+    'duplicate',
+    {'request': request},
+  );
 
   _ida.Future<List<_i3ruzhns.WorkspaceView>> list(
     _iyht06fi.WorkspaceViewListRequest request,

@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_duplication_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -124,6 +125,7 @@ class const _ViewRow(final WorkspaceItemLists owner, final WorkspaceView view)
     icon: Icons.dashboard_outlined,
     onOpen: () => owner.onOpenView(view.id),
     onEdit: () => owner.onEdit(view),
+    source: view,
   );
 }
 
@@ -152,6 +154,7 @@ class const _TableRow(
     icon: Icons.table_chart_outlined,
     onOpen: () => owner.onOpenTable(table.id),
     onEdit: () => owner.onEdit(table),
+    source: table,
   );
 }
 
@@ -161,6 +164,7 @@ class const _ItemRow(
   required final IconData icon,
   required final VoidCallback onOpen,
   required final VoidCallback onEdit,
+  final Object? source,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
@@ -186,6 +190,8 @@ class const _Leading(final _ItemRow row) extends StatelessWidget {
 }
 
 class const _Menu(final _ItemRow row) extends ConsumerWidget {
+  bool get _duplicable =>
+      row.item.key.kind == .table || row.item.key.kind == .view;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (row.owner.selection != null || !row.item.canManage) {
@@ -193,16 +199,48 @@ class const _Menu(final _ItemRow row) extends ConsumerWidget {
     }
 
     return AuraPopupMenuButton(
-      items: [_edit(), const AuraPopupMenuDivider(), _trash(context, ref)],
+      items: _items(context, ref),
       identifier: 'workspace_item_edit_${row.item.key.id}',
       tooltip: LocaleKeys.common_show_more.tr(),
     );
   }
 
+  List<AuraPopupMenuEntry> _items(BuildContext context, WidgetRef ref) => [
+    _edit(),
+    if (_duplicable) _duplicate(context),
+    const AuraPopupMenuDivider(),
+    _trash(context, ref),
+  ];
+
   AuraPopupMenuItem _edit() => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_edit_item),
     onTap: row.onEdit,
   );
+  AuraPopupMenuItem _duplicate(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_duplicate),
+    onTap: () => unawaited(_copy(context)),
+    identifier: 'workspace_item_duplicate_${row.item.key.id}',
+  );
+  Future<void> _copy(BuildContext context) async {
+    final source = row.source;
+    if (source == null) return;
+    final id = await WorkspaceItemDuplicationActions.open(
+      context,
+      row.owner.workspaceId,
+      source,
+    );
+    if (!context.mounted || id == null) return;
+    _openCopy(id);
+  }
+
+  void _openCopy(String id) {
+    if (row.item.key.kind == .table) {
+      row.owner.onOpenTable(id);
+    } else {
+      row.owner.onOpenView(id);
+    }
+  }
+
   AuraPopupMenuItem _trash(BuildContext context, WidgetRef ref) =>
       AuraPopupMenuItem(
         title: const TextLocale(LocaleKeys.workspace_items_trash_action),

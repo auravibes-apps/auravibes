@@ -5,28 +5,20 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_batch_receipt.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_item_duplication.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_change.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
-import 'package:drift/drift.dart';
 import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 
 class const LocalWorkspaceTableRepository(
   final AppDatabase _database,
   final String _workspaceId,
 ) implements WorkspaceTableRepository {
-  Future<WorkspaceTable> duplicate({
-    required WorkspaceTable source,
-    required String targetId,
-    required String name,
-    required String requestId,
-    bool copyRecords = false,
-    String? parentId,
-  }) => _TableDuplicator(_database, _workspaceId).copy(
-    source,
-    (id: targetId, name: name, parentId: parentId, requestId: requestId, records: copyRecords),
-  );
+  Future<WorkspaceTable> duplicate(WorkspaceItemDuplication request) =>
+      _TableDuplicator(_database, _workspaceId).copy(request);
 
   @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
@@ -465,9 +457,13 @@ class const _RecordWriter(
 ) {
   Future<WorkspaceRecord> create(
     WorkspaceTable table,
-    Map<String, Object?> values,
-  ) => _database.transaction(
-    () async => await _insert(table.id, await _prepare(table, values)),
+    Map<String, Object?> values, {
+    bool applyDefaults = true,
+  }) => _database.transaction(
+    () async => await _insert(
+      table.id,
+      await _prepare(table, values, applyDefaults: applyDefaults),
+    ),
   );
 
   Future<WorkspaceRecord> update(
@@ -478,9 +474,10 @@ class const _RecordWriter(
 
   Future<Map<String, Object?>> _prepare(
     WorkspaceTable table,
-    Map<String, Object?> values,
-  ) async {
-    final normalized = await _defaults(table, values);
+    Map<String, Object?> values, {
+    bool applyDefaults = true,
+  }) async {
+    final normalized = applyDefaults ? await _defaults(table, values) : values;
     await _checkSchema(_database, _workspaceId, (
       table: table,
       values: normalized,
@@ -707,44 +704,147 @@ class const LocalWorkspaceRecordBatchRepository(
   }
 }
 
-typedef _CopyInput = ({String id, String name, String? parentId, String requestId, bool records});
-
 class const _TableDuplicator(final AppDatabase db, final String workspaceId) {
-  Future<WorkspaceTable> copy(WorkspaceTable expected, _CopyInput input) => db.transaction(() async {
-    await _checkLocalWorkspace(db, workspaceId);
-    final source = _table(await _tableRow(db, workspaceId, expected.id));
-    final receipts = LocalWorkspaceRecordBatchReceipt(db, workspaceId);
-    final digest = sha256.convert(utf8.encode(jsonEncode([expected.id, expected.revision, input.id, input.name, input.parentId, input.records]))).toString();
-    _validateCopy(input, source.id);
-    if (await receipts.replayed(input.requestId, digest)) return _table(await _tableRow(db, workspaceId, input.id));
-    _checkTableRevision(source, expected);
-    await _checkParent(db, workspaceId, input.parentId);
-    final table = await _insert(source, input);
-    if (input.records) await _copyRecords(source, table);
-    await LocalWorkspaceReferenceValidation(db, workspaceId).allDependencies();
-    await receipts.save(input.requestId, digest);
-    return table;
-  });
+  LocalWorkspaceRecordBatchReceipt get _receipts => .new(db, workspaceId);
+  Future<WorkspaceTable> copy(WorkspaceItemDuplication input) =>
+      db.transaction(() => _run(input));
 
-  Future<WorkspaceTable> _insert(WorkspaceTable source, _CopyInput input) async {
-    final ids = <String, String>{for (var i = 0; i < source.columns.length; i++) source.columns[i].id: '${input.id}-c$i'};
-    final columns = source.columns.map((column) => WorkspaceColumn.fromJson({...column.toJson(), 'id': ids[column.id], if (column.dependsOnColumnId != null) 'dependsOnColumnId': ids[column.dependsOnColumnId]})).toList();
-    WorkspaceColumnValidation.columns(columns, ids[source.labelColumnId]!);
-    await LocalWorkspaceReferenceValidation(db, workspaceId).columns(columns);
-    final _ = await _insertTable(db, WorkspaceTablesCompanion.insert(id: Value(input.id), workspaceId: workspaceId, name: input.name.trim(), parentId: Value(input.parentId), columnsJson: jsonEncode(columns.map((column) => column.toJson()).toList()), labelColumnId: ids[source.labelColumnId]!));
-    return _table(await _tableRow(db, workspaceId, input.id));
+  Future<WorkspaceTable> _run(WorkspaceItemDuplication input) async {
+    final source = await _source(input);
+    if (await _receipts.replayed(input.requestId, _copyDigest(input))) {
+      return await _read(input.targetId);
+    }
+    final table = await _copyNew(source, input);
+    await _receipts.save(input.requestId, _copyDigest(input));
+
+    return table;
   }
 
-  Future<void> _copyRecords(WorkspaceTable source, WorkspaceTable target) async {
-    final originals = await LocalWorkspaceTableRepository(db, workspaceId).records(source.id);
-    if (originals.length >= 50) throw const WorkspaceTableException();
-    final ids = <String, String>{for (var i = 0; i < source.columns.length; i++) source.columns[i].id: target.columns[i].id};
+  Future<WorkspaceTable> _source(WorkspaceItemDuplication input) async {
+    input.validate();
+    if (input.kind != .table) throw const WorkspaceTableException();
+    await _checkLocalWorkspace(db, workspaceId);
+
+    return await _read(input.sourceId);
+  }
+
+  Future<WorkspaceTable> _read(String id) async =>
+      _table(await _tableRow(db, workspaceId, id));
+
+  Future<WorkspaceTable> _copyNew(
+    WorkspaceTable source,
+    WorkspaceItemDuplication input,
+  ) async {
+    if (source.revision != input.expectedRevision) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+    await _checkParent(db, workspaceId, input.parentId);
+    final table = await _insert(source, input);
+    if (input.copyRecords) await _copyRecords(source, table);
+    await LocalWorkspaceReferenceValidation(db, workspaceId).allDependencies();
+
+    return table;
+  }
+
+  Future<WorkspaceTable> _insert(
+    WorkspaceTable source,
+    WorkspaceItemDuplication input,
+  ) async {
+    await _checkIdentity(input.targetId);
+    final ids = _copyColumnIds(source, input.targetId);
+    final columns = await _columns(source, ids);
+    final _ = await _insertTable(
+      db,
+      _companion(input, columns, ids[source.labelColumnId]!),
+    );
+
+    return await _read(input.targetId);
+  }
+
+  Future<List<WorkspaceColumn>> _columns(
+    WorkspaceTable source,
+    Map<String, String> ids,
+  ) async {
+    final columns = _validatedCopyColumns(source, ids);
+    await LocalWorkspaceReferenceValidation(db, workspaceId).columns(columns);
+
+    return columns;
+  }
+
+  Future<void> _checkIdentity(String id) async {
+    final existing = await (db.select(
+      db.workspaceTables,
+    )..where((row) => row.id.equals(id))).getSingleOrNull();
+    if (existing != null) throw const WorkspaceTableException(conflict: true);
+  }
+
+  WorkspaceTablesCompanion _companion(
+    WorkspaceItemDuplication input,
+    List<WorkspaceColumn> columns,
+    String labelId,
+  ) => .insert(
+    id: .new(input.targetId),
+    workspaceId: workspaceId,
+    name: input.name.trim(),
+    parentId: .new(input.parentId),
+    columnsJson: _encodeColumns(columns),
+    labelColumnId: labelId,
+  );
+
+  Future<void> _copyRecords(
+    WorkspaceTable source,
+    WorkspaceTable target,
+  ) async {
+    final originals = await LocalWorkspaceTableRepository(
+      db,
+      workspaceId,
+    ).records(source.id);
+    _checkCopyRecordCount(originals.length);
+    final ids = _copyColumnIds(source, target.id);
     for (final record in originals) {
-      final _ = await _RecordWriter(db, workspaceId).create(target, {for (final entry in record.values.entries) ids[entry.key]!: entry.value});
+      final _ = await _RecordWriter(
+        db,
+        workspaceId,
+      ).create(target, _copyValues(record.values, ids), applyDefaults: false);
     }
   }
 }
 
-void _validateCopy(_CopyInput input, String sourceId) {
-  if (input.id.isEmpty || input.id == sourceId || input.id.length > 100 || input.requestId.isEmpty || input.requestId.length > 100 || input.name.trim().isEmpty || input.name.trim().length > 200) throw const WorkspaceTableException();
+const _maximumCopyRecords = 49;
+String _copyDigest(WorkspaceItemDuplication request) =>
+    sha256.convert(utf8.encode(jsonEncode(request.toJson()))).toString();
+String _encodeColumns(List<WorkspaceColumn> columns) =>
+    jsonEncode(columns.map((column) => column.toJson()).toList());
+Map<String, String> _copyColumnIds(WorkspaceTable source, String targetId) => {
+  for (var i = 0; i < source.columns.length; i++)
+    source.columns[i].id: '$targetId-c$i',
+};
+List<WorkspaceColumn> _validatedCopyColumns(
+  WorkspaceTable source,
+  Map<String, String> ids,
+) {
+  final columns = _copyColumns(source, ids);
+  WorkspaceColumnValidation.columns(columns, ids[source.labelColumnId]!);
+
+  return columns;
+}
+
+List<WorkspaceColumn> _copyColumns(
+  WorkspaceTable source,
+  Map<String, String> ids,
+) => source.columns.map((column) => _copyColumn(column, ids)).toList();
+WorkspaceColumn _copyColumn(WorkspaceColumn column, Map<String, String> ids) =>
+    .fromJson({
+      ...column.toJson(),
+      'id': ids[column.id],
+      if (column.dependsOnColumnId != null)
+        'dependsOnColumnId': ids[column.dependsOnColumnId],
+    });
+Map<String, Object?> _copyValues(
+  Map<String, Object?> values,
+  Map<String, String> ids,
+) => {for (final entry in values.entries) ids[entry.key]!: entry.value};
+
+void _checkCopyRecordCount(int count) {
+  if (count > _maximumCopyRecords) throw const WorkspaceTableException();
 }

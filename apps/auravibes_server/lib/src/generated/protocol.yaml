@@ -98,6 +98,7 @@ workspaceState:
   - queryRecords:
   - read:
   - patch:
+  - duplicateTable:
   - duplicateAgent:
   - mutateCredential:
 workspaceTrash:
@@ -107,6 +108,7 @@ workspaceTrash:
   - list:
   - restore:
 workspaceView:
+  - duplicate:
   - list:
   - read:
   - history:

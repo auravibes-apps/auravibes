@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_tables_pro
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_csv_dialog.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_duplication_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
@@ -375,7 +376,7 @@ class const _TableMenu(
 
   List<AuraPopupMenuEntry> _items(BuildContext context, WidgetRef ref) => [
     if (browser.table.canEditRecords && !selectionMode.value) _select(),
-    if (browser.table.canManage) _settings(),
+    if (browser.table.canManage) ...[_settings(), _duplicate(context)],
     if (browser.table.canEditRecords) _import(context, ref),
     _export(context),
     if (browser.table.canManage) ...[
@@ -393,6 +394,18 @@ class const _TableMenu(
     settings.value = false;
     selectionMode.value = true;
   }
+
+  AuraPopupMenuItem _duplicate(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_duplicate),
+    onTap: () => unawaited(
+      WorkspaceItemDuplicationActions.open(
+        context,
+        browser.workspaceId,
+        browser.table,
+      ),
+    ),
+    identifier: 'workspace_table_duplicate',
+  );
 
   AuraPopupMenuItem _settings() => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_settings),

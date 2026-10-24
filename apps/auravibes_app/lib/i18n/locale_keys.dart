@@ -2719,6 +2719,21 @@ abstract class LocaleKeys {
   static const workspace_items_bulk_selected = 'workspace_items.bulk_selected';
   static const workspace_items_bulk_select = 'workspace_items.bulk_select';
   static const workspace_items_bulk_limit = 'workspace_items.bulk_limit';
+  static const workspace_items_duplicate = 'workspace_items.duplicate';
+  static const workspace_items_duplicate_name =
+      'workspace_items.duplicate_name';
+  static const workspace_items_duplicate_records =
+      'workspace_items.duplicate_records';
+  static const workspace_items_duplicate_relationships =
+      'workspace_items.duplicate_relationships';
+  static const workspace_items_duplicate_view_binding =
+      'workspace_items.duplicate_view_binding';
+  static const workspace_items_duplicate_created =
+      'workspace_items.duplicate_created';
+  static const workspace_items_duplicate_hint =
+      'workspace_items.duplicate_hint';
+  static const workspace_items_duplicate_unsupported =
+      'workspace_items.duplicate_unsupported';
   static const workspace_views_title = 'workspace_views.title';
   static const workspace_views_create = 'workspace_views.create';
   static const workspace_views_name = 'workspace_views.name';

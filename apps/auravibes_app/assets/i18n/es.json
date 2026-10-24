@@ -2082,7 +2082,15 @@
     "bulk_approval": "¿Aplicar todos los cambios juntos? Si algún registro falla, no se guardará ningún cambio.",
     "bulk_selected": "{count} seleccionados",
     "bulk_select": "Seleccionar registros",
-    "bulk_limit": "Selecciona hasta 50 registros para una edición atómica."
+    "bulk_limit": "Selecciona hasta 50 registros para una edición atómica.",
+    "duplicate": "Duplicar",
+    "duplicate_name": "Nombre de la copia",
+    "duplicate_records": "Incluir registros",
+    "duplicate_relationships": "Las referencias siguen usando las tablas y registros existentes. No se copian los elementos relacionados.",
+    "duplicate_view_binding": "Conserva la misma tabla y configuración. Cada persona sigue necesitando acceso.",
+    "duplicate_created": "Copia creada",
+    "duplicate_hint": "Copia las columnas y su configuración. Incluir registros también copia los registros actuales.",
+    "duplicate_unsupported": "No se puede completar esta copia con la estructura, referencias o cantidad de registros actuales. Resuelve las referencias no disponibles o copia solo la estructura."
   },
   "workspace_views": {
     "title": "Vista",

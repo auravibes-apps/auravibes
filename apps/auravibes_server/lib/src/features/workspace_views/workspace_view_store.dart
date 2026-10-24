@@ -19,7 +19,8 @@ class const WorkspaceViewStore(
       _ViewReader(_context).list(parentId, allFolders);
   Future<WorkspaceView> read(String id) => _ViewReader(_context).read(id);
   Future<List<String>> history(String id) => _ViewReader(_context).history(id);
-  Future<WorkspaceView> duplicate(DuplicateWorkspaceItemRequest request) => _ViewDuplicator(_context).copy(request);
+  Future<WorkspaceView> duplicate(DuplicateWorkspaceItemRequest request) =>
+      _ViewDuplicator(_context).copy(request);
   Future<WorkspaceView> save(WorkspaceViewSaveRequest request) =>
       _ViewWriter(_context).save(request);
   Future<void> authorizeMove(WorkspaceViewMove move) =>
@@ -308,25 +309,36 @@ Never _denied() => throw CloudWorkspaceException(
 
 const _endpoint = 'workspaceView.save';
 
-class const _ViewReceipts(final _ViewContext context) {
-  Future<WorkspaceView?> replay(WorkspaceViewSaveRequest request) async {
-    final receipt = await _find(request.requestId);
+class const _ViewReceipts(
+  final _ViewContext context, {
+  final String endpoint = _endpoint,
+}) {
+  Future<WorkspaceView?> replay(WorkspaceViewSaveRequest request) async =>
+      await replayHash(request.requestId, await _requestHash(request));
+  Future<void> save(
+    WorkspaceViewSaveRequest request,
+    WorkspaceView saved,
+  ) async =>
+      await saveHash(request.requestId, await _requestHash(request), saved);
+
+  Future<WorkspaceView?> replayHash(String requestId, String hash) async {
+    final receipt = await _find(requestId);
     if (receipt == null) return null;
-    if (receipt.requestHash != await _requestHash(request)) _receiptConflict();
+    if (receipt.requestHash != hash) _receiptConflict();
 
     return WorkspaceView.fromJson(
       jsonDecode(receipt.responseJson) as Map<String, dynamic>,
     );
   }
 
-  Future<void> save(
-    WorkspaceViewSaveRequest request,
+  Future<void> saveHash(
+    String requestId,
+    String hash,
     WorkspaceView saved,
   ) async {
-    final receipt = await _receipt(request, saved);
-    await WorkspaceMutationReceipt.db.insertRow(
+    final _ = await WorkspaceMutationReceipt.db.insertRow(
       context.session,
-      receipt,
+      _receipt(requestId, hash, saved),
       transaction: context.transaction,
     );
   }
@@ -334,26 +346,31 @@ class const _ViewReceipts(final _ViewContext context) {
   Future<WorkspaceMutationReceipt?> _find(String id) =>
       WorkspaceMutationReceipt.db.findFirstRow(
         context.session,
-        where: _ReceiptKey(context, id).matches,
+        where: _ReceiptKey(context, id, endpoint).matches,
         transaction: context.transaction,
       );
 
-  Future<WorkspaceMutationReceipt> _receipt(
-    WorkspaceViewSaveRequest request,
+  WorkspaceMutationReceipt _receipt(
+    String requestId,
+    String hash,
     WorkspaceView saved,
-  ) async => WorkspaceMutationReceipt(
+  ) => .new(
     workspaceId: context.member.workspaceId,
     scopeKey: _scope(context),
     actorUserId: context.member.userId,
-    endpoint: _endpoint,
-    requestId: request.requestId,
-    requestHash: await _requestHash(request),
+    endpoint: endpoint,
+    requestId: requestId,
+    requestHash: hash,
     responseJson: jsonEncode(saved.toJson()),
     createdAt: DateTime.now().toUtc(),
   );
 }
 
-class const _ReceiptKey(final _ViewContext context, final String requestId) {
+class const _ReceiptKey(
+  final _ViewContext context,
+  final String requestId,
+  final String endpoint,
+) {
   Expression matches(WorkspaceMutationReceiptTable row) =>
       _matchesScope(row) &
       row.actorUserId.equals(context.member.userId) &
@@ -361,7 +378,7 @@ class const _ReceiptKey(final _ViewContext context, final String requestId) {
   Expression _matchesScope(WorkspaceMutationReceiptTable row) =>
       row.workspaceId.equals(context.member.workspaceId) &
       row.scopeKey.equals(_scope(context)) &
-      row.endpoint.equals(_endpoint);
+      row.endpoint.equals(endpoint);
 }
 
 String _scope(_ViewContext context) =>
@@ -423,25 +440,71 @@ WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
 }
 
 class const _ViewDuplicator(final _ViewContext context) {
+  _ViewReceipts get _receipts =>
+      .new(context, endpoint: 'workspaceView.duplicate');
   Future<WorkspaceView> copy(DuplicateWorkspaceItemRequest request) async {
-    WorkspaceTableDuplication.validate(request);
-    if (context.member.role != 'owner' || request.copyRecords) _denied();
-    final source = await _ViewReader(context).read(request.sourceId);
-    final hash = base64UrlEncode((await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes);
-    final previous = await _receipt(request.requestId);
-    if (previous != null) {
-      if (previous.requestHash != hash) _receiptConflict();
-      final _ = await _ViewReader(context).read(request.targetId);
-      return WorkspaceView.fromJson(jsonDecode(previous.responseJson) as Map<String, dynamic>);
-    }
-    _checkRevision(source, request.expectedRevision);
-    if (await context.view(request.targetId, includeDeleted: true) != null) _receiptConflict();
-    final copied = {..._data(source.data), 'id': request.targetId, 'name': request.name.trim(), 'parentId': request.parentId, 'revision': 0};
-    final saved = await _ViewWriter(context).save(WorkspaceViewSaveRequest(workspaceId: request.workspaceId, requestId: 'copy:${request.requestId}', viewId: request.targetId, expectedRevision: 0, definition: jsonEncode(copied)));
-    final _ = await WorkspaceMutationReceipt.db.insertRow(context.session, WorkspaceMutationReceipt(workspaceId: context.member.workspaceId, scopeKey: _scope(context), actorUserId: context.member.userId, endpoint: 'workspaceView.duplicate', requestId: request.requestId, requestHash: hash, responseJson: jsonEncode(saved.toJson()), createdAt: DateTime.now().toUtc()), transaction: context.transaction);
+    final source = await _source(request);
+    final hash = await _copyHash(request);
+    final replay = await _replay(request, hash);
+    if (replay != null) return replay;
+    final saved = await _save(source, request);
+    await _receipts.saveHash(request.requestId, hash, saved);
+
     return saved;
   }
 
-  Future<WorkspaceMutationReceipt?> _receipt(String id) => WorkspaceMutationReceipt.db.findFirstRow(context.session,
-    where: (row) => row.workspaceId.equals(context.member.workspaceId) & row.actorUserId.equals(context.member.userId) & row.endpoint.equals('workspaceView.duplicate') & row.requestId.equals(id), transaction: context.transaction);
+  Future<WorkspaceView> _source(DuplicateWorkspaceItemRequest request) {
+    WorkspaceTableDuplication.validate(request);
+    if (context.member.role != 'owner' || request.copyRecords) _denied();
+
+    return _ViewReader(context).read(request.sourceId);
+  }
+
+  Future<WorkspaceView?> _replay(
+    DuplicateWorkspaceItemRequest request,
+    String hash,
+  ) async {
+    final replay = await _receipts.replayHash(request.requestId, hash);
+    if (replay == null) return null;
+    final _ = await _ViewReader(context).read(request.targetId);
+
+    return replay;
+  }
+
+  Future<WorkspaceView> _save(
+    WorkspaceView source,
+    DuplicateWorkspaceItemRequest request,
+  ) async {
+    _checkRevision(source, request.expectedRevision);
+    if (await context.view(request.targetId, includeDeleted: true) != null) {
+      _receiptConflict();
+    }
+
+    return await _ViewWriter(context).save(_copySaveRequest(source, request));
+  }
 }
+
+Future<String> _copyHash(DuplicateWorkspaceItemRequest request) async =>
+    base64UrlEncode(
+      (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
+    );
+WorkspaceViewSaveRequest _copySaveRequest(
+  WorkspaceView source,
+  DuplicateWorkspaceItemRequest request,
+) => .new(
+  workspaceId: request.workspaceId,
+  requestId: request.targetId,
+  viewId: request.targetId,
+  expectedRevision: 0,
+  definition: jsonEncode(_copyDefinition(source, request)),
+);
+Map<String, Object?> _copyDefinition(
+  WorkspaceView source,
+  DuplicateWorkspaceItemRequest request,
+) => {
+  ..._data(source.data),
+  'id': request.targetId,
+  'name': request.name.trim(),
+  'parentId': request.parentId,
+  'revision': 0,
+};

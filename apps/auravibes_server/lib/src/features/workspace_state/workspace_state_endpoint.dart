@@ -95,7 +95,11 @@ class WorkspaceStateEndpoint extends Endpoint {
     DuplicateWorkspaceItemRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    final response = await _useCases.duplicateTable(session, userId: account.userId, request: request);
+    final response = await _useCases.duplicateTable(
+      session,
+      userId: account.userId,
+      request: request,
+    );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
     return response;
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_duplication_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chart.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_detail.dart';
@@ -111,7 +112,7 @@ class const _Menu(
     final data = _data(ref);
     if (data == null || !data.table.canManage) return const SizedBox.shrink();
 
-    return _Popup(data, selected);
+    return _Popup(owner.workspaceId, data, selected);
   }
 
   WorkspaceViewData? _data(WidgetRef ref) => ref
@@ -120,19 +121,34 @@ class const _Menu(
 }
 
 class const _Popup(
+  final String workspaceId,
   final WorkspaceViewData data,
   final ValueNotifier<_Selection?> selected,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
     itemBuilder: _items,
-    onSelected: (mode) => selected.value = (mode: mode, data: data),
+    onSelected: (mode) => _select(context, mode),
   );
+
+  void _select(BuildContext context, String mode) {
+    if (mode == 'duplicate') {
+      unawaited(
+        WorkspaceItemDuplicationActions.open(context, workspaceId, data.view),
+      );
+    } else {
+      selected.value = (mode: mode, data: data);
+    }
+  }
 
   List<PopupMenuEntry<String>> _items(BuildContext _) => [
     const PopupMenuItem(
       value: 'edit',
       child: TextLocale(LocaleKeys.workspace_views_edit),
+    ),
+    const PopupMenuItem(
+      value: 'duplicate',
+      child: TextLocale(LocaleKeys.workspace_items_duplicate),
     ),
     const PopupMenuItem(
       value: 'history',

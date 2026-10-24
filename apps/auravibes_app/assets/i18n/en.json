@@ -2082,7 +2082,15 @@
     "bulk_approval": "Apply all changes together? If any record fails, no changes will be saved.",
     "bulk_selected": "{count} selected",
     "bulk_select": "Select records",
-    "bulk_limit": "Select up to 50 records for one atomic edit."
+    "bulk_limit": "Select up to 50 records for one atomic edit.",
+    "duplicate": "Duplicate",
+    "duplicate_name": "Copy name",
+    "duplicate_records": "Include records",
+    "duplicate_relationships": "References still use existing tables and records. Related items are not copied.",
+    "duplicate_view_binding": "Keeps the same table and saved settings. Each person still needs access.",
+    "duplicate_created": "Copy created",
+    "duplicate_hint": "Copies columns and settings. Include records also copies the current records.",
+    "duplicate_unsupported": "This copy cannot be completed with the current schema, references or record count. Resolve unavailable references or copy only the schema."
   },
   "workspace_views": {
     "title": "View",
