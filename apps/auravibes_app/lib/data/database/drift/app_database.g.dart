@@ -17737,6 +17737,17 @@ class $WorkspaceViewsTable extends WorkspaceViews
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -17747,6 +17758,7 @@ class $WorkspaceViewsTable extends WorkspaceViews
     revision,
     mutations,
     history,
+    deletedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -17816,6 +17828,12 @@ class $WorkspaceViewsTable extends WorkspaceViews
     } else if (isInserting) {
       context.missing(_historyMeta);
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
     return context;
   }
 
@@ -17857,6 +17875,10 @@ class $WorkspaceViewsTable extends WorkspaceViews
         DriftSqlType.string,
         data['${effectivePrefix}history'],
       )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
     );
   }
 
@@ -17881,6 +17903,7 @@ class WorkspaceViewRow extends DataClass
   final int revision;
   final String mutations;
   final String history;
+  final DateTime? deletedAt;
   const WorkspaceViewRow({
     required this.id,
     required this.createdAt,
@@ -17890,6 +17913,7 @@ class WorkspaceViewRow extends DataClass
     required this.revision,
     required this.mutations,
     required this.history,
+    this.deletedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -17902,6 +17926,9 @@ class WorkspaceViewRow extends DataClass
     map['revision'] = Variable<int>(revision);
     map['mutations'] = Variable<String>(mutations);
     map['history'] = Variable<String>(history);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     return map;
   }
 
@@ -17915,6 +17942,9 @@ class WorkspaceViewRow extends DataClass
       revision: Value(revision),
       mutations: Value(mutations),
       history: Value(history),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
     );
   }
 
@@ -17932,6 +17962,7 @@ class WorkspaceViewRow extends DataClass
       revision: serializer.fromJson<int>(json['revision']),
       mutations: serializer.fromJson<String>(json['mutations']),
       history: serializer.fromJson<String>(json['history']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
     );
   }
   @override
@@ -17946,6 +17977,7 @@ class WorkspaceViewRow extends DataClass
       'revision': serializer.toJson<int>(revision),
       'mutations': serializer.toJson<String>(mutations),
       'history': serializer.toJson<String>(history),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
   }
 
@@ -17958,6 +17990,7 @@ class WorkspaceViewRow extends DataClass
     int? revision,
     String? mutations,
     String? history,
+    Value<DateTime?> deletedAt = const Value.absent(),
   }) => WorkspaceViewRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -17967,6 +18000,7 @@ class WorkspaceViewRow extends DataClass
     revision: revision ?? this.revision,
     mutations: mutations ?? this.mutations,
     history: history ?? this.history,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
   WorkspaceViewRow copyWithCompanion(WorkspaceViewsCompanion data) {
     return WorkspaceViewRow(
@@ -17980,6 +18014,7 @@ class WorkspaceViewRow extends DataClass
       revision: data.revision.present ? data.revision.value : this.revision,
       mutations: data.mutations.present ? data.mutations.value : this.mutations,
       history: data.history.present ? data.history.value : this.history,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
   }
 
@@ -17993,7 +18028,8 @@ class WorkspaceViewRow extends DataClass
           ..write('data: $data, ')
           ..write('revision: $revision, ')
           ..write('mutations: $mutations, ')
-          ..write('history: $history')
+          ..write('history: $history, ')
+          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
@@ -18008,6 +18044,7 @@ class WorkspaceViewRow extends DataClass
     revision,
     mutations,
     history,
+    deletedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -18020,7 +18057,8 @@ class WorkspaceViewRow extends DataClass
           other.data == this.data &&
           other.revision == this.revision &&
           other.mutations == this.mutations &&
-          other.history == this.history);
+          other.history == this.history &&
+          other.deletedAt == this.deletedAt);
 }
 
 class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
@@ -18032,6 +18070,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
   final Value<int> revision;
   final Value<String> mutations;
   final Value<String> history;
+  final Value<DateTime?> deletedAt;
   final Value<int> rowid;
   const WorkspaceViewsCompanion({
     this.id = const Value.absent(),
@@ -18042,6 +18081,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
     this.revision = const Value.absent(),
     this.mutations = const Value.absent(),
     this.history = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceViewsCompanion.insert({
@@ -18053,6 +18093,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
     required int revision,
     this.mutations = const Value.absent(),
     required String history,
+    this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        data = Value(data),
@@ -18067,6 +18108,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
     Expression<int>? revision,
     Expression<String>? mutations,
     Expression<String>? history,
+    Expression<DateTime>? deletedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -18078,6 +18120,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
       if (revision != null) 'revision': revision,
       if (mutations != null) 'mutations': mutations,
       if (history != null) 'history': history,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -18091,6 +18134,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
     Value<int>? revision,
     Value<String>? mutations,
     Value<String>? history,
+    Value<DateTime?>? deletedAt,
     Value<int>? rowid,
   }) {
     return WorkspaceViewsCompanion(
@@ -18102,6 +18146,7 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
       revision: revision ?? this.revision,
       mutations: mutations ?? this.mutations,
       history: history ?? this.history,
+      deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18133,6 +18178,9 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
     if (history.present) {
       map['history'] = Variable<String>(history.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18150,6 +18198,487 @@ class WorkspaceViewsCompanion extends UpdateCompanion<WorkspaceViewRow> {
           ..write('revision: $revision, ')
           ..write('mutations: $mutations, ')
           ..write('history: $history, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceTrashBatchesTable extends WorkspaceTrashBatches
+    with TableInfo<$WorkspaceTrashBatchesTable, WorkspaceTrashBatchRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceTrashBatchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _targetJsonMeta = const VerificationMeta(
+    'targetJson',
+  );
+  @override
+  late final GeneratedColumn<String> targetJson = GeneratedColumn<String>(
+    'target_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _membersJsonMeta = const VerificationMeta(
+    'membersJson',
+  );
+  @override
+  late final GeneratedColumn<String> membersJson = GeneratedColumn<String>(
+    'members_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    targetJson,
+    name,
+    membersJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_trash_batches';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceTrashBatchRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('target_json')) {
+      context.handle(
+        _targetJsonMeta,
+        targetJson.isAcceptableOrUnknown(data['target_json']!, _targetJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetJsonMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('members_json')) {
+      context.handle(
+        _membersJsonMeta,
+        membersJson.isAcceptableOrUnknown(
+          data['members_json']!,
+          _membersJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_membersJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkspaceTrashBatchRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceTrashBatchRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      targetJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_json'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      membersJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}members_json'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceTrashBatchesTable createAlias(String alias) {
+    return $WorkspaceTrashBatchesTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceTrashBatchRow extends DataClass
+    implements Insertable<WorkspaceTrashBatchRow> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String targetJson;
+  final String name;
+  final String membersJson;
+  const WorkspaceTrashBatchRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.targetJson,
+    required this.name,
+    required this.membersJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['target_json'] = Variable<String>(targetJson);
+    map['name'] = Variable<String>(name);
+    map['members_json'] = Variable<String>(membersJson);
+    return map;
+  }
+
+  WorkspaceTrashBatchesCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceTrashBatchesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      targetJson: Value(targetJson),
+      name: Value(name),
+      membersJson: Value(membersJson),
+    );
+  }
+
+  factory WorkspaceTrashBatchRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceTrashBatchRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      targetJson: serializer.fromJson<String>(json['targetJson']),
+      name: serializer.fromJson<String>(json['name']),
+      membersJson: serializer.fromJson<String>(json['membersJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'targetJson': serializer.toJson<String>(targetJson),
+      'name': serializer.toJson<String>(name),
+      'membersJson': serializer.toJson<String>(membersJson),
+    };
+  }
+
+  WorkspaceTrashBatchRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? targetJson,
+    String? name,
+    String? membersJson,
+  }) => WorkspaceTrashBatchRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    targetJson: targetJson ?? this.targetJson,
+    name: name ?? this.name,
+    membersJson: membersJson ?? this.membersJson,
+  );
+  WorkspaceTrashBatchRow copyWithCompanion(
+    WorkspaceTrashBatchesCompanion data,
+  ) {
+    return WorkspaceTrashBatchRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      targetJson: data.targetJson.present
+          ? data.targetJson.value
+          : this.targetJson,
+      name: data.name.present ? data.name.value : this.name,
+      membersJson: data.membersJson.present
+          ? data.membersJson.value
+          : this.membersJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceTrashBatchRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('targetJson: $targetJson, ')
+          ..write('name: $name, ')
+          ..write('membersJson: $membersJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    targetJson,
+    name,
+    membersJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceTrashBatchRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.targetJson == this.targetJson &&
+          other.name == this.name &&
+          other.membersJson == this.membersJson);
+}
+
+class WorkspaceTrashBatchesCompanion
+    extends UpdateCompanion<WorkspaceTrashBatchRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> targetJson;
+  final Value<String> name;
+  final Value<String> membersJson;
+  final Value<int> rowid;
+  const WorkspaceTrashBatchesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.targetJson = const Value.absent(),
+    this.name = const Value.absent(),
+    this.membersJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceTrashBatchesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String targetJson,
+    required String name,
+    required String membersJson,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       targetJson = Value(targetJson),
+       name = Value(name),
+       membersJson = Value(membersJson);
+  static Insertable<WorkspaceTrashBatchRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? targetJson,
+    Expression<String>? name,
+    Expression<String>? membersJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (targetJson != null) 'target_json': targetJson,
+      if (name != null) 'name': name,
+      if (membersJson != null) 'members_json': membersJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceTrashBatchesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? targetJson,
+    Value<String>? name,
+    Value<String>? membersJson,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceTrashBatchesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      targetJson: targetJson ?? this.targetJson,
+      name: name ?? this.name,
+      membersJson: membersJson ?? this.membersJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (targetJson.present) {
+      map['target_json'] = Variable<String>(targetJson.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (membersJson.present) {
+      map['members_json'] = Variable<String>(membersJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceTrashBatchesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('targetJson: $targetJson, ')
+          ..write('name: $name, ')
+          ..write('membersJson: $membersJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18209,6 +18738,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $WorkspaceViewsTable workspaceViews = $WorkspaceViewsTable(this);
+  late final $WorkspaceTrashBatchesTable workspaceTrashBatches =
+      $WorkspaceTrashBatchesTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -18347,6 +18878,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceTableRecords,
     connectorWrites,
     workspaceViews,
+    workspaceTrashBatches,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -18650,6 +19182,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('workspace_views', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('workspace_trash_batches', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -18985,6 +19524,31 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_workspaceViewsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceTrashBatchesTable,
+    List<WorkspaceTrashBatchRow>
+  >
+  _workspaceTrashBatchesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceTrashBatches,
+        aliasName: 'workspaces__id__workspace_trash_batches__workspace_id',
+      );
+
+  $$WorkspaceTrashBatchesTableProcessedTableManager
+  get workspaceTrashBatchesRefs {
+    final manager = $$WorkspaceTrashBatchesTableTableManager(
+      $_db,
+      $_db.workspaceTrashBatches,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceTrashBatchesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -19420,6 +19984,32 @@ class $$WorkspacesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceTrashBatchesRefs(
+    Expression<bool> Function($$WorkspaceTrashBatchesTableFilterComposer f) f,
+  ) {
+    final $$WorkspaceTrashBatchesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceTrashBatches,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceTrashBatchesTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceTrashBatches,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -19893,6 +20483,32 @@ class $$WorkspacesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> workspaceTrashBatchesRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceTrashBatchesTableAnnotationComposer a) f,
+  ) {
+    final $$WorkspaceTrashBatchesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceTrashBatches,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceTrashBatchesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceTrashBatches,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -19924,6 +20540,7 @@ class $$WorkspacesTableTableManager
             bool workspaceTableRecordsRefs,
             bool connectorWritesRefs,
             bool workspaceViewsRefs,
+            bool workspaceTrashBatchesRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -20006,6 +20623,7 @@ class $$WorkspacesTableTableManager
                 workspaceTableRecordsRefs = false,
                 connectorWritesRefs = false,
                 workspaceViewsRefs = false,
+                workspaceTrashBatchesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -20027,6 +20645,7 @@ class $$WorkspacesTableTableManager
                     if (workspaceTableRecordsRefs) db.workspaceTableRecords,
                     if (connectorWritesRefs) db.connectorWrites,
                     if (workspaceViewsRefs) db.workspaceViews,
+                    if (workspaceTrashBatchesRefs) db.workspaceTrashBatches,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -20346,6 +20965,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceTrashBatchesRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceTrashBatchRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceTrashBatchesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceTrashBatchesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -20382,6 +21022,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceTableRecordsRefs,
         bool connectorWritesRefs,
         bool workspaceViewsRefs,
+        bool workspaceTrashBatchesRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -35214,6 +35855,7 @@ typedef $$WorkspaceViewsTableCreateCompanionBuilder =
       required int revision,
       Value<String> mutations,
       required String history,
+      Value<DateTime?> deletedAt,
       Value<int> rowid,
     });
 typedef $$WorkspaceViewsTableUpdateCompanionBuilder =
@@ -35226,6 +35868,7 @@ typedef $$WorkspaceViewsTableUpdateCompanionBuilder =
       Value<int> revision,
       Value<String> mutations,
       Value<String> history,
+      Value<DateTime?> deletedAt,
       Value<int> rowid,
     });
 
@@ -35300,6 +35943,11 @@ class $$WorkspaceViewsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkspacesTableFilterComposer get workspaceId {
     final $$WorkspacesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -35368,6 +36016,11 @@ class $$WorkspaceViewsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkspacesTableOrderingComposer get workspaceId {
     final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -35421,6 +36074,9 @@ class $$WorkspaceViewsTableAnnotationComposer
 
   GeneratedColumn<String> get history =>
       $composableBuilder(column: $table.history, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   $$WorkspacesTableAnnotationComposer get workspaceId {
     final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
@@ -35484,6 +36140,7 @@ class $$WorkspaceViewsTableTableManager
                 Value<int> revision = const Value.absent(),
                 Value<String> mutations = const Value.absent(),
                 Value<String> history = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceViewsCompanion(
                 id: id,
@@ -35494,6 +36151,7 @@ class $$WorkspaceViewsTableTableManager
                 revision: revision,
                 mutations: mutations,
                 history: history,
+                deletedAt: deletedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -35506,6 +36164,7 @@ class $$WorkspaceViewsTableTableManager
                 required int revision,
                 Value<String> mutations = const Value.absent(),
                 required String history,
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceViewsCompanion.insert(
                 id: id,
@@ -35516,6 +36175,7 @@ class $$WorkspaceViewsTableTableManager
                 revision: revision,
                 mutations: mutations,
                 history: history,
+                deletedAt: deletedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -35581,6 +36241,386 @@ typedef $$WorkspaceViewsTableProcessedTableManager =
       $$WorkspaceViewsTableUpdateCompanionBuilder,
       (WorkspaceViewRow, $$WorkspaceViewsTableReferences),
       WorkspaceViewRow,
+      PrefetchHooks Function({bool workspaceId})
+    >;
+typedef $$WorkspaceTrashBatchesTableCreateCompanionBuilder =
+    WorkspaceTrashBatchesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String targetJson,
+      required String name,
+      required String membersJson,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceTrashBatchesTableUpdateCompanionBuilder =
+    WorkspaceTrashBatchesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> targetJson,
+      Value<String> name,
+      Value<String> membersJson,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceTrashBatchesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceTrashBatchesTable,
+          WorkspaceTrashBatchRow
+        > {
+  $$WorkspaceTrashBatchesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('workspace_trash_batches__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceTrashBatchesTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceTrashBatchesTable> {
+  $$WorkspaceTrashBatchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetJson => $composableBuilder(
+    column: $table.targetJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get membersJson => $composableBuilder(
+    column: $table.membersJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceTrashBatchesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceTrashBatchesTable> {
+  $$WorkspaceTrashBatchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetJson => $composableBuilder(
+    column: $table.targetJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get membersJson => $composableBuilder(
+    column: $table.membersJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceTrashBatchesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceTrashBatchesTable> {
+  $$WorkspaceTrashBatchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get targetJson => $composableBuilder(
+    column: $table.targetJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get membersJson => $composableBuilder(
+    column: $table.membersJson,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceTrashBatchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceTrashBatchesTable,
+          WorkspaceTrashBatchRow,
+          $$WorkspaceTrashBatchesTableFilterComposer,
+          $$WorkspaceTrashBatchesTableOrderingComposer,
+          $$WorkspaceTrashBatchesTableAnnotationComposer,
+          $$WorkspaceTrashBatchesTableCreateCompanionBuilder,
+          $$WorkspaceTrashBatchesTableUpdateCompanionBuilder,
+          (WorkspaceTrashBatchRow, $$WorkspaceTrashBatchesTableReferences),
+          WorkspaceTrashBatchRow,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceTrashBatchesTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceTrashBatchesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceTrashBatchesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceTrashBatchesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceTrashBatchesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> targetJson = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> membersJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceTrashBatchesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                targetJson: targetJson,
+                name: name,
+                membersJson: membersJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String targetJson,
+                required String name,
+                required String membersJson,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceTrashBatchesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                targetJson: targetJson,
+                name: name,
+                membersJson: membersJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceTrashBatchesTable,
+                    WorkspaceTrashBatchRow
+                  >(table),
+                  $$WorkspaceTrashBatchesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable: $$WorkspaceTrashBatchesTableReferences
+                            ._workspaceIdTable(db),
+                        referencedColumn: $$WorkspaceTrashBatchesTableReferences
+                            ._workspaceIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceTrashBatchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceTrashBatchesTable,
+      WorkspaceTrashBatchRow,
+      $$WorkspaceTrashBatchesTableFilterComposer,
+      $$WorkspaceTrashBatchesTableOrderingComposer,
+      $$WorkspaceTrashBatchesTableAnnotationComposer,
+      $$WorkspaceTrashBatchesTableCreateCompanionBuilder,
+      $$WorkspaceTrashBatchesTableUpdateCompanionBuilder,
+      (WorkspaceTrashBatchRow, $$WorkspaceTrashBatchesTableReferences),
+      WorkspaceTrashBatchRow,
       PrefetchHooks Function({bool workspaceId})
     >;
 
@@ -35655,4 +36695,6 @@ class $AppDatabaseManager {
       $$ConnectorWritesTableTableManager(_db, _db.connectorWrites);
   $$WorkspaceViewsTableTableManager get workspaceViews =>
       $$WorkspaceViewsTableTableManager(_db, _db.workspaceViews);
+  $$WorkspaceTrashBatchesTableTableManager get workspaceTrashBatches =>
+      $$WorkspaceTrashBatchesTableTableManager(_db, _db.workspaceTrashBatches);
 }

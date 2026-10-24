@@ -2691,6 +2691,22 @@ abstract class LocaleKeys {
   static const workspace_items_filter_clear = 'workspace_items.filter_clear';
   static const workspace_items_filter_invalid_value =
       'workspace_items.filter_invalid_value';
+  static const workspace_items_trash = 'workspace_items.trash';
+  static const workspace_items_trash_action = 'workspace_items.trash_action';
+  static const workspace_items_trash_impact = 'workspace_items.trash_impact';
+  static const workspace_items_trash_empty = 'workspace_items.trash_empty';
+  static const workspace_items_trash_restore = 'workspace_items.trash_restore';
+  static const workspace_items_trash_restored =
+      'workspace_items.trash_restored';
+  static const workspace_items_trash_root_fallback =
+      'workspace_items.trash_root_fallback';
+  static const workspace_items_trash_unresolved =
+      'workspace_items.trash_unresolved';
+  static const workspace_items_reference_deleted =
+      'workspace_items.reference_deleted';
+  static const workspace_items_trash_cancel = 'workspace_items.trash_cancel';
+  static const workspace_items_trash_close = 'workspace_items.trash_close';
+  static const workspace_items_trash_refresh = 'workspace_items.trash_refresh';
   static const workspace_views_title = 'workspace_views.title';
   static const workspace_views_create = 'workspace_views.create';
   static const workspace_views_name = 'workspace_views.name';

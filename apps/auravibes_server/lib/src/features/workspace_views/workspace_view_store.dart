@@ -37,13 +37,14 @@ class const _ViewContext(
         where: _ResourceKey(member.workspaceId, kind, id).matches,
         transaction: transaction,
       );
-  Future<WorkspaceView?> view(String id) => WorkspaceView.db.findFirstRow(
-    session,
-    where: (row) => workspace(row) & row.stableId.equals(id),
-    transaction: transaction,
-  );
+  Future<WorkspaceView?> view(String id, {bool includeDeleted = false}) =>
+      WorkspaceView.db.findFirstRow(
+        session,
+        where: _ViewKey(member.workspaceId, id, includeDeleted).matches,
+        transaction: transaction,
+      );
   Expression workspace(WorkspaceViewTable row) =>
-      row.workspaceId.equals(member.workspaceId);
+      row.workspaceId.equals(member.workspaceId) & row.deletedAt.equals(null);
 }
 
 class const _ViewReader(final _ViewContext context) {
@@ -66,6 +67,7 @@ class const _ViewReader(final _ViewContext context) {
 
   Future<List<String>> history(String id) async {
     final row = await _requiredRow(id);
+    if (!await _visible(_data(row.data))) _denied();
     final result = <String>[];
     for (final snapshot in _history(row)) {
       if (await _visible(snapshot)) result.add(jsonEncode(snapshot));
@@ -120,11 +122,8 @@ class const _ViewWriter(final _ViewContext context) {
   Future<WorkspaceView> save(WorkspaceViewSaveRequest request) async {
     _requireOwner();
     WorkspaceViewValidation.requestId(request.requestId);
-    final input = WorkspaceViewValidation.parse(
-      request.definition,
-      request.viewId,
-    );
-    await _checkBindings(input);
+    final input = await _input(request);
+    await _requireLive(request.viewId);
     final replay = await _ViewReceipts(context).replay(request);
     if (replay != null) return replay;
 
@@ -144,6 +143,20 @@ class const _ViewWriter(final _ViewContext context) {
     await _ViewReceipts(context).save(request, saved);
 
     return saved;
+  }
+
+  Future<WorkspaceViewInput> _input(WorkspaceViewSaveRequest request) async {
+    final input = WorkspaceViewValidation.parse(
+      request.definition,
+      request.viewId,
+    );
+    await _checkBindings(input);
+    return input;
+  }
+
+  Future<void> _requireLive(String id) async {
+    final existing = await context.view(id, includeDeleted: true);
+    if (existing?.deletedAt != null) _denied();
   }
 
   void _requireOwner() {
@@ -361,13 +374,15 @@ Never _receiptConflict() => throw CloudWorkspaceException(
   code: CloudWorkspaceErrorCode.idempotencyConflict,
 );
 
-Map<String, Object?> _movedMetadata(WorkspaceView current, WorkspaceViewMove move) =>
-    {
-      ..._data(current.data),
-      'parentId': move.parentId,
-      'name': _metadataName(current, move.name),
-      'revision': current.revision + 1,
-    };
+Map<String, Object?> _movedMetadata(
+  WorkspaceView current,
+  WorkspaceViewMove move,
+) => {
+  ..._data(current.data),
+  'parentId': move.parentId,
+  'name': _metadataName(current, move.name),
+  'revision': current.revision + 1,
+};
 
 const _maximumMetadataNameLength = 200;
 String _metadataName(WorkspaceView current, String? proposed) {
@@ -378,14 +393,26 @@ String _metadataName(WorkspaceView current, String? proposed) {
   }
   return name;
 }
+
 bool _sameMetadata(WorkspaceView current, WorkspaceViewMove move) {
   final data = _data(current.data);
-  return data['parentId'] == move.parentId && data['name'] == _metadataName(current, move.name);
+  return data['parentId'] == move.parentId &&
+      data['name'] == _metadataName(current, move.name);
+}
+
+class const _ViewKey(
+  final int workspaceId,
+  final String id,
+  final bool includeDeleted,
+) {
+  Expression matches(WorkspaceViewTable row) =>
+      row.workspaceId.equals(workspaceId) &
+      row.stableId.equals(id) &
+      (includeDeleted ? Constant.bool(true) : row.deletedAt.equals(null));
 }
 
 WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
   final data = _movedMetadata(current, move);
-
   return current.copyWith(
     data: jsonEncode(data),
     revision: current.revision + 1,

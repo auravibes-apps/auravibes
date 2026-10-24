@@ -1,9 +1,9 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_deleted_reference_notice.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_record_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -24,6 +24,8 @@ class const WorkspaceReferenceLabel({
 
     return _ResolvedLabel(
       workspaceId: workspaceId,
+      targetTableId: targetTableId,
+      recordId: recordId,
       state: (table: table, record: rows),
     );
   }
@@ -36,6 +38,8 @@ typedef _ReferenceLabelState = ({
 
 class const _ResolvedLabel({
   required final String workspaceId,
+  required final String targetTableId,
+  required final String recordId,
   required final _ReferenceLabelState state,
 }) extends StatelessWidget {
   @override
@@ -45,8 +49,12 @@ class const _ResolvedLabel({
       record: AsyncData(value: final records),
     ) =>
       _RecordLink(workspaceId: workspaceId, table: table, record: records),
-    (table: AsyncError(), record: _) || (table: _, record: AsyncError()) =>
-      const TextLocale(LocaleKeys.workspace_items_reference_unavailable),
+    (table: AsyncError(), record: _) ||
+    (table: _, record: AsyncError()) => WorkspaceDeletedReferenceNotice(
+      workspaceId: workspaceId,
+      tableId: targetTableId,
+      recordId: recordId,
+    ),
     _ => const CircularProgressIndicator(),
   };
 }

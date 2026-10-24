@@ -130,21 +130,51 @@ void main() {
       await expectLater(
         session.db.transaction<void>((transaction) async {
           final store = WorkspaceViewStore(session, ownerMember!, transaction);
-          final current = await WorkspaceView.db.findFirstRow(session, where: (row) => row.workspaceId.equals(workspace.id!) & row.stableId.equals('view'), transaction: transaction);
-          final broken = {...jsonDecode(current!.data) as Map<String, dynamic>, 'bindings': {'title': 'missing'}, 'columnTypes': {'missing': 'text'}};
-          final _ = await WorkspaceView.db.updateRow(session, current.copyWith(data: jsonEncode(broken)), transaction: transaction);
-          final move = WorkspaceViewMove(id: 'view', expectedRevision: 1, name: 'Renamed through metadata');
+          final current = await WorkspaceView.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.stableId.equals('view'),
+            transaction: transaction,
+          );
+          final broken = {
+            ...jsonDecode(current!.data) as Map<String, dynamic>,
+            'bindings': {'title': 'missing'},
+            'columnTypes': {'missing': 'text'},
+          };
+          final _ = await WorkspaceView.db.updateRow(
+            session,
+            current.copyWith(data: jsonEncode(broken)),
+            transaction: transaction,
+          );
+          final move = WorkspaceViewMove(
+            id: 'view',
+            expectedRevision: 1,
+            name: 'Renamed through metadata',
+          );
           await store.authorizeMove(move);
           final moved = await store.move(move);
           expect(moved.revision, 2);
           expect(jsonDecode(moved.data)['bindings'], {'title': 'missing'});
           expect(jsonDecode(moved.data)['definition'], broken['definition']);
           expect(jsonDecode(moved.data)['name'], 'Renamed through metadata');
-          final noop = await store.move(WorkspaceViewMove(id: 'view', expectedRevision: 2));
+          final noop = await store.move(
+            WorkspaceViewMove(id: 'view', expectedRevision: 2),
+          );
           expect(noop.revision, 2);
           expect(jsonDecode(noop.history), isEmpty);
-          await expectLater(store.move(WorkspaceViewMove(id: 'view', expectedRevision: 2, name: '  ')), throwsA(isA<CloudWorkspaceException>()));
-          await expectLater(store.move(WorkspaceViewMove(id: 'view', expectedRevision: 1, name: 'Stale')), throwsA(isA<CloudWorkspaceException>()));
+          await expectLater(
+            store.move(
+              WorkspaceViewMove(id: 'view', expectedRevision: 2, name: '  '),
+            ),
+            throwsA(isA<CloudWorkspaceException>()),
+          );
+          await expectLater(
+            store.move(
+              WorkspaceViewMove(id: 'view', expectedRevision: 1, name: 'Stale'),
+            ),
+            throwsA(isA<CloudWorkspaceException>()),
+          );
           throw StateError('Force outer rollback');
         }),
         throwsStateError,
@@ -271,6 +301,46 @@ void main() {
         ),
         throwsA(isA<CloudWorkspaceException>()),
       );
+      final _ = await endpoints.workspaceState.patch(
+        ownerBuilder,
+        PatchWorkspaceStateRequest(
+          workspaceId: workspace.id!,
+          requestId: 'private-source',
+          operations: [
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .table,
+              resourceId: 'private',
+              data: jsonEncode({...schema, 'memberAccess': <String, String>{}}),
+              fieldMask: const [],
+            ),
+          ],
+        ),
+      );
+      final _ = await endpoints.workspaceView.save(
+        ownerBuilder,
+        WorkspaceViewSaveRequest(
+          workspaceId: workspace.id!,
+          viewId: 'view',
+          requestId: 'rebind-private',
+          expectedRevision: 2,
+          definition: jsonEncode({...definition, 'tableId': 'private'}),
+        ),
+      );
+      await expectLater(
+        endpoints.workspaceView.history(readerBuilder, workspace.id!, 'view'),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      final _ = await endpoints.workspaceView.save(
+        ownerBuilder,
+        WorkspaceViewSaveRequest(
+          workspaceId: workspace.id!,
+          viewId: 'view',
+          requestId: 'rebind-visible',
+          expectedRevision: 3,
+          definition: jsonEncode(definition),
+        ),
+      );
       await tablePatch(2, {
         ...renamedSchema,
         'memberAccess': <String, String>{},
@@ -286,13 +356,9 @@ void main() {
         ),
         isEmpty,
       );
-      expect(
-        await endpoints.workspaceView.history(
-          readerBuilder,
-          workspace.id!,
-          'view',
-        ),
-        isEmpty,
+      await expectLater(
+        endpoints.workspaceView.history(readerBuilder, workspace.id!, 'view'),
+        throwsA(isA<CloudWorkspaceException>()),
       );
       await expectLater(
         endpoints.workspaceView.read(readerBuilder, workspace.id!, 'view'),

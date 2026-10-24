@@ -106,13 +106,15 @@ class const _LocalViewWriter(
     database.workspaceViews,
   )..where((row) => row.id.equals(view.id))).getSingleOrNull();
   void _checkWorkspace(WorkspaceViewRow? current) {
-    if (current != null && current.workspaceId != workspaceId) {
+    if (current != null &&
+        (current.workspaceId != workspaceId || current.deletedAt != null)) {
       throw const WorkspaceTableException(denied: true);
     }
   }
 
   void _checkRevision(WorkspaceViewRow? current) {
-    if (current != null && current.workspaceId != workspaceId) {
+    if (current != null &&
+        (current.workspaceId != workspaceId || current.deletedAt != null)) {
       throw const WorkspaceTableException(denied: true);
     }
     if ((current?.revision ?? 0) != view.revision) {
@@ -154,9 +156,9 @@ class const _LocalViewWriter(
 SimpleSelectStatement<WorkspaceViews, WorkspaceViewRow> _views(
   AppDatabase database,
   String workspaceId,
-) =>
-    database.select(database.workspaceViews)
-      ..where((row) => row.workspaceId.equals(workspaceId));
+) => database.select(
+  database.workspaceViews,
+)..where((row) => row.workspaceId.equals(workspaceId) & row.deletedAt.isNull());
 WorkspaceView _decode(String source) =>
     WorkspaceViewMapper.fromJson(jsonDecode(source) as Map<String, dynamic>);
 List<WorkspaceView> _snapshots(String source) =>

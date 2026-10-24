@@ -15,6 +15,7 @@ class WorkspaceResourceValidation {
   static const _maxStringLength = 16 * 1024;
 
   static const dedicatedKinds = {
+    WorkspaceResourceKind.view,
     WorkspaceResourceKind.conversation,
     WorkspaceResourceKind.message,
     WorkspaceResourceKind.attachment,
@@ -231,6 +232,7 @@ class WorkspaceResourceValidation {
       WorkspaceResourceKind.mcpServer ||
       WorkspaceResourceKind.compactionSetting ||
       WorkspaceResourceKind.workspaceSetting => const {},
+      WorkspaceResourceKind.view ||
       WorkspaceResourceKind.conversation ||
       WorkspaceResourceKind.message ||
       WorkspaceResourceKind.attachment ||

@@ -242,17 +242,15 @@ Future<WorkspaceTableRow> _tableRow(
 Future<void> _checkSchema(
   AppDatabase database,
   String workspaceId,
-  ({WorkspaceTable table, Map<String, Object?> values}) input,
+  _RecordChange input,
 ) async {
   final current = await _tableRow(database, workspaceId, input.table.id);
-  if (current.schemaRevision != input.table.schemaRevision) {
-    throw const WorkspaceTableException(conflict: true);
-  }
-  WorkspaceColumnValidation.values(_table(current).columns, input.values);
+  final columns = _schemaColumns(current, input.table.schemaRevision);
+  WorkspaceColumnValidation.values(columns, input.values);
   await LocalWorkspaceReferenceValidation(
     database,
     workspaceId,
-  ).values(_table(current).columns, input.values);
+  ).values(columns, input.values, previous: input.previous);
 }
 
 Expression<bool> _parent(WorkspaceTables row, String? parentId) =>
@@ -471,6 +469,7 @@ class const _RecordWriter(
     await _checkSchema(_database, _workspaceId, (
       table: table,
       values: normalized,
+      previous: <String, Object?>{},
     ));
     await _checkUnique(table, normalized);
 
@@ -503,8 +502,9 @@ class const _RecordWriter(
     WorkspaceRecord record,
     Map<String, Object?> values,
   ) async {
-    await _checkSchema(_database, _workspaceId, (table: table, values: values));
     final current = await _read(table.id, record.id);
+    final change = (table: table, values: values, previous: current.values);
+    await _checkSchema(_database, _workspaceId, change);
     _checkRecordRevision(current, record);
     await _checkUnique(table, values, exceptId: current.id);
 
@@ -576,3 +576,17 @@ WorkspaceTablesCompanion _metadataChanges(
   parentId: .new(input.parentId),
   revision: .new(row.revision + 1),
 );
+
+typedef _RecordChange = ({
+  WorkspaceTable table,
+  Map<String, Object?> values,
+  Map<String, Object?> previous,
+});
+
+List<WorkspaceColumn> _schemaColumns(WorkspaceTableRow row, int revision) {
+  if (row.schemaRevision != revision) {
+    throw const WorkspaceTableException(conflict: true);
+  }
+
+  return _table(row).columns;
+}

@@ -216,6 +216,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _ikdp8816;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
     as _iar0fwau;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_trash_request.dart'
+    as _i35hgjx1;
 import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view.dart'
     as _i3ruzhns;
 import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view_list_request.dart'
@@ -1207,6 +1209,66 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceTrash extends _isc.EndpointRef {
+  EndpointWorkspaceTrash(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceTrash';
+
+  _ida.Future<String> deletedReference(
+    int workspaceId,
+    String tableId,
+    String recordId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceTrash',
+    'deletedReference',
+    {
+      'workspaceId': workspaceId,
+      'tableId': tableId,
+      'recordId': recordId,
+    },
+  );
+
+  _ida.Future<String> preview(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceTrash',
+    'preview',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<String> trash(_i35hgjx1.WorkspaceTrashRequest request) =>
+      caller.callServerEndpoint<String>(
+        'workspaceTrash',
+        'trash',
+        {'request': request},
+      );
+
+  _ida.Future<List<String>> list(int workspaceId) =>
+      caller.callServerEndpoint<List<String>>(
+        'workspaceTrash',
+        'list',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<String> restore(
+    int workspaceId,
+    String batchId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceTrash',
+    'restore',
+    {
+      'workspaceId': workspaceId,
+      'batchId': batchId,
+    },
+  );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceView extends _isc.EndpointRef {
   EndpointWorkspaceView(_isc.EndpointCaller caller) : super(caller);
 
@@ -1451,6 +1513,7 @@ class Client extends _isc.ServerpodClientShared {
     workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
+    workspaceTrash = EndpointWorkspaceTrash(this);
     workspaceView = EndpointWorkspaceView(this);
     cloudWorkspace = EndpointCloudWorkspace(this);
     modules = Modules(this);
@@ -1486,6 +1549,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceState workspaceState;
 
+  late final EndpointWorkspaceTrash workspaceTrash;
+
   late final EndpointWorkspaceView workspaceView;
 
   late final EndpointCloudWorkspace cloudWorkspace;
@@ -1509,6 +1574,7 @@ class Client extends _isc.ServerpodClientShared {
     'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,
+    'workspaceTrash': workspaceTrash,
     'workspaceView': workspaceView,
     'cloudWorkspace': cloudWorkspace,
   };

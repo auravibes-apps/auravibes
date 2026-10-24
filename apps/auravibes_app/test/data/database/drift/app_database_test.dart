@@ -41,8 +41,54 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 37);
+      expect(fixture.database.schemaVersion, 38);
     });
+
+    test(
+      'migration from schema37 preserves Views and adds recoverable trash',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 37
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+          ..execute(
+            'CREATE TABLE workspace_views (id TEXT PRIMARY KEY, '
+            'workspace_id TEXT NOT NULL, data TEXT NOT NULL, '
+            'revision INTEGER NOT NULL, mutations TEXT NOT NULL, '
+            'history TEXT NOT NULL, created_at INTEGER NOT NULL, '
+            'updated_at INTEGER NOT NULL)',
+          )
+          ..execute(
+            'INSERT INTO workspace_views VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              'view',
+              'existing',
+              '{"name":"Retained"}',
+              5,
+              '{"op":5}',
+              '[{"revision":5}]',
+              1,
+              1,
+            ],
+          );
+        final database = _MigrationAppDatabase<_MigrationCaseTrash>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final view =
+            (await database.select(database.workspaceViews).get()).single;
+        expect(view.id, 'view');
+        expect(view.data, '{"name":"Retained"}');
+        expect(view.history, '[{"revision":5}]');
+        expect(view.mutations, '{"op":5}');
+        expect(view.revision, 5);
+        expect(view.deletedAt, isNull);
+        expect(
+          await database.select(database.workspaceTrashBatches).get(),
+          isEmpty,
+        );
+      },
+    );
 
     test(
       'migration from schema36 preserves data and creates View storage',
@@ -1256,3 +1302,5 @@ final class _DatabaseBeforeRecreation extends AppDatabase {
 }
 
 final class _MigrationCaseViews;
+
+final class _MigrationCaseTrash;

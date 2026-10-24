@@ -20,6 +20,29 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
     WorkspaceMember member,
     WorkspaceEvent event,
   ) async {
+    if (event.resourceKind == 'view') {
+      final view = await WorkspaceView.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(member.workspaceId) &
+            row.stableId.equals(event.resourceId),
+        transaction: transaction,
+      );
+      if (view == null) return _hiddenEvent(event);
+      final data = jsonDecode(view.data) as Map<String, dynamic>;
+      final table = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(member.workspaceId) &
+            row.resourceKind.equals(.table) &
+            row.resourceId.equals(data['tableId'] as String),
+        transaction: transaction,
+      );
+      if (table == null || !await canReadTable(session, member, table)) {
+        return _hiddenEvent(event);
+      }
+      return event;
+    }
     final visible = await _TableReader(
       session,
       member,
@@ -32,11 +55,12 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
   Future<bool> canReadTable(
     Session session,
     WorkspaceMember member,
-    WorkspaceResource table,
-  ) async {
+    WorkspaceResource table, {
+    bool includeDeleted = false,
+  }) async {
     if (table.resourceKind != .table ||
         table.workspaceId != member.workspaceId ||
-        table.deletedAt != null) {
+        (!includeDeleted && table.deletedAt != null)) {
       return false;
     }
     return await _TableReader(session, member, transaction).level(table) !=
