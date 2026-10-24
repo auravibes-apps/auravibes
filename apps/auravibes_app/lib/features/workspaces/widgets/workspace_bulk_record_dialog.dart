@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_record_change
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_batch_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_minimum_viewport.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_fields.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -125,22 +126,31 @@ typedef _BulkForm = ({
 });
 
 class const _BulkFrame(final _BulkForm form) extends StatelessWidget {
+  static const _height = 620.0;
   @override
   Widget build(BuildContext context) => SizedBox(
     width: 720,
-    height: 620,
-    child: Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: _ScopeText(form.owner.records.length),
-        ),
-        Expanded(child: _BulkRecords(form)),
-        if (form.action.error case final error?)
-          WorkspaceItemFailure(error: error),
-        _BulkButtons(form),
-      ],
+    height: _height,
+    child: WorkspaceMinimumViewport(
+      minimumHeight: _height,
+      child: _BulkFrameContent(form),
     ),
+  );
+}
+
+class const _BulkFrameContent(final _BulkForm form) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.all(16),
+        child: _ScopeText(form.owner.records.length),
+      ),
+      Expanded(child: _BulkRecords(form)),
+      if (form.action.error case final error?)
+        WorkspaceItemFailure(error: error),
+      _BulkButtons(form),
+    ],
   );
 }
 
@@ -221,6 +231,7 @@ class const _BulkApproval(final int count) extends StatelessWidget {
       _ApprovalButton(approved: false),
       _ApprovalButton(approved: true),
     ],
+    scrollable: true,
   );
 }
 

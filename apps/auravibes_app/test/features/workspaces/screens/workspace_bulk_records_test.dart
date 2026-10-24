@@ -5,6 +5,8 @@ import 'package:auravibes_app/features/workspaces/models/workspace_record_query.
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_batch_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_records_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
@@ -60,12 +62,18 @@ void main() {
     await tester.runAsync(
       () => tester.pumpWidget(
         TestableApp(
-          child: WorkspaceRecordBrowser(
+          child: WorkspaceTableScreen(
             workspaceId: 'one',
-            table: table,
-            onRecord: (_) => fail('Unexpected editor'),
+            tableId: table.id,
+            onBack: () => fail('Unexpected back'),
           ),
           overrides: [
+            workspaceTableProvider(
+              'one',
+              table.id,
+            ).overrideWith((ref) async => table),
+            workspaceTableUsecaseProvider('one')
+                .overrideWith((ref) async => tables),
             workspaceRecordBatchUsecaseProvider('one').overrideWith(
               (ref) async => EditWorkspaceRecordsUsecase(
                 LocalWorkspaceRecordBatchRepository(database, 'one'),
@@ -83,7 +91,15 @@ void main() {
       ),
     );
     final _ = await tester.pumpAndSettle();
-    await tester.tap(_button('workspace_records_select'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraPopupMenuButton &&
+            widget.identifier == 'workspace_table_overflow',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Select records'));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.byType(Checkbox).first);
     final _ = await tester.pumpAndSettle();
@@ -126,17 +142,26 @@ void main() {
       (await tables.record(table.id, second.id)).values[table.labelColumnId],
       'A',
     );
-    expect(_button('workspace_records_select'), findsOneWidget);
+    expect(_button('workspace_records_bulk_edit'), findsNothing);
     expect(tester.takeException(), isNull);
   });
-  for (final width in [400.0, 1200.0]) {
+  for (final size in [
+    (width: 400.0, height: 900.0),
+    (width: 1200.0, height: 900.0),
+    (width: 400.0, height: 450.0),
+  ]) {
+    final width = size.width;
     testWidgets(
-      'frozen selection survives search and failed bulk save at $width',
+      'frozen selection survives search and failed bulk save at $width/${size.height}',
       (tester) async {
         tester.platformDispatcher.textScaleFactorTestValue = 2;
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
         tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = .new(width, 900);
+        tester.view.physicalSize = .new(width, size.height);
+        if (size.height == 450) {
+          tester.view.viewInsets = const FakeViewPadding(bottom: 180);
+          addTearDown(tester.view.resetViewInsets);
+        }
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         final repository = _Batch();
@@ -166,10 +191,15 @@ void main() {
           ),
         );
         final _ = await tester.pumpAndSettle();
-        await tester.tap(_button('workspace_records_select'));
+        await tester.ensureVisible(find.text('First'));
+        await tester.longPress(find.text('First'));
         final _ = await tester.pumpAndSettle();
-        await tester.tap(find.byType(Checkbox).at(width < 600 ? 0 : 1));
-        final _ = await tester.pumpAndSettle();
+        if (size.height == 450) {
+          expect(tester.takeException(), isNull);
+          tester.view.resetViewInsets();
+          tester.view.physicalSize = .new(width, 900);
+          final _ = await tester.pumpAndSettle();
+        }
         final search = find.byWidgetPredicate(
           (widget) =>
               widget is AuraInput &&
