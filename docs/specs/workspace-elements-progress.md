@@ -515,3 +515,12 @@ CSV combined source `6b4d322a` passes full app fatal analysis. A separate full s
 ### Table visual baseline before shared menus
 
 Four production-table widget scenarios passed at 400/1200 widths and 100%/200% text. Captures show the current content-first toolbar, contextual add button, overflow, search, grid/list and paging controls. These images provide the comparison baseline for incoming Trash/CSV menus. No product or golden file changed. Log: `/tmp/auravibes-1665-table-before-menus.log`; images: `/tmp/auravibes-1665-ui-evidence/table-before-menus-*.png`; temporary source: `/tmp/auravibes-1665-table-capture-scripts/workspace_table_capture_test.dart`. Native OS interaction remains unrun.
+
+
+### Dark-theme menu contrast review
+
+Root compared production table captures before and after the shared-menu candidate at 400/1200 widths and 100%/200% text. Four light-theme and four dark-theme widget scenarios passed, with actual settings/CSV/Trash labels asserted and menu actions reachable. Temporary rendering fixtures normalize missing default text glyph families to Inter only for captures; they do not change product themes, definitions or data. Native OS interaction remains separate and unrun.
+
+Dark review found that the existing shared popup used semantic error ink with contrast1.61 against its dark card. A genuine light/dark component regression failed before the fix. The popup now retains semantic error ink when its measured contrast is at least4.5; otherwise it uses the existing readable surface foreground. This changes no public API, palette or disabled behavior. All30 popup interaction tests,10 focused Widgetbook rendering scenarios, two-path fatal analysis, pinned formatting and strict DCL150 passed. Logs: `/tmp/auravibes-popup-contrast-{red,green,format,static-final}.log`, metrics result beside them, and `/tmp/auravibes-popup-widgetbook-render.log`. Root will inspect production dark captures again after integration.
+
+The prior locked native launcher was stopped through its exact owned session, exiting130 and removing only its own manifest. Its synthetic local database remains. The dedicated UI worktree is now at15beffd0a with candidate source a7c16188; cf5b62e9 differs only in progress documentation. Source rendering still does not claim native macOS verification.
