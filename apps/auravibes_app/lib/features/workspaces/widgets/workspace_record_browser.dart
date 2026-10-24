@@ -132,6 +132,10 @@ class const _PageButton(final _Pages pages, {required final bool previous})
     icon: previous ? Icons.chevron_left : Icons.chevron_right,
     onPressed: () => pages._page(previous ? -1 : 1),
     disabled: _disabled,
+    identifier: previous
+        ? 'workspace_records_previous'
+        : 'workspace_records_next',
+    semanticLabel: _tooltip,
     tooltip: _tooltip,
   );
 }

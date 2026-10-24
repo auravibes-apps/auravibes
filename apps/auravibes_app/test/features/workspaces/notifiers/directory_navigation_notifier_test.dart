@@ -11,16 +11,13 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final provider = directoryNavigationProvider('workspace');
-    final navigation = container.read(provider.notifier);
-    navigation.enter(
-      const WorkspaceFolder(id: 'old', name: 'Old', revision: 1),
-    );
+    final navigation = container.read(provider.notifier)
+      ..enter(const WorkspaceFolder(id: 'old', name: 'Old', revision: 1));
     final pending = Completer<OrganizeWorkspaceFoldersUsecase>();
     final refresh = navigation.refreshPath(pending.future);
-    navigation.ancestor(0);
-    navigation.enter(
-      const WorkspaceFolder(id: 'new', name: 'New', revision: 1),
-    );
+    navigation
+      ..ancestor(0)
+      ..enter(const WorkspaceFolder(id: 'new', name: 'New', revision: 1));
     pending.completeError(const WorkspaceFolderException());
     await refresh;
     expect(container.read(provider).path.single.id, 'new');

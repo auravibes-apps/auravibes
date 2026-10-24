@@ -301,10 +301,12 @@ class const _BrowserToolbar(
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      IconButton(
+      AuraIconButton(
+        icon: Icons.arrow_back,
         onPressed: _back,
+        identifier: 'workspace_table_back',
+        semanticLabel: LocaleKeys.workspace_items_title.tr(),
         tooltip: LocaleKeys.workspace_items_title.tr(),
-        icon: const Icon(Icons.arrow_back),
       ),
       Expanded(child: Text(browser.table.name)),
       if (browser.table.canEditRecords) _NewRecordButton(browser, settings),
@@ -347,6 +349,8 @@ class const _SettingsButton(final ValueNotifier<bool> settings)
         onTap: () => settings.value = !settings.value,
       ),
     ],
+    identifier: 'workspace_table_overflow',
+    tooltip: LocaleKeys.workspace_items_settings.tr(),
   );
 }
 
