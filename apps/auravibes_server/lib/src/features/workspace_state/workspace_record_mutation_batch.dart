@@ -12,8 +12,9 @@ class WorkspaceRecordMutationBatch(
   final Session session,
   final int workspaceId,
   final Transaction transaction,
-  final String userId,
-) {
+  final String userId, {
+  final bool applyDefaults = true,
+}) {
   final _previous = <String, WorkspaceResource?>{};
   final _operations = <String, WorkspacePatchOperation>{};
   Future<void> remember(WorkspacePatchOperation operation) async {
@@ -54,6 +55,7 @@ class WorkspaceRecordMutationBatch(
         workspaceId,
         transaction,
         userId,
+        applyDefaults: applyDefaults,
       ).validate(operation, _data(row), _previous[row.resourceId]);
     } on FormatException {
       throw CloudWorkspaceException(code: .validationFailed);

@@ -108,9 +108,13 @@ class const WorkspaceTableException({
   final bool conflict = false,
   final bool incompatibleRelationship = false,
   final bool denied = false,
+  final bool unsupportedCopy = false,
 }) implements Exception {
   String get localizationKey {
     if (denied) return LocaleKeys.cloud_errors_permission_denied;
+    if (unsupportedCopy) {
+      return LocaleKeys.workspace_items_duplicate_unsupported;
+    }
     if (incompatibleRelationship) {
       return LocaleKeys.workspace_items_reference_incompatible;
     }

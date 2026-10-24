@@ -1,0 +1,10 @@
+class: DuplicateWorkspaceItemRequest
+fields:
+  workspaceId: int
+  requestId: String
+  sourceId: String
+  expectedRevision: int
+  targetId: String
+  name: String
+  parentId: String?
+  copyRecords: bool, default=false

@@ -128,6 +128,8 @@ import 'package:auravibes_server/src/generated/features/sync/stream/models/works
     as _i87sg8g4;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_agent_request.dart'
     as _ikwi2fyo;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_item_request.dart'
+    as _i2sgszxu;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _ii40hsqd;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
@@ -2259,6 +2261,27 @@ class Endpoints extends _is.EndpointDispatch {
                         params['request'],
                       ),
         ),
+        'duplicateTable': _is.MethodConnector(
+          name: 'duplicateTable',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i2sgszxu.DuplicateWorkspaceItemRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
+                      .duplicateTable(
+                        session,
+                        params['request'],
+                      ),
+        ),
         'duplicateAgent': _is.MethodConnector(
           name: 'duplicateAgent',
           params: {
@@ -2442,6 +2465,27 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceView',
       endpoint: endpoints['workspaceView']!,
       methodConnectors: {
+        'duplicate': _is.MethodConnector(
+          name: 'duplicate',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i2sgszxu.DuplicateWorkspaceItemRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .duplicate(
+                        session,
+                        params['request'],
+                      ),
+        ),
         'list': _is.MethodConnector(
           name: 'list',
           params: {

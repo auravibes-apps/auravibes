@@ -195,6 +195,8 @@ import 'package:auravibes_server/src/generated/features/sync/stream/models/works
     as _i87sg8g4;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_agent_request.dart'
     as _ikwi2fyo;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_item_request.dart'
+    as _i2sgszxu;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _ii40hsqd;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -3351,6 +3353,35 @@ class _WorkspaceStateEndpoint {
     });
   }
 
+  _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse> duplicateTable(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i2sgszxu.DuplicateWorkspaceItemRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'duplicateTable',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'duplicateTable',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse> duplicateAgent(
     _ist.TestSessionBuilder sessionBuilder,
     _ikwi2fyo.DuplicateWorkspaceAgentRequest request,
@@ -3589,6 +3620,35 @@ class _WorkspaceViewEndpoint {
   final _is.EndpointDispatch _endpointDispatch;
 
   final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_i7rt6swg.WorkspaceView> duplicate(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i2sgszxu.DuplicateWorkspaceItemRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'duplicate',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'duplicate',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i7rt6swg.WorkspaceView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 
   _ida.Future<List<_i7rt6swg.WorkspaceView>> list(
     _ist.TestSessionBuilder sessionBuilder,
