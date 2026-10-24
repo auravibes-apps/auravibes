@@ -246,6 +246,19 @@ void main() {
           jsonEncode({'filterColumnId': 'quantity', 'filterValue': '2.0'}),
         );
         expect(equivalentNumbers.map((row) => row.resourceId), ['numeric-2']);
+        final rounded = await endpoints.workspaceState.queryRecords(
+          authenticated,
+          workspace.id!,
+          'numeric',
+          jsonEncode({
+            'filterColumnId': 'quantity',
+            'filterValue': '-9007199254740993.0',
+          }),
+        );
+        expect(rounded.map((row) => row.resourceId), [
+          'numeric--9007199254740992',
+        ]);
+
         await patch([
           WorkspacePatchOperation(
             operation: .create,
@@ -460,6 +473,43 @@ void main() {
           }),
           ['large'],
         );
+        for (final id in ['tie-a', 'tie-A']) {
+          await patch([
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: id,
+              data: jsonEncode({
+                'tableId': 'query-table',
+                'schemaRevision': 1,
+                'values': {'label': 'Tie'},
+              }),
+              fieldMask: const [],
+            ),
+          ]);
+        }
+        for (final descending in [false, true]) {
+          final tied = {
+            'filterColumnId': 'label',
+            'filterValue': 'Tie',
+            'descending': descending,
+            'limit': 1,
+          };
+          final rows = await endpoints.workspaceState.queryRecords(
+            authenticated,
+            workspace.id!,
+            'query-table',
+            jsonEncode(tied),
+          );
+          expect(rows.map((row) => row.resourceId), ['tie-A', 'tie-a']);
+          final next = await endpoints.workspaceState.queryRecords(
+            authenticated,
+            workspace.id!,
+            'query-table',
+            jsonEncode({...tied, 'offset': 1}),
+          );
+          expect(next.map((row) => row.resourceId), ['tie-a']);
+        }
         final targetSchema = {
           'name': 'Targets',
           'labelColumnId': 'label',

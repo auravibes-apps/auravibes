@@ -70,14 +70,15 @@ class const _QueryStatement(
     contains: query.filterOperator == .contains,
   );
   String get _operand => switch (_column(_filter).type) {
+    .number => num.parse(query.filterValue ?? '').toString(),
     .checkbox when query.filterValue == 'true' => '1',
     .checkbox => '0',
     _ => query.filterValue ?? '',
   };
   void _validate() {
-    _column(_sort);
+    final _ = _column(_sort);
     if (query.filterColumnId?.isNotEmpty == true) {
-      _column(_filter);
+      final _ = _column(_filter);
       final _ = WorkspaceQueryFilterValidation.parse(
         _column(_filter),
         query.filterValue ?? '',

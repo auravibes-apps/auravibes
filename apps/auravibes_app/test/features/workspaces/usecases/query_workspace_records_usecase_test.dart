@@ -61,6 +61,31 @@ void main() {
       accented.records.single.values[table.labelColumnId],
       '${String.fromCharCode(0xc9)}cho',
     );
+    for (final id in ['tie-a', 'tie-A']) {
+      final _ = await database
+          .into(database.workspaceTableRecords)
+          .insert(
+            WorkspaceTableRecordsCompanion.insert(
+              id: .new(id),
+              workspaceId: 'one',
+              tableId: table.id,
+              valuesJson: jsonEncode({table.labelColumnId: 'Tie'}),
+            ),
+          );
+    }
+    for (final descending in [false, true]) {
+      final tied = WorkspaceRecordQuery(
+        filterColumnId: table.labelColumnId,
+        filterValue: 'Tie',
+        descending: descending,
+        limit: 1,
+      );
+      expect((await query(table.id, tied)).records.single.id, 'tie-A');
+      expect((await query(table.id, tied)).hasMore, isTrue);
+      final next = await query(table.id, tied.change(offset: 1));
+      expect(next.records.single.id, 'tie-a');
+      expect(next.hasMore, isFalse);
+    }
     final numeric = await tables.create(name: 'Numbers', labelName: 'Title');
     final schema = await tables.saveColumn(
       table: numeric,
@@ -90,6 +115,11 @@ void main() {
       .new(filterColumnId: quantity, filterValue: '10'),
     );
     expect(filtered.records.single.values[quantity], 10);
+    final rounded = await query(
+      schema.id,
+      .new(filterColumnId: quantity, filterValue: '-9007199254740993.0'),
+    );
+    expect(rounded.records.single.values[quantity], -9007199254740992);
   });
   test(
     'typed queries compare exact timestamps, money and numeric equality',

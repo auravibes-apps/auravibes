@@ -214,6 +214,7 @@ class _QueryParameters {
   Map<String, Object?> _selection() {
     final sort =
         input['sortColumnId'] as String? ?? data['labelColumnId'] as String;
+
     return {
       'sort': sort,
       'label': data['labelColumnId'],
@@ -226,6 +227,7 @@ class _QueryParameters {
     final filter = input['filterColumnId'] as String? ?? '';
     final column = filter.isEmpty ? null : _column(filter);
     if (column != null) _validateFilter(column);
+
     return {
       'filter': filter,
       'filterType': column?['type'] ?? 'text',
@@ -260,7 +262,15 @@ class _QueryParameters {
       _invalid();
     }
 
-    return {'search': _fold(search), 'value': value};
+    final filter = input['filterColumnId'] as String?;
+    final normalized =
+        filter != null &&
+            filter.isNotEmpty &&
+            _column(filter)['type'] == 'number'
+        ? num.parse(value).toString()
+        : value;
+
+    return {'search': _fold(search), 'value': normalized};
   }
 
   Map<String, dynamic> _column(String id) {
