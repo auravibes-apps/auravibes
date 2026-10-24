@@ -655,3 +655,9 @@ Root visually compared the worker's production-widget captures before/after at40
 ### Relational Views accepted; duplication started
 
 #1683 closed at2026-10-24T08:45:33Z after publication and remote verification of66a6403d0. Acceptance: https://github.com/auravibes-apps/auravibes/issues/1683#issuecomment-6382151966. Root passed26 combined app tests and six authenticated cases; seventeen of26 children are resolved. DraftPR1693 remains draft. Duplication #1684 starts from current integrated code in the existing prepared managed worktree; native prerequisites1673/1682 are closed. History1678 and assets1681 continue independently. Configurable retention remains an explicit history criterion; no launch duration is selected. Current published CI and parent-wide validation remain pending.
+
+### Main integration and toolchain update
+
+Current PR head66a6403d was conflicting with main, so pull-request Flutter CI did not start. Main dd2af7eba adds isolated self-leasing server tests/handoff guidance, Flutter3.47.8 and the Dart3.13.7 server image. Main is merged into this feature branch only. The sole conflict was README integration commands: retained explicit project scoping and omitted remove-orphans, adopted main's self-leasing test entrypoint without an outer lease. Feature code and existing acceptance commits remain preserved.
+
+Post-merge FVM setup/bootstrap and clean generated/scoped combined checks are pending. Earlier3.47.7 local proofs remain historical; baseline rendering comparisons need renewed verification if used under the changed toolchain. Main was not modified, merged into or deployed.

@@ -45,12 +45,16 @@ docker compose --project-name "$AURAVIBES_SERVER_PROJECT" up -d postgres_test
 Keep the explicit project name on every Compose command. Omitting it shares
 containers across worktrees even when their selected host ports differ.
 
-Run the suite from the repository root:
+Run the suite from the repository root. The entrypoint owns the validation lease;
+do not add an outer lease. It checks Docker, the existing isolated database and
+port mapping, and effective Serverpod test credentials before loading tests. It
+does not start services or create credentials:
 
 ```sh
-source scripts/serverpod_worktree_env.sh
-SERVERPOD_DATABASE_PORT="$AURAVIBES_SERVER_TEST_POSTGRES_PORT" \
-  python3 tool/validation_lease.py -- fvm dart run melos run test:integration
+fvm dart run melos run test:integration
+
+# Or select tests from any directory inside the worktree:
+bash "$(git rev-parse --show-toplevel)/scripts/test_server.sh" test/integration/features
 ```
 
 Stop the test database without deleting its volume:

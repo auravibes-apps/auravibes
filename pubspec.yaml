@@ -109,7 +109,7 @@ melos:
       description: Run hermetic unit and widget tests without integrations
 
     test:integration:
-      exec: fvm dart test test/integration --reporter=compact
+      exec: bash "$MELOS_ROOT_PATH/scripts/test_server.sh"
       packageFilters:
         scope: auravibes_server
         dirExists: test/integration
