@@ -1946,6 +1946,10 @@
     }
   },
   "workspace_items": {
+    "edit_item": "Editar elemento",
+    "item_name": "Nombre",
+    "destination": "Carpeta de destino",
+    "root": "Raíz del espacio de trabajo",
     "table_access": "Acceso a la tabla",
     "access_read": "Solo lectura",
     "access_edit": "Leer y editar",

@@ -21,6 +21,20 @@ class const OrganizeWorkspaceTablesUsecase(
     labelName: _name(labelName),
     parentId: parentId,
   );
+  Future<WorkspaceTable> updateMetadata({
+    required WorkspaceTable table,
+    required String name,
+    required String? parentId,
+  }) {
+    _requireManage(table);
+
+    return _repository.updateMetadata(
+      table: table,
+      name: _name(name),
+      parentId: parentId,
+    );
+  }
+
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,

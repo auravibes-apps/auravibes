@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:drift/drift.dart' show Value;
@@ -13,6 +15,70 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'table rename and move preserve record identity and open schema drafts',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final folders = OrganizeWorkspaceFoldersUsecase(
+        LocalWorkspaceFolderRepository(database, 'one'),
+      );
+      final destination = await folders.create(name: 'Archive');
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      final original = await tables.create(
+        name: 'Original',
+        labelName: 'Title',
+      );
+      final record = await tables.createRecord(
+        table: original,
+        values: {original.labelColumnId: 'Preserved'},
+      );
+      final moved = await tables.updateMetadata(
+        table: original,
+        name: '  Renamed  ',
+        parentId: destination.id,
+      );
+      expect(
+        (id: moved.id, name: moved.name, parentId: moved.parentId),
+        (id: original.id, name: 'Renamed', parentId: destination.id),
+      );
+      expect(
+        (schema: moved.schemaRevision, label: moved.labelColumnId),
+        (schema: original.schemaRevision, label: original.labelColumnId),
+      );
+      expect((await tables.record(moved.id, record.id)).values, {
+        original.labelColumnId: 'Preserved',
+      });
+      final second = await tables.createRecord(
+        table: original,
+        values: {original.labelColumnId: 'Open draft'},
+      );
+      expect((await tables.record(moved.id, second.id)).values, {
+        original.labelColumnId: 'Open draft',
+      });
+      expect(await tables.list(), isEmpty);
+      expect(
+        (await tables.list(parentId: destination.id)).single.id,
+        original.id,
+      );
+      await expectLater(
+        tables.updateMetadata(table: original, name: 'Stale', parentId: null),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+
   test(
     'formatted columns reject malformed values without changing records',
     () async {
@@ -383,12 +449,19 @@ void main() {
       other.createRecord(table: table, values: {}),
       throwsA(isA<WorkspaceTableException>()),
     );
+    final renamed = await tables.updateMetadata(
+      table: table,
+      name: 'Retained name',
+      parentId: null,
+    );
+    expect(renamed.schemaRevision, table.schemaRevision);
     await database.close();
     final reopened = AppDatabase(connection: NativeDatabase(file));
     addTearDown(reopened.close);
     final retained = OrganizeWorkspaceTablesUsecase(
       LocalWorkspaceTableRepository(reopened, 'one'),
     );
+    expect((await retained.table(table.id)).name, 'Retained name');
     expect(
       (await retained.table(table.id)).columns.single.id,
       table.labelColumnId,
@@ -403,6 +476,7 @@ void main() {
     () async {
       final rows = <WorkspaceResource>[];
       var canEditRecords = true;
+      var canManage = true;
       final store = CloudWorkspaceResourceStore.forTesting(
         watch: (_) => const Stream.empty(),
         patch: ({required requestId, required operations}) async {
@@ -413,12 +487,22 @@ void main() {
                   row.resourceKind == operation.resourceKind &&
                   row.resourceId == operation.resourceId,
             );
+            final payload = jsonDecode(
+              operation.data ?? (throw StateError('Missing data')),
+            ) as Map<String, dynamic>;
+            if (operation.resourceKind == .table) {
+              if (index < 0) {
+                payload['memberAccess'] = {'viewer': 'read'};
+              } else {
+                expect(payload['memberAccess'], {'viewer': 'read'});
+              }
+            }
             final now = DateTime.now().toUtc();
             final row = WorkspaceResource(
               workspaceId: 1,
               resourceKind: operation.resourceKind,
               resourceId: operation.resourceId,
-              data: operation.data ?? (throw StateError('Missing data')),
+              data: jsonEncode(payload),
               revision: index < 0 ? 1 : rows[index].revision + 1,
               createdAt: now,
               updatedAt: now,
@@ -457,7 +541,7 @@ void main() {
                     ? row.copyWith(
                         data: jsonEncode({
                           ...jsonDecode(row.data) as Map<String, dynamic>,
-                          'canManageTable': true,
+                          'canManageTable': canManage,
                           'canEditRecords': canEditRecords,
                         }),
                       )
@@ -512,6 +596,7 @@ void main() {
       expect(renamed.labelColumnId, table.labelColumnId);
       expect(renamed.columns.single.name, 'Summary');
       canEditRecords = false;
+      canManage = false;
       final readOnly = await tables.table(table.id);
       expect(
         () => tables.createRecord(
@@ -526,9 +611,24 @@ void main() {
           ),
         ),
       );
+      expect(
+        () => tables.updateMetadata(
+          table: readOnly,
+          name: 'Denied',
+          parentId: null,
+        ),
+        throwsA(
+          isA<WorkspaceTableException>().having(
+            (error) => error.denied,
+            'denied',
+            true,
+          ),
+        ),
+      );
       expect(await tables.records(table.id), hasLength(2));
       expect((await tables.list()).single.id, table.id);
       canEditRecords = true;
+      canManage = true;
       var typed = renamed;
       final typedValues = <String, Object?>{typed.labelColumnId: ''};
       for (final example
@@ -560,6 +660,23 @@ void main() {
       );
       expect(
         (await tables.record(typed.id, typedRecord.id)).values,
+        typedValues,
+      );
+      final moved = await tables.updateMetadata(
+        table: typed,
+        name: 'Renamed remotely',
+        parentId: null,
+      );
+      final refreshed = OrganizeWorkspaceTablesUsecase(
+        CloudWorkspaceTableRepository(store),
+      );
+      final reopened = await refreshed.table(moved.id);
+      expect(
+        (id: reopened.id, name: reopened.name, schema: reopened.schemaRevision),
+        (id: typed.id, name: 'Renamed remotely', schema: typed.schemaRevision),
+      );
+      expect(
+        (await refreshed.record(moved.id, typedRecord.id)).values,
         typedValues,
       );
       expect(

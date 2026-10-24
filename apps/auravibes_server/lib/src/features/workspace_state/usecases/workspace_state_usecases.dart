@@ -9,6 +9,7 @@ import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
+import '../domain/workspace_table_schema_identity.dart';
 import '../domain/workspace_table_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
@@ -1169,6 +1170,28 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Transaction transaction,
   ) async {
     if (operation.resourceKind == WorkspaceResourceKind.table) {
+      final previous = existing == null
+          ? null
+          : jsonDecode(existing.data) as Map<String, dynamic>;
+      if (previous == null) {
+        if (data['schemaRevision'] != 1) {
+          throw const FormatException();
+        }
+      } else {
+        final metadataOnly =
+            WorkspaceTableSchemaIdentity.matches(
+              data,
+              previous,
+            ) &&
+            data['schemaRevision'] == previous['schemaRevision'];
+        final expectedSchemaRevision =
+            (previous['schemaRevision'] as int) + (metadataOnly ? 0 : 1);
+        if (data['labelColumnId'] != previous['labelColumnId'] ||
+            data['schemaRevision'] != expectedSchemaRevision) {
+          _staleRevision();
+        }
+        if (metadataOnly) return;
+      }
       String? cursor;
       while (true) {
         final records = await _repository.readPage(
@@ -1191,24 +1214,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         }
         if (records.length < _maxPageSize) break;
         cursor = records.last.resourceId;
-      }
-      final previous = existing == null
-          ? null
-          : jsonDecode(existing.data) as Map<String, dynamic>;
-      if (previous == null) {
-        if (data['schemaRevision'] != 1) {
-          throw const FormatException();
-        }
-      } else {
-        if (data['labelColumnId'] != previous['labelColumnId'] ||
-            data['schemaRevision'] !=
-                (previous['schemaRevision'] as int) +
-                    (jsonEncode(data['columns']) ==
-                            jsonEncode(previous['columns'])
-                        ? 0
-                        : 1)) {
-          _staleRevision();
-        }
       }
     }
     if (operation.resourceKind != WorkspaceResourceKind.tableRecord) {

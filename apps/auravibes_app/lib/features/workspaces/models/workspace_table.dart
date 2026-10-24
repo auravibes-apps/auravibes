@@ -97,6 +97,11 @@ abstract interface class WorkspaceTableRepository {
     required String labelName,
     String? parentId,
   });
+  Future<WorkspaceTable> updateMetadata({
+    required WorkspaceTable table,
+    required String name,
+    required String? parentId,
+  });
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
