@@ -221,6 +221,95 @@ void main() {
         expect(retained.pages.single.resources.map((row) => row.resourceId), [
           'imported',
         ]);
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: 'source',
+            fieldMask: const [],
+            data: jsonEncode({
+              'name': 'Source',
+              'parentId': null,
+              'labelColumnId': 'title',
+              'schemaRevision': 1,
+              'columns': [
+                {'id': 'title', 'name': 'Title', 'type': 'text'},
+                {
+                  'id': 'link',
+                  'name': 'Link',
+                  'type': 'reference',
+                  'targetTableId': 'items',
+                },
+              ],
+            }),
+          ),
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'source-row',
+            fieldMask: const [],
+            data: jsonEncode({
+              'tableId': 'source',
+              'schemaRevision': 1,
+              'values': {'title': 'Source', 'link': 'imported'},
+            }),
+          ),
+        ]);
+        final target = jsonEncode({
+          'kind': 'table',
+          'id': 'items',
+          'revision': 2,
+        });
+        final plan = jsonDecode(
+          await endpoints.workspaceTrash.preview(
+            authenticated,
+            workspace.id!,
+            target,
+          ),
+        ) as Map<String, dynamic>;
+        final _ = await endpoints.workspaceTrash.trash(
+          authenticated,
+          WorkspaceTrashRequest(
+            workspaceId: workspace.id!,
+            requestId: 'csv-trash',
+            targetJson: target,
+            planToken: plan['planToken'] as String,
+          ),
+        );
+        final proof = jsonDecode(
+          await endpoints.workspaceTrash.deletedReference(
+            authenticated,
+            workspace.id!,
+            'items',
+            'imported',
+          ),
+        );
+        expect(proof, isA<Map<String, dynamic>>());
+        expect(
+          await endpoints.workspaceTrash.deletedReference(
+            authenticated,
+            workspace.id!,
+            'items',
+            'missing',
+          ),
+          'null',
+        );
+        final exportPage = await endpoints.workspaceState.read(
+          authenticated,
+          ReadWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            pages: [
+              WorkspaceResourcePageRequest(
+                resourceKind: .tableRecord,
+                limit: 100,
+              ),
+            ],
+            eventLimit: 0,
+          ),
+        );
+        final sourceRow = exportPage.pages.single.resources.single;
+        expect(sourceRow.resourceId, 'source-row');
+        expect(jsonDecode(sourceRow.data)['values']['link'], 'imported');
         final member = await WorkspaceMember.db.findFirstRow(
           session,
           where: (row) =>
@@ -229,6 +318,15 @@ void main() {
         await WorkspaceMember.db.updateRow(
           session,
           member!.copyWith(removedAt: DateTime.now().toUtc()),
+        );
+        await expectLater(
+          endpoints.workspaceTrash.deletedReference(
+            authenticated,
+            workspace.id!,
+            'items',
+            'imported',
+          ),
+          throwsA(isA<CloudWorkspaceException>()),
         );
         await expectLater(
           endpoints.workspaceCsv.preview(authenticated, request),

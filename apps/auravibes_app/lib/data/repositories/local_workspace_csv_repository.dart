@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_csv_input.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -11,6 +12,17 @@ class const LocalWorkspaceCsvRepository(
 ) implements WorkspaceCsvRepository {
   LocalWorkspaceTableRepository get _tables =>
       LocalWorkspaceTableRepository(_database, _workspaceId);
+
+  @override
+  Future<bool> readableDeletedReference(
+    String tableId,
+    String recordId,
+  ) async =>
+      await LocalWorkspaceTrashRepository(
+        _database,
+        _workspaceId,
+      ).deletedReference(tableId, recordId) !=
+      null;
 
   @override
   Future<WorkspaceTable> table(String id) => _tables.table(id);

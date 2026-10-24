@@ -162,6 +162,12 @@ const _table = WorkspaceTable(
 
 class const _NoWrites() implements WorkspaceCsvRepository {
   @override
+  Future<bool> readableDeletedReference(
+    String tableId,
+    String recordId,
+  ) async => false;
+
+  @override
   Future<WorkspaceTable> table(String id) =>
       throw StateError('No data read before file choice');
   @override

@@ -38,19 +38,22 @@ class const ExportWorkspaceCsvUsecase(
   Future<String> _labels(WorkspaceColumn column, Object? value) async {
     final ids = WorkspaceReferenceValue.ids(value);
     if (ids.isEmpty) return '';
-    final target = await _labelTable(column.targetTableId);
+    final target = await _labelTable(column.targetTableId, ids);
     if (target == null) return '';
     final labels = await _Labels(_repository, target, ids).read();
 
     return column.referenceMultiple ? jsonEncode(labels) : _text(labels.single);
   }
 
-  Future<WorkspaceTable?> _labelTable(String? id) async {
+  Future<WorkspaceTable?> _labelTable(String? id, List<String> ids) async {
     if (id == null) throw const WorkspaceTableException();
     try {
       return await _repository.table(id);
     } on WorkspaceTableException catch (error) {
-      if (error.denied || error.conflict) rethrow;
+      if (error.conflict) rethrow;
+      for (final recordId in ids) {
+        if (!await _repository.readableDeletedReference(id, recordId)) rethrow;
+      }
 
       return null;
     }
