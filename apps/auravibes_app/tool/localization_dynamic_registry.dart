@@ -770,13 +770,51 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         keyExpression: 'failure.localizationKey',
         occurrence: 1,
       ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: 'failure.localizationKey',
+        occurrence: 2,
+      ),
     ],
     keys: {
       'cloud_errors.conflict',
       'cloud_errors.permission_denied',
       'workspace_items.invalid_folder',
       'workspace_items.invalid_table',
+      'workspace_csv.invalid_file',
+      'workspace_csv.too_large',
+      'workspace_csv.invalid_mapping',
+      'workspace_csv.validation_failed',
+      'workspace_csv.invalid_value',
     },
+  ),
+  LocalizationDynamicRegistry(
+    family: 'workspace-csv-actions',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_csv_dialog.dart',
+        method: 'TextLocale',
+        keyExpression: '_label',
+      ),
+    ],
+    keys: {
+      'workspace_csv.save',
+      'workspace_csv.choose',
+      'workspace_csv.validate',
+      'workspace_csv.commit',
+    },
+  ),
+  LocalizationDynamicRegistry(
+    family: 'workspace-csv-row-validation',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_csv_dialog.dart',
+        method: 'TextLocale',
+        keyExpression: 'error.localizationKey',
+      ),
+    ],
+    keys: {'workspace_csv.invalid_value'},
   ),
   LocalizationDynamicRegistry(
     family: 'workspace-table-save-actions',

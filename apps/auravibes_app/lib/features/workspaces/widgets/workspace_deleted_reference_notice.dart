@@ -29,10 +29,8 @@ class const _DeletedState({
   Widget build(BuildContext context) => switch (state) {
     AsyncData(value: final WorkspaceDeletedReference deleted) =>
       _DeletedActions(workspaceId: workspaceId, deleted: deleted),
-    AsyncLoading() => const CircularProgressIndicator(),
-    AsyncData(value: null) || AsyncError() => const TextLocale(
-      LocaleKeys.workspace_items_reference_unavailable,
-    ),
+    AsyncLoading() || AsyncData(value: null) || AsyncError() =>
+      const TextLocale(LocaleKeys.workspace_items_reference_unavailable),
   };
 }
 
