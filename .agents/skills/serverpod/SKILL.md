@@ -54,6 +54,7 @@ git diff --check
 
 ## Local Server
 
+- Run local integration tests with `bash "$(git rev-parse --show-toplevel)/scripts/test_server.sh" [test paths and arguments]`; the entrypoint owns its validation lease.
 - Before local integration tests, follow [server setup](../../../apps/auravibes_server/README.md#integration-tests).
 - Dev API URL: `http://localhost:8080/`.
 - VS Code app launch defines `AURAVIBES_SERVER_URL=http://localhost:8080/`.

@@ -2136,5 +2136,27 @@
     "invalid_file": "This file is not valid UTF-8 CSV. Check quotes, delimiters and row lengths, then choose a corrected file.",
     "too_large": "This CSV exceeds the current request size. Choose a smaller file.",
     "invalid_mapping": "Choose each destination column once. Import at most 50 records per request."
+  },
+  "workspace_relational": {
+    "next": "Next",
+    "summary": "Summary of all filtered records",
+    "count": "Records: {}",
+    "present": "With a value: {}",
+    "sum": "Sum: {}",
+    "minimum": "Minimum: {}",
+    "maximum": "Maximum: {}",
+    "query": "Query and presentation",
+    "chart": "Chart",
+    "detail": "Detail",
+    "list": "List",
+    "sort": "Sort by",
+    "page_size": "Records per page",
+    "descending": "Descending",
+    "record": "Record on this page",
+    "no_numbers": "No numeric values on this page.",
+    "chart_scope": "Chart of this page. Missing values are omitted.",
+    "previous": "Previous",
+    "stale": "Refreshing data. Previous results may have changed.",
+    "loading": "Loading current data…"
   }
 }

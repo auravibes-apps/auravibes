@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_table_repository
 import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
 class const LocalWorkspaceRecordQueryRepository(
@@ -19,6 +20,15 @@ class const LocalWorkspaceRecordQueryRepository(
     String tableId,
     WorkspaceRecordQuery query,
   ) => database.transaction(() => _query(tableId, query));
+
+  @override
+  Future<Map<String, Object?>> summarize(
+    String tableId,
+    WorkspaceRecordQuery query,
+    List<String> columnIds,
+  ) => database.transaction(
+    () => _LocalRecordSummary(this, tableId, query, columnIds).read(),
+  );
 
   Future<WorkspaceRecordPage> _query(
     String tableId,
@@ -153,3 +163,69 @@ String _fold(String value) => value.replaceAllMapped(
 
 WorkspaceColumn? _filterColumn(WorkspaceTable table, String? id) =>
     table.columns.where((column) => column.id == id).firstOrNull;
+
+WorkspaceRecordQuery _summaryPage(WorkspaceRecordQuery query, int offset) =>
+    WorkspaceRecordQuery(
+      search: query.search,
+      filterColumnId: query.filterColumnId,
+      filterValue: query.filterValue,
+      filterOperator: query.filterOperator,
+      sortColumnId: query.sortColumnId,
+      descending: query.descending,
+      offset: offset,
+      limit: _summaryBatchSize,
+    );
+
+const _summaryBatchSize = 100;
+const _maximumSummaryColumns = 50;
+
+class const _LocalRecordSummary(
+  final LocalWorkspaceRecordQueryRepository repository,
+  final String tableId,
+  final WorkspaceRecordQuery query,
+  final List<String> columnIds,
+) {
+  Future<Map<String, Object?>> read() async {
+    final summary = await _summary();
+    var offset = 0;
+    while (await _appendPage(summary, offset)) {
+      offset += _summaryBatchSize;
+    }
+
+    return summary.toJson();
+  }
+
+  Future<A2uiDataSummary> _summary() async {
+    final table = await repository._tables.table(tableId);
+    _validateSummaryColumns(table, columnIds);
+
+    return A2uiDataSummary(_summaryTypes(table, columnIds));
+  }
+
+  Future<bool> _appendPage(A2uiDataSummary summary, int offset) async {
+    final page = await repository._query(tableId, _summaryPage(query, offset));
+    for (final record in page.records) {
+      summary.add(record.values);
+    }
+
+    return page.hasMore;
+  }
+}
+
+void _validateSummaryColumns(WorkspaceTable table, List<String> ids) {
+  if (!_validSummaryIds(ids) ||
+      ids.any((id) => !_summaryColumnExists(table, id))) {
+    throw const WorkspaceTableException();
+  }
+}
+
+bool _validSummaryIds(List<String> ids) =>
+    ids.length <= _maximumSummaryColumns && ids.length == ids.toSet().length;
+Map<String, String> _summaryTypes(WorkspaceTable table, List<String> ids) => {
+  for (final column in table.columns.where((column) => ids.contains(column.id)))
+    column.id: column.type.name,
+};
+
+bool _summaryColumnExists(WorkspaceTable table, String id) => table.columns.any(
+  (column) => column.id == id && column.type.name != 'attachment',
+);

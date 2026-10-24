@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
@@ -17,6 +18,17 @@ typedef WorkspaceRecordQueryInput = ({
 
 /// Bounded host-owned record queries. SQL values use bound parameters.
 class const WorkspaceRecordQuery() {
+  Future<Map<String, Object?>> summarize(
+    Session session,
+    String userId,
+    WorkspaceRecordQueryInput input,
+    List<String> columnIds,
+  ) => session.db.transaction(
+    (transaction) => _CloudRecordSummary(
+      _QueryScope(session, userId, input, transaction),
+      columnIds,
+    ).read(),
+  );
   Future<List<WorkspaceResource>> call(
     Session session,
     String userId,
@@ -32,14 +44,18 @@ class const _QueryScope(
   final WorkspaceRecordQueryInput input,
   final Transaction transaction,
 ) {
-  Future<List<WorkspaceResource>> read() async {
+  Future<List<WorkspaceResource>> read({bool summary = false}) async {
     final source = await _AuthorizedTable(
       session,
       userId,
       input,
       transaction,
     ).read();
-    final query = _QueryParameters(input.encoded, source.table).read();
+    final query = _QueryParameters(
+      input.encoded,
+      source.table,
+      summary: summary,
+    ).read();
     await _target(source.member, query);
 
     return await _QueryReader(
@@ -206,9 +222,13 @@ class _QueryParameters {
   static const _maxTextLength = 200;
   static const _maxPageSize = 100;
   static const _maxOffset = 100000;
-  _QueryParameters(String encoded, WorkspaceResource table)
-    : input = _decodeInput(encoded),
-      data = _decode(table.data);
+  _QueryParameters(
+    String encoded,
+    WorkspaceResource table, {
+    this.summary = false,
+  }) : input = _decodeInput(encoded),
+       data = _decode(table.data);
+  final bool summary;
   final Map<String, dynamic> input;
   final Map<String, dynamic> data;
   List<Map<String, dynamic>> get columns =>
@@ -272,7 +292,7 @@ class _QueryParameters {
     if (limit < 1 ||
         limit > _maxPageSize ||
         offset < 0 ||
-        offset > _maxOffset) {
+        !summary && offset > _maxOffset) {
       _invalid();
     }
 
@@ -358,3 +378,98 @@ String _querySql(Map<String, Object?> query) {
     referenceMultiple: referenceMultiple,
   ).build();
 }
+
+const _summaryBatchSize = 100;
+const _maximumSummaryColumns = 50;
+
+class const _CloudRecordSummary(
+  final _QueryScope scope,
+  final List<String> columnIds,
+) {
+  Future<Map<String, Object?>> read() async {
+    final summary = await _summary();
+    var offset = 0;
+    while (await _appendPage(summary, offset)) {
+      offset += _summaryBatchSize;
+    }
+
+    return summary.toJson();
+  }
+
+  Future<A2uiDataSummary> _summary() async {
+    final source = await _AuthorizedTable(
+      scope.session,
+      scope.userId,
+      scope.input,
+      scope.transaction,
+    ).read();
+    final columns = _summaryColumns(source.table);
+    _validateSummaryColumns(columns, columnIds);
+
+    return A2uiDataSummary(_summaryTypes(columns, columnIds));
+  }
+
+  Future<bool> _appendPage(A2uiDataSummary summary, int offset) async {
+    final rows = await _scope(offset).read(summary: true);
+    for (final row in rows.take(_summaryBatchSize)) {
+      summary.add(_summaryValues(row));
+    }
+
+    return rows.length > _summaryBatchSize;
+  }
+
+  _QueryScope _scope(int offset) => _QueryScope(
+    scope.session,
+    scope.userId,
+    _input(offset),
+    scope.transaction,
+  );
+  WorkspaceRecordQueryInput _input(int offset) => (
+    workspaceId: scope.input.workspaceId,
+    tableId: scope.input.tableId,
+    encoded: jsonEncode({
+      ..._decodeInput(scope.input.encoded),
+      'offset': offset,
+      'limit': _summaryBatchSize,
+    }),
+  );
+}
+
+Map<String, Object?> _summaryValues(WorkspaceResource row) {
+  final data = _decode(row.data);
+  final values = Map<String, Object?>.from(data['values'] as Map);
+  for (final id
+      in (data['restrictedReferenceColumns'] as List<dynamic>? ?? const [])) {
+    values.remove(id);
+  }
+
+  return values;
+}
+
+void _validateSummaryColumns(
+  List<Map<String, dynamic>> columns,
+  List<String> ids,
+) {
+  if (!_validSummaryIds(ids) ||
+      ids.any(
+        (id) => !columns.any(
+          (column) => column['id'] == id && column['type'] != 'attachment',
+        ),
+      )) {
+    _invalid();
+  }
+}
+
+bool _validSummaryIds(List<String> ids) =>
+    ids.length <= _maximumSummaryColumns && ids.length == ids.toSet().length;
+Map<String, String> _summaryTypes(
+  List<Map<String, dynamic>> columns,
+  List<String> ids,
+) => {
+  for (final column in columns.where((column) => ids.contains(column['id'])))
+    column['id'] as String: column['type'] as String,
+};
+
+List<Map<String, dynamic>> _summaryColumns(WorkspaceResource source) =>
+    (_decode(source.data)['columns'] as List<dynamic>)
+        .cast<Map<String, dynamic>>();

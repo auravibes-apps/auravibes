@@ -63,6 +63,7 @@ jobs:
           tool/changed_test_selector_test.dart
           tool/merge_lcov_test.dart
           tool/marionette_run_test.dart
+          tool/check_test_credentials_test.dart
 
       - name: Test Python tools
         run: |
@@ -70,6 +71,7 @@ jobs:
           python3 tool/ci_summary_test.py
           python3 tool/plan_test_shards_test.py
           python3 tool/validation_lease_test.py
+          python3 tool/test_server_test.py
           python3 tool/agent_worktree_test.py
 
       - name: Audit first-party tool schemas

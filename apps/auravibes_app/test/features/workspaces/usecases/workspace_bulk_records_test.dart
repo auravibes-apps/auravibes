@@ -332,6 +332,7 @@ void main() {
       expect(
         await usecase.apply(
           changes,
+          requestId: 'cancelled',
           approve: (snapshot) async {
             values['label'] = 'changed';
             changes.clear();
@@ -349,10 +350,12 @@ void main() {
         ],
         approve: (_) async => throw StateError('must not ask'),
         mode: .allowAll,
+        requestId: 'allow-all',
       );
       expect(repository.applied?.single.values, {'label': 'A'});
       final _ = await usecase.apply(
         [_change('one', values)],
+        requestId: 'approved',
         approve: (snapshot) async {
           values['label'] = 'later';
 

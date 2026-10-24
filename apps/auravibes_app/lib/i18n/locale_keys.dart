@@ -2765,4 +2765,28 @@ abstract class LocaleKeys {
   static const workspace_csv_invalid_file = 'workspace_csv.invalid_file';
   static const workspace_csv_too_large = 'workspace_csv.too_large';
   static const workspace_csv_invalid_mapping = 'workspace_csv.invalid_mapping';
+  static const workspace_relational_next = 'workspace_relational.next';
+  static const workspace_relational_summary = 'workspace_relational.summary';
+  static const workspace_relational_count = 'workspace_relational.count';
+  static const workspace_relational_present = 'workspace_relational.present';
+  static const workspace_relational_sum = 'workspace_relational.sum';
+  static const workspace_relational_minimum = 'workspace_relational.minimum';
+  static const workspace_relational_maximum = 'workspace_relational.maximum';
+  static const workspace_relational_query = 'workspace_relational.query';
+  static const workspace_relational_chart = 'workspace_relational.chart';
+  static const workspace_relational_detail = 'workspace_relational.detail';
+  static const workspace_relational_list = 'workspace_relational.list';
+  static const workspace_relational_sort = 'workspace_relational.sort';
+  static const workspace_relational_page_size =
+      'workspace_relational.page_size';
+  static const workspace_relational_descending =
+      'workspace_relational.descending';
+  static const workspace_relational_record = 'workspace_relational.record';
+  static const workspace_relational_no_numbers =
+      'workspace_relational.no_numbers';
+  static const workspace_relational_chart_scope =
+      'workspace_relational.chart_scope';
+  static const workspace_relational_previous = 'workspace_relational.previous';
+  static const workspace_relational_stale = 'workspace_relational.stale';
+  static const workspace_relational_loading = 'workspace_relational.loading';
 }
