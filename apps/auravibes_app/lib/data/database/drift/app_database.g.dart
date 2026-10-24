@@ -18685,6 +18685,292 @@ class WorkspaceTrashBatchesCompanion
   }
 }
 
+class $WorkspaceRecordBatchReceiptsTable extends WorkspaceRecordBatchReceipts
+    with
+        TableInfo<
+          $WorkspaceRecordBatchReceiptsTable,
+          WorkspaceRecordBatchReceiptRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceRecordBatchReceiptsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _requestIdMeta = const VerificationMeta(
+    'requestId',
+  );
+  @override
+  late final GeneratedColumn<String> requestId = GeneratedColumn<String>(
+    'request_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _digestMeta = const VerificationMeta('digest');
+  @override
+  late final GeneratedColumn<String> digest = GeneratedColumn<String>(
+    'digest',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [workspaceId, requestId, digest];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_record_batch_receipts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceRecordBatchReceiptRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('request_id')) {
+      context.handle(
+        _requestIdMeta,
+        requestId.isAcceptableOrUnknown(data['request_id']!, _requestIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_requestIdMeta);
+    }
+    if (data.containsKey('digest')) {
+      context.handle(
+        _digestMeta,
+        digest.isAcceptableOrUnknown(data['digest']!, _digestMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_digestMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, requestId};
+  @override
+  WorkspaceRecordBatchReceiptRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceRecordBatchReceiptRow(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      requestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_id'],
+      )!,
+      digest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}digest'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceRecordBatchReceiptsTable createAlias(String alias) {
+    return $WorkspaceRecordBatchReceiptsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceRecordBatchReceiptRow extends DataClass
+    implements Insertable<WorkspaceRecordBatchReceiptRow> {
+  final String workspaceId;
+  final String requestId;
+  final String digest;
+  const WorkspaceRecordBatchReceiptRow({
+    required this.workspaceId,
+    required this.requestId,
+    required this.digest,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['request_id'] = Variable<String>(requestId);
+    map['digest'] = Variable<String>(digest);
+    return map;
+  }
+
+  WorkspaceRecordBatchReceiptsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceRecordBatchReceiptsCompanion(
+      workspaceId: Value(workspaceId),
+      requestId: Value(requestId),
+      digest: Value(digest),
+    );
+  }
+
+  factory WorkspaceRecordBatchReceiptRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceRecordBatchReceiptRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      requestId: serializer.fromJson<String>(json['requestId']),
+      digest: serializer.fromJson<String>(json['digest']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'requestId': serializer.toJson<String>(requestId),
+      'digest': serializer.toJson<String>(digest),
+    };
+  }
+
+  WorkspaceRecordBatchReceiptRow copyWith({
+    String? workspaceId,
+    String? requestId,
+    String? digest,
+  }) => WorkspaceRecordBatchReceiptRow(
+    workspaceId: workspaceId ?? this.workspaceId,
+    requestId: requestId ?? this.requestId,
+    digest: digest ?? this.digest,
+  );
+  WorkspaceRecordBatchReceiptRow copyWithCompanion(
+    WorkspaceRecordBatchReceiptsCompanion data,
+  ) {
+    return WorkspaceRecordBatchReceiptRow(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      requestId: data.requestId.present ? data.requestId.value : this.requestId,
+      digest: data.digest.present ? data.digest.value : this.digest,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceRecordBatchReceiptRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('requestId: $requestId, ')
+          ..write('digest: $digest')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, requestId, digest);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceRecordBatchReceiptRow &&
+          other.workspaceId == this.workspaceId &&
+          other.requestId == this.requestId &&
+          other.digest == this.digest);
+}
+
+class WorkspaceRecordBatchReceiptsCompanion
+    extends UpdateCompanion<WorkspaceRecordBatchReceiptRow> {
+  final Value<String> workspaceId;
+  final Value<String> requestId;
+  final Value<String> digest;
+  final Value<int> rowid;
+  const WorkspaceRecordBatchReceiptsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.requestId = const Value.absent(),
+    this.digest = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceRecordBatchReceiptsCompanion.insert({
+    required String workspaceId,
+    required String requestId,
+    required String digest,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       requestId = Value(requestId),
+       digest = Value(digest);
+  static Insertable<WorkspaceRecordBatchReceiptRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? requestId,
+    Expression<String>? digest,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (requestId != null) 'request_id': requestId,
+      if (digest != null) 'digest': digest,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceRecordBatchReceiptsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? requestId,
+    Value<String>? digest,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceRecordBatchReceiptsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      requestId: requestId ?? this.requestId,
+      digest: digest ?? this.digest,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (requestId.present) {
+      map['request_id'] = Variable<String>(requestId.value);
+    }
+    if (digest.present) {
+      map['digest'] = Variable<String>(digest.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceRecordBatchReceiptsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('requestId: $requestId, ')
+          ..write('digest: $digest, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -18740,6 +19026,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkspaceViewsTable workspaceViews = $WorkspaceViewsTable(this);
   late final $WorkspaceTrashBatchesTable workspaceTrashBatches =
       $WorkspaceTrashBatchesTable(this);
+  late final $WorkspaceRecordBatchReceiptsTable workspaceRecordBatchReceipts =
+      $WorkspaceRecordBatchReceiptsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -18879,6 +19167,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     connectorWrites,
     workspaceViews,
     workspaceTrashBatches,
+    workspaceRecordBatchReceipts,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -19189,6 +19478,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('workspace_trash_batches', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_record_batch_receipts', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -19548,6 +19846,32 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceTrashBatchesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceRecordBatchReceiptsTable,
+    List<WorkspaceRecordBatchReceiptRow>
+  >
+  _workspaceRecordBatchReceiptsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceRecordBatchReceipts,
+        aliasName:
+            'workspaces__id__workspace_record_batch_receipts__workspace_id',
+      );
+
+  $$WorkspaceRecordBatchReceiptsTableProcessedTableManager
+  get workspaceRecordBatchReceiptsRefs {
+    final manager = $$WorkspaceRecordBatchReceiptsTableTableManager(
+      $_db,
+      $_db.workspaceRecordBatchReceipts,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceRecordBatchReceiptsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -20004,6 +20328,35 @@ class $$WorkspacesTableFilterComposer
               }) => $$WorkspaceTrashBatchesTableFilterComposer(
                 $db: $db,
                 $table: $db.workspaceTrashBatches,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceRecordBatchReceiptsRefs(
+    Expression<bool> Function(
+      $$WorkspaceRecordBatchReceiptsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$WorkspaceRecordBatchReceiptsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceRecordBatchReceipts,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceRecordBatchReceiptsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceRecordBatchReceipts,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -20509,6 +20862,35 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> workspaceRecordBatchReceiptsRefs<T extends Object>(
+    Expression<T> Function(
+      $$WorkspaceRecordBatchReceiptsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$WorkspaceRecordBatchReceiptsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceRecordBatchReceipts,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceRecordBatchReceiptsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceRecordBatchReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -20541,6 +20923,7 @@ class $$WorkspacesTableTableManager
             bool connectorWritesRefs,
             bool workspaceViewsRefs,
             bool workspaceTrashBatchesRefs,
+            bool workspaceRecordBatchReceiptsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -20624,6 +21007,7 @@ class $$WorkspacesTableTableManager
                 connectorWritesRefs = false,
                 workspaceViewsRefs = false,
                 workspaceTrashBatchesRefs = false,
+                workspaceRecordBatchReceiptsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -20646,6 +21030,8 @@ class $$WorkspacesTableTableManager
                     if (connectorWritesRefs) db.connectorWrites,
                     if (workspaceViewsRefs) db.workspaceViews,
                     if (workspaceTrashBatchesRefs) db.workspaceTrashBatches,
+                    if (workspaceRecordBatchReceiptsRefs)
+                      db.workspaceRecordBatchReceipts,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -20986,6 +21372,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceRecordBatchReceiptsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceRecordBatchReceiptRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceRecordBatchReceiptsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceRecordBatchReceiptsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -21023,6 +21430,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool connectorWritesRefs,
         bool workspaceViewsRefs,
         bool workspaceTrashBatchesRefs,
+        bool workspaceRecordBatchReceiptsRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -36623,6 +37031,316 @@ typedef $$WorkspaceTrashBatchesTableProcessedTableManager =
       WorkspaceTrashBatchRow,
       PrefetchHooks Function({bool workspaceId})
     >;
+typedef $$WorkspaceRecordBatchReceiptsTableCreateCompanionBuilder =
+    WorkspaceRecordBatchReceiptsCompanion Function({
+      required String workspaceId,
+      required String requestId,
+      required String digest,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceRecordBatchReceiptsTableUpdateCompanionBuilder =
+    WorkspaceRecordBatchReceiptsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> requestId,
+      Value<String> digest,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceRecordBatchReceiptsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceRecordBatchReceiptsTable,
+          WorkspaceRecordBatchReceiptRow
+        > {
+  $$WorkspaceRecordBatchReceiptsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        'workspace_record_batch_receipts__workspace_id__workspaces__id',
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceRecordBatchReceiptsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceRecordBatchReceiptsTable> {
+  $$WorkspaceRecordBatchReceiptsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get requestId => $composableBuilder(
+    column: $table.requestId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get digest => $composableBuilder(
+    column: $table.digest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceRecordBatchReceiptsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceRecordBatchReceiptsTable> {
+  $$WorkspaceRecordBatchReceiptsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get requestId => $composableBuilder(
+    column: $table.requestId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get digest => $composableBuilder(
+    column: $table.digest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceRecordBatchReceiptsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceRecordBatchReceiptsTable> {
+  $$WorkspaceRecordBatchReceiptsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get requestId =>
+      $composableBuilder(column: $table.requestId, builder: (column) => column);
+
+  GeneratedColumn<String> get digest =>
+      $composableBuilder(column: $table.digest, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceRecordBatchReceiptsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceRecordBatchReceiptsTable,
+          WorkspaceRecordBatchReceiptRow,
+          $$WorkspaceRecordBatchReceiptsTableFilterComposer,
+          $$WorkspaceRecordBatchReceiptsTableOrderingComposer,
+          $$WorkspaceRecordBatchReceiptsTableAnnotationComposer,
+          $$WorkspaceRecordBatchReceiptsTableCreateCompanionBuilder,
+          $$WorkspaceRecordBatchReceiptsTableUpdateCompanionBuilder,
+          (
+            WorkspaceRecordBatchReceiptRow,
+            $$WorkspaceRecordBatchReceiptsTableReferences,
+          ),
+          WorkspaceRecordBatchReceiptRow,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceRecordBatchReceiptsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceRecordBatchReceiptsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceRecordBatchReceiptsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceRecordBatchReceiptsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceRecordBatchReceiptsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> requestId = const Value.absent(),
+                Value<String> digest = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceRecordBatchReceiptsCompanion(
+                workspaceId: workspaceId,
+                requestId: requestId,
+                digest: digest,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String requestId,
+                required String digest,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceRecordBatchReceiptsCompanion.insert(
+                workspaceId: workspaceId,
+                requestId: requestId,
+                digest: digest,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceRecordBatchReceiptsTable,
+                    WorkspaceRecordBatchReceiptRow
+                  >(table),
+                  $$WorkspaceRecordBatchReceiptsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$WorkspaceRecordBatchReceiptsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceRecordBatchReceiptsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceRecordBatchReceiptsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceRecordBatchReceiptsTable,
+      WorkspaceRecordBatchReceiptRow,
+      $$WorkspaceRecordBatchReceiptsTableFilterComposer,
+      $$WorkspaceRecordBatchReceiptsTableOrderingComposer,
+      $$WorkspaceRecordBatchReceiptsTableAnnotationComposer,
+      $$WorkspaceRecordBatchReceiptsTableCreateCompanionBuilder,
+      $$WorkspaceRecordBatchReceiptsTableUpdateCompanionBuilder,
+      (
+        WorkspaceRecordBatchReceiptRow,
+        $$WorkspaceRecordBatchReceiptsTableReferences,
+      ),
+      WorkspaceRecordBatchReceiptRow,
+      PrefetchHooks Function({bool workspaceId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -36697,4 +37415,10 @@ class $AppDatabaseManager {
       $$WorkspaceViewsTableTableManager(_db, _db.workspaceViews);
   $$WorkspaceTrashBatchesTableTableManager get workspaceTrashBatches =>
       $$WorkspaceTrashBatchesTableTableManager(_db, _db.workspaceTrashBatches);
+  $$WorkspaceRecordBatchReceiptsTableTableManager
+  get workspaceRecordBatchReceipts =>
+      $$WorkspaceRecordBatchReceiptsTableTableManager(
+        _db,
+        _db.workspaceRecordBatchReceipts,
+      );
 }

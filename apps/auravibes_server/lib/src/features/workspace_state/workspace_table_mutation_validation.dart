@@ -13,8 +13,9 @@ class WorkspaceTableMutationValidation(
   final Session _session,
   final int _workspaceId,
   final Transaction _transaction,
-  final String _userId,
-) {
+  final String _userId, {
+  final bool deferRecordState = false,
+}) {
   static const _pageSize = 100;
 
   Future<void> validate(
@@ -54,9 +55,9 @@ class WorkspaceTableMutationValidation(
     final id = data['tableId'] as String;
     final schema = await _recordSchema(id, data);
     final values = _values(operation, schema, data);
+    _recordTable(existing, id);
     await _checkReferences(schema, data, existing, operation.resourceId);
     await _checkValues(id, operation.resourceId, schema, values);
-    _recordTable(existing, id);
   }
 
   Future<Map<String, Object?>> _recordSchema(
@@ -77,8 +78,15 @@ class WorkspaceTableMutationValidation(
   ) async {
     final references = await _references();
     final values = (data['values'] as Map).cast<String, Object?>();
-    await references.values(schema, values, _previousValues(existing));
-    await references.dependents.record(recordId, data, existing);
+    await references.values(
+      schema,
+      values,
+      _previousValues(existing),
+      preserveOnly: deferRecordState,
+    );
+    if (!deferRecordState) {
+      await references.dependents.record(recordId, data, existing);
+    }
   }
 
   Future<void> _checkValues(
@@ -87,6 +95,7 @@ class WorkspaceTableMutationValidation(
     Map<String, Object?> schema,
     Map<String, Object?> values,
   ) async {
+    if (deferRecordState) return;
     final records = await _records(id);
     records[recordId] = values;
     WorkspaceTableConstraints.records(schema, records.values);

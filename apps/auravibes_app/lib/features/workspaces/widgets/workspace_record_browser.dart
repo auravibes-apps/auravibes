@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_validation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_change.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_bulk_record_dialog.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_query_filter.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
@@ -35,11 +39,30 @@ class _Draft {
   new(WorkspaceTable table)
     : query = useState(const WorkspaceRecordQuery()),
       controls = useState(false),
+      selecting = useState(false),
+      selected = useState<Map<String, WorkspaceRecord>>({}),
       columns = useState(table.columns.map((column) => column.id).toSet());
 
   final ValueNotifier<WorkspaceRecordQuery> query;
   final ValueNotifier<bool> controls;
+  final ValueNotifier<bool> selecting;
+  final ValueNotifier<Map<String, WorkspaceRecord>> selected;
   final ValueNotifier<Set<String>> columns;
+  bool canSelect(WorkspaceRecord record) =>
+      selected.value.containsKey(record.id) ||
+      selected.value.length < WorkspaceRecordChange.maxOperations;
+  void toggle(WorkspaceRecord record) =>
+      setSelected(record, checked: !selected.value.containsKey(record.id));
+  void setSelected(WorkspaceRecord record, {required bool checked}) {
+    selecting.value = true;
+    final next = Map.of(selected.value);
+    if (!checked) {
+      final _ = next.remove(record.id);
+    } else if (canSelect(record)) {
+      final _ = next.putIfAbsent(record.id, () => record);
+    }
+    selected.value = next;
+  }
 }
 
 class const _Frame(
@@ -51,6 +74,7 @@ class const _Frame(
   Widget build(BuildContext context) => Column(
     children: [
       _Search(draft),
+      if (owner.table.canEditRecords) _BulkToolbar(owner, draft),
       if (draft.controls.value) _Controls(owner, draft),
       Expanded(child: _RecordState(owner, draft, records)),
       _Pages(draft.query, more: records.value?.hasMore ?? false),
@@ -95,6 +119,7 @@ class const _RecordState(
       value.records,
       draft.columns.value,
       owner.onRecord,
+      draft,
     ),
     AsyncError(:final error) => SingleChildScrollView(
       child: WorkspaceItemFailure(error: error),
@@ -245,6 +270,7 @@ class const _Rows(
   final List<WorkspaceRecord> records,
   final Set<String> columns,
   final ValueChanged<WorkspaceRecord> onRecord,
+  final _Draft draft,
 ) extends StatelessWidget {
   WorkspaceTable get table => browser.table;
 
@@ -262,6 +288,7 @@ class const _Rows(
         : selected;
   }
 
+  bool isSelecting() => table.canEditRecords && draft.selecting.value;
   @override
   Widget build(BuildContext context) {
     if (records.isEmpty) {
@@ -283,11 +310,35 @@ class const _Rows(
 
 class const _RecordRow(final _Rows owner, final WorkspaceRecord record)
     extends StatelessWidget {
+  bool get _selecting => owner.isSelecting();
   @override
   Widget build(BuildContext context) => ListTile(
+    key: ValueKey('workspace_record_${record.id}'),
+    leading: _selecting ? _RecordCheckbox(owner, record) : null,
     title: Text(_value(record, owner.table.labelColumnId)),
     subtitle: _RecordDetails(owner, record),
-    onTap: () => owner.onRecord(record),
+    onTap: _tap,
+    onLongPress: owner.table.canEditRecords ? _select : null,
+  );
+  void _select() => owner.draft.toggle(record);
+  void _tap() {
+    if (_selecting) {
+      _select();
+    } else {
+      owner.onRecord(record);
+    }
+  }
+}
+
+class const _RecordCheckbox(final _Rows owner, final WorkspaceRecord record)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Checkbox(
+    value: owner.draft.selected.value.containsKey(record.id),
+    onChanged: owner.draft.canSelect(record)
+        ? (checked) =>
+              owner.draft.setSelected(record, checked: checked ?? false)
+        : null,
   );
 }
 
@@ -320,15 +371,32 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
       ),
     ),
   );
-  DataRow _row(WorkspaceRecord record) => DataRow(
-    cells: [
-      for (final column in owner.visible)
-        DataCell(
-          _Cell(owner, record, column),
-          onTap: () => owner.onRecord(record),
-        ),
-    ],
+  DataRow _row(WorkspaceRecord record) => _GridRecord(owner, record).create();
+}
+
+class const _GridRecord(final _Rows owner, final WorkspaceRecord record) {
+  bool get _selecting => owner.isSelecting();
+  bool get _selected => owner.draft.selected.value.containsKey(record.id);
+  bool get _canSelect => _selecting && owner.draft.canSelect(record);
+  DataRow create() => DataRow(
+    selected: _selected,
+    onSelectChanged: _canSelect ? _changed : null,
+    onLongPress: owner.table.canEditRecords ? _select : null,
+    cells: [for (final column in owner.visible) _cell(column)],
   );
+  void _changed(bool? checked) =>
+      owner.draft.setSelected(record, checked: checked ?? false);
+  void _select() => owner.draft.toggle(record);
+  void _tap() {
+    if (_selecting) {
+      _select();
+    } else {
+      owner.onRecord(record);
+    }
+  }
+
+  DataCell _cell(WorkspaceColumn column) =>
+      DataCell(_Cell(owner, record, column), onTap: _tap);
 }
 
 class const _RecordDetail(
@@ -417,3 +485,85 @@ String _display(Object value) => switch (value) {
 };
 bool _supportsQuery(WorkspaceColumn column) =>
     WorkspaceQueryFilterValidation.supports(column);
+
+class const _BulkToolbar(
+  final WorkspaceRecordBrowser browser,
+  final _Draft draft,
+) extends ConsumerWidget {
+  List<WorkspaceRecord> get _selected =>
+      List.unmodifiable(draft.selected.value.values);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => draft.selecting.value
+      ? _SelectedRecordsToolbar(this)
+      : _StartSelection(draft);
+  void _done() {
+    draft.selecting.value = false;
+    draft.selected.value = {};
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    final saved = await WorkspaceBulkRecordDialog.open(
+      context,
+      browser.workspaceId,
+      browser.table,
+      _selected,
+    );
+    if (!context.mounted || !saved) return;
+    ref.invalidate(workspaceRecordQueryUsecaseProvider(browser.workspaceId));
+    _done();
+  }
+}
+
+class const _StartSelection(final _Draft draft) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => draft.selecting.value = true,
+    child: const TextLocale(LocaleKeys.workspace_items_bulk_select),
+    identifier: 'workspace_records_select',
+  );
+}
+
+class const _SelectedRecordsToolbar(final _BulkToolbar owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    crossAxisAlignment: .center,
+    children: [
+      _SelectionCount(owner.draft),
+      if (owner.draft.selected.value.length ==
+          WorkspaceRecordChange.maxOperations)
+        const TextLocale(LocaleKeys.workspace_items_bulk_limit),
+      _EditSelection(owner),
+      _DoneSelection(owner),
+    ],
+  );
+}
+
+class const _SelectionCount(final _Draft draft) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.workspace_items_bulk_selected.tr(
+      namedArgs: {'count': '${draft.selected.value.length}'},
+    ),
+  );
+}
+
+class const _EditSelection(final _BulkToolbar owner) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraButton(
+    onPressed: () => unawaited(owner._edit(context, ref)),
+    child: const TextLocale(LocaleKeys.workspace_items_bulk_edit),
+    disabled: owner.draft.selected.value.isEmpty,
+    identifier: 'workspace_records_bulk_edit',
+  );
+}
+
+class const _DoneSelection(final _BulkToolbar owner) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: owner._done,
+    child: const TextLocale(LocaleKeys.workspace_items_done),
+    identifier: 'workspace_records_selection_done',
+  );
+}
