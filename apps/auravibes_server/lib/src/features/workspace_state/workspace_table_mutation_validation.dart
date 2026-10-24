@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import 'domain/workspace_table_constraints.dart';
+import 'domain/workspace_table_schema_identity.dart';
 import 'repositories/workspace_state_repository.dart';
 
 class WorkspaceTableMutationValidation(
@@ -32,24 +33,24 @@ class WorkspaceTableMutationValidation(
     Map<String, Object?> data,
     WorkspaceResource? existing,
   ) async {
+    if (_schemaRevision(data, existing)) return;
     final records = await _records(id);
     WorkspaceTableConstraints.records(data, records.values);
-    _schemaRevision(data, existing);
   }
 
-  void _schemaRevision(Map<String, Object?> data, WorkspaceResource? existing) {
+  bool _schemaRevision(Map<String, Object?> data, WorkspaceResource? existing) {
     if (existing == null) {
       if (data['schemaRevision'] != 1) throw const FormatException();
-      return;
+      return false;
     }
     final previous = _decode(existing);
     final revision = previous['schemaRevision'] as int;
-    final changed =
-        jsonEncode(data['columns']) != jsonEncode(previous['columns']);
+    final changed = !WorkspaceTableSchemaIdentity.matches(data, previous);
     if (data['labelColumnId'] != previous['labelColumnId'] ||
         data['schemaRevision'] != revision + (changed ? 1 : 0)) {
       _stale();
     }
+    return !changed;
   }
 
   Future<void> _record(

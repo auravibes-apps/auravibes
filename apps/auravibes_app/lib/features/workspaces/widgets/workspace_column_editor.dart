@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
@@ -97,7 +98,7 @@ abstract final class _ColumnActions {
     ({WorkspaceTable table, WorkspaceColumn column}) input,
     _ColumnDraft draft,
   ) async {
-    final violations = await usecase.previewColumn(
+    final violations = await PreviewWorkspaceColumnUsecase(usecase).call(
       table: input.table,
       column: input.column,
     );

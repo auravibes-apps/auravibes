@@ -104,6 +104,28 @@ The user explicitly requested the `to-spec` workflow after reconciliation. They 
 
 The implementation spec must use Connector for a catalog integration, Connection for workspace-configured access, and Conversation for the workspace-owned chat transcript, following the existing domain documents and Connector/Skill ADR. Reuse host-owned tool approval/execution instead of introducing a Skill-owned tool runtime.
 
+## Directory UX follow-up — 2026-10-23
+
+The user requested the name **Directory**, ordinary folder/item navigation, a toolbar **+** with a type menu, support for future item types, and clean organization using menus and grouped controls. The transitional browser keeps folder/table creation forms permanently visible; the requested Directory removes those forms from the listing. The underlying workspace hierarchy and item identities are unchanged.
+
+| Decision | Confirmed answer |
+| --- | --- |
+| Q73 | Content first throughout Directory and item editors. Put schema, permissions and settings in menus or separate panels. |
+| Q74 | Show the current folder with a breadcrumb/path and Back navigation. Enter folders or open item editors; return to the same folder and scroll position. |
+| Q75 | Toolbar + creates in the current folder. Choose an available item type, provide essential setup, then open the new item. Do not offer unimplemented types. |
+| Q76 | Default to a simple list: folders first, then other items alphabetically. Show icon/name/minimal useful metadata; keep sort/filter controls in the toolbar. |
+| Q77 | Use per-row menus for permitted Rename, Move, Duplicate and Trash actions. Group choices only where useful; show bulk actions after selection. |
+| Q78 | Use a minimal creation sheet on narrow screens or dialog on wide screens. Ask for name and unavoidable required fields, then open the new item; defer advanced setup. |
+| Q79 | Make + contextual: Directory creates item types; inside a table it adds a record. Put columns/schema in a separate menu. |
+| Q80 | Enter selection mode by long-press on touch or Select in the toolbar menu. Show checkboxes and a contextual action bar only in selection mode. |
+| Q81 | Final shared understanding confirmed: apply the complete Directory and content-first item-editor plan. |
+
+The [glossary](../../GLOSSARY.md) defines Directory, Folder and Item. Directory is a product/navigation concept, not a promise of an operating-system filesystem. Internal symbol renaming is not implied.
+
+Q73–Q81 are confirmed. The user explicitly approved applying this complete plan across Directory and item editors. Dates/money and constraints work continues independently; the integrated #1676 UI is a transitional baseline.
+
+No ADR is added for reversible labels, menus or layout choices. Existing persistence, authorization, execution and release decisions remain in force.
+
 ## Unresolved release requirements
 
 No answers selected launch countries, minimum age, retention durations, actual providers/initial Connector, numerical limits, legal entity details, or payment behavior. These need evidence and owner decisions before launch. Do not silently invent values or treat the `ready-for-agent` issue label as release authorization.

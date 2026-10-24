@@ -2547,6 +2547,10 @@ abstract class LocaleKeys {
       'workspace_items.correct_records';
   static const workspace_items_replacement_column =
       'workspace_items.replacement_column';
+  static const workspace_items_edit_item = 'workspace_items.edit_item';
+  static const workspace_items_item_name = 'workspace_items.item_name';
+  static const workspace_items_destination = 'workspace_items.destination';
+  static const workspace_items_root = 'workspace_items.root';
   static const workspace_items_table_access = 'workspace_items.table_access';
   static const workspace_items_access_read = 'workspace_items.access_read';
   static const workspace_items_access_edit = 'workspace_items.access_edit';

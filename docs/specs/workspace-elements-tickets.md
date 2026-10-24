@@ -47,3 +47,7 @@ Each slice includes needed persistence/API/UI behavior and focused tests. Follow
 Existing #1427 and #1521 remain coordination points rather than added blocking edges. Launch countries, age, retention, providers, numerical limits, and any payments remain owner decisions; the release-evidence ticket must expose unresolved requirements rather than invent values.
 
 Local publication bodies and the resumable batch manifest are retained under the task scratch directory. No application implementation or production operation was performed.
+
+## Approved Directory UX follow-up
+
+Q73–Q81 extend #1675 to include Directory naming, current-folder navigation with return context, toolbar type creation, minimal responsive forms, contextual row menus and selection mode. Tables keep content primary, contextual record creation and separate schema/access controls. Original bounded responsive table-query acceptance remains required. Other item types adopt the same shell conventions when implemented. The native dependency remains #1670; no additional child or blocking edge is introduced.

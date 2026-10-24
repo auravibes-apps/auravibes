@@ -118,12 +118,69 @@ void main() {
           ]),
           throwsA(isA<CloudWorkspaceException>()),
         );
-        final renamed = await patch([
+        final metadata = await patch([
           WorkspacePatchOperation(
             operation: .update,
             resourceKind: .table,
             resourceId: 'table-one',
             expectedRevision: 1,
+            data: jsonEncode({
+              'name': 'Renamed list',
+              'parentId': null,
+              'labelColumnId': 'label-one',
+              'schemaRevision': 1,
+              'columns': [
+                {
+                  'id': 'label-one',
+                  'name': 'Title',
+                  'type': 'text',
+                  'options': null,
+                },
+              ],
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        expect(metadata.resources.single.revision, 2);
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .tableRecord,
+            resourceId: 'open-draft',
+            data: jsonEncode({
+              'tableId': 'table-one',
+              'schemaRevision': 1,
+              'values': {'label-one': 'Draft before rename'},
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        await expectLater(
+          patch([
+            WorkspacePatchOperation(
+              operation: .update,
+              resourceKind: .table,
+              resourceId: 'table-one',
+              expectedRevision: 2,
+              fieldMask: const [],
+              data: jsonEncode({
+                'name': 'Tampered schema',
+                'labelColumnId': 'label-one',
+                'schemaRevision': 1,
+                'columns': [
+                  {'id': 'label-one', 'name': 'Changed schema', 'type': 'text'},
+                ],
+              }),
+            ),
+          ]),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        final renamed = await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'table-one',
+            expectedRevision: 2,
             data: jsonEncode({
               'name': 'My list',
               'labelColumnId': 'label-one',
@@ -135,7 +192,7 @@ void main() {
             fieldMask: const [],
           ),
         ]);
-        expect(renamed.resources.single.revision, 2);
+        expect(renamed.resources.single.revision, 3);
         await expectLater(
           patch([
             WorkspacePatchOperation(
@@ -587,7 +644,7 @@ void main() {
             ),
           ],
         );
-        await grant('read', 2);
+        await grant('read', 3);
         final readable = await memberRead();
         expect(readable.pages.first.resources.single.resourceId, 'table-one');
         final readableTable =
@@ -599,13 +656,13 @@ void main() {
           endpoints.workspaceState.patch(outsider, memberWrite),
           throwsA(isA<CloudWorkspaceException>()),
         );
-        await grant('edit', 3);
+        await grant('edit', 4);
         final written = await endpoints.workspaceState.patch(
           outsider,
           memberWrite,
         );
         expect(written.resources.single.resourceId, 'member-record');
-        await grant(null, 4);
+        await grant(null, 5);
         final revoked = await memberRead();
         expect(revoked.pages.expand((page) => page.resources), isEmpty);
         expect(
@@ -622,7 +679,7 @@ void main() {
             ),
           ),
         );
-        await grant('edit', 5);
+        await grant('edit', 6);
         await endpoints.cloudWorkspace.removeMember(
           authenticated,
           RemoveWorkspaceMemberRequest(

@@ -7,11 +7,25 @@ class const OrganizeWorkspaceFoldersUsecase(
       _repository.list(parentId: parentId);
 
   Future<WorkspaceFolder> create({required String name, String? parentId}) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty || trimmed.length > 200) {
-      throw const WorkspaceFolderException();
-    }
-
-    return _repository.create(name: trimmed, parentId: parentId);
+    return _repository.create(name: _name(name), parentId: parentId);
   }
+
+  Future<WorkspaceFolder> updateMetadata({
+    required WorkspaceFolder folder,
+    required String name,
+    required String? parentId,
+  }) => _repository.updateMetadata(
+    folder: folder,
+    name: _name(name),
+    parentId: parentId,
+  );
+}
+
+String _name(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty || trimmed.length > 200) {
+    throw const WorkspaceFolderException();
+  }
+
+  return trimmed;
 }

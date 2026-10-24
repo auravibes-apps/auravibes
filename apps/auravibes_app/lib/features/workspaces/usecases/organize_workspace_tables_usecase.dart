@@ -22,6 +22,20 @@ class const OrganizeWorkspaceTablesUsecase(
     labelName: _name(labelName),
     parentId: parentId,
   );
+  Future<WorkspaceTable> updateMetadata({
+    required WorkspaceTable table,
+    required String name,
+    required String? parentId,
+  }) {
+    _requireManage(table);
+
+    return _repository.updateMetadata(
+      table: table,
+      name: _name(name),
+      parentId: parentId,
+    );
+  }
+
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
     required String name,
@@ -63,27 +77,12 @@ class const OrganizeWorkspaceTablesUsecase(
     );
   }
 
-  Future<List<WorkspaceRecord>> previewColumn({
-    required WorkspaceTable table,
-    required WorkspaceColumn column,
-  }) async {
-    _requireManage(table);
-    final normalized = _normalizeColumn(column);
-    final columns = table.withColumn(normalized);
-    WorkspaceColumnValidation.columns(columns, table.labelColumnId);
-
-    return WorkspaceTableConstraints.violations(
-      columns,
-      await _repository.records(table.id),
-    );
-  }
-
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
     required WorkspaceColumn column,
   }) {
     _requireManage(table);
-    final normalized = _normalizeColumn(column);
+    final normalized = normalizeWorkspaceColumn(column);
     _checkColumnId(table, column.id);
     WorkspaceColumnValidation.columns(
       table.withColumn(normalized),
@@ -100,7 +99,7 @@ void _checkColumnId(WorkspaceTable table, String id) {
   }
 }
 
-WorkspaceColumn _normalizeColumn(WorkspaceColumn column) => WorkspaceColumn(
+WorkspaceColumn normalizeWorkspaceColumn(WorkspaceColumn column) => WorkspaceColumn(
   id: column.id.isEmpty ? const UuidV7().generate() : column.id,
   name: _name(column.name),
   type: column.type,
