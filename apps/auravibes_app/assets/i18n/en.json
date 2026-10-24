@@ -2025,6 +2025,7 @@
     "reference_next": "Next page",
     "reference_previous": "First page",
     "reference_empty": "No matching records",
-    "reference_remove": "Clear selection"
+    "reference_remove": "Clear selection",
+    "reference_choose_target": "Choose a target table first."
   }
 }

@@ -31,7 +31,7 @@ void main() {
                       revision: 1,
                     )
                   : null,
-              onBack: () {},
+              onBack: () => fail('Unexpected navigation'),
             ),
           ),
         );
@@ -69,8 +69,8 @@ const _table = WorkspaceTable(
       id: 'quantity',
       name: 'Quantity',
       type: .number,
-      defaultValue: 7,
       isUnique: true,
+      defaultValue: 7,
     ),
   ],
   revision: 1,

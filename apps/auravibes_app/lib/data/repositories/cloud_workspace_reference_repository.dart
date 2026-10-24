@@ -46,6 +46,26 @@ class const CloudWorkspaceReferenceRepository(
   }
 
   @override
+  Future<WorkspaceReferencePage> tableTargets(
+    String tableId, {
+    required String search,
+    String? afterId,
+  }) async {
+    final connection = await _connection();
+
+    return _page(
+      await connection.client.workspaceReference.tableTargets(
+        .new(
+          workspaceId: connection.workspaceId,
+          tableId: tableId,
+          search: search,
+          afterId: afterId,
+        ),
+      ),
+    );
+  }
+
+  @override
   Future<WorkspaceReferencePage> reverse({
     required String tableId,
     required String recordId,

@@ -19,6 +19,7 @@ class const WorkspaceReferenceField({
   required final bool restricted,
   required final ValueChanged<Object?> onChanged,
   required final VoidCallback onUnset,
+  final bool schemaDefault = false,
   super.key,
 }) extends StatelessWidget {
   List<String> get ids => WorkspaceReferenceValue.ids(value);
@@ -104,5 +105,6 @@ class const _ReferencePickerContent({
     column: field.column,
     selected: field.ids,
     onSelected: (ids) => field._selected(context, ids),
+    schemaDefault: field.schemaDefault,
   );
 }

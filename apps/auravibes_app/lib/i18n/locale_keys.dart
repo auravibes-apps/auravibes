@@ -2645,4 +2645,6 @@ abstract class LocaleKeys {
       'workspace_items.reference_empty';
   static const workspace_items_reference_remove =
       'workspace_items.reference_remove';
+  static const workspace_items_reference_choose_target =
+      'workspace_items.reference_choose_target';
 }

@@ -20,7 +20,12 @@ class const WorkspaceReverseReferences({
       expanded: useState(false),
       cursor: useState<String?>(null),
     ));
-    final page = useFuture(useMemoized(state.load, state.dependencies));
+    final references = ref.watch(
+      workspaceReferencesUsecaseProvider(workspaceId).future,
+    );
+    final page = useFuture(
+      useMemoized(state.load, [references, ...state.dependencies]),
+    );
 
     return _ReverseBody(state: state, page: page);
   }
@@ -37,7 +42,8 @@ class const _ReverseState(
   final _ReverseDraft draft,
 ) {
   List<Object?> get dependencies => [draft.expanded.value, draft.cursor.value];
-  set next(String id) => draft.cursor.value = id;
+  String? get next => draft.cursor.value;
+  set next(String? id) => draft.cursor.value = id;
   Future<WorkspaceReferencePage?> load() async {
     if (!draft.expanded.value) return null;
     final references = await ref.read(

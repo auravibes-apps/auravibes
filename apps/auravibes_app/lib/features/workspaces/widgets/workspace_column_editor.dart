@@ -1,4 +1,3 @@
-import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_target.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -7,6 +6,8 @@ import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_col
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_violations.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_target.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -118,23 +119,8 @@ abstract final class _ColumnActions {
     timeZone: useState(column?.timeZone ?? 'UTC'),
     reference: _referenceDraft(column),
   );
-  static WorkspaceColumn _column(String id, _ColumnFields fields) {
-    final constraints = fields.constraints;
-    final reference = _referenceConfiguration(fields);
-
-    return WorkspaceColumn(
-      id: id,
-      name: fields.name.text,
-      type: fields.type.value,
-      options: _options(fields),
-      isRequired: constraints.required.value,
-      isUnique: constraints.unique.value,
-      defaultValue: constraints.defaultValue.value,
-      timeZone: fields.timeZone.value,
-      targetTableId: reference.tableId,
-      referenceMultiple: reference.multiple,
-    );
-  }
+  static WorkspaceColumn _column(String id, _ColumnFields fields) =>
+      _ColumnValue(id, fields, _referenceConfiguration(fields)).build();
 
   static List<String> _options(_ColumnFields fields) =>
       hasOptions(fields.type.value)
@@ -169,10 +155,10 @@ class const _ColumnInputs({
   Widget build(BuildContext context) => Column(
     children: [
       _ColumnBasicInputs(editor: editor, draft: draft),
+      _ColumnDraftReference(editor: editor, draft: draft),
       _ColumnConstraintInputs(editor: editor, draft: draft),
       _ColumnPreviewResult(editor: editor, draft: draft),
       _ColumnTimeZone(draft: draft),
-      _ColumnDraftReference(editor: editor, draft: draft),
     ],
   );
 }
@@ -186,6 +172,7 @@ class const _ColumnConstraintInputs({
     draft: draft.fields.constraints,
     column: _ColumnActions._column(editor.column?.id ?? '', draft.fields),
     disabled: draft.action.pending,
+    referenceDefault: _ColumnReferenceDefault(editor: editor, draft: draft),
   );
 }
 
@@ -368,3 +355,69 @@ class const _ColumnBasicInputs({
     ],
   );
 }
+
+class const _ColumnValue(
+  final String id,
+  final _ColumnFields fields,
+  final ({String? tableId, bool multiple}) reference,
+) {
+  String get _name => fields.name.text;
+  WorkspaceColumnType get _type => fields.type.value;
+  List<String> get _options => _ColumnActions._options(fields);
+  bool get _required => fields.constraints.required.value;
+  bool get _unique => fields.constraints.unique.value;
+  String get _timeZone => fields.timeZone.value;
+  WorkspaceColumn build() => WorkspaceColumn(
+    id: id,
+    name: _name,
+    type: _type,
+    options: _options,
+    isRequired: _required,
+    isUnique: _unique,
+    defaultValue: _defaultValue(fields),
+    timeZone: _timeZone,
+    targetTableId: reference.tableId,
+    referenceMultiple: reference.multiple,
+  );
+}
+
+class const _ColumnReferenceDefault({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final column = _ColumnActions._column(
+      editor.column?.id ?? '',
+      draft.fields,
+    );
+
+    return column.targetTableId == null
+        ? const TextLocale(LocaleKeys.workspace_items_reference_choose_target)
+        : _ReferenceDefaultChoice(editor: editor, draft: draft, column: column);
+  }
+}
+
+class const _ReferenceDefaultChoice({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+  required final WorkspaceColumn column,
+}) extends StatelessWidget {
+  ValueNotifier<Object?> get _value => draft.fields.constraints.defaultValue;
+  @override
+  Widget build(BuildContext context) => WorkspaceReferenceField(
+    workspaceId: editor.workspaceId,
+    table: editor.table,
+    column: column,
+    value: _value.value,
+    disabled: draft.action.pending,
+    restricted: false,
+    onChanged: (value) => _value.value = value,
+    onUnset: _unset,
+    schemaDefault: true,
+  );
+  void _unset() => _value.value = null;
+}
+
+Object? _defaultValue(_ColumnFields fields) =>
+    fields.constraints.defaultValue.value;

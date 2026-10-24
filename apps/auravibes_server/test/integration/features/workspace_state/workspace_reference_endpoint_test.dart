@@ -113,6 +113,32 @@ void main() {
             },
           }),
         ]);
+        final sourceSchema = schema('Tasks', source: true);
+        sourceSchema['schemaRevision'] = 2;
+        final linkColumn = (sourceSchema['columns'] as List).last as Map;
+        linkColumn['required'] = true;
+        linkColumn['defaultValue'] = ['person'];
+        await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .table,
+            resourceId: 'source',
+            expectedRevision: 1,
+            data: jsonEncode(sourceSchema),
+            fieldMask: const [],
+          ),
+        ]);
+        expect(
+          (await endpoints.workspaceReference.tableTargets(
+            member,
+            WorkspaceReferenceTableRequest(
+              workspaceId: wid,
+              tableId: 'target',
+              search: 'Ada',
+            ),
+          )).single.resourceId,
+          'person',
+        );
         final choices = await endpoints.workspaceReference.targets(
           member,
           WorkspaceReferenceTargetRequest(
@@ -169,6 +195,30 @@ void main() {
           ),
           throwsA(isA<CloudWorkspaceException>()),
         );
+        await expectLater(
+          endpoints.workspaceReference.tableTargets(
+            member,
+            WorkspaceReferenceTableRequest(workspaceId: wid, tableId: 'target'),
+          ),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        final schemaRead = await endpoints.workspaceState.read(
+          member,
+          ReadWorkspaceStateRequest(
+            workspaceId: wid,
+            pages: [
+              WorkspaceResourcePageRequest(resourceKind: .table, limit: 100),
+            ],
+            eventLimit: 0,
+          ),
+        );
+        final projectedSource = schemaRead.pages.single.resources.single;
+        final projectedColumns = _data(projectedSource)['columns'] as List;
+        expect(
+          (projectedColumns.last as Map).containsKey('defaultValue'),
+          false,
+        );
+        expect(jsonEncode(schemaRead.toJson()), isNot(contains('person')));
         final read = await endpoints.workspaceState.read(
           member,
           ReadWorkspaceStateRequest(
@@ -197,7 +247,7 @@ void main() {
               expectedRevision: 1,
               data: jsonEncode({
                 'tableId': 'source',
-                'schemaRevision': 1,
+                'schemaRevision': 2,
                 'values': {'label': 'Updated'},
               }),
               fieldMask: const [],
@@ -342,7 +392,7 @@ void main() {
           ),
         );
         final invalidSchema = schema('Tasks', source: true);
-        invalidSchema['schemaRevision'] = 2;
+        invalidSchema['schemaRevision'] = 3;
         (invalidSchema['columns'] as List).add({
           'id': 'foreign-link',
           'name': 'Foreign',
@@ -355,7 +405,7 @@ void main() {
               operation: .update,
               resourceKind: .table,
               resourceId: 'source',
-              expectedRevision: 1,
+              expectedRevision: 2,
               data: jsonEncode(invalidSchema),
               fieldMask: const [],
             ),

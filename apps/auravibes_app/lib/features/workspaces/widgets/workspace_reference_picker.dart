@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_reference_pag
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_record_dialog.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_row.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -17,12 +18,18 @@ class const WorkspaceReferencePicker({
   required final WorkspaceColumn column,
   required final List<String> selected,
   required final ValueChanged<List<String>> onSelected,
+  final bool schemaDefault = false,
   super.key,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = _PickerState.use(this, ref);
-    final page = useFuture(useMemoized(state.load, state.dependencies));
+    final references = ref.watch(
+      workspaceReferencesUsecaseProvider(workspaceId).future,
+    );
+    final page = useFuture(
+      useMemoized(state.load, [references, ...state.dependencies]),
+    );
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -38,7 +45,7 @@ class const _PickerState(
 ) {
   factory use(WorkspaceReferencePicker picker, WidgetRef ref) =>
       _PickerState(picker, ref, (
-        selected: useState(picker.selected.toSet()),
+        selected: useState(_initialSelection(picker)),
         search: useState(''),
         cursor: useState<String?>(null),
         refresh: useState(0),
@@ -53,11 +60,9 @@ class const _PickerState(
       workspaceReferencesUsecaseProvider(picker.workspaceId).future,
     );
 
-    return await usecase.targets(
-      source: (tableId: picker.table.id, columnId: picker.column.id),
-      search: draft.search.value,
-      afterId: draft.cursor.value,
-    );
+    if (picker.schemaDefault) return await _defaultPage(this, usecase);
+
+    return await _sourcePage(this, usecase);
   }
 
   void search(String value) {
@@ -69,6 +74,7 @@ class const _PickerState(
   void select(String id) {
     if (!picker.column.referenceMultiple) {
       draft.selected.value = {id};
+
       return;
     }
     final next = {...draft.selected.value};
@@ -91,6 +97,12 @@ class const _PickerState(
     retry();
   }
 }
+
+Set<String> _initialSelection(WorkspaceReferencePicker picker) =>
+    (picker.column.referenceMultiple
+            ? picker.selected
+            : picker.selected.take(1))
+        .toSet();
 
 typedef _PickerDraft = ({
   ValueNotifier<Set<String>> selected,
@@ -256,3 +268,20 @@ class const _FirstPage({required final _PickerState state})
           ),
         );
 }
+
+Future<WorkspaceReferencePage> _defaultPage(
+  _PickerState state,
+  BrowseWorkspaceReferencesUsecase usecase,
+) => usecase.tableTargets(
+  tableId: state.picker.column.targetTableId ?? '',
+  search: state.draft.search.value,
+  afterId: state.draft.cursor.value,
+);
+Future<WorkspaceReferencePage> _sourcePage(
+  _PickerState state,
+  BrowseWorkspaceReferencesUsecase usecase,
+) => usecase.targets(
+  source: (tableId: state.picker.table.id, columnId: state.picker.column.id),
+  search: state.draft.search.value,
+  afterId: state.draft.cursor.value,
+);

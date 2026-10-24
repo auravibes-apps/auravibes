@@ -138,6 +138,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/r
     as _i2v5creq;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
     as _irm41t6a;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
+    as _iv6a6cze;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_target_request.dart'
     as _if6l00dz;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
@@ -1871,6 +1873,27 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['workspaceReference']
                           as _it87m04z.WorkspaceReferenceEndpoint)
                       .targets(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'tableTargets': _is.MethodConnector(
+          name: 'tableTargets',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iv6a6cze.WorkspaceReferenceTableRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .tableTargets(
                         session,
                         params['request'],
                       ),

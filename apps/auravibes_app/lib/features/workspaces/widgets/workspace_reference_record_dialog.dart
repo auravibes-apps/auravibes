@@ -1,5 +1,8 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_editor.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _dialogWidth = 680.0;
@@ -41,13 +44,19 @@ class const WorkspaceReferenceRecordDialog({
 class const _ReferenceEditor({
   required final String workspaceId,
   required final WorkspaceReferenceRecordInput input,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => WorkspaceRecordEditor(
+  Widget build(BuildContext context, WidgetRef ref) => WorkspaceRecordEditor(
     workspaceId: workspaceId,
     table: input.table,
     record: input.record,
     onBack: () => Navigator.of(context).pop(),
-    onSaved: input.onSaved,
+    onSaved: (record) => _saved(ref, record),
   );
+  void _saved(WidgetRef ref, WorkspaceRecord record) {
+    ref
+      ..invalidate(workspaceReferencesUsecaseProvider(workspaceId))
+      ..invalidate(workspaceTableRecordsProvider(workspaceId, input.table.id));
+    input.onSaved?.call(record);
+  }
 }

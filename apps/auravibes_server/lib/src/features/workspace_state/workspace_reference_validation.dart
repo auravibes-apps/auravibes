@@ -47,8 +47,9 @@ class const WorkspaceReferenceValidation(
   }
 
   Future<bool> _preserve(_ColumnChange change) async {
-    if (_oldIds(change).isEmpty || await _canRead(_targetId(change)))
+    if (_oldIds(change).isEmpty || await _canRead(_targetId(change))) {
       return false;
+    }
     _retain(change);
 
     return true;
@@ -68,20 +69,15 @@ class const WorkspaceReferenceValidation(
 
     return table != null &&
         await WorkspaceTableAccess(transaction: transaction)
-                .visible(session, member, table) !=
-            null;
+            .canReadTable(session, member, table);
   }
 
   Future<WorkspaceResource> _target(String id) async {
     final table = await _resource(.table, id);
     if (table == null || table.deletedAt != null) throw const FormatException();
-    final visible = await WorkspaceTableAccess(transaction: transaction)
-        .visible(session, member, table);
-    if (visible == null) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.permissionDenied,
-      );
-    }
+    final readable = await WorkspaceTableAccess(transaction: transaction)
+        .canReadTable(session, member, table);
+    if (!readable) throw CloudWorkspaceException(code: .permissionDenied);
 
     return table;
   }

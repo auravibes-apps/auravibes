@@ -86,6 +86,7 @@ workspaceStream:
   - subscribe:
 workspaceReference:
   - targets:
+  - tableTargets:
   - record:
   - reverse:
 workspaceSecret:

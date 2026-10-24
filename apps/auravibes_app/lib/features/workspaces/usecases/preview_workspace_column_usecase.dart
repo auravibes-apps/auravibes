@@ -16,7 +16,14 @@ class const PreviewWorkspaceColumnUsecase(
     );
     WorkspaceColumnValidation.columns(columns, table.labelColumnId);
     final records = await _tables.records(table.id);
+    _requireVisible(records);
 
     return WorkspaceTableConstraints.violations(columns, records);
+  }
+}
+
+void _requireVisible(List<WorkspaceRecord> records) {
+  if (records.any((record) => record.restrictedReferenceColumns.isNotEmpty)) {
+    throw const WorkspaceTableException(denied: true);
   }
 }
