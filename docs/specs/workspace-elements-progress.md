@@ -8,7 +8,7 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 - Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
 - Integrated #1688 Connector writes at `c8a0e6ae5`; isolated live UI acceptance and final standards review remain before closure.
 - Active implementers: #1675 Directory/table browsing, #1673 relationships and #1682 persistent A2UI views. Each owns a separate worktree. #1682 is based on integrated #1688 at `29a973065`; native blocker #1669 is closed, and its preflight only matched this coordinated draft PR.
-- Latest published verified head: `05a844a59`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 at69f361501 passed every gate except format; the one-line formatter repair is published. Current-head CI and remaining children are incomplete.
+- Latest published head: `e5019c835`, verified against `git ls-remote`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 failed only format; repaired run40060362461 passed formatting but was superseded/cancelled before all app tests finished. Current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
 
@@ -330,3 +330,18 @@ Formatter repair `05a844a59381d861acde90d3022c0036e22fb316` pushed after dry-run
 - Worker evidence retained in `/Users/davidlondono/.codex/implementation-checkpoints/workspace-writes-1688.md`: app128, engine45 plus final9, server49, authenticated full26 plus final focused recovery regression; handwritten fatal analyzer, localization, nullable/unused, scoped new-helper DCL and clean generated-drift gate passed. No new full-suite claim is made for this integration check.
 - Existing server orchestration DCL excess remains: changed methods were compared against baseline and recorded in the worker checkpoint. New helpers pass their configured volume ceiling; whole server monolith files do not. No metric ignore or broad unrelated refactor was added.
 - Remaining acceptance: parent-owned isolated app smoke for write approval, allow-all and uncertainty UI; final standards/spec review and repository issue workflow. No live provider writes, push, issue closure, automation or golden updates occurred during integration. Release/provider/retention decisions remain unresolved.
+
+
+### Directory candidate live verification — 2026-10-24
+
+The isolated UI checkout combines References `ce605febf` and Directory `ab6439f43` at candidate `b5e44e8a5`. This is not the integration branch and does not establish final ticket acceptance. Marionette instance `directory-1665-oct24` uses the dedicated UI worktree; Computer provides approved fallback control for its window and an unlabeled table Back control.
+
+- Directory shows only current-folder elements, folders first. Toolbar + exposes implemented Folder/Table types. Minimal name forms create and open the new folder/table in the current folder.
+- A record created through table + saves and appears in the grid. Returning from the editor/table preserves the containing folder.
+- Row-menu rename and move preserve table ID `01a16c25-b6e1-7ec2-b45f-92ff82c9a859`; the table moves to root, disappears from its previous folder, and reopens with its record intact.
+- New-record Quantity default7 is visible before save. Required/Unique hints now follow Quantity; a small left-alignment repair is being verified by the References implementer. No duplicate record was saved during this check.
+- Long-press opens selection mode with checkboxes/count/Done. **Remaining #1675 gap:** permitted bulk Move is absent and must be implemented; selection is not accepted as complete. Exact typed sort/filter operators also remain open.
+- Native table Back lacked a stable selector/label. Directory has added Back/menu/pagination identifiers and labels; these are not yet included in this live capture.
+- No application error logs were collected. One automation argument failed schema validation (`text` instead of `input`); it performed no app mutation, was captured, and was corrected.
+
+Evidence under `/tmp/auravibes-1665-ui-evidence/`: `directory-start-0.png`, `directory-created-table-0.png`, `directory-moved-table-0.png` and tree, `constraints-visible-default-0.png` and tree, `directory-selection-0.png` and tree. Native phone-width verification, final permission/relationship picker flows, final combined slice acceptance and current-head CI remain open.
