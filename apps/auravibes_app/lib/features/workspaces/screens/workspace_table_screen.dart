@@ -259,11 +259,12 @@ class const _TableBrowser({
   @override
   Widget build(BuildContext context) {
     final settings = useState(false);
+    final selectionMode = useState(false);
 
     return Column(
       children: [
-        _BrowserToolbar(this, settings),
-        Expanded(child: _BrowserContent(this, settings)),
+        _BrowserToolbar(this, settings, selectionMode),
+        Expanded(child: _BrowserContent(this, settings, selectionMode)),
       ],
     );
   }
@@ -272,6 +273,7 @@ class const _TableBrowser({
 class const _BrowserContent(
   final _TableBrowser browser,
   final ValueNotifier<bool> settings,
+  final ValueNotifier<bool> selectionMode,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Stack(
@@ -279,11 +281,7 @@ class const _BrowserContent(
     children: [
       Offstage(
         offstage: settings.value,
-        child: WorkspaceRecordBrowser(
-          workspaceId: browser.workspaceId,
-          table: browser.table,
-          onRecord: browser.onRecord,
-        ),
+        child: _BrowserRecords(browser, selectionMode),
       ),
       if (settings.value)
         Positioned.fill(
@@ -296,9 +294,23 @@ class const _BrowserContent(
   );
 }
 
+class const _BrowserRecords(
+  final _TableBrowser browser,
+  final ValueNotifier<bool> selectionMode,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceRecordBrowser(
+    workspaceId: browser.workspaceId,
+    table: browser.table,
+    onRecord: browser.onRecord,
+    selectionMode: selectionMode,
+  );
+}
+
 class const _BrowserToolbar(
   final _TableBrowser browser,
   final ValueNotifier<bool> settings,
+  final ValueNotifier<bool> selectionMode,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
@@ -306,7 +318,7 @@ class const _BrowserToolbar(
       _TableBackButton(browser, settings),
       Expanded(child: Text(browser.table.name)),
       if (browser.table.canEditRecords) _NewRecordButton(browser, settings),
-      _TableMenu(browser, settings),
+      _TableMenu(browser, settings, selectionMode),
     ],
   );
 }
@@ -352,21 +364,35 @@ class const _NewRecordButton(
 class const _TableMenu(
   final _TableBrowser browser,
   final ValueNotifier<bool> settings,
+  final ValueNotifier<bool> selectionMode,
 ) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraPopupMenuButton(
-    items: [
-      if (browser.table.canManage) _settings(),
-      if (browser.table.canEditRecords) _import(context, ref),
-      _export(context),
-      if (browser.table.canManage) ...[
-        const AuraPopupMenuDivider(),
-        _trash(context, ref),
-      ],
-    ],
+    items: _items(context, ref),
     identifier: 'workspace_table_overflow',
     tooltip: LocaleKeys.common_show_more.tr(),
   );
+
+  List<AuraPopupMenuEntry> _items(BuildContext context, WidgetRef ref) => [
+    if (browser.table.canEditRecords && !selectionMode.value) _select(),
+    if (browser.table.canManage) _settings(),
+    if (browser.table.canEditRecords) _import(context, ref),
+    _export(context),
+    if (browser.table.canManage) ...[
+      const AuraPopupMenuDivider(),
+      _trash(context, ref),
+    ],
+  ];
+
+  AuraPopupMenuItem _select() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_items_bulk_select),
+    onTap: _startSelection,
+    identifier: 'workspace_records_select',
+  );
+  void _startSelection() {
+    settings.value = false;
+    selectionMode.value = true;
+  }
 
   AuraPopupMenuItem _settings() => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_settings),

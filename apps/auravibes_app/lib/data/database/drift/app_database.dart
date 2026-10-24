@@ -45,6 +45,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_receipts.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_trash_batches.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
@@ -110,6 +111,7 @@ part 'app_database.g.dart';
     ConnectorWrites,
     WorkspaceViews,
     WorkspaceTrashBatches,
+    WorkspaceRecordBatchReceipts,
   ],
   daos: [
     WorkspaceDao,
@@ -198,7 +200,9 @@ class AppDatabase extends _$AppDatabase {
       _connectorWritesSchemaVersion + 1;
   static const int _workspaceTrashSchemaVersion =
       _workspaceViewsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceTrashSchemaVersion;
+  static const int _workspaceRecordBatchSchemaVersion =
+      _workspaceTrashSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceRecordBatchSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -256,6 +260,9 @@ extension on AppDatabase {
       await m.createTable(workspaceViews);
     }
     await _upgradeWorkspaceTrashSchema(m, from);
+    if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
+      await m.createTable(workspaceRecordBatchReceipts);
+    }
     if (from < AppDatabase._connectorWritesSchemaVersion) {
       await m.createTable(connectorWrites);
     }
