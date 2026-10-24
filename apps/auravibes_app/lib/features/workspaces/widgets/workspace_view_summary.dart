@@ -11,9 +11,10 @@ class const WorkspaceViewSummary({
   Widget build(BuildContext context) => data.needsRepair
       ? const SizedBox.shrink()
       : ExpansionTile(
-          expandedCrossAxisAlignment: .start,
           title: const TextLocale(LocaleKeys.workspace_relational_summary),
           children: [_Count(data), _Columns(data)],
+          expandedCrossAxisAlignment: .start,
+          expandedAlignment: .centerLeft,
         );
 }
 
