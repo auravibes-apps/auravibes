@@ -316,3 +316,5 @@ Clean committed generated-artifact gate at `fd7c849d` passes, including Serverpo
 - Hosted full Flutter CI at `d6d991db` passed (40056284955). At latest published `ea6dcb2f`, lint/harness passed; Flutter Test CI40057406933 was still running when last checked. Never infer full CI success from the first two workflow results.
 
 Publication checkpoint: root `69f361501e5429d0408f21e987837d8d944f3af7` pushed after dry-run and remote-SHA verification. Full Flutter Test CI40057406933 at `ea6dcb2f4` subsequently completed successfully. Current-head CI remains pending. Both isolated UI manifests are gone; no UI app or own bridge remains running.
+
+Current-head CI40058728216 exposed one formatting-only indentation in `workspace_table.dart` (_columnTimeZone continuation). Root applied pinned formatter to that file; exact full `format:check` now passes, whitespace clean. No behavior changed or snapshots updated. Job log: `/tmp/auravibes-1693-format-69f-job-clean.log`. Other current-head CI results remain pending.
