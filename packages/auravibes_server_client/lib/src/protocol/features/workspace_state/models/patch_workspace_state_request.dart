@@ -16,6 +16,8 @@ import 'package:serverpod_client/serverpod_client.dart' as _isc;
 
 import '../../../features/workspace_state/models/workspace_patch_operation.dart'
     as _iou6lkaa;
+import '../../../features/workspace_state/models/workspace_view_move.dart'
+    as _ia3e3t31;
 
 abstract class PatchWorkspaceStateRequest
     implements _isc.SerializableModel, _isc.ProtocolSerialization {
@@ -23,12 +25,14 @@ abstract class PatchWorkspaceStateRequest
     required this.workspaceId,
     required this.requestId,
     required this.operations,
+    this.viewMoves,
   });
 
   factory PatchWorkspaceStateRequest({
     required int workspaceId,
     required String requestId,
     required List<_iou6lkaa.WorkspacePatchOperation> operations,
+    List<_ia3e3t31.WorkspaceViewMove>? viewMoves,
   }) = _PatchWorkspaceStateRequestImpl;
 
   factory PatchWorkspaceStateRequest.fromJson(
@@ -41,6 +45,11 @@ abstract class PatchWorkspaceStateRequest
           .deserialize<List<_iou6lkaa.WorkspacePatchOperation>>(
             jsonSerialization['operations'],
           ),
+      viewMoves: jsonSerialization['viewMoves'] == null
+          ? null
+          : _isctvzjc.Protocol().deserialize<List<_ia3e3t31.WorkspaceViewMove>>(
+              jsonSerialization['viewMoves'],
+            ),
     );
   }
 
@@ -50,6 +59,8 @@ abstract class PatchWorkspaceStateRequest
 
   List<_iou6lkaa.WorkspacePatchOperation> operations;
 
+  List<_ia3e3t31.WorkspaceViewMove>? viewMoves;
+
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -57,6 +68,7 @@ abstract class PatchWorkspaceStateRequest
     int? workspaceId,
     String? requestId,
     List<_iou6lkaa.WorkspacePatchOperation>? operations,
+    List<_ia3e3t31.WorkspaceViewMove>? viewMoves,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -65,6 +77,8 @@ abstract class PatchWorkspaceStateRequest
       'workspaceId': workspaceId,
       'requestId': requestId,
       'operations': operations.toJson(valueToJson: (v) => v.toJson()),
+      if (viewMoves != null)
+        'viewMoves': viewMoves?.toJson(valueToJson: (v) => v.toJson()),
     };
   }
 
@@ -77,6 +91,10 @@ abstract class PatchWorkspaceStateRequest
       'operations': operations.toJson(
         valueToJson: (v) => v.toJsonForProtocol(),
       ),
+      if (viewMoves != null)
+        'viewMoves': viewMoves?.toJson(
+          valueToJson: (v) => v.toJsonForProtocol(),
+        ),
     };
   }
 
@@ -86,15 +104,19 @@ abstract class PatchWorkspaceStateRequest
   }
 }
 
+class _Undefined {}
+
 class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
   _PatchWorkspaceStateRequestImpl({
     required int workspaceId,
     required String requestId,
     required List<_iou6lkaa.WorkspacePatchOperation> operations,
+    List<_ia3e3t31.WorkspaceViewMove>? viewMoves,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          operations: operations,
+         viewMoves: viewMoves,
        );
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
@@ -105,12 +127,16 @@ class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
     int? workspaceId,
     String? requestId,
     List<_iou6lkaa.WorkspacePatchOperation>? operations,
+    Object? viewMoves = _Undefined,
   }) {
     return PatchWorkspaceStateRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       requestId: requestId ?? this.requestId,
       operations:
           operations ?? this.operations.map((e0) => e0.copyWith()).toList(),
+      viewMoves: viewMoves is List<_ia3e3t31.WorkspaceViewMove>?
+          ? viewMoves
+          : this.viewMoves?.map((e0) => e0.copyWith()).toList(),
     );
   }
 }

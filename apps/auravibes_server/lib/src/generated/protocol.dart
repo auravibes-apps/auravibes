@@ -292,6 +292,7 @@ import 'features/workspace_state/models/workspace_secret_kind.dart'
     as _iq96p1l9;
 import 'features/workspace_state/models/workspace_secret_scope.dart'
     as _ioqbiy3d;
+import 'features/workspace_state/models/workspace_view_move.dart' as _i00jdb9n;
 import 'features/workspaces/models/accept_workspace_invite_request.dart'
     as _ib7b2bmq;
 import 'features/workspaces/models/cloud_workspace.dart' as _iyfjt29r;
@@ -497,6 +498,7 @@ export 'features/workspace_state/models/workspace_resource_page_request.dart';
 export 'features/workspace_state/models/workspace_secret.dart';
 export 'features/workspace_state/models/workspace_secret_kind.dart';
 export 'features/workspace_state/models/workspace_secret_scope.dart';
+export 'features/workspace_state/models/workspace_view_move.dart';
 export 'features/workspaces/models/accept_workspace_invite_request.dart';
 export 'features/workspaces/models/cloud_workspace.dart';
 export 'features/workspaces/models/cloud_workspace_capabilities.dart';
@@ -5633,6 +5635,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ioqbiy3d.WorkspaceSecretScope) {
       return _ioqbiy3d.WorkspaceSecretScope.fromJson(data) as T;
     }
+    if (t == _i00jdb9n.WorkspaceViewMove) {
+      return _i00jdb9n.WorkspaceViewMove.fromJson(data) as T;
+    }
     if (t == _ib7b2bmq.AcceptWorkspaceInviteRequest) {
       return _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data) as T;
     }
@@ -6570,6 +6575,10 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i00jdb9n.WorkspaceViewMove?>()) {
+      return (data != null ? _i00jdb9n.WorkspaceViewMove.fromJson(data) : null)
+          as T;
+    }
     if (t == _is.getType<_ib7b2bmq.AcceptWorkspaceInviteRequest?>()) {
       return (data != null
               ? _ib7b2bmq.AcceptWorkspaceInviteRequest.fromJson(data)
@@ -6802,6 +6811,20 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data as List)
               .map((e) => deserialize<_iolo6w4a.WorkspacePatchOperation>(e))
               .toList()
+          as T;
+    }
+    if (t == List<_i00jdb9n.WorkspaceViewMove>) {
+      return (data as List)
+              .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+              .toList()
+          as T;
+    }
+    if (t == _is.getType<List<_i00jdb9n.WorkspaceViewMove>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i00jdb9n.WorkspaceViewMove>(e))
+                    .toList()
+              : null)
           as T;
     }
     if (t == List<_iqzfyfs9.WorkspaceResource>) {
@@ -7126,6 +7149,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iyjw9v2c.WorkspaceSecret => 'WorkspaceSecret',
       _iq96p1l9.WorkspaceSecretKind => 'WorkspaceSecretKind',
       _ioqbiy3d.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _i00jdb9n.WorkspaceViewMove => 'WorkspaceViewMove',
       _ib7b2bmq.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
       _iyfjt29r.CloudWorkspace => 'CloudWorkspace',
       _i1uzipdf.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
@@ -7485,6 +7509,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'WorkspaceSecretKind';
       case _ioqbiy3d.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
+      case _i00jdb9n.WorkspaceViewMove():
+        return 'WorkspaceViewMove';
       case _ib7b2bmq.AcceptWorkspaceInviteRequest():
         return 'AcceptWorkspaceInviteRequest';
       case _iyfjt29r.CloudWorkspace():
@@ -8077,6 +8103,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'WorkspaceSecretScope') {
       return deserialize<_ioqbiy3d.WorkspaceSecretScope>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceViewMove') {
+      return deserialize<_i00jdb9n.WorkspaceViewMove>(data['data']);
     }
     if (dataClassName == 'AcceptWorkspaceInviteRequest') {
       return deserialize<_ib7b2bmq.AcceptWorkspaceInviteRequest>(data['data']);
