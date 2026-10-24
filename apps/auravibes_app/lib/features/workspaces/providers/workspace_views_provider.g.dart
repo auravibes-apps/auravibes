@@ -187,7 +187,7 @@ final class WorkspaceViewDataProvider
         $FutureProvider<WorkspaceViewData> {
   WorkspaceViewDataProvider._({
     required WorkspaceViewDataFamily super.from,
-    required (String, String) super.argument,
+    required (String, String, {int offset}) super.argument,
   }) : super(
          retry: null,
          name: r'workspaceViewDataProvider',
@@ -214,8 +214,13 @@ final class WorkspaceViewDataProvider
 
   @override
   FutureOr<WorkspaceViewData> create(Ref ref) {
-    final argument = this.argument as (String, String);
-    return workspaceViewData(ref, argument.$1, argument.$2);
+    final argument = this.argument as (String, String, {int offset});
+    return workspaceViewData(
+      ref,
+      argument.$1,
+      argument.$2,
+      offset: argument.offset,
+    );
   }
 
   @override
@@ -229,13 +234,13 @@ final class WorkspaceViewDataProvider
   }
 }
 
-String _$workspaceViewDataHash() => r'0c460171c90dea19f7598a930ede4181aaadee6c';
+String _$workspaceViewDataHash() => r'b8c8e3067f3326032a0cf95873594f6ef0d58454';
 
 final class WorkspaceViewDataFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<WorkspaceViewData>,
-          (String, String)
+          (String, String, {int offset})
         > {
   WorkspaceViewDataFamily._()
     : super(
@@ -246,8 +251,14 @@ final class WorkspaceViewDataFamily extends $Family
         isAutoDispose: true,
       );
 
-  WorkspaceViewDataProvider call(String workspaceId, String viewId) =>
-      WorkspaceViewDataProvider._(argument: (workspaceId, viewId), from: this);
+  WorkspaceViewDataProvider call(
+    String workspaceId,
+    String viewId, {
+    int offset = 0,
+  }) => WorkspaceViewDataProvider._(
+    argument: (workspaceId, viewId, offset: offset),
+    from: this,
+  );
 
   @override
   String toString() => r'workspaceViewDataProvider';

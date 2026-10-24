@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:uuid/v7.dart';
@@ -12,6 +13,8 @@ class const WorkspaceView({
   required final int revision,
   final String? parentId,
   final bool canManage = true,
+  final WorkspaceRecordQuery query = const WorkspaceRecordQuery(),
+  final List<String> summaryColumnIds = const [],
 }) {
   factory create({
     required String name,
@@ -44,6 +47,34 @@ class const WorkspaceView({
     revision: revision,
     parentId: parentId,
     canManage: canManage,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
+  );
+  WorkspaceView withSummaryColumns(List<String> ids) => .new(
+    id: id,
+    name: name,
+    tableId: tableId,
+    bindings: bindings,
+    columnTypes: columnTypes,
+    definition: definition,
+    revision: revision,
+    parentId: parentId,
+    canManage: canManage,
+    query: query,
+    summaryColumnIds: ids,
+  );
+  WorkspaceView withQuery(WorkspaceRecordQuery value) => .new(
+    id: id,
+    name: name,
+    tableId: tableId,
+    bindings: bindings,
+    columnTypes: columnTypes,
+    definition: definition,
+    revision: revision,
+    parentId: parentId,
+    canManage: canManage,
+    query: value,
+    summaryColumnIds: summaryColumnIds,
   );
   WorkspaceView withParent(String? value) => .new(
     id: id,
@@ -55,6 +86,8 @@ class const WorkspaceView({
     revision: revision,
     parentId: value,
     canManage: canManage,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
   );
 
   WorkspaceView withRevision(int value) => .new(
@@ -67,6 +100,8 @@ class const WorkspaceView({
     revision: value,
     parentId: parentId,
     canManage: canManage,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
   );
   WorkspaceView withManagement({required bool value}) => .new(
     id: id,
@@ -78,6 +113,8 @@ class const WorkspaceView({
     revision: revision,
     parentId: parentId,
     canManage: value,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
   );
 }
 
@@ -112,4 +149,7 @@ class const WorkspaceViewData({
   required final WorkspaceTable table,
   required final List<WorkspaceRecord> records,
   required final bool needsRepair,
+  final bool hasMore = false,
+  final int offset = 0,
+  final Map<String, Object?> summary = const {},
 });

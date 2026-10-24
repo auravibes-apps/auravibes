@@ -608,16 +608,64 @@ void main() {
           'reference-source',
           jsonEncode({'filterColumnId': column, 'filterValue': id, 'limit': 1}),
         );
-        Future<void> deniedFilter() => expectLater(
-          referenceFilter(),
-          throwsA(
-            isA<CloudWorkspaceException>().having(
-              (error) => error.code,
-              'code',
-              CloudWorkspaceErrorCode.permissionDenied,
+        Future<Map<String, dynamic>> referenceSummary({
+          bool filtered = true,
+        }) async => jsonDecode(
+          await endpoints.workspaceState.summarizeRecords(
+            member,
+            .new(
+              workspaceId: workspace.id!,
+              tableId: 'reference-source',
+              queryJson: jsonEncode(
+                filtered
+                    ? {
+                        'filterColumnId': 'link',
+                        'filterValue': 'hidden-target-record',
+                      }
+                    : <String, Object?>{},
+              ),
+              columnIds: ['link', 'links'],
             ),
           ),
-        );
+        ) as Map<String, dynamic>;
+        Future<void> deniedFilter({
+          int expectedCount = 1,
+          bool validSource = true,
+        }) async {
+          await expectLater(
+            referenceFilter(),
+            throwsA(
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.permissionDenied,
+              ),
+            ),
+          );
+          await expectLater(
+            referenceSummary(),
+            throwsA(
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.permissionDenied,
+              ),
+            ),
+          );
+          if (!validSource) {
+            await expectLater(
+              referenceSummary(filtered: false),
+              throwsA(isA<CloudWorkspaceException>()),
+            );
+            return;
+          }
+          final summary = await referenceSummary(filtered: false);
+          expect(summary['count'], expectedCount);
+          final columns = summary['columns'] as Map;
+          expect((columns['link'] as Map)['present'], 0);
+          expect((columns['links'] as Map)['present'], 0);
+        }
+
         await deniedFilter();
         final deniedReference = await sourceQuery();
         expect(deniedReference.data, isNot(contains('hidden-target-record')));
@@ -639,6 +687,7 @@ void main() {
           ),
         ]);
         expect((await referenceFilter()).single.resourceId, 'source-record');
+        expect((await referenceSummary())['count'], 1);
         expect(
           (await referenceFilter(column: 'links')).single.resourceId,
           'source-record',
@@ -698,7 +747,7 @@ void main() {
             expectedRevision: 2,
           ),
         ]);
-        await deniedFilter();
+        await deniedFilter(expectedCount: 56);
         final revokedReference = await sourceQuery();
         expect(revokedReference.data, isNot(contains('hidden-target-record')));
         expect(
@@ -729,7 +778,7 @@ void main() {
             }),
           ),
         );
-        await deniedFilter();
+        await deniedFilter(validSource: false);
         await expectLater(
           endpoints.workspaceState.queryRecords(
             authenticated,

@@ -2121,5 +2121,27 @@
     "invalid_file": "Este archivo no es CSV UTF-8 válido. Revisa comillas, separadores y longitud de las filas; después elige el archivo corregido.",
     "too_large": "Este CSV supera el tamaño actual de solicitud. Elige un archivo más pequeño.",
     "invalid_mapping": "Elige cada columna de destino una sola vez. Importa como máximo 50 registros por solicitud."
+  },
+  "workspace_relational": {
+    "next": "Siguiente",
+    "summary": "Resumen de todos los registros filtrados",
+    "count": "Registros: {}",
+    "present": "Con valor: {}",
+    "sum": "Suma: {}",
+    "minimum": "Mínimo: {}",
+    "maximum": "Máximo: {}",
+    "query": "Consulta y presentación",
+    "chart": "Gráfico",
+    "detail": "Detalle",
+    "list": "Lista",
+    "sort": "Ordenar por",
+    "page_size": "Registros por página",
+    "descending": "Descendente",
+    "record": "Registro de esta página",
+    "no_numbers": "No hay valores numéricos en esta página.",
+    "chart_scope": "Gráfico de esta página. Se omiten los valores ausentes.",
+    "previous": "Anterior",
+    "stale": "Actualizando datos. Los resultados anteriores pueden haber cambiado.",
+    "loading": "Cargando los datos actuales…"
   }
 }

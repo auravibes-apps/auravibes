@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 import '../../generated/protocol.dart';
+import '../workspace_state/domain/workspace_query_filter_validation.dart';
 
 typedef WorkspaceViewInput = ({
   Map<String, Object?> data,
@@ -15,6 +16,8 @@ const _maximumSource = 131072;
 const _maximumName = 200;
 const _maximumId = 100;
 const _maximumBindings = 50;
+const _maximumPageSize = 100;
+const _maximumSearchLength = 200;
 const _keys = {
   'id',
   'name',
@@ -24,6 +27,8 @@ const _keys = {
   'columnTypes',
   'definition',
   'revision',
+  'query',
+  'summaryColumnIds',
 };
 final _bindingPattern = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,63}$');
 
@@ -43,10 +48,12 @@ abstract final class WorkspaceViewValidation {
   }
 
   static void columns(WorkspaceViewInput input, List<dynamic> columns) {
-    if (input.columnTypes.length != input.bindings.values.toSet().length) {
+    final dependencies = _dependencies(input);
+    if (input.columnTypes.length != dependencies.length) {
       _invalid();
     }
-    for (final id in input.bindings.values) {
+    _queryColumns(input, columns);
+    for (final id in dependencies) {
       if (!_columnMatches(input, id, columns)) _invalid();
     }
   }
@@ -58,6 +65,8 @@ WorkspaceViewInput _parse(String source, String id) {
   _checkIdentity(data, id);
   _checkName(data['name'] as String);
   _checkDefinition(data['definition']);
+  _checkQuery(data['query']);
+  _checkSummary(data['summaryColumnIds']);
 
   return _input(data);
 }
@@ -119,3 +128,112 @@ bool _columnMatches(
 Never _invalid() => throw CloudWorkspaceException(
   code: CloudWorkspaceErrorCode.validationFailed,
 );
+
+void _checkQuery(Object? value) {
+  if (value == null) return;
+  if (value is! Map || value.keys.any((key) => !_queryKeys.contains(key))) {
+    _invalid();
+  }
+  _checkPage(value);
+  _checkText(value);
+  _checkOperands(value);
+}
+
+void _checkPage(Map<dynamic, dynamic> value) {
+  final limit = value['limit'];
+  if (limit is! int ||
+      limit < 1 ||
+      limit > _maximumPageSize ||
+      value['offset'] != 0) {
+    _invalid();
+  }
+}
+
+void _checkText(Map<dynamic, dynamic> value) {
+  final search = value['search'];
+  if (search is! String ||
+      search.length > _maximumSearchLength ||
+      value['descending'] is! bool) {
+    _invalid();
+  }
+}
+
+void _checkOperands(Map<dynamic, dynamic> value) {
+  if (!{'equals', 'contains'}.contains(value['filterOperator'])) _invalid();
+  for (final key in ['filterColumnId', 'filterValue', 'sortColumnId']) {
+    final operand = value[key];
+    if (operand != null && operand is! String) _invalid();
+  }
+}
+
+const _queryKeys = {
+  'search',
+  'filterColumnId',
+  'filterValue',
+  'filterOperator',
+  'sortColumnId',
+  'descending',
+  'offset',
+  'limit',
+};
+Set<String> _dependencies(WorkspaceViewInput input) => {
+  ...input.bindings.values,
+  ..._summaryColumns(input.data),
+  ..._queryDependencies(input.data),
+};
+List<String> _summaryColumns(Map<String, Object?> data) =>
+    (data['summaryColumnIds'] as List<dynamic>? ?? const []).cast<String>();
+Set<String> _queryDependencies(Map<String, Object?> data) {
+  final query = data['query'] as Map<dynamic, dynamic>? ?? const {};
+
+  return {
+    ?query['filterColumnId'] as String?,
+    ?query['sortColumnId'] as String?,
+  };
+}
+
+void _queryColumns(WorkspaceViewInput input, List<dynamic> columns) {
+  final query = input.data['query'] as Map<dynamic, dynamic>?;
+  if (query == null) return;
+  _querySort(query, columns);
+  _queryFilter(query, columns);
+}
+
+void _querySort(Map<dynamic, dynamic> query, List<dynamic> columns) {
+  final sort = query['sortColumnId'] as String?;
+  if (sort == null) return;
+  final column = _queryColumn(columns, sort);
+  if ({'reference', 'attachment', 'multiSelect'}.contains(column['type'])) {
+    _invalid();
+  }
+}
+
+void _queryFilter(Map<dynamic, dynamic> query, List<dynamic> columns) {
+  final id = query['filterColumnId'] as String?;
+  if (id == null) return;
+  WorkspaceQueryFilterValidation.validate(
+    _queryColumn(columns, id),
+    query['filterValue'] as String? ?? '',
+    operator: query['filterOperator'] as String,
+  );
+}
+
+Map<String, dynamic> _queryColumn(List<dynamic> columns, String id) {
+  final column = columns
+      .cast<Map<String, dynamic>>()
+      .where((column) => column['id'] == id)
+      .firstOrNull;
+  if (column == null) _invalid();
+
+  return column;
+}
+
+void _checkSummary(Object? value) {
+  if (value == null) return;
+  if (value is! List ||
+      value.length > _maximumBindings ||
+      value.any((id) => id is! String)) {
+    _invalid();
+  }
+  if (value.length != value.toSet().length) _invalid();
+}
