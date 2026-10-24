@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as repository;
 import 'package:auravibes_server/src/generated/protocol.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_view_store.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
@@ -121,6 +122,32 @@ void main() {
         createRequest,
       );
       expect(first.revision, 1);
+      final ownerMember = await WorkspaceMember.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) & row.userId.equals(owner),
+      );
+      await expectLater(
+        session.db.transaction<void>((transaction) async {
+          final store = WorkspaceViewStore(session, ownerMember!, transaction);
+          final move = WorkspaceViewMove(id: 'view', expectedRevision: 1);
+          await store.authorizeMove(move);
+          final moved = await store.move(move);
+          expect(moved.revision, 2);
+          expect(jsonDecode(moved.data)['bindings'], {'title': 'label'});
+          throw StateError('Force outer rollback');
+        }),
+        throwsStateError,
+      );
+      expect(
+        (await endpoints.workspaceView.read(
+          ownerBuilder,
+          workspace.id!,
+          'view',
+        )).revision,
+        1,
+      );
+
       expect(
         (await endpoints.workspaceView.save(
           ownerBuilder,
@@ -183,6 +210,20 @@ void main() {
           ),
         ),
       );
+      final renamedSchema = {
+        ...schema,
+        'schemaRevision': 2,
+        'columns': [
+          {'id': 'label', 'name': 'Renamed title', 'type': 'text'},
+        ],
+      };
+      await tablePatch(1, renamedSchema);
+      final reopened = await endpoints.workspaceView.read(
+        ownerBuilder,
+        workspace.id!,
+        'view',
+      );
+      expect(jsonDecode(reopened.data)['bindings'], {'title': 'label'});
       final restored = await endpoints.workspaceView.save(
         ownerBuilder,
         WorkspaceViewSaveRequest(
@@ -220,7 +261,10 @@ void main() {
         ),
         throwsA(isA<CloudWorkspaceException>()),
       );
-      await tablePatch(1, {...schema, 'memberAccess': <String, String>{}});
+      await tablePatch(2, {
+        ...renamedSchema,
+        'memberAccess': <String, String>{},
+      });
       expect(
         await endpoints.workspaceView.list(
           readerBuilder,

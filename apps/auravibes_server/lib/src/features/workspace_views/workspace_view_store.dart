@@ -20,6 +20,10 @@ class const WorkspaceViewStore(
   Future<List<String>> history(String id) => _ViewReader(_context).history(id);
   Future<WorkspaceView> save(WorkspaceViewSaveRequest request) =>
       _ViewWriter(_context).save(request);
+  Future<void> authorizeMove(WorkspaceViewMove move) =>
+      _ViewMover(_context).authorize(move);
+  Future<WorkspaceView> move(WorkspaceViewMove move) =>
+      _ViewMover(_context).move(move);
 }
 
 class const _ViewContext(
@@ -198,6 +202,65 @@ class const _ViewWriter(final _ViewContext context) {
   }
 }
 
+class const _ViewMover(final _ViewContext context) {
+  Future<void> authorize(WorkspaceViewMove move) async {
+    if (context.member.role != 'owner') _denied();
+    final current = await _row(move.id);
+    final data = _data(current.data);
+    await _source(data['tableId'] as String);
+    await _parent(data['parentId'] as String?);
+    await _parent(move.parentId);
+  }
+
+  Future<WorkspaceView> move(WorkspaceViewMove move) async {
+    await authorize(move);
+    final current = await _row(move.id);
+    _checkRevision(current, move.expectedRevision);
+
+    return await _persist(current, move.parentId);
+  }
+
+  Future<WorkspaceView> _row(String id) async {
+    final row = await context.view(id);
+    if (row == null) _denied();
+
+    return row;
+  }
+
+  Future<void> _source(String id) async {
+    final table = await context.resource(.table, id);
+    if (table == null) _denied();
+    final visible = await WorkspaceTableAccess(transaction: context.transaction)
+        .visible(context.session, context.member, table);
+    if (visible == null) _denied();
+  }
+
+  Future<void> _parent(String? id) async {
+    if (id == null) return;
+    if (await context.resource(.folder, id) == null) {
+      throw CloudWorkspaceException(code: .validationFailed);
+    }
+  }
+
+  Future<WorkspaceView> _persist(
+    WorkspaceView current,
+    String? parentId,
+  ) async {
+    final data = _movedMetadata(current, parentId);
+    final saved = await WorkspaceView.db.updateRow(
+      context.session,
+      current.copyWith(
+        data: jsonEncode(data),
+        revision: current.revision + 1,
+        history: jsonEncode([..._history(current), data]),
+      ),
+      transaction: context.transaction,
+    );
+
+    return saved.copyWith(history: '[]');
+  }
+}
+
 class const _ResourceKey(
   final int workspaceId,
   final WorkspaceResourceKind kind,
@@ -296,3 +359,10 @@ Future<String> _requestHash(WorkspaceViewSaveRequest request) async {
 Never _receiptConflict() => throw CloudWorkspaceException(
   code: CloudWorkspaceErrorCode.idempotencyConflict,
 );
+
+Map<String, Object?> _movedMetadata(WorkspaceView current, String? parentId) =>
+    {
+      ..._data(current.data),
+      'parentId': parentId,
+      'revision': current.revision + 1,
+    };

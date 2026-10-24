@@ -4,10 +4,12 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/v7.dart';
 
 class const LocalWorkspaceViewRepository(
   final AppDatabase database,
@@ -42,6 +44,33 @@ class const LocalWorkspaceViewRepository(
           _operation(view, requestId),
         ).save(),
       );
+
+  Future<WorkspaceView> move(
+    String id, {
+    required int expectedRevision,
+    required String? parentId,
+  }) => database.transaction(() => _move(id, expectedRevision, parentId));
+
+  Future<WorkspaceView> _move(String id, int expected, String? parentId) async {
+    final current = await read(id);
+    if (current.revision != expected) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+    await _source(current.tableId);
+    await _requireLocalParent(database, workspaceId, current.parentId);
+
+    return await save(
+      current.withParent(parentId),
+      requestId: const UuidV7().generate(),
+    );
+  }
+
+  Future<void> _source(String id) async {
+    final _ = await LocalWorkspaceTableRepository(
+      database,
+      workspaceId,
+    ).table(id);
+  }
 
   Future<WorkspaceViewRow> _row(String id) async {
     await _authorize(database, workspaceId);
@@ -91,20 +120,9 @@ class const _LocalViewWriter(
     }
   }
 
-  Future<void> _checkParent() async {
-    final id = view.parentId;
-    if (id == null) return;
-    final query = database.select(database.workspaceFolders)
-      ..where((row) => _parentMatches(row, id));
-    if (await query.getSingleOrNull() == null) {
-      throw const WorkspaceTableException();
-    }
-  }
+  Future<void> _checkParent() =>
+      _requireLocalParent(database, workspaceId, view.parentId);
 
-  Expression<bool> _parentMatches(WorkspaceFolders row, String id) =>
-      row.id.equals(id) &
-      row.workspaceId.equals(workspaceId) &
-      row.deletedAt.isNull();
   Future<WorkspaceView> _persist(WorkspaceViewRow? current) async {
     final next = view.withRevision(view.revision + 1);
     final snapshots = current == null
@@ -193,3 +211,23 @@ String _mutationJson(
   ..._mutations(row),
   operation.id: {'hash': operation.hash, 'revision': revision},
 });
+
+Future<void> _requireLocalParent(
+  AppDatabase database,
+  String workspaceId,
+  String? id,
+) async {
+  if (id == null) return;
+  final query = database.select(database.workspaceFolders)
+    ..where(_LocalParentKey(workspaceId, id).matches);
+  if (await query.getSingleOrNull() == null) {
+    throw const WorkspaceTableException();
+  }
+}
+
+class const _LocalParentKey(final String workspaceId, final String id) {
+  Expression<bool> matches(WorkspaceFolders row) =>
+      row.id.equals(id) &
+      row.workspaceId.equals(workspaceId) &
+      row.deletedAt.isNull();
+}
