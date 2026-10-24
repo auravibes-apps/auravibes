@@ -16,6 +16,7 @@ class const WorkspaceColumnTypeLabel({
     .url => LocaleKeys.workspace_items_type_url,
     .email => LocaleKeys.workspace_items_type_email,
     .phone => LocaleKeys.workspace_items_type_phone,
+    .reference => LocaleKeys.workspace_items_type_reference,
     _ => _exactLabelKey,
   };
   String get _exactLabelKey => switch (type) {

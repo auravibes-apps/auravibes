@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:uuid/v7.dart';
@@ -11,13 +12,15 @@ const _minimumPhoneDigits = 3;
 abstract final class WorkspaceColumnValidation {
   static WorkspaceColumn normalized(WorkspaceColumn column) => WorkspaceColumn(
     id: _ColumnConfiguration.id(column),
-    name: column.name.trim(),
+    name: _ColumnConfiguration.name(column),
     type: column.type,
-    options: column.options.map((name) => name.trim()).toList(),
+    options: _ColumnConfiguration.options(column),
     isRequired: column.isRequired,
     isUnique: column.isUnique,
     defaultValue: column.defaultValue,
     timeZone: column.timeZone,
+    targetTableId: column.targetTableId,
+    referenceMultiple: column.referenceMultiple,
   );
 
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
@@ -64,6 +67,7 @@ abstract final class WorkspaceColumnValidation {
   static void _column(WorkspaceColumn column) {
     _require(column.id.isNotEmpty && _name(column.name));
     _require(_ColumnConfiguration.valid(column));
+
     if (column.type != .singleSelect && column.type != .multiSelect) {
       _require(column.options.isEmpty);
 
@@ -92,7 +96,14 @@ abstract final class _ColumnConfiguration {
   static String id(WorkspaceColumn column) =>
       column.id.isEmpty ? const UuidV7().generate() : column.id;
 
+  static String name(WorkspaceColumn column) => column.name.trim();
+  static List<String> options(WorkspaceColumn column) =>
+      column.options.map((name) => name.trim()).toList();
+  static bool reference(WorkspaceColumn column) => column.type == .reference
+      ? column.targetTableId?.isNotEmpty == true
+      : column.targetTableId == null && !column.referenceMultiple;
   static bool valid(WorkspaceColumn column) =>
+      reference(column) &&
       WorkspaceTimeZones.valid(column.timeZone) &&
       (column.defaultValue == null ||
           _ValueValidation.valid(column, column.defaultValue));
@@ -115,7 +126,7 @@ abstract final class _ValueValidation {
         .url => _formatted(value, _url),
         .email => _formatted(value, _email.hasMatch),
         .phone => _formatted(value, _phone),
-        _ => _exact(column.type, value),
+        _ => _extra(column, value),
       };
 
   static bool _exact(WorkspaceColumnType type, Object? value) => switch (type) {
@@ -165,3 +176,7 @@ abstract final class _ValueValidation {
   static bool _webScheme(String scheme) =>
       scheme == 'https' || scheme == 'http';
 }
+
+bool _extra(WorkspaceColumn column, Object? value) => column.type == .reference
+    ? WorkspaceReferenceValue.valid(column, value)
+    : _ValueValidation._exact(column.type, value);

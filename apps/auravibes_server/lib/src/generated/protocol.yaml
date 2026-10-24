@@ -84,9 +84,15 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceReference:
+  - targets:
+  - tableTargets:
+  - record:
+  - reverse:
 workspaceSecret:
   - put:
 workspaceState:
+  - queryRecords:
   - read:
   - patch:
   - duplicateAgent:

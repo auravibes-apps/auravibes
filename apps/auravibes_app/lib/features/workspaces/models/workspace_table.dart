@@ -43,16 +43,20 @@ class const WorkspaceColumn({
   final bool isUnique = false,
   final Object? defaultValue,
   final String timeZone = 'UTC',
+  final String? targetTableId,
+  final bool referenceMultiple = false,
 }) {
   factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
-    id: data['id'] as String,
-    name: data['name'] as String,
+    id: _columnString(data, 'id'),
+    name: _columnString(data, 'name'),
     type: _columnType(data),
     options: _columnOptions(data),
-    isRequired: data['required'] as bool? ?? false,
-    isUnique: data['unique'] as bool? ?? false,
+    isRequired: _columnFlag(data, 'required'),
+    isUnique: _columnFlag(data, 'unique'),
     defaultValue: data['defaultValue'],
     timeZone: _columnTimeZone(data),
+    targetTableId: data['targetTableId'] as String?,
+    referenceMultiple: _columnFlag(data, 'referenceMultiple'),
   );
 
   WorkspaceColumn renamed(String value) => WorkspaceColumn(
@@ -64,6 +68,8 @@ class const WorkspaceColumn({
     isUnique: isUnique,
     defaultValue: defaultValue,
     timeZone: timeZone,
+    targetTableId: targetTableId,
+    referenceMultiple: referenceMultiple,
   );
 
   Map<String, Object?> toJson() => {
@@ -75,6 +81,8 @@ class const WorkspaceColumn({
     'unique': isUnique,
     if (defaultValue != null) 'defaultValue': defaultValue,
     'timeZone': timeZone,
+    'targetTableId': targetTableId,
+    'referenceMultiple': referenceMultiple,
   };
 }
 
@@ -90,6 +98,7 @@ enum WorkspaceColumnType {
   dateOnly,
   timestamp,
   money,
+  reference,
 }
 
 class const WorkspaceRecord({
@@ -97,6 +106,7 @@ class const WorkspaceRecord({
   required final String tableId,
   required final Map<String, Object?> values,
   required final int revision,
+  final List<String> restrictedReferenceColumns = const [],
 });
 
 class const WorkspaceTableException({
@@ -157,3 +167,8 @@ WorkspaceColumnType _columnType(Map<String, dynamic> data) =>
 
 String _columnTimeZone(Map<String, dynamic> data) =>
     data['timeZone'] as String? ?? 'UTC';
+
+String _columnString(Map<String, dynamic> data, String key) =>
+    data[key] as String;
+bool _columnFlag(Map<String, dynamic> data, String key) =>
+    data[key] as bool? ?? false;

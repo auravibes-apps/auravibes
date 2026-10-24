@@ -136,6 +136,12 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/p
     as _ixodmwhe;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
     as _i2v5creq;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
+    as _irm41t6a;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
+    as _iv6a6cze;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_target_request.dart'
+    as _if6l00dz;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
@@ -185,6 +191,8 @@ import '../features/model_connections/model_connection_endpoint.dart'
 import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
+import '../features/workspace_state/workspace_reference_endpoint.dart'
+    as _it87m04z;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
     as _i2j4mlvu;
 import '../features/workspace_state/workspace_state_endpoint.dart' as _iv99006q;
@@ -265,6 +273,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceStream',
+          null,
+        ),
+      'workspaceReference': _it87m04z.WorkspaceReferenceEndpoint()
+        ..initialize(
+          server,
+          'workspaceReference',
           null,
         ),
       'workspaceSecret': _i2j4mlvu.WorkspaceSecretEndpoint()
@@ -1845,6 +1859,96 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
+    connectors['workspaceReference'] = _is.EndpointConnector(
+      name: 'workspaceReference',
+      endpoint: endpoints['workspaceReference']!,
+      methodConnectors: {
+        'targets': _is.MethodConnector(
+          name: 'targets',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_if6l00dz.WorkspaceReferenceTargetRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .targets(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'tableTargets': _is.MethodConnector(
+          name: 'tableTargets',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iv6a6cze.WorkspaceReferenceTableRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .tableTargets(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'record': _is.MethodConnector(
+          name: 'record',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_irm41t6a.WorkspaceReferenceRecordRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .record(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'reverse': _is.MethodConnector(
+          name: 'reverse',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_irm41t6a.WorkspaceReferenceRecordRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .reverse(
+                        session,
+                        params['request'],
+                      ),
+        ),
+      },
+    );
     connectors['workspaceSecret'] = _is.EndpointConnector(
       name: 'workspaceSecret',
       endpoint: endpoints['workspaceSecret']!,
@@ -1876,6 +1980,39 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceState',
       endpoint: endpoints['workspaceState']!,
       methodConnectors: {
+        'queryRecords': _is.MethodConnector(
+          name: 'queryRecords',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'tableId': _is.ParameterDescription(
+              name: 'tableId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'queryJson': _is.ParameterDescription(
+              name: 'queryJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceState']
+                          as _iv99006q.WorkspaceStateEndpoint)
+                      .queryRecords(
+                        session,
+                        params['workspaceId'],
+                        params['tableId'],
+                        params['queryJson'],
+                      ),
+        ),
         'read': _is.MethodConnector(
           name: 'read',
           params: {

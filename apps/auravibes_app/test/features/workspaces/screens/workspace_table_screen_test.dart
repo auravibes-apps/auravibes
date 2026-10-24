@@ -1,16 +1,23 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -48,15 +55,18 @@ void main() {
               'one',
               'table',
             ).overrideWith((ref) async => table),
-            workspaceTableRecordsProvider('one', 'table').overrideWith(
-              (ref) async => [
-                const WorkspaceRecord(
-                  id: 'record',
-                  tableId: 'table',
-                  values: {'label': 'Readable'},
-                  revision: 1,
-                ),
-              ],
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async => const WorkspaceRecordPage(
+                records: [
+                  WorkspaceRecord(
+                    id: 'record',
+                    tableId: 'table',
+                    values: {'label': 'Readable'},
+                    revision: 1,
+                  ),
+                ],
+                hasMore: false,
+              ),
             ),
           ],
           workspaceId: 'one',
@@ -75,6 +85,309 @@ void main() {
     expect(find.text('Readable'), findsOneWidget);
     expect(button('workspace_record_save'), findsNothing);
   });
+  testWidgets('restricted reference cells hide stored IDs at both widths', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'source',
+      name: 'Source',
+      labelColumnId: 'label',
+      columns: [
+        WorkspaceColumn(id: 'label', name: 'Title'),
+        WorkspaceColumn(
+          id: 'link',
+          name: 'Related',
+          type: .reference,
+          targetTableId: 'target',
+        ),
+      ],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    const record = WorkspaceRecord(
+      id: 'source-record',
+      tableId: 'source',
+      values: {'label': 'Readable source', 'link': 'secret-record-id'},
+      revision: 1,
+      restrictedReferenceColumns: ['link'],
+    );
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => fail('Unexpected row navigation'),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    for (final width in [1200.0, 400.0]) {
+      tester.view.physicalSize = .new(width, 900);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Readable source'), findsOneWidget);
+      expect(
+        find.text('Linked records are unavailable with your current access.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('secret-record-id'), findsNothing);
+    }
+  });
+  testWidgets(
+    'reference cells show authorized labels instead of IDs at both widths',
+    (tester) async {
+      const table = WorkspaceTable(
+        id: 'source',
+        name: 'Source',
+        labelColumnId: 'label',
+        columns: [
+          WorkspaceColumn(id: 'label', name: 'Title'),
+          WorkspaceColumn(
+            id: 'link',
+            name: 'Related',
+            type: .reference,
+            targetTableId: 'target',
+          ),
+        ],
+        revision: 1,
+        schemaRevision: 1,
+        canManage: false,
+        canEditRecords: false,
+      );
+      const record = WorkspaceRecord(
+        id: 'source-record',
+        tableId: 'source',
+        values: {'label': 'Readable source', 'link': 'target-record-id'},
+        revision: 1,
+      );
+      const target = WorkspaceTable(
+        id: 'target',
+        name: 'Targets',
+        labelColumnId: 'label',
+        columns: [WorkspaceColumn(id: 'label', name: 'Title')],
+        revision: 1,
+        schemaRevision: 1,
+        canManage: false,
+        canEditRecords: false,
+      );
+      const targetRecord = WorkspaceRecord(
+        id: 'target-record-id',
+        tableId: 'target',
+        values: {'label': 'Friendly target'},
+        revision: 1,
+      );
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          TestableApp(
+            child: WorkspaceRecordBrowser(
+              workspaceId: 'one',
+              table: table,
+              onRecord: (_) => fail('Unexpected row navigation'),
+            ),
+            overrides: [
+              workspaceRecordQueryProvider.overrideWith(
+                (ref, arguments) async => const WorkspaceRecordPage(
+                  records: [record],
+                  hasMore: false,
+                ),
+              ),
+              workspaceTableProvider(
+                'one',
+                'target',
+              ).overrideWith((ref) async => target),
+              workspaceReferencedRecordProvider(
+                'one',
+                'target',
+                'target-record-id',
+              ).overrideWith((ref) async => targetRecord),
+            ],
+            workspaceId: 'one',
+          ),
+        ),
+      );
+      for (final width in [1200.0, 400.0]) {
+        tester.view.physicalSize = .new(width, 900);
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Friendly target'), findsOneWidget);
+        expect(find.textContaining('target-record-id'), findsNothing);
+      }
+    },
+  );
+  testWidgets(
+    'saving a target refreshes a continuously mounted reference label',
+    (tester) async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      late WorkspaceTable schema;
+      late WorkspaceRecord target;
+      late OrganizeWorkspaceTablesUsecase tables;
+      await tester.runAsync(() async {
+        final _ = await database
+            .into(database.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(
+                id: const .new('one'),
+                name: 'One',
+                type: .local,
+              ),
+            );
+        tables = OrganizeWorkspaceTablesUsecase(
+          LocalWorkspaceTableRepository(database, 'one'),
+        );
+        final table = await tables.create(name: 'Targets', labelName: 'Title');
+        schema = await tables.saveColumn(
+          table: table,
+          column: WorkspaceColumn(
+            id: '',
+            name: 'Related',
+            type: .reference,
+            targetTableId: table.id,
+          ),
+        );
+        target = await tables.createRecord(
+          table: schema,
+          values: {schema.labelColumnId: 'Old target'},
+        );
+        final _ = await tables.createRecord(
+          table: schema,
+          values: {
+            schema.labelColumnId: 'Source',
+            schema.columns.last.id: target.id,
+          },
+        );
+        await tester.pumpWidget(
+          TestableApp(
+            workspaceId: 'one',
+            overrides: [
+              appDatabaseProvider.overrideWithValue(database),
+              workspaceTableUsecaseProvider('one')
+                  .overrideWith((ref) async => tables),
+            ],
+            child: Column(
+              children: [
+                Expanded(
+                  child: WorkspaceTableScreen(
+                    workspaceId: 'one',
+                    tableId: schema.id,
+                    onBack: () => fail('Unexpected table back'),
+                  ),
+                ),
+                SizedBox(
+                  height: 60,
+                  child: WorkspaceReferenceLabel(
+                    workspaceId: 'one',
+                    targetTableId: schema.id,
+                    recordId: target.id,
+                    key: const ValueKey('stable_reference'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      });
+      await _settleDatabase(tester);
+      await tester.tap(find.text('Old target').first);
+      await _settleDatabase(tester);
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraInput &&
+              widget.identifier == 'workspace_record_value',
+        ),
+        'Updated target',
+      );
+      await tester.runAsync(
+        () => tester.tap(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is AuraButton &&
+                widget.identifier == 'workspace_record_save',
+          ),
+        ),
+      );
+      await _settleDatabase(tester);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('stable_reference')),
+          matching: find.text('Updated target'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+  testWidgets('record grid preserves money precision and selected timezone', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'values',
+      name: 'Values',
+      labelColumnId: 'label',
+      columns: [
+        WorkspaceColumn(id: 'label', name: 'Title'),
+        WorkspaceColumn(id: 'money', name: 'Amount', type: .money),
+        WorkspaceColumn(
+          id: 'instant',
+          name: 'Time',
+          type: .timestamp,
+          timeZone: 'America/New_York',
+        ),
+      ],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    const record = WorkspaceRecord(
+      id: 'value',
+      tableId: 'values',
+      values: {
+        'label': 'Entry',
+        'money': {
+          'amount': '9007199254740993.010000000000000001',
+          'currency': 'USD',
+        },
+        'instant': '2026-03-08T07:00:00Z',
+      },
+      revision: 1,
+    );
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => fail('Unexpected record navigation'),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text('USD 9007199254740993.010000000000000001'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('2026-03-08T03:00:00'), findsOneWidget);
+  });
+
   testWidgets('ordinary controls create tables and edit columns and records', (
     tester,
   ) async {
@@ -97,6 +410,7 @@ void main() {
         TestableApp(
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
+            appDatabaseProvider.overrideWithValue(database),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => tables),
             workspaceFoldersProvider(
@@ -125,16 +439,30 @@ void main() {
     Finder button(String id) => find.byWidgetPredicate(
       (widget) => widget is AuraButton && widget.identifier == id,
     );
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    await flush();
+    await tester.tap(find.text('Table'));
+    await flush();
     await tester.enterText(input('workspace_table_name'), 'Reading');
     await tester.runAsync(() => tester.tap(button('workspace_table_create')));
     await flush();
 
     expect(find.text('Reading'), findsOneWidget);
+    await tester.tap(find.byType(AuraPopupMenuButton).last);
+    await flush();
+    await tester.tap(find.text('Table settings'));
+    await flush();
     await tester.enterText(input('workspace_label_column'), 'Book');
     await tester.runAsync(() => tester.tap(button('workspace_label_save')));
     await flush();
 
-    await tester.tap(button('workspace_record_create'));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'workspace_record_create',
+      ),
+    );
     await flush();
     expect(find.text('Book'), findsOneWidget);
     await tester.tap(find.text('Book'));
@@ -151,5 +479,41 @@ void main() {
 
     expect(find.text('Updated book'), findsOneWidget);
     expect(find.text('First book'), findsNothing);
+    final current = (await tables.list()).single;
+    final _ = await tables.createRecord(
+      table: current,
+      values: {current.labelColumnId: 'Other book'},
+    );
+    await tester.tap(find.byIcon(Icons.refresh));
+    await flush();
+    expect(find.byType(DataTable), findsOneWidget);
+    expect(find.text('Other book'), findsOneWidget);
+    await tester.enterText(input('workspace_record_search'), 'Updated');
+    await tester.testTextInput.receiveAction(.done);
+    await flush();
+    expect(find.text('Updated book'), findsOneWidget);
+    expect(find.text('Other book'), findsNothing);
+    await tester.tap(find.text('Updated book'));
+    await flush();
+    await tester.tap(find.text('Reading'));
+    await flush();
+    expect(find.text('Other book'), findsNothing);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.physicalSize = const Size(400, 800);
+    addTearDown(tester.view.resetPhysicalSize);
+    await flush();
+    expect(find.byType(DataTable), findsNothing);
+    expect(find.text('Updated book'), findsOneWidget);
   });
+}
+
+Future<void> _settleDatabase(WidgetTester tester) async {
+  for (var index = 0; index < 5; index++) {
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+  }
+  final _ = await tester.pumpAndSettle();
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
@@ -248,6 +249,10 @@ Future<void> _checkSchema(
     throw const WorkspaceTableException(conflict: true);
   }
   WorkspaceColumnValidation.values(_table(current).columns, input.values);
+  await LocalWorkspaceReferenceValidation(
+    database,
+    workspaceId,
+  ).values(_table(current).columns, input.values);
 }
 
 Expression<bool> _parent(WorkspaceTables row, String? parentId) =>
@@ -413,6 +418,10 @@ class const _TableWriter(
   ) async {
     final row = await _tableRow(_database, _workspaceId, table.id);
     final columns = _updatedColumns(row, table, column);
+    await LocalWorkspaceReferenceValidation(
+      _database,
+      _workspaceId,
+    ).columns(columns);
     await _checkRecords(table.id, columns);
     await _writeColumns(_database, row, columns);
 
