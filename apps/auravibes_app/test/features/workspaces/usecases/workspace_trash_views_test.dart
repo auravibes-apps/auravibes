@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_table_repository
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
@@ -50,7 +51,8 @@ void main() {
       parentId: folder.id,
     );
     final saved = await views.save(first, requestId: 'once');
-    final earlier = await trash.trash(
+    final earlier = await _trash(
+      trash,
       .new(kind: .view, id: saved.id, revision: saved.revision),
     );
     await expectLater(
@@ -71,7 +73,8 @@ void main() {
       columnIds: [table.labelColumnId],
       parentId: folder.id,
     );
-    final batch = await trash.trash(
+    final batch = await _trash(
+      trash,
       .new(kind: .folder, id: folder.id, revision: folder.revision),
     );
     expect(batch.affectedCount, 2);
@@ -82,13 +85,22 @@ void main() {
     expect((await views.open(first.id)).view.revision, 4);
     expect((await views.history(first.id)).length, 3);
     final current = (await views.open(first.id)).view;
-    final missingSource = await trash.trash(
+    final missingSource = await _trash(
+      trash,
       .new(kind: .view, id: current.id, revision: current.revision),
     );
-    final _ = await trash.trash(
+    final _ = await _trash(
+      trash,
       .new(kind: .table, id: table.id, revision: table.revision),
     );
     final restored = await trash.restore(missingSource.id);
     expect(restored.unresolvedDependencies, isTrue);
   });
 }
+
+Future<WorkspaceTrashBatch> _trash(
+  ManageWorkspaceTrashUsecase usecase,
+  WorkspaceTrashTarget target,
+) async =>
+    await usecase.apply(target, approve: (_) async => true) ??
+    (throw StateError('Expected approved trash'));

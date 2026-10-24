@@ -20,34 +20,9 @@ class const WorkspaceTableAccess({final Transaction? transaction}) {
     WorkspaceMember member,
     WorkspaceEvent event,
   ) async {
-    if (event.resourceKind == 'view') {
-      final view = await WorkspaceView.db.findFirstRow(
-        session,
-        where: (row) =>
-            row.workspaceId.equals(member.workspaceId) &
-            row.stableId.equals(event.resourceId),
-        transaction: transaction,
-      );
-      if (view == null) return _hiddenEvent(event);
-      final data = jsonDecode(view.data) as Map<String, dynamic>;
-      final table = await WorkspaceResource.db.findFirstRow(
-        session,
-        where: (row) =>
-            row.workspaceId.equals(member.workspaceId) &
-            row.resourceKind.equals(.table) &
-            row.resourceId.equals(data['tableId'] as String),
-        transaction: transaction,
-      );
-      if (table == null || !await canReadTable(session, member, table)) {
-        return _hiddenEvent(event);
-      }
-      return event;
-    }
-    final visible = await _TableReader(
-      session,
-      member,
-      transaction,
-    ).canSeeEvent(event);
+    final visible = event.resourceKind == 'view'
+        ? await _ViewEventReader(session, member, transaction).visible(event)
+        : await _TableReader(session, member, transaction).canSeeEvent(event);
 
     return visible ? event : _hiddenEvent(event);
   }
@@ -295,3 +270,39 @@ WorkspaceEvent _hiddenEvent(WorkspaceEvent event) => event.copyWith(
   payloadJson: null,
   publishedAt: null,
 );
+
+class const _ViewEventReader(
+  final Session session,
+  final WorkspaceMember member,
+  final Transaction? transaction,
+) {
+  Future<bool> visible(WorkspaceEvent event) async {
+    final view = await _view(event.resourceId);
+    if (view == null) return false;
+    final table = await _table(_viewSource(view));
+    if (table == null) return false;
+
+    return await WorkspaceTableAccess(transaction: transaction)
+        .canReadTable(session, member, table);
+  }
+
+  Future<WorkspaceView?> _view(String? id) => WorkspaceView.db.findFirstRow(
+    session,
+    where: (row) =>
+        row.workspaceId.equals(member.workspaceId) & row.stableId.equals(id),
+    transaction: transaction,
+  );
+
+  Future<WorkspaceResource?> _table(String id) =>
+      WorkspaceResource.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(member.workspaceId) &
+            row.resourceKind.equals(.table) &
+            row.resourceId.equals(id),
+        transaction: transaction,
+      );
+}
+
+String _viewSource(WorkspaceView view) =>
+    (jsonDecode(view.data) as Map<String, dynamic>)['tableId'] as String;

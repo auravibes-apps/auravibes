@@ -35,6 +35,11 @@ class const WorkspaceTrashRestoration({
   final bool unresolvedDependencies = false,
 });
 
+/// An existing tombstone whose current table read access was authorized.
+///
+/// Presence proves read access; [canRestore] only grants the separate
+/// write action.
+/// Missing, inaccessible, or untracked records produce no such value.
 class const WorkspaceDeletedReference({
   required final String batchId,
   required final bool canRestore,

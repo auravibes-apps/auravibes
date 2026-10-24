@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_folder_repositor
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
@@ -62,7 +63,8 @@ void main() {
         table: outside,
         values: {outside.columns.last.id: retained.id},
       );
-      final _ = await trash.trash(
+      final _ = await _trash(
+        trash,
         .new(
           kind: .record,
           id: earlier.id,
@@ -70,7 +72,8 @@ void main() {
           tableId: table.id,
         ),
       );
-      final batch = await trash.trash(
+      final batch = await _trash(
+        trash,
         .new(kind: .folder, id: folder.id, revision: folder.revision),
       );
       expect(await folders.list(), isEmpty);
@@ -137,10 +140,12 @@ void main() {
       );
       final parent = await folders.create(name: 'Parent');
       final child = await folders.create(name: 'Child', parentId: parent.id);
-      final childBatch = await trash.trash(
+      final childBatch = await _trash(
+        trash,
         .new(kind: .folder, id: child.id, revision: child.revision),
       );
-      final parentBatch = await trash.trash(
+      final parentBatch = await _trash(
+        trash,
         .new(kind: .folder, id: parent.id, revision: parent.revision),
       );
       final restored = await trash.restore(childBatch.id);
@@ -182,7 +187,8 @@ void main() {
         column: .new(id: table.labelColumnId, name: 'Name', isUnique: true),
       );
       await expectLater(
-        trash.trash(
+        _trash(
+          trash,
           .new(kind: .table, id: original.id, revision: original.revision),
         ),
         throwsA(
@@ -198,7 +204,8 @@ void main() {
         table: table,
         values: {table.labelColumnId: 'Name'},
       );
-      final batch = await trash.trash(
+      final batch = await _trash(
+        trash,
         .new(
           kind: .record,
           id: record.id,
@@ -279,3 +286,10 @@ void main() {
     expect(result?.affectedCount, 2);
   });
 }
+
+Future<WorkspaceTrashBatch> _trash(
+  ManageWorkspaceTrashUsecase usecase,
+  WorkspaceTrashTarget target,
+) async =>
+    await usecase.apply(target, approve: (_) async => true) ??
+    (throw StateError('Expected approved trash'));

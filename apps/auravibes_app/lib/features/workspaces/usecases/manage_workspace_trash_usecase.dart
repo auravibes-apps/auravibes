@@ -17,14 +17,6 @@ class const ManageWorkspaceTrashUsecase(
     return _repository.preview(target);
   }
 
-  Future<WorkspaceTrashBatch> trash(WorkspaceTrashTarget target) async {
-    validateWorkspaceTrashTarget(target);
-
-    final plan = await preview(target);
-
-    return await _repository.trash(target, planToken: plan.planToken);
-  }
-
   Future<WorkspaceTrashBatch?> apply(
     WorkspaceTrashTarget target, {
     required Future<bool> Function(WorkspaceTrashBatch plan) approve,
