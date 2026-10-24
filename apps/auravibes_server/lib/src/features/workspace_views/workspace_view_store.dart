@@ -66,6 +66,7 @@ class const _ViewReader(final _ViewContext context) {
 
   Future<List<String>> history(String id) async {
     final row = await _requiredRow(id);
+    if (!await _visible(_data(row.data))) _denied();
     final result = <String>[];
     for (final snapshot in _history(row)) {
       if (await _visible(snapshot)) result.add(jsonEncode(snapshot));
