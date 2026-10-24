@@ -264,10 +264,19 @@ extension on AppDatabase {
 
   Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {
     await _upgradeWorkspaceItemsSchema(m, from);
+    await _upgradeWorkspaceViewsSchema(m, from);
+    await _upgradeWorkspaceTrashSchema(m, from);
+    await _upgradeWorkspaceRevisionSchema(m, from);
+    await _upgradeConnectorWritesSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceViewsSchema(Migrator m, int from) async {
     if (from < AppDatabase._workspaceViewsSchemaVersion) {
       await m.createTable(workspaceViews);
     }
-    await _upgradeWorkspaceTrashSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceRevisionSchema(Migrator m, int from) async {
     if (from < AppDatabase._workspaceHistorySchemaVersion) {
       await m.createTable(workspaceRevisions);
       await m.createTable(workspaceHistoryPolicies);
@@ -275,6 +284,9 @@ extension on AppDatabase {
     if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
       await m.createTable(workspaceRecordBatchReceipts);
     }
+  }
+
+  Future<void> _upgradeConnectorWritesSchema(Migrator m, int from) async {
     if (from < AppDatabase._connectorWritesSchemaVersion) {
       await m.createTable(connectorWrites);
     }
