@@ -1,0 +1,6 @@
+class: WorkspaceRecordSummaryRequest
+fields:
+  workspaceId: int
+  tableId: String
+  queryJson: String
+  columnIds: List<String>

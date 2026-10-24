@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -11,6 +12,8 @@ abstract final class WorkspaceViewMapper {
     'columnTypes': view.columnTypes,
     'definition': view.definition.toJson(),
     'revision': view.revision,
+    'query': view.query.toJson(),
+    'summaryColumnIds': view.summaryColumnIds,
   };
   static WorkspaceView fromJson(Map<String, dynamic> data) =>
       _view(_identity(data), _content(data));
@@ -27,6 +30,8 @@ typedef _ViewContent = ({
   Map<String, String> bindings,
   Map<String, String> columnTypes,
   A2uiSavedDefinition definition,
+  WorkspaceRecordQuery query,
+  List<String> summaryColumnIds,
 });
 
 _ViewIdentity _identity(Map<String, dynamic> data) => (
@@ -40,6 +45,11 @@ _ViewContent _content(Map<String, dynamic> data) => (
   bindings: _strings(data, 'bindings'),
   columnTypes: _strings(data, 'columnTypes'),
   definition: _definition(data),
+  summaryColumnIds: (data['summaryColumnIds'] as List? ?? const [])
+      .cast<String>(),
+  query: WorkspaceRecordQuery.fromJson(
+    Map<String, dynamic>.from(data['query'] as Map? ?? const {}),
+  ),
 );
 Map<String, String> _strings(Map<String, dynamic> data, String key) =>
     Map<String, String>.from(data[key] as Map);
@@ -54,6 +64,8 @@ WorkspaceView _view(_ViewIdentity identity, _ViewContent content) => .new(
   bindings: content.bindings,
   columnTypes: content.columnTypes,
   definition: content.definition,
+  query: content.query,
+  summaryColumnIds: content.summaryColumnIds,
   revision: identity.revision,
   parentId: identity.parentId,
 );

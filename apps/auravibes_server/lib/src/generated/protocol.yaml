@@ -92,6 +92,7 @@ workspaceReference:
 workspaceSecret:
   - put:
 workspaceState:
+  - summarizeRecords:
   - queryRecords:
   - read:
   - patch:

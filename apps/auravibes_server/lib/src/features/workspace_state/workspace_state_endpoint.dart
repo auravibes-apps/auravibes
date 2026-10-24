@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
@@ -8,6 +10,25 @@ import 'workspace_record_query.dart';
 
 class WorkspaceStateEndpoint extends Endpoint {
   WorkspaceStateUseCases get _useCases => WorkspaceStateUseCases(.new());
+
+  Future<String> summarizeRecords(
+    Session session,
+    WorkspaceRecordSummaryRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    final summary = await const WorkspaceRecordQuery().summarize(
+      session,
+      account.userId,
+      (
+        workspaceId: request.workspaceId,
+        tableId: request.tableId,
+        encoded: request.queryJson,
+      ),
+      request.columnIds,
+    );
+
+    return jsonEncode(summary);
+  }
 
   Future<List<WorkspaceResource>> queryRecords(
     Session session,

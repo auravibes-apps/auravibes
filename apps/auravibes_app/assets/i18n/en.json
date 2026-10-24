@@ -2083,5 +2083,27 @@
     "save": "Save view",
     "no_tables": "No tables in this folder. Browse another folder or create a table in Directory.",
     "no_views": "No saved views yet. Create one from Directory."
+  },
+  "workspace_relational": {
+    "next": "Next",
+    "summary": "Summary of all filtered records",
+    "count": "Records: {}",
+    "present": "With a value: {}",
+    "sum": "Sum: {}",
+    "minimum": "Minimum: {}",
+    "maximum": "Maximum: {}",
+    "query": "Query and presentation",
+    "chart": "Chart",
+    "detail": "Detail",
+    "list": "List",
+    "sort": "Sort by",
+    "page_size": "Records per page",
+    "descending": "Descending",
+    "record": "Record on this page",
+    "no_numbers": "No numeric values on this page.",
+    "chart_scope": "Chart of this page. Missing values are omitted.",
+    "previous": "Previous",
+    "stale": "Refreshing data. Previous results may have changed.",
+    "loading": "Loading current data…"
   }
 }

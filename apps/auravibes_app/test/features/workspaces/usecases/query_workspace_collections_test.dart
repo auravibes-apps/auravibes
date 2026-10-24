@@ -1,7 +1,10 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
 import 'package:drift/native.dart';
@@ -78,6 +81,12 @@ void main() {
       final query = QueryWorkspaceRecordsUsecase(
         LocalWorkspaceRecordQueryRepository(database, 'one'),
       );
+      final views = ManageWorkspaceViewsUsecase(
+        LocalWorkspaceViewRepository(database, 'one'),
+        tables,
+        query,
+        .new(LocalWorkspaceReferenceRepository(database, 'one')),
+      );
       for (final column in [link, links]) {
         final page = await query(
           source.id,
@@ -85,6 +94,27 @@ void main() {
         );
         expect(page.records.single.id, matching.id);
         expect(page.hasMore, isFalse);
+        final initial = await views.create(
+          name: 'Related',
+          table: source,
+          columnIds: [source.labelColumnId],
+        );
+        final view = initial
+            .edited(
+              name: initial.name,
+              definition: initial.definition,
+              bindings: initial.bindings,
+              columnTypes: {source.labelColumnId: 'text', column: 'reference'},
+            )
+            .withQuery(
+              .new(filterColumnId: column, filterValue: selected.id, limit: 1),
+            );
+        final _ = await views.save(view);
+        final result = await views.open(view.id);
+        expect(result.records.single.id, matching.id);
+        expect(result.summary['count'], 1);
+        expect(result.hasMore, isFalse);
+
         await expectLater(
           query(
             source.id,

@@ -88,24 +88,29 @@ Future<List<WorkspaceView>> workspaceViews(
 Future<WorkspaceViewData> workspaceViewData(
   Ref ref,
   String workspaceId,
-  String viewId,
-) async {
+  String viewId, {
+  int offset = 0,
+}) async {
   // Record edits invalidate the table providers.
   // Cloud reads always reauthorize.
   final usecase = await ref.watch(
     workspaceViewUsecaseProvider(workspaceId).future,
   );
-  final data = await usecase.open(viewId);
+  final data = await usecase.open(viewId, offset: offset);
+  _observeViewSource(ref, workspaceId, data);
+
+  return data;
+}
+
+void _observeViewSource(Ref ref, String workspaceId, WorkspaceViewData data) {
   final _ = ref.watch(
     workspaceRecordQueryProvider(
       workspaceId,
       data.table.id,
-      const WorkspaceRecordQuery(limit: 100),
+      data.view.query.change(offset: data.offset),
     ),
   );
   final _ = ref.watch(workspaceTableProvider(workspaceId, data.table.id));
-
-  return data;
 }
 
 @riverpod

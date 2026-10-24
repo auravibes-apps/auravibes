@@ -21,6 +21,16 @@ abstract final class WorkspaceViewSurfaceData {
     'columns': _columns(data),
     'rows': _rows(data),
     ..._fields(data),
+    'fieldLabels': _fieldLabels(data),
+    'summary': data.summary,
+    ..._chart(data),
+  };
+  static Map<String, String?> _fieldLabels(WorkspaceViewData data) => {
+    for (final binding in data.view.bindings.entries)
+      binding.key: data.table.columns
+          .where((column) => column.id == binding.value)
+          .firstOrNull
+          ?.name,
   };
   static List<String?> _columns(WorkspaceViewData data) {
     final names = {
@@ -42,7 +52,13 @@ abstract final class WorkspaceViewSurfaceData {
       ? {}
       : {
           for (final entry in data.view.bindings.entries)
-            entry.key: _displayValue(data, data.records.first, entry.value),
+            entry.key:
+                _displayValue(
+                  data,
+                  data.records.first,
+                  entry.value,
+                )?.toString() ??
+                '-',
         };
 }
 
@@ -89,3 +105,47 @@ Object? _columnValue(WorkspaceColumn? column, Object? value) {
 
   return _scalar(value);
 }
+
+Map<String, Object?> _chart(WorkspaceViewData data) {
+  final column = _chartColumn(data);
+  if (column == null) {
+    return {'chartLabels': <String>[], 'chartSeries': <Object>[]};
+  }
+
+  return _chartModel(data, column);
+}
+
+WorkspaceColumn? _chartColumn(WorkspaceViewData data) => data.table.columns
+    .where(
+      (column) =>
+          column.type == .number && data.view.bindings.containsValue(column.id),
+    )
+    .firstOrNull;
+Map<String, Object?> _chartModel(
+  WorkspaceViewData data,
+  WorkspaceColumn column,
+) {
+  final records = data.records
+      .where((record) => record.values[column.id] is num)
+      .toList();
+
+  return {
+    'chartLabels': _chartLabels(data, records),
+    'chartSeries': [_chartSeries(column, records)],
+  };
+}
+
+List<String> _chartLabels(
+  WorkspaceViewData data,
+  List<WorkspaceRecord> records,
+) => [
+  for (final record in records)
+    record.values[data.table.labelColumnId]?.toString() ?? '',
+];
+Map<String, Object?> _chartSeries(
+  WorkspaceColumn column,
+  List<WorkspaceRecord> records,
+) => {
+  'label': column.name,
+  'values': [for (final record in records) record.values[column.id]],
+};

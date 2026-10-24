@@ -208,6 +208,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_record_summary_request.dart'
+    as _i3t1q87g;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
     as _iic7z6j2;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_table_request.dart'
@@ -1158,6 +1160,14 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
 
   @override
   String get name => 'workspaceState';
+
+  _ida.Future<String> summarizeRecords(
+    _i3t1q87g.WorkspaceRecordSummaryRequest request,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceState',
+    'summarizeRecords',
+    {'request': request},
+  );
 
   _ida.Future<List<_iar0fwau.WorkspaceResource>> queryRecords(
     int workspaceId,

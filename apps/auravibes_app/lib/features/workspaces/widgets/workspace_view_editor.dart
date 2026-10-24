@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_query_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -29,6 +31,8 @@ class const _EditState(
   final TextEditingController layout,
   final ValueNotifier<Set<String>> selected,
   final WorkspaceTableAction action,
+  final ValueNotifier<WorkspaceRecordQuery> query,
+  final ValueNotifier<Set<String>> summary,
 ) {
   factory use(BuildContext context, WorkspaceViewData data) => _EditState(
     useTextEditingController(text: data.view.name),
@@ -38,14 +42,19 @@ class const _EditState(
     ),
     useState(data.view.bindings.values.toSet()),
     WorkspaceTableActions.use(context),
+    useState(data.view.query),
+    useState(data.view.summaryColumnIds.toSet()),
   );
 
-  WorkspaceView edited(WorkspaceViewData data) => data.view.edited(
-    name: name.text,
-    definition: _definition(),
-    bindings: _bindings(data.view.bindings),
-    columnTypes: _types(data),
-  );
+  WorkspaceView edited(WorkspaceViewData data) => data.view
+      .edited(
+        name: name.text,
+        definition: _definition(),
+        bindings: _bindings(data.view.bindings),
+        columnTypes: _types(data),
+      )
+      .withSummaryColumns(summary.value.toList())
+      .withQuery(query.value);
   void toggle(String id, {required bool checked}) {
     final next = {...selected.value};
     if (checked) {
@@ -61,7 +70,13 @@ class const _EditState(
   );
   Map<String, String> _types(WorkspaceViewData data) => {
     for (final column in data.table.columns)
-      if (selected.value.contains(column.id)) column.id: column.type.name,
+      if ({
+        ...selected.value,
+        ...summary.value,
+        ?query.value.filterColumnId,
+        ?query.value.sortColumnId,
+      }.contains(column.id))
+        column.id: column.type.name,
   };
   Map<String, String> _bindings(Map<String, String> existing) {
     final result = _selectedBindings(existing);
@@ -95,6 +110,7 @@ class const _Form(final WorkspaceViewEditor owner, final _EditState state)
       _Back(owner, state),
       _Name(state),
       _Fields(owner, state),
+      _QueryEditor(owner, state),
       _Layout(state),
       _Save(owner, state),
       if (state.action.error case final error?)
@@ -187,4 +203,19 @@ class const _Save(final WorkspaceViewEditor owner, final _EditState state)
     );
     if (context.mounted) owner.onDone();
   }
+}
+
+class const _QueryEditor(
+  final WorkspaceViewEditor owner,
+  final _EditState state,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceViewQueryEditor(
+    workspaceId: owner.workspaceId,
+    data: owner.data,
+    query: state.query,
+    layout: state.layout,
+    summary: state.summary,
+    bindings: state._bindings(owner.data.view.bindings),
+  );
 }
