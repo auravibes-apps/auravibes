@@ -1,0 +1,6 @@
+class: WorkspaceHistoryRestoreRequest
+fields:
+  workspaceId: int
+  targetJson: String
+  revision: int
+  requestId: String

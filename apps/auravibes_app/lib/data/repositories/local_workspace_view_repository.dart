@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_purge_guard.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -114,6 +115,7 @@ class const _LocalViewWriter(
 ) {
   Future<WorkspaceView> save() async {
     await _authorize(database, workspaceId);
+    await LocalWorkspacePurgeGuard(database, workspaceId).view(view.id);
     final current = await _current();
     _checkWorkspace(current);
     final replay = _replay(current, operation);

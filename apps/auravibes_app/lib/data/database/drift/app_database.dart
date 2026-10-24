@@ -45,12 +45,15 @@ import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_receipts.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_revisions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_trash_batches.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
+import 'package:auravibes_app/data/database/drift/workspace_revision_capture.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
@@ -112,6 +115,8 @@ part 'app_database.g.dart';
     ConnectorWrites,
     WorkspaceViews,
     WorkspaceTrashBatches,
+    WorkspaceRevisions,
+    WorkspaceHistoryPolicies,
     WorkspaceRecordBatchReceipts,
     WorkspaceAssets,
     WorkspaceFiles,
@@ -205,8 +210,10 @@ class AppDatabase extends _$AppDatabase {
       _workspaceViewsSchemaVersion + 1;
   static const int _workspaceRecordBatchSchemaVersion =
       _workspaceTrashSchemaVersion + 1;
-  // Schema 40 belongs to record/schema history (#1678).
-  static const int _workspaceAssetsSchemaVersion = 41;
+  static const int _workspaceHistorySchemaVersion =
+      _workspaceRecordBatchSchemaVersion + 1;
+  static const int _workspaceAssetsSchemaVersion =
+      _workspaceHistorySchemaVersion + 1;
   static const int _currentSchemaVersion = _workspaceAssetsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -241,6 +248,7 @@ extension on AppDatabase {
       onUpgrade: _runUpgrades,
       beforeOpen: (_) async {
         await customStatement('PRAGMA foreign_keys = ON');
+        await WorkspaceRevisionCapture.install(this);
       },
     );
   }
@@ -265,6 +273,10 @@ extension on AppDatabase {
       await m.createTable(workspaceViews);
     }
     await _upgradeWorkspaceTrashSchema(m, from);
+    if (from < AppDatabase._workspaceHistorySchemaVersion) {
+      await m.createTable(workspaceRevisions);
+      await m.createTable(workspaceHistoryPolicies);
+    }
     if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
       await m.createTable(workspaceRecordBatchReceipts);
     }

@@ -208,6 +208,10 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_history_policy_request.dart'
+    as _if7x0ut8;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_history_restore_request.dart'
+    as _ih19x2zu;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_record_summary_request.dart'
     as _i3t1q87g;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
@@ -1125,6 +1129,60 @@ class EndpointWorkspaceCsv extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceHistory extends _isc.EndpointRef {
+  EndpointWorkspaceHistory(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceHistory';
+
+  _ida.Future<String> policy(int workspaceId) =>
+      caller.callServerEndpoint<String>(
+        'workspaceHistory',
+        'policy',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<void> configurePolicy(
+    _if7x0ut8.WorkspaceHistoryPolicyRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'configurePolicy',
+    {'request': request},
+  );
+
+  _ida.Future<void> permanentlyDelete(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'permanentlyDelete',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<List<String>> history(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<List<String>>(
+    'workspaceHistory',
+    'history',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<void> restore(_ih19x2zu.WorkspaceHistoryRestoreRequest request) =>
+      caller.callServerEndpoint<void>(
+        'workspaceHistory',
+        'restore',
+        {'request': request},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceReference extends _isc.EndpointRef {
   EndpointWorkspaceReference(_isc.EndpointCaller caller) : super(caller);
 
@@ -1545,6 +1603,7 @@ class Client extends _isc.ServerpodClientShared {
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
     workspaceCsv = EndpointWorkspaceCsv(this);
+    workspaceHistory = EndpointWorkspaceHistory(this);
     workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
@@ -1580,6 +1639,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceCsv workspaceCsv;
 
+  late final EndpointWorkspaceHistory workspaceHistory;
+
   late final EndpointWorkspaceReference workspaceReference;
 
   late final EndpointWorkspaceSecret workspaceSecret;
@@ -1609,6 +1670,7 @@ class Client extends _isc.ServerpodClientShared {
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
     'workspaceCsv': workspaceCsv,
+    'workspaceHistory': workspaceHistory,
     'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_purge_guard.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_batch_receipt.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
@@ -305,6 +306,10 @@ Future<String> _insertTable(
   AppDatabase db,
   WorkspaceTablesCompanion row,
 ) async {
+  await LocalWorkspacePurgeGuard(
+    db,
+    row.workspaceId.value,
+  ).resource('table', row.id.value);
   final _ = await db.into(db.workspaceTables).insert(row);
 
   return row.id.value;
@@ -314,6 +319,10 @@ Future<String> _insertRecord(
   AppDatabase db,
   WorkspaceTableRecordsCompanion row,
 ) async {
+  await LocalWorkspacePurgeGuard(
+    db,
+    row.workspaceId.value,
+  ).resource('record', row.id.value);
   final _ = await db.into(db.workspaceTableRecords).insert(row);
 
   return row.id.value;
