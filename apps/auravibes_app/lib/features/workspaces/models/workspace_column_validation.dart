@@ -21,12 +21,27 @@ abstract final class WorkspaceColumnValidation {
     List<WorkspaceColumn> columns,
     Map<String, Object?> values,
   ) {
-    for (final entry in values.entries) {
-      final column = columns
-          .where((column) => column.id == entry.key)
-          .firstOrNull;
-      _require(column != null && _ValueValidation.valid(column, entry.value));
-    }
+    _require(accepts(columns, values));
+  }
+
+  static bool accepts(
+    List<WorkspaceColumn> columns,
+    Map<String, Object?> values,
+  ) =>
+      columns.every(
+        (column) => !column.isRequired || values.containsKey(column.id),
+      ) &&
+      values.entries.every((entry) => _entryValid(columns, entry));
+
+  static bool _entryValid(
+    List<WorkspaceColumn> columns,
+    MapEntry<String, Object?> entry,
+  ) {
+    final column = columns
+        .where((column) => column.id == entry.key)
+        .firstOrNull;
+
+    return column != null && _ValueValidation.valid(column, entry.value);
   }
 
   static bool _uniqueIds(List<WorkspaceColumn> columns) =>
@@ -34,6 +49,9 @@ abstract final class WorkspaceColumnValidation {
 
   static void _column(WorkspaceColumn column) {
     _require(column.id.isNotEmpty && _name(column.name));
+    if (column.defaultValue != null) {
+      _require(_ValueValidation.valid(column, column.defaultValue));
+    }
     if (column.type != .singleSelect && column.type != .multiSelect) {
       _require(column.options.isEmpty);
 

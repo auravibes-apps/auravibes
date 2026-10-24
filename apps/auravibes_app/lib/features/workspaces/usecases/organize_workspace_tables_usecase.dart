@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:uuid/v7.dart';
 
 class const OrganizeWorkspaceTablesUsecase(
@@ -35,9 +36,13 @@ class const OrganizeWorkspaceTablesUsecase(
     required Map<String, Object?> values,
   }) {
     _requireEdit(table);
-    WorkspaceColumnValidation.values(table.columns, values);
+    final normalized = WorkspaceTableConstraints.defaults(
+      table.columns,
+      values,
+    );
+    WorkspaceColumnValidation.values(table.columns, normalized);
 
-    return _repository.createRecord(table: table, values: values);
+    return _repository.createRecord(table: table, values: normalized);
   }
 
   Future<WorkspaceRecord> updateRecord({
@@ -55,6 +60,21 @@ class const OrganizeWorkspaceTablesUsecase(
       table: table,
       record: record,
       values: values,
+    );
+  }
+
+  Future<List<WorkspaceRecord>> previewColumn({
+    required WorkspaceTable table,
+    required WorkspaceColumn column,
+  }) async {
+    _requireManage(table);
+    final normalized = _normalizeColumn(column);
+    final columns = table.withColumn(normalized);
+    WorkspaceColumnValidation.columns(columns, table.labelColumnId);
+
+    return WorkspaceTableConstraints.violations(
+      columns,
+      await _repository.records(table.id),
     );
   }
 
@@ -85,6 +105,9 @@ WorkspaceColumn _normalizeColumn(WorkspaceColumn column) => WorkspaceColumn(
   name: _name(column.name),
   type: column.type,
   options: column.options.map(_name).toList(),
+  isRequired: column.isRequired,
+  isUnique: column.isUnique,
+  defaultValue: column.defaultValue,
 );
 
 String _name(String value) {

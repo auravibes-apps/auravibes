@@ -1,6 +1,9 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_column_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_column_violations.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -33,12 +36,22 @@ typedef _ColumnFields = ({
   TextEditingController name,
   TextEditingController options,
   ValueNotifier<WorkspaceColumnType> type,
+  WorkspaceColumnConstraintDraft constraints,
 });
-typedef _ColumnDraft = ({_ColumnFields fields, WorkspaceTableAction action});
+typedef _ColumnDraft = ({
+  _ColumnFields fields,
+  WorkspaceTableAction action,
+  ValueNotifier<List<WorkspaceRecord>> violations,
+  ValueNotifier<bool> replacement,
+});
 
 abstract final class _ColumnActions {
-  static _ColumnDraft use(BuildContext context, WorkspaceColumn? column) =>
-      (fields: _fields(column), action: WorkspaceTableActions.use(context));
+  static _ColumnDraft use(BuildContext context, WorkspaceColumn? column) => (
+    fields: _fields(column),
+    action: WorkspaceTableActions.use(context),
+    violations: useState<List<WorkspaceRecord>>([]),
+    replacement: useState(false),
+  );
   static Future<void> save(
     WidgetRef ref,
     WorkspaceColumnEditor editor,
@@ -47,16 +60,55 @@ abstract final class _ColumnActions {
     final usecase = await ref.read(
       workspaceTableUsecaseProvider(editor.workspaceId).future,
     );
-    final _ = await usecase.saveColumn(
-      table: editor.table,
-      column: _column(editor.column, draft.fields),
-    );
-    if (ref.context.mounted) editor.onBack();
+    if (!ref.context.mounted) return;
+    final input = _draftInput(editor, draft);
+    if (!await _preview(ref, usecase, input, draft)) {
+      return;
+    }
+    await _write(ref, usecase, editor, input.column);
   }
 
   static bool hasOptions(WorkspaceColumnType type) =>
       type == .singleSelect || type == .multiSelect;
+  static ({WorkspaceTable table, WorkspaceColumn column}) _draftInput(
+    WorkspaceColumnEditor editor,
+    _ColumnDraft draft,
+  ) => (
+    table: editor.table,
+    column: _column(
+      draft.replacement.value ? null : editor.column,
+      draft.fields,
+    ),
+  );
+
+  static Future<void> _write(
+    WidgetRef ref,
+    OrganizeWorkspaceTablesUsecase usecase,
+    WorkspaceColumnEditor editor,
+    WorkspaceColumn column,
+  ) async {
+    final _ = await usecase.saveColumn(table: editor.table, column: column);
+    if (ref.context.mounted) editor.onBack();
+  }
+
+  static Future<bool> _preview(
+    WidgetRef ref,
+    OrganizeWorkspaceTablesUsecase usecase,
+    ({WorkspaceTable table, WorkspaceColumn column}) input,
+    _ColumnDraft draft,
+  ) async {
+    final violations = await usecase.previewColumn(
+      table: input.table,
+      column: input.column,
+    );
+    if (!ref.context.mounted) return false;
+    draft.violations.value = violations;
+
+    return violations.isEmpty;
+  }
+
   static _ColumnFields _fields(WorkspaceColumn? column) => (
+    constraints: WorkspaceColumnConstraints.use(column),
     name: useTextEditingController(text: column?.name ?? ''),
     options: useTextEditingController(text: column?.options.join('\n') ?? ''),
     type: useState(column?.type ?? WorkspaceColumnType.text),
@@ -64,12 +116,20 @@ abstract final class _ColumnActions {
   static WorkspaceColumn _column(
     WorkspaceColumn? column,
     _ColumnFields fields,
-  ) => WorkspaceColumn(
-    id: column?.id ?? '',
-    name: fields.name.text,
-    type: fields.type.value,
-    options: _options(fields),
-  );
+  ) {
+    final constraints = fields.constraints;
+
+    return WorkspaceColumn(
+      id: column?.id ?? '',
+      name: fields.name.text,
+      type: fields.type.value,
+      options: _options(fields),
+      isRequired: constraints.required.value,
+      isUnique: constraints.unique.value,
+      defaultValue: constraints.defaultValue.value,
+    );
+  }
+
   static List<String> _options(_ColumnFields fields) =>
       hasOptions(fields.type.value)
       ? fields.options.text
@@ -108,8 +168,42 @@ class const _ColumnInputs({
       ),
       _ColumnDraftType(editor: editor, draft: draft),
       _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
+      _ColumnConstraintInputs(editor: editor, draft: draft),
+      _ColumnPreviewResult(editor: editor, draft: draft),
     ],
   );
+}
+
+class const _ColumnConstraintInputs({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceColumnConstraints(
+    draft: draft.fields.constraints,
+    column: _ColumnActions._column(editor.column, draft.fields),
+    disabled: draft.action.pending,
+  );
+}
+
+class const _ColumnPreviewResult({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceColumnViolations(
+    records: draft.violations.value,
+    table: editor.table,
+    onCorrect: editor.onBack,
+    onReplace: editor.column?.id == editor.table.labelColumnId
+        ? null
+        : _replace,
+    replacement: draft.replacement.value,
+  );
+  void _replace() {
+    draft.replacement.value = true;
+    draft.violations.value = [];
+  }
 }
 
 class const _ColumnDraftType({

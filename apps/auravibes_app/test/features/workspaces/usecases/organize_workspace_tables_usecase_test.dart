@@ -14,6 +14,200 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
+    'constraint previews require corrections and never discard values',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('preview'),
+              name: 'Preview',
+              type: .local,
+            ),
+          );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'preview'),
+      );
+      var table = await tables.create(name: 'Items', labelName: 'Title');
+      table = await tables.saveColumn(
+        table: table,
+        column: const WorkspaceColumn(id: '', name: 'Value'),
+      );
+      final id = table.columns.last.id;
+      final first = await tables.createRecord(
+        table: table,
+        values: {id: 'not a number'},
+      );
+      final second = await tables.createRecord(
+        table: table,
+        values: {id: 'not a number'},
+      );
+      final requiredColumn = WorkspaceColumn(
+        id: table.labelColumnId,
+        name: 'Title',
+        isRequired: true,
+      );
+      expect(
+        (await tables.previewColumn(
+          table: table,
+          column: requiredColumn,
+        )).length,
+        2,
+      );
+      await expectLater(
+        tables.saveColumn(table: table, column: requiredColumn),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+      final unique = WorkspaceColumn(id: id, name: 'Value', isUnique: true);
+      expect(
+        (await tables.previewColumn(
+          table: table,
+          column: unique,
+        )).map((record) => record.id),
+        [first.id, second.id],
+      );
+      await expectLater(
+        tables.saveColumn(table: table, column: unique),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+      final number = WorkspaceColumn(id: id, name: 'Value', type: .number);
+      expect(
+        (await tables.previewColumn(table: table, column: number)).length,
+        2,
+      );
+      await expectLater(
+        tables.saveColumn(table: table, column: number),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+      expect(
+        (await tables.record(table.id, first.id)).values[id],
+        'not a number',
+      );
+      expect(
+        (await tables.table(table.id)).schemaRevision,
+        table.schemaRevision,
+      );
+      final _ = await tables.updateRecord(
+        table: table,
+        record: first,
+        values: {id: 'corrected'},
+      );
+      table = await tables.saveColumn(table: table, column: unique);
+      expect(table.columns.last.id, id);
+      final stale = table;
+      table = await tables.saveColumn(
+        table: table,
+        column: .new(
+          id: id,
+          name: 'Value',
+          isRequired: true,
+          isUnique: true,
+        ),
+      );
+      await expectLater(
+        Future.sync(
+          () => tables.updateRecord(
+            table: stale,
+            record: second,
+            values: const {},
+          ),
+        ),
+        throwsA(
+          isA<WorkspaceTableException>().having(
+            (error) => error.conflict,
+            'conflict',
+            true,
+          ),
+        ),
+      );
+      await expectLater(
+        tables.updateRecord(
+          table: table,
+          record: second,
+          values: {id: 'corrected'},
+        ),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+  test(
+    'required unique defaults reject duplicates and preserve explicit zero',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('constraints'),
+              name: 'Constraints',
+              type: .local,
+            ),
+          );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'constraints'),
+      );
+      var table = await tables.create(name: 'Items', labelName: 'Title');
+      table = await tables.saveColumn(
+        table: table,
+        column: const WorkspaceColumn(
+          id: '',
+          name: 'Count',
+          type: .number,
+          isRequired: true,
+          isUnique: true,
+          defaultValue: 5,
+        ),
+      );
+      final id = table.columns.last.id;
+      table = await tables.saveColumn(
+        table: table,
+        column: const WorkspaceColumn(
+          id: '',
+          name: 'Enabled',
+          type: .checkbox,
+          isRequired: true,
+          defaultValue: false,
+        ),
+      );
+      final checkboxId = table.columns.last.id;
+      table = await tables.saveColumn(
+        table: table,
+        column: const WorkspaceColumn(
+          id: '',
+          name: 'Note',
+          isRequired: true,
+          defaultValue: '',
+        ),
+      );
+      final textId = table.columns.last.id;
+      final first = await tables.createRecord(table: table, values: const {});
+      expect(first.values[checkboxId], false);
+      expect(first.values[textId], '');
+      expect((await tables.table(table.id)).columns.last.isRequired, true);
+      expect(first.values[id], 5);
+      final zero = await tables.createRecord(table: table, values: {id: 0});
+      expect(zero.values[id], 0);
+      await expectLater(
+        Future.sync(() => tables.createRecord(table: table, values: const {})),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+      expect((await tables.records(table.id)).length, 2);
+      await expectLater(
+        Future.sync(
+          () => tables.updateRecord(
+            table: table,
+            record: first,
+            values: const {},
+          ),
+        ),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+  test(
     'formatted columns reject malformed values without changing records',
     () async {
       final database = AppDatabase(connection: NativeDatabase.memory());

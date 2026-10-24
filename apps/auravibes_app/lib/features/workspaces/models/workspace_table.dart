@@ -39,12 +39,28 @@ class const WorkspaceColumn({
   required final String name,
   final WorkspaceColumnType type = WorkspaceColumnType.text,
   final List<String> options = const [],
+  final bool isRequired = false,
+  final bool isUnique = false,
+  final Object? defaultValue,
 }) {
   factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
     id: data['id'] as String,
     name: data['name'] as String,
-    type: WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text'),
-    options: (data['options'] as List<dynamic>? ?? const []).cast<String>(),
+    type: _columnType(data),
+    options: _columnOptions(data),
+    isRequired: data['required'] as bool? ?? false,
+    isUnique: data['unique'] as bool? ?? false,
+    defaultValue: data['defaultValue'],
+  );
+
+  WorkspaceColumn renamed(String value) => WorkspaceColumn(
+    id: id,
+    name: value,
+    type: type,
+    options: options,
+    isRequired: isRequired,
+    isUnique: isUnique,
+    defaultValue: defaultValue,
   );
 
   Map<String, Object?> toJson() => {
@@ -52,6 +68,9 @@ class const WorkspaceColumn({
     'name': name,
     'type': type.name,
     'options': options,
+    'required': isRequired,
+    'unique': isUnique,
+    if (defaultValue != null) 'defaultValue': defaultValue,
   };
 }
 
@@ -117,3 +136,9 @@ abstract interface class WorkspaceTableRepository {
     required Map<String, Object?> values,
   });
 }
+
+List<String> _columnOptions(Map<String, dynamic> data) =>
+    (data['options'] as List<dynamic>? ?? const []).cast<String>();
+
+WorkspaceColumnType _columnType(Map<String, dynamic> data) =>
+    WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text');

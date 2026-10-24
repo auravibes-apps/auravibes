@@ -60,7 +60,9 @@ class const CloudWorkspaceTableRepository(
     required String name,
   }) => saveColumn(
     table: table,
-    column: .new(id: table.labelColumnId, name: name),
+    column: table.columns
+        .firstWhere((column) => column.id == table.labelColumnId)
+        .renamed(name),
   );
 
   @override
