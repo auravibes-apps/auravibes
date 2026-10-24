@@ -72,6 +72,7 @@ import 'features/conversations/models/bookmark_message_request.dart'
 import 'features/conversations/models/cancel_turn_request.dart' as _iarqshx6;
 import 'features/conversations/models/compact_conversation_request.dart'
     as _isyd7s84;
+import 'features/conversations/models/connector_write.dart' as _ik5xiz1a;
 import 'features/conversations/models/continue_conversation_request.dart'
     as _ialxa16r;
 import 'features/conversations/models/continue_turn_request.dart' as _iwrs6sde;
@@ -358,6 +359,7 @@ export 'features/conversations/models/background_work_view.dart';
 export 'features/conversations/models/bookmark_message_request.dart';
 export 'features/conversations/models/cancel_turn_request.dart';
 export 'features/conversations/models/compact_conversation_request.dart';
+export 'features/conversations/models/connector_write.dart';
 export 'features/conversations/models/continue_conversation_request.dart';
 export 'features/conversations/models/continue_turn_request.dart';
 export 'features/conversations/models/conversation.dart';
@@ -612,6 +614,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isyd7s84.CompactConversationRequest) {
       return _isyd7s84.CompactConversationRequest.fromJson(data) as T;
+    }
+    if (t == _ik5xiz1a.ConnectorWrite) {
+      return _ik5xiz1a.ConnectorWrite.fromJson(data) as T;
     }
     if (t == _ialxa16r.ContinueConversationRequest) {
       return _ialxa16r.ContinueConversationRequest.fromJson(data) as T;
@@ -1204,6 +1209,10 @@ class Protocol extends _isc.SerializationManager {
       return (data != null
               ? _isyd7s84.CompactConversationRequest.fromJson(data)
               : null)
+          as T;
+    }
+    if (t == _isc.getType<_ik5xiz1a.ConnectorWrite?>()) {
+      return (data != null ? _ik5xiz1a.ConnectorWrite.fromJson(data) : null)
           as T;
     }
     if (t == _isc.getType<_ialxa16r.ContinueConversationRequest?>()) {
@@ -2353,6 +2362,7 @@ class Protocol extends _isc.SerializationManager {
       _ihrj16d1.BookmarkMessageRequest => 'BookmarkMessageRequest',
       _iarqshx6.CancelTurnRequest => 'CancelTurnRequest',
       _isyd7s84.CompactConversationRequest => 'CompactConversationRequest',
+      _ik5xiz1a.ConnectorWrite => 'ConnectorWrite',
       _ialxa16r.ContinueConversationRequest => 'ContinueConversationRequest',
       _iwrs6sde.ContinueTurnRequest => 'ContinueTurnRequest',
       _iivijtsr.Conversation => 'Conversation',
@@ -2597,6 +2607,8 @@ class Protocol extends _isc.SerializationManager {
         return 'CancelTurnRequest';
       case _isyd7s84.CompactConversationRequest():
         return 'CompactConversationRequest';
+      case _ik5xiz1a.ConnectorWrite():
+        return 'ConnectorWrite';
       case _ialxa16r.ContinueConversationRequest():
         return 'ContinueConversationRequest';
       case _iwrs6sde.ContinueTurnRequest():
@@ -3002,6 +3014,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'CompactConversationRequest') {
       return deserialize<_isyd7s84.CompactConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'ConnectorWrite') {
+      return deserialize<_ik5xiz1a.ConnectorWrite>(data['data']);
     }
     if (dataClassName == 'ContinueConversationRequest') {
       return deserialize<_ialxa16r.ContinueConversationRequest>(data['data']);

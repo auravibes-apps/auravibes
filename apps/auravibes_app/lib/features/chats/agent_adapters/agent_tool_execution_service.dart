@@ -28,6 +28,7 @@ typedef _ToolApprovalRequest = ({
   String workspaceId,
   String toolCallId,
   ResolvedTool resolvedTool,
+  String? argumentsRaw,
 });
 
 typedef _ToolExecutionErrorRequest = ({
@@ -118,6 +119,7 @@ class const AppAllowedToolsDataProvider({
     workspaceId: request.workspaceId,
     toolCallId: request.toolCallId,
     resolvedTool: request.resolvedTool,
+    argumentsRaw: request.argumentsRaw,
   ));
 
   @override
@@ -241,12 +243,24 @@ Future<ToolApprovalDecision> _resolvePermission(
   ResolveToolApprovalDecisionUsecase resolver,
   _ToolApprovalRequest request,
   ResolvedTool approvalTool,
-) => resolver.call(
-  conversationId: request.conversationId,
-  workspaceId: request.workspaceId,
-  toolCallId: request.toolCallId,
-  resolvedTool: approvalTool,
-);
+) {
+  if (approvalTool.isConnectorCommand) {
+    return resolver.callForRequest((
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      toolCallId: request.toolCallId,
+      resolvedTool: approvalTool,
+      argumentsRaw: request.argumentsRaw,
+    ));
+  }
+
+  return resolver.call(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    toolCallId: request.toolCallId,
+    resolvedTool: approvalTool,
+  );
+}
 
 agent.AgentToolApprovalDecision _toApprovalDecision(
   ToolApprovalDecision decision,
