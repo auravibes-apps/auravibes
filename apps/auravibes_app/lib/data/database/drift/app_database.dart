@@ -269,10 +269,20 @@ extension on AppDatabase {
 
   Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {
     await _upgradeWorkspaceItemsSchema(m, from);
+    await _upgradeWorkspaceViewsSchema(m, from);
+    await _upgradeWorkspaceTrashSchema(m, from);
+    await _upgradeWorkspaceRevisionSchema(m, from);
+    await _upgradeWorkspaceAssetsSchema(m, from);
+    await _upgradeConnectorWritesSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceViewsSchema(Migrator m, int from) async {
     if (from < AppDatabase._workspaceViewsSchemaVersion) {
       await m.createTable(workspaceViews);
     }
-    await _upgradeWorkspaceTrashSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceRevisionSchema(Migrator m, int from) async {
     if (from < AppDatabase._workspaceHistorySchemaVersion) {
       await m.createTable(workspaceRevisions);
       await m.createTable(workspaceHistoryPolicies);
@@ -280,14 +290,24 @@ extension on AppDatabase {
     if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
       await m.createTable(workspaceRecordBatchReceipts);
     }
-    if (from < AppDatabase._workspaceAssetsSchemaVersion) {
-      await m.createTable(workspaceAssets);
-      await m.createTable(workspaceFiles);
-      if (await _tableExists('message_attachments') &&
-          !await _columnExists('message_attachments', 'asset_id')) {
-        await m.addColumn(messageAttachments, messageAttachments.assetId);
-      }
+  }
+
+  Future<void> _upgradeWorkspaceAssetsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceAssetsSchemaVersion) return;
+    await m.createTable(workspaceAssets);
+    await m.createTable(workspaceFiles);
+    await _upgradeMessageAssetReferences(m);
+  }
+
+  Future<void> _upgradeMessageAssetReferences(Migrator m) async {
+    if (!await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'asset_id')) {
+      return;
     }
+    await m.addColumn(messageAttachments, messageAttachments.assetId);
+  }
+
+  Future<void> _upgradeConnectorWritesSchema(Migrator m, int from) async {
     if (from < AppDatabase._connectorWritesSchemaVersion) {
       await m.createTable(connectorWrites);
     }

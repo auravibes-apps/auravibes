@@ -9,27 +9,47 @@ class const LocalMessageAssetReferences(
   final AppDatabase database,
   final String namespace,
 ) {
+  static const _denied = WorkspaceAssetException(.denied);
+
   Future<void> validate(
     String messageId,
     MessageAttachmentToCreate attachment,
   ) async {
+    final location = _shared(attachment);
+    if (location == null) return;
+    await _scope(messageId, location);
+    final asset = await _asset(location.workspaceId, location.assetId);
+    _requireMetadata(asset, attachment);
+  }
+
+  WorkspaceAssetLocation? _shared(MessageAttachmentToCreate attachment) {
     final location = WorkspaceAssetLocation.parse(attachment.localPath);
-    final id = attachment.assetId;
-    if (location == null && id == null) return;
-    if (location == null ||
-        id != location.assetId ||
-        namespace != location.namespace) {
-      throw const WorkspaceAssetException(.denied);
+    if (location == null && attachment.assetId == null) return null;
+    if (location == null || !_matchesLocation(location, attachment)) {
+      throw _denied;
     }
-    final workspaceId = await _workspace(messageId);
-    if (location.workspaceId != workspaceId) {
-      throw const WorkspaceAssetException(.denied);
-    }
-    final asset = await _asset(workspaceId, location.assetId);
+
+    return location;
+  }
+
+  bool _matchesLocation(
+    WorkspaceAssetLocation location,
+    MessageAttachmentToCreate attachment,
+  ) =>
+      location.namespace == namespace && location.assetId == attachment.assetId;
+
+  Future<void> _scope(String messageId, WorkspaceAssetLocation location) async {
+    if (location.workspaceId != await _workspace(messageId)) throw _denied;
+  }
+
+  static void _requireMetadata(
+    WorkspaceAssetRow? asset,
+    MessageAttachmentToCreate attachment,
+  ) {
     if (asset == null ||
         asset.mimeType != attachment.mimeType ||
         asset.sizeBytes != attachment.sizeBytes) {
-      throw const WorkspaceAssetException(.denied);
+      throw _denied;
     }
   }
 
@@ -43,16 +63,26 @@ class const LocalMessageAssetReferences(
           .getSingleOrNull();
 
   Future<String> _workspace(String messageId) async {
-    final message = await (database.select(
-      database.messages,
-    )..where((row) => row.id.equals(messageId))).getSingle();
-    final conversation = await (database.select(
-      database.conversations,
-    )..where((row) => row.id.equals(message.conversationId))).getSingle();
-    final workspace = await (database.select(
-      database.workspaces,
-    )..where((row) => row.id.equals(conversation.workspaceId))).getSingle();
-    if (workspace.type != .local) throw const WorkspaceAssetException(.denied);
+    final conversation = await _conversation(messageId);
+    if (conversation == null) throw _denied;
+
+    return await _localWorkspace(conversation.workspaceId);
+  }
+
+  Future<ConversationsTable?> _conversation(String messageId) async {
+    final message = await database.messageDao.getMessageById(messageId);
+    if (message == null) return null;
+
+    return await database.conversationDao.getConversationById(
+      message.conversationId,
+    );
+  }
+
+  Future<String> _localWorkspace(String id) async {
+    final query = database.select(database.workspaces)
+      ..where((row) => row.id.equals(id));
+    final workspace = await query.getSingleOrNull();
+    if (workspace == null || workspace.type != .local) throw _denied;
 
     return workspace.id;
   }

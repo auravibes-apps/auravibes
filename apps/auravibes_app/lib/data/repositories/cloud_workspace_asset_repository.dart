@@ -24,6 +24,8 @@ class const CloudWorkspaceAssetRepository({
   required final WorkspaceAssetDownload getDownload,
   required final WorkspaceAssetBytes fetchBytes,
 }) implements WorkspaceAssetRepository {
+  static final _checksum = RegExp(r'^[a-f0-9]{64}$');
+
   @override
   Future<WorkspaceAsset> upload(String name, Uint8List bytes) async {
     final mime = WorkspaceAssetInput.validate(name, bytes);
@@ -44,20 +46,7 @@ class const CloudWorkspaceAssetRepository({
 
   @override
   Future<WorkspaceAsset> asset(String id) =>
-      CloudAppErrors.guardCall(.object, () async {
-        final objectId = _id(id);
-        final result = await gateway.client.object.describe(
-          .new(
-            workspaceId: gateway.workspace.cloudWorkspaceId,
-            objectId: objectId,
-          ),
-        );
-        if (result.objectId != objectId) {
-          throw const WorkspaceAssetException(.invalid);
-        }
-
-        return _asset(result);
-      });
+      CloudAppErrors.guardCall(.object, () => _describe(_id(id)));
 
   @override
   Future<Uint8List> bytes(String id) async {
@@ -67,13 +56,19 @@ class const CloudWorkspaceAssetRepository({
     return await fetchBytes(uri, metadata.sizeBytes);
   }
 
+  Future<WorkspaceAsset> _describe(int id) async {
+    final result = await _object(id);
+    if (result.objectId != id) throw const WorkspaceAssetException(.invalid);
+
+    return _asset(result);
+  }
+
+  Future<ObjectResult> _object(int id) => gateway.client.object.describe(
+    .new(workspaceId: gateway.workspace.cloudWorkspaceId, objectId: id),
+  );
+
   WorkspaceAsset _asset(ObjectResult object) {
-    if (object.workspaceId != gateway.workspace.cloudWorkspaceId ||
-        object.sizeBytes <= 0 ||
-        object.objectId <= 0 ||
-        !RegExp(r'^[a-f0-9]{64}$').hasMatch(object.checksumSha256)) {
-      throw const WorkspaceAssetException(.invalid);
-    }
+    if (!_valid(object)) throw const WorkspaceAssetException(.invalid);
 
     return WorkspaceAsset(
       id: '${object.objectId}',
@@ -83,6 +78,12 @@ class const CloudWorkspaceAssetRepository({
       checksum: object.checksumSha256,
     );
   }
+
+  bool _valid(ObjectResult object) =>
+      object.workspaceId == gateway.workspace.cloudWorkspaceId &&
+      object.sizeBytes > 0 &&
+      object.objectId > 0 &&
+      _checksum.hasMatch(object.checksumSha256);
 }
 
 int _id(String id) {
