@@ -49,6 +49,7 @@ void main() {
           ),
           greaterThanOrEqualTo(4.5),
         );
+        expect(style.fontFamily, entry.theme.typography.bodyFontFamily);
         await tester.tap(find.text('Context action'));
         expect(activated, isTrue);
       });
