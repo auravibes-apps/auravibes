@@ -5,10 +5,12 @@ class const WorkspaceReferencePage({
   final String? nextId,
 });
 
+typedef WorkspaceReferenceSource = ({String tableId, String columnId});
+
 abstract interface class WorkspaceReferenceRepository {
-  Future<WorkspaceReferencePage> targets({
-    required String sourceTableId,
-    required String columnId,
+  Future<WorkspaceRecord> record(String tableId, String id);
+  Future<WorkspaceReferencePage> targets(
+    WorkspaceReferenceSource source, {
     required String search,
     String? afterId,
   });

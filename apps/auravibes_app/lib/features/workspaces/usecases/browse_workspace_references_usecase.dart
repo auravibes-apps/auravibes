@@ -1,22 +1,20 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_reference.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_reference_page.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 
 class const BrowseWorkspaceReferencesUsecase(
   final WorkspaceReferenceRepository repository,
 ) {
+  Future<WorkspaceRecord> record(String tableId, String id) =>
+      repository.record(tableId, id);
+
   Future<WorkspaceReferencePage> targets({
-    required String sourceTableId,
-    required String columnId,
+    required WorkspaceReferenceSource source,
     String search = '',
     String? afterId,
   }) {
     if (search.length > 200) throw const WorkspaceTableException();
-    return repository.targets(
-      sourceTableId: sourceTableId,
-      columnId: columnId,
-      search: search,
-      afterId: afterId,
-    );
+
+    return repository.targets(source, search: search, afterId: afterId);
   }
 
   Future<WorkspaceReferencePage> reverse({

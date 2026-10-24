@@ -91,3 +91,95 @@ final class WorkspaceReferencesUsecaseFamily extends $Family
   @override
   String toString() => r'workspaceReferencesUsecaseProvider';
 }
+
+@ProviderFor(workspaceReferencedRecord)
+final workspaceReferencedRecordProvider = WorkspaceReferencedRecordFamily._();
+
+final class WorkspaceReferencedRecordProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<WorkspaceRecord>,
+          WorkspaceRecord,
+          FutureOr<WorkspaceRecord>
+        >
+    with $FutureModifier<WorkspaceRecord>, $FutureProvider<WorkspaceRecord> {
+  WorkspaceReferencedRecordProvider._({
+    required WorkspaceReferencedRecordFamily super.from,
+    required (String, String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceReferencedRecordProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceReferencedRecordHash();
+
+  @override
+  String toString() {
+    return r'workspaceReferencedRecordProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<WorkspaceRecord> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WorkspaceRecord> create(Ref ref) {
+    final argument = this.argument as (String, String, String);
+    return workspaceReferencedRecord(
+      ref,
+      argument.$1,
+      argument.$2,
+      argument.$3,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceReferencedRecordProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceReferencedRecordHash() =>
+    r'60d594f83be8c0156d8af9377ddb6961971356cd';
+
+final class WorkspaceReferencedRecordFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<WorkspaceRecord>,
+          (String, String, String)
+        > {
+  WorkspaceReferencedRecordFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceReferencedRecordProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceReferencedRecordProvider call(
+    String workspaceId,
+    String tableId,
+    String id,
+  ) => WorkspaceReferencedRecordProvider._(
+    argument: (workspaceId, tableId, id),
+    from: this,
+  );
+
+  @override
+  String toString() => r'workspaceReferencedRecordProvider';
+}

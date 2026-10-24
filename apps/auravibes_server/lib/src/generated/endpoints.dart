@@ -136,6 +136,10 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/p
     as _ixodmwhe;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
     as _i2v5creq;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
+    as _irm41t6a;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_target_request.dart'
+    as _if6l00dz;
 import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
@@ -1853,30 +1857,10 @@ class Endpoints extends _is.EndpointDispatch {
         'targets': _is.MethodConnector(
           name: 'targets',
           params: {
-            'workspaceId': _is.ParameterDescription(
-              name: 'workspaceId',
-              type: _is.getType<int>(),
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_if6l00dz.WorkspaceReferenceTargetRequest>(),
               nullable: false,
-            ),
-            'sourceTableId': _is.ParameterDescription(
-              name: 'sourceTableId',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'columnId': _is.ParameterDescription(
-              name: 'columnId',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'search': _is.ParameterDescription(
-              name: 'search',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'afterId': _is.ParameterDescription(
-              name: 'afterId',
-              type: _is.getType<String?>(),
-              nullable: true,
             ),
           },
           call:
@@ -1888,35 +1872,37 @@ class Endpoints extends _is.EndpointDispatch {
                           as _it87m04z.WorkspaceReferenceEndpoint)
                       .targets(
                         session,
-                        params['workspaceId'],
-                        params['sourceTableId'],
-                        params['columnId'],
-                        params['search'],
-                        params['afterId'],
+                        params['request'],
+                      ),
+        ),
+        'record': _is.MethodConnector(
+          name: 'record',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_irm41t6a.WorkspaceReferenceRecordRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceReference']
+                          as _it87m04z.WorkspaceReferenceEndpoint)
+                      .record(
+                        session,
+                        params['request'],
                       ),
         ),
         'reverse': _is.MethodConnector(
           name: 'reverse',
           params: {
-            'workspaceId': _is.ParameterDescription(
-              name: 'workspaceId',
-              type: _is.getType<int>(),
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_irm41t6a.WorkspaceReferenceRecordRequest>(),
               nullable: false,
-            ),
-            'tableId': _is.ParameterDescription(
-              name: 'tableId',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'recordId': _is.ParameterDescription(
-              name: 'recordId',
-              type: _is.getType<String>(),
-              nullable: false,
-            ),
-            'afterId': _is.ParameterDescription(
-              name: 'afterId',
-              type: _is.getType<String?>(),
-              nullable: true,
             ),
           },
           call:
@@ -1928,10 +1914,7 @@ class Endpoints extends _is.EndpointDispatch {
                           as _it87m04z.WorkspaceReferenceEndpoint)
                       .reverse(
                         session,
-                        params['workspaceId'],
-                        params['tableId'],
-                        params['recordId'],
-                        params['afterId'],
+                        params['request'],
                       ),
         ),
       },

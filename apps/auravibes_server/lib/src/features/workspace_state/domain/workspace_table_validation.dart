@@ -1,4 +1,5 @@
 import 'workspace_reference_value.dart';
+
 import 'package:auravibes_server/src/features/workspace_state/domain/workspace_time_zones.dart';
 import 'package:auravibes_server/src/features/workspace_state/domain/workspace_exact_value_validation.dart';
 
@@ -62,6 +63,11 @@ abstract final class WorkspaceTableValidation {
         'checkbox' => value is bool,
         'singleSelect' || 'multiSelect' => _selectionValue(column, value),
         'url' || 'email' || 'phone' => _formattedValue(column['type'], value),
+        _ => _exact(column, value),
+      };
+
+  static bool _exact(Map<String, Object?> column, Object? value) =>
+      switch (column['type']) {
         'dateOnly' => WorkspaceExactValueValidation.date(value),
         'timestamp' => WorkspaceExactValueValidation.timestamp(value),
         'money' => WorkspaceExactValueValidation.money(value),

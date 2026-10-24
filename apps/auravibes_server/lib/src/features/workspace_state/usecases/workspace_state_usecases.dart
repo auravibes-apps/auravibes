@@ -155,10 +155,14 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
-        return await _visiblePatch(session, member, transaction,
+        return await _visiblePatch(
+          session,
+          member,
+          transaction,
           PatchWorkspaceStateResponse.fromJson(
             jsonDecode(receipt.responseJson) as Map<String, dynamic>,
-          ));
+          ),
+        );
       }
 
       await guard?.call(transaction);
@@ -300,18 +304,26 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       now: now,
       transaction: transaction,
     );
-    final member = await _repository.findMember(session, workspaceId: workspaceId,
-      userId: metadata.userId, transaction: transaction);
+    final member = await _repository.findMember(
+      session,
+      workspaceId: workspaceId,
+      userId: metadata.userId,
+      transaction: transaction,
+    );
     if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
     return await _visiblePatch(session, member, transaction, response);
   }
 
-  Future<PatchWorkspaceStateResponse> _visiblePatch(Session session,
-    WorkspaceMember member, Transaction transaction,
-    PatchWorkspaceStateResponse response) async {
+  Future<PatchWorkspaceStateResponse> _visiblePatch(
+    Session session,
+    WorkspaceMember member,
+    Transaction transaction,
+    PatchWorkspaceStateResponse response,
+  ) async {
     final resources = <WorkspaceResource>[];
     for (final row in response.resources) {
-      final visible = await WorkspaceTableAccess(transaction: transaction).visible(session, member, row);
+      final visible = await WorkspaceTableAccess(transaction: transaction)
+          .visible(session, member, row);
       if (visible != null) resources.add(visible);
     }
     return response.copyWith(resources: resources);

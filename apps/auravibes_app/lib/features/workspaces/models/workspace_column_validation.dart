@@ -12,9 +12,9 @@ const _minimumPhoneDigits = 3;
 abstract final class WorkspaceColumnValidation {
   static WorkspaceColumn normalized(WorkspaceColumn column) => WorkspaceColumn(
     id: _ColumnConfiguration.id(column),
-    name: column.name.trim(),
+    name: _ColumnConfiguration.name(column),
     type: column.type,
-    options: column.options.map((name) => name.trim()).toList(),
+    options: _ColumnConfiguration.options(column),
     isRequired: column.isRequired,
     isUnique: column.isUnique,
     defaultValue: column.defaultValue,
@@ -67,9 +67,7 @@ abstract final class WorkspaceColumnValidation {
   static void _column(WorkspaceColumn column) {
     _require(column.id.isNotEmpty && _name(column.name));
     _require(_ColumnConfiguration.valid(column));
-    _require(column.type == .reference
-        ? column.targetTableId?.isNotEmpty == true
-        : column.targetTableId == null && !column.referenceMultiple);
+
     if (column.type != .singleSelect && column.type != .multiSelect) {
       _require(column.options.isEmpty);
 
@@ -98,7 +96,14 @@ abstract final class _ColumnConfiguration {
   static String id(WorkspaceColumn column) =>
       column.id.isEmpty ? const UuidV7().generate() : column.id;
 
+  static String name(WorkspaceColumn column) => column.name.trim();
+  static List<String> options(WorkspaceColumn column) =>
+      column.options.map((name) => name.trim()).toList();
+  static bool reference(WorkspaceColumn column) => column.type == .reference
+      ? column.targetTableId?.isNotEmpty == true
+      : column.targetTableId == null && !column.referenceMultiple;
   static bool valid(WorkspaceColumn column) =>
+      reference(column) &&
       WorkspaceTimeZones.valid(column.timeZone) &&
       (column.defaultValue == null ||
           _ValueValidation.valid(column, column.defaultValue));
@@ -118,12 +123,16 @@ abstract final class _ValueValidation {
         .checkbox ||
         .singleSelect ||
         .multiSelect => _basic(column, value),
-        .reference => WorkspaceReferenceValue.valid(column, value),
         .url => _formatted(value, _url),
         .email => _formatted(value, _email.hasMatch),
         .phone => _formatted(value, _phone),
-        _ => _exact(column.type, value),
+        _ => _extra(column, value),
       };
+
+  static bool _extra(WorkspaceColumn column, Object? value) =>
+      column.type == .reference
+      ? WorkspaceReferenceValue.valid(column, value)
+      : _exact(column.type, value);
 
   static bool _exact(WorkspaceColumnType type, Object? value) => switch (type) {
     .dateOnly => WorkspaceExactValueValidation.date(value),

@@ -7,32 +7,40 @@ import 'workspace_reference_reader.dart';
 class WorkspaceReferenceEndpoint extends Endpoint {
   Future<List<WorkspaceResource>> targets(
     Session session,
-    int workspaceId,
-    String sourceTableId,
-    String columnId,
-    String search,
-    String? afterId,
+    WorkspaceReferenceTargetRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return WorkspaceReferenceReader(
+
+    return await WorkspaceReferenceReader(
       session,
-      workspaceId,
+      request.workspaceId,
       account.userId,
-    ).targets(sourceTableId, columnId, search, afterId);
+    ).targets(request);
+  }
+
+  Future<WorkspaceResource> record(
+    Session session,
+    WorkspaceReferenceRecordRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+
+    return await WorkspaceReferenceReader(
+      session,
+      request.workspaceId,
+      account.userId,
+    ).record(request);
   }
 
   Future<List<WorkspaceResource>> reverse(
     Session session,
-    int workspaceId,
-    String tableId,
-    String recordId,
-    String? afterId,
+    WorkspaceReferenceRecordRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return WorkspaceReferenceReader(
+
+    return await WorkspaceReferenceReader(
       session,
-      workspaceId,
+      request.workspaceId,
       account.userId,
-    ).reverse(tableId, recordId, afterId);
+    ).reverse(request);
   }
 }

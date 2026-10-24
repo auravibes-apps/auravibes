@@ -2,46 +2,31 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_reference.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_reference_page.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:drift/drift.dart';
+
+const _pageSize = 50;
 
 class const LocalWorkspaceReferenceRepository(
   final AppDatabase database,
   final String workspaceId,
 ) implements WorkspaceReferenceRepository {
+  LocalWorkspaceTableRepository get tables =>
+      LocalWorkspaceTableRepository(database, workspaceId);
   @override
-  Future<WorkspaceReferencePage> targets({
-    required String sourceTableId,
-    required String columnId,
+  Future<WorkspaceRecord> record(String tableId, String id) =>
+      tables.record(tableId, id);
+  @override
+  Future<WorkspaceReferencePage> targets(
+    WorkspaceReferenceSource source, {
     required String search,
     String? afterId,
   }) async {
-    final tables = LocalWorkspaceTableRepository(database, workspaceId);
-    final source = await tables.table(sourceTableId);
-    final column = source.columns
-        .where((column) => column.id == columnId && column.type == .reference)
-        .firstOrNull;
-    if (column == null || column.targetTableId == null)
-      throw const WorkspaceTableException();
-    final target = await tables.table(column.targetTableId!);
-    final rows = await database
-        .customSelect(
-          '''SELECT * FROM workspace_table_records WHERE workspace_id = ?
-      AND table_id = ? AND deleted_at IS NULL AND id > ?
-      AND instr(lower(COALESCE(json_extract(values_json, ?), '')), lower(?)) > 0
-      ORDER BY id LIMIT 51''',
-          variables: [
-            Variable(workspaceId),
-            Variable(target.id),
-            Variable(afterId ?? ''),
-            Variable('\$."${target.labelColumnId}"'),
-            Variable(search),
-          ],
-          readsFrom: {database.workspaceTableRecords},
-        )
-        .get();
-    return _page(rows.map(_record).toList());
+    final target = await _target(source);
+    final rows = await _targetRows(target, (search: search, afterId: afterId));
+
+    return _page(rows);
   }
 
   @override
@@ -50,45 +35,108 @@ class const LocalWorkspaceReferenceRepository(
     required String recordId,
     String? afterId,
   }) async {
-    final tables = LocalWorkspaceTableRepository(database, workspaceId);
     final _ = await tables.record(tableId, recordId);
+    final rows = await _reverseRows((
+      tableId: tableId,
+      recordId: recordId,
+      afterId: afterId,
+    ));
+
+    return _page(rows);
+  }
+
+  Future<WorkspaceTable> _target(WorkspaceReferenceSource source) async {
+    final table = await tables.table(source.tableId);
+
+    return await tables.table(_targetId(table, source.columnId));
+  }
+
+  Future<List<WorkspaceRecord>> _targetRows(
+    WorkspaceTable target,
+    _TargetQuery query,
+  ) async {
     final rows = await database
         .customSelect(
-          '''SELECT DISTINCT r.* FROM workspace_table_records r
-      JOIN workspace_tables t ON t.id = r.table_id AND t.workspace_id = r.workspace_id,
-      json_each(t.columns_json) c
-      WHERE r.workspace_id = ? AND r.deleted_at IS NULL AND t.deleted_at IS NULL
-      AND r.id > ? AND json_extract(c.value, '\$.type') = 'reference'
-      AND json_extract(c.value, '\$.targetTableId') = ?
-      AND EXISTS (SELECT 1 FROM json_each(r.values_json) v
-        WHERE v.key = json_extract(c.value, '\$.id')
-        AND (v.value = ? OR (v.type = 'array' AND EXISTS
-          (SELECT 1 FROM json_each(v.value) a WHERE a.value = ?))))
-      ORDER BY r.id LIMIT 51''',
-          variables: [
-            Variable(workspaceId),
-            Variable(afterId ?? ''),
-            Variable(tableId),
-            Variable(recordId),
-            Variable(recordId),
-          ],
+          _targetSql,
+          variables: _targetVariables(target, query),
+          readsFrom: {database.workspaceTableRecords},
+        )
+        .get();
+
+    return rows.map(_record).toList();
+  }
+
+  List<Variable<Object>> _targetVariables(
+    WorkspaceTable target,
+    _TargetQuery query,
+  ) => [
+    Variable(workspaceId),
+    Variable(target.id),
+    Variable(query.afterId ?? ''),
+    Variable('\$."${target.labelColumnId}"'),
+    Variable(query.search),
+  ];
+  Future<List<WorkspaceRecord>> _reverseRows(_ReverseQuery input) async {
+    final rows = await database
+        .customSelect(
+          _reverseSql,
+          variables: _reverseVariables(input),
           readsFrom: {database.workspaceTableRecords, database.workspaceTables},
         )
         .get();
-    return _page(rows.map(_record).toList());
+
+    return rows.map(_record).toList();
   }
+
+  List<Variable<Object>> _reverseVariables(_ReverseQuery input) => [
+    Variable(workspaceId),
+    Variable(input.afterId ?? ''),
+    Variable(input.tableId),
+    Variable(input.recordId),
+    Variable(input.recordId),
+  ];
+}
+
+typedef _TargetQuery = ({String search, String? afterId});
+typedef _ReverseQuery = ({String tableId, String recordId, String? afterId});
+
+String _targetId(WorkspaceTable table, String id) {
+  final column = table.columns
+      .where((column) => column.id == id && column.type == .reference)
+      .firstOrNull;
+
+  return column?.targetTableId ?? (throw const WorkspaceTableException());
 }
 
 WorkspaceRecord _record(QueryRow row) => WorkspaceRecord(
   id: row.read<String>('id'),
   tableId: row.read<String>('table_id'),
-  values: (jsonDecode(row.read<String>('values_json')) as Map)
-      .cast<String, Object?>(),
+  values: _values(row),
   revision: row.read<int>('revision'),
 );
-
+Map<String, Object?> _values(QueryRow row) =>
+    (jsonDecode(row.read<String>('values_json')) as Map)
+        .cast<String, Object?>();
 WorkspaceReferencePage _page(List<WorkspaceRecord> rows) =>
     WorkspaceReferencePage(
-      records: rows.take(50).toList(),
-      nextId: rows.length > 50 ? rows[49].id : null,
+      records: rows.take(_pageSize).toList(),
+      nextId: rows.length > _pageSize ? rows[_pageSize - 1].id : null,
     );
+const _targetSql = '''
+SELECT * FROM workspace_table_records WHERE workspace_id = ?
+      AND table_id = ? AND deleted_at IS NULL AND id > ?
+      AND instr(lower(COALESCE(json_extract(values_json, ?), '')), lower(?)) > 0
+      ORDER BY id LIMIT 51''';
+
+const _reverseSql = r'''
+SELECT DISTINCT r.* FROM workspace_table_records r
+      JOIN workspace_tables t ON t.id = r.table_id AND t.workspace_id = r.workspace_id,
+      json_each(t.columns_json) c
+      WHERE r.workspace_id = ? AND r.deleted_at IS NULL AND t.deleted_at IS NULL
+      AND r.id > ? AND json_extract(c.value, '$.type') = 'reference'
+      AND json_extract(c.value, '$.targetTableId') = ?
+      AND EXISTS (SELECT 1 FROM json_each(r.values_json) v
+        WHERE v.key = json_extract(c.value, '$.id')
+        AND (v.value = ? OR (v.type = 'array' AND EXISTS
+          (SELECT 1 FROM json_each(v.value) a WHERE a.value = ?))))
+      ORDER BY r.id LIMIT 51''';

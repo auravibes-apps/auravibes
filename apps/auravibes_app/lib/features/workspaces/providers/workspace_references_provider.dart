@@ -2,7 +2,6 @@ import 'package:auravibes_app/data/repositories/cloud_workspace_reference_reposi
 import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,7 +29,22 @@ Future<BrowseWorkspaceReferencesUsecase> workspaceReferencesUsecase(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (!ref.mounted || gateway == null) throw const WorkspaceTableException();
+
   return BrowseWorkspaceReferencesUsecase(
-    CloudWorkspaceReferenceRepository(CloudWorkspaceResourceStore(gateway)),
+    CloudWorkspaceReferenceRepository(.new(gateway)),
   );
+}
+
+@riverpod
+Future<WorkspaceRecord> workspaceReferencedRecord(
+  Ref ref,
+  String workspaceId,
+  String tableId,
+  String id,
+) async {
+  final references = await ref.watch(
+    workspaceReferencesUsecaseProvider(workspaceId).future,
+  );
+
+  return await references.record(tableId, id);
 }

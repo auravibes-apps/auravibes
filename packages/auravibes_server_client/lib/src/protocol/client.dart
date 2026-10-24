@@ -208,6 +208,10 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
+    as _iic7z6j2;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_target_request.dart'
+    as _ikdp8816;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
     as _iar0fwau;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
@@ -1092,37 +1096,27 @@ class EndpointWorkspaceReference extends _isc.EndpointRef {
   String get name => 'workspaceReference';
 
   _ida.Future<List<_iar0fwau.WorkspaceResource>> targets(
-    int workspaceId,
-    String sourceTableId,
-    String columnId,
-    String search,
-    String? afterId,
+    _ikdp8816.WorkspaceReferenceTargetRequest request,
   ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
     'workspaceReference',
     'targets',
-    {
-      'workspaceId': workspaceId,
-      'sourceTableId': sourceTableId,
-      'columnId': columnId,
-      'search': search,
-      'afterId': afterId,
-    },
+    {'request': request},
+  );
+
+  _ida.Future<_iar0fwau.WorkspaceResource> record(
+    _iic7z6j2.WorkspaceReferenceRecordRequest request,
+  ) => caller.callServerEndpoint<_iar0fwau.WorkspaceResource>(
+    'workspaceReference',
+    'record',
+    {'request': request},
   );
 
   _ida.Future<List<_iar0fwau.WorkspaceResource>> reverse(
-    int workspaceId,
-    String tableId,
-    String recordId,
-    String? afterId,
+    _iic7z6j2.WorkspaceReferenceRecordRequest request,
   ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
     'workspaceReference',
     'reverse',
-    {
-      'workspaceId': workspaceId,
-      'tableId': tableId,
-      'recordId': recordId,
-      'afterId': afterId,
-    },
+    {'request': request},
   );
 }
 

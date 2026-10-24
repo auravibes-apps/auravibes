@@ -39,10 +39,17 @@ typedef _RecordDraft = ({
 });
 
 abstract final class _RecordActions {
-  static _RecordDraft use(BuildContext context, WorkspaceRecordEditor editor) => (
-    values: useState<Map<String, Object?>>({...editor.record?.values ?? WorkspaceTableConstraints.defaults(editor.table.columns, const {})}),
-    action: WorkspaceTableActions.use(context),
-  );
+  static _RecordDraft use(BuildContext context, WorkspaceRecordEditor editor) =>
+      (
+        values: useState<Map<String, Object?>>({
+          ...editor.record?.values ??
+              WorkspaceTableConstraints.defaults(
+                editor.table.columns,
+                const {},
+              ),
+        }),
+        action: WorkspaceTableActions.use(context),
+      );
 
   static Future<void> save(
     WidgetRef ref,
@@ -119,17 +126,20 @@ class const _RecordFields({
   Widget build(BuildContext context) => Column(
     children: [
       for (final column in table.columns)
-        Column(crossAxisAlignment: .stretch, children: [
-        _RecordValue(
-          table: table,
-          workspaceId: workspaceId,
-          restricted: restricted.contains(column.id),
-          column: column,
-          draft: draft,
-          disabled: disabled,
+        Column(
+          crossAxisAlignment: .stretch,
+          children: [
+            _RecordValue(
+              table: table,
+              workspaceId: workspaceId,
+              restricted: restricted.contains(column.id),
+              column: column,
+              draft: draft,
+              disabled: disabled,
+            ),
+            _RecordConstraintHints(column: column),
+          ],
         ),
-        _RecordConstraintHints(column: column),
-      ]),
     ],
   );
 }
@@ -142,30 +152,15 @@ class const _RecordValue({
   required final ValueNotifier<Map<String, Object?>> draft,
   required final bool disabled,
 }) extends StatelessWidget {
+  Object? get value => draft.value[column.id];
+  bool get present => draft.value.containsKey(column.id);
+  String get identifier => column.id == table.labelColumnId
+      ? 'workspace_record_value'
+      : 'workspace_record_value_${column.id}';
   @override
   Widget build(BuildContext context) => column.type == .reference
-      ? WorkspaceReferenceField(
-          workspaceId: workspaceId,
-          table: table,
-          column: column,
-          value: draft.value[column.id],
-          disabled: disabled,
-          restricted: restricted,
-          onChanged: _change,
-          onUnset: _unset,
-        )
-      : WorkspaceRecordField(
-          column: column,
-          value: draft.value[column.id],
-          present: draft.value.containsKey(column.id),
-          disabled: disabled,
-          identifier: column.id == table.labelColumnId
-              ? 'workspace_record_value'
-              : 'workspace_record_value_${column.id}',
-          onChanged: _change,
-          onUnset: _unset,
-          key: ValueKey(column.id),
-        );
+      ? _ReferenceRecordValue(this)
+      : _ScalarRecordValue(this);
   void _change(Object? value) =>
       draft.value = {...draft.value, column.id: value};
   void _unset() => draft.value = Map.of(draft.value)..remove(column.id);
@@ -180,5 +175,35 @@ class const _RecordConstraintHints({required final WorkspaceColumn column})
         const TextLocale(LocaleKeys.workspace_items_required),
       if (column.isUnique) const TextLocale(LocaleKeys.workspace_items_unique),
     ],
+  );
+}
+
+class const _ReferenceRecordValue(final _RecordValue field)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceReferenceField(
+    workspaceId: field.workspaceId,
+    table: field.table,
+    column: field.column,
+    value: field.value,
+    disabled: field.disabled,
+    restricted: field.restricted,
+    onChanged: field._change,
+    onUnset: field._unset,
+  );
+}
+
+class const _ScalarRecordValue(final _RecordValue field)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceRecordField(
+    column: field.column,
+    value: field.value,
+    present: field.present,
+    disabled: field.disabled,
+    identifier: field.identifier,
+    onChanged: field._change,
+    onUnset: field._unset,
+    key: ValueKey(field.column.id),
   );
 }

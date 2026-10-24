@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
-import 'repositories/workspace_state_repository.dart';
 import 'workspace_table_access.dart';
 
 class const WorkspaceReferenceVisibility(
@@ -15,42 +14,65 @@ class const WorkspaceReferenceVisibility(
     final data = _data(row);
     final table = await _table(data['tableId'] as String);
     if (table == null) return row;
-    final values = (data['values'] as Map).cast<String, Object?>();
+    final restricted = await _restricted(_columns(table));
+
+    return _project(row, data, restricted);
+  }
+
+  Future<List<String>> _restricted(
+    Iterable<Map<String, dynamic>> columns,
+  ) async {
     final restricted = <String>[];
-    for (final column
-        in (_data(table)['columns'] as List).cast<Map<String, dynamic>>()) {
-      if (column['type'] != 'reference') continue;
-      if (await _visible(column['targetTableId'] as String)) continue;
-      final id = column['id'] as String;
-      values.remove(id);
-      restricted.add(id);
+    for (final column in columns) {
+      if (!await _visible(column['targetTableId'] as String)) {
+        restricted.add(column['id'] as String);
+      }
     }
-    return row.copyWith(
-      data: jsonEncode({
-        ...data,
-        'values': values,
-        'restrictedReferenceColumns': restricted,
-      }),
-    );
+
+    return restricted;
   }
 
   Future<bool> _visible(String id) async {
     final table = await _table(id);
     if (table == null) return false;
+
     return await WorkspaceTableAccess(transaction: transaction)
             .visible(session, member, table) !=
         null;
   }
 
   Future<WorkspaceResource?> _table(String id) =>
-      WorkspaceStateRepository().findResource(
+      WorkspaceResource.db.findFirstRow(
         session,
-        workspaceId: member.workspaceId,
-        kind: .table,
-        resourceId: id,
+        where: (row) => _matches(row, id),
         transaction: transaction,
       );
+  Expression _matches(WorkspaceResourceTable row, String id) =>
+      row.workspaceId.equals(member.workspaceId) &
+      row.resourceKind.equals(.table) &
+      row.resourceId.equals(id);
 }
 
+Iterable<Map<String, dynamic>> _columns(WorkspaceResource row) =>
+    (_data(row)['columns'] as List).cast<Map<String, dynamic>>().where(
+      (column) => column['type'] == 'reference',
+    );
+WorkspaceResource _project(
+  WorkspaceResource row,
+  Map<String, dynamic> data,
+  List<String> restricted,
+) => row.copyWith(
+  data: jsonEncode({
+    ...data,
+    'values': _visibleValues(data, restricted),
+    'restrictedReferenceColumns': restricted,
+  }),
+);
+Map<String, Object?> _visibleValues(
+  Map<String, dynamic> data,
+  List<String> restricted,
+) =>
+    (data['values'] as Map).cast<String, Object?>()
+      ..removeWhere((key, _) => restricted.contains(key));
 Map<String, dynamic> _data(WorkspaceResource resource) =>
     jsonDecode(resource.data) as Map<String, dynamic>;

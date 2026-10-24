@@ -6,47 +6,42 @@ import '../../generated/protocol.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_table_access.dart';
 
+const _pageBatch = 51;
+const _maximumSearchLength = 200;
+
 class const WorkspaceReferenceReader(
   final Session session,
   final int workspaceId,
   final String userId,
 ) {
   Future<List<WorkspaceResource>> targets(
-    String sourceId,
-    String columnId,
-    String search,
-    String? afterId,
+    WorkspaceReferenceTargetRequest input,
   ) => session.db.transaction((transaction) async {
-    if (search.length > 200) _invalid();
     final reader = await _reader(transaction);
-    final source = await reader.visible(.table, sourceId);
-    final columns = (_data(source)['columns'] as List)
-        .cast<Map<String, dynamic>>();
-    final column = columns
-        .where(
-          (column) => column['id'] == columnId && column['type'] == 'reference',
-        )
-        .firstOrNull;
-    if (column == null) _invalid();
-    final target = await reader.visible(
-      .table,
-      column['targetTableId'] as String,
-    );
-    return reader.targets(target, search, afterId);
-  });
 
+    return await reader.targets(input);
+  });
+  Future<WorkspaceResource> record(WorkspaceReferenceRecordRequest input) =>
+      session.db.transaction((transaction) async {
+        final reader = await _reader(transaction);
+
+        return await reader.record(input);
+      });
   Future<List<WorkspaceResource>> reverse(
-    String tableId,
-    String recordId,
-    String? afterId,
+    WorkspaceReferenceRecordRequest input,
   ) => session.db.transaction((transaction) async {
     final reader = await _reader(transaction);
-    final record = await reader.visible(.tableRecord, recordId);
-    if (_data(record)['tableId'] != tableId) _invalid();
-    return reader.reverse(tableId, recordId, afterId);
-  });
+    final _ = await reader.record(input);
 
+    return await reader.reverse(input);
+  });
   Future<_Reader> _reader(Transaction transaction) async {
+    final member = await _member(transaction);
+
+    return _Reader(session, member, transaction);
+  }
+
+  Future<WorkspaceMember> _member(Transaction transaction) async {
     final repository = WorkspaceStateRepository();
     final workspace = await repository.findWorkspace(
       session,
@@ -61,7 +56,8 @@ class const WorkspaceReferenceReader(
       transaction: transaction,
     );
     if (workspace == null || member == null) _denied();
-    return _Reader(session, member, transaction);
+
+    return member;
   }
 }
 
@@ -70,95 +66,175 @@ class const _Reader(
   final WorkspaceMember member,
   final Transaction transaction,
 ) {
+  _QueryRows get query => _QueryRows(session, member, transaction);
+  WorkspaceTableAccess get access =>
+      WorkspaceTableAccess(transaction: transaction);
   Future<WorkspaceResource> visible(
     WorkspaceResourceKind kind,
     String id,
   ) async {
-    final row = await WorkspaceStateRepository().findResource(
-      session,
-      workspaceId: member.workspaceId,
-      kind: kind,
-      resourceId: id,
-      transaction: transaction,
-    );
+    final row = await _resource(kind, id);
     if (row == null || row.deletedAt != null) _denied();
-    final result = await WorkspaceTableAccess(transaction: transaction)
-        .visible(session, member, row);
-    if (result == null) _denied();
-    return result;
+    final result = await access.visible(session, member, row);
+
+    return result ?? _denied();
   }
 
   Future<List<WorkspaceResource>> targets(
-    WorkspaceResource table,
-    String search,
-    String? afterId,
-  ) => _query(_targetSql, {
-    'tableId': table.resourceId,
-    'label': _data(table)['labelColumnId'],
-    'search': search.toLowerCase(),
-    'afterId': afterId ?? '',
-  });
+    WorkspaceReferenceTargetRequest input,
+  ) async {
+    if (input.search.length > _maximumSearchLength) _invalid();
+    final target = await _target(input);
+    final rows = await query.read(_targetSql, _targetParameters(target, input));
+
+    return await query.project(rows);
+  }
+
+  Future<WorkspaceResource> record(
+    WorkspaceReferenceRecordRequest input,
+  ) async {
+    final row = await visible(.tableRecord, input.recordId);
+    if (_data(row)['tableId'] != input.tableId) _invalid();
+
+    return row;
+  }
 
   Future<List<WorkspaceResource>> reverse(
-    String tableId,
-    String recordId,
-    String? afterId,
+    WorkspaceReferenceRecordRequest input,
   ) async {
     final rows = <WorkspaceResource>[];
-    var cursor = afterId ?? '';
-    while (rows.length < 51) {
-      final candidates = await _query(_reverseSql, {
-        'tableId': tableId,
-        'recordId': recordId,
-        'afterId': cursor,
-      }, project: false);
-      for (final row in candidates) {
-        final visible = await WorkspaceTableAccess(transaction: transaction)
-            .visible(session, member, row);
-        if (visible != null) rows.add(visible);
-        if (rows.length == 51) break;
-      }
-      if (candidates.length < 51) break;
+    var cursor = input.afterId;
+    while (rows.length < _pageBatch) {
+      final candidates = await _reversePage(input, cursor);
+      await _append(rows, candidates);
+      if (candidates.length < _pageBatch) break;
       cursor = candidates.last.resourceId;
     }
+
     return rows;
   }
 
-  Future<List<WorkspaceResource>> _query(
+  Future<WorkspaceResource?> _resource(WorkspaceResourceKind kind, String id) =>
+      WorkspaceStateRepository().findResource(
+        session,
+        workspaceId: member.workspaceId,
+        kind: kind,
+        resourceId: id,
+        transaction: transaction,
+      );
+  Future<WorkspaceResource> _target(
+    WorkspaceReferenceTargetRequest input,
+  ) async {
+    final source = await visible(.table, input.sourceTableId);
+
+    return await visible(.table, _targetId(source, input.columnId));
+  }
+
+  Future<List<WorkspaceResource>> _reversePage(
+    WorkspaceReferenceRecordRequest input,
+    String? cursor,
+  ) => query.read(_reverseSql, _reverseParameters(input, cursor));
+
+  Future<void> _append(
+    List<WorkspaceResource> rows,
+    List<WorkspaceResource> candidates,
+  ) async {
+    for (final row in await query.project(candidates)) {
+      rows.add(row);
+      if (rows.length == _pageBatch) break;
+    }
+  }
+}
+
+class const _QueryRows(
+  final Session session,
+  final WorkspaceMember member,
+  final Transaction transaction,
+) {
+  Future<List<WorkspaceResource>> read(
     String sql,
-    Map<String, Object?> values, {
-    bool project = true,
-  }) async {
+    Map<String, Object?> values,
+  ) async {
+    final ids = await _ids(sql, values);
+    if (ids.isEmpty) return [];
+    final rows = await _resources(ids);
+
+    return _ordered(rows, ids);
+  }
+
+  Future<List<WorkspaceResource>> project(List<WorkspaceResource> rows) async {
+    final result = <WorkspaceResource>[];
+    final access = WorkspaceTableAccess(transaction: transaction);
+    for (final row in rows) {
+      final visible = await access.visible(session, member, row);
+      if (visible != null) result.add(visible);
+    }
+
+    return result;
+  }
+
+  Future<List<String>> _ids(String sql, Map<String, Object?> values) async {
     final result = await session.db.unsafeQuery(
       sql,
       parameters: .named({...values, 'workspaceId': member.workspaceId}),
       transaction: transaction,
     );
-    final ids = result
-        .map((row) => row.toColumnMap()['resourceId'] as String)
-        .toList();
-    if (ids.isEmpty) return [];
-    final rows = await WorkspaceResource.db.find(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(member.workspaceId) &
-          row.resourceKind.equals(.tableRecord) &
-          row.resourceId.inSet(ids.toSet()),
-      transaction: transaction,
-    );
+
+    return result.map(_rowId).toList();
+  }
+
+  Future<List<WorkspaceResource>> _resources(List<String> ids) =>
+      WorkspaceResource.db.find(
+        session,
+        where: (row) => _matches(row, ids),
+        transaction: transaction,
+      );
+  Expression _matches(WorkspaceResourceTable row, List<String> ids) =>
+      row.workspaceId.equals(member.workspaceId) &
+      row.resourceKind.equals(.tableRecord) &
+      row.resourceId.inSet(ids.toSet());
+  List<WorkspaceResource> _ordered(
+    List<WorkspaceResource> rows,
+    List<String> ids,
+  ) {
     final indexed = {for (final row in rows) row.resourceId: row};
-    if (!project) return [for (final id in ids) ?indexed[id]];
-    final visible = <WorkspaceResource>[];
-    for (final id in ids) {
-      final row = indexed[id];
-      if (row == null) continue;
-      final projected = await WorkspaceTableAccess(transaction: transaction).visible(session, member, row);
-      if (projected != null) visible.add(projected);
-    }
-    return visible;
+
+    return [for (final id in ids) ?indexed[id]];
   }
 }
 
+String _targetId(WorkspaceResource source, String columnId) {
+  final columns = (_data(source)['columns'] as List)
+      .cast<Map<String, dynamic>>();
+  final column = columns
+      .where((column) => _referenceColumn(column, columnId))
+      .firstOrNull;
+  if (column == null) _invalid();
+
+  return column['targetTableId'] as String;
+}
+
+bool _referenceColumn(Map<String, dynamic> column, String id) =>
+    column['id'] == id && column['type'] == 'reference';
+Map<String, Object?> _targetParameters(
+  WorkspaceResource table,
+  WorkspaceReferenceTargetRequest input,
+) => {
+  'tableId': table.resourceId,
+  'label': _data(table)['labelColumnId'],
+  'search': input.search.toLowerCase(),
+  'afterId': input.afterId ?? '',
+};
+Map<String, Object?> _reverseParameters(
+  WorkspaceReferenceRecordRequest input,
+  String? cursor,
+) => {
+  'tableId': input.tableId,
+  'recordId': input.recordId,
+  'afterId': cursor ?? '',
+};
+String _rowId(DatabaseResultRow row) =>
+    row.toColumnMap()['resourceId'] as String;
 const _targetSql = '''SELECT "resourceId" FROM workspace_resource
 WHERE "workspaceId" = @workspaceId AND "resourceKind" = 'tableRecord'
 AND "deletedAt" IS NULL AND "resourceId" > @afterId

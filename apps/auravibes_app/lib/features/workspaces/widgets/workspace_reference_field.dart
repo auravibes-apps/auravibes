@@ -1,13 +1,14 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_picker.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+
+const _pickerWidth = 720.0;
+const _pickerHeight = 620.0;
 
 class const WorkspaceReferenceField({
   required final String workspaceId,
@@ -19,83 +20,89 @@ class const WorkspaceReferenceField({
   required final ValueChanged<Object?> onChanged,
   required final VoidCallback onUnset,
   super.key,
-}) extends ConsumerWidget {
+}) extends StatelessWidget {
+  List<String> get ids => WorkspaceReferenceValue.ids(value);
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Column(
+  Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
       Text(column.name),
       if (restricted)
         const TextLocale(LocaleKeys.workspace_items_reference_unavailable)
-      else ...[
-        for (final id in WorkspaceReferenceValue.ids(value))
-          _SelectedRecord(
-            workspaceId: workspaceId,
-            tableId: column.targetTableId ?? '',
-            id: id,
-          ),
-        AuraButton(
-          onPressed: disabled ? null : () => _pick(context),
-          child: const TextLocale(LocaleKeys.workspace_items_reference_choose),
-        ),
-        if (!disabled && value != null)
-          AuraButton(
-            onPressed: onUnset,
-            child: const TextLocale(
-              LocaleKeys.workspace_items_reference_remove,
-            ),
-          ),
-      ],
+      else
+        _ReferenceChoices(field: this),
     ],
   );
-
   Future<void> _pick(BuildContext context) => showDialog<void>(
     context: context,
-    builder: (context) => Dialog(
-      child: SizedBox(
-        width: 720,
-        height: 620,
-        child: WorkspaceReferencePicker(
-          workspaceId: workspaceId,
-          table: table,
-          column: column,
-          selected: WorkspaceReferenceValue.ids(value),
-          onSelected: (ids) {
-            if (ids.isEmpty) {
-              onUnset();
-            } else {
-              onChanged(column.referenceMultiple ? ids : ids.single);
-            }
-            Navigator.of(context).pop();
-          },
+    builder: (_) => Dialog(child: _ReferencePickerDialog(field: this)),
+  );
+  void _selected(BuildContext context, List<String> ids) {
+    if (ids.isEmpty) {
+      onUnset();
+    } else {
+      onChanged(column.referenceMultiple ? ids : ids.single);
+    }
+    Navigator.of(context).pop();
+  }
+}
+
+class const _ReferenceChoices({required final WorkspaceReferenceField field})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      for (final id in field.ids)
+        WorkspaceReferenceLabel(
+          workspaceId: field.workspaceId,
+          targetTableId: field.column.targetTableId ?? '',
+          recordId: id,
         ),
-      ),
-    ),
+      _ReferenceActions(field: field),
+    ],
   );
 }
 
-class const _SelectedRecord({
-  required final String workspaceId,
-  required final String tableId,
-  required final String id,
-}) extends ConsumerWidget {
+class const _ReferenceActions({required final WorkspaceReferenceField field})
+    extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final table = ref.watch(workspaceTableProvider(workspaceId, tableId));
-    final rows = ref.watch(workspaceTableRecordsProvider(workspaceId, tableId));
-    return switch ((table, rows)) {
-      (AsyncData(value: final table), AsyncData(value: final records)) => Text(
-        records
-                .where((row) => row.id == id)
-                .firstOrNull
-                ?.values[table.labelColumnId]
-                ?.toString() ??
-            LocaleKeys.workspace_items_reference_unavailable.tr(),
+  Widget build(BuildContext context) => Column(
+    children: [
+      AuraButton(
+        onPressed: () => field._pick(context),
+        child: const TextLocale(LocaleKeys.workspace_items_reference_choose),
+        disabled: field.disabled,
       ),
-      (AsyncError(), _) || (_, AsyncError()) => const TextLocale(
-        LocaleKeys.workspace_items_reference_unavailable,
-      ),
-      _ => const CircularProgressIndicator(),
-    };
-  }
+      if (!field.disabled && field.value != null)
+        AuraButton(
+          onPressed: field.onUnset,
+          child: const TextLocale(LocaleKeys.workspace_items_reference_remove),
+        ),
+    ],
+  );
+}
+
+class const _ReferencePickerDialog({
+  required final WorkspaceReferenceField field,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: _pickerWidth,
+    height: _pickerHeight,
+    child: _ReferencePickerContent(field: field),
+  );
+}
+
+class const _ReferencePickerContent({
+  required final WorkspaceReferenceField field,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceReferencePicker(
+    workspaceId: field.workspaceId,
+    table: field.table,
+    column: field.column,
+    selected: field.ids,
+    onSelected: (ids) => field._selected(context, ids),
+  );
 }

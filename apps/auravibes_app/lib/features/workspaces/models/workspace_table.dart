@@ -47,16 +47,16 @@ class const WorkspaceColumn({
   final bool referenceMultiple = false,
 }) {
   factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
-    id: data['id'] as String,
-    name: data['name'] as String,
+    id: _columnString(data, 'id'),
+    name: _columnString(data, 'name'),
     type: _columnType(data),
     options: _columnOptions(data),
-    isRequired: data['required'] as bool? ?? false,
-    isUnique: data['unique'] as bool? ?? false,
+    isRequired: _columnFlag(data, 'required'),
+    isUnique: _columnFlag(data, 'unique'),
     defaultValue: data['defaultValue'],
     timeZone: _columnTimeZone(data),
     targetTableId: data['targetTableId'] as String?,
-    referenceMultiple: data['referenceMultiple'] as bool? ?? false,
+    referenceMultiple: _columnFlag(data, 'referenceMultiple'),
   );
 
   WorkspaceColumn renamed(String value) => WorkspaceColumn(
@@ -166,4 +166,9 @@ WorkspaceColumnType _columnType(Map<String, dynamic> data) =>
     WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text');
 
 String _columnTimeZone(Map<String, dynamic> data) =>
-  data['timeZone'] as String? ?? 'UTC';
+    data['timeZone'] as String? ?? 'UTC';
+
+String _columnString(Map<String, dynamic> data, String key) =>
+    data[key] as String;
+bool _columnFlag(Map<String, dynamic> data, String key) =>
+    data[key] as bool? ?? false;
