@@ -76,7 +76,7 @@ class WorkspaceToolsRepository(final AppDatabase _database)
   Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
-    String? config,
+    String config,
   ) async {
     try {
       final tables = await _dao.patchWorkspaceToolConfig(
