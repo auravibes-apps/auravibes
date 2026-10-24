@@ -7,7 +7,7 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 - Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
 - Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
 - Active implementers: #1675 Directory/table browsing, #1673 relationships, #1688 Connector writes. Each owns a separate worktree.
-- Latest published verified head: `ea6dcb2f4`; draft PR #1693 remains draft. Parent/final CI and remaining children are incomplete.
+- Latest published verified head: `69f361501`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933); current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
 
@@ -314,3 +314,5 @@ Clean committed generated-artifact gate at `fd7c849d` passes, including Serverpo
 - Evidence: `/tmp/auravibes-1665-ui-evidence/constraints-{violation,default-reopened,duplicate}-0.png`, corresponding trees and final logs. Logged errors are the captured Marionette scroll/tap selector failures; duplicate rejection is an expected WorkspaceTableException warning. Approved Computer fallback scrolled the exact isolated window and disambiguated default checkbox. Own bridges (including the temporary lost-handle bridge) and exact runner stopped; manifest removal verified.
 - #1688 started after native #1685 closure/preflight in managed `workspace-writes-1688/auravibes`, based on `6b2edfeb4`; owns durable Connector write outcomes/approval/reconciliation with deterministic provider fakes. Prep pointers: `/tmp/auravibes-1688-frontier-notes.md`. No production provider calls are permitted.
 - Hosted full Flutter CI at `d6d991db` passed (40056284955). At latest published `ea6dcb2f`, lint/harness passed; Flutter Test CI40057406933 was still running when last checked. Never infer full CI success from the first two workflow results.
+
+Publication checkpoint: root `69f361501e5429d0408f21e987837d8d944f3af7` pushed after dry-run and remote-SHA verification. Full Flutter Test CI40057406933 at `ea6dcb2f4` subsequently completed successfully. Current-head CI remains pending. Both isolated UI manifests are gone; no UI app or own bridge remains running.
