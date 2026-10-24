@@ -2028,6 +2028,18 @@
     "default_value": "Default for new records",
     "constraint_violations": "Resolve these records before applying this change. Existing values will not be discarded.",
     "correct_records": "Return to table to correct records",
-    "replacement_column": "Create a separate replacement column"
+    "replacement_column": "Create a separate replacement column",
+    "type_reference": "Linked record",
+    "reference_table": "Target table",
+    "reference_multiple": "Allow multiple records",
+    "reference_choose": "Choose records",
+    "reference_search": "Search records",
+    "reference_details": "Open details",
+    "reference_reverse": "Related records",
+    "reference_unavailable": "Linked records are unavailable with your current access.",
+    "reference_next": "Next page",
+    "reference_previous": "First page",
+    "reference_empty": "No matching records",
+    "reference_remove": "Clear selection"
   }
 }

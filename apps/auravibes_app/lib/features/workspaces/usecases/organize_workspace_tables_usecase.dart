@@ -64,7 +64,7 @@ class const OrganizeWorkspaceTablesUsecase(
     required Map<String, Object?> values,
   }) {
     _requireEdit(table);
-    WorkspaceColumnValidation.values(table.columns, values);
+    WorkspaceColumnValidation.values(_editableColumns(table, record), values);
     if (record.tableId != table.id) {
       throw const WorkspaceTableException();
     }
@@ -114,3 +114,10 @@ void _requireManage(WorkspaceTable table) {
 void _requireEdit(WorkspaceTable table) {
   if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
 }
+
+List<WorkspaceColumn> _editableColumns(
+  WorkspaceTable table,
+  WorkspaceRecord record,
+) => table.columns
+    .where((column) => !record.restrictedReferenceColumns.contains(column.id))
+    .toList();

@@ -1,0 +1,7 @@
+class: WorkspaceReferenceTargetRequest
+fields:
+  workspaceId: int
+  sourceTableId: String
+  columnId: String
+  search: String, default=''
+  afterId: String?

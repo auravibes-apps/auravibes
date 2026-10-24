@@ -2028,6 +2028,18 @@
     "default_value": "Valor predeterminado para nuevos registros",
     "constraint_violations": "Corrige estos registros antes de aplicar el cambio. Los valores existentes se conservarán.",
     "correct_records": "Volver a la tabla para corregir registros",
-    "replacement_column": "Crear una columna de reemplazo separada"
+    "replacement_column": "Crear una columna de reemplazo separada",
+    "type_reference": "Registro relacionado",
+    "reference_table": "Tabla de destino",
+    "reference_multiple": "Permitir varios registros",
+    "reference_choose": "Elegir registros",
+    "reference_search": "Buscar registros",
+    "reference_details": "Abrir detalles",
+    "reference_reverse": "Registros relacionados",
+    "reference_unavailable": "Los registros relacionados no están disponibles con tu acceso actual.",
+    "reference_next": "Página siguiente",
+    "reference_previous": "Primera página",
+    "reference_empty": "No hay registros coincidentes",
+    "reference_remove": "Borrar selección"
   }
 }

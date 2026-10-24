@@ -208,6 +208,10 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
+    as _iic7z6j2;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_target_request.dart'
+    as _ikdp8816;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
     as _iar0fwau;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
@@ -1085,6 +1089,38 @@ class EndpointWorkspaceStream extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceReference extends _isc.EndpointRef {
+  EndpointWorkspaceReference(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceReference';
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> targets(
+    _ikdp8816.WorkspaceReferenceTargetRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'targets',
+    {'request': request},
+  );
+
+  _ida.Future<_iar0fwau.WorkspaceResource> record(
+    _iic7z6j2.WorkspaceReferenceRecordRequest request,
+  ) => caller.callServerEndpoint<_iar0fwau.WorkspaceResource>(
+    'workspaceReference',
+    'record',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> reverse(
+    _iic7z6j2.WorkspaceReferenceRecordRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'reverse',
+    {'request': request},
+  );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceSecret extends _isc.EndpointRef {
   EndpointWorkspaceSecret(_isc.EndpointCaller caller) : super(caller);
 
@@ -1348,6 +1384,7 @@ class Client extends _isc.ServerpodClientShared {
     object = EndpointObject(this);
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
+    workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
     cloudWorkspace = EndpointCloudWorkspace(this);
@@ -1378,6 +1415,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceStream workspaceStream;
 
+  late final EndpointWorkspaceReference workspaceReference;
+
   late final EndpointWorkspaceSecret workspaceSecret;
 
   late final EndpointWorkspaceState workspaceState;
@@ -1400,6 +1439,7 @@ class Client extends _isc.ServerpodClientShared {
     'object': object,
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
+    'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,
     'cloudWorkspace': cloudWorkspace,

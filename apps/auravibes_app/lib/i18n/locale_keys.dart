@@ -2639,4 +2639,28 @@ abstract class LocaleKeys {
       'workspace_items.correct_records';
   static const workspace_items_replacement_column =
       'workspace_items.replacement_column';
+  static const workspace_items_type_reference =
+      'workspace_items.type_reference';
+  static const workspace_items_reference_table =
+      'workspace_items.reference_table';
+  static const workspace_items_reference_multiple =
+      'workspace_items.reference_multiple';
+  static const workspace_items_reference_choose =
+      'workspace_items.reference_choose';
+  static const workspace_items_reference_search =
+      'workspace_items.reference_search';
+  static const workspace_items_reference_details =
+      'workspace_items.reference_details';
+  static const workspace_items_reference_reverse =
+      'workspace_items.reference_reverse';
+  static const workspace_items_reference_unavailable =
+      'workspace_items.reference_unavailable';
+  static const workspace_items_reference_next =
+      'workspace_items.reference_next';
+  static const workspace_items_reference_previous =
+      'workspace_items.reference_previous';
+  static const workspace_items_reference_empty =
+      'workspace_items.reference_empty';
+  static const workspace_items_reference_remove =
+      'workspace_items.reference_remove';
 }

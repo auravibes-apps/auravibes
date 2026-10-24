@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_target.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -38,6 +39,7 @@ typedef _ColumnFields = ({
   TextEditingController name,
   TextEditingController options,
   ValueNotifier<String> timeZone,
+  _ColumnReferenceDraft reference,
   ValueNotifier<WorkspaceColumnType> type,
   WorkspaceColumnConstraintDraft constraints,
 });
@@ -114,9 +116,11 @@ abstract final class _ColumnActions {
     options: useTextEditingController(text: column?.options.join('\n') ?? ''),
     type: useState(column?.type ?? WorkspaceColumnType.text),
     timeZone: useState(column?.timeZone ?? 'UTC'),
+    reference: _referenceDraft(column),
   );
   static WorkspaceColumn _column(String id, _ColumnFields fields) {
     final constraints = fields.constraints;
+    final reference = _referenceConfiguration(fields);
 
     return WorkspaceColumn(
       id: id,
@@ -127,6 +131,8 @@ abstract final class _ColumnActions {
       isUnique: constraints.unique.value,
       defaultValue: constraints.defaultValue.value,
       timeZone: fields.timeZone.value,
+      targetTableId: reference.tableId,
+      referenceMultiple: reference.multiple,
     );
   }
 
@@ -162,15 +168,11 @@ class const _ColumnInputs({
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      _ColumnName(
-        controller: draft.fields.name,
-        disabled: draft.action.pending,
-      ),
-      _ColumnDraftType(editor: editor, draft: draft),
-      _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
+      _ColumnBasicInputs(editor: editor, draft: draft),
       _ColumnConstraintInputs(editor: editor, draft: draft),
       _ColumnPreviewResult(editor: editor, draft: draft),
       _ColumnTimeZone(draft: draft),
+      _ColumnDraftReference(editor: editor, draft: draft),
     ],
   );
 }
@@ -316,4 +318,53 @@ class const _ColumnTimeZone({required final _ColumnDraft draft})
   Widget build(BuildContext context) => draft.fields.type.value == .timestamp
       ? _TimeZoneInput(fields: draft.fields, disabled: draft.action.pending)
       : const SizedBox.shrink();
+}
+
+typedef _ColumnReferenceDraft = ({
+  ValueNotifier<String?> tableId,
+  ValueNotifier<bool> multiple,
+});
+_ColumnReferenceDraft _referenceDraft(WorkspaceColumn? column) => (
+  tableId: useState(column?.targetTableId),
+  multiple: useState(column?.referenceMultiple ?? false),
+);
+({String? tableId, bool multiple}) _referenceConfiguration(
+  _ColumnFields fields,
+) => fields.type.value == .reference
+    ? (
+        tableId: fields.reference.tableId.value,
+        multiple: fields.reference.multiple.value,
+      )
+    : (tableId: null, multiple: false);
+
+class const _ColumnDraftReference({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => draft.fields.type.value != .reference
+      ? const SizedBox.shrink()
+      : WorkspaceReferenceTarget(
+          workspaceId: editor.workspaceId,
+          targetTableId: draft.fields.reference.tableId,
+          multiple: draft.fields.reference.multiple,
+          disabled: draft.action.pending,
+        );
+}
+
+class const _ColumnBasicInputs({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _ColumnName(
+        controller: draft.fields.name,
+        disabled: draft.action.pending,
+      ),
+      _ColumnDraftType(editor: editor, draft: draft),
+      _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
+    ],
+  );
 }

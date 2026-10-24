@@ -1,0 +1,6 @@
+class: WorkspaceReferenceRecordRequest
+fields:
+  workspaceId: int
+  tableId: String
+  recordId: String
+  afterId: String?
