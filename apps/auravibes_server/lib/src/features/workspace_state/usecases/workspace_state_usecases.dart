@@ -19,6 +19,7 @@ import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
 import '../workspace_table_page_reader.dart';
+import '../workspace_table_duplication.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -209,6 +210,23 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     }
   }
 
+  Future<PatchWorkspaceStateResponse> duplicateTable(
+    Session session, {
+    required String userId,
+    required DuplicateWorkspaceItemRequest request,
+  }) async {
+    WorkspaceTableDuplication.validate(request);
+    final input = (
+      request: request,
+      userId: userId,
+      hash: await _tableCopyHash(request),
+    );
+
+    return session.db.transaction(
+      (transaction) => _duplicateTable(session, input, transaction),
+    );
+  }
+
   Future<PatchWorkspaceStateResponse> duplicateAgent(
     Session session, {
     required String userId,
@@ -308,6 +326,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     return await _projectBatch(context, response);
   }
 
+  // Copying preserves missing cells rather than applying defaults added later.
   WorkspaceRecordMutationBatch _recordBatch(_OperationCommitContext context) =>
       WorkspaceRecordMutationBatch(
         _repository,
@@ -315,6 +334,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         context.workspaceId,
         context.transaction,
         context.metadata.userId,
+        applyDefaults: context.metadata.endpoint != _tableCopyEndpoint,
       );
 
   Future<List<WorkspaceResource>> _applyBatch(
@@ -343,6 +363,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     context.transaction,
     userId: context.metadata.userId,
     deferRecordState: true,
+    applyRecordDefaults: context.metadata.endpoint != _tableCopyEndpoint,
   );
 
   Future<PatchWorkspaceStateResponse> _emitBatch(
@@ -1357,6 +1378,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required String userId,
     ({String? value})? credentialSecret,
     bool deferRecordState = false,
+    bool applyRecordDefaults = true,
   }) async {
     if (operation.resourceId.isEmpty) {
       throw CloudWorkspaceException(
@@ -1410,6 +1432,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           transaction,
           userId,
           deferRecordState: deferRecordState,
+          applyDefaults: applyRecordDefaults,
         ).validate(operation, decoded, existing);
         if (operation.resourceKind == WorkspaceResourceKind.file) {
           await ObjectFileMutation(
@@ -1532,18 +1555,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String endpoint,
     String requestId,
     Transaction transaction,
-  ) => WorkspaceMutationReceipt.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.actorUserId.equals(userId) &
-        t.scopeKey.equals(
-          WorkspaceResourceValidation.receiptScopeKey(workspaceId),
-        ) &
-        t.endpoint.equals(endpoint) &
-        t.requestId.equals(requestId),
-    transaction: transaction,
-  ).then(WorkspaceHistoryReceipts.available);
+  ) => WorkspaceMutationReceipt.db
+      .findFirstRow(
+        session,
+        where: (t) =>
+            t.workspaceId.equals(workspaceId) &
+            t.actorUserId.equals(userId) &
+            t.scopeKey.equals(
+              WorkspaceResourceValidation.receiptScopeKey(workspaceId),
+            ) &
+            t.endpoint.equals(endpoint) &
+            t.requestId.equals(requestId),
+        transaction: transaction,
+      )
+      .then(WorkspaceHistoryReceipts.available);
   Future<void> _saveReceipt(
     Session session, {
     required int workspaceId,
@@ -1597,6 +1622,115 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     );
   }
 
+  Future<PatchWorkspaceStateResponse> _duplicateTable(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) async {
+    final context = await _tableCopyContext(session, input, transaction);
+    final copy = context.copy;
+    final source = await copy.source();
+    await copy.requireTarget();
+    final replay = await _tableCopyReplay(session, input, context);
+    if (replay != null) return replay;
+
+    final operations = await copy.operations(source);
+    await copy.requireOperations(operations);
+
+    return await _commitTableCopy(session, input, context, operations);
+  }
+
+  Future<_TableCopyContext> _tableCopyContext(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) async {
+    final _ = await _tableCopyMember(session, input, transaction);
+    final workspace = await _requireLockedWorkspace(
+      session,
+      input.request.workspaceId,
+      transaction,
+    );
+    final member = await _tableCopyMember(session, input, transaction);
+
+    return (
+      workspace: workspace,
+      member: member,
+      transaction: transaction,
+      copy: _tableCopyHelper(session, input, transaction),
+    );
+  }
+
+  WorkspaceTableDuplication _tableCopyHelper(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) => .new(_repository, session, input.request, transaction);
+
+  Future<WorkspaceMember> _tableCopyMember(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) async {
+    final member = await _authorize(
+      session,
+      input.request.workspaceId,
+      input.userId,
+      transaction: transaction,
+    );
+    if (member.role != WorkspaceRoles.owner) {
+      throw CloudWorkspaceException(code: .permissionDenied);
+    }
+
+    return member;
+  }
+
+  Future<PatchWorkspaceStateResponse?> _tableCopyReplay(
+    Session session,
+    _TableCopyInput input,
+    _TableCopyContext context,
+  ) async {
+    final receipt = await _tableCopyReceipt(session, input, context);
+    if (receipt == null) return null;
+    if (receipt.requestHash != input.hash) _idempotencyConflict();
+    final response = _copyResponse(receipt);
+    await context.copy.requireLiveTargets(response.resources);
+
+    return await _visiblePatch(
+      session,
+      context.member,
+      context.transaction,
+      response,
+    );
+  }
+
+  Future<WorkspaceMutationReceipt?> _tableCopyReceipt(
+    Session session,
+    _TableCopyInput input,
+    _TableCopyContext context,
+  ) => _findReceipt(
+    session,
+    input.request.workspaceId,
+    input.userId,
+    _tableCopyEndpoint,
+    input.request.requestId,
+    context.transaction,
+  );
+
+  Future<PatchWorkspaceStateResponse> _commitTableCopy(
+    Session session,
+    _TableCopyInput input,
+    _TableCopyContext context,
+    List<WorkspacePatchOperation> operations,
+  ) => _commitOperations(
+    session,
+    workspace: context.workspace,
+    workspaceId: input.request.workspaceId,
+    metadata: _tableCopyMetadata(input),
+    operations: operations,
+    transaction: context.transaction,
+  );
+
   String _suffix(String secret) =>
       secret.length <= 4 ? '••••' : secret.substring(secret.length - 4);
 
@@ -1625,3 +1759,28 @@ typedef _OperationCommitContext = ({
   Transaction transaction,
   DateTime now,
 });
+
+const _tableCopyEndpoint = 'workspaceState.duplicateTable';
+typedef _TableCopyInput = ({
+  DuplicateWorkspaceItemRequest request,
+  String userId,
+  String hash,
+});
+typedef _TableCopyContext = ({
+  CloudWorkspace workspace,
+  WorkspaceMember member,
+  Transaction transaction,
+  WorkspaceTableDuplication copy,
+});
+Future<String> _tableCopyHash(DuplicateWorkspaceItemRequest request) async =>
+    base64UrlEncode(
+      (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
+    );
+PatchWorkspaceStateResponse _copyResponse(WorkspaceMutationReceipt receipt) =>
+    .fromJson(jsonDecode(receipt.responseJson) as Map<String, dynamic>);
+_OperationCommitMetadata _tableCopyMetadata(_TableCopyInput input) => (
+  userId: input.userId,
+  endpoint: _tableCopyEndpoint,
+  requestId: input.request.requestId,
+  hash: input.hash,
+);

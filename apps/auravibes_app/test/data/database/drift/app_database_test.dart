@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -44,43 +46,73 @@ void main() {
       expect(fixture.database.schemaVersion, 41);
     });
 
-    test('schema39 migration preserves records and captures later revisions', () async {
-      final sqliteDb = sqlite.sqlite3.openInMemory()
-        ..userVersion = 39
-        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
-        ..execute("INSERT INTO workspaces VALUES ('existing')");
-      _createHistorySources(sqliteDb);
-      sqliteDb.execute("INSERT INTO message_attachments VALUES ('legacy')");
-      sqliteDb.execute(
-        "INSERT INTO workspace_tables VALUES ('table','existing','Data',NULL,'label','[]',1,1,NULL,0,0)",
-      );
-      sqliteDb.execute(
-        "INSERT INTO workspace_table_records VALUES ('record','existing','table','{}',1,NULL,0,0)",
-      );
-      final database = _MigrationAppDatabase<_MigrationCaseHistory>(
-        connection: NativeDatabase.opened(sqliteDb),
-      );
-      addTearDown(database.close);
-      final legacyAttachment = await database
-          .customSelect(
-            "SELECT id, asset_id FROM message_attachments WHERE id = 'legacy'",
+    test(
+      'schema39 migration preserves records and captures later revisions',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 39
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        _createHistorySources(sqliteDb);
+        sqliteDb.execute('INSERT INTO message_attachments VALUES (?)', [
+          'legacy',
+        ]);
+        sqliteDb
+          ..execute(
+            'INSERT INTO workspace_tables VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            [
+              'table',
+              'existing',
+              'Data',
+              null,
+              'label',
+              '[]',
+              1,
+              1,
+              null,
+              0,
+              0,
+            ],
           )
-          .getSingle();
-      expect(legacyAttachment.read<String>('id'), 'legacy');
-      expect(legacyAttachment.data['asset_id'], isNull);
-      expect(await database.select(database.workspaceRevisions).get(), isEmpty);
-      expect(
-        await database.select(database.workspaceHistoryPolicies).get(),
-        isEmpty,
-      );
-      await database.customStatement(
-        "UPDATE workspace_table_records SET values_json = '{\"label\":\"Changed\"}', revision = 2 WHERE id = 'record'",
-      );
-      final rows = await database.select(database.workspaceRevisions).get();
-      expect(rows.map((row) => row.revision), [1, 2]);
-      expect(rows.map((row) => row.workspaceId), everyElement('existing'));
-      expect(rows.lastOrNull?.data, contains('Changed'));
-    });
+          ..execute(
+            'INSERT INTO workspace_table_records VALUES (?,?,?,?,?,?,?,?)',
+            ['record', 'existing', 'table', '{}', 1, null, 0, 0],
+          );
+        final database = _MigrationAppDatabase<_MigrationCaseHistory>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final legacyAttachment = await database
+            .customSelect(
+              'SELECT id, asset_id FROM message_attachments WHERE id = ?',
+              variables: [const Variable<String>('legacy')],
+            )
+            .getSingle();
+        expect(legacyAttachment.read<String>('id'), 'legacy');
+        expect(legacyAttachment.data['asset_id'], isNull);
+
+        expect(
+          await database.select(database.workspaceRevisions).get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.workspaceHistoryPolicies).get(),
+          isEmpty,
+        );
+        await database.customStatement(
+          'UPDATE workspace_table_records '
+          'SET values_json = ?, revision = 2 WHERE id = ?',
+          [
+            jsonEncode({'label': 'Changed'}),
+            'record',
+          ],
+        );
+        final rows = await database.select(database.workspaceRevisions).get();
+        expect(rows.map((row) => row.revision), [1, 2]);
+        expect(rows.map((row) => row.workspaceId), everyElement('existing'));
+        expect(rows.lastOrNull?.data, contains('Changed'));
+      },
+    );
 
     test(
       'schema38 migration preserves stored data and adds batch receipts',
@@ -1375,17 +1407,20 @@ final class _MigrationCaseHistory;
 
 void _createHistorySources(sqlite.Database database) {
   database.execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)');
-  database.execute(
-    'CREATE TABLE workspace_tables ('
-    'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL, '
-    'parent_id TEXT, label_column_id TEXT NOT NULL, columns_json TEXT NOT NULL, '
-    'schema_revision INTEGER NOT NULL, revision INTEGER NOT NULL, deleted_at INTEGER, '
-    'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
-  );
-  database.execute(
-    'CREATE TABLE workspace_table_records ('
-    'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, table_id TEXT NOT NULL, '
-    'values_json TEXT NOT NULL, revision INTEGER NOT NULL, deleted_at INTEGER, '
-    'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
-  );
+  database
+    ..execute(
+      'CREATE TABLE workspace_tables ( '
+      'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, '
+      'name TEXT NOT NULL, parent_id TEXT, label_column_id TEXT NOT NULL, '
+      'columns_json TEXT NOT NULL, schema_revision INTEGER NOT NULL, '
+      'revision INTEGER NOT NULL, deleted_at INTEGER, '
+      'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
+    )
+    ..execute(
+      'CREATE TABLE workspace_table_records ( '
+      'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, '
+      'table_id TEXT NOT NULL, values_json TEXT NOT NULL, '
+      'revision INTEGER NOT NULL, deleted_at INTEGER, '
+      'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
+    );
 }

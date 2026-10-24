@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_tras
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_history_panel.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_trash_menu.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_panel.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
@@ -121,16 +122,10 @@ void main() {
                       data: MediaQuery.of(context)
                           .copyWith(textScaler: .linear(scale)),
                       child: Builder(
-                        builder: (context) => AuraButton(
-                          onPressed: () => unawaited(
-                            WorkspaceHistoryPanel.open(
-                              context,
-                              'local',
-                              target,
-                            ),
-                          ),
-                          child: const Text('History fixture'),
-                          identifier: 'open_history',
+                        builder: (context) => WorkspaceRecordTrashMenu(
+                          workspaceId: 'local',
+                          record: second,
+                          onTrashed: () => fail('Unexpected record Trash'),
                         ),
                       ),
                     ),
@@ -148,7 +143,15 @@ void main() {
           Finder button(String id) => find.byWidgetPredicate(
             (widget) => widget is AuraButton && widget.identifier == id,
           );
-          await tester.tap(button('open_history'));
+          await tester.tap(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is AuraIconButton &&
+                  widget.identifier == 'workspace_record_overflow',
+            ),
+          );
+          await _settle(tester);
+          await tester.tap(find.text('Revision history'));
           await _settle(tester);
           expect(find.text('Current value'), findsOneWidget);
           await _capture(tester, 'history-$width-$scale');
@@ -182,7 +185,7 @@ void main() {
           );
           unawaited(
             WorkspaceHistoryPanel.open(
-              tester.element(button('open_history')),
+              tester.element(find.byType(WorkspaceRecordTrashMenu)),
               'local',
               target,
               canRestore: false,
@@ -204,207 +207,205 @@ void main() {
           expect(tester.takeException(), isNull);
         },
       );
-      testWidgets(
-        'permanent deletion confirms explicit batch at width $width and text $scale',
-        (tester) async {
-          tester.view.devicePixelRatio = 1;
-          tester.view.physicalSize = .new(width, 800);
-          tester.platformDispatcher.textScaleFactorTestValue = scale;
-          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-          addTearDown(tester.view.resetPhysicalSize);
-          addTearDown(tester.view.resetDevicePixelRatio);
-          final database = AppDatabase(connection: NativeDatabase.memory());
-          addTearDown(database.close);
-          final _ = await database
-              .into(database.workspaces)
-              .insert(
-                WorkspacesCompanion.insert(
-                  id: const .new('local'),
-                  name: 'Local',
-                  type: .local,
-                ),
-              );
-          final tables = OrganizeWorkspaceTablesUsecase(
-            LocalWorkspaceTableRepository(database, 'local'),
-          );
-          final table = await tables.create(name: 'Data', labelName: 'Name');
-          final record = await tables.createRecord(
-            table: table,
-            values: {table.labelColumnId: 'Delete me'},
-          );
-          final trash = ManageWorkspaceTrashUsecase(
-            LocalWorkspaceTrashRepository(database, 'local'),
-          );
-          final history = ManageWorkspaceHistoryUsecase(
-            LocalWorkspaceHistoryRepository(database, 'local'),
-          );
-          final batch = await trash.apply(
-            .new(
-              kind: .record,
-              id: record.id,
-              tableId: table.id,
-              revision: record.revision,
-            ),
-            approve: (_) async => true,
-          );
-          if (batch == null) fail('Expected Trash batch');
-          await tester.runAsync(
-            () => tester.pumpWidget(
-              RepaintBoundary(
-                key: const ValueKey('history_capture'),
-                child: TestableApp(
-                  child: Builder(
-                    builder: (context) => AuraButton(
-                      onPressed: () =>
-                          unawaited(WorkspaceTrashPanel.open(context, 'local')),
-                      child: const Text('Trash fixture'),
-                      identifier: 'open_trash',
-                    ),
+      testWidgets('permanent deletion requires approval at $width / $scale', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = .new(width, 800);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final database = AppDatabase(connection: NativeDatabase.memory());
+        addTearDown(database.close);
+        final _ = await database
+            .into(database.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(
+                id: const .new('local'),
+                name: 'Local',
+                type: .local,
+              ),
+            );
+        final tables = OrganizeWorkspaceTablesUsecase(
+          LocalWorkspaceTableRepository(database, 'local'),
+        );
+        final table = await tables.create(name: 'Data', labelName: 'Name');
+        final record = await tables.createRecord(
+          table: table,
+          values: {table.labelColumnId: 'Delete me'},
+        );
+        final trash = ManageWorkspaceTrashUsecase(
+          LocalWorkspaceTrashRepository(database, 'local'),
+        );
+        final history = ManageWorkspaceHistoryUsecase(
+          LocalWorkspaceHistoryRepository(database, 'local'),
+        );
+        final batch = await trash.apply(
+          .new(
+            kind: .record,
+            id: record.id,
+            tableId: table.id,
+            revision: record.revision,
+          ),
+          approve: (_) async => true,
+        );
+        if (batch == null) fail('Expected Trash batch');
+        await tester.runAsync(
+          () => tester.pumpWidget(
+            RepaintBoundary(
+              key: const ValueKey('history_capture'),
+              child: TestableApp(
+                child: Builder(
+                  builder: (context) => AuraButton(
+                    onPressed: () =>
+                        unawaited(WorkspaceTrashPanel.open(context, 'local')),
+                    child: const Text('Trash fixture'),
+                    identifier: 'open_trash',
                   ),
-                  overrides: [
-                    workspaceHistoryUsecaseProvider('local')
-                        .overrideWith((ref) async => history),
-                    workspaceTrashUsecaseProvider('local')
-                        .overrideWith((ref) async => trash),
-                  ],
-                  workspaceId: 'local',
                 ),
+                overrides: [
+                  workspaceHistoryUsecaseProvider('local')
+                      .overrideWith((ref) async => history),
+                  workspaceTrashUsecaseProvider('local')
+                      .overrideWith((ref) async => trash),
+                ],
+                workspaceId: 'local',
               ),
             ),
-          );
-          Finder button(String id) => find.byWidgetPredicate(
-            (widget) => widget is AuraButton && widget.identifier == id,
-          );
-          await _settle(tester);
-          await tester.tap(button('open_trash'));
-          await _settle(tester);
-          final purge = button('workspace_permanent_delete_${record.id}');
-          await tester.scrollUntilVisible(purge, 200);
-          await tester.tap(purge);
-          final _ = await tester.pump();
-          final _ = await tester.pump(const Duration(milliseconds: 400));
-          await tester.ensureVisible(button('workspace_history_cancel'));
-          await tester.tap(button('workspace_history_cancel'));
-          await _settle(tester);
-          expect((await trash.list()).single.id, batch.id);
-          await tester.tap(purge);
-          final _ = await tester.pump();
-          final _ = await tester.pump(const Duration(milliseconds: 400));
-          await tester.ensureVisible(button('workspace_history_confirm'));
-          await tester.tap(button('workspace_history_confirm'));
-          await _settle(tester);
-          expect(await trash.list(), isEmpty);
-          expect(tester.takeException(), isNull);
-        },
-      );
-      testWidgets(
-        'retention settings persist explicit days and unset at $width text $scale',
-        (tester) async {
-          tester.view.devicePixelRatio = 1;
-          tester.view.physicalSize = .new(width, 800);
-          tester.platformDispatcher.textScaleFactorTestValue = scale;
-          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-          addTearDown(tester.view.resetPhysicalSize);
-          addTearDown(tester.view.resetDevicePixelRatio);
-          final database = AppDatabase(connection: NativeDatabase.memory());
-          addTearDown(database.close);
-          final _ = await database
-              .into(database.workspaces)
-              .insert(
-                WorkspacesCompanion.insert(
-                  id: const .new('local'),
-                  name: 'Local',
-                  type: .local,
-                ),
-              );
-          final tables = OrganizeWorkspaceTablesUsecase(
-            LocalWorkspaceTableRepository(database, 'local'),
-          );
-          final table = await tables.create(name: 'Data', labelName: 'Name');
-          final history = ManageWorkspaceHistoryUsecase(
-            LocalWorkspaceHistoryRepository(database, 'local'),
-          );
-          await tester.runAsync(
-            () => tester.pumpWidget(
-              RepaintBoundary(
-                key: const ValueKey('history_capture'),
-                child: TestableApp(
-                  child: Builder(
-                    builder: (context) => AuraButton(
-                      onPressed: () => unawaited(
-                        WorkspaceHistoryPanel.open(
-                          context,
-                          'local',
-                          .new(
-                            kind: .table,
-                            id: table.id,
-                            revision: table.revision,
-                          ),
+          ),
+        );
+        Finder button(String id) => find.byWidgetPredicate(
+          (widget) => widget is AuraButton && widget.identifier == id,
+        );
+        await _settle(tester);
+        await tester.tap(button('open_trash'));
+        await _settle(tester);
+        final purge = button('workspace_permanent_delete_${record.id}');
+        await tester.scrollUntilVisible(purge, 200);
+        await tester.tap(purge);
+        final _ = await tester.pump();
+        final _ = await tester.pump(const Duration(milliseconds: 400));
+        await tester.ensureVisible(button('workspace_history_cancel'));
+        await tester.tap(button('workspace_history_cancel'));
+        await _settle(tester);
+        expect((await trash.list()).single.id, batch.id);
+        await tester.tap(purge);
+        final _ = await tester.pump();
+        final _ = await tester.pump(const Duration(milliseconds: 400));
+        await tester.ensureVisible(button('workspace_history_confirm'));
+        await tester.tap(button('workspace_history_confirm'));
+        await _settle(tester);
+        expect(await trash.list(), isEmpty);
+        expect(tester.takeException(), isNull);
+      });
+      testWidgets('retention policy persists at $width / $scale', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = .new(width, 800);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final database = AppDatabase(connection: NativeDatabase.memory());
+        addTearDown(database.close);
+        final _ = await database
+            .into(database.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(
+                id: const .new('local'),
+                name: 'Local',
+                type: .local,
+              ),
+            );
+        final tables = OrganizeWorkspaceTablesUsecase(
+          LocalWorkspaceTableRepository(database, 'local'),
+        );
+        final table = await tables.create(name: 'Data', labelName: 'Name');
+        final history = ManageWorkspaceHistoryUsecase(
+          LocalWorkspaceHistoryRepository(database, 'local'),
+        );
+        await tester.runAsync(
+          () => tester.pumpWidget(
+            RepaintBoundary(
+              key: const ValueKey('history_capture'),
+              child: TestableApp(
+                child: Builder(
+                  builder: (context) => AuraButton(
+                    onPressed: () => unawaited(
+                      WorkspaceHistoryPanel.open(
+                        context,
+                        'local',
+                        .new(
+                          kind: .table,
+                          id: table.id,
+                          revision: table.revision,
                         ),
                       ),
-                      child: const Text('History fixture'),
-                      identifier: 'open_policy',
                     ),
+                    child: const Text('History fixture'),
+                    identifier: 'open_policy',
                   ),
-                  overrides: [
-                    workspaceHistoryUsecaseProvider('local')
-                        .overrideWith((ref) async => history),
-                  ],
-                  workspaceId: 'local',
                 ),
+                overrides: [
+                  workspaceHistoryUsecaseProvider('local')
+                      .overrideWith((ref) async => history),
+                ],
+                workspaceId: 'local',
               ),
             ),
-          );
-          Finder button(String id) => find.byWidgetPredicate(
-            (widget) => widget is AuraButton && widget.identifier == id,
-          );
-          final settings = find.byWidgetPredicate(
-            (widget) =>
-                widget is AuraIconButton &&
-                widget.identifier == 'workspace_history_retention',
-          );
-          await _settle(tester);
-          await tester.tap(button('open_policy'));
-          await _settle(tester);
-          await tester.tap(settings);
-          await _settle(tester);
-          await _capture(tester, 'policy-$width-$scale');
-          await tester.enterText(
-            find.byKey(const ValueKey('workspace_history_policy_days')),
-            '1',
-          );
-          await tester.ensureVisible(button('workspace_history_policy_save'));
-          await tester.tap(button('workspace_history_policy_save'));
-          final _ = await tester.pump();
-          final _ = await tester.pump(const Duration(milliseconds: 400));
-          await tester.ensureVisible(button('workspace_history_cancel'));
-          await tester.tap(button('workspace_history_cancel'));
-          await _settle(tester);
-          expect((await history.policy()).days, isNull);
-          await tester.tap(button('workspace_history_policy_save'));
-          final _ = await tester.pump();
-          final _ = await tester.pump(const Duration(milliseconds: 400));
-          await tester.ensureVisible(button('workspace_history_confirm'));
-          await tester.tap(button('workspace_history_confirm'));
-          await _settle(tester);
-          expect((await history.policy()).days, 1);
-          await tester.tap(settings);
-          await _settle(tester);
-          await tester.enterText(
-            find.byKey(const ValueKey('workspace_history_policy_days')),
-            '',
-          );
-          await tester.ensureVisible(button('workspace_history_policy_save'));
-          await tester.tap(button('workspace_history_policy_save'));
-          final _ = await tester.pump();
-          final _ = await tester.pump(const Duration(milliseconds: 400));
-          await tester.ensureVisible(button('workspace_history_confirm'));
-          await tester.tap(button('workspace_history_confirm'));
-          await _settle(tester);
-          expect((await history.policy()).days, isNull);
-          expect(tester.takeException(), isNull);
-        },
-      );
+          ),
+        );
+        Finder button(String id) => find.byWidgetPredicate(
+          (widget) => widget is AuraButton && widget.identifier == id,
+        );
+        final settings = find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraIconButton &&
+              widget.identifier == 'workspace_history_retention',
+        );
+        await _settle(tester);
+        await tester.tap(button('open_policy'));
+        await _settle(tester);
+        await tester.tap(settings);
+        await _settle(tester);
+        await _capture(tester, 'policy-$width-$scale');
+        await tester.enterText(
+          find.byKey(const ValueKey('workspace_history_policy_days')),
+          '1',
+        );
+        await tester.ensureVisible(button('workspace_history_policy_save'));
+        await tester.tap(button('workspace_history_policy_save'));
+        final _ = await tester.pump();
+        final _ = await tester.pump(const Duration(milliseconds: 400));
+        await tester.ensureVisible(button('workspace_history_cancel'));
+        await tester.tap(button('workspace_history_cancel'));
+        await _settle(tester);
+        expect((await history.policy()).days, isNull);
+        await tester.tap(button('workspace_history_policy_save'));
+        final _ = await tester.pump();
+        final _ = await tester.pump(const Duration(milliseconds: 400));
+        await tester.ensureVisible(button('workspace_history_confirm'));
+        await tester.tap(button('workspace_history_confirm'));
+        await _settle(tester);
+        expect((await history.policy()).days, 1);
+        await tester.tap(settings);
+        await _settle(tester);
+        await tester.enterText(
+          find.byKey(const ValueKey('workspace_history_policy_days')),
+          '',
+        );
+        await tester.ensureVisible(button('workspace_history_policy_save'));
+        await tester.tap(button('workspace_history_policy_save'));
+        final _ = await tester.pump();
+        final _ = await tester.pump(const Duration(milliseconds: 400));
+        await tester.ensureVisible(button('workspace_history_confirm'));
+        await tester.tap(button('workspace_history_confirm'));
+        await _settle(tester);
+        expect((await history.policy()).days, isNull);
+        expect(tester.takeException(), isNull);
+      });
     }
   }
 }

@@ -5,8 +5,10 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../workspace_state/domain/workspace_resource_validation.dart';
-import '../workspace_state/workspace_table_access.dart';
+import '../workspace_state/workspace_history_receipts.dart';
 import '../workspace_state/workspace_revision_capture.dart';
+import '../workspace_state/workspace_table_access.dart';
+import '../workspace_state/workspace_table_duplication.dart';
 import 'workspace_view_validation.dart';
 
 class const WorkspaceViewStore(
@@ -19,6 +21,8 @@ class const WorkspaceViewStore(
       _ViewReader(_context).list(parentId, allFolders);
   Future<WorkspaceView> read(String id) => _ViewReader(_context).read(id);
   Future<List<String>> history(String id) => _ViewReader(_context).history(id);
+  Future<WorkspaceView> duplicate(DuplicateWorkspaceItemRequest request) =>
+      _ViewDuplicator(_context).copy(request);
   Future<WorkspaceView> save(WorkspaceViewSaveRequest request) =>
       _ViewWriter(_context).save(request);
   Future<void> authorizeMove(WorkspaceViewMove move) =>
@@ -311,52 +315,70 @@ Never _denied() => throw CloudWorkspaceException(
 
 const _endpoint = 'workspaceView.save';
 
-class const _ViewReceipts(final _ViewContext context) {
-  Future<WorkspaceView?> replay(WorkspaceViewSaveRequest request) async {
-    final receipt = await _find(request.requestId);
+class const _ViewReceipts(
+  final _ViewContext context, {
+  final String endpoint = _endpoint,
+}) {
+  Future<WorkspaceView?> replay(WorkspaceViewSaveRequest request) async =>
+      await replayHash(request.requestId, await _requestHash(request));
+  Future<void> save(
+    WorkspaceViewSaveRequest request,
+    WorkspaceView saved,
+  ) async =>
+      await saveHash(request.requestId, await _requestHash(request), saved);
+
+  Future<WorkspaceView?> replayHash(String requestId, String hash) async {
+    final receipt = await _find(requestId);
     if (receipt == null) return null;
-    if (receipt.requestHash != await _requestHash(request)) _receiptConflict();
+    if (receipt.requestHash != hash) _receiptConflict();
 
     return WorkspaceView.fromJson(
       jsonDecode(receipt.responseJson) as Map<String, dynamic>,
     );
   }
 
-  Future<void> save(
-    WorkspaceViewSaveRequest request,
+  Future<void> saveHash(
+    String requestId,
+    String hash,
     WorkspaceView saved,
   ) async {
-    final receipt = await _receipt(request, saved);
-    await WorkspaceMutationReceipt.db.insertRow(
+    final _ = await WorkspaceMutationReceipt.db.insertRow(
       context.session,
-      receipt,
+      _receipt(requestId, hash, saved),
       transaction: context.transaction,
     );
   }
 
-  Future<WorkspaceMutationReceipt?> _find(String id) =>
-      WorkspaceMutationReceipt.db.findFirstRow(
+  Future<WorkspaceMutationReceipt?> _find(String id) => WorkspaceMutationReceipt
+      .db
+      .findFirstRow(
         context.session,
-        where: _ReceiptKey(context, id).matches,
+        where: _ReceiptKey(context, id, endpoint).matches,
         transaction: context.transaction,
-      );
+      )
+      .then(WorkspaceHistoryReceipts.available);
 
-  Future<WorkspaceMutationReceipt> _receipt(
-    WorkspaceViewSaveRequest request,
+  WorkspaceMutationReceipt _receipt(
+    String requestId,
+    String hash,
     WorkspaceView saved,
-  ) async => WorkspaceMutationReceipt(
+  ) => .new(
     workspaceId: context.member.workspaceId,
     scopeKey: _scope(context),
     actorUserId: context.member.userId,
-    endpoint: _endpoint,
-    requestId: request.requestId,
-    requestHash: await _requestHash(request),
+    endpoint: endpoint,
+    requestId: requestId,
+    requestHash: hash,
     responseJson: jsonEncode(saved.toJson()),
     createdAt: DateTime.now().toUtc(),
   );
 }
 
-class const _ReceiptKey(final _ViewContext context, final String requestId) {
+class const _ReceiptKey(
+  final _ViewContext context,
+  final String requestId,
+  final String endpoint,
+) {
   Expression matches(WorkspaceMutationReceiptTable row) =>
       _matchesScope(row) &
       row.actorUserId.equals(context.member.userId) &
@@ -364,7 +386,7 @@ class const _ReceiptKey(final _ViewContext context, final String requestId) {
   Expression _matchesScope(WorkspaceMutationReceiptTable row) =>
       row.workspaceId.equals(context.member.workspaceId) &
       row.scopeKey.equals(_scope(context)) &
-      row.endpoint.equals(_endpoint);
+      row.endpoint.equals(endpoint);
 }
 
 String _scope(_ViewContext context) =>
@@ -424,3 +446,84 @@ WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
     history: jsonEncode([..._history(current), data]),
   );
 }
+
+class const _ViewDuplicator(final _ViewContext context) {
+  _ViewReceipts get _receipts =>
+      .new(context, endpoint: 'workspaceView.duplicate');
+  Future<WorkspaceView> copy(DuplicateWorkspaceItemRequest request) async {
+    final source = await _source(request);
+    final hash = await _copyHash(request);
+    final replay = await _replay(request, hash);
+    if (replay != null) return replay;
+    final saved = await _save(source, request);
+    await _receipts.saveHash(request.requestId, hash, saved);
+
+    return saved;
+  }
+
+  Future<WorkspaceView> _source(DuplicateWorkspaceItemRequest request) async {
+    WorkspaceTableDuplication.validate(request);
+    if (context.member.role != 'owner' || request.copyRecords) _denied();
+
+    final source = await _ViewReader(context).read(request.sourceId);
+    await _requireTarget(source, request);
+
+    return source;
+  }
+
+  Future<void> _requireTarget(
+    WorkspaceView source,
+    DuplicateWorkspaceItemRequest request,
+  ) => WorkspaceRevisionCapture(
+    context.session,
+    context.transaction,
+  ).requireView(_copySaveRequest(source, request));
+
+  Future<WorkspaceView?> _replay(
+    DuplicateWorkspaceItemRequest request,
+    String hash,
+  ) async {
+    final replay = await _receipts.replayHash(request.requestId, hash);
+    if (replay == null) return null;
+    final _ = await _ViewReader(context).read(request.targetId);
+
+    return replay;
+  }
+
+  Future<WorkspaceView> _save(
+    WorkspaceView source,
+    DuplicateWorkspaceItemRequest request,
+  ) async {
+    _checkRevision(source, request.expectedRevision);
+    if (await context.view(request.targetId, includeDeleted: true) != null) {
+      _receiptConflict();
+    }
+
+    return await _ViewWriter(context).save(_copySaveRequest(source, request));
+  }
+}
+
+Future<String> _copyHash(DuplicateWorkspaceItemRequest request) async =>
+    base64UrlEncode(
+      (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
+    );
+WorkspaceViewSaveRequest _copySaveRequest(
+  WorkspaceView source,
+  DuplicateWorkspaceItemRequest request,
+) => .new(
+  workspaceId: request.workspaceId,
+  requestId: request.targetId,
+  viewId: request.targetId,
+  expectedRevision: 0,
+  definition: jsonEncode(_copyDefinition(source, request)),
+);
+Map<String, Object?> _copyDefinition(
+  WorkspaceView source,
+  DuplicateWorkspaceItemRequest request,
+) => {
+  ..._data(source.data),
+  'id': request.targetId,
+  'name': request.name.trim(),
+  'parentId': request.parentId,
+  'revision': 0,
+};

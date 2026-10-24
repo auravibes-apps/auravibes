@@ -15,6 +15,7 @@ class WorkspaceTableMutationValidation(
   final Transaction _transaction,
   final String _userId, {
   final bool deferRecordState = false,
+  final bool applyDefaults = true,
 }) {
   static const _pageSize = 100;
 
@@ -74,7 +75,12 @@ class WorkspaceTableMutationValidation(
   ) async {
     final id = data['tableId'] as String;
     final schema = await _recordSchema(id, data);
-    final values = _values(operation, schema, data);
+    final values = _values(
+      operation,
+      schema,
+      data,
+      applyDefaults: applyDefaults,
+    );
     _recordTable(existing, id);
     await _checkReferences(
       schema,
@@ -214,10 +220,12 @@ bool _schemaRevision(Map<String, Object?> data, WorkspaceResource? existing) {
 Map<String, Object?> _values(
   WorkspacePatchOperation operation,
   Map<String, Object?> schema,
-  Map<String, Object?> data,
-) {
+  Map<String, Object?> data, {
+  required bool applyDefaults,
+}) {
   var values = (data['values'] as Map).cast<String, Object?>();
-  if (operation.operation == WorkspacePatchOperationKind.create) {
+  if (applyDefaults &&
+      operation.operation == WorkspacePatchOperationKind.create) {
     values = WorkspaceTableConstraints.defaults(schema, values);
     data['values'] = values;
   }
