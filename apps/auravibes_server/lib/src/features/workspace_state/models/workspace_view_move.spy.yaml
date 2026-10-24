@@ -3,3 +3,4 @@ fields:
   id: String
   expectedRevision: int
   parentId: String?
+  name: String?
