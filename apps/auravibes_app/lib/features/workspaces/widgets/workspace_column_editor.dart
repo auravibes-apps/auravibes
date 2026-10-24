@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
@@ -36,6 +37,7 @@ class const WorkspaceColumnEditor({
 typedef _ColumnFields = ({
   TextEditingController name,
   TextEditingController options,
+  ValueNotifier<String> timeZone,
   ValueNotifier<WorkspaceColumnType> type,
   WorkspaceColumnConstraintDraft constraints,
 });
@@ -111,6 +113,7 @@ abstract final class _ColumnActions {
     name: useTextEditingController(text: column?.name ?? ''),
     options: useTextEditingController(text: column?.options.join('\n') ?? ''),
     type: useState(column?.type ?? WorkspaceColumnType.text),
+    timeZone: useState(column?.timeZone ?? 'UTC'),
   );
   static WorkspaceColumn _column(
     WorkspaceColumn? column,
@@ -126,6 +129,7 @@ abstract final class _ColumnActions {
       isRequired: constraints.required.value,
       isUnique: constraints.unique.value,
       defaultValue: constraints.defaultValue.value,
+      timeZone: fields.timeZone.value,
     );
   }
 
@@ -169,6 +173,7 @@ class const _ColumnInputs({
       _ColumnDraftOptions(fields: draft.fields, disabled: draft.action.pending),
       _ColumnConstraintInputs(editor: editor, draft: draft),
       _ColumnPreviewResult(editor: editor, draft: draft),
+      _ColumnTimeZone(draft: draft),
     ],
   );
 }
@@ -281,4 +286,37 @@ class const _ColumnOptions({
     maxLines: 6,
     identifier: 'workspace_column_options',
   );
+}
+
+class const _TimeZoneInput({
+  required final _ColumnFields fields,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      const TextLocale(LocaleKeys.workspace_items_timezone),
+      AuraDropdownSelector<String>(
+        options: [
+          for (final zone in WorkspaceTimeZones.names)
+            AuraDropdownOption(value: zone, child: Text(zone)),
+        ],
+        value: fields.timeZone.value,
+        onChanged: _change,
+        isEnabled: !disabled,
+        identifier: 'workspace_column_timezone',
+      ),
+    ],
+  );
+  void _change(String? value) {
+    if (value != null) fields.timeZone.value = value;
+  }
+}
+
+class const _ColumnTimeZone({required final _ColumnDraft draft})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => draft.fields.type.value == .timestamp
+      ? _TimeZoneInput(fields: draft.fields, disabled: draft.action.pending)
+      : const SizedBox.shrink();
 }

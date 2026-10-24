@@ -94,7 +94,7 @@ abstract final class WorkspaceTableConstraints {
 }
 
 Object? _comparison(WorkspaceColumn column, Object? value) {
-  if (column.type.name == 'timestamp' && value is String) {
+  if (column.type == .timestamp && value is String) {
     return DateTime.tryParse(value)?.toUtc().microsecondsSinceEpoch;
   }
 

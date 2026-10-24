@@ -42,6 +42,7 @@ class const WorkspaceColumn({
   final bool isRequired = false,
   final bool isUnique = false,
   final Object? defaultValue,
+  final String timeZone = 'UTC',
 }) {
   factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
     id: data['id'] as String,
@@ -51,6 +52,7 @@ class const WorkspaceColumn({
     isRequired: data['required'] as bool? ?? false,
     isUnique: data['unique'] as bool? ?? false,
     defaultValue: data['defaultValue'],
+    timeZone: _columnTimeZone(data),
   );
 
   WorkspaceColumn renamed(String value) => WorkspaceColumn(
@@ -61,6 +63,7 @@ class const WorkspaceColumn({
     isRequired: isRequired,
     isUnique: isUnique,
     defaultValue: defaultValue,
+    timeZone: timeZone,
   );
 
   Map<String, Object?> toJson() => {
@@ -71,6 +74,7 @@ class const WorkspaceColumn({
     'required': isRequired,
     'unique': isUnique,
     if (defaultValue != null) 'defaultValue': defaultValue,
+    'timeZone': timeZone,
   };
 }
 
@@ -83,6 +87,9 @@ enum WorkspaceColumnType {
   url,
   email,
   phone,
+  dateOnly,
+  timestamp,
+  money,
 }
 
 class const WorkspaceRecord({
@@ -147,3 +154,6 @@ List<String> _columnOptions(Map<String, dynamic> data) =>
 
 WorkspaceColumnType _columnType(Map<String, dynamic> data) =>
     WorkspaceColumnType.values.byName(data['type'] as String? ?? 'text');
+
+String _columnTimeZone(Map<String, dynamic> data) =>
+  data['timeZone'] as String? ?? 'UTC';

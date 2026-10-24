@@ -1,5 +1,7 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:uuid/v7.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 
 const _maximumColumns = 100;
 const _maximumNameLength = 200;
@@ -15,6 +17,7 @@ abstract final class WorkspaceColumnValidation {
     isRequired: column.isRequired,
     isUnique: column.isUnique,
     defaultValue: column.defaultValue,
+    timeZone: column.timeZone,
   );
 
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
@@ -63,6 +66,7 @@ abstract final class WorkspaceColumnValidation {
     if (column.defaultValue != null) {
       _require(_ValueValidation.valid(column, column.defaultValue));
     }
+    _require(WorkspaceTimeZones.valid(column.timeZone));
     if (column.type != .singleSelect && column.type != .multiSelect) {
       _require(column.options.isEmpty);
 
@@ -104,7 +108,15 @@ abstract final class _ValueValidation {
         .url => _formatted(value, _url),
         .email => _formatted(value, _email.hasMatch),
         .phone => _formatted(value, _phone),
+        _ => _exact(column.type, value),
       };
+
+  static bool _exact(WorkspaceColumnType type, Object? value) => switch (type) {
+    .dateOnly => WorkspaceExactValueValidation.date(value),
+    .timestamp => WorkspaceExactValueValidation.timestamp(value),
+    .money => WorkspaceExactValueValidation.money(value),
+    _ => false,
+  };
 
   static bool _basic(WorkspaceColumn column, Object? value) =>
       switch (column.type) {
@@ -113,7 +125,7 @@ abstract final class _ValueValidation {
         .checkbox => value is bool,
         .singleSelect => _single(column.options, value),
         .multiSelect => _multiple(column.options, value),
-        .url || .email || .phone => false,
+        _ => false,
       };
 
   static bool _single(List<String> options, Object? value) =>

@@ -305,6 +305,14 @@ void main() {
           {'id': 'website', 'name': 'Website', 'type': 'url'},
           {'id': 'email', 'name': 'Email', 'type': 'email'},
           {'id': 'phone', 'name': 'Phone', 'type': 'phone'},
+          {'id': 'day', 'name': 'Date', 'type': 'dateOnly'},
+          {
+            'id': 'instant',
+            'name': 'Instant',
+            'type': 'timestamp',
+            'timeZone': 'America/New_York',
+          },
+          {'id': 'money', 'name': 'Amount', 'type': 'money'},
         ];
         final typedSchema = {
           'name': 'Typed',
@@ -323,6 +331,12 @@ void main() {
         ]);
         final typedValues = <String, Object?>{
           'typed-label': '',
+          'day': '2024-02-29',
+          'instant': '2026-11-01T06:30:00.123456Z',
+          'money': {
+            'amount': '9007199254740993.010000000000000001',
+            'currency': 'USD',
+          },
           'count': 0,
           'done': false,
           'status': 'Open',
@@ -345,6 +359,14 @@ void main() {
           ),
         ]);
         for (final invalid in <Map<String, Object?>>[
+          {'day': '2023-02-29'},
+          {'instant': '2026-11-01T01:30:00'},
+          {
+            'money': {'amount': 0.1, 'currency': 'USD'},
+          },
+          {
+            'money': {'amount': '1.00', 'currency': 'usd'},
+          },
           {'count': '0'},
           {'done': 'false'},
           {
