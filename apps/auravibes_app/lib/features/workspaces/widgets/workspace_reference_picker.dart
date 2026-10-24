@@ -19,6 +19,8 @@ class const WorkspaceReferencePicker({
   required final List<String> selected,
   required final ValueChanged<List<String>> onSelected,
   final bool schemaDefault = false,
+  final bool queryFilter = false,
+  final String? parentId,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -60,7 +62,9 @@ class const _PickerState(
       workspaceReferencesUsecaseProvider(picker.workspaceId).future,
     );
 
-    if (picker.schemaDefault) return await _defaultPage(this, usecase);
+    if (picker.schemaDefault || picker.queryFilter) {
+      return await _defaultPage(this, usecase);
+    }
 
     return await _sourcePage(this, usecase);
   }
@@ -72,7 +76,7 @@ class const _PickerState(
 
   void retry() => draft.refresh.value++;
   void select(String id) {
-    if (!picker.column.referenceMultiple) {
+    if (picker.queryFilter || !picker.column.referenceMultiple) {
       draft.selected.value = {id};
 
       return;
@@ -99,7 +103,7 @@ class const _PickerState(
 }
 
 Set<String> _initialSelection(WorkspaceReferencePicker picker) =>
-    (picker.column.referenceMultiple
+    (!picker.queryFilter && picker.column.referenceMultiple
             ? picker.selected
             : picker.selected.take(1))
         .toSet();
@@ -137,17 +141,25 @@ class const _PickerHeader({required final _PickerState state})
         label: const TextLocale(LocaleKeys.workspace_items_reference_search),
         onChanged: state.search,
       ),
-      _CreateTarget(
-        state: state,
-        target: ref.watch(
-          workspaceTableProvider(
-            state.picker.workspaceId,
-            state.picker.column.targetTableId ?? '',
-          ),
-        ),
-      ),
+      _PickerCreate(state: state),
     ],
   );
+}
+
+class const _PickerCreate({required final _PickerState state})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => state.picker.queryFilter
+      ? const SizedBox.shrink()
+      : _CreateTarget(
+          state: state,
+          target: ref.watch(
+            workspaceTableProvider(
+              state.picker.workspaceId,
+              state.picker.column.targetTableId ?? '',
+            ),
+          ),
+        );
 }
 
 class const _CreateTarget({
@@ -281,6 +293,7 @@ Future<WorkspaceReferencePage> _sourcePage(
   _PickerState state,
   BrowseWorkspaceReferencesUsecase usecase,
 ) => usecase.targets(
+  parentId: state.picker.parentId,
   source: (tableId: state.picker.table.id, columnId: state.picker.column.id),
   search: state.draft.search.value,
   afterId: state.draft.cursor.value,

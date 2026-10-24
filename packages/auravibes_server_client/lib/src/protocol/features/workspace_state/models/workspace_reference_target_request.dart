@@ -20,6 +20,7 @@ abstract class WorkspaceReferenceTargetRequest
     required this.columnId,
     String? search,
     this.afterId,
+    this.parentId,
   }) : search = search ?? '';
 
   factory WorkspaceReferenceTargetRequest({
@@ -28,6 +29,7 @@ abstract class WorkspaceReferenceTargetRequest
     required String columnId,
     String? search,
     String? afterId,
+    String? parentId,
   }) = _WorkspaceReferenceTargetRequestImpl;
 
   factory WorkspaceReferenceTargetRequest.fromJson(
@@ -39,6 +41,7 @@ abstract class WorkspaceReferenceTargetRequest
       columnId: jsonSerialization['columnId'] as String,
       search: jsonSerialization['search'] as String?,
       afterId: jsonSerialization['afterId'] as String?,
+      parentId: jsonSerialization['parentId'] as String?,
     );
   }
 
@@ -52,6 +55,8 @@ abstract class WorkspaceReferenceTargetRequest
 
   String? afterId;
 
+  String? parentId;
+
   /// Returns a shallow copy of this [WorkspaceReferenceTargetRequest]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -61,6 +66,7 @@ abstract class WorkspaceReferenceTargetRequest
     String? columnId,
     String? search,
     String? afterId,
+    String? parentId,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -71,6 +77,7 @@ abstract class WorkspaceReferenceTargetRequest
       'columnId': columnId,
       'search': search,
       if (afterId != null) 'afterId': afterId,
+      if (parentId != null) 'parentId': parentId,
     };
   }
 
@@ -83,6 +90,7 @@ abstract class WorkspaceReferenceTargetRequest
       'columnId': columnId,
       'search': search,
       if (afterId != null) 'afterId': afterId,
+      if (parentId != null) 'parentId': parentId,
     };
   }
 
@@ -102,12 +110,14 @@ class _WorkspaceReferenceTargetRequestImpl
     required String columnId,
     String? search,
     String? afterId,
+    String? parentId,
   }) : super._(
          workspaceId: workspaceId,
          sourceTableId: sourceTableId,
          columnId: columnId,
          search: search,
          afterId: afterId,
+         parentId: parentId,
        );
 
   /// Returns a shallow copy of this [WorkspaceReferenceTargetRequest]
@@ -120,6 +130,7 @@ class _WorkspaceReferenceTargetRequestImpl
     String? columnId,
     String? search,
     Object? afterId = _Undefined,
+    Object? parentId = _Undefined,
   }) {
     return WorkspaceReferenceTargetRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -127,6 +138,7 @@ class _WorkspaceReferenceTargetRequestImpl
       columnId: columnId ?? this.columnId,
       search: search ?? this.search,
       afterId: afterId is String? ? afterId : this.afterId,
+      parentId: parentId is String? ? parentId : this.parentId,
     );
   }
 }

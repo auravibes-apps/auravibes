@@ -22,11 +22,21 @@ class const LocalWorkspaceReferenceRepository(
     WorkspaceReferenceSource source, {
     required String search,
     String? afterId,
+    String? parentId,
   }) async {
-    final target = await _target(source);
-    final rows = await _targetRows(target, (search: search, afterId: afterId));
+    final selection = await _LocalReferenceSelection(
+      this,
+      source,
+      parentId,
+    ).read();
+    final query = (
+      search: search,
+      afterId: afterId,
+      matchColumn: selection.column.targetMatchColumnId,
+      parentId: parentId,
+    );
 
-    return _page(rows);
+    return _page(await _targetRows(selection.target, query));
   }
 
   @override
@@ -37,7 +47,14 @@ class const LocalWorkspaceReferenceRepository(
   }) async {
     final target = await tables.table(tableId);
 
-    return _page(await _targetRows(target, (search: search, afterId: afterId)));
+    return _page(
+      await _targetRows(target, (
+        search: search,
+        afterId: afterId,
+        matchColumn: null,
+        parentId: null,
+      )),
+    );
   }
 
   @override
@@ -54,12 +71,6 @@ class const LocalWorkspaceReferenceRepository(
     ));
 
     return _page(rows);
-  }
-
-  Future<WorkspaceTable> _target(WorkspaceReferenceSource source) async {
-    final table = await tables.table(source.tableId);
-
-    return await tables.table(_targetId(table, source.columnId));
   }
 
   Future<List<WorkspaceRecord>> _targetRows(
@@ -86,6 +97,9 @@ class const LocalWorkspaceReferenceRepository(
     Variable(query.afterId ?? ''),
     Variable('\$."${target.labelColumnId}"'),
     Variable(query.search),
+    Variable(query.matchColumn ?? ''),
+    Variable('\$."${query.matchColumn ?? ''}"'),
+    Variable(query.parentId ?? ''),
   ];
   Future<List<WorkspaceRecord>> _reverseRows(_ReverseQuery input) async {
     final rows = await database
@@ -108,16 +122,13 @@ class const LocalWorkspaceReferenceRepository(
   ];
 }
 
-typedef _TargetQuery = ({String search, String? afterId});
+typedef _TargetQuery = ({
+  String search,
+  String? afterId,
+  String? matchColumn,
+  String? parentId,
+});
 typedef _ReverseQuery = ({String tableId, String recordId, String? afterId});
-
-String _targetId(WorkspaceTable table, String id) {
-  final column = table.columns
-      .where((column) => column.id == id && column.type == .reference)
-      .firstOrNull;
-
-  return column?.targetTableId ?? (throw const WorkspaceTableException());
-}
 
 WorkspaceRecord _record(QueryRow row) => WorkspaceRecord(
   id: row.read<String>('id'),
@@ -137,6 +148,7 @@ const _targetSql = '''
 SELECT * FROM workspace_table_records WHERE workspace_id = ?
       AND table_id = ? AND deleted_at IS NULL AND id > ?
       AND instr(lower(COALESCE(json_extract(values_json, ?), '')), lower(?)) > 0
+      AND (? = '' OR json_extract(values_json, ?) = NULLIF(?, ''))
       ORDER BY id LIMIT 51''';
 
 const _reverseSql = r'''
@@ -151,3 +163,33 @@ SELECT DISTINCT r.* FROM workspace_table_records r
         AND (v.value = ? OR (v.type = 'array' AND EXISTS
           (SELECT 1 FROM json_each(v.value) a WHERE a.value = ?))))
       ORDER BY r.id LIMIT 51''';
+
+class const _LocalReferenceSelection(
+  final LocalWorkspaceReferenceRepository repository,
+  final WorkspaceReferenceSource source,
+  final String? parentId,
+) {
+  Future<({WorkspaceTable target, WorkspaceColumn column})> read() async {
+    final table = await repository.tables.table(source.tableId);
+    final column = _sourceColumn(table, source.columnId);
+    await _parent(table, column);
+    final target = await repository.tables.table(_targetId(column));
+
+    return (target: target, column: column);
+  }
+
+  Future<void> _parent(WorkspaceTable table, WorkspaceColumn column) async {
+    final id = parentId;
+    if (column.dependsOnColumnId == null || id == null) return;
+    final parent = _sourceColumn(table, column.dependsOnColumnId ?? '');
+    final _ = await repository.tables.record(_targetId(parent), id);
+  }
+}
+
+String _targetId(WorkspaceColumn column) =>
+    column.targetTableId ?? (throw const WorkspaceTableException());
+WorkspaceColumn _sourceColumn(WorkspaceTable table, String id) =>
+    table.columns
+        .where((column) => column.id == id && column.type == .reference)
+        .firstOrNull ??
+    (throw const WorkspaceTableException());

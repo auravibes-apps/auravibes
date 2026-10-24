@@ -25,6 +25,7 @@ class const WorkspaceReferenceReader(
     WorkspaceReferenceTableRequest input,
   ) => session.db.transaction((transaction) async {
     final reader = await _reader(transaction);
+
     return await reader.tableTargets(input);
   });
   Future<WorkspaceResource> record(WorkspaceReferenceRecordRequest input) =>
@@ -88,11 +89,9 @@ class const _Reader(
     WorkspaceReferenceTargetRequest input,
   ) async {
     if (input.search.length > _maximumSearchLength) _invalid();
-    final target = await _target(input);
-    return await _targetRows(target, (
-      search: input.search,
-      afterId: input.afterId,
-    ));
+    final selection = await _ReferenceSelection(this, input).read();
+
+    return await _targetRows(selection.target, selection.query);
   }
 
   Future<List<WorkspaceResource>> tableTargets(
@@ -100,9 +99,12 @@ class const _Reader(
   ) async {
     if (input.search.length > _maximumSearchLength) _invalid();
     final target = await visible(.table, input.tableId);
+
     return await _targetRows(target, (
       search: input.search,
       afterId: input.afterId,
+      matchColumn: null,
+      parentId: null,
     ));
   }
 
@@ -138,20 +140,14 @@ class const _Reader(
         resourceId: id,
         transaction: transaction,
       );
-  Future<WorkspaceResource> _target(
-    WorkspaceReferenceTargetRequest input,
-  ) async {
-    final source = await visible(.table, input.sourceTableId);
-
-    return await visible(.table, _targetId(source, input.columnId));
-  }
-
   Future<List<WorkspaceResource>> _targetRows(
     WorkspaceResource target,
-    ({String search, String? afterId}) input,
+    ({String search, String? afterId, String? matchColumn, String? parentId})
+    input,
   ) async {
     final rows = await _query(this)
         .read(_targetSql, _targetParameters(target, input));
+
     return await _query(this).project(rows);
   }
 
@@ -228,27 +224,17 @@ class const _QueryRows(
   }
 }
 
-String _targetId(WorkspaceResource source, String columnId) {
-  final columns = (_data(source)['columns'] as List)
-      .cast<Map<String, dynamic>>();
-  final column = columns
-      .where((column) => _referenceColumn(column, columnId))
-      .firstOrNull;
-  if (column == null) _invalid();
-
-  return column['targetTableId'] as String;
-}
-
-bool _referenceColumn(Map<String, dynamic> column, String id) =>
-    column['id'] == id && column['type'] == 'reference';
 Map<String, Object?> _targetParameters(
   WorkspaceResource table,
-  ({String search, String? afterId}) input,
+  ({String search, String? afterId, String? matchColumn, String? parentId})
+  input,
 ) => {
   'tableId': table.resourceId,
   'label': _data(table)['labelColumnId'],
   'search': input.search,
   'afterId': input.afterId ?? '',
+  'matchColumn': input.matchColumn ?? '',
+  'parentId': input.parentId ?? '',
 };
 Map<String, Object?> _reverseParameters(
   WorkspaceReferenceRecordRequest input,
@@ -268,6 +254,7 @@ AND strpos(
   translate(COALESCE(data::jsonb->'values'->>@label, ''),
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'),
   translate(@search, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')) > 0
+AND (@matchColumn = '' OR data::jsonb->'values'->>@matchColumn = NULLIF(@parentId, ''))
 ORDER BY "resourceId" LIMIT 51''';
 
 const _reverseSql = '''SELECT DISTINCT r."resourceId" FROM workspace_resource r
@@ -289,3 +276,48 @@ Never _invalid() => throw CloudWorkspaceException(code: .validationFailed);
 
 _QueryRows _query(_Reader reader) =>
     _QueryRows(reader.session, reader.member, reader.transaction);
+
+typedef _TargetQuery = ({
+  String search,
+  String? afterId,
+  String? matchColumn,
+  String? parentId,
+});
+
+class const _ReferenceSelection(
+  final _Reader reader,
+  final WorkspaceReferenceTargetRequest input,
+) {
+  Future<({WorkspaceResource target, _TargetQuery query})> read() async {
+    final source = await reader.visible(.table, input.sourceTableId);
+    final column = _sourceColumn(source, input.columnId);
+    await _parent(source, column);
+    final target = await reader.visible(
+      .table,
+      column['targetTableId'] as String,
+    );
+
+    return (target: target, query: _query(column));
+  }
+
+  _TargetQuery _query(Map column) => (
+    search: input.search,
+    afterId: input.afterId,
+    matchColumn: column['targetMatchColumnId'] as String?,
+    parentId: input.parentId,
+  );
+  Future<void> _parent(WorkspaceResource source, Map column) async {
+    final id = input.parentId;
+    if (column['dependsOnColumnId'] == null || id == null) return;
+    final parent = _sourceColumn(source, column['dependsOnColumnId'] as String);
+    final row = await reader.visible(.tableRecord, id);
+    if (_data(row)['tableId'] != parent['targetTableId']) _invalid();
+  }
+}
+
+Map _sourceColumn(WorkspaceResource source, String id) =>
+    (_data(source)['columns'] as List)
+        .cast<Map>()
+        .where((column) => column['id'] == id && column['type'] == 'reference')
+        .firstOrNull ??
+    _invalid();

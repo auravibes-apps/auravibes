@@ -45,19 +45,10 @@ class const WorkspaceColumn({
   final String timeZone = 'UTC',
   final String? targetTableId,
   final bool referenceMultiple = false,
+  final String? dependsOnColumnId,
+  final String? targetMatchColumnId,
 }) {
-  factory fromJson(Map<String, dynamic> data) => WorkspaceColumn(
-    id: _columnString(data, 'id'),
-    name: _columnString(data, 'name'),
-    type: _columnType(data),
-    options: _columnOptions(data),
-    isRequired: _columnFlag(data, 'required'),
-    isUnique: _columnFlag(data, 'unique'),
-    defaultValue: data['defaultValue'],
-    timeZone: _columnTimeZone(data),
-    targetTableId: data['targetTableId'] as String?,
-    referenceMultiple: _columnFlag(data, 'referenceMultiple'),
-  );
+  factory fromJson(Map<String, dynamic> data) => _ColumnData(data).build();
 
   WorkspaceColumn renamed(String value) => WorkspaceColumn(
     id: id,
@@ -70,6 +61,8 @@ class const WorkspaceColumn({
     timeZone: timeZone,
     targetTableId: targetTableId,
     referenceMultiple: referenceMultiple,
+    dependsOnColumnId: dependsOnColumnId,
+    targetMatchColumnId: targetMatchColumnId,
   );
 
   Map<String, Object?> toJson() => {
@@ -83,6 +76,8 @@ class const WorkspaceColumn({
     'timeZone': timeZone,
     'targetTableId': targetTableId,
     'referenceMultiple': referenceMultiple,
+    if (dependsOnColumnId != null) 'dependsOnColumnId': dependsOnColumnId,
+    if (targetMatchColumnId != null) 'targetMatchColumnId': targetMatchColumnId,
   };
 }
 
@@ -111,10 +106,14 @@ class const WorkspaceRecord({
 
 class const WorkspaceTableException({
   final bool conflict = false,
+  final bool incompatibleRelationship = false,
   final bool denied = false,
 }) implements Exception {
   String get localizationKey {
     if (denied) return LocaleKeys.cloud_errors_permission_denied;
+    if (incompatibleRelationship) {
+      return LocaleKeys.workspace_items_reference_incompatible;
+    }
 
     return conflict
         ? LocaleKeys.cloud_errors_conflict
@@ -172,3 +171,46 @@ String _columnString(Map<String, dynamic> data, String key) =>
     data[key] as String;
 bool _columnFlag(Map<String, dynamic> data, String key) =>
     data[key] as bool? ?? false;
+
+class _ColumnData {
+  new(Map<String, Object?> data)
+    : _data = data,
+      id = _columnString(data, 'id'),
+      name = _columnString(data, 'name'),
+      type = _columnType(data),
+      options = _columnOptions(data),
+      required = _columnFlag(data, 'required'),
+      unique = _columnFlag(data, 'unique'),
+      timeZone = _columnTimeZone(data),
+      targetTableId = data['targetTableId'] as String?,
+      multiple = _columnFlag(data, 'referenceMultiple'),
+      parent = data['dependsOnColumnId'] as String?,
+      match = data['targetMatchColumnId'] as String?;
+  final String id;
+  final String name;
+  final WorkspaceColumnType type;
+  final List<String> options;
+  final bool required;
+  final bool unique;
+  final String timeZone;
+  final String? targetTableId;
+  final bool multiple;
+  final String? parent;
+  final String? match;
+  final Map<String, Object?> _data;
+
+  WorkspaceColumn build() => WorkspaceColumn(
+    id: id,
+    name: name,
+    type: type,
+    options: options,
+    isRequired: required,
+    isUnique: unique,
+    defaultValue: _data['defaultValue'],
+    timeZone: timeZone,
+    targetTableId: targetTableId,
+    referenceMultiple: multiple,
+    dependsOnColumnId: parent,
+    targetMatchColumnId: match,
+  );
+}
