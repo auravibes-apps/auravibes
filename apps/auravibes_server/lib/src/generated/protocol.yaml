@@ -86,6 +86,12 @@ workspaceStream:
   - subscribe:
 workspaceCsv:
   - preview:
+workspaceHistory:
+  - policy:
+  - configurePolicy:
+  - permanentlyDelete:
+  - history:
+  - restore:
 workspaceReference:
   - targets:
   - tableTargets:

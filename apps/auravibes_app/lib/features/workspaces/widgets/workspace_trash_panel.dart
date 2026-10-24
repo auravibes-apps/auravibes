@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_trash_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_permanent_delete_button.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_restore_button.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -78,6 +79,11 @@ class const _TrashRow({
       else
         Text(batch.name),
       Text('${batch.affectedCount}'),
+      if (batch.canRestore)
+        WorkspacePermanentDeleteButton(
+          workspaceId: workspaceId,
+          target: batch.target,
+        ),
       if (batch.canRestore)
         WorkspaceTrashRestoreButton(
           workspaceId: workspaceId,

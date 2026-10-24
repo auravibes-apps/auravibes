@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'workspace_revision_capture.dart';
 
 class const WorkspaceTableGrantCleanup(
   final Session _session,
@@ -25,11 +26,13 @@ class const WorkspaceTableGrantCleanup(
   ) async {
     final data = _withoutGrant(table, removal.userId);
     if (data == null) return;
-    final _ = await WorkspaceResource.db.updateRow(
+    await WorkspaceRevisionCapture(_session, _transaction).save(table);
+    final updated = await WorkspaceResource.db.updateRow(
       _session,
       _updatedTable(table, data, removal.now),
       transaction: _transaction,
     );
+    await WorkspaceRevisionCapture(_session, _transaction).save(updated);
   }
 }
 

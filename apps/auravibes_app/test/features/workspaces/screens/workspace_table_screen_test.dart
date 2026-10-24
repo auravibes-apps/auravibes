@@ -98,6 +98,7 @@ void main() {
     await tester.tap(overflow);
     final _ = await tester.pumpAndSettle();
     expect(find.text('Export CSV'), findsOneWidget);
+    expect(find.text('Revision history'), findsOneWidget);
     expect(find.text('Import CSV'), findsNothing);
     expect(find.text('Move to Trash'), findsNothing);
     expect(find.text('Settings'), findsNothing);
@@ -109,14 +110,16 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.text('Readable'), findsOneWidget);
     expect(button('workspace_record_save'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraPopupMenuButton &&
-            widget.identifier == 'workspace_record_overflow',
-      ),
-      findsNothing,
+    final recordMenu = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraPopupMenuButton &&
+          widget.identifier == 'workspace_record_overflow',
     );
+    expect(recordMenu, findsOneWidget);
+    await tester.tap(recordMenu);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Revision history'), findsOneWidget);
+    expect(find.text('Move to Trash'), findsNothing);
   });
   testWidgets('restricted reference cells hide stored IDs at both widths', (
     tester,

@@ -12,6 +12,8 @@ import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_directory_move_batch.dart';
 import '../workspace_record_mutation_batch.dart';
+import '../workspace_revision_capture.dart';
+import '../workspace_history_receipts.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
@@ -155,6 +157,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           );
         }
         await moves.authorize(session, member, transaction);
+        await WorkspaceRevisionCapture(
+          session,
+          transaction,
+        ).requirePatch(request);
         final receipt = await _findReceipt(
           session,
           request.workspaceId,
@@ -1409,7 +1415,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation.expectedRevision != null) {
         throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
       }
-      return WorkspaceResource.db.insertRow(
+      final created = await WorkspaceResource.db.insertRow(
         session,
         WorkspaceResource(
           workspaceId: workspaceId,
@@ -1422,6 +1428,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         ),
         transaction: transaction,
       );
+      await WorkspaceRevisionCapture(session, transaction).save(created);
+      return created;
     }
     if (existing == null || existing.deletedAt != null) {
       throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
@@ -1460,11 +1468,14 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
-    return WorkspaceResource.db.updateRow(
+    await WorkspaceRevisionCapture(session, transaction).save(existing);
+    final written = await WorkspaceResource.db.updateRow(
       session,
       updated,
       transaction: transaction,
     );
+    await WorkspaceRevisionCapture(session, transaction).save(written);
+    return written;
   }
 
   Future<CloudWorkspace> _requireLockedWorkspace(
@@ -1489,19 +1500,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String endpoint,
     String requestId,
     Transaction transaction,
-  ) => WorkspaceMutationReceipt.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.actorUserId.equals(userId) &
-        t.scopeKey.equals(
-          WorkspaceResourceValidation.receiptScopeKey(workspaceId),
-        ) &
-        t.endpoint.equals(endpoint) &
-        t.requestId.equals(requestId),
-    transaction: transaction,
-  );
-
+  ) => WorkspaceMutationReceipt.db
+      .findFirstRow(
+        session,
+        where: (t) =>
+            t.workspaceId.equals(workspaceId) &
+            t.actorUserId.equals(userId) &
+            t.scopeKey.equals(
+              WorkspaceResourceValidation.receiptScopeKey(workspaceId),
+            ) &
+            t.endpoint.equals(endpoint) &
+            t.requestId.equals(requestId),
+        transaction: transaction,
+      )
+      .then(WorkspaceHistoryReceipts.available);
   Future<void> _saveReceipt(
     Session session, {
     required int workspaceId,
