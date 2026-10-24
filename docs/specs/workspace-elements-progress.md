@@ -7,7 +7,7 @@ Parent: #1665. Branch: `feat/1665-workspace-elements`.
 - Closed with acceptance evidence: #1667, #1668, #1669, #1670, #1671, #1685 (6 of 26 children).
 - Integrated pending acceptance follow-up: #1676 rename/move awaits Directory live acceptance; #1672 constraints awaits two record-editor clarity repairs owned by #1673.
 - Integrated #1688 Connector writes at `c8a0e6ae5`; isolated live UI acceptance and final standards review remain before closure.
-- Active implementers: #1675 Directory/table browsing and #1673 relationships. Each owns a separate worktree.
+- Active implementers: #1675 Directory/table browsing, #1673 relationships and #1682 persistent A2UI views. Each owns a separate worktree. #1682 is based on integrated #1688 at `29a973065`; native blocker #1669 is closed, and its preflight only matched this coordinated draft PR.
 - Latest published verified head: `05a844a59`; draft PR #1693 remains draft. Full Flutter CI passed at prior `ea6dcb2f4` (40057406933). Run40058728216 at69f361501 passed every gate except format; the one-line formatter repair is published. Current-head CI and remaining children are incomplete.
 - #1671 acceptance comment: https://github.com/auravibes-apps/auravibes/issues/1671#issuecomment-6379169692. Local/cloud date, timestamp and exact-money behavior is accepted; #1672 separately verifies constraint interactions.
 
