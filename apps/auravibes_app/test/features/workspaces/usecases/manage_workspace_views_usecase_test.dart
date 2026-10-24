@@ -69,7 +69,7 @@ Future<void> _persistence() async {
   );
   expect((await views.open(typedView.id)).needsRepair, isTrue);
   await expectLater(
-    views.restore(typedView, typedView),
+    views.restore(typedView, typedView, requestId: 'invalid-restore'),
     throwsA(isA<WorkspaceTableException>()),
   );
   final second = await views.save(first, requestId: 'save-once');
@@ -81,6 +81,7 @@ Future<void> _persistence() async {
   final restored = await views.restore(
     second,
     (await views.history(first.id)).first,
+    requestId: 'restore-first',
   );
   expect(restored.revision, 3);
   expect((await views.history(first.id)).length, 3);
