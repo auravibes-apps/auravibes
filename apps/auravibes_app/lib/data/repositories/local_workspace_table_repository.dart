@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_record_batch_receipt.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_change.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:drift/drift.dart';
@@ -589,4 +591,105 @@ List<WorkspaceColumn> _schemaColumns(WorkspaceTableRow row, int revision) {
   }
 
   return _table(row).columns;
+}
+
+class const LocalWorkspaceRecordBatchRepository(
+  final AppDatabase database,
+  final String workspaceId,
+) implements WorkspaceRecordBatchRepository {
+  @override
+  Future<void> apply(
+    List<WorkspaceRecordChange> changes, {
+    required String requestId,
+  }) {
+    WorkspaceRecordChange.validate(changes);
+    if (requestId.isEmpty) throw const WorkspaceTableException();
+
+    final snapshot = List<WorkspaceRecordChange>.unmodifiable(changes);
+    final request = (
+      id: requestId,
+      digest: LocalWorkspaceRecordBatchReceipt.digest(snapshot),
+    );
+
+    return database.transaction(() => _run(snapshot, request));
+  }
+
+  Future<void> _run(
+    List<WorkspaceRecordChange> changes,
+    ({String id, String digest}) request,
+  ) async {
+    await _checkLocalWorkspace(database, workspaceId);
+    final receipts = LocalWorkspaceRecordBatchReceipt(database, workspaceId);
+    if (await receipts.replayed(request.id, request.digest)) return;
+    await _commit(changes);
+    await receipts.save(request.id, request.digest);
+  }
+
+  Future<void> _commit(List<WorkspaceRecordChange> changes) async {
+    final previous = await _stageAll(changes);
+    await _validateAll(changes, previous);
+    await LocalWorkspaceReferenceValidation(
+      database,
+      workspaceId,
+    ).allDependencies();
+  }
+
+  Future<List<WorkspaceRecord>> _stageAll(
+    List<WorkspaceRecordChange> changes,
+  ) async {
+    final previous = <WorkspaceRecord>[];
+    for (final change in changes) {
+      previous.add(await _stage(change));
+    }
+
+    return previous;
+  }
+
+  Future<void> _validateAll(
+    List<WorkspaceRecordChange> changes,
+    List<WorkspaceRecord> previous,
+  ) async {
+    for (var i = 0; i < changes.length; i++) {
+      await _validate(changes[i], previous[i].values);
+    }
+  }
+
+  Future<WorkspaceRecord> _current(WorkspaceRecordChange change) async {
+    final tables = LocalWorkspaceTableRepository(database, workspaceId);
+    final table = await tables.table(change.table.id);
+    final _ = _schemaColumns(
+      await _tableRow(database, workspaceId, table.id),
+      change.table.schemaRevision,
+    );
+
+    return await tables.record(table.id, change.record.id);
+  }
+
+  Future<WorkspaceRecord> _stage(WorkspaceRecordChange change) async {
+    final current = await _current(change);
+    _checkRecordRevision(current, change.record);
+    WorkspaceColumnValidation.values(change.table.columns, change.values);
+    final target = (workspaceId: workspaceId, record: current);
+    await _writeRecord(database, target, change.values);
+
+    return current;
+  }
+
+  Future<void> _validate(
+    WorkspaceRecordChange change,
+    Map<String, Object?> previous,
+  ) async {
+    await _checkSchema(database, workspaceId, (
+      table: change.table,
+      values: change.values,
+      previous: previous,
+    ));
+    await _unique(change.table.id);
+  }
+
+  Future<void> _unique(String id) async {
+    final tables = LocalWorkspaceTableRepository(database, workspaceId);
+    final table = await tables.table(id);
+    _validateRecords(table.columns, await tables.records(id));
+  }
 }

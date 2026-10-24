@@ -2713,6 +2713,12 @@ abstract class LocaleKeys {
   static const workspace_items_trash_cancel = 'workspace_items.trash_cancel';
   static const workspace_items_trash_close = 'workspace_items.trash_close';
   static const workspace_items_trash_refresh = 'workspace_items.trash_refresh';
+  static const workspace_items_bulk_edit = 'workspace_items.bulk_edit';
+  static const workspace_items_bulk_scope = 'workspace_items.bulk_scope';
+  static const workspace_items_bulk_approval = 'workspace_items.bulk_approval';
+  static const workspace_items_bulk_selected = 'workspace_items.bulk_selected';
+  static const workspace_items_bulk_select = 'workspace_items.bulk_select';
+  static const workspace_items_bulk_limit = 'workspace_items.bulk_limit';
   static const workspace_views_title = 'workspace_views.title';
   static const workspace_views_create = 'workspace_views.create';
   static const workspace_views_name = 'workspace_views.name';

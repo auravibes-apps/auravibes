@@ -11,6 +11,7 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_directory_move_batch.dart';
+import '../workspace_record_mutation_batch.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
@@ -272,63 +273,152 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required Iterable<WorkspacePatchOperation> operations,
     required Transaction transaction,
   }) async {
-    final now = DateTime.now().toUtc();
+    return await _commitPrepared((
+      session: session,
+      workspace: workspace,
+      workspaceId: workspaceId,
+      metadata: metadata,
+      transaction: transaction,
+      now: DateTime.now().toUtc(),
+    ), operations);
+  }
+
+  Future<PatchWorkspaceStateResponse> _commitPrepared(
+    _OperationCommitContext context,
+    Iterable<WorkspacePatchOperation> operations,
+  ) async {
+    final changed = await _applyBatch(context, operations);
+    final response = await _emitBatch(context, changed);
+    await _saveBatchReceipt(context, response);
+
+    return await _projectBatch(context, response);
+  }
+
+  WorkspaceRecordMutationBatch _recordBatch(_OperationCommitContext context) =>
+      WorkspaceRecordMutationBatch(
+        _repository,
+        context.session,
+        context.workspaceId,
+        context.transaction,
+        context.metadata.userId,
+      );
+
+  Future<List<WorkspaceResource>> _applyBatch(
+    _OperationCommitContext context,
+    Iterable<WorkspacePatchOperation> operations,
+  ) async {
+    final records = _recordBatch(context);
     final changed = <WorkspaceResource>[];
     for (final operation in operations) {
-      changed.add(
-        await _applyOperation(
-          session,
-          operation,
-          workspaceId,
-          now,
-          transaction,
-          userId: metadata.userId,
-        ),
-      );
+      await records.remember(operation);
+      changed.add(await _applyBatchOperation(context, operation));
     }
-    var sequence = workspace.sequence;
+    await records.validate(changed);
+
+    return changed;
+  }
+
+  Future<WorkspaceResource> _applyBatchOperation(
+    _OperationCommitContext context,
+    WorkspacePatchOperation operation,
+  ) => _applyOperation(
+    context.session,
+    operation,
+    context.workspaceId,
+    context.now,
+    context.transaction,
+    userId: context.metadata.userId,
+    deferRecordState: true,
+  );
+
+  Future<PatchWorkspaceStateResponse> _emitBatch(
+    _OperationCommitContext context,
+    List<WorkspaceResource> changed,
+  ) async {
+    final sequence = await _recordBatchEvents(context, changed);
+    await _updateBatchWorkspace(context, sequence);
+
+    return PatchWorkspaceStateResponse(resources: changed, sequence: sequence);
+  }
+
+  Future<int> _recordBatchEvents(
+    _OperationCommitContext context,
+    List<WorkspaceResource> changed,
+  ) async {
+    var sequence = context.workspace.sequence;
     for (final resource in changed) {
       sequence++;
-      final event = WorkspaceResourceValidation.eventFor(resource);
-      await _recordEvent(
-        session,
-        workspaceId: workspaceId,
-        sequence: sequence,
-        userId: metadata.userId,
-        kind: event.kind,
-        resourceKind: event.resourceKind,
-        resourceId: event.resourceId,
-        transaction: transaction,
-      );
+      await _recordBatchEvent(context, resource, sequence);
     }
-    await CloudWorkspace.db.updateRow(
-      session,
-      workspace.copyWith(sequence: sequence, updatedAt: now),
-      transaction: transaction,
-    );
-    final response = PatchWorkspaceStateResponse(
-      resources: changed,
+
+    return sequence;
+  }
+
+  Future<void> _recordBatchEvent(
+    _OperationCommitContext context,
+    WorkspaceResource resource,
+    int sequence,
+  ) async {
+    final event = WorkspaceResourceValidation.eventFor(resource);
+    await _recordEvent(
+      context.session,
+      workspaceId: context.workspaceId,
       sequence: sequence,
+      userId: context.metadata.userId,
+      kind: event.kind,
+      resourceKind: event.resourceKind,
+      resourceId: event.resourceId,
+      transaction: context.transaction,
     );
+  }
+
+  Future<void> _updateBatchWorkspace(
+    _OperationCommitContext context,
+    int sequence,
+  ) async {
+    final _ = await CloudWorkspace.db.updateRow(
+      context.session,
+      context.workspace.copyWith(sequence: sequence, updatedAt: context.now),
+      transaction: context.transaction,
+    );
+  }
+
+  Future<void> _saveBatchReceipt(
+    _OperationCommitContext context,
+    PatchWorkspaceStateResponse response,
+  ) async {
+    final metadata = context.metadata;
     await _saveReceipt(
-      session,
-      workspaceId: workspaceId,
+      context.session,
+      workspaceId: context.workspaceId,
       userId: metadata.userId,
       endpoint: metadata.endpoint,
       requestId: metadata.requestId,
       hash: metadata.hash,
       responseJson: jsonEncode(response.toJson()),
-      now: now,
-      transaction: transaction,
+      now: context.now,
+      transaction: context.transaction,
     );
+  }
+
+  Future<PatchWorkspaceStateResponse> _projectBatch(
+    _OperationCommitContext context,
+    PatchWorkspaceStateResponse response,
+  ) async {
     final member = await _repository.findMember(
-      session,
-      workspaceId: workspaceId,
-      userId: metadata.userId,
-      transaction: transaction,
+      context.session,
+      workspaceId: context.workspaceId,
+      userId: context.metadata.userId,
+      transaction: context.transaction,
     );
     if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
-    return await _visiblePatch(session, member, transaction, response);
+
+    return await _visiblePatch(
+      context.session,
+      member,
+      context.transaction,
+      response,
+    );
   }
 
   Future<PatchWorkspaceStateResponse> _visiblePatch(
@@ -1240,6 +1330,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Transaction transaction, {
     required String userId,
     ({String? value})? credentialSecret,
+    bool deferRecordState = false,
   }) async {
     if (operation.resourceId.isEmpty) {
       throw CloudWorkspaceException(
@@ -1292,6 +1383,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           workspaceId,
           transaction,
           userId,
+          deferRecordState: deferRecordState,
         ).validate(operation, decoded, existing);
         if (operation.resourceKind == WorkspaceResourceKind.tableRecord) {
           validatedData = jsonEncode(decoded);
@@ -1482,3 +1574,12 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
 class const _WorkspacePreviewComplete(
   final PatchWorkspaceStateResponse response,
 ) implements Exception;
+
+typedef _OperationCommitContext = ({
+  Session session,
+  CloudWorkspace workspace,
+  int workspaceId,
+  _OperationCommitMetadata metadata,
+  Transaction transaction,
+  DateTime now,
+});
