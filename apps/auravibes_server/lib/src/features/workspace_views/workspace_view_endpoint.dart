@@ -5,6 +5,7 @@ import '../accounts/authenticated_account_resolver.dart';
 import 'workspace_view_store.dart';
 
 class WorkspaceViewEndpoint extends Endpoint {
+  Future<WorkspaceView> duplicate(Session session, DuplicateWorkspaceItemRequest request) => _access(session, request.workspaceId, (store) => store.duplicate(request));
   Future<List<WorkspaceView>> list(
     Session session,
     WorkspaceViewListRequest request,

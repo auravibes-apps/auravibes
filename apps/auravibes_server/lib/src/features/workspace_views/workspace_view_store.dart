@@ -6,6 +6,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../workspace_state/domain/workspace_resource_validation.dart';
 import '../workspace_state/workspace_table_access.dart';
+import '../workspace_state/workspace_table_duplication.dart';
 import 'workspace_view_validation.dart';
 
 class const WorkspaceViewStore(
@@ -18,6 +19,7 @@ class const WorkspaceViewStore(
       _ViewReader(_context).list(parentId, allFolders);
   Future<WorkspaceView> read(String id) => _ViewReader(_context).read(id);
   Future<List<String>> history(String id) => _ViewReader(_context).history(id);
+  Future<WorkspaceView> duplicate(DuplicateWorkspaceItemRequest request) => _ViewDuplicator(_context).copy(request);
   Future<WorkspaceView> save(WorkspaceViewSaveRequest request) =>
       _ViewWriter(_context).save(request);
   Future<void> authorizeMove(WorkspaceViewMove move) =>
@@ -418,4 +420,28 @@ WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
     revision: current.revision + 1,
     history: jsonEncode([..._history(current), data]),
   );
+}
+
+class const _ViewDuplicator(final _ViewContext context) {
+  Future<WorkspaceView> copy(DuplicateWorkspaceItemRequest request) async {
+    WorkspaceTableDuplication.validate(request);
+    if (context.member.role != 'owner' || request.copyRecords) _denied();
+    final source = await _ViewReader(context).read(request.sourceId);
+    final hash = base64UrlEncode((await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes);
+    final previous = await _receipt(request.requestId);
+    if (previous != null) {
+      if (previous.requestHash != hash) _receiptConflict();
+      final _ = await _ViewReader(context).read(request.targetId);
+      return WorkspaceView.fromJson(jsonDecode(previous.responseJson) as Map<String, dynamic>);
+    }
+    _checkRevision(source, request.expectedRevision);
+    if (await context.view(request.targetId, includeDeleted: true) != null) _receiptConflict();
+    final copied = {..._data(source.data), 'id': request.targetId, 'name': request.name.trim(), 'parentId': request.parentId, 'revision': 0};
+    final saved = await _ViewWriter(context).save(WorkspaceViewSaveRequest(workspaceId: request.workspaceId, requestId: 'copy:${request.requestId}', viewId: request.targetId, expectedRevision: 0, definition: jsonEncode(copied)));
+    final _ = await WorkspaceMutationReceipt.db.insertRow(context.session, WorkspaceMutationReceipt(workspaceId: context.member.workspaceId, scopeKey: _scope(context), actorUserId: context.member.userId, endpoint: 'workspaceView.duplicate', requestId: request.requestId, requestHash: hash, responseJson: jsonEncode(saved.toJson()), createdAt: DateTime.now().toUtc()), transaction: context.transaction);
+    return saved;
+  }
+
+  Future<WorkspaceMutationReceipt?> _receipt(String id) => WorkspaceMutationReceipt.db.findFirstRow(context.session,
+    where: (row) => row.workspaceId.equals(context.member.workspaceId) & row.actorUserId.equals(context.member.userId) & row.endpoint.equals('workspaceView.duplicate') & row.requestId.equals(id), transaction: context.transaction);
 }

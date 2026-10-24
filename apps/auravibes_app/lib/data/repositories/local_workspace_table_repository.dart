@@ -9,12 +9,25 @@ import 'package:auravibes_app/features/workspaces/models/workspace_record_change
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:drift/drift.dart';
+import 'package:crypto/crypto.dart';
 import 'package:uuid/v7.dart';
 
 class const LocalWorkspaceTableRepository(
   final AppDatabase _database,
   final String _workspaceId,
 ) implements WorkspaceTableRepository {
+  Future<WorkspaceTable> duplicate({
+    required WorkspaceTable source,
+    required String targetId,
+    required String name,
+    required String requestId,
+    bool copyRecords = false,
+    String? parentId,
+  }) => _TableDuplicator(_database, _workspaceId).copy(
+    source,
+    (id: targetId, name: name, parentId: parentId, requestId: requestId, records: copyRecords),
+  );
+
   @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
     final query = _tables(_database, _workspaceId)
@@ -692,4 +705,46 @@ class const LocalWorkspaceRecordBatchRepository(
     final table = await tables.table(id);
     _validateRecords(table.columns, await tables.records(id));
   }
+}
+
+typedef _CopyInput = ({String id, String name, String? parentId, String requestId, bool records});
+
+class const _TableDuplicator(final AppDatabase db, final String workspaceId) {
+  Future<WorkspaceTable> copy(WorkspaceTable expected, _CopyInput input) => db.transaction(() async {
+    await _checkLocalWorkspace(db, workspaceId);
+    final source = _table(await _tableRow(db, workspaceId, expected.id));
+    final receipts = LocalWorkspaceRecordBatchReceipt(db, workspaceId);
+    final digest = sha256.convert(utf8.encode(jsonEncode([expected.id, expected.revision, input.id, input.name, input.parentId, input.records]))).toString();
+    _validateCopy(input, source.id);
+    if (await receipts.replayed(input.requestId, digest)) return _table(await _tableRow(db, workspaceId, input.id));
+    _checkTableRevision(source, expected);
+    await _checkParent(db, workspaceId, input.parentId);
+    final table = await _insert(source, input);
+    if (input.records) await _copyRecords(source, table);
+    await LocalWorkspaceReferenceValidation(db, workspaceId).allDependencies();
+    await receipts.save(input.requestId, digest);
+    return table;
+  });
+
+  Future<WorkspaceTable> _insert(WorkspaceTable source, _CopyInput input) async {
+    final ids = <String, String>{for (var i = 0; i < source.columns.length; i++) source.columns[i].id: '${input.id}-c$i'};
+    final columns = source.columns.map((column) => WorkspaceColumn.fromJson({...column.toJson(), 'id': ids[column.id], if (column.dependsOnColumnId != null) 'dependsOnColumnId': ids[column.dependsOnColumnId]})).toList();
+    WorkspaceColumnValidation.columns(columns, ids[source.labelColumnId]!);
+    await LocalWorkspaceReferenceValidation(db, workspaceId).columns(columns);
+    final _ = await _insertTable(db, WorkspaceTablesCompanion.insert(id: Value(input.id), workspaceId: workspaceId, name: input.name.trim(), parentId: Value(input.parentId), columnsJson: jsonEncode(columns.map((column) => column.toJson()).toList()), labelColumnId: ids[source.labelColumnId]!));
+    return _table(await _tableRow(db, workspaceId, input.id));
+  }
+
+  Future<void> _copyRecords(WorkspaceTable source, WorkspaceTable target) async {
+    final originals = await LocalWorkspaceTableRepository(db, workspaceId).records(source.id);
+    if (originals.length >= 50) throw const WorkspaceTableException();
+    final ids = <String, String>{for (var i = 0; i < source.columns.length; i++) source.columns[i].id: target.columns[i].id};
+    for (final record in originals) {
+      final _ = await _RecordWriter(db, workspaceId).create(target, {for (final entry in record.values.entries) ids[entry.key]!: entry.value});
+    }
+  }
+}
+
+void _validateCopy(_CopyInput input, String sourceId) {
+  if (input.id.isEmpty || input.id == sourceId || input.id.length > 100 || input.requestId.isEmpty || input.requestId.length > 100 || input.name.trim().isEmpty || input.name.trim().length > 200) throw const WorkspaceTableException();
 }

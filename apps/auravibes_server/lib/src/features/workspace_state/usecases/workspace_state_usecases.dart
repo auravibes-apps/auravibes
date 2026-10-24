@@ -16,6 +16,7 @@ import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
 import '../workspace_table_mutation_validation.dart';
 import '../workspace_table_page_reader.dart';
+import '../workspace_table_duplication.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -198,6 +199,31 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     } on _WorkspacePreviewComplete catch (preview) {
       return preview.response;
     }
+  }
+
+  Future<PatchWorkspaceStateResponse> duplicateTable(
+    Session session, {
+    required String userId,
+    required DuplicateWorkspaceItemRequest request,
+  }) async {
+    WorkspaceTableDuplication.validate(request);
+    final hash = base64UrlEncode((await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes);
+    return session.db.transaction((transaction) async {
+      final workspace = await _requireLockedWorkspace(session, request.workspaceId, transaction);
+      final member = await _authorize(session, request.workspaceId, userId, transaction: transaction);
+      if (member.role != WorkspaceRoles.owner) throw CloudWorkspaceException(code: .permissionDenied);
+      final copy = WorkspaceTableDuplication(_repository, session, request, transaction);
+      final source = await copy.source();
+      final receipt = await _findReceipt(session, request.workspaceId, userId, 'workspaceState.duplicateTable', request.requestId, transaction);
+      if (receipt != null) {
+        if (receipt.requestHash != hash) _idempotencyConflict();
+        return await _visiblePatch(session, member, transaction, PatchWorkspaceStateResponse.fromJson(jsonDecode(receipt.responseJson) as Map<String, dynamic>));
+      }
+      final operations = await copy.operations(source);
+      return await _commitOperations(session, workspace: workspace, workspaceId: request.workspaceId,
+        metadata: (userId: userId, endpoint: 'workspaceState.duplicateTable', requestId: request.requestId, hash: hash),
+        operations: operations, transaction: transaction);
+    });
   }
 
   Future<PatchWorkspaceStateResponse> duplicateAgent(
