@@ -9,8 +9,13 @@ class const WorkspaceRecordQuery({
   final String? sortColumnId,
   final bool descending = false,
   final int offset = 0,
-  final int limit = 50,
+  final int limit = _defaultPageSize,
 }) {
+  factory fromJson(Map<String, dynamic> value) => _withFilter(
+    _baseQuery(value),
+    value,
+  ).change(offset: value['offset'] as int? ?? 0);
+
   Map<String, Object?> toJson() => {
     'search': search,
     'filterColumnId': filterColumnId,
@@ -32,6 +37,11 @@ class const WorkspaceRecordPage({
 
 abstract interface class WorkspaceRecordQueryRepository {
   Future<WorkspaceRecordPage> query(String tableId, WorkspaceRecordQuery query);
+  Future<Map<String, Object?>> summarize(
+    String tableId,
+    WorkspaceRecordQuery query,
+    List<String> columnIds,
+  );
 }
 
 extension WorkspaceRecordQueryChanges on WorkspaceRecordQuery {
@@ -63,5 +73,31 @@ extension WorkspaceRecordQueryChanges on WorkspaceRecordQuery {
     sortColumnId: sortColumnId,
     descending: descending,
     limit: limit,
+  );
+}
+
+const _defaultPageSize = 50;
+WorkspaceRecordQuery _baseQuery(Map<String, dynamic> value) => .new(
+  search: value['search'] as String? ?? '',
+  sortColumnId: value['sortColumnId'] as String?,
+  descending: value['descending'] as bool? ?? false,
+  limit: value['limit'] as int? ?? _defaultPageSize,
+);
+WorkspaceRecordFilterOperator _filterOperator(Map<String, dynamic> value) =>
+    WorkspaceRecordFilterOperator.values.byName(
+      value['filterOperator'] as String? ?? 'equals',
+    );
+
+WorkspaceRecordQuery _withFilter(
+  WorkspaceRecordQuery query,
+  Map<String, dynamic> value,
+) {
+  final id = value['filterColumnId'] as String?;
+  if (id == null) return query;
+
+  return query.filter(
+    id,
+    value['filterValue'] as String? ?? '',
+    operator: _filterOperator(value),
   );
 }

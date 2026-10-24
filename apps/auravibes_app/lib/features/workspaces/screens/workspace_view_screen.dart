@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chart.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_detail.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_history.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_summary.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -15,7 +18,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 typedef _Selection = ({String mode, WorkspaceViewData data});
-const _maximumVisibleRecords = 100;
 const _refreshInterval = Duration(seconds: 10);
 
 class const WorkspaceViewScreen({
@@ -24,8 +26,7 @@ class const WorkspaceViewScreen({
   required final VoidCallback onBack,
   super.key,
 }) extends StatelessWidget {
-  void refresh(WidgetRef ref) =>
-      ref.invalidate(workspaceViewDataProvider(workspaceId, viewId));
+  void refresh(WidgetRef ref) => ref.invalidate(workspaceViewDataProvider);
 
   @override
   Widget build(BuildContext context) => _ViewSession(
@@ -158,17 +159,118 @@ class const _Contents(
   }
 }
 
-class const _LoadState(final WorkspaceViewScreen owner) extends ConsumerWidget {
+class const _LoadState(final WorkspaceViewScreen owner)
+    extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => switch (ref.watch(
-    workspaceViewDataProvider(owner.workspaceId, owner.viewId),
-  )) {
-    AsyncData(:final value) => _Content(value),
-    AsyncError(:final error) => Center(
-      child: WorkspaceItemFailure(error: error),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final offset = useState(0);
+    final state = ref.watch(
+      workspaceViewDataProvider(
+        owner.workspaceId,
+        owner.viewId,
+        offset: offset.value,
+      ),
+    );
+
+    return _PageState(state, offset);
+  }
+}
+
+class const _PageState(
+  final AsyncValue<WorkspaceViewData> state,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoading) return _Waiting(stale: state.hasValue);
+
+    return switch (state) {
+      AsyncData(:final value) => _Page(value, offset),
+      AsyncError(:final error) => Center(
+        child: WorkspaceItemFailure(error: error),
+      ),
+      AsyncLoading() => const _Waiting(stale: false),
+    };
+  }
+}
+
+class const _Waiting({required final bool stale}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        const CircularProgressIndicator(),
+        TextLocale(
+          stale
+              ? LocaleKeys.workspace_relational_stale
+              : LocaleKeys.workspace_relational_loading,
+        ),
+      ],
     ),
-    AsyncLoading() => const Center(child: CircularProgressIndicator()),
-  };
+  );
+}
+
+class const _Page(final WorkspaceViewData data, final ValueNotifier<int> offset)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Expanded(child: _Content(data)),
+      _Pages(data, offset),
+    ],
+  );
+}
+
+class const _Pages(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => data.needsRepair
+      ? const SizedBox.shrink()
+      : Wrap(
+          spacing: 8,
+          children: [
+            _Previous(data, offset),
+            _PageRange(data),
+            _Next(data, offset),
+          ],
+        );
+}
+
+class const _PageRange(final WorkspaceViewData data) extends StatelessWidget {
+  int get _start => data.records.isEmpty ? 0 : data.offset + 1;
+  int get _end => data.records.isEmpty ? 0 : data.offset + data.records.length;
+  @override
+  Widget build(BuildContext context) => Text('$_start - $_end');
+}
+
+class const _Previous(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: _previous,
+    child: const TextLocale(LocaleKeys.workspace_relational_previous),
+    disabled: offset.value == 0,
+    identifier: 'workspace_view_previous',
+  );
+  void _previous() => offset.value = (offset.value - data.view.query.limit)
+      .clamp(0, offset.value);
+}
+
+class const _Next(final WorkspaceViewData data, final ValueNotifier<int> offset)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: _next,
+    child: const TextLocale(LocaleKeys.workspace_relational_next),
+    disabled: !data.hasMore,
+    identifier: 'workspace_view_next',
+  );
+  void _next() => offset.value += data.view.query.limit;
 }
 
 class const _Selected(
@@ -190,17 +292,31 @@ class const _Selected(
         );
 }
 
-class const _Content(final WorkspaceViewData data) extends StatelessWidget {
+class const _Content(final WorkspaceViewData data) extends HookWidget {
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(16),
-    children: [
-      Text(data.view.name),
-      const TextLocale(LocaleKeys.workspace_views_display_only),
-      _Surface(data),
-      _Limit(data),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final selected = useState<String?>(null);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(data.view.name),
+        const TextLocale(LocaleKeys.workspace_views_display_only),
+        _DataSurface(data, selected),
+        WorkspaceViewSummary(data: data),
+      ],
+    );
+  }
+}
+
+class const _DataSurface(
+  final WorkspaceViewData data,
+  final ValueNotifier<String?> selected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _isDetail(data) && !data.needsRepair
+      ? WorkspaceViewDetail(data: data, selected: selected)
+      : _Surface(data);
 }
 
 class const _Surface(final WorkspaceViewData data) extends StatelessWidget {
@@ -213,14 +329,24 @@ class const _Surface(final WorkspaceViewData data) extends StatelessWidget {
       return const TextLocale(LocaleKeys.workspace_views_empty);
     }
 
+    if (data.view.definition.components.any(_boundChart)) {
+      return WorkspaceViewChart(data: data);
+    }
+
     return WorkspaceViewSurface(data: data);
   }
 }
 
-class const _Limit(final WorkspaceViewData data) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      data.records.length >= _maximumVisibleRecords
-      ? const TextLocale(LocaleKeys.workspace_views_limit)
-      : const SizedBox.shrink();
-}
+bool _isDetail(WorkspaceViewData data) => data.view.definition.components.any(
+  (component) => component['id'].toString().startsWith('detail_'),
+);
+
+bool _boundChart(Map<String, Object?> component) => switch (component) {
+  {
+    'component': 'Chart',
+    'labels': {'path': '/chartLabels'},
+    'series': {'path': '/chartSeries'},
+  } =>
+    true,
+  _ => false,
+};

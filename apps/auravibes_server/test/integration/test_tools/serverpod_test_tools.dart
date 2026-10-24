@@ -211,6 +211,8 @@ import 'package:auravibes_server/src/generated/features/workspace_state/models/r
     as _i2v5creq;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_response.dart'
     as _iwsbsne8;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_record_summary_request.dart'
+    as _il1i4a8s;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_record_request.dart'
     as _irm41t6a;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/workspace_reference_table_request.dart'
@@ -3052,6 +3054,35 @@ class _WorkspaceStateEndpoint {
   final _is.EndpointDispatch _endpointDispatch;
 
   final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> summarizeRecords(
+    _ist.TestSessionBuilder sessionBuilder,
+    _il1i4a8s.WorkspaceRecordSummaryRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'summarizeRecords',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'summarizeRecords',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 
   _ida.Future<List<_ixyz6pla.WorkspaceResource>> queryRecords(
     _ist.TestSessionBuilder sessionBuilder,

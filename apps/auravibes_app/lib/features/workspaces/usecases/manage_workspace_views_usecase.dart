@@ -23,13 +23,14 @@ class const ManageWorkspaceViewsUsecase(
     return await _visibleViews(views);
   }
 
-  Future<WorkspaceViewData> open(String id) async {
+  Future<WorkspaceViewData> open(String id, {int offset = 0}) async {
     final view = await _views.read(id);
     final table = await _tables.table(view.tableId);
-    final repair = WorkspaceViewValidation.needsRepair(view, table);
-    final records = repair ? <WorkspaceRecord>[] : await _records(view);
+    if (WorkspaceViewValidation.needsRepair(view, table)) {
+      return _snapshot(view, table, []);
+    }
 
-    return _snapshot(view, table, records, needsRepair: repair);
+    return await _readPage(view, table, offset);
   }
 
   Future<WorkspaceView> create({
@@ -65,18 +66,22 @@ class const ManageWorkspaceViewsUsecase(
     return save(previous.withRevision(current.revision), requestId: requestId);
   }
 
-  Future<List<WorkspaceRecord>> _records(WorkspaceView view) async {
-    final page = await _query(
-      view.tableId,
-      const WorkspaceRecordQuery(limit: 100),
-    );
+  Future<WorkspaceViewData> _readPage(
+    WorkspaceView view,
+    WorkspaceTable table,
+    int offset,
+  ) async {
+    final page = await _query(view.tableId, view.query.change(offset: offset));
+    final records = await _project(view, page.records);
+    final info = await _pageInfo(_query, view, page.hasMore, offset);
 
-    return await WorkspaceViewProjection(
-      _tables,
-      _references,
-    ).records(view, page.records);
+    return _snapshot(view, table, records, info);
   }
 
+  Future<List<WorkspaceRecord>> _project(
+    WorkspaceView view,
+    List<WorkspaceRecord> records,
+  ) => WorkspaceViewProjection(_tables, _references).records(view, records);
   Future<List<WorkspaceView>> _visibleViews(List<WorkspaceView> views) async {
     final result = <WorkspaceView>[];
     for (final view in views) {
@@ -98,13 +103,25 @@ class const ManageWorkspaceViewsUsecase(
   }
 }
 
+typedef _ViewPageInfo = ({
+  bool hasMore,
+  int offset,
+  Map<String, Object?> summary,
+});
 WorkspaceViewData _snapshot(
   WorkspaceView view,
   WorkspaceTable table,
-  List<WorkspaceRecord> records, {
-  required bool needsRepair,
-}) =>
-    .new(view: view, table: table, records: records, needsRepair: needsRepair);
+  List<WorkspaceRecord> records, [
+  _ViewPageInfo? page,
+]) => .new(
+  view: view,
+  table: table,
+  records: records,
+  needsRepair: page == null,
+  hasMore: page?.hasMore ?? false,
+  offset: page?.offset ?? 0,
+  summary: page?.summary ?? const {},
+);
 
 String _operationId(String? requested) {
   final id = requested ?? const UuidV7().generate();
@@ -116,3 +133,18 @@ String _operationId(String? requested) {
 }
 
 const _maximumOperationIdLength = 100;
+
+Future<_ViewPageInfo> _pageInfo(
+  QueryWorkspaceRecordsUsecase query,
+  WorkspaceView view,
+  bool hasMore,
+  int offset,
+) async => (
+  hasMore: hasMore,
+  offset: offset,
+  summary: await query.repository.summarize(
+    view.tableId,
+    view.query,
+    view.summaryColumnIds,
+  ),
+);
