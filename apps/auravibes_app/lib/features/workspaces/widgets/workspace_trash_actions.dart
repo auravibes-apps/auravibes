@@ -52,6 +52,7 @@ abstract final class WorkspaceTrashActions {
 
   static void refresh(WidgetRef ref) {
     ref
+      ..invalidate(workspaceAssetRepositoryProvider)
       ..invalidate(workspaceFilesProvider)
       ..invalidate(workspaceFileProvider)
       ..invalidate(workspaceAssetPreviewProvider)

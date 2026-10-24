@@ -1,6 +1,5 @@
 import 'package:serverpod/serverpod.dart';
 
-import '../../generated/protocol.dart';
 import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspaces;
 import 'object_item_access.dart';

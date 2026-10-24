@@ -11,20 +11,9 @@ class const CloudWorkspaceFileRepository(
   @override
   Future<List<WorkspaceFile>> list({String? parentId}) async {
     final files = <WorkspaceFile>[];
-    String? cursor;
-    do {
-      final response = await store.read(
-        pages: [.new(resourceKind: .file, afterResourceId: cursor, limit: 100)],
-      );
-      final page = response.pages.single;
-      files.addAll(
-        page.resources
-            .where((row) => row.deletedAt == null)
-            .map(_file)
-            .where((file) => file.parentId == parentId),
-      );
-      cursor = page.nextResourceId;
-    } while (cursor != null);
+    await for (final page in _FilePages(store).read()) {
+      files.addAll(_liveFiles(page).where((file) => file.parentId == parentId));
+    }
     files.sort((left, right) => left.name.compareTo(right.name));
 
     return files;
@@ -32,18 +21,10 @@ class const CloudWorkspaceFileRepository(
 
   @override
   Future<WorkspaceFile> file(String id) async {
-    String? cursor;
-    do {
-      final response = await store.read(
-        pages: [.new(resourceKind: .file, afterResourceId: cursor, limit: 100)],
-      );
-      final page = response.pages.single;
-      final row = page.resources
-          .where((row) => row.resourceId == id && row.deletedAt == null)
-          .firstOrNull;
-      if (row != null) return _file(row);
-      cursor = page.nextResourceId;
-    } while (cursor != null);
+    await for (final page in _FilePages(store).read()) {
+      final found = _liveFiles(page).where((file) => file.id == id).firstOrNull;
+      if (found != null) return found;
+    }
     throw const WorkspaceAssetException(.denied);
   }
 
@@ -92,6 +73,36 @@ class const CloudWorkspaceFileRepository(
     return await this.file(file.id);
   }
 }
+
+class const _FilePages(final CloudWorkspaceResourceStore store) {
+  Stream<List<WorkspaceResource>> read() async* {
+    final seen = <String>{};
+    String? cursor;
+    do {
+      final page = await _page(cursor);
+      cursor = page.nextResourceId;
+      if (cursor != null && !seen.add(cursor)) {
+        throw const WorkspaceAssetException(.unavailable);
+      }
+      yield page.resources;
+    } while (cursor != null);
+  }
+
+  Future<WorkspaceResourcePage> _page(String? cursor) async {
+    final response = await store.read(
+      pages: [.new(resourceKind: .file, afterResourceId: cursor, limit: 100)],
+    );
+    if (response.pages.length != 1 ||
+        response.pages.single.resourceKind != .file) {
+      throw const WorkspaceAssetException(.unavailable);
+    }
+
+    return response.pages.single;
+  }
+}
+
+Iterable<WorkspaceFile> _liveFiles(List<WorkspaceResource> rows) =>
+    rows.where((row) => row.deletedAt == null).map(_file);
 
 WorkspaceFile _file(WorkspaceResource resource) {
   final data = CloudResourceMapper.decode(resource);

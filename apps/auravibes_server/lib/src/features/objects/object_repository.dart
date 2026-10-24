@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'object_deletion_guard.dart';
 
 class ObjectRepository {
   Future<WorkspaceObject?> findObject(
@@ -140,7 +141,13 @@ class ObjectRepository {
     required WorkerCoordinatorLease coordinator,
     required DateTime now,
   }) => session.db.transaction((transaction) async {
-    if (!await _ownsCoordinator(session, transaction, coordinator)) return;
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
     final current = await ObjectDeletion.db.findById(
       session,
       deletion.id!,
@@ -162,7 +169,13 @@ class ObjectRepository {
     required DateTime now,
     required String error,
   }) => session.db.transaction((transaction) async {
-    if (!await _ownsCoordinator(session, transaction, coordinator)) return;
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
     final current = await ObjectDeletion.db.findById(
       session,
       deletion.id!,
@@ -182,26 +195,4 @@ class ObjectRepository {
       transaction: transaction,
     );
   });
-
-  Future<bool> _ownsCoordinator(
-    Session session,
-    Transaction transaction,
-    WorkerCoordinatorLease coordinator,
-  ) async {
-    final lease = await WorkerCoordinatorLease.db.findFirstRow(
-      session,
-      where: (table) => table.key.equals('global'),
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    final result = await session.db.unsafeQuery(
-      'SELECT clock_timestamp() AS "now"',
-      transaction: transaction,
-    );
-    final now = result.first.toColumnMap()['now']! as DateTime;
-    return lease != null &&
-        lease.ownerId == coordinator.ownerId &&
-        lease.fencingToken == coordinator.fencingToken &&
-        lease.expiresAt.isAfter(now);
-  }
 }

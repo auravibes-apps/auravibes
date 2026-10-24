@@ -18,13 +18,13 @@ class const SelectWorkspaceAssetAttachmentUsecase(
     );
 
     return MessageAttachmentToCreate(
-      assetId: asset.id,
       localPath: location.location,
       fileName: asset.name,
       displayName: asset.name,
       mimeType: asset.mimeType,
       modality: ChatAttachmentModality.forMimeType(asset.mimeType),
       sizeBytes: asset.sizeBytes,
+      assetId: asset.id,
     );
   }
 }

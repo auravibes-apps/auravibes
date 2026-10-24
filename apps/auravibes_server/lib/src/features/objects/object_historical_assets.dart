@@ -4,6 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../workspace_state/workspace_table_access.dart';
+import 'object_asset_references.dart';
 
 /// Only capture-time attachment provenance can retain or authorize an asset.
 class const ObjectHistoricalAssets(
@@ -11,8 +12,12 @@ class const ObjectHistoricalAssets(
   final int workspaceId,
   final Transaction? transaction,
 ) {
+  Future<Set<String>> ids() async => {
+    for (final row in await _snapshots()) ..._references(row),
+  };
+
   Future<bool> retained(int objectId) async =>
-      (await _snapshots()).any((row) => _contains(row, '$objectId'));
+      (await ids()).contains('$objectId');
 
   Future<bool> readable(
     int objectId,
@@ -66,28 +71,16 @@ bool _audienceFits(WorkspaceResource table, Set<String>? targetReaders) {
   return targetReaders.difference(readers).isEmpty;
 }
 
-bool _contains(WorkspaceRevision snapshot, String id) {
+bool _contains(WorkspaceRevision snapshot, String id) =>
+    _references(snapshot).contains(id);
+
+Iterable<String> _references(WorkspaceRevision snapshot) {
   final data = _data(snapshot.data);
-  if (snapshot.resourceKind == .table) return _defaultContains(data, id);
-  final columns = data['historyAttachmentColumns'];
-  final values = data['values'];
-  if (columns is! List || values is! Map) return false;
 
-  return columns.whereType<String>().any(
-    (column) => _includes(values[column], id),
-  );
+  return snapshot.resourceKind == .table
+      ? ObjectAssetReferences.defaults(data)
+      : ObjectAssetReferences.historicalRecord(data);
 }
 
-bool _defaultContains(Map<String, dynamic> data, String id) {
-  final columns = data['columns'];
-  if (columns is! List) return false;
-
-  return columns.whereType<Map>().any(
-    (column) =>
-        column['type'] == 'attachment' && _includes(column['defaultValue'], id),
-  );
-}
-
-bool _includes(Object? value, String id) => value is List && value.contains(id);
 Map<String, dynamic> _data(String value) =>
     jsonDecode(value) as Map<String, dynamic>;

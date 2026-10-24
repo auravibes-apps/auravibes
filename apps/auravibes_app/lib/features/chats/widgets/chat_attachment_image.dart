@@ -1,13 +1,12 @@
+import 'package:auravibes_app/features/chats/widgets/chat_attachment_image_web.dart'
+    if (dart.library.io) 'package:auravibes_app/features/chats/widgets/chat_attachment_image_io.dart'
+    as platform;
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset_location.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-
-import 'chat_attachment_image_web.dart'
-    if (dart.library.io) 'chat_attachment_image_io.dart'
-    as platform;
 
 class const ChatAttachmentImage({
   required final String localPath,
@@ -32,11 +31,10 @@ class const ChatAttachmentImage({
 
 class const _AssetImage(final WorkspaceAssetLocation location)
     extends ConsumerWidget {
-  static const _decodeWidth = 640;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (location.namespace != ref.watch(appStorageNamespaceProvider)) {
-      return _unavailable();
+      return const Icon(Icons.broken_image_outlined);
     }
     final value = ref.watch(
       workspaceAssetPreviewProvider(location.workspaceId, location.assetId),
@@ -46,19 +44,25 @@ class const _AssetImage(final WorkspaceAssetLocation location)
     }
 
     return switch (value) {
-      AsyncData(:final value) => _image(value),
-      _ => _unavailable(),
+      AsyncData(:final value) => _ReadyImage(value),
+      AsyncError() || AsyncLoading() => const Icon(Icons.broken_image_outlined),
     };
   }
+}
 
-  Widget _image(WorkspaceAssetPreview preview) {
-    if (preview.kind != .image) return _unavailable();
+class const _ReadyImage(final WorkspaceAssetPreview preview)
+    extends StatelessWidget {
+  static const _decodeWidth = 640;
+
+  @override
+  Widget build(BuildContext context) {
+    if (preview.kind != .image) return const Icon(Icons.broken_image_outlined);
 
     return Image.memory(
       preview.bytes,
+      errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
       fit: .cover,
       cacheWidth: _decodeWidth,
-      errorBuilder: (_, _, _) => _unavailable(),
     );
   }
 }
@@ -70,5 +74,3 @@ WorkspaceAssetLocation? _location(String value) {
     return null;
   }
 }
-
-Widget _unavailable() => const Icon(Icons.broken_image_outlined);

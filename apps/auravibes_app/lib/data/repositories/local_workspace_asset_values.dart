@@ -70,7 +70,7 @@ class const LocalWorkspaceAssetValues(
     return Map.of(data)
       ..['columns'] = [
         for (final column in raw.cast<Map<String, dynamic>>())
-          if (hidden.contains(column['id']))
+          if (hidden.contains(column['id'] as String))
             Map.of(column)..remove('defaultValue')
           else
             column,

@@ -1,5 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
@@ -20,6 +22,130 @@ void main() {
     expect(
       await fixture.database.select(fixture.database.workspaceAssets).get(),
       hasLength(1),
+    );
+  });
+
+  test(
+    'Conversation deletion retains shared fork asset until last reference',
+    () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.database.close);
+      final _ = await fixture.messages.createMessage(_message(_asset));
+      final deleted = <String>[];
+      final conversations = ConversationRepository(
+        fixture.database,
+        attachmentFileStore: _DeletingStore(deleted),
+      );
+      final fork = await conversations.forkConversation('conversation');
+      expect(await conversations.deleteConversation('conversation'), isTrue);
+      expect(deleted, isEmpty);
+      expect(
+        await fixture.database.select(fixture.database.workspaceAssets).get(),
+        hasLength(1),
+      );
+      expect(await conversations.deleteConversation(fork.id), isTrue);
+      await LocalWorkspaceAssetCleanup(
+        fixture.database,
+        'local',
+        _DeletingStore(deleted),
+      ).flush();
+      expect(deleted, ['asset']);
+      expect(
+        await fixture.database.select(fixture.database.workspaceAssets).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test('deleting the final message releases its shared asset', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    final message = await fixture.messages.createMessage(_message(_asset));
+    final deleted = <String>[];
+    final messages = MessageRepository(
+      fixture.database,
+      attachmentFileStore: _DeletingStore(deleted),
+    );
+    expect(await messages.deleteMessage(message.id), isTrue);
+    await LocalWorkspaceAssetCleanup(
+      fixture.database,
+      'local',
+      _DeletingStore(deleted),
+    ).flush();
+    expect(deleted, ['asset']);
+  });
+
+  test(
+    'failed cleanup stays inaccessible and retries without duplicate deletion',
+    () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.database.close);
+      final _ = await fixture.messages.createMessage(_message(_asset));
+      final deleted = <String>[];
+      final store = _DeletingStore(deleted)..fail = true;
+      final conversations = ConversationRepository(
+        fixture.database,
+        attachmentFileStore: store,
+      );
+      expect(await conversations.deleteConversation('conversation'), isTrue);
+      await LocalWorkspaceAssetCleanup(
+        fixture.database,
+        'local',
+        store,
+      ).flush();
+      final pending = await fixture.database
+          .select(fixture.database.workspaceAssets)
+          .getSingle();
+      expect(pending.status, 'deleting');
+      expect(deleted, isEmpty);
+      store.fail = false;
+      final cleanup = LocalWorkspaceAssetCleanup(
+        fixture.database,
+        'local',
+        store,
+      );
+      await cleanup.flush();
+      await cleanup.flush();
+      expect(deleted, ['asset']);
+      expect(
+        await fixture.database.select(fixture.database.workspaceAssets).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test('outer rollback never deletes retained bytes', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    final _ = await fixture.messages.createMessage(_message(_asset));
+    final deleted = <String>[];
+    final conversations = ConversationRepository(
+      fixture.database,
+      attachmentFileStore: _DeletingStore(deleted),
+    );
+    await expectLater(
+      fixture.database.transaction(() async {
+        expect(await conversations.deleteConversation('conversation'), isTrue);
+        throw StateError('Rollback outer operation');
+      }),
+      throwsStateError,
+    );
+    await LocalWorkspaceAssetCleanup(
+      fixture.database,
+      'local',
+      _DeletingStore(deleted),
+    ).flush();
+    expect(deleted, isEmpty);
+    expect(
+      await fixture.messages.getMessagesByConversation('conversation'),
+      hasLength(1),
+    );
+    expect(
+      (await fixture.database
+              .select(fixture.database.workspaceAssets)
+              .getSingle())
+          .status,
+      'active',
     );
   });
 
@@ -112,4 +238,15 @@ class _Store extends AttachmentFileStore {
   Future<String> persistDraftFile(String path) async => path;
   @override
   Future<void> deleteFile(String path) async {}
+}
+
+class _DeletingStore extends _Store {
+  _DeletingStore(this.deleted);
+  final List<String> deleted;
+  bool fail = false;
+  @override
+  Future<void> deleteAsset(String id) async {
+    if (fail) throw StateError('Transient byte store failure');
+    deleted.add(id);
+  }
 }

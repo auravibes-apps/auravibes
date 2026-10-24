@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:drift/drift.dart';
@@ -270,13 +271,19 @@ extension on ConversationRepository {
       id,
       includeDescendantAttachmentPaths,
     );
-    final deleted = await _database.transaction(
+    final deleted = await _deleteWithAssetRetention(
+      id,
       () => _materializeAndDelete(id, frozenForkBoundaries),
     );
     if (deleted) await _deleteUnusedAttachments(attachmentPaths);
 
     return deleted;
   }
+
+  Future<bool> _deleteWithAssetRetention(
+    String id,
+    Future<bool> Function() action,
+  ) => LocalWorkspaceAssetMutation(_database).conversation(id, action);
 
   Future<Set<String>> _attachmentPathsForDeletionMode(
     String id,
@@ -1015,8 +1022,8 @@ extension on ConversationRepository {
     createdAt: .new(attachment.createdAt),
     updatedAt: .new(attachment.updatedAt),
     messageId: messageId,
-    localPath: attachment.localPath,
     assetId: .absentIfNull(attachment.assetId),
+    localPath: attachment.localPath,
     fileName: attachment.fileName,
     displayName: .new(attachment.displayName),
     mimeType: attachment.mimeType,

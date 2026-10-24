@@ -25,7 +25,7 @@ class const ChatSharedAsset({
 
     return switch (value) {
       AsyncData(:final value) => _ReadyAsset(this, value),
-      _ => const Chip(
+      AsyncError() || AsyncLoading() => const Chip(
         label: TextLocale(LocaleKeys.workspace_assets_unavailable),
       ),
     };
@@ -37,7 +37,10 @@ class const _ReadyAsset(final ChatSharedAsset owner, final WorkspaceAsset asset)
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (asset.mimeType.startsWith('image/')) {
-      return InkWell(onTap: () => _open(context, ref), child: _image(ref));
+      return InkWell(
+        child: _AssetPicture(owner),
+        onTap: () => _open(context, ref),
+      );
     }
 
     return ActionChip(
@@ -46,14 +49,6 @@ class const _ReadyAsset(final ChatSharedAsset owner, final WorkspaceAsset asset)
       onPressed: () => _open(context, ref),
     );
   }
-
-  Widget _image(WidgetRef ref) => ChatAttachmentImage(
-    localPath: WorkspaceAssetLocation.create(
-      namespace: ref.watch(appStorageNamespaceProvider),
-      workspaceId: owner.workspaceId,
-      assetId: owner.assetId,
-    ).location,
-  );
 
   void _open(BuildContext context, WidgetRef ref) {
     ref.invalidate(
@@ -67,4 +62,15 @@ class const _ReadyAsset(final ChatSharedAsset owner, final WorkspaceAsset asset)
       ),
     );
   }
+}
+
+class const _AssetPicture(final ChatSharedAsset owner) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ChatAttachmentImage(
+    localPath: WorkspaceAssetLocation.create(
+      namespace: ref.watch(appStorageNamespaceProvider),
+      workspaceId: owner.workspaceId,
+      assetId: owner.assetId,
+    ).location,
+  );
 }

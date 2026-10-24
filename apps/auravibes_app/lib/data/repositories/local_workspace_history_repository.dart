@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_release.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_retention.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_permanent_delete.dart';
@@ -44,7 +45,9 @@ class const LocalWorkspaceHistoryRepository(
   @override
   Future<void> permanentlyDelete(WorkspaceTrashTarget target) async {
     await _store.requireLocal();
-    await LocalWorkspacePermanentDelete(database, workspaceId)(target);
+    await LocalWorkspaceAssetRelease(database, workspaceId).mutate(
+      () => LocalWorkspacePermanentDelete(database, workspaceId)(target),
+    );
   }
 
   Future<WorkspaceRevision> _visible(

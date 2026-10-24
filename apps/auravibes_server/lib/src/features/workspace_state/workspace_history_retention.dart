@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../objects/object_asset_release.dart';
 import 'workspace_history_receipts.dart';
 import 'workspace_trash_access.dart';
 
@@ -46,7 +47,17 @@ class const WorkspaceHistoryRetention(
 
   Future<void> _prune(int days) async {
     final now = DateTime.now().toUtc();
-    for (final row in await _expired(now, days)) {
+    final expired = await _expired(now, days);
+    if (expired.isEmpty) return;
+    await ObjectAssetRelease(
+      session,
+      workspaceId,
+      transaction,
+    ).mutate(() => _deleteRows(expired));
+  }
+
+  Future<void> _deleteRows(Iterable<WorkspaceRevision> expired) async {
+    for (final row in expired) {
       final _ = await WorkspaceRevision.db.deleteRow(
         session,
         row,

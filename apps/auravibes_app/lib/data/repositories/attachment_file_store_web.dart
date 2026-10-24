@@ -34,7 +34,7 @@ class const AttachmentFileStoreWeb({
     try {
       final _ = await directory.removeEntry(assetId).toDart;
     } on Object catch (error, stackTrace) {
-      // WebIDL removeEntry rejects with a DOMException; only missing is success.
+      // WebIDL rejects with DOMException; only missing is success.
       final value = error as JSAny;
       if (value.isA<web.DOMException>() &&
           (value as web.DOMException).name == 'NotFoundError') {

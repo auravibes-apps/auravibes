@@ -4,10 +4,63 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'configured history expiry queues only assets with no retained use',
+    () async {
+      final fixture = _Fixture();
+      addTearDown(fixture.database.close);
+      await fixture.prepare();
+      fixture.table = await fixture.tables.saveColumn(
+        table: fixture.table,
+        column: const WorkspaceColumn(
+          id: 'files',
+          name: 'Attachments',
+          type: .attachment,
+        ),
+      );
+      final cleared = await fixture.tables.updateRecord(
+        table: fixture.table,
+        record: fixture.first,
+        values: {fixture.table.labelColumnId: 'Cleared'},
+      );
+      await fixture.database.customStatement(
+        'UPDATE workspace_revisions SET captured_at = 1',
+      );
+      final target = WorkspaceTrashTarget(
+        kind: .record,
+        id: cleared.id,
+        tableId: cleared.tableId,
+        revision: cleared.revision,
+      );
+      expect(await fixture.history.history(target), isNotEmpty);
+      expect(
+        (await fixture.database
+                .select(fixture.database.workspaceAssets)
+                .getSingle())
+            .status,
+        'active',
+      );
+      await fixture.history.configure(await fixture.history.policy(), 1);
+      expect(
+        (await fixture.database
+                .select(fixture.database.workspaceAssets)
+                .getSingle())
+            .status,
+        'deleting',
+      );
+      expect(await fixture.history.history(target), isEmpty);
+      expect(
+        (await fixture.tables.record(cleared.tableId, cleared.id)).values,
+        {fixture.table.labelColumnId: 'Cleared'},
+      );
+    },
+  );
+
   test('schema restore preserves unchanged unavailable defaults and record references', () async {
     final fixture = _Fixture();
     addTearDown(fixture.database.close);

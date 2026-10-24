@@ -25,7 +25,7 @@ class const LocalMessageAssetReferences(
     if (location.workspaceId != workspaceId) {
       throw const WorkspaceAssetException(.denied);
     }
-    final asset = await _asset(workspaceId, id!);
+    final asset = await _asset(workspaceId, location.assetId);
     if (asset == null ||
         asset.mimeType != attachment.mimeType ||
         asset.sizeBytes != attachment.sizeBytes) {
@@ -53,6 +53,7 @@ class const LocalMessageAssetReferences(
       database.workspaces,
     )..where((row) => row.id.equals(conversation.workspaceId))).getSingle();
     if (workspace.type != .local) throw const WorkspaceAssetException(.denied);
+
     return workspace.id;
   }
 }

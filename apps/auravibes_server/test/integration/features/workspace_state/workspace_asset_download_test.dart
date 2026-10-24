@@ -545,6 +545,79 @@ void main() {
           (await download()).downloadUrl,
           'https://example.invalid/private',
         );
+        final secondFile = await patch(
+          .new(
+            operation: .create,
+            resourceKind: .file,
+            resourceId: 'second-file',
+            data: jsonEncode({
+              'name': 'Second File',
+              'assetId': '${unlinked.id}',
+              'sharingApproved': true,
+            }),
+            fieldMask: const [],
+          ),
+        );
+        Future<void> purgeFile(String id, int revision) async {
+          final target = jsonEncode({
+            'kind': 'file',
+            'id': id,
+            'revision': revision,
+          });
+          final plan = jsonDecode(
+            await endpoints.workspaceTrash.preview(
+              authenticated,
+              workspace.id!,
+              target,
+            ),
+          ) as Map<String, dynamic>;
+          final _ = await endpoints.workspaceTrash.trash(
+            authenticated,
+            .new(
+              workspaceId: workspace.id!,
+              requestId: 'trash-$id',
+              targetJson: target,
+              planToken: plan['planToken'] as String,
+            ),
+          );
+          expect(
+            (await WorkspaceObject.db.findById(session, unlinked.id!))?.status,
+            'active',
+          );
+          await endpoints.workspaceHistory.permanentlyDelete(
+            authenticated,
+            workspace.id!,
+            target,
+          );
+        }
+
+        await purgeFile('shared-file', created.resources.single.revision);
+        expect(
+          (await WorkspaceObject.db.findById(session, unlinked.id!))?.status,
+          'active',
+        );
+        expect(
+          (await endpoints.object.describe(
+            authenticated,
+            .new(
+              workspaceId: workspace.id!,
+              objectId: unlinked.id!,
+            ),
+          )).objectId,
+          unlinked.id,
+        );
+        await purgeFile('second-file', secondFile.resources.single.revision);
+        expect(
+          (await WorkspaceObject.db.findById(session, unlinked.id!))?.status,
+          'deleted',
+        );
+        expect(
+          await ObjectDeletion.db.find(
+            session,
+            where: (row) => row.objectId.equals(unlinked.id!),
+          ),
+          hasLength(1),
+        );
       },
     );
   });

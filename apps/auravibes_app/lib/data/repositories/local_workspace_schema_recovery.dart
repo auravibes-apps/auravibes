@@ -86,8 +86,8 @@ class const LocalWorkspaceSchemaRecovery(
           (row) => WorkspaceRecord(
             id: row.id,
             tableId: row.tableId,
-            revision: row.revision,
             values: jsonDecode(row.valuesJson) as Map<String, dynamic>,
+            revision: row.revision,
           ),
         )
         .toList();

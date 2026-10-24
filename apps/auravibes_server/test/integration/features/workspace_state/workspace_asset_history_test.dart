@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspaces;
 import 'package:auravibes_server/src/generated/protocol.dart';
+import 'package:auravibes_server/src/features/objects/object_deletion_guard.dart';
+import 'package:auravibes_server/src/features/workers/worker_coordinator_repository.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
@@ -190,6 +192,78 @@ void main() {
             ),
           ),
         );
+        final revisions = await WorkspaceRevision.db.find(
+          session,
+          where: (row) => row.workspaceId.equals(wid),
+        );
+        for (final revision in revisions) {
+          await WorkspaceRevision.db.updateRow(
+            session,
+            revision.copyWith(capturedAt: .utc(2000)),
+          );
+        }
+        await endpoints.workspaceHistory.configurePolicy(
+          owner,
+          .new(
+            workspaceId: wid,
+            expectedRevision: 0,
+            days: 1,
+            requestId: 'expire-shared-assets',
+          ),
+        );
+        expect(
+          (await WorkspaceObject.db.findById(session, object.id!))?.status,
+          'deleted',
+        );
+        final queued = await ObjectDeletion.db.find(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(wid) & row.objectId.equals(object.id!),
+        );
+        expect(queued, hasLength(1));
+        final lease = await const WorkerCoordinatorRepository()
+            .acquireCoordinator(session, ownerId: 'asset-cleanup-test');
+        expect(lease, isNotNull);
+        if (lease == null) fail('Expected isolated cleanup lease');
+        const guard = ObjectDeletionGuard();
+        expect(await guard.allows(session, queued.single, lease), isTrue);
+        final trashReference = await WorkspaceResource.db.insertRow(
+          session,
+          .new(
+            workspaceId: wid,
+            resourceKind: .file,
+            resourceId: 'retained-file',
+            data: jsonEncode({'name': 'Retained', 'assetId': '${object.id}'}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+            deletedAt: now,
+          ),
+        );
+        expect(await guard.allows(session, queued.single, lease), isFalse);
+        await WorkspaceResource.db.deleteRow(session, trashReference);
+        expect(await guard.allows(session, queued.single, lease), isTrue);
+        expect(
+          await guard.allows(
+            session,
+            queued.single,
+            lease.copyWith(fencingToken: lease.fencingToken + 1),
+          ),
+          isFalse,
+        );
+        final released = await WorkspaceObject.db.findById(session, object.id!);
+        if (released == null) fail('Expected released object metadata');
+        await WorkspaceObject.db.updateRow(
+          session,
+          released.copyWith(objectKey: 'replacement/key'),
+        );
+        expect(await guard.allows(session, queued.single, lease), isFalse);
+        await WorkspaceObject.db.updateRow(session, released);
+        await ObjectDeletion.db.updateRow(
+          session,
+          queued.single.copyWith(completedAt: now),
+        );
+        expect(await guard.allows(session, queued.single, lease), isFalse);
       },
     );
   });

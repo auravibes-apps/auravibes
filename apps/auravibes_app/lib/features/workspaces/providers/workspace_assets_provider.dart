@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/cloud_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_file_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_attachment_adapter.dart';
@@ -52,11 +53,12 @@ Future<WorkspaceAssetRepository> _assetRepository(
   );
   if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
   if (session.cloud == null) {
-    return LocalWorkspaceAssetRepository(
-      ref.watch(appDatabaseProvider),
-      workspaceId,
-      ref.watch(attachmentFileStoreProvider),
-    );
+    final database = ref.watch(appDatabaseProvider);
+    final store = ref.watch(attachmentFileStoreProvider);
+    await LocalWorkspaceAssetCleanup(database, workspaceId, store).flush();
+    if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
+
+    return LocalWorkspaceAssetRepository(database, workspaceId, store);
   }
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayProvider(session).future,
