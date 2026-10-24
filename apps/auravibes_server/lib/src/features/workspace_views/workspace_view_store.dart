@@ -207,6 +207,7 @@ class const _ViewMover(final _ViewContext context) {
     if (context.member.role != 'owner') _denied();
     final current = await _row(move.id);
     final data = _data(current.data);
+    final _ = _metadataName(current, move.name);
     await _source(data['tableId'] as String);
     await _parent(data['parentId'] as String?);
     await _parent(move.parentId);
@@ -217,7 +218,7 @@ class const _ViewMover(final _ViewContext context) {
     final current = await _row(move.id);
     _checkRevision(current, move.expectedRevision);
 
-    return await _persist(current, move.parentId);
+    return await _persist(current, move);
   }
 
   Future<WorkspaceView> _row(String id) async {
@@ -244,9 +245,10 @@ class const _ViewMover(final _ViewContext context) {
 
   Future<WorkspaceView> _persist(
     WorkspaceView current,
-    String? parentId,
+    WorkspaceViewMove move,
   ) async {
-    final data = _movedMetadata(current, parentId);
+    if (_sameMetadata(current, move)) return current.copyWith(history: '[]');
+    final data = _movedMetadata(current, move);
     final saved = await WorkspaceView.db.updateRow(
       context.session,
       current.copyWith(
@@ -360,9 +362,24 @@ Never _receiptConflict() => throw CloudWorkspaceException(
   code: CloudWorkspaceErrorCode.idempotencyConflict,
 );
 
-Map<String, Object?> _movedMetadata(WorkspaceView current, String? parentId) =>
+Map<String, Object?> _movedMetadata(WorkspaceView current, WorkspaceViewMove move) =>
     {
       ..._data(current.data),
-      'parentId': parentId,
+      'parentId': move.parentId,
+      'name': _metadataName(current, move.name),
       'revision': current.revision + 1,
     };
+
+const _maximumMetadataNameLength = 200;
+String _metadataName(WorkspaceView current, String? proposed) {
+  if (proposed == null) return _data(current.data)['name'] as String;
+  final name = proposed.trim();
+  if (name.isEmpty || name.length > _maximumMetadataNameLength) {
+    throw CloudWorkspaceException(code: .validationFailed);
+  }
+  return name;
+}
+bool _sameMetadata(WorkspaceView current, WorkspaceViewMove move) {
+  final data = _data(current.data);
+  return data['parentId'] == move.parentId && data['name'] == _metadataName(current, move.name);
+}
