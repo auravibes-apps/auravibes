@@ -20,7 +20,7 @@ class const LocalWorkspaceRecordQueryRepository(
       workspaceId,
     ).table(tableId);
     final statement = _QueryStatement(workspaceId, table, query);
-    statement.validate();
+    statement._validate();
     final rows = await _read(statement);
 
     return _page(rows, query.limit);
@@ -29,7 +29,7 @@ class const LocalWorkspaceRecordQueryRepository(
   Future<List<QueryRow>> _read(_QueryStatement statement) => database
       .customSelect(
         _sql(statement.query.descending),
-        variables: statement.variables(),
+        variables: statement._variables(),
         readsFrom: {database.workspaceTableRecords},
       )
       .get();
@@ -81,7 +81,7 @@ class const _QueryStatement(
 ) {
   String get _sort => query.sortColumnId ?? table.labelColumnId;
   String get _filter => query.filterColumnId ?? table.labelColumnId;
-  void validate() {
+  void _validate() {
     _column(_sort);
     if (query.filterColumnId != null) _column(_filter);
   }
@@ -92,7 +92,7 @@ class const _QueryStatement(
     _requireSupported(table, id);
   }
 
-  List<Variable<Object>> variables() => [
+  List<Variable<Object>> _variables() => [
     Variable(workspaceId),
     Variable(table.id),
     ..._search(),

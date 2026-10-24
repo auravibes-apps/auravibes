@@ -1,8 +1,6 @@
-import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
-
 import 'dart:async';
 
-import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation_notifier.dart';
@@ -11,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_tables_pro
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_folder_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_creation.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_lists.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_metadata_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -98,16 +97,18 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
       switch (navigation.state.selected) {
         final WorkspaceFolder folder => _FolderEditor(navigation, folder),
         final WorkspaceTable table => _TableEditor(navigation, table),
-        final String id => WorkspaceTableScreen(
-          workspaceId: navigation.workspaceId,
-          tableId: id,
-          onBack: () {
-            navigation.actions.open(null);
-            navigation._refresh(ref);
-          },
-        ),
-        _ => _Browser(navigation),
+        final String id => _OpenedTable(navigation,id),
+    _ => _Browser(navigation),
       };
+}
+
+class const _OpenedTable(final _Navigation navigation,final String id) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context,WidgetRef ref) => WorkspaceTableScreen(workspaceId:navigation.workspaceId,tableId:id,onBack:() => _back(ref));
+  void _back(WidgetRef ref) {
+    navigation.actions.open(null);
+    navigation._refresh(ref);
+  }
 }
 
 class const _FolderEditor(
@@ -216,43 +217,40 @@ class const _BrowserBody(final _Navigation navigation, {super.key})
     final tables = ref.watch(
       workspaceTablesProvider(navigation.workspaceId, navigation._parentId),
     );
-    if (folders.isLoading || tables.isLoading)
+    if (folders.isLoading || tables.isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     return _DirectoryList(navigation);
   }
 }
 
 class const _DirectoryList(final _Navigation navigation)
-    extends HookConsumerWidget {
+    extends HookWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final parent = navigation._parentId;
     final scroll = useScrollController(
       initialScrollOffset: navigation.state.offsets[parent] ?? 0,
     );
     _rememberScroll(scroll, navigation, parent);
 
-    return ListView(
-      key: ValueKey(parent),
-      controller: scroll,
-      padding: const EdgeInsets.all(16),
-      children: [
-        _Breadcrumb(navigation),
-        if (navigation.state.recovered)
-          const TextLocale(LocaleKeys.workspace_items_location_recovered),
-        if (navigation.state.failure case final failure?)
-          WorkspaceItemFailure(error: failure),
-        if (navigation.selection.value case final selected?)
-          Text(
-            LocaleKeys.workspace_items_selected.tr(
-              args: [selected.length.toString()],
-            ),
-          ),
-        _Items(navigation),
-      ],
-    );
+    return _DirectoryScroll(navigation,scroll);
   }
+}
+
+class const _DirectoryScroll(final _Navigation navigation,final ScrollController scroll) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(key:ValueKey(navigation._parentId),controller:scroll,padding:const EdgeInsets.all(16),children:[_Breadcrumb(navigation),_DirectoryStatus(navigation),_Items(navigation)]);
+}
+
+class const _DirectoryStatus(final _Navigation navigation) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(children:[
+    if(navigation.state.recovered) const TextLocale(LocaleKeys.workspace_items_location_recovered),
+    if(navigation.state.failure case final failure?) WorkspaceItemFailure(error:failure),
+    if(navigation.selection.value case final selected?) Text(LocaleKeys.workspace_items_selected.tr(args:[selected.length.toString()])),
+  ]);
 }
 
 void _rememberScroll(

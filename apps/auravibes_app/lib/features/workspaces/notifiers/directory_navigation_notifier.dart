@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'directory_navigation_notifier.g.dart';

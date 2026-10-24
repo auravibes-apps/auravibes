@@ -101,16 +101,14 @@ class const _QueryReader(
   final Transaction transaction,
 ) {
   Future<List<WorkspaceResource>> read(Map<String, Object?> query) async {
-    final ids = await this.ids(query);
+    final ids = await _ids(query);
 
-    return await resources(ids);
+    return await _resources(ids);
   }
 
-  Future<List<String>> ids(Map<String, Object?> query) async {
-    final descending = query.remove('descending') == true;
-    final numeric = query.remove('numeric') == true;
+  Future<List<String>> _ids(Map<String, Object?> query) async {
     final rows = await session.db.unsafeQuery(
-      _sql(descending, numeric),
+      _querySql(query),
       parameters: .named(_parameters(query)),
       transaction: transaction,
     );
@@ -126,7 +124,7 @@ class const _QueryReader(
     'tableId': input.tableId,
   };
 
-  Future<List<WorkspaceResource>> resources(List<String> ids) async {
+  Future<List<WorkspaceResource>> _resources(List<String> ids) async {
     if (ids.isEmpty) return [];
     final rows = await _find(ids);
 
@@ -288,3 +286,10 @@ Map<String, dynamic> _decode(String encoded) {
 }
 
 const _maxEncodedLength = 2000;
+
+String _querySql(Map<String,Object?> query) {
+  final descending=query.remove('descending')==true;
+  final numeric=query.remove('numeric')==true;
+
+  return _sql(descending,numeric);
+}

@@ -70,7 +70,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   }
 
   /// Update workspace tool configuration.
-  Future<void> updateToolConfig(String toolId, String? config) async {
+  Future<void> updateToolConfig(String toolId, String config) async {
     final success = await _requiredWorkspaceToolsRepository(this)
         .patchWorkspaceToolConfig(_workspaceId, toolId, config);
     _replaceTools(success);

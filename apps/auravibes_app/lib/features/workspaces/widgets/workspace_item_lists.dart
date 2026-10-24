@@ -143,8 +143,9 @@ class const _Leading(final _ItemRow row) extends StatelessWidget {
 class const _Menu(final _ItemRow row) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (row.owner.selection != null || !row.canManage)
+    if (row.owner.selection != null || !row.canManage) {
       return const SizedBox.shrink();
+    }
 
     return AuraPopupMenuButton(
       items: [

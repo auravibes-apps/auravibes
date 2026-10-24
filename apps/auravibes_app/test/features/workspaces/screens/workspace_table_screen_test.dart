@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
@@ -82,6 +83,15 @@ void main() {
     expect(find.text('Readable'), findsOneWidget);
     expect(button('workspace_record_save'), findsNothing);
   });
+  testWidgets('record grid preserves money precision and selected timezone', (tester) async {
+    const table=WorkspaceTable(id:'values',name:'Values',labelColumnId:'label',columns:[WorkspaceColumn(id:'label',name:'Title'),WorkspaceColumn(id:'money',name:'Amount',type:.money),WorkspaceColumn(id:'instant',name:'Time',type:.timestamp,timeZone:'America/New_York')],revision:1,schemaRevision:1);
+    const record=WorkspaceRecord(id:'value',tableId:'values',values:{'label':'Entry','money':{'amount':'9007199254740993.010000000000000001','currency':'USD'},'instant':'2026-03-08T07:00:00Z'},revision:1);
+    await tester.runAsync(() => tester.pumpWidget(TestableApp(child: WorkspaceRecordBrowser(workspaceId: 'one', table: table, onRecord: (_) {}), overrides: [workspaceRecordQueryProvider.overrideWith((ref, arguments) async => const WorkspaceRecordPage(records: [record], hasMore: false))], workspaceId: 'one')));
+    final _=await tester.pumpAndSettle();
+    expect(find.text('USD 9007199254740993.010000000000000001'),findsOneWidget);
+    expect(find.textContaining('2026-03-08T03:00:00'),findsOneWidget);
+  });
+
   testWidgets('ordinary controls create tables and edit columns and records', (
     tester,
   ) async {
@@ -183,7 +193,7 @@ void main() {
     expect(find.byType(DataTable), findsOneWidget);
     expect(find.text('Other book'), findsOneWidget);
     await tester.enterText(input('workspace_record_search'), 'Updated');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.testTextInput.receiveAction(.done);
     await flush();
     expect(find.text('Updated book'), findsOneWidget);
     expect(find.text('Other book'), findsNothing);

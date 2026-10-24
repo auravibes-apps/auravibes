@@ -67,12 +67,12 @@ void main() {
     }
     final sorted = await query(
       schema.id,
-      WorkspaceRecordQuery(sortColumnId: quantity),
+      .new(sortColumnId: quantity),
     );
     expect(sorted.records.map((record) => record.values[quantity]), [2, 10]);
     final filtered = await query(
       schema.id,
-      WorkspaceRecordQuery(filterColumnId: quantity, filterValue: '10'),
+      .new(filterColumnId: quantity, filterValue: '10'),
     );
     expect(filtered.records.single.values[quantity], 10);
   });

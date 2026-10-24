@@ -16,6 +16,110 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
+    'temporal and exact currency values survive local persistence',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'workspace-exact-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final file = File('${directory.path}/values.sqlite');
+      final database = AppDatabase(connection: NativeDatabase(file));
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      var table = await tables.create(name: 'Values', labelName: 'Title');
+      for (final type in [
+        WorkspaceColumnType.dateOnly,
+        WorkspaceColumnType.timestamp,
+        WorkspaceColumnType.money,
+      ]) {
+        table = await tables.saveColumn(
+          table: table,
+          column: .new(
+            id: '',
+            name: type.name,
+            type: type,
+            timeZone: 'America/New_York',
+          ),
+        );
+      }
+      final date = table.columns[1].id;
+      final instant = table.columns[2].id;
+      final money = table.columns[3].id;
+      final values = <String, Object?>{
+        date: '2024-02-29',
+        instant: '2026-10-23T23:30:00.123456Z',
+        money: {
+          'amount': '9007199254740993.010000000000000001',
+          'currency': 'USD',
+        },
+      };
+      final record = await tables.createRecord(table: table, values: values);
+      expect((await tables.record(table.id, record.id)).values, values);
+      final missing = await tables.createRecord(table: table, values: {});
+      expect((await tables.record(table.id, missing.id)).values, isEmpty);
+      for (final invalid in <Map<String, Object?>>[
+        {date: '2023-02-29'},
+        {date: '2024-02-29T00:00:00Z'},
+        {instant: '2026-10-23T23:30:00'},
+        {
+          money: {'amount': 0.1, 'currency': 'USD'},
+        },
+        {
+          money: {'amount': '1e2', 'currency': 'USD'},
+        },
+        {
+          money: {'amount': '1.00', 'currency': 'usd'},
+        },
+      ]) {
+        await expectLater(
+          Future.sync(
+            () => tables.updateRecord(
+              table: table,
+              record: record,
+              values: invalid,
+            ),
+          ),
+          throwsA(isA<WorkspaceTableException>()),
+        );
+      }
+      expect((await tables.record(table.id, record.id)).values, values);
+      values[money] = {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      };
+      final edited = await tables.updateRecord(
+        table: table,
+        record: record,
+        values: values,
+      );
+      expect(edited.values[money], {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      });
+      await database.close();
+      final reopened = AppDatabase(connection: NativeDatabase(file));
+      addTearDown(reopened.close);
+      final retained = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(reopened, 'one'),
+      );
+      expect((await retained.record(table.id, record.id)).values, values);
+      expect(
+        (await retained.table(table.id)).columns[2].timeZone,
+        'America/New_York',
+      );
+    },
+  );
+  test(
     'table rename and move preserve record identity and open schema drafts',
     () async {
       final database = AppDatabase(connection: NativeDatabase.memory());
@@ -642,6 +746,16 @@ void main() {
             (type: .url, value: 'https://example.com', options: []),
             (type: .email, value: 'david@example.com', options: []),
             (type: .phone, value: '+1 (555) 123-4567', options: []),
+            (type: .dateOnly, value: '2024-02-29', options: []),
+            (type: .timestamp, value: '2026-11-01T06:30:00.000Z', options: []),
+            (
+              type: .money,
+              value: {
+                'amount': '9007199254740993.010000000000000001',
+                'currency': 'USD',
+              },
+              options: [],
+            ),
           ]) {
         typed = await tables.saveColumn(
           table: typed,
@@ -662,6 +776,22 @@ void main() {
         (await tables.record(typed.id, typedRecord.id)).values,
         typedValues,
       );
+      final moneyId = typed.columns
+          .firstWhere((column) => column.type == .money)
+          .id;
+      typedValues[moneyId] = {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      };
+      final editedTyped = await tables.updateRecord(
+        table: typed,
+        record: typedRecord,
+        values: typedValues,
+      );
+      expect(editedTyped.values[moneyId], {
+        'amount': '9007199254740993.010000000000000002',
+        'currency': 'EUR',
+      });
       final moved = await tables.updateMetadata(
         table: typed,
         name: 'Renamed remotely',

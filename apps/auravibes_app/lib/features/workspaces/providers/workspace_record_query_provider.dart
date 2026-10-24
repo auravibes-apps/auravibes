@@ -1,7 +1,7 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_record_query_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';

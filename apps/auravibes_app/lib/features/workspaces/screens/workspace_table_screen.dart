@@ -66,8 +66,9 @@ class const _TableState({required final WorkspaceTableScreen screen})
       workspaceTableProvider(screen.workspaceId, screen.tableId),
     );
 
-    if (table case AsyncError(:final error))
+    if (table case AsyncError(:final error)) {
       return _TableFailure(onBack: screen.onBack, error: error);
+    }
     final current = table.value;
     if (current != null) return _LoadedTable(screen: screen, table: current);
 
@@ -258,31 +259,18 @@ class const _TableBrowser({
     return Column(
       children: [
         _BrowserToolbar(this, settings),
-        Expanded(
-          child: Stack(
-            fit: .expand,
-            children: [
-              Offstage(
-                offstage: settings.value,
-                child: WorkspaceRecordBrowser(
-                  workspaceId: workspaceId,
-                  table: table,
-                  onRecord: onRecord,
-                ),
-              ),
-              if (settings.value)
-                Positioned.fill(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [_TableManagement(browser: this)],
-                  ),
-                ),
-            ],
-          ),
-        ),
+        Expanded(child:_BrowserContent(this,settings)),
       ],
     );
   }
+}
+
+class const _BrowserContent(final _TableBrowser browser,final ValueNotifier<bool> settings) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(fit:.expand,children:[
+    Offstage(offstage:settings.value,child:WorkspaceRecordBrowser(workspaceId:browser.workspaceId,table:browser.table,onRecord:browser.onRecord)),
+    if(settings.value) Positioned.fill(child:ListView(padding:const EdgeInsets.all(16),children:[_TableManagement(browser:browser)])),
+  ]);
 }
 
 class const _BrowserToolbar(

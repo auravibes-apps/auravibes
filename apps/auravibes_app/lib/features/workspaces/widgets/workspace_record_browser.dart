@@ -1,11 +1,12 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -108,14 +109,21 @@ class const _Pages(
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: .spaceBetween,
     children: [
-      AuraIconButton(icon:Icons.chevron_left,onPressed:() => _page(-1),disabled:query.value.offset==0,tooltip:LocaleKeys.workspace_items_previous_page.tr()),
+      _PageButton(this,true),
       Text('${query.value.offset ~/ query.value.limit + 1}'),
-      AuraIconButton(icon:Icons.chevron_right,onPressed:() => _page(1),disabled:!more,tooltip:LocaleKeys.workspace_items_next_page.tr()),
+      _PageButton(this,false),
     ],
   );
   void _page(int direction) => query.value = query.value.change(
     offset: query.value.offset + query.value.limit * direction,
   );
+}
+
+class const _PageButton(final _Pages pages,final bool previous) extends StatelessWidget {
+  bool get _disabled => previous ? pages.query.value.offset==0 : !pages.more;
+  String get _tooltip => (previous ? LocaleKeys.workspace_items_previous_page : LocaleKeys.workspace_items_next_page).tr();
+  @override
+  Widget build(BuildContext context) => AuraIconButton(icon:previous ? Icons.chevron_left : Icons.chevron_right,onPressed:() => pages._page(previous ? -1 : 1),disabled:_disabled,tooltip:_tooltip);
 }
 
 class const _Controls(final WorkspaceTable table, final _Draft draft)
@@ -162,7 +170,7 @@ class const _QueryDropdown(
 }
 
 class _QueryColumnOption extends AuraDropdownOption<String> {
-  _QueryColumnOption(WorkspaceColumn column)
+  new(WorkspaceColumn column)
     : super(
         value: column.id,
         isEnabled: _supportsQuery(column),
@@ -177,8 +185,9 @@ class const _FilterColumn(final WorkspaceTable table, final _Draft draft)
       _QueryDropdown(table, draft.filter.value ?? '', _change, filter: true);
   void _change(String? id) {
     draft.filter.value = id;
-    if (id == null || id.isEmpty)
+    if (id == null || id.isEmpty) {
       draft.query.value = draft.query.value.filter(null, '');
+    }
   }
 }
 
@@ -250,10 +259,11 @@ class const _Rows(
 
   @override
   Widget build(BuildContext context) {
-    if (records.isEmpty)
+    if (records.isEmpty) {
       return const Center(
         child: TextLocale(LocaleKeys.workspace_items_no_records),
       );
+    }
 
     return LayoutBuilder(builder: _layout);
   }
@@ -278,7 +288,7 @@ class const _RecordRow(final _Rows owner, final WorkspaceRecord record)
     for (final column in owner.visible.where(
       (column) => column.id != owner.table.labelColumnId,
     ))
-      '${column.name}: ${_value(record, column.id)}',
+      '${column.name}: ${_value(record, column.id,column)}',
   ].join('\n');
 }
 
@@ -300,15 +310,25 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
     cells: [
       for (final column in owner.visible)
         DataCell(
-          Text(_value(record, column.id)),
+          Text(_value(record, column.id,column)),
           onTap: () => owner.onRecord(record),
         ),
     ],
   );
 }
 
-String _value(WorkspaceRecord record, String columnId) =>
-    record.values[columnId]?.toString() ?? '';
+String _value(WorkspaceRecord record,String columnId,[WorkspaceColumn? column]) {
+  final value=record.values[columnId];
+  if(value==null) return LocaleKeys.workspace_items_missing_value.tr();
+  if(column?.type==WorkspaceColumnType.timestamp && value is String) return WorkspaceTimeZones.display(value,column?.timeZone ?? 'UTC');
+
+  return _display(value);
+}
+String _display(Object value) => switch(value) {
+  {'amount':final String amount,'currency':final String currency} => '$currency $amount',
+  final List<Object?> values => values.join(', '),
+  _ => value.toString(),
+};
 bool _supportsQuery(WorkspaceColumn column) => !{
   'timestamp',
   'money',
