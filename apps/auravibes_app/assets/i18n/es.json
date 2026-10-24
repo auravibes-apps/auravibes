@@ -2064,7 +2064,19 @@
     "move": "Mover",
     "move_here": "Mover aquí",
     "selection_move_limit": "Selecciona hasta 50 elementos para moverlos juntos.",
-    "selection_move_denied": "No se puede mover uno o más elementos seleccionados."
+    "selection_move_denied": "No se puede mover uno o más elementos seleccionados.",
+    "trash": "Papelera",
+    "trash_action": "Mover a la papelera",
+    "trash_impact": "¿Mover {name} y su contenido a la papelera? Se incluyen {count} elementos y registros. Los registros relacionados fuera de esta selección permanecen en su lugar.",
+    "trash_empty": "La papelera está vacía.",
+    "trash_restore": "Restaurar",
+    "trash_restored": "Restaurado.",
+    "trash_root_fallback": "Restaurado en la raíz del directorio porque la carpeta original no está disponible.",
+    "trash_unresolved": "Restaurado con dependencias pendientes. Se conservan los enlaces.",
+    "reference_deleted": "Registro eliminado",
+    "trash_cancel": "Cancelar",
+    "trash_close": "Cerrar",
+    "trash_refresh": "Actualizar"
   },
   "workspace_views": {
     "title": "Vista",

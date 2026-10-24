@@ -21,6 +21,7 @@ abstract class WorkspaceView
     required this.data,
     required this.revision,
     required this.history,
+    this.deletedAt,
   });
 
   factory WorkspaceView({
@@ -30,6 +31,7 @@ abstract class WorkspaceView
     required String data,
     required int revision,
     required String history,
+    DateTime? deletedAt,
   }) = _WorkspaceViewImpl;
 
   factory WorkspaceView.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -40,6 +42,9 @@ abstract class WorkspaceView
       data: jsonSerialization['data'] as String,
       revision: jsonSerialization['revision'] as int,
       history: jsonSerialization['history'] as String,
+      deletedAt: jsonSerialization['deletedAt'] == null
+          ? null
+          : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
 
@@ -58,6 +63,8 @@ abstract class WorkspaceView
 
   String history;
 
+  DateTime? deletedAt;
+
   /// Returns a shallow copy of this [WorkspaceView]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -68,6 +75,7 @@ abstract class WorkspaceView
     String? data,
     int? revision,
     String? history,
+    DateTime? deletedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -79,6 +87,7 @@ abstract class WorkspaceView
       'data': data,
       'revision': revision,
       'history': history,
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
     };
   }
 
@@ -92,6 +101,7 @@ abstract class WorkspaceView
       'data': data,
       'revision': revision,
       'history': history,
+      if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
     };
   }
 
@@ -111,6 +121,7 @@ class _WorkspaceViewImpl extends WorkspaceView {
     required String data,
     required int revision,
     required String history,
+    DateTime? deletedAt,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
@@ -118,6 +129,7 @@ class _WorkspaceViewImpl extends WorkspaceView {
          data: data,
          revision: revision,
          history: history,
+         deletedAt: deletedAt,
        );
 
   /// Returns a shallow copy of this [WorkspaceView]
@@ -131,6 +143,7 @@ class _WorkspaceViewImpl extends WorkspaceView {
     String? data,
     int? revision,
     String? history,
+    Object? deletedAt = _Undefined,
   }) {
     return WorkspaceView(
       id: id is int? ? id : this.id,
@@ -139,6 +152,7 @@ class _WorkspaceViewImpl extends WorkspaceView {
       data: data ?? this.data,
       revision: revision ?? this.revision,
       history: history ?? this.history,
+      deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
     );
   }
 }

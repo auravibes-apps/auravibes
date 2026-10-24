@@ -2064,7 +2064,19 @@
     "move": "Move",
     "move_here": "Move here",
     "selection_move_limit": "Select up to 50 items to move together.",
-    "selection_move_denied": "Move is unavailable for one or more selected items."
+    "selection_move_denied": "Move is unavailable for one or more selected items.",
+    "trash": "Trash",
+    "trash_action": "Move to Trash",
+    "trash_impact": "Move {name} and its contents to Trash? {count} items and records are affected. Related records outside this selection stay in place.",
+    "trash_empty": "Trash is empty.",
+    "trash_restore": "Restore",
+    "trash_restored": "Restored.",
+    "trash_root_fallback": "Restored to Directory root because the original folder is unavailable.",
+    "trash_unresolved": "Restored with unresolved dependencies. Retained links remain unchanged.",
+    "reference_deleted": "Deleted record",
+    "trash_cancel": "Cancel",
+    "trash_close": "Close",
+    "trash_refresh": "Refresh"
   },
   "workspace_views": {
     "title": "View",

@@ -301,6 +301,46 @@ void main() {
         ),
         throwsA(isA<CloudWorkspaceException>()),
       );
+      final _ = await endpoints.workspaceState.patch(
+        ownerBuilder,
+        PatchWorkspaceStateRequest(
+          workspaceId: workspace.id!,
+          requestId: 'private-source',
+          operations: [
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .table,
+              resourceId: 'private',
+              data: jsonEncode({...schema, 'memberAccess': <String, String>{}}),
+              fieldMask: const [],
+            ),
+          ],
+        ),
+      );
+      final _ = await endpoints.workspaceView.save(
+        ownerBuilder,
+        WorkspaceViewSaveRequest(
+          workspaceId: workspace.id!,
+          viewId: 'view',
+          requestId: 'rebind-private',
+          expectedRevision: 2,
+          definition: jsonEncode({...definition, 'tableId': 'private'}),
+        ),
+      );
+      await expectLater(
+        endpoints.workspaceView.history(readerBuilder, workspace.id!, 'view'),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      final _ = await endpoints.workspaceView.save(
+        ownerBuilder,
+        WorkspaceViewSaveRequest(
+          workspaceId: workspace.id!,
+          viewId: 'view',
+          requestId: 'rebind-visible',
+          expectedRevision: 3,
+          definition: jsonEncode(definition),
+        ),
+      );
       await tablePatch(2, {
         ...renamedSchema,
         'memberAccess': <String, String>{},
@@ -316,13 +356,9 @@ void main() {
         ),
         isEmpty,
       );
-      expect(
-        await endpoints.workspaceView.history(
-          readerBuilder,
-          workspace.id!,
-          'view',
-        ),
-        isEmpty,
+      await expectLater(
+        endpoints.workspaceView.history(readerBuilder, workspace.id!, 'view'),
+        throwsA(isA<CloudWorkspaceException>()),
       );
       await expectLater(
         endpoints.workspaceView.read(readerBuilder, workspace.id!, 'view'),

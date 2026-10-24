@@ -46,6 +46,7 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_se
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_trash_batches.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -108,6 +109,7 @@ part 'app_database.g.dart';
     WorkspaceTableRecords,
     ConnectorWrites,
     WorkspaceViews,
+    WorkspaceTrashBatches,
   ],
   daos: [
     WorkspaceDao,
@@ -194,7 +196,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceTablesSchemaVersion + 1;
   static const int _workspaceViewsSchemaVersion =
       _connectorWritesSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceViewsSchemaVersion;
+  static const int _workspaceTrashSchemaVersion =
+      _workspaceViewsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceTrashSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -233,9 +237,6 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
-    if (from < AppDatabase._workspaceViewsSchemaVersion) {
-      await m.createTable(workspaceViews);
-    }
     await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
@@ -246,9 +247,25 @@ extension on AppDatabase {
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
+    await _upgradeWorkspaceContentSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {
     await _upgradeWorkspaceItemsSchema(m, from);
+    if (from < AppDatabase._workspaceViewsSchemaVersion) {
+      await m.createTable(workspaceViews);
+    }
+    await _upgradeWorkspaceTrashSchema(m, from);
     if (from < AppDatabase._connectorWritesSchemaVersion) {
       await m.createTable(connectorWrites);
+    }
+  }
+
+  Future<void> _upgradeWorkspaceTrashSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceTrashSchemaVersion) return;
+    await m.createTable(workspaceTrashBatches);
+    if (from >= AppDatabase._workspaceViewsSchemaVersion) {
+      await m.addColumn(workspaceViews, workspaceViews.deletedAt);
     }
   }
 

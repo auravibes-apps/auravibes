@@ -111,6 +111,17 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
+    if (request.operations.any(
+      (operation) =>
+          operation.operation == .delete &&
+          {
+            WorkspaceResourceKind.folder,
+            WorkspaceResourceKind.table,
+            WorkspaceResourceKind.tableRecord,
+          }.contains(operation.resourceKind),
+    )) {
+      throw CloudWorkspaceException(code: .validationFailed);
+    }
     final requestJson = jsonEncode(moves.canonicalRequest());
     final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
     final hash = base64UrlEncode(requestHash);
