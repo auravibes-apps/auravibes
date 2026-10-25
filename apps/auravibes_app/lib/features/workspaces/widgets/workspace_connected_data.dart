@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/project_connected_workspace_view_usecase.dart';
@@ -24,92 +25,106 @@ class const WorkspaceConnectedData({
     final state = ref.watch(
       workspaceConnectedViewProvider(workspaceId, viewId),
     );
-    if (state.isLoading) {
-      return Center(
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            const CircularProgressIndicator(),
-            TextLocale(
-              state.hasValue
-                  ? LocaleKeys.workspace_relational_stale
-                  : LocaleKeys.workspace_relational_loading,
-            ),
-          ],
-        ),
-      );
-    }
+    if (state.isLoading) return _Waiting(stale: state.hasValue);
 
     return switch (state) {
-      AsyncData(:final value) => Column(
-        crossAxisAlignment: .start,
-        children: [
-          const TextLocale(LocaleKeys.workspace_connected_title),
-          const TextLocale(LocaleKeys.workspace_connected_disclosure),
-          Text(
-            LocaleKeys.workspace_connected_freshness.tr(
-              namedArgs: {'time': value.fetchedAt.toLocal().toString()},
-            ),
-          ),
-          _Projected(data, value.value),
-        ],
-      ),
+      AsyncData(:final value) => _Fetched(data, value),
       AsyncError(:final error) => TextLocale(_errorKey(error)),
-      AsyncLoading() => const CircularProgressIndicator(),
+      AsyncLoading() => const _Waiting(stale: false),
     };
   }
+}
+
+class const _Waiting({required final bool stale}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        const CircularProgressIndicator(),
+        TextLocale(
+          stale
+              ? LocaleKeys.workspace_relational_stale
+              : LocaleKeys.workspace_relational_loading,
+        ),
+      ],
+    ),
+  );
+}
+
+class const _Fetched(
+  final WorkspaceViewData? data,
+  final WorkspaceConnectedResult result,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      const TextLocale(LocaleKeys.workspace_connected_title),
+      const TextLocale(LocaleKeys.workspace_connected_disclosure),
+      _Freshness(result.fetchedAt),
+      _Projected(data, result.value),
+    ],
+  );
+}
+
+class const _Freshness(final DateTime time) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.workspace_connected_freshness.tr(
+      namedArgs: {'time': time.toLocal().toString()},
+    ),
+  );
 }
 
 class const _Result(final Object? value) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      value == null || value == '' || (value is List && (value as List).isEmpty)
-      ? const TextLocale(LocaleKeys.workspace_connected_empty)
-      : SelectableText(const JsonEncoder.withIndent('  ').convert(value));
+      SelectableText(const JsonEncoder.withIndent('  ').convert(value));
 }
 
-String _errorKey(Object error) {
-  if (error is WorkspaceConnectedReadException) {
-    return switch (error.code) {
-      'denied' => LocaleKeys.workspace_connected_denied,
-      'disconnected' => LocaleKeys.workspace_connected_disconnected,
-      'repair' => LocaleKeys.workspace_connected_repair,
-      _ => LocaleKeys.workspace_connected_failed,
+String _errorKey(Object error) => switch (error) {
+  WorkspaceTableException(denied: true) =>
+    LocaleKeys.workspace_connected_denied,
+  WorkspaceTableException() => LocaleKeys.workspace_connected_repair,
+  CloudWorkspaceException(code: .staleRevision) =>
+    LocaleKeys.workspace_connected_changed,
+  WorkspaceConnectedReadException(:final code) => _codeKey(code),
+  CloudWorkspaceException(
+    code: .permissionDenied || .membershipRequired || .authenticationRequired,
+  ) =>
+    LocaleKeys.workspace_connected_denied,
+  AgentToolExecutionFailure() => _codeKey(_commandCode(error)),
+  _ => LocaleKeys.workspace_connected_failed,
+};
+String _codeKey(String? code) => switch (code) {
+  'denied' || 'tool_access_denied' => LocaleKeys.workspace_connected_denied,
+  'repair' ||
+  'stale_contract' ||
+  'invalid_tool_arguments' => LocaleKeys.workspace_connected_repair,
+  'disconnected' => LocaleKeys.workspace_connected_disconnected,
+  final String value when value.startsWith('connection_') =>
+    LocaleKeys.workspace_connected_disconnected,
+  _ => LocaleKeys.workspace_connected_failed,
+};
+String? _commandCode(AgentToolExecutionFailure error) {
+  try {
+    return switch (jsonDecode(error.responseRaw)) {
+      {'error': {'code': final String code}} => code,
+      _ => null,
     };
+  } on FormatException {
+    return null;
   }
-  if (error is CloudWorkspaceException &&
-      {
-        'permissionDenied',
-        'membershipRequired',
-        'authenticationRequired',
-      }.contains(error.code.name)) {
-    return LocaleKeys.workspace_connected_denied;
-  }
-  if (error is AgentToolExecutionFailure) {
-    try {
-      final data = jsonDecode(error.responseRaw) as Map<String, dynamic>;
-      final code = (data['error'] as Map?)?['code'];
-      if (code == 'tool_access_denied') {
-        return LocaleKeys.workspace_connected_denied;
-      }
-      if (code is String && code.startsWith('connection_')) {
-        return LocaleKeys.workspace_connected_disconnected;
-      }
-      if (code == 'stale_contract' || code == 'invalid_tool_arguments') {
-        return LocaleKeys.workspace_connected_repair;
-      }
-    } on FormatException {
-      return LocaleKeys.workspace_connected_failed;
-    }
-  }
-
-  return LocaleKeys.workspace_connected_failed;
 }
 
 class const _Projected(final WorkspaceViewData? data, final Object? value)
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (_empty(value)) {
+      return const TextLocale(LocaleKeys.workspace_connected_empty);
+    }
     final source = data;
     if (source == null || !source.view.isConnectedOnly) return _Result(value);
     try {
@@ -125,3 +140,11 @@ class const _Projected(final WorkspaceViewData? data, final Object? value)
     }
   }
 }
+
+bool _empty(Object? value) => switch (value) {
+  null || '' => true,
+  final List<Object?> values => values.isEmpty,
+  final Map<Object?, Object?> values => values.isEmpty,
+  final String text => const {'[]', '{}', 'null'}.contains(text.trim()),
+  _ => false,
+};

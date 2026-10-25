@@ -45,6 +45,8 @@ abstract final class WorkspaceViewValidation {
       _invalid();
     } on TypeError {
       _invalid();
+    } on AgentToolExecutionFailure {
+      _invalid();
     }
   }
 
@@ -64,26 +66,36 @@ WorkspaceViewInput _parse(String source, String id) {
   _checkSize(source, id);
   final data = Map<String, Object?>.from(jsonDecode(source) as Map);
   _checkIdentity(data, id);
+  _checkContent(data);
+  _checkConnected(data);
+
+  return _input(data);
+}
+
+void _checkContent(Map<String, Object?> data) {
   _checkName(data['name'] as String);
   _checkDefinition(data['definition']);
   _checkQuery(data['query']);
   _checkSummary(data['summaryColumnIds']);
+}
+
+void _checkConnected(Map<String, Object?> data) {
   if (data['connected'] != null) {
     WorkspaceConnectedValidation.arguments(data['connected']);
   }
-
-  if (data['tableId'] == '') {
-    final bindings = _bindings(data['bindings'], connected: true);
-    for (final path in bindings.values) {
-      if (path.length > 512 ||
-          (path.isNotEmpty && !path.startsWith('/')) ||
-          path.split('/').length > 16) {
-        _invalid();
-      }
-    }
+  if (data['tableId'] != '') return;
+  final bindings = _bindings(data['bindings'], connected: true);
+  for (final path in bindings.values) {
+    _checkPointer(path);
   }
+}
 
-  return _input(data);
+void _checkPointer(String path) {
+  if (path.length > 512 ||
+      (path.isNotEmpty && !path.startsWith('/')) ||
+      path.split('/').length > 16) {
+    _invalid();
+  }
 }
 
 WorkspaceViewInput _input(Map<String, Object?> data) => (

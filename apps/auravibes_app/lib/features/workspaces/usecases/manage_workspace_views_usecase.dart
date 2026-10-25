@@ -49,17 +49,14 @@ class const ManageWorkspaceViewsUsecase(
   );
 
   Future<WorkspaceView> save(WorkspaceView view, {String? requestId}) async {
-    if (view.isConnectedOnly && !canManageConnected) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final table = view.isConnectedOnly
-        ? _connectedSnapshot(view).table
-        : await _tables.table(view.tableId);
+    final table = await _saveTable(
+      view,
+      _tables,
+      canManage: canManageConnected,
+    );
     WorkspaceViewValidation.check(view, table);
     if (view.connected case final binding?) {
-      final authorize = validateConnected;
-      if (authorize == null) throw const WorkspaceTableException(denied: true);
-      await authorize(binding);
+      await _authorizeConnected(binding, validateConnected);
     }
 
     return await _views.save(view, requestId: _operationId(requestId));
@@ -184,3 +181,22 @@ WorkspaceViewData _connectedSnapshot(WorkspaceView view) => .new(
   records: const [],
   needsRepair: false,
 );
+
+Future<WorkspaceTable> _saveTable(
+  WorkspaceView view,
+  OrganizeWorkspaceTablesUsecase tables, {
+  required bool canManage,
+}) async {
+  if (!view.isConnectedOnly) return await tables.table(view.tableId);
+  if (!canManage) throw const WorkspaceTableException(denied: true);
+
+  return _connectedSnapshot(view).table;
+}
+
+Future<void> _authorizeConnected(
+  WorkspaceConnectedBinding binding,
+  Future<void> Function(WorkspaceConnectedBinding)? authorize,
+) async {
+  if (authorize == null) throw const WorkspaceTableException(denied: true);
+  await authorize(binding);
+}

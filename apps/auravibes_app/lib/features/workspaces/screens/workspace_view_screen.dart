@@ -31,8 +31,9 @@ class const WorkspaceViewScreen({
   super.key,
 }) extends StatelessWidget {
   void refresh(WidgetRef ref) {
-    ref.invalidate(workspaceConnectedViewProvider(workspaceId, viewId));
-    ref.invalidate(workspaceViewDataProvider);
+    ref
+      ..invalidate(workspaceConnectedViewProvider(workspaceId, viewId))
+      ..invalidate(workspaceViewDataProvider);
   }
 
   @override
@@ -152,10 +153,11 @@ class const _Popup(
       value: 'connected',
       child: TextLocale(LocaleKeys.workspace_connected_configure),
     ),
-    const PopupMenuItem(
-      value: 'edit',
-      child: TextLocale(LocaleKeys.workspace_views_edit),
-    ),
+    if (!data.view.isConnectedOnly)
+      const PopupMenuItem(
+        value: 'edit',
+        child: TextLocale(LocaleKeys.workspace_views_edit),
+      ),
     const PopupMenuItem(
       value: 'duplicate',
       child: TextLocale(LocaleKeys.workspace_items_duplicate),
@@ -198,23 +200,40 @@ class const _LoadState(final WorkspaceViewScreen owner)
       ),
     );
 
+    return _LoadedContent(owner, state, offset);
+  }
+}
+
+class const _LoadedContent(
+  final WorkspaceViewScreen owner,
+  final AsyncValue<WorkspaceViewData> state,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = state.value;
+
     return Column(
       children: [
-        if (state.value?.view.isConnectedOnly != true)
+        if (data?.view.isConnectedOnly != true)
           Expanded(child: _PageState(state, offset)),
-        if (state.value?.view.connected != null)
-          Flexible(
-            child: SingleChildScrollView(
-              child: WorkspaceConnectedData(
-                workspaceId: owner.workspaceId,
-                viewId: owner.viewId,
-                data: state.value,
-              ),
-            ),
-          ),
+        if (data?.view.connected != null) _ConnectedContent(owner, data),
       ],
     );
   }
+}
+
+class _ConnectedContent extends Flexible {
+  new(WorkspaceViewScreen owner, WorkspaceViewData? data)
+    : super(
+        child: SingleChildScrollView(
+          child: WorkspaceConnectedData(
+            workspaceId: owner.workspaceId,
+            viewId: owner.viewId,
+            data: data,
+          ),
+        ),
+      );
 }
 
 class const _PageState(
@@ -320,25 +339,43 @@ class const _Selected(
   final VoidCallback done,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      selection.mode == 'connected' ||
-          (selection.mode == 'edit' && selection.data.view.isConnectedOnly)
-      ? WorkspaceConnectedEditor(
-          workspaceId: owner.workspaceId,
-          view: selection.data.view,
-          onDone: done,
-        )
-      : selection.mode == 'history'
-      ? WorkspaceViewHistory(
-          workspaceId: owner.workspaceId,
-          current: selection.data.view,
-          onDone: done,
-        )
-      : WorkspaceViewEditor(
-          workspaceId: owner.workspaceId,
-          data: selection.data,
-          onDone: done,
-        );
+  Widget build(BuildContext context) {
+    final data = selection.data;
+    if (selection.mode == 'history') {
+      return WorkspaceViewHistory(
+        workspaceId: owner.workspaceId,
+        current: data.view,
+        onDone: done,
+      );
+    }
+
+    return _SelectedEditor(owner, data, selection.mode, done);
+  }
+}
+
+class const _SelectedEditor(
+  final WorkspaceViewScreen owner,
+  final WorkspaceViewData data,
+  final String mode,
+  final VoidCallback done,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final view = data.view;
+    if (mode == 'connected' || view.isConnectedOnly) {
+      return WorkspaceConnectedEditor(
+        workspaceId: owner.workspaceId,
+        view: view,
+        onDone: done,
+      );
+    }
+
+    return WorkspaceViewEditor(
+      workspaceId: owner.workspaceId,
+      data: data,
+      onDone: done,
+    );
+  }
 }
 
 class const _Content(final WorkspaceViewData data) extends HookWidget {

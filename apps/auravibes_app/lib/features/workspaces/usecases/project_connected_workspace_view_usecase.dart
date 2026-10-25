@@ -41,8 +41,9 @@ Object? _boundValue(
   Object? decoded,
   MapEntry<String, String> binding,
 ) {
-  if (binding.key == 'source' && binding.value.isEmpty && response is String)
+  if (binding.key == 'source' && binding.value.isEmpty && response is String) {
     return response;
+  }
   final value = _pointer(decoded, binding.value);
   if (binding.key != 'source' || value is String) return value;
 
@@ -50,22 +51,25 @@ Object? _boundValue(
 }
 
 Object? _pointer(Object? value, String path) {
-  if (path.isEmpty) return value;
   var current = value;
-  for (final encoded in path.substring(1).split('/')) {
+  for (final encoded in path.split('/').skip(1)) {
     final segment = encoded.replaceAll('~1', '/').replaceAll('~0', '~');
-    if (current is Map && current.containsKey(segment)) {
-      current = current[segment];
-    } else if (current is List) {
-      final index = int.tryParse(segment);
-      if (index == null || index < 0 || index >= current.length) {
-        throw const WorkspaceTableException();
-      }
-      current = current[index];
-    } else {
-      throw const WorkspaceTableException();
-    }
+    current = _step(current, segment);
   }
 
   return current;
+}
+
+Object? _step(Object? value, String segment) => switch (value) {
+  final Map<Object?, Object?> map when map.containsKey(segment) => map[segment],
+  final List<Object?> list => _index(list, segment),
+  _ => throw const WorkspaceTableException(),
+};
+Object? _index(List<Object?> values, String segment) {
+  final index = int.tryParse(segment);
+  if (index == null || index < 0 || index >= values.length) {
+    throw const WorkspaceTableException();
+  }
+
+  return values[index];
 }

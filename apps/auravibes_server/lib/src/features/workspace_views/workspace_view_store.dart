@@ -195,6 +195,10 @@ class const _ViewWriter(final _ViewContext context) {
       await _checkParent(input.parentId);
       return;
     }
+    await _checkOwnedBindings(input);
+  }
+
+  Future<void> _checkOwnedBindings(WorkspaceViewInput input) async {
     final table = await context.resource(.table, input.tableId);
     if (table == null) _denied();
     WorkspaceViewValidation.columns(

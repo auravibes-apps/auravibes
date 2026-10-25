@@ -2834,4 +2834,14 @@ abstract class LocaleKeys {
       'workspace_connected.disconnected';
   static const workspace_connected_repair = 'workspace_connected.repair';
   static const workspace_connected_empty = 'workspace_connected.empty';
+  static const workspace_connected_changed = 'workspace_connected.changed';
+  static const workspace_connected_no_reads = 'workspace_connected.no_reads';
+  static const workspace_connected_options = 'workspace_connected.options';
+  static const workspace_connected_advanced_inputs =
+      'workspace_connected.advanced_inputs';
+  static const workspace_connected_yes = 'workspace_connected.yes';
+  static const workspace_connected_no = 'workspace_connected.no';
+  static const workspace_connected_unset = 'workspace_connected.unset';
+  static const workspace_connected_remove_extra_inputs =
+      'workspace_connected.remove_extra_inputs';
 }

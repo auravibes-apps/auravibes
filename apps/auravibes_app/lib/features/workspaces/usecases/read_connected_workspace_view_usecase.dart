@@ -4,12 +4,17 @@ import 'package:auravibes_app/features/workspaces/models/workspace_connected_bin
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
+typedef _ReadTarget = ({
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
+});
+
 class const ReadConnectedWorkspaceViewUsecase({
   required final Future<Object?> Function(Map<String, dynamic>) execute,
   final List<ConnectorDefinition>? connectors,
 }) {
   Future<Object?> call(WorkspaceConnectedBinding binding) {
-    validate(binding, connectors: connectors);
+    final _ = validate(binding, connectors: connectors);
 
     return execute(binding.executionArguments());
   }
@@ -18,47 +23,75 @@ class const ReadConnectedWorkspaceViewUsecase({
     String workspaceId,
     WorkspaceConnectedBinding binding,
   ) {
-    validate(binding);
-    for (final connector in connectorDefinitions) {
-      for (final tool in connector.tools) {
-        if (connectorToolId(connector, tool) != binding.toolId) continue;
+    final target = validate(binding);
 
-        return (
-          workspaceId: workspaceId,
-          connectorId: connector.identifier,
-          toolSlug: tool.slug,
-          arguments: {
-            ...binding.inputs,
-            if (binding.connectionId != null)
-              'connectionId': binding.connectionId,
-          },
-          operationId: '',
-        );
-      }
-    }
-    throw const WorkspaceTableException();
+    return (
+      workspaceId: workspaceId,
+      connectorId: target.connector.identifier,
+      toolSlug: target.tool.slug,
+      arguments: _inputs(binding),
+      operationId: '',
+    );
   }
 
-  static void validate(
+  static ({ConnectorDefinition connector, ConnectorToolDefinition tool})
+  validate(
     WorkspaceConnectedBinding binding, {
     List<ConnectorDefinition>? connectors,
   }) {
-    for (final connector in connectors ?? connectorDefinitions) {
-      for (final tool in connector.tools) {
-        if (connectorToolId(connector, tool) != binding.toolId) continue;
-        if (tool.urlTemplate == null ||
-            connectorToolWrites(tool) ||
-            connectorToolRevision(connector, tool) != binding.revision ||
-            (tool.requiresConnection && binding.connectionId == null)) {
-          throw const WorkspaceTableException();
-        }
-        validateToolArguments(
-          Map<String, Object?>.from(tool.inputJsonSchema),
-          binding.inputs,
-        );
-        return;
-      }
-    }
+    final target = _target(binding.toolId, connectors ?? connectorDefinitions);
+    _requireReadContract(binding, target);
+    _validateInputs(binding, target.tool);
+
+    return target;
+  }
+}
+
+Map<String, dynamic> _inputs(WorkspaceConnectedBinding binding) => {
+  ...binding.inputs,
+  if (binding.connectionId != null) 'connectionId': binding.connectionId,
+};
+_ReadTarget _target(String id, Iterable<ConnectorDefinition> connectors) {
+  for (final connector in connectors) {
+    final tool = _findTool(connector, id);
+    if (tool != null) return (connector: connector, tool: tool);
+  }
+  throw const WorkspaceTableException();
+}
+
+ConnectorToolDefinition? _findTool(ConnectorDefinition connector, String id) =>
+    connector.tools
+        .where((tool) => connectorToolId(connector, tool) == id)
+        .firstOrNull;
+void _requireReadContract(
+  WorkspaceConnectedBinding binding,
+  _ReadTarget target,
+) {
+  final tool = target.tool;
+  if (tool.urlTemplate == null ||
+      connectorToolWrites(tool) ||
+      connectorToolRevision(target.connector, tool) != binding.revision ||
+      !_hasConnection(binding, tool)) {
     throw const WorkspaceTableException();
+  }
+}
+
+bool _hasConnection(
+  WorkspaceConnectedBinding binding,
+  ConnectorToolDefinition tool,
+) => tool.requiresConnection
+    ? binding.connectionId?.isNotEmpty == true
+    : binding.connectionId == null;
+void _validateInputs(
+  WorkspaceConnectedBinding binding,
+  ConnectorToolDefinition tool,
+) {
+  try {
+    validateToolArguments(
+      Map<String, Object?>.from(tool.inputJsonSchema),
+      binding.inputs,
+    );
+  } on FormatException catch (_, stack) {
+    Error.throwWithStackTrace(const WorkspaceTableException(), stack);
   }
 }

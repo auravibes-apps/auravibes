@@ -22,7 +22,7 @@ void main() {
     testWidgets(
       'connected result clears while rechecking and after denial at $width',
       (tester) async {
-        tester.view.physicalSize = Size(width, 900);
+        tester.view.physicalSize = .new(width, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -30,17 +30,17 @@ void main() {
         await tester.runAsync(() async {
           await tester.pumpWidget(
             TestableApp(
-              workspaceId: 'one',
+              child: const WorkspaceConnectedData(
+                workspaceId: 'one',
+                viewId: 'view',
+              ),
               overrides: [
                 workspaceConnectedViewProvider(
                   'one',
                   'view',
                 ).overrideWith((ref) => pending.future),
               ],
-              child: const WorkspaceConnectedData(
-                workspaceId: 'one',
-                viewId: 'view',
-              ),
+              workspaceId: 'one',
             ),
           );
           await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -56,24 +56,24 @@ void main() {
           value: {'private': 'allowed result'},
           fetchedAt: DateTime.utc(2026, 10, 24),
         ));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
         expect(find.textContaining('allowed result'), findsOneWidget);
         final container = ProviderScope.containerOf(
           tester.element(find.byType(WorkspaceConnectedData)),
         );
-        pending = Completer<WorkspaceConnectedResult>();
+        pending = .new();
         container.invalidate(workspaceConnectedViewProvider('one', 'view'));
         await tester.pump();
         expect(find.textContaining('allowed result'), findsNothing);
         pending.completeError(
           AgentToolExecutionFailure(
-            failurePhase: 'connector.authorization',
             responseRaw: '{"error":{"code":"tool_access_denied"}}',
             error: StateError('denied'),
-            stackTrace: StackTrace.current,
+            stackTrace: .current,
+            failurePhase: 'connector.authorization',
           ),
         );
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
         expect(find.textContaining('Access denied'), findsOneWidget);
         expect(find.textContaining('allowed result'), findsNothing);
         await tester.pumpWidget(const SizedBox.shrink());
@@ -82,7 +82,7 @@ void main() {
     testWidgets(
       'Connector-only response binds approved host surface at $width',
       (tester) async {
-        tester.view.physicalSize = Size(width, 900);
+        tester.view.physicalSize = .new(width, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -117,7 +117,11 @@ void main() {
         await tester.runAsync(() async {
           await tester.pumpWidget(
             TestableApp(
-              workspaceId: 'one',
+              child: WorkspaceConnectedData(
+                workspaceId: 'one',
+                viewId: 'view',
+                data: data,
+              ),
               overrides: [
                 workspaceConnectedViewProvider('one', 'view').overrideWith(
                   (ref) async => (
@@ -130,16 +134,12 @@ void main() {
                   ),
                 ),
               ],
-              child: WorkspaceConnectedData(
-                workspaceId: 'one',
-                viewId: 'view',
-                data: data,
-              ),
+              workspaceId: 'one',
             ),
           );
           await Future<void>.delayed(const Duration(milliseconds: 30));
         });
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
         expect(find.text('Bound live source'), findsOneWidget);
         await tester.pumpWidget(const SizedBox.shrink());
       },

@@ -30,6 +30,16 @@ import 'conversation_host_effects.dart';
 import 'server_agent_guidance.dart';
 import 'server_tool_runtime.dart';
 
+typedef _ConnectorReader = ({int workspaceId, String userId});
+typedef _ConnectorReadTarget = ({
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
+});
+typedef _ConnectorConnections = ({
+  List<Map<String, dynamic>> services,
+  List<Map<String, dynamic>> models,
+});
+
 String cloudServiceConnectionId(String connectionId) =>
     connectionId.startsWith('service:')
     ? connectionId.substring('service:'.length)
@@ -444,37 +454,54 @@ class const ServerToolExecutorService({
     required int workspaceId,
     required String userId,
     required Map<String, dynamic> arguments,
-  }) async {
-    final toolId = arguments['toolId'] as String;
-    final resolved = resolveCloudConnectorTool(
-      toolId: toolId,
-      arguments: Map<String, dynamic>.from(arguments['args'] as Map),
-      revision: arguments['revision'] as String,
-    );
-    if (connectorToolWrites(resolved.tool)) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.validationFailed,
-      );
-    }
-    await const WorkspaceConnectorAccessUsecases().requireEnabled(
+  }) => _checkReadAccess(session, (
+    workspaceId: workspaceId,
+    userId: userId,
+  ), arguments);
+
+  Future<void> _checkReadAccess(
+    Session session,
+    _ConnectorReader actor,
+    Map<String, dynamic> arguments,
+  ) async {
+    final target = _readContract(arguments);
+    await _authorizeRead(session, actor, target);
+    await _requireReadConnection(
       session,
-      workspaceId: workspaceId,
-      userId: userId,
-      toolId: toolId,
-      tool: resolved.tool,
+      actor.workspaceId,
+      target,
+      arguments['connectionId'] as String?,
     );
+  }
+
+  Future<void> _authorizeRead(
+    Session session,
+    _ConnectorReader actor,
+    _ConnectorReadTarget target,
+  ) => const WorkspaceConnectorAccessUsecases().requireEnabled(
+    session,
+    workspaceId: actor.workspaceId,
+    userId: actor.userId,
+    toolId: connectorToolId(target.connector, target.tool),
+    tool: target.tool,
+  );
+
+  Future<void> _requireReadConnection(
+    Session session,
+    int workspaceId,
+    _ConnectorReadTarget target,
+    String? id,
+  ) async {
+    final connections = await _readConnections(session, workspaceId);
     final options = cloudConnectorConnectionOptions(
-      connector: resolved.connector,
-      serviceConnections: await _connectorServiceConnections(
-        session,
-        workspaceId,
-      ),
-      modelConnections: await _connectorModelConnections(session, workspaceId),
+      connector: target.connector,
+      serviceConnections: connections.services,
+      modelConnections: connections.models,
     );
-    resolveCloudConnectorConnectionId(
+    final _ = resolveCloudConnectorConnectionId(
       connections: options,
-      requiresConnection: resolved.tool.requiresConnection,
-      requestedConnectionId: arguments['connectionId'] as String?,
+      requiresConnection: target.tool.requiresConnection,
+      requestedConnectionId: id,
     );
   }
 
@@ -483,30 +510,42 @@ class const ServerToolExecutorService({
     required int workspaceId,
     required String userId,
     required Map<String, dynamic> arguments,
-  }) async {
-    final resolved = resolveCloudConnectorTool(
-      toolId: arguments['toolId'] as String,
-      arguments: Map<String, dynamic>.from(arguments['args'] as Map),
-      revision: arguments['revision'] as String,
-    );
-    if (connectorToolWrites(resolved.tool)) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.validationFailed,
-      );
-    }
+  }) => _readConnector(session, (
+    workspaceId: workspaceId,
+    userId: userId,
+  ), arguments);
 
-    return await _executeConnectorTool(
-      session,
-      (workspaceId: workspaceId, userId: userId, turn: null),
-      ServerToolRequest(
-        id: '',
-        name: executeConnectorToolName,
-        arguments: arguments,
-      ),
-      await _connectorServiceConnections(session, workspaceId),
-      await _connectorModelConnections(session, workspaceId),
-    );
+  Future<Object?> _readConnector(
+    Session session,
+    _ConnectorReader actor,
+    Map<String, dynamic> arguments,
+  ) async {
+    final _ = _readContract(arguments);
+    final connections = await _readConnections(session, actor.workspaceId);
+
+    return await _executeRead(session, actor, arguments, connections);
   }
+
+  Future<Object?> _executeRead(
+    Session session,
+    _ConnectorReader actor,
+    Map<String, dynamic> arguments,
+    _ConnectorConnections connections,
+  ) => _executeConnectorTool(
+    session,
+    (workspaceId: actor.workspaceId, userId: actor.userId, turn: null),
+    _readRequest(arguments),
+    connections.services,
+    connections.models,
+  );
+
+  Future<_ConnectorConnections> _readConnections(
+    Session session,
+    int workspaceId,
+  ) async => (
+    services: await _connectorServiceConnections(session, workspaceId),
+    models: await _connectorModelConnections(session, workspaceId),
+  );
 
   Future<Object?> call(
     Session session,
@@ -2195,3 +2234,32 @@ String _connectorOperationId(ServerToolRequest request) {
     message: 'operationId must be a non-empty string.',
   );
 }
+
+_ConnectorReadTarget _readContract(Map<String, dynamic> arguments) {
+  final target = _resolveReadTarget(arguments);
+  if (connectorToolWrites(target.tool)) {
+    throw CloudWorkspaceException(code: .validationFailed);
+  }
+
+  return target;
+}
+
+_ConnectorReadTarget _resolveReadTarget(Map<String, dynamic> arguments) {
+  final {
+    'toolId': String toolId,
+    'revision': String revision,
+    'args': Map<Object?, Object?> inputs,
+  } = arguments;
+
+  return resolveCloudConnectorTool(
+    toolId: toolId,
+    arguments: Map<String, dynamic>.from(inputs),
+    revision: revision,
+  );
+}
+
+ServerToolRequest _readRequest(Map<String, dynamic> arguments) => .new(
+  id: '',
+  name: executeConnectorToolName,
+  arguments: arguments,
+);

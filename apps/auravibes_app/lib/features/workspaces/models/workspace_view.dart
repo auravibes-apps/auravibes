@@ -18,8 +18,6 @@ class const WorkspaceView({
   final WorkspaceRecordQuery query = const WorkspaceRecordQuery(),
   final List<String> summaryColumnIds = const [],
 }) {
-  bool get isConnectedOnly => tableId.isEmpty;
-
   factory connectedDraft({required String name, String? parentId}) => .new(
     id: const UuidV7().generate(),
     name: name,
@@ -55,6 +53,8 @@ class const WorkspaceView({
     revision: 0,
     parentId: parentId,
   );
+
+  bool get isConnectedOnly => tableId.isEmpty;
 
   WorkspaceView edited({
     required String name,

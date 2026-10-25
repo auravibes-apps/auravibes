@@ -209,12 +209,14 @@ bool _matches(
 }) => allFolders || view.parentId == parentId;
 
 typedef _ViewOperation = ({String id, String hash});
-_ViewOperation _operation(WorkspaceView view, String requestId) => (
-  id: requestId,
-  hash: sha256
-      .convert(utf8.encode(jsonEncode(WorkspaceViewMapper.toJson(view))))
-      .toString(),
-);
+_ViewOperation _operation(WorkspaceView view, String requestId) {
+  final data = jsonEncode(WorkspaceViewMapper.toJson(view));
+  if (data.length > _maximumViewSource) throw const WorkspaceTableException();
+
+  return (id: requestId, hash: sha256.convert(utf8.encode(data)).toString());
+}
+
+const _maximumViewSource = 131072;
 Map<String, dynamic> _mutations(WorkspaceViewRow? row) =>
     row == null ? {} : jsonDecode(row.mutations) as Map<String, dynamic>;
 WorkspaceView? _replay(WorkspaceViewRow? row, _ViewOperation operation) {

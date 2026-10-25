@@ -187,14 +187,67 @@ void main() {
               definition: jsonEncode(definition),
             ),
           );
+          final connected = Map<String, Object?>.from(
+            definition['connected'] as Map,
+          );
+          for (final invalid in [
+            {...connected, 'revision': 'obsolete-contract'},
+            {
+              ...connected,
+              'inputs': {'query': 17},
+            },
+            {...connected, 'connectionId': 'service:missing'},
+          ]) {
+            await expectLater(
+              endpoints.workspaceView.save(
+                authenticated,
+                WorkspaceViewSaveRequest(
+                  workspaceId: workspace.id!,
+                  requestId: const Uuid().v4().toString(),
+                  viewId: 'view',
+                  expectedRevision: 1,
+                  definition: jsonEncode({
+                    ...definition,
+                    'revision': 1,
+                    'connected': invalid,
+                  }),
+                ),
+              ),
+              throwsA(
+                isA<CloudWorkspaceException>().having(
+                  (error) => error.code,
+                  'code',
+                  CloudWorkspaceErrorCode.validationFailed,
+                ),
+              ),
+            );
+          }
           var calls = 0;
           var revoke = false;
+          var changeRevision = false;
           final endpoint = WorkspaceViewEndpoint(
             connectorExecutor: ServerToolExecutorService(
               connectorHttpClient: (request) =>
                   CancelableOperation.fromFuture(() async {
                     calls++;
                     expect(request.headers.values, contains('synthetic-key'));
+                    if (changeRevision) {
+                      changeRevision = false;
+                      await endpoints.workspaceView.save(
+                        authenticated,
+                        WorkspaceViewSaveRequest(
+                          workspaceId: workspace.id!,
+                          requestId: 'change-view',
+                          viewId: 'view',
+                          expectedRevision: 1,
+                          definition: jsonEncode({
+                            ...definition,
+                            'revision': 1,
+                            'name': 'Changed configuration',
+                          }),
+                        ),
+                      );
+                    }
                     if (revoke) {
                       final target = await WorkspaceResource.db.findFirstRow(
                         session,
@@ -233,17 +286,29 @@ void main() {
             '{"live":true}',
           );
           expect(calls, 1);
+          changeRevision = true;
+          await expectLater(
+            endpoint.readConnected(memberSession, workspace.id!, 'view'),
+            throwsA(
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.staleRevision,
+              ),
+            ),
+          );
+          expect(calls, 2);
           revoke = true;
           await expectLater(
             endpoint.readConnected(memberSession, workspace.id!, 'view'),
             throwsA(isA<CloudWorkspaceException>()),
           );
-          expect(calls, 2);
+          expect(calls, 3);
           await expectLater(
             endpoint.readConnected(memberSession, workspace.id!, 'view'),
             throwsA(isA<CloudWorkspaceException>()),
           );
-          expect(calls, 2);
+          expect(calls, 3);
           final saved = await endpoints.workspaceView.read(
             authenticated,
             workspace.id!,

@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_connected_binding.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_inputs.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -26,6 +29,7 @@ class const WorkspaceConnectedEditor({
   required final WorkspaceView view,
   required final VoidCallback onDone,
   final ValueChanged<WorkspaceView>? onSaved,
+  final bool embedded = false,
   super.key,
 }) extends HookWidget {
   void submit(WidgetRef ref, _ReadTool? target, _EditState state) {
@@ -36,7 +40,8 @@ class const WorkspaceConnectedEditor({
   Future<void> remove(WidgetRef ref) => _persist(ref, null);
 
   @override
-  Widget build(BuildContext context) => _EditorForm(this, .use(context, view));
+  Widget build(BuildContext context) =>
+      _EditorForm(this, _editState(context, view));
 
   Future<void> _save(WidgetRef ref, _ReadTool target, _EditState state) =>
       _persist(ref, _binding(target, state), edited: _edited(state));
@@ -72,31 +77,37 @@ class const WorkspaceConnectedEditor({
     final callback = onSaved;
     if (callback == null) {
       onDone();
+
       return;
     }
     callback(saved);
   }
 }
 
-class const _EditState(
-  final ValueNotifier<String?> tool,
-  final ValueNotifier<String?> connection,
-  final TextEditingController inputs,
-  final TextEditingController bindings,
-  final TextEditingController layout,
-  final WorkspaceTableAction action,
-) {
-  factory use(BuildContext context, WorkspaceView view) => .new(
-    useState(view.connected?.toolId),
-    useState(view.connected?.connectionId),
-    useTextEditingController(
-      text: jsonEncode(view.connected?.inputs ?? const {}),
-    ),
-    useTextEditingController(text: jsonEncode(view.bindings)),
-    useTextEditingController(text: jsonEncode(view.definition.toJson())),
-    WorkspaceTableActions.use(context),
-  );
-}
+typedef _EditState = ({
+  ValueNotifier<String?> tool,
+  ValueNotifier<String?> connection,
+  TextEditingController inputs,
+  TextEditingController bindings,
+  TextEditingController layout,
+  WorkspaceTableAction action,
+});
+
+_EditState _editState(BuildContext context, WorkspaceView view) => (
+  tool: useState(view.connected?.toolId),
+  connection: useState(view.connected?.connectionId),
+  inputs: _useJsonController(view.connected?.inputs ?? const {}),
+  bindings: _useJsonController(view.bindings),
+  layout: _useJsonController(view.definition.toJson()),
+  action: WorkspaceTableActions.use(context),
+);
+
+TextEditingController _useJsonController(Object value) =>
+    useTextEditingController(text: jsonEncode(value));
+
+const _inputLines = 8;
+const _bindingLines = 5;
+const _buttonSpacing = 8.0;
 
 class const _EditorForm(
   final WorkspaceConnectedEditor owner,
@@ -104,31 +115,72 @@ class const _EditorForm(
 ) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final choices = _enabled(ref, owner.workspaceId);
+    final tools = ref.watch(workspaceToolsProvider(owner.workspaceId));
+
+    return switch (tools) {
+      AsyncData(:final value) => _ReadyEditor(owner, state, _choices(value)),
+      AsyncError(:final error) => WorkspaceItemFailure(error: error),
+      AsyncLoading() => const CircularProgressIndicator(),
+    };
+  }
+}
+
+class const _ReadyEditor(
+  final WorkspaceConnectedEditor owner,
+  final _EditState state,
+  final List<_ReadTool> choices,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final target = choices
         .where((item) => _id(item) == state.tool.value)
         .firstOrNull;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const TextLocale(LocaleKeys.workspace_connected_configure),
-        const TextLocale(LocaleKeys.workspace_connected_disclosure),
-        _ToolPicker(state, choices, target),
-        if (target?.tool.requiresConnection == true)
-          _ConnectionPicker(owner.workspaceId, state, target),
-        AuraInput(
-          controller: state.inputs,
-          label: const TextLocale(LocaleKeys.workspace_connected_inputs),
-          maxLines: 8,
-        ),
-        if (owner.view.isConnectedOnly) _ProjectionFields(state),
-        if (state.action.error case final error?)
-          WorkspaceItemFailure(error: error),
-        _EditorActions(owner, state, target),
-      ],
+    return _EditorBody(
+      _EditorFields(owner, state, choices, target),
+      embedded: owner.embedded,
     );
   }
+}
+
+class _EditorFields extends Column {
+  new(
+    WorkspaceConnectedEditor owner,
+    _EditState state,
+    List<_ReadTool> choices,
+    _ReadTool? target,
+  ) : super(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [
+          const TextLocale(LocaleKeys.workspace_connected_configure),
+          const TextLocale(LocaleKeys.workspace_connected_disclosure),
+          if (choices.isEmpty)
+            const TextLocale(LocaleKeys.workspace_connected_no_reads)
+          else
+            _ToolPicker(state, choices, target),
+          if (target?.tool.requiresConnection == true)
+            _ConnectionPicker(owner.workspaceId, state, target),
+          if (target != null)
+            WorkspaceConnectedInputs(
+              tool: target.tool,
+              controller: state.inputs,
+              key: ValueKey(_id(target)),
+            ),
+          if (owner.view.isConnectedOnly) _ProjectionFields(state),
+          if (state.action.error case final error?)
+            WorkspaceItemFailure(error: error),
+          _EditorActions(owner, state, target),
+        ],
+      );
+}
+
+class const _EditorBody(final Widget child, {required final bool embedded})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => embedded
+      ? child
+      : SingleChildScrollView(padding: const EdgeInsets.all(16), child: child);
 }
 
 class const _ToolPicker(
@@ -145,8 +197,10 @@ class const _ToolPicker(
     identifier: 'workspace_connected_tool',
   );
   void _select(String? value) {
+    if (state.tool.value == value) return;
     state.tool.value = value;
     state.connection.value = null;
+    state.inputs.text = '{}';
   }
 }
 
@@ -164,23 +218,37 @@ class const _ConnectionPicker(
     );
 
     return switch (choices) {
-      AsyncData(:final value) => AuraDropdownSelector<String>(
-        options: [
-          for (final item in value)
-            AuraDropdownOption(value: item.id, child: Text(item.name)),
-        ],
-        value: value.any((item) => item.id == state.connection.value)
-            ? state.connection.value
-            : null,
-        onChanged: (value) => state.connection.value = value,
-        label: const TextLocale(LocaleKeys.workspace_connected_connection),
-        identifier: 'workspace_connected_connection',
-      ),
+      AsyncData(:final value) => _ConnectionSelector(value, state.connection),
       AsyncError(:final error) => WorkspaceItemFailure(error: error),
       AsyncLoading() => const CircularProgressIndicator(),
     };
   }
 }
+
+class _ConnectionSelector extends AuraDropdownSelector<String> {
+  new(
+    List<ConnectorConnectionCandidate> choices,
+    ValueNotifier<String?> selected,
+  ) : super(
+        options: choices
+            .map<AuraDropdownOption<String>>(_ConnectionOption.new)
+            .toList(),
+        value: _currentConnection(choices, selected.value),
+        onChanged: (value) => selected.value = value,
+        label: const TextLocale(LocaleKeys.workspace_connected_connection),
+        identifier: 'workspace_connected_connection',
+      );
+}
+
+class _ConnectionOption extends AuraDropdownOption<String> {
+  new(ConnectorConnectionCandidate choice)
+    : super(value: choice.id, child: Text(choice.name));
+}
+
+String? _currentConnection(
+  List<ConnectorConnectionCandidate> choices,
+  String? selected,
+) => choices.any((choice) => choice.id == selected) ? selected : null;
 
 class const _ProjectionFields(final _EditState state) extends StatelessWidget {
   @override
@@ -190,12 +258,12 @@ class const _ProjectionFields(final _EditState state) extends StatelessWidget {
       AuraInput(
         controller: state.bindings,
         label: const TextLocale(LocaleKeys.workspace_views_bindings),
-        maxLines: 5,
+        maxLines: _bindingLines,
       ),
       AuraInput(
         controller: state.layout,
         label: const TextLocale(LocaleKeys.workspace_views_edit),
-        maxLines: 8,
+        maxLines: _inputLines,
       ),
     ],
   );
@@ -207,28 +275,40 @@ class const _EditorActions(
   final _ReadTool? target,
 ) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Wrap(
-    spacing: 8,
-    children: [
-      AuraButton(
-        onPressed: () => owner.submit(ref, target, state),
-        child: const TextLocale(LocaleKeys.common_save),
-        disabled: state.action.pending || target == null,
-        identifier: 'workspace_connected_save',
-      ),
-      AuraButton(
-        onPressed: owner.onDone,
-        child: const TextLocale(LocaleKeys.common_cancel),
-        disabled: state.action.pending,
-      ),
-      if (owner.view.connected != null && !owner.view.isConnectedOnly)
-        AuraButton(
-          onPressed: () => unawaited(state.action.run(() => owner.remove(ref))),
-          child: const TextLocale(LocaleKeys.workspace_connected_remove),
-          disabled: state.action.pending,
-        ),
-    ],
-  );
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _Buttons(owner, state, target, ref);
+}
+
+class _Buttons extends Wrap {
+  new(
+    WorkspaceConnectedEditor owner,
+    _EditState state,
+    _ReadTool? target,
+    WidgetRef ref,
+  ) : super(
+        spacing: _buttonSpacing,
+        children: [
+          AuraButton(
+            onPressed: () => owner.submit(ref, target, state),
+            child: const TextLocale(LocaleKeys.common_save),
+            isLoading: state.action.pending,
+            disabled: state.action.pending || target == null,
+            identifier: 'workspace_connected_save',
+          ),
+          AuraButton(
+            onPressed: owner.onDone,
+            child: const TextLocale(LocaleKeys.common_cancel),
+            disabled: state.action.pending,
+          ),
+          if (owner.view.connected != null && !owner.view.isConnectedOnly)
+            AuraButton(
+              onPressed: () =>
+                  unawaited(state.action.run(() => owner.remove(ref))),
+              child: const TextLocale(LocaleKeys.workspace_connected_remove),
+              disabled: state.action.pending,
+            ),
+        ],
+      );
 }
 
 WorkspaceConnectedBinding _binding(_ReadTool target, _EditState state) => .new(
@@ -241,7 +321,7 @@ A2uiSavedDefinition _definition(String value) =>
     .fromJson(Map<String, Object?>.from(jsonDecode(value) as Map));
 
 class _ReadOption extends AuraDropdownOption<String> {
-  _ReadOption(_ReadTool choice)
+  new(_ReadTool choice)
     : super(
         value: _id(choice),
         child: Text('${choice.connector.title}: ${choice.tool.title}'),
@@ -249,18 +329,16 @@ class _ReadOption extends AuraDropdownOption<String> {
 }
 
 String _id(_ReadTool value) => connectorToolId(value.connector, value.tool);
-List<_ReadTool> _enabled(WidgetRef ref, String workspaceId) {
-  final enabled =
-      ref.watch(workspaceToolsProvider(workspaceId)).value ?? const [];
+List<_ReadTool> _choices(List<WorkspaceToolEntity> tools) {
+  final ids = _enabledIds(tools);
 
-  return _tools()
-      .where(
-        (target) =>
-            enabled.any((tool) => tool.toolId == _id(target) && tool.isEnabled),
-      )
-      .toList();
+  return _tools().where((target) => ids.contains(_id(target))).toList();
 }
 
+Set<String> _enabledIds(List<WorkspaceToolEntity> tools) => {
+  for (final tool in tools)
+    if (tool.isEnabled && tool.permissionMode != .alwaysDeny) tool.toolId,
+};
 List<_ReadTool> _tools() => [
   for (final connector in connectorDefinitions)
     for (final tool in connector.tools)

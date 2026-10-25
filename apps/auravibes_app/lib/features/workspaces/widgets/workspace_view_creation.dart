@@ -34,37 +34,10 @@ class const _Form(
   Widget build(BuildContext context, WidgetRef ref) {
     final connected = useState<WorkspaceView?>(null);
     if (connected.value case final draft?) {
-      return SizedBox(
-        height:
-            ((MediaQuery.sizeOf(context).height -
-                        MediaQuery.viewInsetsOf(context).bottom) *
-                    0.55)
-                .clamp(120, 420),
-        child: WorkspaceConnectedEditor(
-          workspaceId: owner.workspaceId,
-          view: draft,
-          onDone: () => connected.value = null,
-          onSaved: (saved) => _created(ref, saved),
-        ),
-      );
+      return _ConnectedForm(this, draft, connected);
     }
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        _Name(state),
-        const TextLocale(LocaleKeys.workspace_views_bindings),
-        _Source(owner, selected),
-        _Create(owner, state, selected),
-        AuraButton(
-          identifier: 'workspace_view_connected_create',
-          onPressed: () => _connected(context, connected),
-          child: const TextLocale(LocaleKeys.workspace_connected_configure),
-        ),
-        if (state.error.value case final error?)
-          WorkspaceItemFailure(error: error),
-      ],
-    );
+    return _InitialForm(this, connected);
   }
 
   void _created(WidgetRef ref, WorkspaceView saved) {
@@ -74,16 +47,85 @@ class const _Form(
 
   void _connected(BuildContext context, ValueNotifier<WorkspaceView?> draft) =>
       unawaited(
-        state.run(context, () async {
-          if (state.name.text.trim().isEmpty) {
-            throw const WorkspaceTableException();
-          }
-          draft.value = WorkspaceView.connectedDraft(
-            name: state.name.text,
-            parentId: owner.parentId,
-          );
+        state.run(context, () {
+          draft.value = _draft();
+
+          return Future<void>.value();
         }),
       );
+  WorkspaceView _draft() {
+    final name = state.name.text;
+    if (name.trim().isEmpty) throw const WorkspaceTableException();
+
+    return WorkspaceView.connectedDraft(name: name, parentId: owner.parentId);
+  }
+}
+
+class const _ConnectedForm(
+  final _Form form,
+  final WorkspaceView draft,
+  final ValueNotifier<WorkspaceView?> connected,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => WorkspaceConnectedEditor(
+    workspaceId: form.owner.workspaceId,
+    view: draft,
+    onDone: () => connected.value = null,
+    onSaved: (saved) => form._created(ref, saved),
+    embedded: true,
+  );
+}
+
+class _InitialForm extends Column {
+  new(_Form form, ValueNotifier<WorkspaceView?> connected)
+    : super(
+        mainAxisSize: .min,
+        children: [
+          _OwnedTableFields(form),
+          _ConnectedCreate(form, connected),
+          _CreationFailure(form.state),
+        ],
+      );
+}
+
+class const _OwnedTableFields(final _Form form) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final owner = form.owner;
+    final state = form.state;
+    final selected = form.selected;
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        _Name(state),
+        const TextLocale(LocaleKeys.workspace_views_bindings),
+        _Source(owner, selected),
+        _Create(owner, state, selected),
+      ],
+    );
+  }
+}
+
+class const _CreationFailure(final WorkspaceItemFormState state)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (state.error.value) {
+    final Object error => WorkspaceItemFailure(error: error),
+    null => const SizedBox.shrink(),
+  };
+}
+
+class const _ConnectedCreate(
+  final _Form form,
+  final ValueNotifier<WorkspaceView?> connected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => form._connected(context, connected),
+    child: const TextLocale(LocaleKeys.workspace_connected_configure),
+    identifier: 'workspace_view_connected_create',
+  );
 }
 
 class const _Name(final WorkspaceItemFormState state) extends StatelessWidget {

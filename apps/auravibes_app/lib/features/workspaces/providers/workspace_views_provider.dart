@@ -1,7 +1,7 @@
-import 'package:auravibes_app/features/service_connections/usecases/run_connector_tool_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/read_connected_workspace_view_usecase.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_view_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
+import 'package:auravibes_app/features/service_connections/usecases/run_connector_tool_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_connected_binding.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -11,7 +11,11 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_record_que
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/read_connected_workspace_view_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -59,6 +63,26 @@ Future<ManageWorkspaceViewsUsecase> _usecase(
   WorkspaceSession session,
 ) async {
   _requireMounted(ref);
+  final services = _services(ref, workspaceId);
+  final management = await _management(ref, workspaceId, session);
+  final owned = await services;
+
+  return ManageWorkspaceViewsUsecase(
+    repository,
+    owned.tables,
+    owned.query,
+    owned.references,
+    canManageConnected: management.canManage,
+    validateConnected: management.validate,
+  );
+}
+
+typedef _ViewServices = ({
+  OrganizeWorkspaceTablesUsecase tables,
+  QueryWorkspaceRecordsUsecase query,
+  BrowseWorkspaceReferencesUsecase references,
+});
+Future<_ViewServices> _services(Ref ref, String workspaceId) async {
   final tables = ref.watch(workspaceTableUsecaseProvider(workspaceId).future);
   final query = ref.watch(
     workspaceRecordQueryUsecaseProvider(workspaceId).future,
@@ -67,24 +91,39 @@ Future<ManageWorkspaceViewsUsecase> _usecase(
     workspaceReferencesUsecaseProvider(workspaceId).future,
   );
 
-  return ManageWorkspaceViewsUsecase(
-    repository,
-    await tables,
-    await query,
-    await references,
-    validateConnected: session.cloud == null
-        ? (binding) => ref
-              .read(runConnectorToolUsecaseProvider)
-              .requireCurrent(
-                ReadConnectedWorkspaceViewUsecase.accessRequest(
-                  workspaceId,
-                  binding,
-                ),
-              )
-        : (_) async {},
-    canManageConnected:
-        (await ref.watch(workspaceAccessProvider(workspaceId).future)).role ==
-        'owner',
+  return (
+    tables: await tables,
+    query: await query,
+    references: await references,
+  );
+}
+
+typedef _Management = ({
+  bool canManage,
+  Future<void> Function(WorkspaceConnectedBinding) validate,
+});
+Future<_Management> _management(
+  Ref ref,
+  String workspaceId,
+  WorkspaceSession session,
+) async {
+  final access = ref.watch(workspaceAccessProvider(workspaceId).future);
+  final validate = _connectedValidator(ref, workspaceId, session);
+
+  return (canManage: (await access).role == 'owner', validate: validate);
+}
+
+Future<void> Function(WorkspaceConnectedBinding) _connectedValidator(
+  Ref ref,
+  String workspaceId,
+  WorkspaceSession session,
+) {
+  // Cloud saves validate bindings inside the authenticated endpoint.
+  if (session.cloud != null) return (_) => Future<void>.value();
+  final run = ref.watch(runConnectorToolUsecaseProvider);
+
+  return (binding) => run.requireCurrent(
+    ReadConnectedWorkspaceViewUsecase.accessRequest(workspaceId, binding),
   );
 }
 

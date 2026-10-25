@@ -26,7 +26,7 @@ final class WorkspaceConnectedViewProvider
     required WorkspaceConnectedViewFamily super.from,
     required (String, String) super.argument,
   }) : super(
-         retry: null,
+         retry: _connectedRetry,
          name: r'workspaceConnectedViewProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -68,7 +68,7 @@ final class WorkspaceConnectedViewProvider
 }
 
 String _$workspaceConnectedViewHash() =>
-    r'30ffbe86c293c17c003663bbf41aa05065363a7f';
+    r'f888e9674b118c195ef96bf65471a746d010c20b';
 
 final class WorkspaceConnectedViewFamily extends $Family
     with
@@ -78,7 +78,7 @@ final class WorkspaceConnectedViewFamily extends $Family
         > {
   WorkspaceConnectedViewFamily._()
     : super(
-        retry: null,
+        retry: _connectedRetry,
         name: r'workspaceConnectedViewProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
@@ -146,7 +146,7 @@ final class WorkspaceConnectedAccessProvider
 }
 
 String _$workspaceConnectedAccessHash() =>
-    r'5ab2c5bcb312b9b67cdede67d9cf4b7463d9c9e0';
+    r'a5b4dee06839f0d3328ebd7c93542ec4fe97a3f3';
 
 final class WorkspaceConnectedAccessFamily extends $Family
     with $FunctionalFamilyOverride<Stream<Object?>, String> {
@@ -226,7 +226,7 @@ final class WorkspaceConnectedConnectionsProvider
 }
 
 String _$workspaceConnectedConnectionsHash() =>
-    r'bcaffc6f013c0e661e589c9a637f7b427fff50ec';
+    r'143aa7bf4c5eabdf3a8cb49c073eccaf20c7f029';
 
 final class WorkspaceConnectedConnectionsFamily extends $Family
     with

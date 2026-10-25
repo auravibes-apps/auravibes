@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_connected_binding.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/read_connected_workspace_view_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,16 +10,16 @@ void main() {
     final binding = WorkspaceConnectedBinding(
       toolId: 'connector/example/read',
       revision: connectorToolRevision(_connector, _tool),
-      connectionId: 'service:chosen',
       inputs: {'query': 'name'},
+      connectionId: 'service:chosen',
     );
     final read = ReadConnectedWorkspaceViewUsecase(
-      connectors: const [_connector],
       execute: (arguments) async {
         calls.add(arguments);
 
         return {'result': 'live'};
       },
+      connectors: const [_connector],
     );
     expect(await read(binding), {'result': 'live'});
     expect(calls.single, {
@@ -31,16 +32,16 @@ void main() {
   test('rejects stale contracts before executing', () async {
     var called = false;
     final read = ReadConnectedWorkspaceViewUsecase(
-      connectors: const [_connector],
       execute: (_) async {
         called = true;
 
         return null;
       },
+      connectors: const [_connector],
     );
     expect(
       () => read(
-        const WorkspaceConnectedBinding(
+        const .new(
           toolId: 'connector/example/read',
           revision: 'old',
           inputs: {'query': 'name'},
@@ -51,31 +52,31 @@ void main() {
     );
     expect(called, false);
   });
-  test('rejects schema-invalid arguments before executing', () async {
+  test('rejects schema-invalid arguments before executing', () {
     final read = ReadConnectedWorkspaceViewUsecase(
-      connectors: const [_connector],
       execute: (_) async => fail('must not execute'),
+      connectors: const [_connector],
     );
     expect(
       () => read(
-        WorkspaceConnectedBinding(
+        .new(
           toolId: 'connector/example/read',
           revision: connectorToolRevision(_connector, _tool),
           inputs: const {'query': 7},
           connectionId: 'service:chosen',
         ),
       ),
-      throwsFormatException,
+      throwsA(isA<WorkspaceTableException>()),
     );
   });
   test('requires explicit Connection instead of guessing', () {
     final read = ReadConnectedWorkspaceViewUsecase(
-      connectors: const [_connector],
       execute: (_) async => fail('must not execute'),
+      connectors: const [_connector],
     );
     expect(
       () => read(
-        WorkspaceConnectedBinding(
+        .new(
           toolId: 'connector/example/read',
           revision: connectorToolRevision(_connector, _tool),
           inputs: const {'query': 'name'},
@@ -104,12 +105,12 @@ void main() {
       tools: [write],
     );
     final read = ReadConnectedWorkspaceViewUsecase(
-      connectors: const [connector],
       execute: (_) async => fail('write must never run'),
+      connectors: const [connector],
     );
     expect(
       () => read(
-        WorkspaceConnectedBinding(
+        .new(
           toolId: connectorToolId(connector, write),
           revision: connectorToolRevision(connector, write),
           inputs: const {},

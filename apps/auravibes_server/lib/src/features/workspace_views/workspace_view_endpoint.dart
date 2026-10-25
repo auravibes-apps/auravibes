@@ -21,17 +21,7 @@ class WorkspaceViewEndpoint extends Endpoint {
     try {
       return await _readConnected(session, workspaceId, id);
     } on AgentToolExecutionFailure catch (failure) {
-      final data = jsonDecode(failure.responseRaw) as Map<String, dynamic>;
-      final code = (data['error'] as Map?)?['code'];
-      throw WorkspaceConnectedReadException(
-        code: switch (code) {
-          'stale_contract' || 'invalid_tool_arguments' => 'repair',
-          final String value when value.startsWith('connection_') =>
-            'disconnected',
-          'tool_access_denied' => 'denied',
-          _ => 'failed',
-        },
-      );
+      throw WorkspaceConnectedReadException(code: _failureCode(failure));
     }
   }
 
@@ -40,30 +30,47 @@ class WorkspaceViewEndpoint extends Endpoint {
     int workspaceId,
     String id,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
-    final view = await read(session, workspaceId, id);
-    final data = jsonDecode(view.data) as Map<String, dynamic>;
-    final arguments = WorkspaceConnectedValidation.arguments(data['connected']);
+    final source = await _readSource(session, workspaceId, id);
     final result = await _connectorExecutor.readConnector(
       session,
-      workspaceId: workspaceId,
-      userId: account.userId,
-      arguments: arguments,
+      workspaceId: source.workspaceId,
+      userId: source.userId,
+      arguments: source.arguments,
     );
-    final current = await read(session, workspaceId, id);
-    if (current.revision != view.revision) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.staleRevision,
-      );
-    }
-    await _connectorExecutor.readConnectorAccess(
-      session,
-      workspaceId: workspaceId,
-      userId: account.userId,
-      arguments: arguments,
-    );
+    await _checkSource(session, source);
 
     return jsonEncode(result);
+  }
+
+  Future<_ConnectedRead> _readSource(
+    Session session,
+    int workspaceId,
+    String id,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    final view = await read(session, workspaceId, id);
+
+    return (
+      workspaceId: workspaceId,
+      userId: account.userId,
+      view: view,
+      arguments: _savedArguments(view),
+    );
+  }
+
+  Future<void> _checkSource(Session session, _ConnectedRead source) async {
+    final current = await read(
+      session,
+      source.workspaceId,
+      source.view.stableId,
+    );
+    _requireRevision(source.view, current);
+    await _connectorExecutor.readConnectorAccess(
+      session,
+      workspaceId: source.workspaceId,
+      userId: source.userId,
+      arguments: source.arguments,
+    );
   }
 
   Future<WorkspaceView> duplicate(
@@ -90,6 +97,37 @@ class WorkspaceViewEndpoint extends Endpoint {
     Session session,
     WorkspaceViewSaveRequest request,
   ) => _access(session, request.workspaceId, (store) => store.save(request));
+}
+
+typedef _ConnectedRead = ({
+  int workspaceId,
+  String userId,
+  WorkspaceView view,
+  Map<String, dynamic> arguments,
+});
+
+Map<String, dynamic> _savedArguments(WorkspaceView view) {
+  final data = jsonDecode(view.data) as Map<String, dynamic>;
+
+  return WorkspaceConnectedValidation.arguments(data['connected']);
+}
+
+void _requireRevision(WorkspaceView saved, WorkspaceView current) {
+  if (current.revision != saved.revision) {
+    throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.staleRevision);
+  }
+}
+
+String _failureCode(AgentToolExecutionFailure failure) {
+  final data = jsonDecode(failure.responseRaw) as Map<String, dynamic>;
+  final code = (data['error'] as Map?)?['code'];
+
+  return switch (code) {
+    'stale_contract' || 'invalid_tool_arguments' => 'repair',
+    final String value when value.startsWith('connection_') => 'disconnected',
+    'tool_access_denied' => 'denied',
+    _ => 'failed',
+  };
 }
 
 Future<T> _access<T>(

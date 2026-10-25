@@ -15,7 +15,7 @@ abstract final class WorkspaceViewMapper {
     'revision': view.revision,
     'query': view.query.toJson(),
     'summaryColumnIds': view.summaryColumnIds,
-    if (view.connected != null) 'connected': view.connected!.toJson(),
+    if (view.connected case final connected?) 'connected': connected.toJson(),
   };
   static WorkspaceView fromJson(Map<String, dynamic> data) =>
       _view(_identity(data), _content(data));
@@ -45,20 +45,22 @@ _ViewIdentity _identity(Map<String, dynamic> data) => (
   revision: data['revision'] as int,
 );
 _ViewContent _content(Map<String, dynamic> data) => (
-  connected: data['connected'] == null
-      ? null
-      : WorkspaceConnectedBinding.fromJson(
-          Map<String, dynamic>.from(data['connected'] as Map),
-        ),
+  connected: _connected(data['connected']),
   bindings: _strings(data, 'bindings'),
   columnTypes: _strings(data, 'columnTypes'),
   definition: _definition(data),
   summaryColumnIds: (data['summaryColumnIds'] as List? ?? const [])
       .cast<String>(),
-  query: WorkspaceRecordQuery.fromJson(
-    Map<String, dynamic>.from(data['query'] as Map? ?? const {}),
-  ),
+  query: _query(data['query']),
 );
+WorkspaceRecordQuery _query(Object? data) => WorkspaceRecordQuery.fromJson(
+  Map<String, dynamic>.from(data as Map? ?? const {}),
+);
+WorkspaceConnectedBinding? _connected(Object? data) => data == null
+    ? null
+    : WorkspaceConnectedBinding.fromJson(
+        Map<String, dynamic>.from(data as Map),
+      );
 Map<String, String> _strings(Map<String, dynamic> data, String key) =>
     Map<String, String>.from(data[key] as Map);
 A2uiSavedDefinition _definition(Map<String, dynamic> data) =>
