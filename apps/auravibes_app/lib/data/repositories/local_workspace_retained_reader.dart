@@ -66,6 +66,12 @@ Map<String, dynamic> _data(QueryRow row, _Source source) {
   if (source.kind == 'file') {
     return {'parentId': raw['parent_id'], 'assetId': raw['asset_id']};
   }
+
+  return _content(row, source);
+}
+
+Map<String, dynamic> _content(QueryRow row, _Source source) {
+  final raw = row.data;
   final value = jsonDecode(row.read<String>(source.column));
 
   return switch (source.kind) {

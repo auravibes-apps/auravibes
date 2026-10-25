@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../objects/object_record_attachments.dart';
 import 'domain/workspace_table_constraints.dart';
 import 'domain/workspace_table_schema_identity.dart';
 import 'repositories/workspace_state_repository.dart';
@@ -25,46 +26,15 @@ class WorkspaceTableMutationValidation(
     WorkspaceResource? existing,
   ) async {
     if (operation.resourceKind == WorkspaceResourceKind.table) {
-      await _table(operation.resourceId, data, existing);
+      await _SchemaValidation(
+        this,
+        operation.resourceId,
+        data,
+        existing,
+      ).call();
     }
     if (operation.resourceKind == WorkspaceResourceKind.tableRecord) {
       await _record(operation, data, existing);
-    }
-  }
-
-  Future<void> _table(
-    String id,
-    Map<String, Object?> data,
-    WorkspaceResource? existing,
-  ) async {
-    if (_schemaRevision(data, existing)) return;
-    final references = await _references();
-    await references.columns(
-      data,
-      tableId: id,
-      previous: existing == null ? const {} : _decode(existing),
-    );
-    await references.dependents.schema(id, data);
-    final records = await _records(id);
-    WorkspaceTableConstraints.records(data, records.values);
-    final oldAttachmentColumns = existing == null
-        ? <String>{}
-        : (_decode(existing)['columns'] as List)
-              .whereType<Map>()
-              .where((column) => column['type'] == 'attachment')
-              .map((column) => column['id'] as String)
-              .toSet();
-    for (final entry in records.entries) {
-      await references.values(
-        data,
-        entry.value,
-        {
-          for (final id in oldAttachmentColumns)
-            if (entry.value.containsKey(id)) id: entry.value[id],
-        },
-        recordId: entry.key,
-        tableId: id,
-      );
     }
   }
 
@@ -82,13 +52,7 @@ class WorkspaceTableMutationValidation(
       applyDefaults: applyDefaults,
     );
     _recordTable(existing, id);
-    await _checkReferences(
-      schema,
-      data,
-      existing,
-      operation.resourceId,
-      (jsonDecode(operation.data!) as Map)['assetSharingApproved'] == true,
-    );
+    await _checkReferences(operation, schema, data, existing);
     await _checkValues(id, operation.resourceId, schema, values);
   }
 
@@ -103,26 +67,19 @@ class WorkspaceTableMutationValidation(
   }
 
   Future<void> _checkReferences(
+    WorkspacePatchOperation operation,
     Map<String, Object?> schema,
     Map<String, Object?> data,
     WorkspaceResource? existing,
-    String recordId,
-    bool assetSharingApproved,
   ) async {
     final references = await _references();
-    final values = (data['values'] as Map).cast<String, Object?>();
     await references.values(
-      schema,
-      values,
-      _previousValues(existing),
+      _recordAttachments(operation, schema, data, existing),
       preserveOnly: deferRecordState,
-      recordId: recordId,
-      tableId: data['tableId'] as String,
-      assetSharingApproved: assetSharingApproved,
     );
     data.remove('assetSharingApproved');
     if (!deferRecordState) {
-      await references.dependents.record(recordId, data, existing);
+      await references.dependents.record(operation.resourceId, data, existing);
     }
   }
 
@@ -188,6 +145,83 @@ class WorkspaceTableMutationValidation(
     transaction: _transaction,
   );
 }
+
+class const _SchemaValidation(
+  final WorkspaceTableMutationValidation owner,
+  final String id,
+  final Map<String, Object?> data,
+  final WorkspaceResource? existing,
+) {
+  Future<void> call() async {
+    if (_schemaRevision(data, existing)) return;
+    final references = await _references();
+    await _records(references);
+  }
+
+  Future<WorkspaceReferenceValidation> _references() async {
+    final references = await owner._references();
+    final row = existing;
+    await references.columns(
+      data,
+      tableId: id,
+      previous: row == null ? const {} : _decode(row),
+    );
+    await references.dependents.schema(id, data);
+
+    return references;
+  }
+
+  Future<void> _records(WorkspaceReferenceValidation references) async {
+    final records = await owner._records(id);
+    WorkspaceTableConstraints.records(data, records.values);
+    final previous = _previousAttachments();
+    for (final entry in records.entries) {
+      await references.values(_input(entry, previous));
+    }
+  }
+
+  Set<String> _previousAttachments() {
+    final row = existing;
+    if (row == null) return {};
+
+    return (_decode(row)['columns'] as List)
+        .whereType<Map>()
+        .where((column) => column['type'] == 'attachment')
+        .map((column) => column['id'] as String)
+        .toSet();
+  }
+
+  ObjectAttachmentValues _input(
+    MapEntry<String, Map<String, Object?>> entry,
+    Set<String> previous,
+  ) => .new(
+    schema: data,
+    values: entry.value,
+    previous: {
+      for (final id in previous)
+        if (entry.value.containsKey(id)) id: entry.value[id],
+    },
+    recordId: entry.key,
+    tableId: id,
+  );
+}
+
+ObjectAttachmentValues _recordAttachments(
+  WorkspacePatchOperation operation,
+  Map<String, Object?> schema,
+  Map<String, Object?> data,
+  WorkspaceResource? existing,
+) => .new(
+  schema: schema,
+  values: (data['values'] as Map).cast<String, Object?>(),
+  previous: _previousValues(existing),
+  recordId: operation.resourceId,
+  tableId: data['tableId'] as String,
+  sharingApproved: _sharingApproved(operation),
+);
+
+bool _sharingApproved(WorkspacePatchOperation operation) =>
+    (jsonDecode(operation.data!) as Map)['assetSharingApproved'] == true;
 
 Map<String, Object?> _decode(WorkspaceResource row) =>
     (jsonDecode(row.data) as Map).cast<String, Object?>();

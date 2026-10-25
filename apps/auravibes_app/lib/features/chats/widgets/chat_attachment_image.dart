@@ -43,10 +43,7 @@ class const _AssetImage(final WorkspaceAssetLocation location)
       return const Center(child: CircularProgressIndicator());
     }
 
-    return switch (value) {
-      AsyncData(:final value) => _ReadyImage(value),
-      AsyncError() || AsyncLoading() => const Icon(Icons.broken_image_outlined),
-    };
+    return _ImageState(value);
   }
 }
 
@@ -73,4 +70,13 @@ WorkspaceAssetLocation? _location(String value) {
   } on WorkspaceAssetException {
     return null;
   }
+}
+
+class const _ImageState(final AsyncValue<WorkspaceAssetPreview> state)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (state) {
+    AsyncData(:final value) => _ReadyImage(value),
+    AsyncError() || AsyncLoading() => const Icon(Icons.broken_image_outlined),
+  };
 }

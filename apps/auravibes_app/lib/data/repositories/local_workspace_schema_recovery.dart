@@ -22,17 +22,28 @@ class const LocalWorkspaceSchemaRecovery(
     WorkspaceTrashTarget target,
     Map<String, dynamic> data,
   ) async {
-    final current = await _tables.table(target.id);
-    WorkspaceRecoveryValidation.revision(current.revision, target.revision);
+    final current = await _current(target);
     final previous = await _storedColumns(current.id);
-    final columns = await LocalWorkspaceAssetValues(
-      database,
-      workspaceId,
-    ).preserveDefaults(_columns(data), previous);
+    final columns = await _restoreDefaults(data, previous);
     await _validate(current, columns, previous);
     await _write(current, columns);
     await _references.allDependencies();
   }
+
+  Future<WorkspaceTable> _current(WorkspaceTrashTarget target) async {
+    final table = await _tables.table(target.id);
+    WorkspaceRecoveryValidation.revision(table.revision, target.revision);
+
+    return table;
+  }
+
+  Future<List<WorkspaceColumn>> _restoreDefaults(
+    Map<String, dynamic> data,
+    List<WorkspaceColumn> previous,
+  ) => LocalWorkspaceAssetValues(
+    database,
+    workspaceId,
+  ).preserveDefaults(_columns(data), previous);
 
   Future<void> _validate(
     WorkspaceTable table,
@@ -65,32 +76,15 @@ class const LocalWorkspaceSchemaRecovery(
       ..where((row) => row.workspaceId.equals(workspaceId) & row.id.equals(id));
     final row = await query.getSingle();
 
-    return (jsonDecode(row.columnsJson) as List)
-        .cast<Map<String, dynamic>>()
-        .map(WorkspaceColumn.fromJson)
-        .toList();
+    return _columns({'columns': jsonDecode(row.columnsJson)});
   }
 
   Future<List<WorkspaceRecord>> _records(String tableId) async {
     final query = database.select(database.workspaceTableRecords)
-      ..where(
-        (row) =>
-            row.workspaceId.equals(workspaceId) &
-            row.tableId.equals(tableId) &
-            row.deletedAt.isNull(),
-      );
+      ..where((row) => _activeRecord(row, workspaceId, tableId));
     final rows = await query.get();
 
-    return rows
-        .map(
-          (row) => WorkspaceRecord(
-            id: row.id,
-            tableId: row.tableId,
-            values: jsonDecode(row.valuesJson) as Map<String, dynamic>,
-            revision: row.revision,
-          ),
-        )
-        .toList();
+    return rows.map(_record).toList();
   }
 
   Future<void> _write(
@@ -130,3 +124,19 @@ Expression<bool> _matches(
   String workspaceId,
   String id,
 ) => row.workspaceId.equals(workspaceId) & row.id.equals(id);
+
+WorkspaceRecord _record(WorkspaceTableRecordRow row) => WorkspaceRecord(
+  id: row.id,
+  tableId: row.tableId,
+  values: jsonDecode(row.valuesJson) as Map<String, dynamic>,
+  revision: row.revision,
+);
+
+Expression<bool> _activeRecord(
+  $WorkspaceTableRecordsTable row,
+  String workspaceId,
+  String tableId,
+) =>
+    row.workspaceId.equals(workspaceId) &
+    row.tableId.equals(tableId) &
+    row.deletedAt.isNull();

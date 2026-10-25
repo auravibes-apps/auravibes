@@ -125,34 +125,62 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       switch (navigation.state.selected) {
-        final WorkspaceFolder folder => _FolderEditor(navigation, folder),
-        final WorkspaceTable table => _TableEditor(navigation, table),
-        final WorkspaceView view => _ViewEditor(navigation, view),
-        final WorkspaceFile file => AppScreen(
-          child: WorkspaceFileMetadataEditor(
-            workspaceId: navigation.workspaceId,
-            file: file,
-            parentName: navigation._parentName,
-            onBack: () {
-              navigation.actions.open(null);
-              navigation._refresh(ref);
-            },
-          ),
-        ),
+        WorkspaceFolder() ||
+        WorkspaceTable() ||
+        WorkspaceView() ||
+        WorkspaceFile() => _EditorSelection(navigation),
         final String id => _OpenedTable(navigation, id),
         DirectoryViewLocation(:final id) => _OpenedView(navigation, id),
-        DirectoryFileLocation(:final id) => AppScreen(
-          child: WorkspaceFileScreen(
-            workspaceId: navigation.workspaceId,
-            fileId: id,
-            onBack: () {
-              navigation.actions.open(null);
-              navigation._refresh(ref);
-            },
-          ),
-        ),
+        DirectoryFileLocation(:final id) => _OpenedFile(navigation, id),
         _ => _Browser(navigation),
       };
+}
+
+class const _EditorSelection(final _Navigation navigation)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (navigation.state.selected) {
+    final WorkspaceFolder folder => _FolderEditor(navigation, folder),
+    final WorkspaceTable table => _TableEditor(navigation, table),
+    final WorkspaceView view => _ViewEditor(navigation, view),
+    final WorkspaceFile file => _FileEditor(navigation, file),
+    _ => _Browser(navigation),
+  };
+}
+
+class const _FileEditor(final _Navigation navigation, final WorkspaceFile file)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AppScreen(
+    child: WorkspaceFileMetadataEditor(
+      workspaceId: navigation.workspaceId,
+      file: file,
+      parentName: navigation._parentName,
+      onBack: () => _back(ref),
+    ),
+  );
+
+  void _back(WidgetRef ref) {
+    navigation.actions.open(null);
+    navigation._refresh(ref);
+  }
+}
+
+class const _OpenedFile(final _Navigation navigation, final String id)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AppScreen(
+    child: WorkspaceFileScreen(
+      workspaceId: navigation.workspaceId,
+      fileId: id,
+      onBack: () => _back(ref),
+    ),
+  );
+
+  void _back(WidgetRef ref) {
+    navigation.actions.open(null);
+    navigation._refresh(ref);
+  }
 }
 
 class const _OpenedTable(final _Navigation navigation, final String id)
@@ -327,14 +355,15 @@ class const _SelectionActions(final _Navigation navigation)
   void _refreshItem(WidgetRef ref, WorkspaceDirectoryMoveItem item) {
     final workspace = navigation.workspaceId;
     final id = item.key.id;
-    if (item.key.kind == .file) {
-      ref.invalidate(workspaceFileProvider(workspace, id));
-    }
-    if (item.key.kind == .table) {
-      ref.invalidate(workspaceTableProvider(workspace, id));
-    }
-    if (item.key.kind == .view) {
-      ref.invalidate(workspaceViewDataProvider(workspace, id));
+    switch (item.key.kind) {
+      case .file:
+        ref.invalidate(workspaceFileProvider(workspace, id));
+      case .table:
+        ref.invalidate(workspaceTableProvider(workspace, id));
+      case .view:
+        ref.invalidate(workspaceViewDataProvider(workspace, id));
+      case .folder:
+        return;
     }
   }
 }
@@ -526,10 +555,7 @@ class const _CreationChoices(
   );
 
   List<AuraPopupMenuItem> _items(BuildContext context) => [
-    AuraPopupMenuItem(
-      title: const TextLocale(LocaleKeys.workspace_assets_file),
-      onTap: () => _present(context, _FileCreation(navigation)),
-    ),
+    _fileItem(context),
     AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.workspace_items_folder),
       onTap: () => _show(context, false),
@@ -539,12 +565,18 @@ class const _CreationChoices(
         title: const TextLocale(LocaleKeys.workspace_items_table),
         onTap: () => _show(context, true),
       ),
-    if (access.isOwner)
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_views_title),
-        onTap: () => _present(context, _ViewCreation(navigation)),
-      ),
+    if (access.isOwner) _viewItem(context),
   ];
+
+  AuraPopupMenuItem _fileItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_assets_file),
+    onTap: () => _present(context, _FileCreation(navigation)),
+  );
+
+  AuraPopupMenuItem _viewItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_views_title),
+    onTap: () => _present(context, _ViewCreation(navigation)),
+  );
 
   void _show(BuildContext context, bool table) =>
       _present(context, _Creation(navigation, table: table));
@@ -642,11 +674,12 @@ class const _Items(final _Navigation navigation) extends StatelessWidget {
     onOpenFolder: navigation._folder,
     onOpenTable: navigation.actions.open,
     onOpenView: _view,
-    onOpenFile: (id) => navigation.actions.open(DirectoryFileLocation(id)),
+    onOpenFile: _file,
     onEdit: navigation.actions.open,
     selection: navigation.selection.value?.keys.toSet(),
     onSelect: _select,
   );
+  void _file(String id) => navigation.actions.open(DirectoryFileLocation(id));
   void _view(String id) => navigation.actions.open(DirectoryViewLocation(id));
   void _select(WorkspaceDirectoryMoveItem item) {
     final selected = {...?navigation.selection.value};

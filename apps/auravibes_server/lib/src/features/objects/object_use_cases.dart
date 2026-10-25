@@ -49,6 +49,14 @@ class ObjectUseCases {
     }
   }
 
+  Future<ObjectResult> describe(
+    Session session, {
+    required String userId,
+    required GetDownloadRequest request,
+  }) async => _ObjectResults.from(
+    await _ObjectReader(this, session).read(userId, request),
+  );
+
   Future<BeginUploadResult> beginUpload(
     Session session, {
     required String userId,
@@ -186,7 +194,7 @@ class ObjectUseCases {
     if (upload.actorUserId != userId) {
       throw ObjectException(code: ObjectErrorCode.objectNotFound);
     }
-    if (object.status == 'active') return _result(object);
+    if (object.status == 'active') return _ObjectResults.from(object);
     if (object.status == 'infected') {
       throw ObjectException(code: ObjectErrorCode.scanInfected);
     }
@@ -292,7 +300,7 @@ class ObjectUseCases {
       );
       return updated;
     });
-    return _result(active);
+    return _ObjectResults.from(active);
   }
 
   Future<void> _recordScanFailure(
@@ -326,7 +334,7 @@ class ObjectUseCases {
     required String userId,
     required GetDownloadRequest request,
   }) async {
-    final object = await _readableObject(session, userId, request);
+    final object = await _ObjectReader(this, session).read(userId, request);
     final signed = await store.signGet(
       key: object.objectKey,
       contentDisposition: safeContentDisposition(object.displayName),
@@ -338,58 +346,6 @@ class ObjectUseCases {
     );
   }
 
-  Future<ObjectResult> describe(
-    Session session, {
-    required String userId,
-    required GetDownloadRequest request,
-  }) async => _result(await _readableObject(session, userId, request));
-
-  Future<WorkspaceObject> _readableObject(
-    Session session,
-    String userId,
-    GetDownloadRequest request,
-  ) async {
-    await authorize(session, workspaceId: request.workspaceId, userId: userId);
-    final object = await repository.findObject(
-      session,
-      workspaceId: request.workspaceId,
-      objectId: request.objectId,
-    );
-    if (object == null ||
-        object.status != 'active' ||
-        object.deletedAt != null) {
-      throw ObjectException(code: ObjectErrorCode.objectNotFound);
-    }
-    final member = await _member(session, request.workspaceId, userId);
-    if (!await repository.hasReadableMessageReference(
-          session,
-          workspaceId: request.workspaceId,
-          objectId: request.objectId,
-        ) &&
-        !await ObjectItemAccess(session, member).canRead(request.objectId)) {
-      throw ObjectException(code: ObjectErrorCode.objectNotFound);
-    }
-    return object;
-  }
-
-  Future<WorkspaceMember> _member(
-    Session session,
-    int workspaceId,
-    String userId, {
-    Transaction? transaction,
-  }) async {
-    final member = await workspaceRepository.findActiveMember(
-      session,
-      workspaceId: workspaceId,
-      userId: userId,
-      transaction: transaction,
-    );
-    if (member == null) {
-      throw CloudWorkspaceException(code: .membershipRequired);
-    }
-    return member;
-  }
-
   Future<void> delete(
     Session session, {
     required String userId,
@@ -397,8 +353,7 @@ class ObjectUseCases {
   }) async {
     await authorize(session, workspaceId: request.workspaceId, userId: userId);
     await session.db.transaction((transaction) async {
-      final member = await _member(
-        session,
+      final member = await _ObjectReader(this, session).member(
         request.workspaceId,
         userId,
         transaction: transaction,
@@ -506,7 +461,86 @@ class ObjectUseCases {
     });
   }
 
-  ObjectResult _result(WorkspaceObject object) => ObjectResult(
+  String _opaqueKey() {
+    final random = Random.secure();
+    return List.generate(
+      24,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+  }
+}
+
+class const _ObjectReader(final ObjectUseCases owner, final Session session) {
+  Future<WorkspaceObject> read(
+    String userId,
+    GetDownloadRequest request,
+  ) async {
+    await owner.authorize(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    final object = await _object(request);
+    final actor = await member(request.workspaceId, userId);
+    if (!await _canRead(actor, request.objectId)) {
+      throw ObjectException(code: .objectNotFound);
+    }
+
+    return object;
+  }
+
+  Future<WorkspaceMember> member(
+    int workspaceId,
+    String userId, {
+    Transaction? transaction,
+  }) async {
+    final actor = await owner.workspaceRepository.findActiveMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (actor == null) {
+      throw CloudWorkspaceException(code: .membershipRequired);
+    }
+
+    return actor;
+  }
+
+  Future<WorkspaceObject> _object(GetDownloadRequest request) async {
+    final object = await owner.repository.findObject(
+      session,
+      workspaceId: request.workspaceId,
+      objectId: request.objectId,
+    );
+
+    return _active(object);
+  }
+
+  static WorkspaceObject _active(WorkspaceObject? object) {
+    if (object == null ||
+        object.status != 'active' ||
+        object.deletedAt != null) {
+      throw ObjectException(code: .objectNotFound);
+    }
+
+    return object;
+  }
+
+  Future<bool> _canRead(WorkspaceMember actor, int objectId) async =>
+      await _messageReference(actor.workspaceId, objectId) ||
+      await ObjectItemAccess(session, actor).canRead(objectId);
+
+  Future<bool> _messageReference(int workspaceId, int objectId) =>
+      owner.repository.hasReadableMessageReference(
+        session,
+        workspaceId: workspaceId,
+        objectId: objectId,
+      );
+}
+
+abstract final class _ObjectResults {
+  static ObjectResult from(WorkspaceObject object) => .new(
     objectId: object.id!,
     workspaceId: object.workspaceId,
     displayName: object.displayName,
@@ -515,12 +549,4 @@ class ObjectUseCases {
     checksumSha256: object.checksumSha256,
     revision: object.revision,
   );
-
-  String _opaqueKey() {
-    final random = Random.secure();
-    return List.generate(
-      24,
-      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
-    ).join();
-  }
 }

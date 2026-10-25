@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_updates.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
@@ -28,47 +29,19 @@ class const LocalWorkspaceDirectoryMoveRepository(
       case .table:
         await _table(item, parentId);
       case .file:
-        await _file(item, parentId);
+        await _FileMove(this).call(item, parentId);
       case .view:
-        final _ = await LocalWorkspaceViewRepository(database, workspaceId)
-            .move(
-              item.key.id,
-              expectedRevision: item.revision,
-              parentId: parentId,
-              name: item.metadataName,
-            );
+        await _view(item, parentId);
     }
   }
 
-  Future<void> _file(WorkspaceDirectoryMoveItem item, String? parentId) async {
-    final current =
-        await (database.select(database.workspaceFiles)..where(
-              (row) =>
-                  row.id.equals(item.key.id) &
-                  row.workspaceId.equals(workspaceId) &
-                  row.deletedAt.isNull(),
-            ))
-            .getSingleOrNull();
-    if (current == null) throw const WorkspaceTableException(denied: true);
-    if (current.revision != item.revision) {
-      throw const WorkspaceTableException(conflict: true);
-    }
-    if (parentId != null) {
-      final _ = await _currentFolder(parentId);
-    }
-    final _ =
-        await (database.update(database.workspaceFiles)..where(
-              (row) =>
-                  row.id.equals(current.id) &
-                  row.workspaceId.equals(workspaceId),
-            ))
-            .write(
-              WorkspaceFilesCompanion(
-                updatedAt: .new(DateTime.now()),
-                parentId: .new(parentId),
-                revision: .new(current.revision + 1),
-              ),
-            );
+  Future<void> _view(WorkspaceDirectoryMoveItem item, String? parentId) async {
+    final _ = await LocalWorkspaceViewRepository(database, workspaceId).move(
+      item.key.id,
+      expectedRevision: item.revision,
+      parentId: parentId,
+      name: item.metadataName,
+    );
   }
 
   Future<void> _folder(
@@ -114,4 +87,52 @@ class const LocalWorkspaceDirectoryMoveRepository(
       parentId: parentId,
     );
   }
+}
+
+class const _FileMove(final LocalWorkspaceDirectoryMoveRepository owner) {
+  AppDatabase get _database => owner.database;
+
+  Future<void> call(WorkspaceDirectoryMoveItem item, String? parentId) async {
+    final row = await _current(item);
+    if (parentId != null) {
+      final _ = await owner._currentFolder(parentId);
+    }
+    await _write(row, parentId);
+  }
+
+  Future<void> _write(WorkspaceFileRow row, String? parentId) async {
+    final query = _database.update(_database.workspaceFiles)
+      ..where((value) => _scope(value, row.id));
+    final _ = await query.write(_changes(row, parentId));
+  }
+
+  Future<WorkspaceFileRow> _current(WorkspaceDirectoryMoveItem item) async {
+    final query = _database.select(_database.workspaceFiles)
+      ..where((row) => _live(row, item.key.id));
+    final row = await query.getSingleOrNull();
+
+    return _checkedFile(row, item.revision);
+  }
+
+  Expression<bool> _live(WorkspaceFiles row, String id) =>
+      _scope(row, id) & row.deletedAt.isNull();
+
+  Expression<bool> _scope(WorkspaceFiles row, String id) =>
+      row.id.equals(id) & row.workspaceId.equals(owner.workspaceId);
+
+  WorkspaceFilesCompanion _changes(WorkspaceFileRow row, String? parentId) =>
+      WorkspaceFilesCompanion(
+        updatedAt: .new(DateTime.now()),
+        parentId: .new(parentId),
+        revision: .new(row.revision + 1),
+      );
+}
+
+WorkspaceFileRow _checkedFile(WorkspaceFileRow? row, int revision) {
+  if (row == null) throw const WorkspaceTableException(denied: true);
+  if (row.revision != revision) {
+    throw const WorkspaceTableException(conflict: true);
+  }
+
+  return row;
 }

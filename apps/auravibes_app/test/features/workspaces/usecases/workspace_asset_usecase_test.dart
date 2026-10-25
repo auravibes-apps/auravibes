@@ -4,11 +4,14 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_directory_move_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_assets_usecase.dart';
@@ -86,8 +89,25 @@ void main() {
     );
     expect(first.id, isNot(second.id));
     expect(second.assetId, first.assetId);
+    final destination = await LocalWorkspaceFolderRepository(
+      reopened,
+      'local',
+    ).create(name: 'Destination');
+    final moves = LocalWorkspaceDirectoryMoveRepository(reopened, 'local');
+    await moves.move([.file(first)], destination.id);
+    final moved = await files.file(first.id);
+    expect(moved.assetId, asset.id);
+    expect(moved.parentId, destination.id);
+    expect(moved.revision, first.revision + 1);
+    await expectLater(
+      moves.move([WorkspaceDirectoryMoveItem.file(first)], null),
+      throwsA(isA<WorkspaceTableException>()),
+    );
+    expect((await files.file(first.id)).parentId, destination.id);
+    await moves.move([.file(moved)], null);
+    final returned = await files.file(first.id);
     final renamed = await files.updateMetadata(
-      file: first,
+      file: returned,
       name: 'Renamed',
       parentId: null,
     );

@@ -51,11 +51,21 @@ abstract final class WorkspaceTrashActions {
   }
 
   static void refresh(WidgetRef ref) {
+    _refreshAssets(ref);
+    _refreshTables(ref);
+    _refreshViews(ref);
+  }
+
+  static void _refreshAssets(WidgetRef ref) {
     ref
       ..invalidate(workspaceAssetRepositoryProvider)
       ..invalidate(workspaceFilesProvider)
       ..invalidate(workspaceFileProvider)
-      ..invalidate(workspaceAssetPreviewProvider)
+      ..invalidate(workspaceAssetPreviewProvider);
+  }
+
+  static void _refreshTables(WidgetRef ref) {
+    ref
       ..invalidate(workspaceFoldersProvider)
       ..invalidate(workspaceTablesProvider)
       ..invalidate(workspaceTableProvider)
@@ -63,7 +73,11 @@ abstract final class WorkspaceTrashActions {
       ..invalidate(workspaceRecordQueryProvider)
       ..invalidate(workspaceReferencedRecordProvider)
       ..invalidate(workspaceTrashProvider)
-      ..invalidate(workspaceDeletedReferenceProvider)
+      ..invalidate(workspaceDeletedReferenceProvider);
+  }
+
+  static void _refreshViews(WidgetRef ref) {
+    ref
       ..invalidate(workspaceViewsProvider)
       ..invalidate(workspaceViewDataProvider)
       ..invalidate(workspaceViewChoicesProvider)

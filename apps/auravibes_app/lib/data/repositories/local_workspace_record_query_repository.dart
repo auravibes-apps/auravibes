@@ -46,23 +46,33 @@ class const LocalWorkspaceRecordQueryRepository(
     _QueryStatement statement,
     WorkspaceRecordQuery query,
   ) async {
-    final rows = await _read(statement);
+    final page = _page(await _read(statement), query.limit);
 
-    final page = _page(rows, query.limit);
-    if (!statement.table.columns.any((column) => column.type == .attachment)) {
+    return await _projectPage(statement.table, page);
+  }
+
+  Future<WorkspaceRecordPage> _projectPage(
+    WorkspaceTable table,
+    WorkspaceRecordPage page,
+  ) async {
+    if (!table.columns.any((column) => column.type == .attachment)) {
       return page;
     }
 
     return WorkspaceRecordPage(
-      records: await Future.wait(
-        page.records.map(
-          (record) => LocalWorkspaceAssetValues(
-            database,
-            workspaceId,
-          ).project(statement.table.columns, record),
-        ),
-      ),
+      records: await _projectRecords(table.columns, page.records),
       hasMore: page.hasMore,
+    );
+  }
+
+  Future<List<WorkspaceRecord>> _projectRecords(
+    List<WorkspaceColumn> columns,
+    List<WorkspaceRecord> records,
+  ) {
+    final assets = LocalWorkspaceAssetValues(database, workspaceId);
+
+    return Future.wait(
+      records.map((record) => assets.project(columns, record)),
     );
   }
 

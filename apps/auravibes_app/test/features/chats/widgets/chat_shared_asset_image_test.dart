@@ -15,11 +15,6 @@ void main() {
     final pending = Completer<WorkspaceAssetPreview>();
     await tester.pumpWidget(
       ProviderScope(
-        child: const MaterialApp(
-          home: ChatAttachmentImage(
-            localPath: 'workspace-asset://asset/asset-test/one/asset',
-          ),
-        ),
         overrides: [
           appStorageNamespaceProvider.overrideWithValue('asset-test'),
           workspaceAssetPreviewProvider(
@@ -27,13 +22,18 @@ void main() {
             'asset',
           ).overrideWith((_) => pending.future),
         ],
+        child: const MaterialApp(
+          home: ChatAttachmentImage(
+            localPath: 'workspace-asset://asset/asset-test/one/asset',
+          ),
+        ),
       ),
     );
-    await tester.pump();
+    final _ = await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byType(Image), findsNothing);
     pending.completeError(const WorkspaceAssetException(.denied));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.byType(Image), findsNothing);
     expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
     expect(tester.takeException(), isNull);

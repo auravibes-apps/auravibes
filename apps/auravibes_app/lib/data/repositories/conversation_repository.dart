@@ -1018,18 +1018,13 @@ extension on ConversationRepository {
   MessageAttachmentsCompanion _forkAttachmentCompanion(
     MessageAttachmentsTable attachment,
     String messageId,
-  ) => MessageAttachmentsCompanion.insert(
-    createdAt: .new(attachment.createdAt),
-    updatedAt: .new(attachment.updatedAt),
-    messageId: messageId,
-    assetId: .absentIfNull(attachment.assetId),
-    localPath: attachment.localPath,
-    fileName: attachment.fileName,
-    displayName: .new(attachment.displayName),
-    mimeType: attachment.mimeType,
-    modality: attachment.modality,
-    sizeBytes: attachment.sizeBytes,
-  ).copyWith(id: .new(const UuidV7().generate()));
+  ) => attachment
+      .toCompanion(true)
+      .copyWith(
+        id: .new(const UuidV7().generate()),
+        messageId: .new(messageId),
+        toolCallId: const .new(null),
+      );
 
   void _validateMaterializedBoundary(String? boundary, String? mappedBoundary) {
     if (boundary != null && mappedBoundary == null) _throwInvalidForkBoundary();

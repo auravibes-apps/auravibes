@@ -34,6 +34,7 @@ class _OversizedAsset implements WorkspaceAssetRepository {
   @override
   Future<Uint8List> bytes(String id) async {
     downloads++;
+
     return .fromList([1]);
   }
 

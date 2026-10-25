@@ -20,7 +20,7 @@ class const LocalWorkspaceReferenceValidation(
     bool retained = false,
     List<WorkspaceColumn> previous = const [],
   }) async {
-    for (final column in columns.where((column) => column.type == .reference)) {
+    for (final column in _referenceColumns(columns)) {
       await _table(_targetId(column), retained: retained);
       await _LocalDependencies(this)
           .column(columns, column, retained: retained);
@@ -36,7 +36,7 @@ class const LocalWorkspaceReferenceValidation(
     Map<String, Object?> previous = const {},
   }) async {
     await attachmentValues(columns, values, previous: previous);
-    for (final column in columns.where((column) => column.type == .reference)) {
+    for (final column in _referenceColumns(columns)) {
       await _LocalReferenceValues(this).column(column, values, previous);
     }
   }
@@ -365,3 +365,6 @@ class const _LocalAttachmentDefaults(
         columns.where((column) => column.type == .attachment).toList(),
       );
 }
+
+Iterable<WorkspaceColumn> _referenceColumns(List<WorkspaceColumn> columns) =>
+    columns.where((column) => column.type == .reference);

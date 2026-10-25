@@ -13,6 +13,7 @@ void main() {
       when(() => store.read(pages: any(named: 'pages'))).thenAnswer((_) async {
         calls++;
         if (calls > 3) throw StateError('Unbounded pagination');
+
         return cloud.ReadWorkspaceStateResponse(
           pages: [
             cloud.WorkspaceResourcePage(
@@ -42,4 +43,4 @@ void main() {
   }
 }
 
-class _Store extends Mock implements CloudWorkspaceResourceStore {}
+class _Store extends Mock implements CloudWorkspaceResourceStore;

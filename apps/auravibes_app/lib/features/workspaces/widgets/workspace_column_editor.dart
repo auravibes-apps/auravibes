@@ -171,16 +171,33 @@ class const _ColumnConstraintInputs({
   required final _ColumnDraft draft,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => WorkspaceColumnConstraints(
-    draft: draft.fields.constraints,
-    column: _ColumnActions._column(editor.column?.id ?? '', draft.fields),
-    disabled: draft.action.pending,
+  Widget build(BuildContext context) => _ColumnConstraintSettings(
+    editor: editor,
+    draft: draft,
     defaultEditor: switch (draft.fields.type.value) {
       .attachment => _AttachmentDefault(editor: editor, draft: draft),
       .reference => _ColumnReferenceDefault(editor: editor, draft: draft),
       _ => null,
     },
   );
+}
+
+class const _ColumnConstraintSettings({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+  required final Widget? defaultEditor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final fields = draft.fields;
+
+    return WorkspaceColumnConstraints(
+      draft: fields.constraints,
+      column: _ColumnActions._column(editor.column?.id ?? '', fields),
+      disabled: draft.action.pending,
+      defaultEditor: defaultEditor,
+    );
+  }
 }
 
 class const _ColumnPreviewResult({
@@ -483,19 +500,23 @@ class const _AttachmentDefault({
   required final WorkspaceColumnEditor editor,
   required final _ColumnDraft draft,
 }) extends StatelessWidget {
+  ValueNotifier<Object?> get _value => draft.fields.constraints.defaultValue;
+
   @override
   Widget build(BuildContext context) {
-    final value = draft.fields.constraints.defaultValue;
+    final value = _value.value;
 
     return WorkspaceAttachmentField(
       workspaceId: editor.workspaceId,
       label: LocaleKeys.workspace_items_default_value.tr(),
-      value: value.value,
-      present: value.value != null,
+      value: value,
+      present: value != null,
       disabled: draft.action.pending,
       restricted: false,
-      onChanged: (next) => value.value = next,
-      onUnset: () => value.value = null,
+      onChanged: (value) => _value.value = value,
+      onUnset: _unset,
     );
   }
+
+  void _unset() => _value.value = null;
 }

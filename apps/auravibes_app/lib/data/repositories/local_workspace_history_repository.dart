@@ -136,12 +136,8 @@ class const _HistoryStore(
     int revision,
   ) async {
     final snapshots = await rows(target);
-    final selected = snapshots
-        .where((row) => row.revision == revision && row.revision > 0)
-        .firstOrNull;
-    if (selected == null) throw const WorkspaceTableException();
 
-    return jsonDecode(selected.data) as Map<String, dynamic>;
+    return _snapshotData(snapshots, revision);
   }
 }
 
@@ -169,3 +165,15 @@ String _tableId(WorkspaceTrashTarget target) =>
 
 Map<String, Object?> _values(Map<String, dynamic> data) =>
     (data['values'] as Map<String, dynamic>).cast<String, Object?>();
+
+Map<String, dynamic> _snapshotData(
+  List<WorkspaceRevisionRow> rows,
+  int revision,
+) {
+  final selected = rows
+      .where((row) => row.revision == revision && row.revision > 0)
+      .firstOrNull;
+  if (selected == null) throw const WorkspaceTableException();
+
+  return jsonDecode(selected.data) as Map<String, dynamic>;
+}

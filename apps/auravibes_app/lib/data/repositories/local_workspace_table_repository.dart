@@ -26,12 +26,13 @@ class const LocalWorkspaceTableRepository(
       ..orderBy([_nameOrder]);
     final rows = await query.get();
 
-    return await Future.wait(rows.map(_visible));
+    return await Future.wait(rows.map(_TableProjection(this).table));
   }
 
   @override
   Future<WorkspaceTable> table(String id) async =>
-      await _visible(await _tableRow(_database, _workspaceId, id));
+      await _TableProjection(this)
+          .table(await _tableRow(_database, _workspaceId, id));
   @override
   Future<WorkspaceTable> create({
     required String name,
@@ -71,35 +72,16 @@ class const LocalWorkspaceTableRepository(
     final query = _records(_database, _workspaceId, tableId)
       ..orderBy([_createdOrder, _recordIdOrder]);
     final rows = await query.get();
-    final columns = _columns(schema.columnsJson);
-    if (!columns.any((column) => column.type == .attachment)) {
-      return rows.map(_record).toList();
-    }
 
-    return await Future.wait(
-      rows.map(
-        (row) => LocalWorkspaceAssetValues(
-          _database,
-          _workspaceId,
-        ).project(_columns(schema.columnsJson), _record(row)),
-      ),
-    );
+    return await _TableProjection(this).records(schema, rows);
   }
 
   @override
   Future<WorkspaceRecord> record(String tableId, String id) async {
     final schema = await _tableRow(_database, _workspaceId, tableId);
-    final query = _records(_database, _workspaceId, tableId)
-      ..where((row) => row.id.equals(id));
-    final row = await query.getSingleOrNull();
-    if (row == null) {
-      throw const WorkspaceTableException();
-    }
+    final row = await _recordRow(_database, _workspaceId, tableId, id);
 
-    return await LocalWorkspaceAssetValues(
-      _database,
-      _workspaceId,
-    ).project(_columns(schema.columnsJson), _record(row));
+    return await _TableProjection(this).record(schema, row);
   }
 
   @override
@@ -113,15 +95,38 @@ class const LocalWorkspaceTableRepository(
     required WorkspaceRecord record,
     required Map<String, Object?> values,
   }) => _RecordWriter(_database, _workspaceId).update(table, record, values);
+}
 
-  Future<WorkspaceTable> _visible(WorkspaceTableRow row) async {
-    final data = await LocalWorkspaceAssetValues(
-      _database,
-      _workspaceId,
-    ).schema({'columns': jsonDecode(row.columnsJson)});
+class const _TableProjection(final LocalWorkspaceTableRepository owner) {
+  LocalWorkspaceAssetValues get _assets =>
+      .new(owner._database, owner._workspaceId);
+
+  Future<WorkspaceTable> table(WorkspaceTableRow row) async {
+    final data = await _assets.schema({'columns': jsonDecode(row.columnsJson)});
 
     return _table(row.copyWith(columnsJson: jsonEncode(data['columns'])));
   }
+
+  Future<List<WorkspaceRecord>> records(
+    WorkspaceTableRow schema,
+    List<WorkspaceTableRecordRow> rows,
+  ) async {
+    final columns = _columns(schema.columnsJson);
+    if (!columns.any((column) => column.type == .attachment)) {
+      return rows.map(_record).toList();
+    }
+
+    return await _projectRecords(columns, rows);
+  }
+
+  Future<WorkspaceRecord> record(
+    WorkspaceTableRow schema,
+    WorkspaceTableRecordRow row,
+  ) => _assets.project(_columns(schema.columnsJson), _record(row));
+  Future<List<WorkspaceRecord>> _projectRecords(
+    List<WorkspaceColumn> columns,
+    List<WorkspaceTableRecordRow> rows,
+  ) => Future.wait(rows.map((row) => _assets.project(columns, _record(row))));
 }
 
 extension LocalWorkspaceTableDuplication on LocalWorkspaceTableRepository {
@@ -170,6 +175,19 @@ SimpleSelectStatement<WorkspaceTableRecords, WorkspaceTableRecordRow> _records(
         row.tableId.equals(tableId) &
         row.deletedAt.isNull(),
   );
+
+Future<WorkspaceTableRecordRow> _recordRow(
+  AppDatabase database,
+  String workspaceId,
+  String tableId,
+  String id,
+) async {
+  final query = _records(database, workspaceId, tableId)
+    ..where((row) => row.id.equals(id));
+  final row = await query.getSingleOrNull();
+
+  return row ?? (throw const WorkspaceTableException());
+}
 
 Future<void> _checkLocalWorkspace(AppDatabase db, String workspaceId) async {
   final workspace = await (db.select(
@@ -280,15 +298,22 @@ Future<void> _checkSchema(
 ) async {
   final current = await _tableRow(database, workspaceId, input.table.id);
   final columns = _schemaColumns(current, input.table.schemaRevision);
-  await LocalWorkspaceAssetValues(
-    database,
-    workspaceId,
-  ).preserve(columns, input.values, input.previous);
+  await _validateRecordValues(.new(database, workspaceId), columns, input);
+}
+
+Future<void> _validateRecordValues(
+  LocalWorkspaceReferenceValidation references,
+  List<WorkspaceColumn> columns,
+  _RecordChange input,
+) async {
+  await _preserveValues(
+    references.database,
+    references.workspaceId,
+    columns,
+    input,
+  );
   WorkspaceColumnValidation.values(columns, input.values);
-  await LocalWorkspaceReferenceValidation(
-    database,
-    workspaceId,
-  ).values(columns, input.values, previous: input.previous);
+  await references.values(columns, input.values, previous: input.previous);
 }
 
 Expression<bool> _parent(WorkspaceTables row, String? parentId) =>
@@ -463,17 +488,25 @@ class const _TableWriter(
     WorkspaceColumn column,
   ) async {
     final row = await _tableRow(_database, _workspaceId, table.id);
-    final previous = _columns(row.columnsJson);
-    final columns = await LocalWorkspaceAssetValues(
-      _database,
-      _workspaceId,
-    ).preserveDefaults(_updatedColumns(row, table, column), previous);
-    await _references.columns(columns, previous: previous);
-    await _checkRecords(table.id, columns, previous);
-    await _writeColumns(_database, row, columns);
+    final columns = await _updatedColumnDefaults(_database, _workspaceId, (
+      row: row,
+      table: table,
+      column: column,
+    ));
+    await _writeColumnChange(row, columns);
     await _references.allDependencies();
 
     return await _read(table.id);
+  }
+
+  Future<void> _writeColumnChange(
+    WorkspaceTableRow row,
+    List<WorkspaceColumn> columns,
+  ) async {
+    final previous = _columns(row.columnsJson);
+    await _references.columns(columns, previous: previous);
+    await _checkRecords(row.id, columns, previous);
+    await _writeColumns(_database, row, columns);
   }
 
   Future<WorkspaceTable> _read(String id) async =>
@@ -498,6 +531,15 @@ class const _TableWriter(
     }
   }
 }
+
+Future<List<WorkspaceColumn>> _updatedColumnDefaults(
+  AppDatabase database,
+  String workspaceId,
+  ({WorkspaceTableRow row, WorkspaceTable table, WorkspaceColumn column}) input,
+) => LocalWorkspaceAssetValues(database, workspaceId).preserveDefaults(
+  _updatedColumns(input.row, input.table, input.column),
+  _columns(input.row.columnsJson),
+);
 
 class const _RecordWriter(
   final AppDatabase _database,
@@ -651,6 +693,42 @@ List<WorkspaceColumn> _schemaColumns(WorkspaceTableRow row, int revision) {
   return _table(row).columns;
 }
 
+Future<void> _batchSchema(
+  AppDatabase database,
+  String workspaceId,
+  WorkspaceRecordChange change,
+) async {
+  final row = await _tableRow(database, workspaceId, change.table.id);
+  final _ = _schemaColumns(row, change.table.schemaRevision);
+}
+
+Future<void> _preserveValues(
+  AppDatabase database,
+  String workspaceId,
+  List<WorkspaceColumn> columns,
+  _RecordChange input,
+) => LocalWorkspaceAssetValues(
+  database,
+  workspaceId,
+).preserve(columns, input.values, input.previous);
+
+Future<Map<String, Object?>> _stageValues(
+  AppDatabase database,
+  String workspaceId,
+  WorkspaceRecordChange change,
+  WorkspaceRecord current,
+) async {
+  final values = Map<String, Object?>.of(change.values);
+  await _preserveValues(database, workspaceId, change.table.columns, (
+    table: change.table,
+    values: values,
+    previous: current.values,
+  ));
+  WorkspaceColumnValidation.values(change.table.columns, values);
+
+  return values;
+}
+
 class const LocalWorkspaceRecordBatchRepository(
   final AppDatabase database,
   final String workspaceId,
@@ -728,19 +806,14 @@ class const LocalWorkspaceRecordBatchRepository(
   }
 
   Future<WorkspaceRecord> _current(WorkspaceRecordChange change) async {
-    final tables = LocalWorkspaceTableRepository(database, workspaceId);
-    final table = await tables.table(change.table.id);
-    final _ = _schemaColumns(
-      await _tableRow(database, workspaceId, table.id),
-      change.table.schemaRevision,
-    );
+    await _batchSchema(database, workspaceId, change);
 
-    final row = await (_records(
+    final row = await _recordRow(
       database,
       workspaceId,
-      table.id,
-    )..where((row) => row.id.equals(change.record.id))).getSingleOrNull();
-    if (row == null) throw const WorkspaceTableException();
+      change.table.id,
+      change.record.id,
+    );
 
     return _record(row);
   }
@@ -748,12 +821,7 @@ class const LocalWorkspaceRecordBatchRepository(
   Future<WorkspaceRecord> _stage(WorkspaceRecordChange change) async {
     final current = await _current(change);
     _checkRecordRevision(current, change.record);
-    final values = Map<String, Object?>.of(change.values);
-    await LocalWorkspaceAssetValues(
-      database,
-      workspaceId,
-    ).preserve(change.table.columns, values, current.values);
-    WorkspaceColumnValidation.values(change.table.columns, values);
+    final values = await _stageValues(database, workspaceId, change, current);
     final target = (workspaceId: workspaceId, record: current);
     await _writeRecord(database, target, values);
 

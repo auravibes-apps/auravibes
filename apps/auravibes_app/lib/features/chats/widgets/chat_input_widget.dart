@@ -1287,23 +1287,29 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
 
   Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
     if (!ref.context.mounted) {
-      if (attachment.assetId == null) {
-        await _attachmentUsecase.deleteAttachment(attachment.localPath);
-      }
+      await _discardDetachedAttachment(attachment);
 
       return;
     }
 
     if (!_canAddAttachment(attachment)) return;
-    if (attachment.assetId != null &&
-        _draft.attachments.value.any(
-          (value) => value.assetId == attachment.assetId,
-        )) {
-      return;
-    }
+    if (_alreadySelectedAsset(attachment)) return;
 
     _draft.attachments.value = [..._draft.attachments.value, attachment];
   }
+
+  Future<void> _discardDetachedAttachment(
+    MessageAttachmentToCreate attachment,
+  ) async {
+    if (attachment.assetId != null) return;
+    await _attachmentUsecase.deleteAttachment(attachment.localPath);
+  }
+
+  bool _alreadySelectedAsset(MessageAttachmentToCreate attachment) =>
+      attachment.assetId != null &&
+      _draft.attachments.value.any(
+        (value) => value.assetId == attachment.assetId,
+      );
 
   bool _canAddAttachment(MessageAttachmentToCreate attachment) {
     if (input.acceptDroppedFilesWhenDisabled ||
@@ -1419,22 +1425,32 @@ extension _ChatInputExistingAssets on _ChatInputActions {
   Future<void> _selectExistingAsset() async {
     final context = ref.context;
     try {
-      final asset = await showDialog<WorkspaceAsset>(
+      final asset = await _chooseExistingAsset(context);
+      if (asset == null || !context.mounted) return;
+      await _addExistingAsset(asset, context);
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Existing asset selection failed', error, stackTrace);
+      if (!context.mounted) return;
+      _showAttachmentError(_existingAssetError(error));
+    }
+  }
+
+  Future<WorkspaceAsset?> _chooseExistingAsset(BuildContext context) =>
+      showDialog<WorkspaceAsset>(
         context: context,
         builder: (_) => WorkspaceAssetChooser(workspaceId: input.workspaceId),
       );
-      if (asset == null || !context.mounted) return;
-      final select = await ref.read(
-        selectWorkspaceAssetAttachmentProvider(input.workspaceId).future,
-      );
-      await _addAttachment(await select(asset.id));
-    } on Object catch (error, stackTrace) {
-      _logger.warning('Existing asset selection failed', error, stackTrace);
-      _showAttachmentError(switch (error) {
-        final WorkspaceAssetException error => error.localizationKey,
-        _ => CloudAppErrors.localizationKey(error),
-      });
-    }
+
+  Future<void> _addExistingAsset(
+    WorkspaceAsset asset,
+    BuildContext context,
+  ) async {
+    final select = await ref.read(
+      selectWorkspaceAssetAttachmentProvider(input.workspaceId).future,
+    );
+    final attachment = await select(asset.id);
+    if (!context.mounted) return;
+    await _addAttachment(attachment);
   }
 }
 
@@ -2772,3 +2788,8 @@ String _findAvailableAttachmentName(
     index += 1;
   }
 }
+
+String _existingAssetError(Object error) => switch (error) {
+  final WorkspaceAssetException error => error.localizationKey,
+  _ => CloudAppErrors.localizationKey(error),
+};

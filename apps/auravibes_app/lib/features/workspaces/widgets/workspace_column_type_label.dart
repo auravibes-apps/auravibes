@@ -17,13 +17,13 @@ class const WorkspaceColumnTypeLabel({
     .email => LocaleKeys.workspace_items_type_email,
     .phone => LocaleKeys.workspace_items_type_phone,
     .reference => LocaleKeys.workspace_items_type_reference,
-    .attachment => LocaleKeys.workspace_assets_attachments,
     _ => _exactLabelKey,
   };
   String get _exactLabelKey => switch (type) {
     .dateOnly => LocaleKeys.workspace_items_type_date_only,
     .timestamp => LocaleKeys.workspace_items_type_timestamp,
     .money => LocaleKeys.workspace_items_type_money,
+    .attachment => LocaleKeys.workspace_assets_attachments,
     _ => LocaleKeys.workspace_items_type_text,
   };
 

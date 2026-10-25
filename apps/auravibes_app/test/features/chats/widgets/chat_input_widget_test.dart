@@ -1729,28 +1729,28 @@ void main() {
     final _ = await pumpAndInit(
       tester,
       buildSubject(
-        modalitiesInput: const ['text', 'file'],
         onSendMessage: (draft) => sent = draft,
-        sharedAssets: const _SharedAssets(asset),
+        modalitiesInput: const ['text', 'file'],
         sharedFile: const WorkspaceFile(
           id: 'file',
           name: 'Stored notes',
           assetId: 'asset',
-          asset: asset,
           revision: 1,
+          asset: asset,
         ),
+        sharedAssets: const _SharedAssets(asset),
       ),
     );
     await tester.tap(find.byIcon(Icons.tune_rounded));
-    await tester.pump();
+    final _ = await tester.pump();
     await tester.tap(find.text(LocaleKeys.workspace_assets_existing.tr()));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Stored notes'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(
       find.bySemanticsIdentifier('chat_send_button').hitTestable(),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(sent?.attachments.single.assetId, 'asset');
     expect(
       sent?.attachments.single.localPath,

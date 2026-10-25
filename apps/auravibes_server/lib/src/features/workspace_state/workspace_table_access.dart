@@ -91,38 +91,33 @@ class const _TableReader(
   }
 
   Future<WorkspaceResource?> visible(WorkspaceResource resource) async {
-    if (resource.resourceKind == WorkspaceResourceKind.folder) {
-      return _visibleFolder(resource, member.role);
-    }
-    if (resource.resourceKind == WorkspaceResourceKind.file) {
-      if (resource.deletedAt != null) return null;
+    return switch (resource.resourceKind) {
+      .folder => _visibleFolder(resource, member.role),
+      .file => await _file(resource),
+      _ => await _tableResource(resource),
+    };
+  }
 
-      return await _visibleFile(session, resource, member.role, transaction);
-    }
+  Future<bool> canSeeEvent(WorkspaceEvent event) =>
+      _TableEventReader(this).visible(event);
+
+  Future<WorkspaceResource?> _file(WorkspaceResource resource) async {
+    if (resource.deletedAt != null) return null;
+
+    return await _FileProjection(
+      session,
+      resource,
+      member.role,
+      transaction,
+    ).visible();
+  }
+
+  Future<WorkspaceResource?> _tableResource(WorkspaceResource resource) async {
     if (!_isTableResource(resource.resourceKind)) return resource;
     final access = await level(resource);
     if (access == null) return null;
 
     return await _project(resource, access);
-  }
-
-  Future<bool> canSeeEvent(WorkspaceEvent event) async {
-    final kind = _eventKind(event);
-    if (kind == .file) {
-      final id = event.resourceId;
-      if (id == null) return false;
-      final row = await resource(_ResourceKey(event.workspaceId, .file, id));
-
-      return row != null && row.deletedAt == null;
-    }
-    if (kind == null || !_isTableResource(kind)) return true;
-    final id = event.resourceId;
-    if (id == null) return false;
-    final row = await resource(
-      _ResourceKey(event.workspaceId, kind, id),
-    );
-
-    return row != null && await level(row) != null;
   }
 
   Future<WorkspaceResource> _project(
@@ -142,6 +137,36 @@ class const _TableReader(
       member,
       transaction,
     ).record(resource);
+  }
+}
+
+class const _TableEventReader(final _TableReader reader) {
+  Future<bool> visible(WorkspaceEvent event) async {
+    final kind = _eventKind(event);
+    if (kind == .file) return await _file(event);
+    if (kind == null || !_isTableResource(kind)) return true;
+
+    return await _table(event, kind);
+  }
+
+  Future<bool> _table(WorkspaceEvent event, WorkspaceResourceKind kind) async {
+    final id = event.resourceId;
+    if (id == null) return false;
+    final row = await reader.resource(
+      _ResourceKey(event.workspaceId, kind, id),
+    );
+
+    return row != null && await reader.level(row) != null;
+  }
+
+  Future<bool> _file(WorkspaceEvent event) async {
+    final id = event.resourceId;
+    if (id == null) return false;
+    final row = await reader.resource(
+      _ResourceKey(event.workspaceId, .file, id),
+    );
+
+    return row != null && row.deletedAt == null;
   }
 }
 
@@ -275,39 +300,45 @@ WorkspaceResource _visibleFolder(WorkspaceResource resource, String role) =>
       }),
     );
 
-Future<WorkspaceResource> _visibleFile(
-  Session session,
-  WorkspaceResource resource,
-  String role,
-  Transaction? transaction,
-) async {
-  final data = _data(resource);
-  final objectId = int.tryParse(data['assetId'] as String? ?? '');
-  final object = await WorkspaceObject.db.findFirstRow(
-    session,
-    where: (row) =>
-        row.workspaceId.equals(resource.workspaceId) &
-        row.id.equals(objectId) &
-        row.status.equals('active') &
-        row.deletedAt.equals(null),
-    transaction: transaction,
-  );
+class const _FileProjection(
+  final Session session,
+  final WorkspaceResource resource,
+  final String role,
+  final Transaction? transaction,
+) {
+  Future<WorkspaceResource> visible() async =>
+      resource.copyWith(data: jsonEncode(_content(await _object())));
 
-  return resource.copyWith(
-    data: jsonEncode({
-      ...data,
-      'canManageFile':
-          role == WorkspaceRoles.owner || role == WorkspaceRoles.admin,
-      if (object != null)
-        'asset': {
-          'id': '${object.id}',
-          'name': object.displayName,
-          'mimeType': object.mimeType,
-          'sizeBytes': object.sizeBytes,
-          'checksum': object.checksumSha256,
-        },
-    }),
-  );
+  Future<WorkspaceObject?> _object() {
+    final objectId = int.tryParse(_data(resource)['assetId'] as String? ?? '');
+
+    return WorkspaceObject.db.findFirstRow(
+      session,
+      where: (row) => _matches(row, objectId),
+      transaction: transaction,
+    );
+  }
+
+  Expression _matches(WorkspaceObjectTable row, int? objectId) =>
+      row.workspaceId.equals(resource.workspaceId) &
+      row.id.equals(objectId) &
+      row.status.equals('active') &
+      row.deletedAt.equals(null);
+
+  Map<String, Object?> _content(WorkspaceObject? object) => {
+    ..._data(resource),
+    'canManageFile':
+        role == WorkspaceRoles.owner || role == WorkspaceRoles.admin,
+    if (object != null) 'asset': _asset(object),
+  };
+
+  Map<String, Object?> _asset(WorkspaceObject object) => {
+    'id': '${object.id}',
+    'name': object.displayName,
+    'mimeType': object.mimeType,
+    'sizeBytes': object.sizeBytes,
+    'checksum': object.checksumSha256,
+  };
 }
 
 WorkspaceEvent _hiddenEvent(WorkspaceEvent event) => event.copyWith(

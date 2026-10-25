@@ -66,47 +66,8 @@ class ObjectRepository {
     required int workspaceId,
     required int objectId,
     Transaction? transaction,
-  }) async {
-    final references = await ObjectReference.db.find(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) &
-          row.objectId.equals(objectId) &
-          row.deletedAt.equals(null),
-      transaction: transaction,
-    );
-    for (final reference in references) {
-      if (await _messageReadable(session, reference, transaction)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  Future<bool> _messageReadable(
-    Session session,
-    ObjectReference reference,
-    Transaction? transaction,
-  ) async {
-    final message = await ConversationMessage.db.findFirstRow(
-      session,
-      where: (t) =>
-          t.id.equals(reference.messageId) &
-          t.workspaceId.equals(reference.workspaceId) &
-          t.status.notEquals('deleted'),
-      transaction: transaction,
-    );
-    if (message == null) return false;
-    final conversation = await Conversation.db.findFirstRow(
-      session,
-      where: (row) =>
-          row.id.equals(message.conversationId) &
-          row.workspaceId.equals(reference.workspaceId) &
-          row.deletedAt.equals(null),
-      transaction: transaction,
-    );
-    return conversation != null;
-  }
+  }) =>
+      _MessageReferences(session, transaction).contains(workspaceId, objectId);
 
   Future<ObjectDeletion?> findDeletionByRequest(
     Session session, {
@@ -195,4 +156,75 @@ class ObjectRepository {
       transaction: transaction,
     );
   });
+}
+
+class const _MessageReferences(
+  final Session session,
+  final Transaction? transaction,
+) {
+  Future<bool> contains(int workspaceId, int objectId) async {
+    for (final reference in await _rows(workspaceId, objectId)) {
+      if (await _readable(reference)) return true;
+    }
+
+    return false;
+  }
+
+  Future<List<ObjectReference>> _rows(int workspaceId, int objectId) =>
+      ObjectReference.db.find(
+        session,
+        where: (row) => _liveReference(row, workspaceId, objectId),
+        transaction: transaction,
+      );
+
+  Expression _liveReference(
+    ObjectReferenceTable row,
+    int workspaceId,
+    int objectId,
+  ) =>
+      row.workspaceId.equals(workspaceId) &
+      row.objectId.equals(objectId) &
+      row.deletedAt.equals(null);
+
+  Future<bool> _readable(ObjectReference reference) async {
+    final message = await _message(reference);
+    if (message == null) return false;
+    final conversation = await _conversation(
+      reference.workspaceId,
+      message.conversationId,
+    );
+
+    return conversation != null;
+  }
+
+  Future<ConversationMessage?> _message(ObjectReference reference) =>
+      ConversationMessage.db.findFirstRow(
+        session,
+        where: (row) => _messageScope(row, reference),
+        transaction: transaction,
+      );
+
+  Expression _messageScope(
+    ConversationMessageTable row,
+    ObjectReference reference,
+  ) =>
+      row.id.equals(reference.messageId) &
+      row.workspaceId.equals(reference.workspaceId) &
+      row.status.notEquals('deleted');
+
+  Future<Conversation?> _conversation(int workspaceId, int conversationId) =>
+      Conversation.db.findFirstRow(
+        session,
+        where: (row) => _conversationScope(row, workspaceId, conversationId),
+        transaction: transaction,
+      );
+
+  Expression _conversationScope(
+    ConversationTable row,
+    int workspaceId,
+    int conversationId,
+  ) =>
+      row.id.equals(conversationId) &
+      row.workspaceId.equals(workspaceId) &
+      row.deletedAt.equals(null);
 }

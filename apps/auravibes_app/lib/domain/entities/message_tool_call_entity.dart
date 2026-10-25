@@ -232,16 +232,15 @@ MessageMetadataEntity _metadataFromDecodedJson(Map<String, dynamic> json) {
 
 List<String> _readCloudAttachmentAssetIds(Object? value) {
   if (value is! List) return [];
-  final key = RegExp(r'^[1-9][0-9]*$');
 
-  return value
-      .where(
-        (id) => (id is int && id > 0) || (id is String && key.hasMatch(id)),
-      )
-      .map((id) => '$id')
-      .toSet()
-      .toList();
+  return value.where(_cloudAssetId).map((id) => '$id').toSet().toList();
 }
+
+bool _cloudAssetId(Object? id) => switch (id) {
+  final int value => value > 0,
+  final String value => RegExp(r'^[1-9][0-9]*$').hasMatch(value),
+  _ => false,
+};
 
 /// Entity representing a message in a conversation.
 ///

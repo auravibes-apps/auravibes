@@ -54,10 +54,8 @@ void main() {
           ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
           ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
         _createHistorySources(sqliteDb);
-        sqliteDb.execute('INSERT INTO message_attachments VALUES (?)', [
-          'legacy',
-        ]);
         sqliteDb
+          ..execute('INSERT INTO message_attachments VALUES (?)', ['legacy'])
           ..execute(
             'INSERT INTO workspace_tables VALUES (?,?,?,?,?,?,?,?,?,?,?)',
             [
@@ -1406,8 +1404,8 @@ final class _MigrationCaseRecordBatch;
 final class _MigrationCaseHistory;
 
 void _createHistorySources(sqlite.Database database) {
-  database.execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)');
   database
+    ..execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)')
     ..execute(
       'CREATE TABLE workspace_tables ( '
       'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, '

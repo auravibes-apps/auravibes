@@ -103,13 +103,16 @@ class const _HistoryProjection(
       context.transaction,
     );
     final hidden = await projection.restricted(
-      columns.whereType<String>().map((id) => {'id': id, 'type': 'attachment'}),
+      _attachmentColumns(columns),
       values,
     );
     for (final column in hidden) {
       values.remove(column);
     }
   }
+
+  Iterable<Map<String, dynamic>> _attachmentColumns(List<dynamic> columns) =>
+      columns.whereType<String>().map((id) => {'id': id, 'type': 'attachment'});
 
   Future<WorkspaceResource?> _targetTable(String id) =>
       WorkspaceStateRepository().findResource(

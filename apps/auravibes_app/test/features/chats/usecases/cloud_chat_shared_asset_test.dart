@@ -6,14 +6,17 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('shared asset reauthorizes its ID without reading or cloning bytes', () async {
-    final fixture = _Uploads();
-    final objects = await fixture.usecase.uploadDraftResults(
-      attachments: const [_existing],
-    );
-    expect(objects.map((object) => object.objectId), [42]);
-    expect(fixture.calls, ['describe:42']);
-  });
+  test(
+    'shared asset reauthorizes its ID without reading or cloning bytes',
+    () async {
+      final fixture = _Uploads();
+      final objects = await fixture.usecase.uploadDraftResults(
+        attachments: const [_existing],
+      );
+      expect(objects.map((object) => object.objectId), [42]);
+      expect(fixture.calls, ['describe:42']);
+    },
+  );
 
   test('failed later upload never deletes an existing shared asset', () async {
     final fixture = _Uploads();
@@ -39,13 +42,13 @@ void main() {
 }
 
 const _existing = MessageAttachmentToCreate(
-  assetId: '42',
   localPath: 'workspace-asset:///cloud/42',
   fileName: 'notes.txt',
   displayName: 'notes.txt',
   mimeType: 'text/plain',
   modality: .file,
   sizeBytes: 3,
+  assetId: '42',
 );
 const _draft = MessageAttachmentToCreate(
   localPath: '/draft.txt',
@@ -59,9 +62,10 @@ const _draft = MessageAttachmentToCreate(
 class _Uploads {
   final calls = <String>[];
   bool denied = false;
-  late final usecase = CloudChatAttachmentUsecase(
+  CloudChatAttachmentUsecase get usecase => .new(
     beginUpload: (_) async {
       calls.add('begin');
+
       return BeginUploadResult(
         objectId: 9,
         revision: 1,
@@ -76,16 +80,21 @@ class _Uploads {
     },
     completeUpload: ({required objectId}) => throw UnimplementedError(),
     getDownload: ({required objectId}) => throw UnimplementedError(),
-    deleteObject: ({required objectId, required requestId, required expectedRevision}) async {
-      calls.add('delete:$objectId');
-    },
+    deleteObject:
+        ({required objectId, required requestId, required expectedRevision}) {
+          calls.add('delete:$objectId');
+
+          return Future.value();
+        },
     readBytes: (_) async {
       calls.add('read');
+
       return Uint8List.fromList([1, 2, 3]);
     },
     describeObject: ({required objectId}) async {
       calls.add('describe:$objectId');
       if (denied) throw StateError('Revoked');
+
       return ObjectResult(
         objectId: objectId,
         workspaceId: 7,

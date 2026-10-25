@@ -173,11 +173,21 @@ abstract final class _ValueValidation {
 
 bool _extra(WorkspaceColumn column, Object? value) => switch (column.type) {
   .reference => WorkspaceReferenceValue.valid(column, value),
-  .attachment => value is List && value.length <= _maximumColumns &&
-      value.toSet().length == value.length && value.every((id) =>
-        id is String && RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(id)),
+  .attachment => _AttachmentValidation.valid(value),
   _ => _ValueValidation._exact(column.type, value),
 };
+
+abstract final class _AttachmentValidation {
+  static final _id = RegExp(r'^[A-Za-z0-9_-]{1,128}$');
+
+  static bool valid(Object? value) =>
+      value is List &&
+      value.length <= _maximumColumns &&
+      value.toSet().length == value.length &&
+      value.every(_validId);
+
+  static bool _validId(Object? id) => id is String && _id.hasMatch(id);
+}
 
 bool _validParent(WorkspaceColumn? parent, String id) =>
     parent != null &&

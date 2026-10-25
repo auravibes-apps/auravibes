@@ -27,63 +27,28 @@ class const WorkspaceReferenceValidation(
       await dependent.schema(schema, column);
       await dependent.defaults(schema, column);
     }
-    final defaults = <String, Object?>{
-      for (final column in (schema['columns'] as List).whereType<Map>())
-        if (column['type'] == 'attachment' && column['defaultValue'] != null)
-          column['id'] as String: column['defaultValue'],
-    };
-    await ObjectRecordAttachments(session, member, transaction).validate(
-      .new(
-        schema: schema,
-        values: defaults,
-        previous: {
-          for (final column
-              in (previous['columns'] as List? ?? const []).whereType<Map>())
-            if (column['type'] == 'attachment' &&
-                column['defaultValue'] != null)
-              column['id'] as String: column['defaultValue'],
-        },
-        recordId: '',
-        tableId: tableId,
-      ),
-    );
-    for (final column in (schema['columns'] as List).whereType<Map>()) {
-      if (column['type'] == 'attachment' &&
-          defaults.containsKey(column['id'])) {
-        column['defaultValue'] = defaults[column['id']];
-      }
-    }
+    await _AttachmentDefaults(this).validate(schema, previous, tableId);
   }
 
   Future<void> values(
-    Map<String, Object?> schema,
-    Map<String, Object?> values,
-    Map<String, Object?> previous, {
+    ObjectAttachmentValues request, {
     bool preserveOnly = false,
-    String recordId = '',
-    String tableId = '',
-    bool assetSharingApproved = false,
   }) async {
-    await ObjectRecordAttachments(session, member, transaction).validate(
-      .new(
-        schema: schema,
-        values: values,
-        previous: previous,
-        recordId: recordId,
-        tableId: tableId,
-        sharingApproved: assetSharingApproved,
-      ),
-    );
-    for (final column in _columns(schema)) {
+    await ObjectRecordAttachments(
+      session,
+      member,
+      transaction,
+    ).validate(request);
+    for (final column in _columns(request.schema)) {
       final _ = await _preserve((
         column: column,
-        values: values,
-        previous: previous,
+        values: request.values,
+        previous: request.previous,
       ));
     }
     if (preserveOnly) return;
-    for (final column in _columns(schema)) {
-      await _column(column, values, previous);
+    for (final column in _columns(request.schema)) {
+      await _column(column, request.values, request.previous);
     }
   }
 
@@ -236,6 +201,58 @@ Map<String, Object?> _defaults(Map schema) => {
     if (column['defaultValue'] != null)
       column['id'] as String: column['defaultValue'],
 };
+
+class const _AttachmentDefaults(
+  final WorkspaceReferenceValidation references,
+) {
+  ObjectRecordAttachments get _attachments => .new(
+    references.session,
+    references.member,
+    references.transaction,
+  );
+
+  Future<void> validate(
+    Map<String, Object?> schema,
+    Map<String, Object?> previous,
+    String tableId,
+  ) async {
+    final columns = schema['columns'] as List;
+    final values = _values(columns);
+    await _attachments.validate(_input(schema, values, previous, tableId));
+    _write(columns, values);
+  }
+
+  ObjectAttachmentValues _input(
+    Map<String, Object?> schema,
+    Map<String, Object?> values,
+    Map<String, Object?> previous,
+    String tableId,
+  ) => .new(
+    schema: schema,
+    values: values,
+    previous: _values(previous['columns'] as List? ?? const []),
+    recordId: '',
+    tableId: tableId,
+  );
+
+  Map<String, Object?> _values(List<dynamic> columns) => {
+    for (final column in _columns(columns))
+      if (column['defaultValue'] != null)
+        column['id'] as String: column['defaultValue'],
+  };
+
+  void _write(List<dynamic> columns, Map<String, Object?> values) {
+    for (final column in _columns(columns)) {
+      if (values.containsKey(column['id'])) {
+        column['defaultValue'] = values[column['id']];
+      }
+    }
+  }
+
+  Iterable<Map> _columns(List<dynamic> columns) => columns
+      .whereType<Map>()
+      .where((column) => column['type'] == 'attachment');
+}
 
 class const _DependentReferences(
   final WorkspaceReferenceValidation references,

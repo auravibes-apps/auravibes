@@ -11,17 +11,15 @@ class const WorkspaceReferenceVisibility(
   final WorkspaceMember member,
   final Transaction? transaction,
 ) {
+  ObjectAttachmentProjection get _attachments =>
+      .new(session, member, transaction);
+
   Future<WorkspaceResource> record(WorkspaceResource row) async {
     final data = _data(row);
     final table = await _table(data['tableId'] as String);
     if (table == null) return row;
     final restricted = await _restricted(_columns(table));
-    restricted.addAll(
-      await ObjectAttachmentProjection(session, member, transaction).restricted(
-        (_data(table)['columns'] as List).cast<Map<String, dynamic>>(),
-        (data['values'] as Map).cast<String, Object?>(),
-      ),
-    );
+    restricted.addAll(await _recordAttachments(table, data));
 
     return _project(row, data, restricted);
   }
@@ -29,21 +27,19 @@ class const WorkspaceReferenceVisibility(
   Future<WorkspaceResource> table(WorkspaceResource row) async {
     final restricted = await _restricted(_columns(row));
     final data = _data(row);
-    final columns = (data['columns'] as List).cast<Map<String, dynamic>>();
-    restricted.addAll(
-      await ObjectAttachmentProjection(session, member, transaction).restricted(
-        columns,
-        {
-          for (final column in columns)
-            if (column['defaultValue'] != null)
-              column['id'] as String: column['defaultValue'],
-        },
-      ),
-    );
+    restricted.addAll(await _defaultAttachments(data));
     data['columns'] = _visibleColumns(data, restricted);
 
     return row.copyWith(data: jsonEncode(data));
   }
+
+  Future<List<String>> _recordAttachments(
+    WorkspaceResource table,
+    Map<String, dynamic> data,
+  ) => _attachments.restricted(_allColumns(_data(table)), _values(data));
+
+  Future<List<String>> _defaultAttachments(Map<String, dynamic> data) =>
+      _attachments.restricted(_allColumns(data), _defaultValues(data));
 
   Future<List<String>> _restricted(
     Iterable<Map<String, dynamic>> columns,
@@ -79,9 +75,18 @@ class const WorkspaceReferenceVisibility(
 }
 
 Iterable<Map<String, dynamic>> _columns(WorkspaceResource row) =>
-    (_data(row)['columns'] as List).cast<Map<String, dynamic>>().where(
+    _allColumns(_data(row)).where(
       (column) => column['type'] == 'reference',
     );
+List<Map<String, dynamic>> _allColumns(Map<String, dynamic> data) =>
+    (data['columns'] as List).cast<Map<String, dynamic>>();
+Map<String, Object?> _values(Map<String, dynamic> data) =>
+    (data['values'] as Map).cast<String, Object?>();
+Map<String, Object?> _defaultValues(Map<String, dynamic> data) => {
+  for (final column in _allColumns(data))
+    if (column['defaultValue'] != null)
+      column['id'] as String: column['defaultValue'],
+};
 WorkspaceResource _project(
   WorkspaceResource row,
   Map<String, dynamic> data,
@@ -96,9 +101,7 @@ WorkspaceResource _project(
 Map<String, Object?> _visibleValues(
   Map<String, dynamic> data,
   List<String> restricted,
-) =>
-    (data['values'] as Map).cast<String, Object?>()
-      ..removeWhere((key, _) => restricted.contains(key));
+) => _values(data)..removeWhere((key, _) => restricted.contains(key));
 Map<String, dynamic> _data(WorkspaceResource resource) =>
     jsonDecode(resource.data) as Map<String, dynamic>;
 
