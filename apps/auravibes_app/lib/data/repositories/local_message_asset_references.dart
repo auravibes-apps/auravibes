@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_access.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset_location.dart';
@@ -20,6 +21,12 @@ class const LocalMessageAssetReferences(
     await _scope(messageId, location);
     final asset = await _asset(location.workspaceId, location.assetId);
     _requireMetadata(asset, attachment);
+    if (!await LocalWorkspaceAssetAccess(
+      database,
+      location.workspaceId,
+    ).allows(location.assetId)) {
+      throw _denied;
+    }
   }
 
   WorkspaceAssetLocation? _shared(MessageAttachmentToCreate attachment) {

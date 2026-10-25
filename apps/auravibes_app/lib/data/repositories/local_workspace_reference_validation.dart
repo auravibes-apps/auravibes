@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_access.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -73,7 +74,13 @@ class const LocalWorkspaceReferenceValidation(
                       row.status.equals('active'),
                 ))
                 .getSingleOrNull();
-        if (asset == null) throw const WorkspaceTableException(denied: true);
+        if (asset == null ||
+            !await LocalWorkspaceAssetAccess(
+              database,
+              workspaceId,
+            ).allows(id)) {
+          throw const WorkspaceTableException(denied: true);
+        }
       }
     }
   }

@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_access.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset_input.dart';
 import 'package:crypto/crypto.dart';
@@ -56,7 +57,10 @@ class const LocalWorkspaceAssetRepository(
                   row.status.equals('active'),
             ))
             .getSingleOrNull();
-    if (row == null) throw const WorkspaceAssetException(.denied);
+    if (row == null ||
+        !await LocalWorkspaceAssetAccess(database, workspaceId).allows(id)) {
+      throw const WorkspaceAssetException(.denied);
+    }
 
     return WorkspaceAsset(
       id: row.id,

@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_assets_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
@@ -190,6 +192,34 @@ void main() {
       revision: remaining.revision,
     );
     final _ = await trash.apply(lastTarget, approve: (_) async => true);
+    await expectLater(
+      next.describe(asset.id),
+      throwsA(
+        isA<WorkspaceAssetException>().having(
+          (error) => error.failure,
+          'Trash alone cannot authorize asset metadata',
+          WorkspaceAssetFailure.denied,
+        ),
+      ),
+    );
+    const attachment = WorkspaceColumn(
+      id: 'attachment',
+      name: 'Attachment',
+      type: .attachment,
+    );
+    await expectLater(
+      LocalWorkspaceReferenceValidation(reopened, 'local').values(
+        [attachment],
+        {
+          'attachment': [asset.id],
+        },
+      ),
+      throwsA(isA<WorkspaceTableException>()),
+    );
+    await expectLater(
+      files.create(id: 'guessed-file', name: 'Guessed', assetId: asset.id),
+      throwsA(isA<WorkspaceAssetException>()),
+    );
     await LocalWorkspaceHistoryRepository(
       reopened,
       'local',

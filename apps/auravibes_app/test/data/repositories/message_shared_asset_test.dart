@@ -9,6 +9,46 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'a trashed File cannot authorize a new Conversation attachment',
+    () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.database.close);
+      final _ = await fixture.database
+          .into(fixture.database.workspaceFiles)
+          .insert(
+            WorkspaceFilesCompanion.insert(
+              id: const .new('file'),
+              workspaceId: 'local',
+              name: 'Notes',
+              assetId: 'asset',
+              creationHash: 'creation',
+              deletedAt: .new(DateTime.utc(2026)),
+            ),
+          );
+      await expectLater(
+        fixture.messages.createMessage(_message(_asset)),
+        throwsA(isA<WorkspaceAssetException>()),
+      );
+      expect(
+        await fixture.database
+            .select(fixture.database.messageAttachments)
+            .get(),
+        isEmpty,
+      );
+      expect(
+        await fixture.database.select(fixture.database.messages).get(),
+        isEmpty,
+      );
+      final _ =
+          await (fixture.database.update(fixture.database.workspaceFiles)
+                ..where((row) => row.id.equals('file')))
+              .write(const WorkspaceFilesCompanion(deletedAt: .new(null)));
+      final created = await fixture.messages.createMessage(_message(_asset));
+      expect(created.attachments.single.assetId, 'asset');
+    },
+  );
+
   test('message stores shared asset identity without cloning bytes', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);
@@ -149,7 +189,7 @@ void main() {
     );
   });
 
-  test('message rejects cross-workspace, missing and forged asset references atomically', () async {
+  test('message rejects forged asset scope and metadata atomically', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);
     for (final invalid in [
@@ -175,13 +215,13 @@ void main() {
 }
 
 const _asset = MessageAttachmentToCreate(
-  assetId: 'asset',
   localPath: 'workspace-asset://asset/asset-test/local/asset',
   fileName: 'notes.txt',
   displayName: 'notes.txt',
   mimeType: 'text/plain',
   modality: .file,
   sizeBytes: 5,
+  assetId: 'asset',
 );
 MessageToCreate _message(MessageAttachmentToCreate attachment) => .new(
   conversationId: 'conversation',
@@ -193,7 +233,7 @@ MessageToCreate _message(MessageAttachmentToCreate attachment) => .new(
 );
 
 class _Fixture {
-  _Fixture(this.database);
+  new(this.database);
   final AppDatabase database;
   MessageRepository get messages =>
       MessageRepository(database, attachmentFileStore: const _Store());
@@ -228,20 +268,21 @@ class _Fixture {
             status: const .new('active'),
           ),
         );
+
     return _Fixture(database);
   }
 }
 
 class _Store extends AttachmentFileStore {
-  const _Store() : super(storageNamespace: 'asset-test');
+  const new() : super(storageNamespace: 'asset-test');
   @override
   Future<String> persistDraftFile(String path) async => path;
   @override
-  Future<void> deleteFile(String path) async {}
+  Future<void> deleteFile(String path) => Future<void>.value();
 }
 
 class _DeletingStore extends _Store {
-  _DeletingStore(this.deleted);
+  new(this.deleted);
   final List<String> deleted;
   bool fail = false;
   @override
