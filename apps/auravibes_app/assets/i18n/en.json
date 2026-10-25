@@ -2194,5 +2194,28 @@
     "previous": "Previous",
     "stale": "Refreshing data. Previous results may have changed.",
     "loading": "Loading current data…"
+  },
+  "workspace_connected": {
+    "title": "Connected data",
+    "configure": "Configure connected data",
+    "tool": "Read tool",
+    "inputs": "Inputs (JSON)",
+    "connection": "Connection",
+    "freshness": "Fetched at {time}",
+    "disclosure": "Live source data. Viewing does not send this data to AI.",
+    "failed": "Source unavailable, disconnected, or access denied. Refresh or check the Connection and tool permissions.",
+    "remove": "Remove connected source",
+    "denied": "Access denied. Check current tool permissions.",
+    "disconnected": "Connection unavailable. Reconnect or choose another Connection.",
+    "repair": "Tool contract changed. Reconfigure this source.",
+    "empty": "No source data.",
+    "changed": "View changed while data loaded. Refresh to use its current configuration.",
+    "no_reads": "No supported read tools are enabled. Enable one in Connections.",
+    "options": "More options",
+    "advanced_inputs": "Advanced inputs",
+    "yes": "Yes",
+    "no": "No",
+    "unset": "Not set",
+    "remove_extra_inputs": "Remove extra inputs"
   }
 }

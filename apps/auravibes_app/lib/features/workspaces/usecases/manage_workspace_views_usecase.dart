@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_connected_binding.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
@@ -12,8 +13,10 @@ class const ManageWorkspaceViewsUsecase(
   final WorkspaceViewRepository _views,
   final OrganizeWorkspaceTablesUsecase _tables,
   final QueryWorkspaceRecordsUsecase _query,
-  final BrowseWorkspaceReferencesUsecase _references,
-) {
+  final BrowseWorkspaceReferencesUsecase _references, {
+  final bool canManageConnected = true,
+  final Future<void> Function(WorkspaceConnectedBinding)? validateConnected,
+}) {
   Future<List<WorkspaceView>> list({
     String? parentId,
     bool allFolders = false,
@@ -25,6 +28,9 @@ class const ManageWorkspaceViewsUsecase(
 
   Future<WorkspaceViewData> open(String id, {int offset = 0}) async {
     final view = await _views.read(id);
+    if (view.isConnectedOnly) {
+      return _connectedSnapshot(view.withManagement(value: canManageConnected));
+    }
     final table = await _tables.table(view.tableId);
     if (WorkspaceViewValidation.needsRepair(view, table)) {
       return _snapshot(view, table, []);
@@ -43,15 +49,24 @@ class const ManageWorkspaceViewsUsecase(
   );
 
   Future<WorkspaceView> save(WorkspaceView view, {String? requestId}) async {
-    final table = await _tables.table(view.tableId);
+    final table = await _saveTable(
+      view,
+      _tables,
+      canManage: canManageConnected,
+    );
     WorkspaceViewValidation.check(view, table);
+    if (view.connected case final binding?) {
+      await _authorizeConnected(binding, validateConnected);
+    }
 
     return await _views.save(view, requestId: _operationId(requestId));
   }
 
   Future<List<WorkspaceView>> history(String id) async {
     final current = await _views.read(id);
-    final _ = await _tables.table(current.tableId);
+    if (!current.isConnectedOnly) {
+      final _ = await _tables.table(current.tableId);
+    }
 
     return await _views.history(id);
   }
@@ -94,6 +109,9 @@ class const ManageWorkspaceViewsUsecase(
 
   Future<WorkspaceView?> _visibleView(WorkspaceView view) async {
     try {
+      if (view.isConnectedOnly) {
+        return view.withManagement(value: canManageConnected);
+      }
       final table = await _tables.table(view.tableId);
 
       return view.withManagement(value: table.canManage);
@@ -148,3 +166,37 @@ Future<_ViewPageInfo> _pageInfo(
     view.summaryColumnIds,
   ),
 );
+
+WorkspaceViewData _connectedSnapshot(WorkspaceView view) => .new(
+  view: view,
+  table: .new(
+    id: '',
+    name: view.name,
+    labelColumnId: '',
+    columns: const [],
+    revision: view.revision,
+    schemaRevision: 0,
+    canManage: view.canManage,
+  ),
+  records: const [],
+  needsRepair: false,
+);
+
+Future<WorkspaceTable> _saveTable(
+  WorkspaceView view,
+  OrganizeWorkspaceTablesUsecase tables, {
+  required bool canManage,
+}) async {
+  if (!view.isConnectedOnly) return await tables.table(view.tableId);
+  if (!canManage) throw const WorkspaceTableException(denied: true);
+
+  return _connectedSnapshot(view).table;
+}
+
+Future<void> _authorizeConnected(
+  WorkspaceConnectedBinding binding,
+  Future<void> Function(WorkspaceConnectedBinding)? authorize,
+) async {
+  if (authorize == null) throw const WorkspaceTableException(denied: true);
+  await authorize(binding);
+}

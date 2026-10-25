@@ -10,7 +10,8 @@ import 'package:material_ui/material_ui.dart';
 
 /// Display-only workspace surface. It has no model or Conversation runtime.
 class WorkspaceViewSurface extends StatefulWidget {
-  const new({required this.data, super.key});
+  const new({required this.data, this.connectedModel, super.key});
+  final Map<String, Object?>? connectedModel;
   final WorkspaceViewData data;
   @override
   State<WorkspaceViewSurface> createState() => _WorkspaceViewSurfaceState();
@@ -34,7 +35,10 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
   @override
   void didUpdateWidget(covariant WorkspaceViewSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.data, widget.data)) _load();
+    if (!identical(oldWidget.data, widget.data) ||
+        !identical(oldWidget.connectedModel, widget.connectedModel)) {
+      _load();
+    }
   }
 
   @override
@@ -61,7 +65,9 @@ class _WorkspaceViewSurfaceState extends State<WorkspaceViewSurface> {
 
   void _render() {
     activeA2uiWireCodec
-        .decodeAll(WorkspaceViewSurfaceData.envelope(widget.data))
+        .decodeAll(
+          WorkspaceViewSurfaceData.envelope(widget.data, widget.connectedModel),
+        )
         .forEach(_handle);
   }
 

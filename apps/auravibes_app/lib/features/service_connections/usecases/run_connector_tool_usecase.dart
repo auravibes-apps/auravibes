@@ -43,6 +43,10 @@ class const RunConnectorToolUsecase(
   required final ConnectorWriteJournal Function(String workspaceId)
   journalForWorkspace,
 }) {
+  Future<void> requireCurrent(ConnectorToolExecutionRequest request) async {
+    final _ = await _resolveCredential(request);
+  }
+
   Future<Object?> call(ConnectorToolExecutionRequest request) =>
       callCancelable(request).valueOrCancellation();
 

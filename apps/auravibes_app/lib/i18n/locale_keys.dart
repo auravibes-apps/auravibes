@@ -2847,4 +2847,30 @@ abstract class LocaleKeys {
   static const workspace_relational_previous = 'workspace_relational.previous';
   static const workspace_relational_stale = 'workspace_relational.stale';
   static const workspace_relational_loading = 'workspace_relational.loading';
+  static const workspace_connected_title = 'workspace_connected.title';
+  static const workspace_connected_configure = 'workspace_connected.configure';
+  static const workspace_connected_tool = 'workspace_connected.tool';
+  static const workspace_connected_inputs = 'workspace_connected.inputs';
+  static const workspace_connected_connection =
+      'workspace_connected.connection';
+  static const workspace_connected_freshness = 'workspace_connected.freshness';
+  static const workspace_connected_disclosure =
+      'workspace_connected.disclosure';
+  static const workspace_connected_failed = 'workspace_connected.failed';
+  static const workspace_connected_remove = 'workspace_connected.remove';
+  static const workspace_connected_denied = 'workspace_connected.denied';
+  static const workspace_connected_disconnected =
+      'workspace_connected.disconnected';
+  static const workspace_connected_repair = 'workspace_connected.repair';
+  static const workspace_connected_empty = 'workspace_connected.empty';
+  static const workspace_connected_changed = 'workspace_connected.changed';
+  static const workspace_connected_no_reads = 'workspace_connected.no_reads';
+  static const workspace_connected_options = 'workspace_connected.options';
+  static const workspace_connected_advanced_inputs =
+      'workspace_connected.advanced_inputs';
+  static const workspace_connected_yes = 'workspace_connected.yes';
+  static const workspace_connected_no = 'workspace_connected.no';
+  static const workspace_connected_unset = 'workspace_connected.unset';
+  static const workspace_connected_remove_extra_inputs =
+      'workspace_connected.remove_extra_inputs';
 }

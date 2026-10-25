@@ -115,6 +115,7 @@ workspaceTrash:
   - list:
   - restore:
 workspaceView:
+  - readConnected:
   - duplicate:
   - list:
   - read:

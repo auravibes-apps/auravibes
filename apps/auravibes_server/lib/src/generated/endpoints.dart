@@ -2484,6 +2484,33 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceView',
       endpoint: endpoints['workspaceView']!,
       methodConnectors: {
+        'readConnected': _is.MethodConnector(
+          name: 'readConnected',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .readConnected(
+                        session,
+                        params['workspaceId'],
+                        params['id'],
+                      ),
+        ),
         'duplicate': _is.MethodConnector(
           name: 'duplicate',
           params: {

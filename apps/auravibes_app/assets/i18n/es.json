@@ -2194,5 +2194,28 @@
     "previous": "Anterior",
     "stale": "Actualizando datos. Los resultados anteriores pueden haber cambiado.",
     "loading": "Cargando los datos actuales…"
+  },
+  "workspace_connected": {
+    "title": "Datos conectados",
+    "configure": "Configurar datos conectados",
+    "tool": "Herramienta de lectura",
+    "inputs": "Entradas (JSON)",
+    "connection": "Conexión",
+    "freshness": "Consultado a las {time}",
+    "disclosure": "Datos en vivo de la fuente. Verlos no envía estos datos a la IA.",
+    "failed": "Fuente no disponible, desconectada o acceso denegado. Actualiza o revisa la conexión y los permisos.",
+    "remove": "Quitar fuente conectada",
+    "denied": "Acceso denegado. Revisa los permisos actuales de la herramienta.",
+    "disconnected": "Conexión no disponible. Vuelve a conectarte o selecciona otra conexión.",
+    "repair": "El contrato de la herramienta cambió. Configura la fuente de nuevo.",
+    "empty": "No hay datos de la fuente.",
+    "changed": "La vista cambió mientras se cargaban los datos. Actualiza para usar su configuración actual.",
+    "no_reads": "No hay herramientas de lectura compatibles habilitadas. Habilita una en Conexiones.",
+    "options": "Más opciones",
+    "advanced_inputs": "Entradas avanzadas",
+    "yes": "Sí",
+    "no": "No",
+    "unset": "Sin definir",
+    "remove_extra_inputs": "Quitar entradas adicionales"
   }
 }
