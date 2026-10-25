@@ -64,7 +64,11 @@ class const _BoundedDownload(final Dio dio) {
   Future<ResponseBody> body(Uri uri) async {
     final response = await dio.get<ResponseBody>(
       uri.toString(),
-      options: .new(responseType: .stream, followRedirects: false),
+      options: .new(
+        responseType: .stream,
+        followRedirects: false,
+        headers: const {'Cache-Control': 'no-store'},
+      ),
     );
 
     return response.data ??

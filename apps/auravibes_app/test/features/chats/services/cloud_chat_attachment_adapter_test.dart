@@ -28,6 +28,7 @@ void main() {
           await expectLater(result, throwsStateError);
         }
         expect(transport.options?.followRedirects, isFalse);
+        expect(transport.options?.headers['Cache-Control'], 'no-store');
         expect(transport.requests, 1);
       },
     );
