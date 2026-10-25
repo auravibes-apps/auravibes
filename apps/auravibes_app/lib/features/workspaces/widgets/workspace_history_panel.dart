@@ -22,12 +22,12 @@ class const WorkspaceHistoryPanel({
   final bool canRestore = true,
   super.key,
 }) extends HookConsumerWidget {
-  static Future<void> open(
+  static Future<bool?> open(
     BuildContext context,
     String workspaceId,
     WorkspaceTrashTarget target, {
     bool canRestore = true,
-  }) => showDialog<void>(
+  }) => showDialog<bool>(
     context: context,
     builder: (_) => Dialog(
       child: SizedBox(
@@ -191,7 +191,7 @@ class const _RevisionRow({
   void _complete(BuildContext context, WidgetRef ref, bool restored) {
     if (!context.mounted || !restored) return;
     WorkspaceTrashActions.refresh(ref);
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
   }
 }
 

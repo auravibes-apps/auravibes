@@ -378,7 +378,7 @@ class const _TableMenu(
   List<AuraPopupMenuEntry> _items(BuildContext context, WidgetRef ref) => [
     if (browser.table.canEditRecords && !selectionMode.value) _select(),
     if (browser.table.canManage) ...[_settings(), _duplicate(context)],
-    _history(context),
+    _TableHistoryMenu.item(context, browser),
     if (browser.table.canEditRecords) _import(context, ref),
     _export(context),
     if (browser.table.canManage) ...[
@@ -407,23 +407,6 @@ class const _TableMenu(
       ),
     ),
     identifier: 'workspace_table_duplicate',
-  );
-
-  AuraPopupMenuItem _history(BuildContext context) => AuraPopupMenuItem(
-    title: const TextLocale(LocaleKeys.workspace_items_history_title),
-    onTap: () => unawaited(
-      WorkspaceHistoryPanel.open(
-        context,
-        browser.workspaceId,
-        .new(
-          kind: .table,
-          id: browser.table.id,
-          revision: browser.table.revision,
-        ),
-        canRestore: browser.table.canManage,
-      ),
-    ),
-    identifier: 'workspace_table_history',
   );
 
   AuraPopupMenuItem _settings() => AuraPopupMenuItem(
@@ -618,4 +601,25 @@ class const _LoadedTable({
     onBack: screen.onBack,
     key: ValueKey(table.id),
   );
+}
+
+abstract final class _TableHistoryMenu {
+  static AuraPopupMenuItem item(BuildContext context, _TableBrowser browser) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_items_history_title),
+        onTap: () => unawaited(_open(context, browser)),
+        identifier: 'workspace_table_history',
+      );
+
+  static Future<bool?> _open(BuildContext context, _TableBrowser browser) =>
+      WorkspaceHistoryPanel.open(
+        context,
+        browser.workspaceId,
+        .new(
+          kind: .table,
+          id: browser.table.id,
+          revision: browser.table.revision,
+        ),
+        canRestore: browser.table.canManage,
+      );
 }

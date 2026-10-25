@@ -16,6 +16,7 @@ class const WorkspaceRecordTrashMenu({
   required final WorkspaceRecord record,
   required final VoidCallback onTrashed,
   final bool canTrash = true,
+  final VoidCallback? onRestored,
   super.key,
 }) extends ConsumerWidget {
   WorkspaceTrashTarget get _target => .new(
@@ -34,18 +35,19 @@ class const WorkspaceRecordTrashMenu({
 
   AuraPopupMenuItem _history(BuildContext context) => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.workspace_items_history_title),
-    onTap: () => _openHistory(context),
+    onTap: () => unawaited(_openHistory(context)),
     identifier: 'workspace_record_history',
   );
 
-  void _openHistory(BuildContext context) => unawaited(
-    WorkspaceHistoryPanel.open(
+  Future<void> _openHistory(BuildContext context) async {
+    final restored = await WorkspaceHistoryPanel.open(
       context,
       workspaceId,
       _target,
       canRestore: canTrash,
-    ),
-  );
+    );
+    if (context.mounted && restored == true) onRestored?.call();
+  }
 
   AuraPopupMenuItem _trashItem(BuildContext context, WidgetRef ref) =>
       AuraPopupMenuItem(
