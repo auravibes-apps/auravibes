@@ -961,3 +961,13 @@ Native coverage remains partial. The View row's attachment bytes could not be ex
 Code and cloud acceptance evidence remains the source-freeze evidence above. Native evidence does not cover text File preview, expanded View attachment bytes, supported-model chat draft discard, or native width changes; parent review must keep these limits visible.
 
 The integration worktree reran eight Assets, Connected Views and Directory app test files: 27 cases pass under pinned Flutter 3.47.8. `git diff --check` passes. Bootstrap produced no tracked generated changes; the frozen source's clean `validate:generated` evidence remains applicable.
+
+### 2026-10-25 — #1681 integrated; #1687 remains the dependency frontier
+
+The frozen #1681 source `f6b782d1e` fast-forwarded from integration `96ee1c45d`. Root now points to `9bda3bfde`, including the native evidence above. The separate merger worktree passed pinned FVM 3.47.8 bootstrap, `git diff --check`, and 27 tests across eight Assets, Connected Views and Directory files. The integration branch was pushed after a successful dry-run; `git ls-remote` confirms `9bda3bfde`. Draft PR #1693 points to that commit. Hosted checks were pending when queried: runs `40205887808`, `40205887815`, `40205888377`, and `40205888403`. No ticket was closed by this push.
+
+GitHub currently reports 19 of 26 children closed. Open children are #1681, #1686, #1687, #1689, #1690, #1691, and #1692. #1686 is integrated as `8f21e6034`; #1681 implementation is integrated as above. They remain open for the parent PR's final verified issue workflow.
+
+The remaining implementation frontier is #1687. Cloud Conversation reference projection still exposes an unselected target in a failing regression. Two attempts to continue that cloud change were blocked by automatic cybersecurity review with the stated reason `possible cybersecurity risk`. No bypass or repeat attempt was made. Its separate worktree remains dirty with candidate changes and must not be discarded or merged without an allowed security review path. #1689 and #1690 depend on #1687; #1691 depends on #1690; #1692 depends on #1689 and #1691. No other child is currently unblocked.
+
+Next: resolve the #1687 reference projection through an allowed security review path, then continue the newly unblocked tickets. No issue was closed, no release decision was invented, and no production data was changed.
