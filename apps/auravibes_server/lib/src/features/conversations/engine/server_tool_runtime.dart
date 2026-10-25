@@ -49,8 +49,8 @@ bool serverToolIsReplayableSkillKind(AgentResolvedToolKind? kind) =>
 
 bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     (descriptor.kind == AgentResolvedToolKind.builtIn &&
-      descriptor.tableId == workspaceCommandTableId &&
-      descriptor.toolIdentifier == workspaceCommandToolName) ||
+        descriptor.tableId == workspaceCommandTableId &&
+        descriptor.toolIdentifier == workspaceCommandToolName) ||
     (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
         descriptor.toolIdentifier == backgroundWorkResultReaderToolName) ||
@@ -491,9 +491,9 @@ AgentToolPermissionResult connectorCommandApprovalPermission(
         workspaceCommandNeedsApproval(arguments)
     ? AgentToolPermissionResult.needsConfirmation
     : descriptor.kind == AgentResolvedToolKind.connectorCommand &&
-        descriptor.toolIdentifier == executeConnectorToolName &&
-        permission == AgentToolPermissionResult.granted &&
-        connectorCommandMayWrite(arguments, connectorDefinitions)
+          descriptor.toolIdentifier == executeConnectorToolName &&
+          permission == AgentToolPermissionResult.granted &&
+          connectorCommandMayWrite(arguments, connectorDefinitions)
     ? AgentToolPermissionResult.needsConfirmation
     : permission;
 
@@ -664,9 +664,13 @@ class ServerToolRuntime({
     return [
       ...genericTools,
       ...fixedCloudConnectorCommandTools(),
-      ServerResolvedTool(descriptor: AgentResolvedToolName.builtIn(
-        tableId: workspaceCommandTableId, toolIdentifier: workspaceCommandToolName),
-        spec: workspaceCommandToolSpec()),
+      ServerResolvedTool(
+        descriptor: AgentResolvedToolName.builtIn(
+          tableId: workspaceCommandTableId,
+          toolIdentifier: workspaceCommandToolName,
+        ),
+        spec: workspaceCommandToolSpec(),
+      ),
       ...fixedCloudSkillCommandTools(),
       ...agentTools,
       ServerResolvedTool(

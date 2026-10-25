@@ -2818,6 +2818,9 @@ abstract class LocaleKeys {
   static const workspace_relational_previous = 'workspace_relational.previous';
   static const workspace_relational_stale = 'workspace_relational.stale';
   static const workspace_relational_loading = 'workspace_relational.loading';
+  static const workspace_chat_inspect = 'workspace_chat.inspect';
+  static const workspace_chat_none = 'workspace_chat.none';
+  static const workspace_chat_title = 'workspace_chat.title';
   static const workspace_chat_share = 'workspace_chat.share';
   static const workspace_chat_revoke = 'workspace_chat.revoke';
   static const workspace_chat_scope = 'workspace_chat.scope';

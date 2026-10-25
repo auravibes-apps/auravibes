@@ -253,6 +253,8 @@ import 'features/sync/stream/models/workspace_subscribe_request.dart'
     as _ig40wm3p;
 import 'features/workers/models/recurring_worker_schedule.dart' as _ivj0myfi;
 import 'features/workers/models/worker_coordinator_lease.dart' as _ifhsy8zv;
+import 'features/workspace_context/models/workspace_conversation_context.dart'
+    as _ic7cyfzr;
 import 'features/workspace_state/models/duplicate_workspace_agent_request.dart'
     as _i887etaa;
 import 'features/workspace_state/models/duplicate_workspace_item_request.dart'
@@ -496,6 +498,7 @@ export 'features/sync/stream/models/workspace_stream_envelope_kind.dart';
 export 'features/sync/stream/models/workspace_subscribe_request.dart';
 export 'features/workers/models/recurring_worker_schedule.dart';
 export 'features/workers/models/worker_coordinator_lease.dart';
+export 'features/workspace_context/models/workspace_conversation_context.dart';
 export 'features/workspace_state/models/duplicate_workspace_agent_request.dart';
 export 'features/workspace_state/models/duplicate_workspace_item_request.dart';
 export 'features/workspace_state/models/mutate_workspace_credential_request.dart';
@@ -999,6 +1002,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ifhsy8zv.WorkerCoordinatorLease) {
       return _ifhsy8zv.WorkerCoordinatorLease.fromJson(data) as T;
+    }
+    if (t == _ic7cyfzr.WorkspaceConversationContext) {
+      return _ic7cyfzr.WorkspaceConversationContext.fromJson(data) as T;
     }
     if (t == _i887etaa.DuplicateWorkspaceAgentRequest) {
       return _i887etaa.DuplicateWorkspaceAgentRequest.fromJson(data) as T;
@@ -1911,6 +1917,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_ic7cyfzr.WorkspaceConversationContext?>()) {
+      return (data != null
+              ? _ic7cyfzr.WorkspaceConversationContext.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i887etaa.DuplicateWorkspaceAgentRequest?>()) {
       return (data != null
               ? _i887etaa.DuplicateWorkspaceAgentRequest.fromJson(data)
@@ -2640,6 +2652,7 @@ class Protocol extends _isc.SerializationManager {
       _ig40wm3p.WorkspaceSubscribeRequest => 'WorkspaceSubscribeRequest',
       _ivj0myfi.RecurringWorkerSchedule => 'RecurringWorkerSchedule',
       _ifhsy8zv.WorkerCoordinatorLease => 'WorkerCoordinatorLease',
+      _ic7cyfzr.WorkspaceConversationContext => 'WorkspaceConversationContext',
       _i887etaa.DuplicateWorkspaceAgentRequest =>
         'DuplicateWorkspaceAgentRequest',
       _i1oaqjf3.DuplicateWorkspaceItemRequest =>
@@ -2999,6 +3012,8 @@ class Protocol extends _isc.SerializationManager {
         return 'RecurringWorkerSchedule';
       case _ifhsy8zv.WorkerCoordinatorLease():
         return 'WorkerCoordinatorLease';
+      case _ic7cyfzr.WorkspaceConversationContext():
+        return 'WorkspaceConversationContext';
       case _i887etaa.DuplicateWorkspaceAgentRequest():
         return 'DuplicateWorkspaceAgentRequest';
       case _i1oaqjf3.DuplicateWorkspaceItemRequest():
@@ -3576,6 +3591,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkerCoordinatorLease') {
       return deserialize<_ifhsy8zv.WorkerCoordinatorLease>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceConversationContext') {
+      return deserialize<_ic7cyfzr.WorkspaceConversationContext>(data['data']);
     }
     if (dataClassName == 'DuplicateWorkspaceAgentRequest') {
       return deserialize<_i887etaa.DuplicateWorkspaceAgentRequest>(

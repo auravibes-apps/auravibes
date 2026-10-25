@@ -2169,6 +2169,9 @@
     "loading": "Cargando los datos actuales…"
   },
   "workspace_chat": {
+    "inspect": "Ver el contexto compartido",
+    "none": "No hay elementos del espacio compartidos con la IA en esta conversación.",
+    "title": "Contexto de IA",
     "share": "Compartir con IA",
     "revoke": "Dejar de compartir con IA",
     "scope": "Solo se compartirán los registros marcados y la estructura de este elemento. Abrir un elemento no comparte sus datos.",

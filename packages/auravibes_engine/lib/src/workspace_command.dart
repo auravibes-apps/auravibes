@@ -54,7 +54,7 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
 );
 
 bool workspaceCommandNeedsApproval(Map<String, dynamic> arguments) =>
-    arguments['action'] != 'read' && arguments['action'] != 'updateRecord';
+    !{'read', 'createRecord', 'updateRecord'}.contains(arguments['action']);
 
 /// A user selection event never grants data in a copied/forked Conversation.
 class WorkspaceContextSelection {
@@ -93,12 +93,16 @@ class WorkspaceContextSelection {
         value['kind'] is! String ||
         value['recordIds'] is! List<Object?>)
       return null;
+    if (value['parentId'] != null && value['parentId'] is! String) return null;
+    if (value['kind'] != 'directory' && (value['itemId'] as String).isEmpty) return null;
     final records = value['recordIds'] as List<Object?>;
     if (records.length > 50 ||
         records.any((id) => id is! String || id.isEmpty) ||
         records.toSet().length != records.length ||
         !{'directory', 'folder', 'table', 'view'}.contains(value['kind']))
       return null;
+    if (value['kind'] == 'directory' && ((value['itemId'] as String).isNotEmpty || records.isNotEmpty)) return null;
+    if (value['kind'] == 'folder' && records.isNotEmpty) return null;
     return WorkspaceContextSelection(
       workspaceId: workspaceId,
       conversationId: conversationId,
@@ -108,4 +112,54 @@ class WorkspaceContextSelection {
       recordIds: records.cast<String>(),
     );
   }
+}
+
+/// Hosts supply only verified creations from the active selection epoch.
+WorkspaceContextSelection workspaceCreatedContext(
+  WorkspaceContextSelection selection,
+  List<Map<String, Object?>> created,
+  Map<String, dynamic> arguments,
+) {
+  final target =
+      arguments['tableId'] ?? arguments['parentId'] ?? arguments['id'];
+  final owned = created
+      .where((resource) => resource['id'] == target)
+      .firstOrNull;
+  final id = owned?['id'] as String? ?? selection.itemId;
+  final kind = owned?['kind'] as String? ?? selection.kind;
+  final records = <String>{
+    if (owned == null) ...selection.recordIds,
+    for (final resource in created)
+      if (resource['kind'] == 'record' && resource['tableId'] == id)
+        resource['id'] as String,
+  };
+  return WorkspaceContextSelection(
+    workspaceId: selection.workspaceId,
+    conversationId: selection.conversationId,
+    itemId: id,
+    kind: kind,
+    parentId: owned?['parentId'] as String? ?? selection.parentId,
+    recordIds: records.toList(),
+  );
+}
+
+const workspaceContextUnavailable =
+    'Workspace content is unavailable in the current shared scope.';
+
+/// Hosts reauthorize this read before replaying a stored workspace tool result.
+Map<String, dynamic> workspaceContextReadArguments(
+  Map<String, dynamic> input,
+  Object? output,
+) {
+  final result = output is Map<String, dynamic>
+      ? output
+      : const <String, dynamic>{};
+  final created = (input['action'] as String? ?? '').startsWith('create');
+  return {
+    'action': 'read',
+    'id': created ? result['id'] : input['id'],
+    'tableId': created && result['kind'] == 'table'
+        ? result['id']
+        : input['tableId'],
+  };
 }

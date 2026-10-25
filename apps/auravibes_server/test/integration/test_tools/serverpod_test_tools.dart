@@ -436,6 +436,8 @@ class TestEndpoints {
 
   late final _WorkspaceStreamEndpoint workspaceStream;
 
+  late final _WorkspaceContextEndpoint workspaceContext;
+
   late final _WorkspaceCsvEndpoint workspaceCsv;
 
   late final _WorkspaceHistoryEndpoint workspaceHistory;
@@ -505,6 +507,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceStream = _WorkspaceStreamEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceContext = _WorkspaceContextEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2847,6 +2853,87 @@ class _WorkspaceStreamEndpoint {
       _localTestStreamManager.outputStreamController,
     );
     return _localTestStreamManager.outputStreamController.stream;
+  }
+}
+
+class _WorkspaceContextEndpoint {
+  _WorkspaceContextEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> read(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String conversationId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceContext',
+            method: 'read',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceContext',
+          methodName: 'read',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'conversationId': conversationId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<String> save(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String conversationId,
+    String requestId,
+    String? selectionJson,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceContext',
+            method: 'save',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceContext',
+          methodName: 'save',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'conversationId': conversationId,
+            'requestId': requestId,
+            'selectionJson': selectionJson,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
   }
 }
 

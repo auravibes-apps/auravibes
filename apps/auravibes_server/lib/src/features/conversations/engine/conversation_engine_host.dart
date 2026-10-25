@@ -1,3 +1,5 @@
+import 'workspace_prompt_projection.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -58,6 +60,7 @@ String appendDurableSkillActivations(
 }
 
 String _toolResultForContext(ConversationToolCall call) {
+  if (call.name == workspaceCommandToolName) return workspaceContextUnavailable;
   final result = call.resultJson ?? call.status;
   return projectToolOutput(result).text;
 }
@@ -359,9 +362,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
               ProviderToolCallRecord(
                 id: call.stableId,
                 name: call.name,
-                arguments: Map<String, Object?>.from(
-                  jsonDecode(call.argumentsJson) as Map,
-                ),
+                arguments: call.name == workspaceCommandToolName
+                    ? const {'action': 'read'}
+                    : Map<String, Object?>.from(
+                        jsonDecode(call.argumentsJson) as Map,
+                      ),
               ),
           ],
           assistantContent: assistant['content'] as String?,
@@ -388,9 +393,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
             ProviderToolCallRecord(
               id: call.stableId,
               name: call.name,
-              arguments: Map<String, Object?>.from(
-                jsonDecode(call.argumentsJson) as Map,
-              ),
+              arguments: call.name == workspaceCommandToolName
+                  ? const {'action': 'read'}
+                  : Map<String, Object?>.from(
+                      jsonDecode(call.argumentsJson) as Map,
+                    ),
             ),
         ],
         resultsByCallId: {
@@ -718,7 +725,7 @@ final class const ServerConversationEngineHost({
             session,
             job: job,
             providerId: config.providerId,
-            body: (admissionLost) => codec.stream(
+            body: (admissionLost) async => codec.stream(
               (body) =>
                   providerTransport?.call(body) ??
                   _transport(
@@ -730,7 +737,11 @@ final class const ServerConversationEngineHost({
                   ),
               {
                 'model': config.modelId,
-                'messages': requestMessages,
+                'messages': await const WorkspacePromptProjection().call(
+                  session,
+                  turn,
+                  requestMessages,
+                ),
                 if (tools.isNotEmpty) 'tools': toolSampling.definitions,
                 'stream': true,
                 'stream_options': {'include_usage': true},

@@ -19678,6 +19678,852 @@ class WorkspaceRecordBatchReceiptsCompanion
   }
 }
 
+class $WorkspaceContextSelectionsTable extends WorkspaceContextSelections
+    with
+        TableInfo<
+          $WorkspaceContextSelectionsTable,
+          WorkspaceContextSelectionRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceContextSelectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _selectionMeta = const VerificationMeta(
+    'selection',
+  );
+  @override
+  late final GeneratedColumn<String> selection = GeneratedColumn<String>(
+    'selection',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workspaceId,
+    conversationId,
+    selection,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_context_selections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceContextSelectionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('selection')) {
+      context.handle(
+        _selectionMeta,
+        selection.isAcceptableOrUnknown(data['selection']!, _selectionMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkspaceContextSelectionRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceContextSelectionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      selection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selection'],
+      ),
+    );
+  }
+
+  @override
+  $WorkspaceContextSelectionsTable createAlias(String alias) {
+    return $WorkspaceContextSelectionsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceContextSelectionRow extends DataClass
+    implements Insertable<WorkspaceContextSelectionRow> {
+  final String id;
+  final String workspaceId;
+  final String conversationId;
+  final String? selection;
+  const WorkspaceContextSelectionRow({
+    required this.id,
+    required this.workspaceId,
+    required this.conversationId,
+    this.selection,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['conversation_id'] = Variable<String>(conversationId);
+    if (!nullToAbsent || selection != null) {
+      map['selection'] = Variable<String>(selection);
+    }
+    return map;
+  }
+
+  WorkspaceContextSelectionsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceContextSelectionsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      conversationId: Value(conversationId),
+      selection: selection == null && nullToAbsent
+          ? const Value.absent()
+          : Value(selection),
+    );
+  }
+
+  factory WorkspaceContextSelectionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceContextSelectionRow(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      selection: serializer.fromJson<String?>(json['selection']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'selection': serializer.toJson<String?>(selection),
+    };
+  }
+
+  WorkspaceContextSelectionRow copyWith({
+    String? id,
+    String? workspaceId,
+    String? conversationId,
+    Value<String?> selection = const Value.absent(),
+  }) => WorkspaceContextSelectionRow(
+    id: id ?? this.id,
+    workspaceId: workspaceId ?? this.workspaceId,
+    conversationId: conversationId ?? this.conversationId,
+    selection: selection.present ? selection.value : this.selection,
+  );
+  WorkspaceContextSelectionRow copyWithCompanion(
+    WorkspaceContextSelectionsCompanion data,
+  ) {
+    return WorkspaceContextSelectionRow(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      selection: data.selection.present ? data.selection.value : this.selection,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceContextSelectionRow(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('selection: $selection')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, conversationId, selection);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceContextSelectionRow &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.conversationId == this.conversationId &&
+          other.selection == this.selection);
+}
+
+class WorkspaceContextSelectionsCompanion
+    extends UpdateCompanion<WorkspaceContextSelectionRow> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> conversationId;
+  final Value<String?> selection;
+  final Value<int> rowid;
+  const WorkspaceContextSelectionsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.selection = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceContextSelectionsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String conversationId,
+    this.selection = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       workspaceId = Value(workspaceId),
+       conversationId = Value(conversationId);
+  static Insertable<WorkspaceContextSelectionRow> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? conversationId,
+    Expression<String>? selection,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (selection != null) 'selection': selection,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceContextSelectionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? workspaceId,
+    Value<String>? conversationId,
+    Value<String?>? selection,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceContextSelectionsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      conversationId: conversationId ?? this.conversationId,
+      selection: selection ?? this.selection,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (selection.present) {
+      map['selection'] = Variable<String>(selection.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceContextSelectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('selection: $selection, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceCommandReceiptsTable extends WorkspaceCommandReceipts
+    with TableInfo<$WorkspaceCommandReceiptsTable, WorkspaceCommandReceiptRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceCommandReceiptsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _selectionIdMeta = const VerificationMeta(
+    'selectionId',
+  );
+  @override
+  late final GeneratedColumn<String> selectionId = GeneratedColumn<String>(
+    'selection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspace_context_selections (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _requestIdMeta = const VerificationMeta(
+    'requestId',
+  );
+  @override
+  late final GeneratedColumn<String> requestId = GeneratedColumn<String>(
+    'request_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _digestMeta = const VerificationMeta('digest');
+  @override
+  late final GeneratedColumn<String> digest = GeneratedColumn<String>(
+    'digest',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resultMeta = const VerificationMeta('result');
+  @override
+  late final GeneratedColumn<String> result = GeneratedColumn<String>(
+    'result',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdMeta = const VerificationMeta(
+    'created',
+  );
+  @override
+  late final GeneratedColumn<bool> created = GeneratedColumn<bool>(
+    'created',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("created" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workspaceId,
+    conversationId,
+    selectionId,
+    requestId,
+    digest,
+    result,
+    created,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_command_receipts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceCommandReceiptRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('selection_id')) {
+      context.handle(
+        _selectionIdMeta,
+        selectionId.isAcceptableOrUnknown(
+          data['selection_id']!,
+          _selectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_selectionIdMeta);
+    }
+    if (data.containsKey('request_id')) {
+      context.handle(
+        _requestIdMeta,
+        requestId.isAcceptableOrUnknown(data['request_id']!, _requestIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_requestIdMeta);
+    }
+    if (data.containsKey('digest')) {
+      context.handle(
+        _digestMeta,
+        digest.isAcceptableOrUnknown(data['digest']!, _digestMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_digestMeta);
+    }
+    if (data.containsKey('result')) {
+      context.handle(
+        _resultMeta,
+        result.isAcceptableOrUnknown(data['result']!, _resultMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_resultMeta);
+    }
+    if (data.containsKey('created')) {
+      context.handle(
+        _createdMeta,
+        created.isAcceptableOrUnknown(data['created']!, _createdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {
+    workspaceId,
+    conversationId,
+    requestId,
+  };
+  @override
+  WorkspaceCommandReceiptRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceCommandReceiptRow(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      selectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selection_id'],
+      )!,
+      requestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_id'],
+      )!,
+      digest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}digest'],
+      )!,
+      result: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result'],
+      )!,
+      created: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}created'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceCommandReceiptsTable createAlias(String alias) {
+    return $WorkspaceCommandReceiptsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceCommandReceiptRow extends DataClass
+    implements Insertable<WorkspaceCommandReceiptRow> {
+  final String workspaceId;
+  final String conversationId;
+  final String selectionId;
+  final String requestId;
+  final String digest;
+  final String result;
+  final bool created;
+  const WorkspaceCommandReceiptRow({
+    required this.workspaceId,
+    required this.conversationId,
+    required this.selectionId,
+    required this.requestId,
+    required this.digest,
+    required this.result,
+    required this.created,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['selection_id'] = Variable<String>(selectionId);
+    map['request_id'] = Variable<String>(requestId);
+    map['digest'] = Variable<String>(digest);
+    map['result'] = Variable<String>(result);
+    map['created'] = Variable<bool>(created);
+    return map;
+  }
+
+  WorkspaceCommandReceiptsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceCommandReceiptsCompanion(
+      workspaceId: Value(workspaceId),
+      conversationId: Value(conversationId),
+      selectionId: Value(selectionId),
+      requestId: Value(requestId),
+      digest: Value(digest),
+      result: Value(result),
+      created: Value(created),
+    );
+  }
+
+  factory WorkspaceCommandReceiptRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceCommandReceiptRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      selectionId: serializer.fromJson<String>(json['selectionId']),
+      requestId: serializer.fromJson<String>(json['requestId']),
+      digest: serializer.fromJson<String>(json['digest']),
+      result: serializer.fromJson<String>(json['result']),
+      created: serializer.fromJson<bool>(json['created']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'selectionId': serializer.toJson<String>(selectionId),
+      'requestId': serializer.toJson<String>(requestId),
+      'digest': serializer.toJson<String>(digest),
+      'result': serializer.toJson<String>(result),
+      'created': serializer.toJson<bool>(created),
+    };
+  }
+
+  WorkspaceCommandReceiptRow copyWith({
+    String? workspaceId,
+    String? conversationId,
+    String? selectionId,
+    String? requestId,
+    String? digest,
+    String? result,
+    bool? created,
+  }) => WorkspaceCommandReceiptRow(
+    workspaceId: workspaceId ?? this.workspaceId,
+    conversationId: conversationId ?? this.conversationId,
+    selectionId: selectionId ?? this.selectionId,
+    requestId: requestId ?? this.requestId,
+    digest: digest ?? this.digest,
+    result: result ?? this.result,
+    created: created ?? this.created,
+  );
+  WorkspaceCommandReceiptRow copyWithCompanion(
+    WorkspaceCommandReceiptsCompanion data,
+  ) {
+    return WorkspaceCommandReceiptRow(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      selectionId: data.selectionId.present
+          ? data.selectionId.value
+          : this.selectionId,
+      requestId: data.requestId.present ? data.requestId.value : this.requestId,
+      digest: data.digest.present ? data.digest.value : this.digest,
+      result: data.result.present ? data.result.value : this.result,
+      created: data.created.present ? data.created.value : this.created,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceCommandReceiptRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('selectionId: $selectionId, ')
+          ..write('requestId: $requestId, ')
+          ..write('digest: $digest, ')
+          ..write('result: $result, ')
+          ..write('created: $created')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    workspaceId,
+    conversationId,
+    selectionId,
+    requestId,
+    digest,
+    result,
+    created,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceCommandReceiptRow &&
+          other.workspaceId == this.workspaceId &&
+          other.conversationId == this.conversationId &&
+          other.selectionId == this.selectionId &&
+          other.requestId == this.requestId &&
+          other.digest == this.digest &&
+          other.result == this.result &&
+          other.created == this.created);
+}
+
+class WorkspaceCommandReceiptsCompanion
+    extends UpdateCompanion<WorkspaceCommandReceiptRow> {
+  final Value<String> workspaceId;
+  final Value<String> conversationId;
+  final Value<String> selectionId;
+  final Value<String> requestId;
+  final Value<String> digest;
+  final Value<String> result;
+  final Value<bool> created;
+  final Value<int> rowid;
+  const WorkspaceCommandReceiptsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.selectionId = const Value.absent(),
+    this.requestId = const Value.absent(),
+    this.digest = const Value.absent(),
+    this.result = const Value.absent(),
+    this.created = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceCommandReceiptsCompanion.insert({
+    required String workspaceId,
+    required String conversationId,
+    required String selectionId,
+    required String requestId,
+    required String digest,
+    required String result,
+    required bool created,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       conversationId = Value(conversationId),
+       selectionId = Value(selectionId),
+       requestId = Value(requestId),
+       digest = Value(digest),
+       result = Value(result),
+       created = Value(created);
+  static Insertable<WorkspaceCommandReceiptRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? conversationId,
+    Expression<String>? selectionId,
+    Expression<String>? requestId,
+    Expression<String>? digest,
+    Expression<String>? result,
+    Expression<bool>? created,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (selectionId != null) 'selection_id': selectionId,
+      if (requestId != null) 'request_id': requestId,
+      if (digest != null) 'digest': digest,
+      if (result != null) 'result': result,
+      if (created != null) 'created': created,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceCommandReceiptsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? conversationId,
+    Value<String>? selectionId,
+    Value<String>? requestId,
+    Value<String>? digest,
+    Value<String>? result,
+    Value<bool>? created,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceCommandReceiptsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      conversationId: conversationId ?? this.conversationId,
+      selectionId: selectionId ?? this.selectionId,
+      requestId: requestId ?? this.requestId,
+      digest: digest ?? this.digest,
+      result: result ?? this.result,
+      created: created ?? this.created,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (selectionId.present) {
+      map['selection_id'] = Variable<String>(selectionId.value);
+    }
+    if (requestId.present) {
+      map['request_id'] = Variable<String>(requestId.value);
+    }
+    if (digest.present) {
+      map['digest'] = Variable<String>(digest.value);
+    }
+    if (result.present) {
+      map['result'] = Variable<String>(result.value);
+    }
+    if (created.present) {
+      map['created'] = Variable<bool>(created.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceCommandReceiptsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('selectionId: $selectionId, ')
+          ..write('requestId: $requestId, ')
+          ..write('digest: $digest, ')
+          ..write('result: $result, ')
+          ..write('created: $created, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -19739,6 +20585,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceHistoryPoliciesTable(this);
   late final $WorkspaceRecordBatchReceiptsTable workspaceRecordBatchReceipts =
       $WorkspaceRecordBatchReceiptsTable(this);
+  late final $WorkspaceContextSelectionsTable workspaceContextSelections =
+      $WorkspaceContextSelectionsTable(this);
+  late final $WorkspaceCommandReceiptsTable workspaceCommandReceipts =
+      $WorkspaceCommandReceiptsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -19881,6 +20731,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceRevisions,
     workspaceHistoryPolicies,
     workspaceRecordBatchReceipts,
+    workspaceContextSelections,
+    workspaceCommandReceipts,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -20215,6 +21067,51 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [
         TableUpdate('workspace_record_batch_receipts', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_context_selections', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_context_selections', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_command_receipts', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_command_receipts', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspace_context_selections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_command_receipts', kind: UpdateKind.delete),
       ],
     ),
   ]);
@@ -20650,6 +21547,56 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceRecordBatchReceiptsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceContextSelectionsTable,
+    List<WorkspaceContextSelectionRow>
+  >
+  _workspaceContextSelectionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceContextSelections,
+        aliasName: 'workspaces__id__workspace_context_selections__workspace_id',
+      );
+
+  $$WorkspaceContextSelectionsTableProcessedTableManager
+  get workspaceContextSelectionsRefs {
+    final manager = $$WorkspaceContextSelectionsTableTableManager(
+      $_db,
+      $_db.workspaceContextSelections,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceContextSelectionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceCommandReceiptsTable,
+    List<WorkspaceCommandReceiptRow>
+  >
+  _workspaceCommandReceiptsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceCommandReceipts,
+        aliasName: 'workspaces__id__workspace_command_receipts__workspace_id',
+      );
+
+  $$WorkspaceCommandReceiptsTableProcessedTableManager
+  get workspaceCommandReceiptsRefs {
+    final manager = $$WorkspaceCommandReceiptsTableTableManager(
+      $_db,
+      $_db.workspaceCommandReceipts,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceCommandReceiptsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -21187,6 +22134,60 @@ class $$WorkspacesTableFilterComposer
               }) => $$WorkspaceRecordBatchReceiptsTableFilterComposer(
                 $db: $db,
                 $table: $db.workspaceRecordBatchReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceContextSelectionsRefs(
+    Expression<bool> Function($$WorkspaceContextSelectionsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceContextSelectionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceCommandReceiptsRefs(
+    Expression<bool> Function($$WorkspaceCommandReceiptsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceCommandReceiptsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCommandReceipts,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCommandReceiptsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceCommandReceipts,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -21774,6 +22775,62 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> workspaceContextSelectionsRefs<T extends Object>(
+    Expression<T> Function(
+      $$WorkspaceContextSelectionsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$WorkspaceContextSelectionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> workspaceCommandReceiptsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceCommandReceiptsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceCommandReceiptsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCommandReceipts,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCommandReceiptsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -21809,6 +22866,8 @@ class $$WorkspacesTableTableManager
             bool workspaceRevisionsRefs,
             bool workspaceHistoryPoliciesRefs,
             bool workspaceRecordBatchReceiptsRefs,
+            bool workspaceContextSelectionsRefs,
+            bool workspaceCommandReceiptsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -21895,6 +22954,8 @@ class $$WorkspacesTableTableManager
                 workspaceRevisionsRefs = false,
                 workspaceHistoryPoliciesRefs = false,
                 workspaceRecordBatchReceiptsRefs = false,
+                workspaceContextSelectionsRefs = false,
+                workspaceCommandReceiptsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -21922,6 +22983,10 @@ class $$WorkspacesTableTableManager
                       db.workspaceHistoryPolicies,
                     if (workspaceRecordBatchReceiptsRefs)
                       db.workspaceRecordBatchReceipts,
+                    if (workspaceContextSelectionsRefs)
+                      db.workspaceContextSelections,
+                    if (workspaceCommandReceiptsRefs)
+                      db.workspaceCommandReceipts,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -22325,6 +23390,48 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceContextSelectionsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceContextSelectionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceContextSelectionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceContextSelectionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceCommandReceiptsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceCommandReceiptRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceCommandReceiptsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceCommandReceiptsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -22365,6 +23472,8 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceRevisionsRefs,
         bool workspaceHistoryPoliciesRefs,
         bool workspaceRecordBatchReceiptsRefs,
+        bool workspaceContextSelectionsRefs,
+        bool workspaceCommandReceiptsRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -25599,6 +26708,58 @@ final class $$ConversationsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $WorkspaceContextSelectionsTable,
+    List<WorkspaceContextSelectionRow>
+  >
+  _workspaceContextSelectionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceContextSelections,
+        aliasName:
+            'conversations__id__workspace_context_selections__conversation_id',
+      );
+
+  $$WorkspaceContextSelectionsTableProcessedTableManager
+  get workspaceContextSelectionsRefs {
+    final manager = $$WorkspaceContextSelectionsTableTableManager(
+      $_db,
+      $_db.workspaceContextSelections,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceContextSelectionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceCommandReceiptsTable,
+    List<WorkspaceCommandReceiptRow>
+  >
+  _workspaceCommandReceiptsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceCommandReceipts,
+        aliasName:
+            'conversations__id__workspace_command_receipts__conversation_id',
+      );
+
+  $$WorkspaceCommandReceiptsTableProcessedTableManager
+  get workspaceCommandReceiptsRefs {
+    final manager = $$WorkspaceCommandReceiptsTableTableManager(
+      $_db,
+      $_db.workspaceCommandReceipts,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceCommandReceiptsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ConversationsTableFilterComposer
@@ -25935,6 +27096,60 @@ class $$ConversationsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceContextSelectionsRefs(
+    Expression<bool> Function($$WorkspaceContextSelectionsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceContextSelectionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceCommandReceiptsRefs(
+    Expression<bool> Function($$WorkspaceCommandReceiptsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceCommandReceiptsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCommandReceipts,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCommandReceiptsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -26433,6 +27648,62 @@ class $$ConversationsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> workspaceContextSelectionsRefs<T extends Object>(
+    Expression<T> Function(
+      $$WorkspaceContextSelectionsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$WorkspaceContextSelectionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> workspaceCommandReceiptsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceCommandReceiptsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceCommandReceiptsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCommandReceipts,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCommandReceiptsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableTableManager
@@ -26460,6 +27731,8 @@ class $$ConversationsTableTableManager
             bool modelUsageRecordsRefs,
             bool backgroundWorksRefs,
             bool backgroundWorksByChildConversation,
+            bool workspaceContextSelectionsRefs,
+            bool workspaceCommandReceiptsRefs,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -26572,6 +27845,8 @@ class $$ConversationsTableTableManager
                 modelUsageRecordsRefs = false,
                 backgroundWorksRefs = false,
                 backgroundWorksByChildConversation = false,
+                workspaceContextSelectionsRefs = false,
+                workspaceCommandReceiptsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -26583,6 +27858,10 @@ class $$ConversationsTableTableManager
                     if (modelUsageRecordsRefs) db.modelUsageRecords,
                     if (backgroundWorksRefs) db.backgroundWorks,
                     if (backgroundWorksByChildConversation) db.backgroundWorks,
+                    if (workspaceContextSelectionsRefs)
+                      db.workspaceContextSelections,
+                    if (workspaceCommandReceiptsRefs)
+                      db.workspaceCommandReceipts,
                   ],
                   addJoins:
                       <
@@ -26796,6 +28075,48 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceContextSelectionsRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          WorkspaceContextSelectionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._workspaceContextSelectionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceContextSelectionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceCommandReceiptsRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          WorkspaceCommandReceiptRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._workspaceCommandReceiptsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceCommandReceiptsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -26828,6 +28149,8 @@ typedef $$ConversationsTableProcessedTableManager =
         bool modelUsageRecordsRefs,
         bool backgroundWorksRefs,
         bool backgroundWorksByChildConversation,
+        bool workspaceContextSelectionsRefs,
+        bool workspaceCommandReceiptsRefs,
       })
     >;
 typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
@@ -38934,6 +40257,1114 @@ typedef $$WorkspaceRecordBatchReceiptsTableProcessedTableManager =
       WorkspaceRecordBatchReceiptRow,
       PrefetchHooks Function({bool workspaceId})
     >;
+typedef $$WorkspaceContextSelectionsTableCreateCompanionBuilder =
+    WorkspaceContextSelectionsCompanion Function({
+      required String id,
+      required String workspaceId,
+      required String conversationId,
+      Value<String?> selection,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceContextSelectionsTableUpdateCompanionBuilder =
+    WorkspaceContextSelectionsCompanion Function({
+      Value<String> id,
+      Value<String> workspaceId,
+      Value<String> conversationId,
+      Value<String?> selection,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceContextSelectionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceContextSelectionsTable,
+          WorkspaceContextSelectionRow
+        > {
+  $$WorkspaceContextSelectionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        'workspace_context_selections__workspace_id__workspaces__id',
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        'workspace_context_selections__conversation_id__conversations__id',
+      );
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceCommandReceiptsTable,
+    List<WorkspaceCommandReceiptRow>
+  >
+  _workspaceCommandReceiptsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceCommandReceipts,
+        aliasName: 'workspace_context_selections__id__workspace_command_receipts__selection_id',
+      );
+
+  $$WorkspaceCommandReceiptsTableProcessedTableManager
+  get workspaceCommandReceiptsRefs {
+    final manager = $$WorkspaceCommandReceiptsTableTableManager(
+      $_db,
+      $_db.workspaceCommandReceipts,
+    ).filter((f) => f.selectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceCommandReceiptsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$WorkspaceContextSelectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceContextSelectionsTable> {
+  $$WorkspaceContextSelectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selection => $composableBuilder(
+    column: $table.selection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> workspaceCommandReceiptsRefs(
+    Expression<bool> Function($$WorkspaceCommandReceiptsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceCommandReceiptsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCommandReceipts,
+          getReferencedColumn: (t) => t.selectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCommandReceiptsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$WorkspaceContextSelectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceContextSelectionsTable> {
+  $$WorkspaceContextSelectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get selection => $composableBuilder(
+    column: $table.selection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceContextSelectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceContextSelectionsTable> {
+  $$WorkspaceContextSelectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get selection =>
+      $composableBuilder(column: $table.selection, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> workspaceCommandReceiptsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceCommandReceiptsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceCommandReceiptsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceCommandReceipts,
+          getReferencedColumn: (t) => t.selectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceCommandReceiptsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$WorkspaceContextSelectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceContextSelectionsTable,
+          WorkspaceContextSelectionRow,
+          $$WorkspaceContextSelectionsTableFilterComposer,
+          $$WorkspaceContextSelectionsTableOrderingComposer,
+          $$WorkspaceContextSelectionsTableAnnotationComposer,
+          $$WorkspaceContextSelectionsTableCreateCompanionBuilder,
+          $$WorkspaceContextSelectionsTableUpdateCompanionBuilder,
+          (
+            WorkspaceContextSelectionRow,
+            $$WorkspaceContextSelectionsTableReferences,
+          ),
+          WorkspaceContextSelectionRow,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool conversationId,
+            bool workspaceCommandReceiptsRefs,
+          })
+        > {
+  $$WorkspaceContextSelectionsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceContextSelectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceContextSelectionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceContextSelectionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceContextSelectionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String?> selection = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceContextSelectionsCompanion(
+                id: id,
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                selection: selection,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String workspaceId,
+                required String conversationId,
+                Value<String?> selection = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceContextSelectionsCompanion.insert(
+                id: id,
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                selection: selection,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceContextSelectionsTable,
+                    WorkspaceContextSelectionRow
+                  >(table),
+                  $$WorkspaceContextSelectionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                conversationId = false,
+                workspaceCommandReceiptsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (workspaceCommandReceiptsRefs)
+                      db.workspaceCommandReceipts,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable:
+                                $$WorkspaceContextSelectionsTableReferences
+                                    ._workspaceIdTable(db),
+                            referencedColumn:
+                                $$WorkspaceContextSelectionsTableReferences
+                                    ._workspaceIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+                        if (conversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.conversationId,
+                            referencedTable:
+                                $$WorkspaceContextSelectionsTableReferences
+                                    ._conversationIdTable(db),
+                            referencedColumn:
+                                $$WorkspaceContextSelectionsTableReferences
+                                    ._conversationIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (workspaceCommandReceiptsRefs)
+                        await $_getPrefetchedData<
+                          WorkspaceContextSelectionRow,
+                          $WorkspaceContextSelectionsTable,
+                          WorkspaceCommandReceiptRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$WorkspaceContextSelectionsTableReferences
+                                  ._workspaceCommandReceiptsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspaceContextSelectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceCommandReceiptsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.selectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$WorkspaceContextSelectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceContextSelectionsTable,
+      WorkspaceContextSelectionRow,
+      $$WorkspaceContextSelectionsTableFilterComposer,
+      $$WorkspaceContextSelectionsTableOrderingComposer,
+      $$WorkspaceContextSelectionsTableAnnotationComposer,
+      $$WorkspaceContextSelectionsTableCreateCompanionBuilder,
+      $$WorkspaceContextSelectionsTableUpdateCompanionBuilder,
+      (
+        WorkspaceContextSelectionRow,
+        $$WorkspaceContextSelectionsTableReferences,
+      ),
+      WorkspaceContextSelectionRow,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool conversationId,
+        bool workspaceCommandReceiptsRefs,
+      })
+    >;
+typedef $$WorkspaceCommandReceiptsTableCreateCompanionBuilder =
+    WorkspaceCommandReceiptsCompanion Function({
+      required String workspaceId,
+      required String conversationId,
+      required String selectionId,
+      required String requestId,
+      required String digest,
+      required String result,
+      required bool created,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceCommandReceiptsTableUpdateCompanionBuilder =
+    WorkspaceCommandReceiptsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> conversationId,
+      Value<String> selectionId,
+      Value<String> requestId,
+      Value<String> digest,
+      Value<String> result,
+      Value<bool> created,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceCommandReceiptsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceCommandReceiptsTable,
+          WorkspaceCommandReceiptRow
+        > {
+  $$WorkspaceCommandReceiptsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('workspace_command_receipts__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        'workspace_command_receipts__conversation_id__conversations__id',
+      );
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $WorkspaceContextSelectionsTable _selectionIdTable(_$AppDatabase db) =>
+      db.workspaceContextSelections.createAlias(
+        'workspace_command_receipts__selection_id__workspace_context_selections__id',
+      );
+
+  $$WorkspaceContextSelectionsTableProcessedTableManager get selectionId {
+    final $_column = $_itemColumn<String>('selection_id')!;
+
+    final manager = $$WorkspaceContextSelectionsTableTableManager(
+      $_db,
+      $_db.workspaceContextSelections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_selectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceCommandReceiptsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceCommandReceiptsTable> {
+  $$WorkspaceCommandReceiptsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get requestId => $composableBuilder(
+    column: $table.requestId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get digest => $composableBuilder(
+    column: $table.digest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get result => $composableBuilder(
+    column: $table.result,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get created => $composableBuilder(
+    column: $table.created,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkspaceContextSelectionsTableFilterComposer get selectionId {
+    final $$WorkspaceContextSelectionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.selectionId,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$WorkspaceCommandReceiptsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceCommandReceiptsTable> {
+  $$WorkspaceCommandReceiptsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get requestId => $composableBuilder(
+    column: $table.requestId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get digest => $composableBuilder(
+    column: $table.digest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get result => $composableBuilder(
+    column: $table.result,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get created => $composableBuilder(
+    column: $table.created,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkspaceContextSelectionsTableOrderingComposer get selectionId {
+    final $$WorkspaceContextSelectionsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.selectionId,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableOrderingComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$WorkspaceCommandReceiptsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceCommandReceiptsTable> {
+  $$WorkspaceCommandReceiptsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get requestId =>
+      $composableBuilder(column: $table.requestId, builder: (column) => column);
+
+  GeneratedColumn<String> get digest =>
+      $composableBuilder(column: $table.digest, builder: (column) => column);
+
+  GeneratedColumn<String> get result =>
+      $composableBuilder(column: $table.result, builder: (column) => column);
+
+  GeneratedColumn<bool> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkspaceContextSelectionsTableAnnotationComposer get selectionId {
+    final $$WorkspaceContextSelectionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.selectionId,
+          referencedTable: $db.workspaceContextSelections,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceContextSelectionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceContextSelections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$WorkspaceCommandReceiptsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceCommandReceiptsTable,
+          WorkspaceCommandReceiptRow,
+          $$WorkspaceCommandReceiptsTableFilterComposer,
+          $$WorkspaceCommandReceiptsTableOrderingComposer,
+          $$WorkspaceCommandReceiptsTableAnnotationComposer,
+          $$WorkspaceCommandReceiptsTableCreateCompanionBuilder,
+          $$WorkspaceCommandReceiptsTableUpdateCompanionBuilder,
+          (
+            WorkspaceCommandReceiptRow,
+            $$WorkspaceCommandReceiptsTableReferences,
+          ),
+          WorkspaceCommandReceiptRow,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool conversationId,
+            bool selectionId,
+          })
+        > {
+  $$WorkspaceCommandReceiptsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceCommandReceiptsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceCommandReceiptsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceCommandReceiptsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceCommandReceiptsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> selectionId = const Value.absent(),
+                Value<String> requestId = const Value.absent(),
+                Value<String> digest = const Value.absent(),
+                Value<String> result = const Value.absent(),
+                Value<bool> created = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceCommandReceiptsCompanion(
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                selectionId: selectionId,
+                requestId: requestId,
+                digest: digest,
+                result: result,
+                created: created,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String conversationId,
+                required String selectionId,
+                required String requestId,
+                required String digest,
+                required String result,
+                required bool created,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceCommandReceiptsCompanion.insert(
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                selectionId: selectionId,
+                requestId: requestId,
+                digest: digest,
+                result: result,
+                created: created,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceCommandReceiptsTable,
+                    WorkspaceCommandReceiptRow
+                  >(table),
+                  $$WorkspaceCommandReceiptsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                conversationId = false,
+                selectionId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable:
+                                $$WorkspaceCommandReceiptsTableReferences
+                                    ._workspaceIdTable(db),
+                            referencedColumn:
+                                $$WorkspaceCommandReceiptsTableReferences
+                                    ._workspaceIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+                        if (conversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.conversationId,
+                            referencedTable:
+                                $$WorkspaceCommandReceiptsTableReferences
+                                    ._conversationIdTable(db),
+                            referencedColumn:
+                                $$WorkspaceCommandReceiptsTableReferences
+                                    ._conversationIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+                        if (selectionId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.selectionId,
+                            referencedTable:
+                                $$WorkspaceCommandReceiptsTableReferences
+                                    ._selectionIdTable(db),
+                            referencedColumn:
+                                $$WorkspaceCommandReceiptsTableReferences
+                                    ._selectionIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$WorkspaceCommandReceiptsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceCommandReceiptsTable,
+      WorkspaceCommandReceiptRow,
+      $$WorkspaceCommandReceiptsTableFilterComposer,
+      $$WorkspaceCommandReceiptsTableOrderingComposer,
+      $$WorkspaceCommandReceiptsTableAnnotationComposer,
+      $$WorkspaceCommandReceiptsTableCreateCompanionBuilder,
+      $$WorkspaceCommandReceiptsTableUpdateCompanionBuilder,
+      (WorkspaceCommandReceiptRow, $$WorkspaceCommandReceiptsTableReferences),
+      WorkspaceCommandReceiptRow,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool conversationId,
+        bool selectionId,
+      })
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -39020,5 +41451,16 @@ class $AppDatabaseManager {
       $$WorkspaceRecordBatchReceiptsTableTableManager(
         _db,
         _db.workspaceRecordBatchReceipts,
+      );
+  $$WorkspaceContextSelectionsTableTableManager
+  get workspaceContextSelections =>
+      $$WorkspaceContextSelectionsTableTableManager(
+        _db,
+        _db.workspaceContextSelections,
+      );
+  $$WorkspaceCommandReceiptsTableTableManager get workspaceCommandReceipts =>
+      $$WorkspaceCommandReceiptsTableTableManager(
+        _db,
+        _db.workspaceCommandReceipts,
       );
 }

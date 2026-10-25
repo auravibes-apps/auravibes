@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
@@ -17,6 +19,60 @@ void main() {
     final fixture = _ResolveToolApprovalDecisionFixture();
 
     setUp(fixture.setUp);
+    for (final mode in agent.ConversationToolAccessMode.values) {
+      test(
+        'workspace mode $mode preserves current access and previews structure only',
+        () async {
+          final usecase = ResolveToolApprovalDecisionUsecase(
+            conversationToolsRepository: fixture.conversationToolsRepository,
+            toolsGroupsRepository: fixture.toolsGroupsRepository,
+            workspaceToolsRepository: fixture.workspaceToolsRepository,
+            workspaceAccess: (_, _) async => true,
+            getToolAccessMode: (_) async => mode,
+          );
+          for (final action in [
+            'read',
+            'createRecord',
+            'updateRecord',
+            'createTable',
+            'saveColumn',
+            'saveView',
+          ]) {
+            final result = await usecase.callForRequest((
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolCallId: 'call',
+              resolvedTool: ResolvedTool.workspaceCommand(),
+              argumentsRaw: jsonEncode({'action': action}),
+            ));
+            expect(
+              result.permissionResult,
+              mode == .allowAll ||
+                      ['read', 'createRecord', 'updateRecord'].contains(action)
+                  ? ToolPermissionResult.granted
+                  : ToolPermissionResult.needsConfirmation,
+            );
+          }
+          final denied = ResolveToolApprovalDecisionUsecase(
+            conversationToolsRepository: fixture.conversationToolsRepository,
+            toolsGroupsRepository: fixture.toolsGroupsRepository,
+            workspaceToolsRepository: fixture.workspaceToolsRepository,
+            workspaceAccess: (_, _) async => false,
+            getToolAccessMode: (_) async => mode,
+          );
+          expect(
+            (await denied.callForRequest((
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolCallId: 'call',
+              resolvedTool: ResolvedTool.workspaceCommand(),
+              argumentsRaw: '{"action":"updateRecord"}',
+            ))).permissionResult,
+            ToolPermissionResult.disabledInWorkspace,
+          );
+        },
+      );
+    }
 
     for (final mode in agent.ConversationToolAccessMode.values) {
       for (final permission in ToolPermissionResult.values) {

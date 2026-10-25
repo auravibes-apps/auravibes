@@ -43,7 +43,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 40);
+      expect(fixture.database.schemaVersion, 42);
     });
 
     test(

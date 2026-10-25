@@ -1,5 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
+
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
+
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -39,15 +42,19 @@ typedef _ToolResultMediaCallRequest = ({
 class const BuildPromptChatMessages({
   final List<String> modalitiesInput = const [],
   final bool supportsImageToolResults = false,
+  final Future<List<MessageEntity>> Function(List<MessageEntity>)?
+  workspaceProjection,
 }) {
   static const _agentBuilder = agent.BuildPromptChatMessages();
 
-  Future<List<ChatMessage>> call(List<MessageEntity> messages) =>
+  Future<List<ChatMessage>> call(List<MessageEntity> messages) async =>
       _buildPromptMessages(
         _agentBuilder,
         modalitiesInput,
         supportsImageToolResults,
-        messages,
+        workspaceProjection == null
+            ? redactWorkspaceToolHistory(messages)
+            : await workspaceProjection!(messages),
       );
 }
 

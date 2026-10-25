@@ -84,6 +84,9 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceContext:
+  - read:
+  - save:
 workspaceCsv:
   - preview:
 workspaceHistory:

@@ -1,4 +1,6 @@
 import 'package:auravibes_app/app_storage_namespace.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_context_selections.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
 import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
@@ -117,6 +119,8 @@ part 'app_database.g.dart';
     WorkspaceRevisions,
     WorkspaceHistoryPolicies,
     WorkspaceRecordBatchReceipts,
+    WorkspaceCommandReceipts,
+    WorkspaceContextSelections,
   ],
   daos: [
     WorkspaceDao,
@@ -209,7 +213,8 @@ class AppDatabase extends _$AppDatabase {
       _workspaceTrashSchemaVersion + 1;
   static const int _workspaceHistorySchemaVersion =
       _workspaceRecordBatchSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceHistorySchemaVersion;
+  static const int _workspaceCommandSchemaVersion = 42;
+  static const int _currentSchemaVersion = _workspaceCommandSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -268,6 +273,10 @@ extension on AppDatabase {
       await m.createTable(workspaceViews);
     }
     await _upgradeWorkspaceTrashSchema(m, from);
+    if (from < AppDatabase._workspaceCommandSchemaVersion) {
+      await m.createTable(workspaceContextSelections);
+      await m.createTable(workspaceCommandReceipts);
+    }
     if (from < AppDatabase._workspaceHistorySchemaVersion) {
       await m.createTable(workspaceRevisions);
       await m.createTable(workspaceHistoryPolicies);

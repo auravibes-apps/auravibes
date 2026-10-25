@@ -2169,6 +2169,9 @@
     "loading": "Loading current data…"
   },
   "workspace_chat": {
+    "inspect": "Inspect shared context",
+    "none": "No workspace items are shared with AI in this Conversation.",
+    "title": "AI context",
     "share": "Share with AI",
     "revoke": "Stop sharing with AI",
     "scope": "Only checked records and this item’s structure will be shared. Opening an item does not share its data.",

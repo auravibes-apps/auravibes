@@ -1,18 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/features/workspaces/widgets/workspace_context_inspector.dart';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation_notifier.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_context_record_picker.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -21,6 +23,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:uuid/v7.dart';
 
 class const WorkspaceChatContextToolbar({
   required final String workspaceId,
@@ -43,9 +46,23 @@ class const WorkspaceChatContextToolbar({
               onPressed: onClose,
               tooltip: LocaleKeys.common_close.tr(),
             ),
-            Expanded(child: TextLocale(LocaleKeys.workspace_chat_scope)),
+            const Expanded(
+              child: const TextLocale(LocaleKeys.workspace_chat_title),
+            ),
             AuraPopupMenuButton(
               items: [
+                AuraPopupMenuItem(
+                  title: const TextLocale(LocaleKeys.workspace_chat_inspect),
+                  onTap: () => unawaited(
+                    showDialog<void>(
+                      context: context,
+                      builder: (_) => WorkspaceContextInspector(
+                        workspaceId: workspaceId,
+                        conversationId: conversationId,
+                      ),
+                    ),
+                  ),
+                ),
                 AuraPopupMenuItem(
                   onTap: busy.value
                       ? null
@@ -98,8 +115,24 @@ class const WorkspaceChatContextToolbar({
               parentId: _parent(ref),
               recordIds: ids,
             );
+      final consent = await ref.read(
+        workspaceConversationContextUsecaseProvider(workspaceId).future,
+      );
+      final granted = await consent.save(
+        conversationId,
+        const UuidV7().generate(),
+        selection,
+      );
+      ref.invalidate(
+        workspaceConversationContextProvider(workspaceId, conversationId),
+      );
       final metadata = MessageMetadataEntity(
-        modelMetadata: {workspaceContextMetadataKey: selection?.toJson()},
+        modelMetadata: {
+          'workspaceContextSelectionProof': {
+            'epoch': granted.id,
+            'selection': selection?.toJson(),
+          },
+        },
       );
       final content = revoke
           ? LocaleKeys.workspace_chat_revoked.tr()
@@ -129,12 +162,16 @@ class const WorkspaceChatContextToolbar({
     if (item.kind != 'directory') return item;
     final directory = ref.read(directoryNavigationProvider(workspaceId));
     final selected = directory.selected;
-    if (selected is WorkspaceTable)
+    if (selected is WorkspaceTable) {
       return WorkspaceChatItem(id: selected.id, kind: 'table');
-    if (selected is DirectoryViewLocation)
+    }
+    if (selected is DirectoryViewLocation) {
       return WorkspaceChatItem(id: selected.id, kind: 'view');
-    if (directory.path.isNotEmpty)
+    }
+    if (selected != null) throw const WorkspaceTableException(denied: true);
+    if (directory.path.isNotEmpty) {
       return WorkspaceChatItem(id: directory.path.last.id, kind: 'folder');
+    }
     return item;
   }
 
@@ -147,16 +184,16 @@ class const WorkspaceChatContextToolbar({
       final accepted = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: TextLocale(LocaleKeys.workspace_chat_share),
-          content: TextLocale(LocaleKeys.workspace_chat_scope),
+          title: const TextLocale(LocaleKeys.workspace_chat_share),
+          content: const TextLocale(LocaleKeys.workspace_chat_scope),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: TextLocale(LocaleKeys.common_cancel),
+              child: const TextLocale(LocaleKeys.common_cancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: TextLocale(LocaleKeys.workspace_chat_share),
+              child: const TextLocale(LocaleKeys.workspace_chat_share),
             ),
           ],
         ),
@@ -167,59 +204,11 @@ class const WorkspaceChatContextToolbar({
       workspaceTableUsecaseProvider(workspaceId).future,
     );
     final table = await tables.table(item.id);
-    final query = await ref.read(
-      workspaceRecordQueryUsecaseProvider(workspaceId).future,
-    );
-    final page = await query(table.id, const WorkspaceRecordQuery(limit: 50));
     if (!context.mounted) return null;
     return showDialog<List<String>>(
       context: context,
-      builder: (_) => _RecordSelection(table, page.records),
-    );
-  }
-}
-
-class const _RecordSelection(
-  final WorkspaceTable table,
-  final List<WorkspaceRecord> records,
-) extends HookWidget {
-  @override
-  Widget build(BuildContext context) {
-    final selected = useState(<String>{});
-    return AlertDialog(
-      title: const TextLocale(LocaleKeys.workspace_chat_records),
-      content: SizedBox(
-        width: 400,
-        height: 400,
-        child: ListView(
-          children: [
-            const TextLocale(LocaleKeys.workspace_chat_scope),
-            const TextLocale(LocaleKeys.workspace_chat_structure),
-            for (final record in records)
-              CheckboxListTile(
-                title: Text(
-                  '${record.values[table.labelColumnId] ?? record.id}',
-                ),
-                value: selected.value.contains(record.id),
-                onChanged: (value) => selected.value =
-                    value == true
-                          ? {...selected.value, record.id}
-                          : {...selected.value}
-                      ..remove(record.id),
-              ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const TextLocale(LocaleKeys.common_cancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(selected.value.toList()),
-          child: const TextLocale(LocaleKeys.workspace_chat_share),
-        ),
-      ],
+      builder: (_) =>
+          WorkspaceContextRecordPicker(workspaceId: workspaceId, table: table),
     );
   }
 }

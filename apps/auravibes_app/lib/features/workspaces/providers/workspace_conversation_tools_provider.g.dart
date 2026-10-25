@@ -58,4 +58,4 @@ final class WorkspaceConversationToolsProvider
 }
 
 String _$workspaceConversationToolsHash() =>
-    r'476655052684543e41adaf9653af80debe2ada87';
+    r'6a5fad32215797b64f7339f1054366d1f6d50b4b';

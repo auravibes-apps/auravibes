@@ -1,4 +1,6 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -39,6 +41,7 @@ class AppAgentContinuationAdapter({
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
   final ConversationAgentLanguageRuntime? conversationLanguageRuntime,
+  final ProjectWorkspaceChatContextUsecase? workspaceContextProjection,
 }) with _AgentContinuationMessageRoleChecks
     implements
         AgentContinuationProvider<
@@ -172,6 +175,7 @@ class AppAgentContinuationAdapter({
     return [
       ...skillContextMessages,
       ...await BuildPromptChatMessages(
+        workspaceProjection: workspaceContextProjection?.call,
         modalitiesInput: model.workspaceModelSelection.modalitiesInput,
         supportsImageToolResults:
             model.modelsProvider.type == ModelProvidersType.anthropic &&
@@ -242,6 +246,9 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
   ref,
 ) {
   return AppAgentContinuationAdapter(
+    workspaceContextProjection: ProjectWorkspaceChatContextUsecase(
+      ref.watch(workspaceConversationToolsProvider),
+    ),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
     modelSelectionStore: (workspaceId) =>

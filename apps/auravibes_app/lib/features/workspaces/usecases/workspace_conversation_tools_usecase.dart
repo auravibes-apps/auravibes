@@ -1,50 +1,63 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_command_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 class const WorkspaceConversationToolsUsecase({
   required final ConversationRepository conversations,
-  required final MessageRepository messages,
+  required final LocalWorkspaceContextRepository Function(String workspaceId)
+  context,
   required final Future<WorkspaceConversationCommandUsecase> Function(String)
   commands,
+  final LocalWorkspaceCommandRepository? receipts,
 }) {
   Future<Object?> call({
     required String conversationId,
     required Map<String, dynamic> arguments,
+    String? operationId,
   }) async {
     final conversation = await conversations.getConversationById(
       conversationId,
     );
     if (conversation == null) throw const WorkspaceTableException(denied: true);
-    final selection = await _selection(
-      conversation.workspaceId,
-      conversationId,
-    );
-    if (selection == null) throw const WorkspaceTableException(denied: true);
-    return (await commands(conversation.workspaceId))
-        .call(selection: selection, arguments: arguments);
-  }
-
-  Future<WorkspaceContextSelection?> _selection(
-    String workspaceId,
-    String conversationId,
-  ) async {
-    final users = await messages.getUserMessages(conversationId);
-    users.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    for (final message in users) {
-      final data = message.metadata?.modelMetadata;
-      if (message.conversationId != conversationId ||
-          data == null ||
-          !data.containsKey(workspaceContextMetadataKey))
-        continue;
-      return WorkspaceContextSelection.decode(
-        data[workspaceContextMetadataKey],
-        workspaceId,
-        conversationId,
-      );
+    final event = await context(conversation.workspaceId)
+        .latest(conversation.workspaceId, conversationId);
+    final selection = event == null
+        ? null
+        : WorkspaceContextSelection.decode(
+            event.selection,
+            conversation.workspaceId,
+            conversationId,
+          );
+    if (selection == null || event == null) {
+      throw const WorkspaceTableException(denied: true);
     }
-    return null;
+    final created =
+        await receipts?.created(
+          conversation.workspaceId,
+          conversationId,
+          event.id,
+        ) ??
+        [];
+    final scope = workspaceCreatedContext(selection, created, arguments);
+    final command = await commands(conversation.workspaceId);
+    if (arguments['action'] == 'read') {
+      return command.call(selection: scope, arguments: arguments);
+    }
+    final store = receipts;
+    if (store == null || operationId == null || operationId.isEmpty) {
+      throw const WorkspaceTableException();
+    }
+    return store.execute(
+      workspaceId: conversation.workspaceId,
+      conversationId: conversationId,
+      selectionId: event.id,
+      requestId: operationId,
+      arguments: arguments,
+      run: () => command.call(selection: scope, arguments: arguments),
+      authorizeReplay: command.authorizeReceipt,
+    );
   }
 }

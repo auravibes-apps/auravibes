@@ -1,7 +1,7 @@
-import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -18,8 +18,9 @@ class const WorkspaceConversationCommandUsecase({
     final action = arguments['action'];
     if (selection.kind == 'folder' &&
         action != 'createFolder' &&
-        action != 'createTable')
+        action != 'createTable') {
       return _folder(selection, arguments);
+    }
     if (selection.kind == 'view') return _view(selection, arguments);
     if (action == 'createTable' || action == 'createFolder') {
       return _createItem(selection, arguments);
@@ -40,6 +41,35 @@ class const WorkspaceConversationCommandUsecase({
     };
   }
 
+  Future<void> authorizeReceipt(Map<String, Object?> result) async {
+    final id = result['id'] as String;
+    switch (result['kind']) {
+      case 'record':
+        final table = await tables.table(result['tableId'] as String);
+        if (!table.canEditRecords) {
+          throw const WorkspaceTableException(denied: true);
+        }
+        final _ = await tables.record(table.id, id);
+      case 'table':
+        final table = await tables.table(id);
+        if (!table.canManage) throw const WorkspaceTableException(denied: true);
+      case 'folder':
+        final candidates = await folders!.list(
+          parentId: result['parentId'] as String?,
+        );
+        if (!candidates.any((folder) => folder.id == id && folder.canManage)) {
+          throw const WorkspaceTableException(denied: true);
+        }
+      case 'view':
+        final data = await views!.open(id);
+        if (!data.view.canManage) {
+          throw const WorkspaceTableException(denied: true);
+        }
+      default:
+        throw const WorkspaceTableException(denied: true);
+    }
+  }
+
   Future<Map<String, Object?>> _folder(
     WorkspaceContextSelection selection,
     Map<String, dynamic> arguments,
@@ -50,24 +80,33 @@ class const WorkspaceConversationCommandUsecase({
     final folder = candidates
         .where((candidate) => candidate.id == selection.itemId)
         .firstOrNull;
-    if (folder == null || arguments['id'] != folder.id)
+    if (folder == null || arguments['id'] != folder.id) {
       throw const WorkspaceTableException(denied: true);
-    if (arguments['action'] == 'read')
+    }
+    if (arguments['action'] == 'read') {
       return {
         'id': folder.id,
         'name': folder.name,
         'revision': folder.revision,
       };
-    if (arguments['action'] != 'renameFolder')
+    }
+    if (arguments['action'] != 'renameFolder') {
       throw const WorkspaceTableException();
-    if (arguments['revision'] != folder.revision)
+    }
+    if (arguments['revision'] != folder.revision) {
       throw const WorkspaceTableException(conflict: true);
+    }
     final updated = await usecase.updateMetadata(
       folder: folder,
       name: _string(arguments, 'name'),
       parentId: folder.parentId,
     );
-    return {'id': updated.id, 'kind': 'folder', 'revision': updated.revision};
+    return {
+      'id': updated.id,
+      'kind': 'folder',
+      'parentId': updated.parentId,
+      'revision': updated.revision,
+    };
   }
 
   Future<Map<String, Object?>> _view(
@@ -75,13 +114,16 @@ class const WorkspaceConversationCommandUsecase({
     Map<String, dynamic> arguments,
   ) async {
     final usecase = views;
-    if (usecase == null || arguments['id'] != selection.itemId)
+    if (usecase == null || arguments['id'] != selection.itemId) {
       throw const WorkspaceTableException(denied: true);
+    }
     final data = await usecase.open(selection.itemId);
-    if (arguments['action'] == 'read')
+    if (arguments['action'] == 'read') {
       return WorkspaceViewMapper.toJson(data.view);
-    if (arguments['action'] != 'saveView')
+    }
+    if (arguments['action'] != 'saveView') {
       throw const WorkspaceTableException();
+    }
     if (arguments['revision'] != data.view.revision ||
         arguments['schemaRevision'] != data.table.schemaRevision) {
       throw const WorkspaceTableException(conflict: true);
@@ -110,14 +152,20 @@ class const WorkspaceConversationCommandUsecase({
       throw const WorkspaceTableException(denied: true);
     }
     final parent = selection.kind == 'directory' ? null : selection.itemId;
-    if (arguments['parentId'] != parent)
+    if (arguments['parentId'] != parent) {
       throw const WorkspaceTableException(denied: true);
+    }
     final name = _string(arguments, 'name');
     if (arguments['action'] == 'createFolder') {
       final usecase = folders;
       if (usecase == null) throw const WorkspaceTableException();
       final folder = await usecase.create(name: name, parentId: parent);
-      return {'id': folder.id, 'kind': 'folder', 'revision': folder.revision};
+      return {
+        'id': folder.id,
+        'kind': 'folder',
+        'revision': folder.revision,
+        'parentId': folder.parentId,
+      };
     }
     final table = await tables.create(
       name: name,
@@ -136,7 +184,12 @@ class const WorkspaceConversationCommandUsecase({
       table: table,
       values: _map(arguments, 'values'),
     );
-    return {'id': record.id, 'kind': 'record', 'revision': record.revision};
+    return {
+      'id': record.id,
+      'kind': 'record',
+      'tableId': table.id,
+      'revision': record.revision,
+    };
   }
 
   Future<Map<String, Object?>> _renameTable(
@@ -191,6 +244,7 @@ class const WorkspaceConversationCommandUsecase({
     'name': table.name,
     'revision': table.revision,
     'schemaRevision': table.schemaRevision,
+    'labelColumnId': table.labelColumnId,
     'columns': [
       for (final column in table.columns)
         {...column.toJson()}..remove('targetTableId'),
@@ -224,7 +278,12 @@ class const WorkspaceConversationCommandUsecase({
       record: current,
       values: values,
     );
-    return {'id': updated.id, 'revision': updated.revision};
+    return {
+      'id': updated.id,
+      'kind': 'record',
+      'tableId': table.id,
+      'revision': updated.revision,
+    };
   }
 }
 

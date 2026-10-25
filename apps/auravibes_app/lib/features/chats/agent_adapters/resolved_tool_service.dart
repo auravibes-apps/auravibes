@@ -158,6 +158,7 @@ class ResolvedToolService {
       return commands.call(
         conversationId: conversationId,
         arguments: arguments,
+        operationId: toolCallId,
       );
     }
     final result = await delegate.call(

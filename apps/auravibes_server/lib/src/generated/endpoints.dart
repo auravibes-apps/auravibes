@@ -205,6 +205,8 @@ import '../features/model_connections/model_connection_endpoint.dart'
 import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
 import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
+import '../features/workspace_context/workspace_context_endpoint.dart'
+    as _ikyf4f6l;
 import '../features/workspace_state/workspace_csv_endpoint.dart' as _iml0si8c;
 import '../features/workspace_state/workspace_history_endpoint.dart'
     as _iro98jgh;
@@ -291,6 +293,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceStream',
+          null,
+        ),
+      'workspaceContext': _ikyf4f6l.WorkspaceContextEndpoint()
+        ..initialize(
+          server,
+          'workspaceContext',
           null,
         ),
       'workspaceCsv': _iml0si8c.WorkspaceCsvEndpoint()
@@ -1891,6 +1899,78 @@ class Endpoints extends _is.EndpointDispatch {
                       .subscribe(
                         session,
                         params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceContext'] = _is.EndpointConnector(
+      name: 'workspaceContext',
+      endpoint: endpoints['workspaceContext']!,
+      methodConnectors: {
+        'read': _is.MethodConnector(
+          name: 'read',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'conversationId': _is.ParameterDescription(
+              name: 'conversationId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceContext']
+                          as _ikyf4f6l.WorkspaceContextEndpoint)
+                      .read(
+                        session,
+                        params['workspaceId'],
+                        params['conversationId'],
+                      ),
+        ),
+        'save': _is.MethodConnector(
+          name: 'save',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'conversationId': _is.ParameterDescription(
+              name: 'conversationId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'requestId': _is.ParameterDescription(
+              name: 'requestId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'selectionJson': _is.ParameterDescription(
+              name: 'selectionJson',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceContext']
+                          as _ikyf4f6l.WorkspaceContextEndpoint)
+                      .save(
+                        session,
+                        params['workspaceId'],
+                        params['conversationId'],
+                        params['requestId'],
+                        params['selectionJson'],
                       ),
         ),
       },

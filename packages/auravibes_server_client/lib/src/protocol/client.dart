@@ -1106,6 +1106,43 @@ class EndpointWorkspaceStream extends _isc.EndpointRef {
       );
 }
 
+/// Explicit host UI consent. This endpoint is never exposed as an agent tool.
+/// {@category Endpoint}
+class EndpointWorkspaceContext extends _isc.EndpointRef {
+  EndpointWorkspaceContext(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceContext';
+
+  _ida.Future<String> read(
+    int workspaceId,
+    String conversationId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContext',
+    'read',
+    {
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+    },
+  );
+
+  _ida.Future<String> save(
+    int workspaceId,
+    String conversationId,
+    String requestId,
+    String? selectionJson,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContext',
+    'save',
+    {
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+      'requestId': requestId,
+      'selectionJson': selectionJson,
+    },
+  );
+}
+
 /// {@category Endpoint}
 class EndpointWorkspaceCsv extends _isc.EndpointRef {
   EndpointWorkspaceCsv(_isc.EndpointCaller caller) : super(caller);
@@ -1612,6 +1649,7 @@ class Client extends _isc.ServerpodClientShared {
     object = EndpointObject(this);
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
+    workspaceContext = EndpointWorkspaceContext(this);
     workspaceCsv = EndpointWorkspaceCsv(this);
     workspaceHistory = EndpointWorkspaceHistory(this);
     workspaceReference = EndpointWorkspaceReference(this);
@@ -1647,6 +1685,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceStream workspaceStream;
 
+  late final EndpointWorkspaceContext workspaceContext;
+
   late final EndpointWorkspaceCsv workspaceCsv;
 
   late final EndpointWorkspaceHistory workspaceHistory;
@@ -1679,6 +1719,7 @@ class Client extends _isc.ServerpodClientShared {
     'object': object,
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
+    'workspaceContext': workspaceContext,
     'workspaceCsv': workspaceCsv,
     'workspaceHistory': workspaceHistory,
     'workspaceReference': workspaceReference,
