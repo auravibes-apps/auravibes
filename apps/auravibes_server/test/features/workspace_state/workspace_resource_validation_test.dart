@@ -239,6 +239,8 @@ void main() {
         workspaceId: 1,
         data: switch (kind) {
           WorkspaceResourceKind.folder => '{"name":"Folder","parentId":null}',
+          WorkspaceResourceKind.file =>
+            '{"name":"File","parentId":null,"assetId":"1"}',
           WorkspaceResourceKind.table =>
             '{"name":"Table","parentId":null,'
                 '"labelColumnId":"column-1","schemaRevision":1,'
