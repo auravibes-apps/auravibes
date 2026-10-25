@@ -1759,6 +1759,63 @@ void main() {
     expect(sent?.attachments.single.localPath, contains('/ws-1/asset'));
   });
 
+  testWidgets('discarding a Directory File draft leaves its asset available', (
+    tester,
+  ) async {
+    const asset = WorkspaceAsset(
+      id: 'asset',
+      name: 'notes.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 5,
+      checksum: 'unused',
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(
+      const MessageAttachmentToCreate(
+        localPath: 'workspace-asset://asset/ws-1/asset',
+        fileName: 'notes.txt',
+        displayName: 'Stored notes',
+        mimeType: 'text/plain',
+        modality: .file,
+        sizeBytes: 5,
+        assetId: 'asset',
+      ),
+    );
+    final activeConversation = ValueNotifier<String?>('conversation-1');
+    addTearDown(activeConversation.dispose);
+    const sharedAssets = _SharedAssets(asset);
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        modalitiesInput: const ['text', 'file'],
+        activeConversation: activeConversation,
+        attachmentService: attachmentService,
+        sharedFile: const WorkspaceFile(
+          id: 'file',
+          name: 'Stored notes',
+          assetId: 'asset',
+          revision: 1,
+          asset: asset,
+        ),
+        sharedAssets: sharedAssets,
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text(LocaleKeys.workspace_assets_existing.tr()));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Stored notes'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text('Discard draft'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(attachmentService.deletedPaths, isEmpty);
+    expect(find.text('Stored notes'), findsNothing);
+    expect(await sharedAssets.asset('asset'), same(asset));
+  });
+
   testWidgets('shows file and hides photo attachment on macOS', (tester) async {
     overridePlatform(.macOS);
 
