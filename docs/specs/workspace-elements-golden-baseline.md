@@ -58,3 +58,9 @@ Automated extraction asserted exact equality of all golden filenames and `(perce
 No source or golden updates. No push, PR, issue writes, production changes, platform builds or full suite run. Full failure artifacts remain in the baseline worktree untracked `failures/` directories. `git status --short` shows only these five generated failure-artifact directories; no tracked source or golden modifications. This establishes pre-existing failures on this host, not a root-cause diagnosis or passing golden gate.
 
 The baseline worktree was archived after verification; its non-ignored failure artifacts are retained in the managed worktree snapshot.
+
+## Flutter 3.47.8 renewal — 2026-10-24
+
+Repeated the same seven cases on baseline `0d8e39b24aa077bd324d704f21d449710e49e1f7` and integrated `d88c57a8`, using the same host and pinned Flutter3.47.8/Dart3.13.7. All11 filename/percentage/pixel pairs match each other and the table above exactly. All44 generated comparison PNG artifacts are byte-identical between baseline and integration. No snapshots changed; this renews baseline equivalence, not a passing golden gate or root-cause diagnosis.
+
+Logs: `/tmp/auravibes-golden3478-{current,baseline}-{app,ui}.log`. Exact comparison: `/tmp/auravibes-golden3478/comparison.json`; artifacts under `/tmp/auravibes-golden3478/{current,baseline}`. Baseline temporary SDK selection files were restored after verification, and only owned generated failure directories were removed after copying their evidence outside the worktree. Subsequent feature slices still require their own relevant checks.

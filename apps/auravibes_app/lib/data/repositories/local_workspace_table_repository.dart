@@ -18,9 +18,6 @@ class const LocalWorkspaceTableRepository(
   final AppDatabase _database,
   final String _workspaceId,
 ) implements WorkspaceTableRepository {
-  Future<WorkspaceTable> duplicate(WorkspaceItemDuplication request) =>
-      _TableDuplicator(_database, _workspaceId).copy(request);
-
   @override
   Future<List<WorkspaceTable>> list({String? parentId}) async {
     final query = _tables(_database, _workspaceId)
@@ -101,6 +98,11 @@ class const LocalWorkspaceTableRepository(
     required WorkspaceRecord record,
     required Map<String, Object?> values,
   }) => _RecordWriter(_database, _workspaceId).update(table, record, values);
+}
+
+extension LocalWorkspaceTableDuplication on LocalWorkspaceTableRepository {
+  Future<WorkspaceTable> duplicate(WorkspaceItemDuplication request) =>
+      _TableDuplicator(_database, _workspaceId).copy(request);
 }
 
 WorkspaceTable _table(WorkspaceTableRow row) => WorkspaceTable(
@@ -764,7 +766,12 @@ class const _TableDuplicator(final AppDatabase db, final String workspaceId) {
     final columns = await _columns(source, ids);
     final _ = await _insertTable(
       db,
-      _companion(input, columns, ids[source.labelColumnId]!),
+      _copyTableCompanion(
+        workspaceId,
+        input,
+        columns,
+        ids[source.labelColumnId]!,
+      ),
     );
 
     return await _read(input.targetId);
@@ -787,19 +794,6 @@ class const _TableDuplicator(final AppDatabase db, final String workspaceId) {
     if (existing != null) throw const WorkspaceTableException(conflict: true);
   }
 
-  WorkspaceTablesCompanion _companion(
-    WorkspaceItemDuplication input,
-    List<WorkspaceColumn> columns,
-    String labelId,
-  ) => .insert(
-    id: .new(input.targetId),
-    workspaceId: workspaceId,
-    name: input.name.trim(),
-    parentId: .new(input.parentId),
-    columnsJson: _encodeColumns(columns),
-    labelColumnId: labelId,
-  );
-
   Future<void> _copyRecords(
     WorkspaceTable source,
     WorkspaceTable target,
@@ -818,6 +812,20 @@ class const _TableDuplicator(final AppDatabase db, final String workspaceId) {
     }
   }
 }
+
+WorkspaceTablesCompanion _copyTableCompanion(
+  String workspaceId,
+  WorkspaceItemDuplication input,
+  List<WorkspaceColumn> columns,
+  String labelId,
+) => .insert(
+  id: .new(input.targetId),
+  workspaceId: workspaceId,
+  name: input.name.trim(),
+  parentId: .new(input.parentId),
+  columnsJson: _encodeColumns(columns),
+  labelColumnId: labelId,
+);
 
 const _maximumCopyRecords = 49;
 String _copyDigest(WorkspaceItemDuplication request) =>
