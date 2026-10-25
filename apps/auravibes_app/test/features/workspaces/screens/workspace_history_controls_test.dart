@@ -106,6 +106,7 @@ void main() {
           final history = ManageWorkspaceHistoryUsecase(
             LocalWorkspaceHistoryRepository(database, 'local'),
           );
+          var restoredCalls = 0;
           final target = WorkspaceTrashTarget(
             kind: .record,
             id: first.id,
@@ -126,6 +127,7 @@ void main() {
                           workspaceId: 'local',
                           record: second,
                           onTrashed: () => fail('Unexpected record Trash'),
+                          onRestored: () => restoredCalls++,
                         ),
                       ),
                     ),
@@ -169,6 +171,7 @@ void main() {
           await tester.tap(button('workspace_history_cancel'));
           await _settle(tester);
           expect((await tables.record(table.id, first.id)).revision, 2);
+          expect(restoredCalls, 0);
           await tester.tap(button('workspace_history_restore_1'));
           final _ = await tester.pump();
           final _ = await tester.pump(const Duration(milliseconds: 400));
@@ -176,6 +179,7 @@ void main() {
           await tester.tap(button('workspace_history_confirm'));
           await _settle(tester);
           expect((await tables.record(table.id, first.id)).revision, 3);
+          expect(restoredCalls, 1);
           expect(
             (await tables.record(
               table.id,
