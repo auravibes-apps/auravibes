@@ -23,7 +23,11 @@ class const LocalWorkspaceAssetRetention(
       database,
       workspaceId,
     ).read({});
-    final result = _itemAssets(rows);
+
+    return _itemAssets(rows)..addAll(await _messages());
+  }
+
+  Future<Iterable<String>> _messages() async {
     final messages = await database
         .customSelect(
           'SELECT a.asset_id FROM message_attachments a '
@@ -33,9 +37,8 @@ class const LocalWorkspaceAssetRetention(
           variables: [Variable(workspaceId)],
         )
         .get();
-    result.addAll(messages.map((row) => row.read<String>('asset_id')));
 
-    return result;
+    return messages.map((row) => row.read<String>('asset_id'));
   }
 }
 
@@ -43,17 +46,24 @@ Set<String> _itemAssets(List<LocalRetainedData> rows) {
   final result = <String>{};
   final columns = _tableColumns(rows);
   for (final row in rows) {
-    final data = row.data;
-    if (data['assetId'] case final String id when row.kind == 'file') {
-      final _ = result.add(id);
-    }
-    if (row.kind == 'table') result.addAll(_defaults(data));
-    if (row.kind == 'record') {
-      result.addAll(_record(data, columns));
-    }
+    result.addAll(_assets(row, columns));
   }
 
   return result;
+}
+
+Iterable<String> _assets(
+  LocalRetainedData row,
+  Map<String, Set<String>> columns,
+) {
+  final data = row.data;
+  final assetId = data['assetId'];
+  final kind = row.kind;
+  if (kind == 'file' && assetId is String) return [assetId];
+  if (kind == 'table') return _defaults(data);
+  if (kind == 'record') return _record(data, columns);
+
+  return const [];
 }
 
 Map<String, Set<String>> _tableColumns(List<LocalRetainedData> rows) {
@@ -80,14 +90,22 @@ Iterable<String> _record(
   Map<String, dynamic> data,
   Map<String, Set<String>> tables,
 ) {
-  final provenance = data['historyAttachmentColumns'];
-  final tableId = data['tableId'];
-  final current = tables[tableId is String ? tableId : ''] ?? const <String>{};
-  final columns = provenance is List ? provenance.whereType<String>() : current;
+  final columns = _recordColumns(data, tables);
   final values = data['values'];
   if (values is! Map) return const [];
 
   return columns.expand((column) => _ids(values[column]));
+}
+
+Iterable<String> _recordColumns(
+  Map<String, dynamic> data,
+  Map<String, Set<String>> tables,
+) {
+  final provenance = data['historyAttachmentColumns'];
+  if (provenance is List) return provenance.whereType<String>();
+  final tableId = data['tableId'];
+
+  return tables[tableId is String ? tableId : ''] ?? const <String>{};
 }
 
 Iterable<String> _ids(Object? value) =>

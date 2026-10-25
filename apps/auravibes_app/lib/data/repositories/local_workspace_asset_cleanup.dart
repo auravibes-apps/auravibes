@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_retention.dart';
 import 'package:drift/drift.dart';
@@ -12,23 +13,31 @@ class const LocalWorkspaceAssetCleanup(
 ) {
   Future<void> flush() async {
     await LocalWorkspaceAssetRetention(database, workspaceId).authorize();
+    for (final row in await _pending()) {
+      if (await _removeBytes(row.id)) await _removeMetadata(row.id);
+    }
+  }
+
+  Future<List<WorkspaceAssetRow>> _pending() {
     final query = database.select(database.workspaceAssets)
       ..where(
         (row) =>
             row.workspaceId.equals(workspaceId) & row.status.equals('deleting'),
       );
-    for (final row in await query.get()) {
-      if (!await _removeBytes(row.id)) continue;
-      final deletion = database.delete(database.workspaceAssets)
-        ..where(
-          (asset) =>
-              asset.id.equals(row.id) &
-              asset.workspaceId.equals(workspaceId) &
-              asset.status.equals('deleting'),
-        );
-      final _ = await deletion.go();
-    }
+
+    return query.get();
   }
+
+  Future<void> _removeMetadata(String id) async {
+    final query = database.delete(database.workspaceAssets)
+      ..where((row) => _deleting(row, id));
+    final _ = await query.go();
+  }
+
+  Expression<bool> _deleting(WorkspaceAssets row, String id) =>
+      row.id.equals(id) &
+      row.workspaceId.equals(workspaceId) &
+      row.status.equals('deleting');
 
   Future<bool> _removeBytes(String id) async {
     try {
