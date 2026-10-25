@@ -986,7 +986,7 @@ After that hosted run, root added a focused `chat_input_widget_test.dart` regres
 
 ### 2026-10-25 — current integration status
 
-Integration branch `feat/1665-workspace-elements` is published at `4f5e3f7d1c8bc2d902a6b61919df2a67d297fb6b`; draft PR [#1693](https://github.com/auravibes-apps/auravibes/pull/1693) points to this exact head. Preserved commit `4eee5ba1` is an ancestor. Hosted run [40210481615](https://github.com/auravibes-apps/auravibes/actions/runs/40210481615) completed successfully on the same SHA across app/server tests, authenticated integration, platform builds, analysis, code health, coverage/Sonar, and responsive goldens. No golden snapshot changed.
+The latest product source commit is `4f5e3f7d1c8bc2d902a6b61919df2a67d297fb6b`; commit `609285cd` added only progress documentation after that source. Preserved commit `4eee5ba1` is an ancestor. Hosted run [40212341382](https://github.com/auravibes-apps/auravibes/actions/runs/40212341382) completed successfully on the exact `609285cd` checkpoint across app/server tests, authenticated integration, platform builds, analysis, code health, coverage/Sonar, and responsive goldens. No golden snapshot changed.
 
 GitHub reports 21 of 26 child issues closed. #1681 and #1686 have acceptance evidence and are closed. Five remain open: #1687, #1689, #1690, #1691, and #1692. Native dependencies confirm #1687 is the current frontier; #1689 and #1690 depend on it, #1691 depends on #1690, and #1692 depends on #1689 and #1691.
 
