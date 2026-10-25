@@ -19,6 +19,7 @@ class CiSummaryTest(unittest.TestCase):
                 "platforms": "[]",
                 "run_code_checks": "false",
                 "run_server_integration": "false",
+                "run_ci_tool_checks": "false",
                 "renovate_config_changes": "false",
                 "run_ui_goldens": "false",
                 "run_generated_checks": "false",
@@ -32,6 +33,7 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("renovate.json did not change", summary)
         self.assertIn("No UI golden inputs changed", summary)
         self.assertIn("No generator inputs changed", summary)
+        self.assertIn("No CI routing tools changed", summary)
         self.assertNotIn("passed", summary)
 
     def test_unknown_range_explains_conservative_checks(self):
@@ -41,6 +43,7 @@ class CiSummaryTest(unittest.TestCase):
                 "platforms": '["android","ios"]',
                 "run_code_checks": "true",
                 "run_server_integration": "true",
+                "run_ci_tool_checks": "false",
                 "renovate_config_changes": "false",
                 "run_ui_goldens": "true",
                 "run_generated_checks": "true",
@@ -212,6 +215,7 @@ class CiSummaryTest(unittest.TestCase):
             output.write_text(
                 "platforms=[]\nrun_code_checks=false\n"
                 "run_server_integration=false\nrenovate_config_changes=false\n"
+                "run_ci_tool_checks=false\n"
                 "run_ui_goldens=false\nrun_generated_checks=false\n"
             )
             summary = Path(directory) / "summary"
@@ -239,6 +243,9 @@ class CiSummaryTest(unittest.TestCase):
     def test_workflow_routing_outputs_classify_optional_checks(self):
         root = Path(__file__).resolve().parent.parent
         workflow = (root / ".github/workflows/ci.yml").read_text()
+        self.assertIn("  ci-routing-tests:\n", workflow)
+        self.assertIn("run_ci_tool_checks == 'true'", workflow)
+        self.assertIn("run_code_checks != 'true'", workflow)
         block = workflow.split("      - name: Determine changed platforms\n", 1)[1]
         script = block.split("        run: |\n", 1)[1].split(
             "\n  renovate-validation:", 1
@@ -273,6 +280,24 @@ class CiSummaryTest(unittest.TestCase):
                 "[]",
                 "true",
                 "false",
+                "false",
+            ),
+            (
+                ".github/workflows/ci.yml",
+                "pull_request",
+                False,
+                "[]",
+                "false",
+                "false",
+                "false",
+            ),
+            (
+                ".github/workflows/build-matrix.yml",
+                "pull_request",
+                False,
+                all_platforms,
+                "true",
+                "true",
                 "false",
             ),
             (
@@ -359,6 +384,13 @@ class CiSummaryTest(unittest.TestCase):
             git("update-ref", "refs/remotes/origin/main", base)
             generated_source = "apps/auravibes_app/lib/features/models/generated_input.dart"
             golden_source = "apps/auravibes_app/test/widgets/responsive_shell_test.dart"
+            ci_tool_paths = {
+                ".github/workflows/ci.yml",
+                "tool/classify_ci_changes.py",
+                "tool/classify_ci_changes_test.py",
+                "tool/ci_summary.py",
+                "tool/ci_summary_test.py",
+            }
             for path, event, unknown, platforms, code, server, renovate in cases:
                 with self.subTest(path=path, event=event, unknown=unknown):
                     if event == "workflow_dispatch":
@@ -413,6 +445,9 @@ class CiSummaryTest(unittest.TestCase):
                             "platforms": platforms,
                             "run_code_checks": code,
                             "run_server_integration": server,
+                            "run_ci_tool_checks": str(
+                                path in ci_tool_paths
+                            ).lower(),
                             "renovate_config_changes": renovate,
                             "run_ui_goldens": str(
                                 unknown
@@ -428,6 +463,8 @@ class CiSummaryTest(unittest.TestCase):
                     )
                     routing = summary.read_text()
                     self.assertIn("CI routing", routing)
+                    if path in ci_tool_paths:
+                        self.assertIn("CI routing tooling", routing)
                     if event == "workflow_dispatch" and unknown:
                         self.assertIn(
                             "Comparison unavailable. Configuration changes not determined",

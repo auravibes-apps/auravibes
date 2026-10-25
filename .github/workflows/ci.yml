@@ -198,6 +198,7 @@ jobs:
       platforms: ${{ steps.platforms.outputs.platforms }}
       run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
       run_server_integration: ${{ steps.platforms.outputs.run_server_integration }}
+      run_ci_tool_checks: ${{ steps.platforms.outputs.run_ci_tool_checks }}
       renovate_config_changes: ${{ steps.platforms.outputs.renovate_config_changes }}
       run_ui_goldens: ${{ steps.platforms.outputs.run_ui_goldens }}
       run_generated_checks: ${{ steps.platforms.outputs.run_generated_checks }}
@@ -222,6 +223,7 @@ jobs:
           full_build=false
           run_code_checks=true
           renovate_config_changes=false
+          run_ci_tool_checks=false
           run_ui_goldens=false
           run_generated_checks=false
           force_optional_checks=false
@@ -280,6 +282,7 @@ jobs:
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_server_integration=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_ci_tool_checks=false\n' >> "$GITHUB_OUTPUT"
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             printf 'run_ui_goldens=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_generated_checks=true\n' >> "$GITHUB_OUTPUT"
@@ -291,6 +294,7 @@ jobs:
           classification="$(printf '%s\n' "$changed_files" | python3 tool/classify_ci_changes.py --base "$base_sha" --head "$head_sha")"
           run_code_checks="$(jq -r '.run_code_checks' <<< "$classification")"
           run_server_integration="$(jq -r '.run_server_integration' <<< "$classification")"
+          run_ci_tool_checks="$(jq -r '.run_ci_tool_checks' <<< "$classification")"
           renovate_config_changes="$(jq -r '.renovate_config_changes' <<< "$classification")"
           run_ui_goldens="$(jq -r '.run_ui_goldens' <<< "$classification")"
           run_generated_checks="$(jq -r '.run_generated_checks' <<< "$classification")"
@@ -307,6 +311,7 @@ jobs:
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
+            printf 'run_ci_tool_checks=%s\n' "$run_ci_tool_checks" >> "$GITHUB_OUTPUT"
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             printf 'run_ui_goldens=%s\n' "$run_ui_goldens" >> "$GITHUB_OUTPUT"
             printf 'run_generated_checks=%s\n' "$run_generated_checks" >> "$GITHUB_OUTPUT"
@@ -334,7 +339,7 @@ jobs:
               packages/*/pubspec.yaml|packages/*/pubspec.lock|packages/*/pubspec_overrides.yaml) full_build=true ;;
               pubspec.yaml|pubspec.lock|pubspec_overrides.yaml|melos.yaml) full_build=true ;;
               .fvmrc|.fvm/*|.vscode/settings.json) full_build=true ;;
-              .github/workflows/ci.yml|.github/workflows/build-matrix.yml|.github/actions/*) full_build=true ;;
+              .github/workflows/build-matrix.yml|.github/actions/*) full_build=true ;;
             esac
             [[ "$full_build" == true ]] && break
           done <<< "$changed_files"
@@ -349,6 +354,7 @@ jobs:
           fi
           printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
           printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
+          printf 'run_ci_tool_checks=%s\n' "$run_ci_tool_checks" >> "$GITHUB_OUTPUT"
           printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
           printf 'run_ui_goldens=%s\n' "$run_ui_goldens" >> "$GITHUB_OUTPUT"
           printf 'run_generated_checks=%s\n' "$run_generated_checks" >> "$GITHUB_OUTPUT"
@@ -375,6 +381,26 @@ jobs:
         run: npx --yes --package renovate@44.149.0 -- renovate-config-validator --strict
         # This checks configuration syntax and supported options. It does not
         # run dependency lookups or prove that package names resolve.
+
+  ci-routing-tests:
+    name: CI routing tests
+    needs: change
+    if: >-
+      ${{
+        needs.change.outputs.run_ci_tool_checks == 'true' &&
+        needs.change.outputs.run_code_checks != 'true'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Test CI routing
+        run: |
+          python3 tool/classify_ci_changes_test.py
+          python3 tool/ci_summary_test.py
 
   platform-builds:
     name: platform builds

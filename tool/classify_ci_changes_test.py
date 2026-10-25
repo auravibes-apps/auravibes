@@ -18,6 +18,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
             {
                 "run_code_checks": False,
                 "run_server_integration": False,
+                "run_ci_tool_checks": False,
                 "renovate_config_changes": False,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
@@ -41,6 +42,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
             {
                 "run_code_checks": False,
                 "run_server_integration": False,
+                "run_ci_tool_checks": False,
                 "renovate_config_changes": True,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
@@ -57,6 +59,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
             {
                 "run_code_checks": True,
                 "run_server_integration": False,
+                "run_ci_tool_checks": False,
                 "renovate_config_changes": False,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
@@ -71,6 +74,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
             {
                 "run_code_checks": True,
                 "run_server_integration": False,
+                "run_ci_tool_checks": False,
                 "renovate_config_changes": True,
                 "run_ui_goldens": True,
                 "run_generated_checks": False,
@@ -83,7 +87,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
             "packages/core/pubspec.lock",
             ".fvmrc",
             ".github/actions/setup-workspace/action.yml",
-            ".github/workflows/ci.yml",
+            ".github/workflows/build-matrix.yml",
         ):
             with self.subTest(path=path):
                 result = classify_paths([path])
@@ -102,8 +106,8 @@ class ClassifyCiChangesTest(unittest.TestCase):
             "packages/auravibes_engine/lib/engine.dart",
             "pubspec.lock",
             ".fvmrc",
-            ".github/workflows/ci.yml",
-            "tool/classify_ci_changes.py",
+            ".github/actions/setup-workspace/action.yml",
+            ".github/workflows/build-matrix.yml",
         ):
             with self.subTest(path=path):
                 self.assertTrue(classify_paths([path])["run_server_integration"])
@@ -113,12 +117,34 @@ class ClassifyCiChangesTest(unittest.TestCase):
             "apps/auravibes_app/lib/main.dart",
             "packages/auravibes_ui/lib/button.dart",
             "apps/auravibes_server/README.md",
+            ".github/workflows/ci.yml",
+            "tool/classify_ci_changes.py",
             "README.md",
         ):
             with self.subTest(path=path):
                 self.assertFalse(
                     classify_paths([path])["run_server_integration"]
                 )
+
+    def test_ci_routing_changes_only_request_routing_tests(self):
+        for path in (
+            ".github/workflows/ci.yml",
+            "tool/classify_ci_changes.py",
+            "tool/classify_ci_changes_test.py",
+            "tool/ci_summary.py",
+            "tool/ci_summary_test.py",
+        ):
+            with self.subTest(path=path):
+                result = classify_paths([path])
+                self.assertFalse(result["run_code_checks"])
+                self.assertFalse(result["run_server_integration"])
+                self.assertTrue(result["run_ci_tool_checks"])
+
+        mixed = classify_paths(
+            ["tool/classify_ci_changes.py", "apps/auravibes_app/lib/main.dart"]
+        )
+        self.assertTrue(mixed["run_code_checks"])
+        self.assertTrue(mixed["run_ci_tool_checks"])
 
     def test_ui_goldens_only_run_for_visual_inputs(self):
         cases = {

@@ -18,6 +18,14 @@ _DOCUMENTATION_FILES = (
     "license",
 )
 
+_CI_ROUTING_PATHS = {
+    ".github/workflows/ci.yml",
+    "tool/classify_ci_changes.py",
+    "tool/classify_ci_changes_test.py",
+    "tool/ci_summary.py",
+    "tool/ci_summary_test.py",
+}
+
 _SERVER_INTEGRATION_SHARED_PATHS = {
     ".fvmrc",
     ".vscode/settings.json",
@@ -25,7 +33,6 @@ _SERVER_INTEGRATION_SHARED_PATHS = {
     "pubspec.yaml",
     "pubspec.lock",
     "pubspec_overrides.yaml",
-    "tool/classify_ci_changes.py",
 }
 
 _BUILD_RUNNER_PART = re.compile(
@@ -75,6 +82,8 @@ def _requires_code_checks(path):
     normalized = path.replace("\\", "/")
     filename = normalized.rsplit("/", 1)[-1].lower()
 
+    if _is_ci_routing_path(normalized):
+        return False
     if _is_skill_metadata(normalized):
         return False
     if normalized == "renovate.json":
@@ -110,6 +119,8 @@ def _requires_server_integration(path):
     normalized = path.replace("\\", "/")
     filename = normalized.rsplit("/", 1)[-1].lower()
 
+    if _is_ci_routing_path(normalized):
+        return False
     if (
         filename.endswith((".md", ".mdx"))
         or filename in _DOCUMENTATION_FILES
@@ -173,6 +184,10 @@ def _requires_generated_checks(path):
     )
 
 
+def _is_ci_routing_path(path):
+    return path.replace("\\", "/") in _CI_ROUTING_PATHS
+
+
 def _has_build_runner_part(contents):
     return bool(_BUILD_RUNNER_PART.search(contents))
 
@@ -208,6 +223,9 @@ def classify_paths(paths, generated_source_paths=()):
         "run_code_checks": any(_requires_code_checks(path) for path in normalized_paths),
         "run_server_integration": any(
             _requires_server_integration(path) for path in normalized_paths
+        ),
+        "run_ci_tool_checks": any(
+            _is_ci_routing_path(path) for path in normalized_paths
         ),
         "renovate_config_changes": "renovate.json" in normalized_paths,
         "run_ui_goldens": any(_requires_ui_goldens(path) for path in normalized_paths),
