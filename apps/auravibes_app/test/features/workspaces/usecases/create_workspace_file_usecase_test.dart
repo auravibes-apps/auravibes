@@ -19,10 +19,12 @@ void main() {
       WorkspaceAsset? uploaded;
       try {
         final _ = await create(
-          id: 'stable-file',
-          name: 'Notes',
-          source: source,
-          parentId: null,
+          .new(
+            id: 'stable-file',
+            name: 'Notes',
+            source: source,
+            parentId: null,
+          ),
         );
         fail('Expected a recoverable container failure');
       } on WorkspaceFileCreationFailure catch (failure) {
@@ -30,18 +32,20 @@ void main() {
       }
       expect(uploaded, isNotNull);
       final retried = await create(
-        id: 'stable-file',
-        name: 'Notes',
-        source: source,
-        parentId: null,
-        uploaded: uploaded,
+        .new(
+          id: 'stable-file',
+          name: 'Notes',
+          source: source,
+          parentId: null,
+          uploaded: uploaded,
+        ),
       );
       expect(retried.id, 'stable-file');
       expect(retried.assetId, 'asset');
       expect(files.ids, ['stable-file', 'stable-file']);
       expect(assets.uploads, 1);
       await expectLater(
-        create(id: 'invalid', name: ' ', source: source, parentId: null),
+        create(.new(id: 'invalid', name: ' ', source: source, parentId: null)),
         throwsA(isA<WorkspaceAssetException>()),
       );
       expect(assets.uploads, 1);
@@ -73,13 +77,13 @@ class _Assets implements WorkspaceAssetRepository {
 class _Files implements WorkspaceFileRepository {
   final ids = <String>[];
   @override
-  Future<WorkspaceFile> create({
-    required String id,
-    required String name,
-    required String assetId,
-    String? parentId,
+  Future<WorkspaceFile> create(
+    WorkspaceFileDraft draft, {
     bool sharingApproved = false,
   }) async {
+    final id = draft.id;
+    final name = draft.name;
+    final assetId = draft.assetId;
     ids.add(id);
     if (ids.length == 1) throw const WorkspaceAssetException(.unavailable);
 

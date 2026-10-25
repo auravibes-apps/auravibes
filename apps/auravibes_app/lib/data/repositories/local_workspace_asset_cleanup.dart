@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_retention.dart';
 import 'package:drift/drift.dart';
 
@@ -13,6 +14,7 @@ class const LocalWorkspaceAssetCleanup(
 ) {
   Future<void> flush() async {
     await LocalWorkspaceAssetRetention(database, workspaceId).authorize();
+    await LocalWorkspaceAssetErasure(database, store).flush();
     for (final row in await _pending()) {
       if (await _removeBytes(row.id)) await _removeMetadata(row.id);
     }

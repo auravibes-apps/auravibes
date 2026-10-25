@@ -9,6 +9,54 @@ part of 'workspace_assets_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(workspaceAssetErasure)
+final workspaceAssetErasureProvider = WorkspaceAssetErasureProvider._();
+
+final class WorkspaceAssetErasureProvider
+    extends
+        $FunctionalProvider<
+          LocalWorkspaceAssetErasure,
+          LocalWorkspaceAssetErasure,
+          LocalWorkspaceAssetErasure
+        >
+    with $Provider<LocalWorkspaceAssetErasure> {
+  WorkspaceAssetErasureProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'workspaceAssetErasureProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceAssetErasureHash();
+
+  @$internal
+  @override
+  $ProviderElement<LocalWorkspaceAssetErasure> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  LocalWorkspaceAssetErasure create(Ref ref) {
+    return workspaceAssetErasure(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(LocalWorkspaceAssetErasure value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<LocalWorkspaceAssetErasure>(value),
+    );
+  }
+}
+
+String _$workspaceAssetErasureHash() =>
+    r'e455c17ef341c7c472fdce517f4a5dec71ca2738';
+
 @ProviderFor(selectWorkspaceAssetAttachment)
 final selectWorkspaceAssetAttachmentProvider =
     SelectWorkspaceAssetAttachmentFamily._();

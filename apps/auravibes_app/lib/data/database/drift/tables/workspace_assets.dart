@@ -27,3 +27,12 @@ class WorkspaceFiles extends Table with TableMixin {
   IntColumn get revision => integer().withDefault(const Constant(1))();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 }
+
+/// Survives workspace cascades so explicit byte erasure can retry safely.
+@DataClassName('WorkspaceAssetDeletionRow')
+class WorkspaceAssetDeletions extends Table {
+  TextColumn get assetId => text()();
+
+  @override
+  Set<Column> get primaryKey => {assetId};
+}

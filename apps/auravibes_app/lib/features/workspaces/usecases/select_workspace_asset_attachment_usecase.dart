@@ -11,20 +11,27 @@ class const SelectWorkspaceAssetAttachmentUsecase(
   Future<MessageAttachmentToCreate> call(String assetId) async {
     final asset = await assets.describe(assetId);
     if (asset.id != assetId) throw const WorkspaceAssetException(.invalid);
-    final location = WorkspaceAssetLocation.create(
-      namespace: scope.namespace,
-      workspaceId: scope.workspaceId,
-      assetId: asset.id,
-    );
+
+    return _attachment(asset);
+  }
+
+  MessageAttachmentToCreate _attachment(WorkspaceAsset asset) {
+    final name = asset.name;
 
     return MessageAttachmentToCreate(
-      localPath: location.location,
-      fileName: asset.name,
-      displayName: asset.name,
+      localPath: _location(asset.id),
+      fileName: name,
+      displayName: name,
       mimeType: asset.mimeType,
       modality: ChatAttachmentModality.forMimeType(asset.mimeType),
       sizeBytes: asset.sizeBytes,
       assetId: asset.id,
     );
   }
+
+  String _location(String id) => WorkspaceAssetLocation.create(
+    namespace: scope.namespace,
+    workspaceId: scope.workspaceId,
+    assetId: id,
+  ).location;
 }

@@ -23,29 +23,8 @@ class CloudChatAttachmentAdapter({
     describeObject: _gateway.describeObject,
   );
 
-  Future<Uint8List> downloadAssetBytes(Uri uri, int expectedBytes) async {
-    if (!uri.isScheme('https') || expectedBytes <= 0) {
-      throw StateError('Invalid private asset download.');
-    }
-    final response = await _dio.get<ResponseBody>(
-      uri.toString(),
-      options: .new(responseType: .stream, followRedirects: false),
-    );
-    final body = response.data;
-    if (body == null) throw StateError('Asset download is unavailable.');
-    final bytes = BytesBuilder(copy: false);
-    await for (final chunk in body.stream) {
-      if (bytes.length + chunk.length > expectedBytes) {
-        throw StateError('Asset download exceeds its declared size.');
-      }
-      bytes.add(chunk);
-    }
-    if (bytes.length != expectedBytes) {
-      throw StateError('Asset download is incomplete.');
-    }
-
-    return bytes.takeBytes();
-  }
+  Future<Uint8List> downloadAssetBytes(Uri uri, int expectedBytes) =>
+      _BoundedDownload(_dio).call(uri, expectedBytes);
 
   Future<Uint8List> _readBytes(String localPath) async {
     final bytes = await ChatAttachmentBytes.read(localPath);
@@ -71,6 +50,47 @@ class CloudChatAttachmentAdapter({
     final status = statusCode ?? 0;
     if (status < 200 || status >= 300) {
       throw StateError('Attachment upload failed.');
+    }
+  }
+}
+
+class const _BoundedDownload(final Dio dio) {
+  Future<Uint8List> call(Uri uri, int size) async {
+    require(uri, size);
+
+    return await collect(await body(uri), size);
+  }
+
+  Future<ResponseBody> body(Uri uri) async {
+    final response = await dio.get<ResponseBody>(
+      uri.toString(),
+      options: .new(responseType: .stream, followRedirects: false),
+    );
+
+    return response.data ??
+        (throw StateError('Asset download is unavailable.'));
+  }
+
+  Future<Uint8List> collect(ResponseBody body, int size) async {
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in body.stream) {
+      append(bytes, chunk, size);
+    }
+    if (bytes.length != size) throw StateError('Asset download is incomplete.');
+
+    return bytes.takeBytes();
+  }
+
+  static void append(BytesBuilder bytes, List<int> chunk, int size) {
+    if (bytes.length + chunk.length > size) {
+      throw StateError('Asset download exceeds its declared size.');
+    }
+    bytes.add(chunk);
+  }
+
+  static void require(Uri uri, int size) {
+    if (!uri.isScheme('https') || size <= 0) {
+      throw StateError('Invalid private asset download.');
     }
   }
 }

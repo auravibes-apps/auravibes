@@ -33,21 +33,21 @@ class WorkspaceAssetLocation {
   static WorkspaceAssetLocation? parse(String value) {
     final uri = Uri.tryParse(value);
     if (uri?.scheme != 'workspace-asset') return null;
-    if (uri == null ||
-        uri.host != 'asset' ||
-        uri.pathSegments.length != 3 ||
-        uri.hasQuery ||
-        uri.hasFragment ||
-        uri.userInfo.isNotEmpty ||
-        uri.hasPort) {
+    if (uri == null || !_authority(uri) || !_path(uri)) {
       throw const WorkspaceAssetException(.invalid);
     }
-    final segments = uri.pathSegments;
 
-    return .create(
-      namespace: segments.firstOrNull ?? '',
-      workspaceId: segments[1],
-      assetId: segments[2],
-    );
+    return _fromSegments(uri.pathSegments);
   }
+
+  static WorkspaceAssetLocation _fromSegments(List<String> segments) => .create(
+    namespace: segments.firstOrNull ?? '',
+    workspaceId: segments[1],
+    assetId: segments[2],
+  );
+
+  static bool _authority(Uri uri) =>
+      uri.host == 'asset' && uri.userInfo.isEmpty && !uri.hasPort;
+  static bool _path(Uri uri) =>
+      uri.pathSegments.length == 3 && !uri.hasQuery && !uri.hasFragment;
 }

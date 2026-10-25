@@ -26,29 +26,46 @@ class const WorkspaceViewAssets({
     return Column(
       children: [
         for (final record in data.records)
-          ExpansionTile(
-            title: Text(
-              record.values[data.table.labelColumnId]?.toString() ?? '',
-            ),
-            children: [
-              for (final column in columns)
-                WorkspaceAttachmentField(
-                  workspaceId: workspaceId,
-                  label: column.name,
-                  value: record.values[column.id],
-                  present: record.values.containsKey(column.id),
-                  disabled: true,
-                  restricted: record.restrictedReferenceColumns.contains(
-                    column.id,
-                  ),
-                  onChanged: (_) => _denied(),
-                  onUnset: _denied,
-                ),
-            ],
-          ),
+          _Record(workspaceId, record, columns, data.table.labelColumnId),
       ],
     );
   }
+}
+
+class const _Record(
+  final String workspaceId,
+  final WorkspaceRecord record,
+  final List<WorkspaceColumn> columns,
+  final String labelColumnId,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    title: Text(record.values[labelColumnId]?.toString() ?? ''),
+    children: [
+      for (final column in columns) _Field(workspaceId, record, column),
+    ],
+  );
+}
+
+class const _Field(
+  final String workspaceId,
+  final WorkspaceRecord record,
+  final WorkspaceColumn column,
+) extends StatelessWidget {
+  bool get _present => record.values.containsKey(column.id);
+  bool get _restricted => record.restrictedReferenceColumns.contains(column.id);
+
+  @override
+  Widget build(BuildContext context) => WorkspaceAttachmentField(
+    workspaceId: workspaceId,
+    label: column.name,
+    value: record.values[column.id],
+    present: _present,
+    disabled: true,
+    restricted: _restricted,
+    onChanged: (_) => _denied(),
+    onUnset: _denied,
+  );
 }
 
 Never _denied() => throw const WorkspaceAssetException(.denied);

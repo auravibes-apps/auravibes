@@ -1,11 +1,14 @@
 import 'package:auravibes_app/data/repositories/cloud_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_file_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_attachment_adapter.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/features/workspaces/services/workspace_asset_file_service.dart';
 import 'package:auravibes_app/features/workspaces/usecases/choose_workspace_asset_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/create_workspace_file_usecase.dart';
@@ -17,6 +20,13 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_assets_provider.g.dart';
+
+@riverpod
+LocalWorkspaceAssetErasure workspaceAssetErasure(Ref ref) =>
+    LocalWorkspaceAssetErasure(
+      ref.watch(appDatabaseProvider),
+      ref.watch(attachmentFileStoreProvider),
+    );
 
 @riverpod
 Future<SelectWorkspaceAssetAttachmentUsecase> selectWorkspaceAssetAttachment(
@@ -51,21 +61,41 @@ Future<WorkspaceAssetRepository> _assetRepository(
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
-  if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
-  if (session.cloud == null) {
-    final database = ref.watch(appDatabaseProvider);
-    final store = ref.watch(attachmentFileStoreProvider);
-    await LocalWorkspaceAssetCleanup(database, workspaceId, store).flush();
-    if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
+  _requireMounted(ref);
 
-    return LocalWorkspaceAssetRepository(database, workspaceId, store);
-  }
+  return session.cloud == null
+      ? await _localAssets(ref, workspaceId)
+      : _bindCloudAssets(await _gateway(ref, session));
+}
+
+Future<WorkspaceAssetRepository> _localAssets(
+  Ref ref,
+  String workspaceId,
+) async {
+  final database = ref.watch(appDatabaseProvider);
+  final store = ref.watch(attachmentFileStoreProvider);
+  await LocalWorkspaceAssetCleanup(database, workspaceId, store).flush();
+  _requireMounted(ref);
+
+  return LocalWorkspaceAssetRepository(database, workspaceId, store);
+}
+
+Future<CloudWorkspaceStateGateway> _gateway(
+  Ref ref,
+  WorkspaceSession session,
+) async {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
-  if (!ref.mounted || gateway == null) {
-    throw const WorkspaceAssetException(.unavailable);
-  }
+  _requireMounted(ref);
+  if (gateway == null) throw const WorkspaceAssetException(.unavailable);
+
+  return gateway;
+}
+
+CloudWorkspaceAssetRepository _bindCloudAssets(
+  CloudWorkspaceStateGateway gateway,
+) {
   final transfer = CloudChatAttachmentAdapter(gateway: .new(gateway));
   final uploader = transfer.createUsecase();
 
@@ -75,6 +105,10 @@ Future<WorkspaceAssetRepository> _assetRepository(
     getDownload: uploader.getDownload,
     fetchBytes: transfer.downloadAssetBytes,
   );
+}
+
+void _requireMounted(Ref ref) {
+  if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
 }
 
 @riverpod
@@ -102,30 +136,30 @@ Future<OrganizeWorkspaceFilesUsecase> _filesUsecase(
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
-  if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
-  if (session.cloud == null) {
-    final assets = await ref.watch(
-      workspaceAssetRepositoryProvider(workspaceId).future,
-    );
-    if (!ref.mounted) throw const WorkspaceAssetException(.unavailable);
-
-    return OrganizeWorkspaceFilesUsecase(
-      LocalWorkspaceFileRepository(
-        ref.watch(appDatabaseProvider),
-        workspaceId,
-        assets,
-      ),
-    );
-  }
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
-  if (!ref.mounted || gateway == null) {
-    throw const WorkspaceAssetException(.unavailable);
-  }
+  _requireMounted(ref);
+  if (session.cloud == null) return await _localFiles(ref, workspaceId);
+  final gateway = await _gateway(ref, session);
 
   return OrganizeWorkspaceFilesUsecase(
     CloudWorkspaceFileRepository(.new(gateway)),
+  );
+}
+
+Future<OrganizeWorkspaceFilesUsecase> _localFiles(
+  Ref ref,
+  String workspaceId,
+) async {
+  final assets = await ref.watch(
+    workspaceAssetRepositoryProvider(workspaceId).future,
+  );
+  _requireMounted(ref);
+
+  return OrganizeWorkspaceFilesUsecase(
+    LocalWorkspaceFileRepository(
+      ref.watch(appDatabaseProvider),
+      workspaceId,
+      assets,
+    ),
   );
 }
 

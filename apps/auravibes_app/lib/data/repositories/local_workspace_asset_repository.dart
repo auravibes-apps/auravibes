@@ -2,6 +2,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_access.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_retention.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset_input.dart';
@@ -19,11 +20,8 @@ class const LocalWorkspaceAssetRepository(
     final metadata = _Metadata.upload(name, bytes);
     final rows = _AssetRows(database, workspaceId);
     await rows.insert(metadata);
-    // Pending metadata makes interrupted writes discoverable for cleanup.
-    await store.writeAsset(metadata.id, bytes);
-    await rows.activate(metadata.id);
 
-    return await asset(metadata.id);
+    return await _LocalAssetUpload(this).call(metadata, bytes);
   }
 
   @override
@@ -43,6 +41,32 @@ class const LocalWorkspaceAssetRepository(
     final readable = await asset(id);
 
     return await store.readAsset(readable.id);
+  }
+}
+
+class const _LocalAssetUpload(final LocalWorkspaceAssetRepository owner) {
+  Future<WorkspaceAsset> call(WorkspaceAsset metadata, Uint8List bytes) async {
+    try {
+      return await _write(metadata, bytes);
+    } on Object {
+      await _AssetRows(owner.database, owner.workspaceId).failed(metadata.id);
+      await LocalWorkspaceAssetErasure(
+        owner.database,
+        owner.store,
+      ).recoverUntrackedWrite(metadata.id);
+      rethrow;
+    }
+  }
+
+  Future<WorkspaceAsset> _write(
+    WorkspaceAsset metadata,
+    Uint8List bytes,
+  ) async {
+    // Pending metadata makes interrupted writes discoverable for cleanup.
+    await owner.store.writeAsset(metadata.id, bytes);
+    await _AssetRows(owner.database, owner.workspaceId).activate(metadata.id);
+
+    return await owner.asset(metadata.id);
   }
 }
 
@@ -66,12 +90,28 @@ class const _AssetRows(final AppDatabase database, final String workspaceId) {
     return query.getSingleOrNull();
   }
 
+  Future<void> failed(String id) async {
+    final query = database.update(database.workspaceAssets)
+      ..where((row) => _activatable(row, id));
+    final _ = await query.write(
+      const WorkspaceAssetsCompanion(status: .new('deleting')),
+    );
+  }
+
   Future<void> _markActive(String id) async {
     final query = database.update(database.workspaceAssets)
-      ..where((row) => _scope(row, id));
-    final _ = await query.write(
+      ..where((row) => _activatable(row, id));
+    final updated = await query.write(
       const WorkspaceAssetsCompanion(status: .new('active')),
     );
+    _requireActivation(updated);
+  }
+
+  Expression<bool> _activatable(WorkspaceAssets row, String id) =>
+      _scope(row, id) & row.status.equals('pending');
+
+  static void _requireActivation(int count) {
+    if (count != 1) throw const WorkspaceAssetException(.denied);
   }
 
   Expression<bool> _scope(WorkspaceAssets row, String id) =>

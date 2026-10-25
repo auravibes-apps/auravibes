@@ -26,25 +26,22 @@ class const LocalWorkspaceReferenceValidation(
           .column(columns, column, retained: retained);
       if (!retained) await _defaults(columns, column);
     }
-    for (final column in columns.where(
-      (column) => column.type == .attachment,
-    )) {
-      if (!retained && column.defaultValue != null) {
-        await values(
-          [column],
-          {column.id: column.defaultValue},
-          previous: {
-            for (final old in previous.where(
-              (column) => column.type == .attachment,
-            ))
-              if (old.defaultValue != null) old.id: old.defaultValue,
-          },
-        );
-      }
-    }
+    await _LocalAttachmentDefaults(this)
+        .validate(columns, previous, retained: retained);
   }
 
   Future<void> values(
+    List<WorkspaceColumn> columns,
+    Map<String, Object?> values, {
+    Map<String, Object?> previous = const {},
+  }) async {
+    await attachmentValues(columns, values, previous: previous);
+    for (final column in columns.where((column) => column.type == .reference)) {
+      await _LocalReferenceValues(this).column(column, values, previous);
+    }
+  }
+
+  Future<void> attachmentValues(
     List<WorkspaceColumn> columns,
     Map<String, Object?> values, {
     Map<String, Object?> previous = const {},
@@ -53,35 +50,11 @@ class const LocalWorkspaceReferenceValidation(
       database,
       workspaceId,
     ).preserve(columns, values, previous);
-    for (final column in columns.where((column) => column.type == .reference)) {
-      await _LocalReferenceValues(this).column(column, values, previous);
-    }
+    final attachments = _LocalAttachments(database, workspaceId);
     for (final column in columns.where(
       (column) => column.type == .attachment,
     )) {
-      final ids = values[column.id];
-      if (ids is! List) continue;
-      for (final id in ids.cast<String>()) {
-        if (previous[column.id] case final List<Object?> old
-            when old.contains(id)) {
-          continue;
-        }
-        final asset =
-            await (database.select(database.workspaceAssets)..where(
-                  (row) =>
-                      row.workspaceId.equals(workspaceId) &
-                      row.id.equals(id) &
-                      row.status.equals('active'),
-                ))
-                .getSingleOrNull();
-        if (asset == null ||
-            !await LocalWorkspaceAssetAccess(
-              database,
-              workspaceId,
-            ).allows(id)) {
-          throw const WorkspaceTableException(denied: true);
-        }
-      }
+      await attachments.column(column, values, previous);
     }
   }
 
@@ -313,4 +286,82 @@ class const _LocalReferenceValues(
       final _ = await references._record(_targetId(column), input.id);
     }
   }
+}
+
+class const _LocalAttachments(
+  final AppDatabase database,
+  final String workspaceId,
+) {
+  Future<void> column(
+    WorkspaceColumn column,
+    Map<String, Object?> values,
+    Map<String, Object?> previous,
+  ) async {
+    for (final id in _newIds(column.id, values, previous)) {
+      await _require(id);
+    }
+  }
+
+  Future<void> _require(String id) async {
+    if (!await _exists(id) ||
+        !await LocalWorkspaceAssetAccess(database, workspaceId).allows(id)) {
+      throw const WorkspaceTableException(denied: true);
+    }
+  }
+
+  Future<bool> _exists(String id) async {
+    final query = database.select(database.workspaceAssets)
+      ..where((row) => _matches(row, id));
+
+    return await query.getSingleOrNull() != null;
+  }
+
+  Expression<bool> _matches($WorkspaceAssetsTable row, String id) =>
+      row.workspaceId.equals(workspaceId) &
+      row.id.equals(id) &
+      row.status.equals('active');
+
+  static Iterable<String> _newIds(
+    String column,
+    Map<String, Object?> values,
+    Map<String, Object?> previous,
+  ) {
+    final ids = values[column];
+    if (ids is! List) return const [];
+    final old = previous[column];
+
+    return ids.cast<String>().where((id) => !_retained(old, id));
+  }
+
+  static bool _retained(Object? previous, String id) =>
+      previous is List && previous.contains(id);
+}
+
+class const _LocalAttachmentDefaults(
+  final LocalWorkspaceReferenceValidation references,
+) {
+  Future<void> validate(
+    List<WorkspaceColumn> columns,
+    List<WorkspaceColumn> previous, {
+    required bool retained,
+  }) async {
+    if (retained) return;
+    for (final column in columns.where(_hasDefault)) {
+      await _value(column, previous);
+    }
+  }
+
+  Future<void> _value(WorkspaceColumn column, List<WorkspaceColumn> previous) =>
+      references.attachmentValues(
+        [column],
+        {column.id: column.defaultValue},
+        previous: _previous(previous),
+      );
+
+  static bool _hasDefault(WorkspaceColumn column) =>
+      column.type == .attachment && column.defaultValue != null;
+  static Map<String, Object?> _previous(List<WorkspaceColumn> columns) =>
+      _defaultsMap(
+        columns.where((column) => column.type == .attachment).toList(),
+      );
 }

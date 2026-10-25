@@ -7,17 +7,16 @@ class const OrganizeWorkspaceFilesUsecase(
       repository.list(parentId: parentId);
   Future<WorkspaceFile> file(String id) => repository.file(id);
 
-  Future<WorkspaceFile> create({
-    required String id,
-    required String name,
-    required String assetId,
-    String? parentId,
+  Future<WorkspaceFile> create(
+    WorkspaceFileDraft draft, {
     bool sharingApproved = false,
   }) => repository.create(
-    id: id,
-    name: _name(name),
-    assetId: assetId,
-    parentId: parentId,
+    .new(
+      id: draft.id,
+      name: _name(draft.name),
+      assetId: draft.assetId,
+      parentId: draft.parentId,
+    ),
     sharingApproved: sharingApproved,
   );
 

@@ -684,12 +684,27 @@ class const LocalWorkspaceRecordBatchRepository(
   }
 
   Future<void> _commit(List<WorkspaceRecordChange> changes) async {
+    await _authorizeAttachments(changes);
     final previous = await _stageAll(changes);
     await _validateAll(changes, previous);
     await LocalWorkspaceReferenceValidation(
       database,
       workspaceId,
     ).allDependencies();
+  }
+
+  Future<void> _authorizeAttachments(
+    List<WorkspaceRecordChange> changes,
+  ) async {
+    final validation = LocalWorkspaceReferenceValidation(database, workspaceId);
+    for (final change in changes) {
+      final current = await _current(change);
+      await validation.attachmentValues(
+        change.table.columns,
+        .of(change.values),
+        previous: current.values,
+      );
+    }
   }
 
   Future<List<WorkspaceRecord>> _stageAll(
@@ -733,13 +748,14 @@ class const LocalWorkspaceRecordBatchRepository(
   Future<WorkspaceRecord> _stage(WorkspaceRecordChange change) async {
     final current = await _current(change);
     _checkRecordRevision(current, change.record);
+    final values = Map<String, Object?>.of(change.values);
     await LocalWorkspaceAssetValues(
       database,
       workspaceId,
-    ).preserve(change.table.columns, change.values, current.values);
-    WorkspaceColumnValidation.values(change.table.columns, change.values);
+    ).preserve(change.table.columns, values, current.values);
+    WorkspaceColumnValidation.values(change.table.columns, values);
     final target = (workspaceId: workspaceId, record: current);
-    await _writeRecord(database, target, change.values);
+    await _writeRecord(database, target, values);
 
     return current;
   }
@@ -750,7 +766,7 @@ class const LocalWorkspaceRecordBatchRepository(
   ) async {
     await _checkSchema(database, workspaceId, (
       table: change.table,
-      values: change.values,
+      values: Map<String, Object?>.of(change.values),
       previous: previous,
     ));
     await _unique(change.table.id);

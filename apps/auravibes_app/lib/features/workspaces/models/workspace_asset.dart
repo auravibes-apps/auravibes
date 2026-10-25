@@ -20,6 +20,13 @@ class const WorkspaceFile({
   final bool canManage = true,
 });
 
+class const WorkspaceFileDraft({
+  required final String id,
+  required final String name,
+  required final String assetId,
+  final String? parentId,
+});
+
 enum WorkspaceAssetFailure {
   invalid,
   unavailable,
@@ -37,6 +44,8 @@ class const WorkspaceAssetException(final WorkspaceAssetFailure failure)
     .referenced => LocaleKeys.workspace_assets_referenced,
     .unavailable => LocaleKeys.workspace_assets_unavailable,
   };
+  @override
+  String toString() => 'WorkspaceAssetException(${failure.name})';
 }
 
 abstract interface class WorkspaceAssetRepository {
@@ -48,11 +57,8 @@ abstract interface class WorkspaceAssetRepository {
 abstract interface class WorkspaceFileRepository {
   Future<List<WorkspaceFile>> list({String? parentId});
   Future<WorkspaceFile> file(String id);
-  Future<WorkspaceFile> create({
-    required String id,
-    required String name,
-    required String assetId,
-    String? parentId,
+  Future<WorkspaceFile> create(
+    WorkspaceFileDraft draft, {
     bool sharingApproved = false,
   });
   Future<WorkspaceFile> updateMetadata({

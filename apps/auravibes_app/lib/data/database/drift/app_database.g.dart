@@ -20914,6 +20914,180 @@ class WorkspaceFilesCompanion extends UpdateCompanion<WorkspaceFileRow> {
   }
 }
 
+class $WorkspaceAssetDeletionsTable extends WorkspaceAssetDeletions
+    with TableInfo<$WorkspaceAssetDeletionsTable, WorkspaceAssetDeletionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceAssetDeletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _assetIdMeta = const VerificationMeta(
+    'assetId',
+  );
+  @override
+  late final GeneratedColumn<String> assetId = GeneratedColumn<String>(
+    'asset_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [assetId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_asset_deletions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceAssetDeletionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('asset_id')) {
+      context.handle(
+        _assetIdMeta,
+        assetId.isAcceptableOrUnknown(data['asset_id']!, _assetIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_assetIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {assetId};
+  @override
+  WorkspaceAssetDeletionRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceAssetDeletionRow(
+      assetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}asset_id'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceAssetDeletionsTable createAlias(String alias) {
+    return $WorkspaceAssetDeletionsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceAssetDeletionRow extends DataClass
+    implements Insertable<WorkspaceAssetDeletionRow> {
+  final String assetId;
+  const WorkspaceAssetDeletionRow({required this.assetId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['asset_id'] = Variable<String>(assetId);
+    return map;
+  }
+
+  WorkspaceAssetDeletionsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceAssetDeletionsCompanion(assetId: Value(assetId));
+  }
+
+  factory WorkspaceAssetDeletionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceAssetDeletionRow(
+      assetId: serializer.fromJson<String>(json['assetId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'assetId': serializer.toJson<String>(assetId)};
+  }
+
+  WorkspaceAssetDeletionRow copyWith({String? assetId}) =>
+      WorkspaceAssetDeletionRow(assetId: assetId ?? this.assetId);
+  WorkspaceAssetDeletionRow copyWithCompanion(
+    WorkspaceAssetDeletionsCompanion data,
+  ) {
+    return WorkspaceAssetDeletionRow(
+      assetId: data.assetId.present ? data.assetId.value : this.assetId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceAssetDeletionRow(')
+          ..write('assetId: $assetId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => assetId.hashCode;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceAssetDeletionRow && other.assetId == this.assetId);
+}
+
+class WorkspaceAssetDeletionsCompanion
+    extends UpdateCompanion<WorkspaceAssetDeletionRow> {
+  final Value<String> assetId;
+  final Value<int> rowid;
+  const WorkspaceAssetDeletionsCompanion({
+    this.assetId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceAssetDeletionsCompanion.insert({
+    required String assetId,
+    this.rowid = const Value.absent(),
+  }) : assetId = Value(assetId);
+  static Insertable<WorkspaceAssetDeletionRow> custom({
+    Expression<String>? assetId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (assetId != null) 'asset_id': assetId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceAssetDeletionsCompanion copyWith({
+    Value<String>? assetId,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceAssetDeletionsCompanion(
+      assetId: assetId ?? this.assetId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (assetId.present) {
+      map['asset_id'] = Variable<String>(assetId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceAssetDeletionsCompanion(')
+          ..write('assetId: $assetId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -20979,6 +21153,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkspaceRecordBatchReceiptsTable workspaceRecordBatchReceipts =
       $WorkspaceRecordBatchReceiptsTable(this);
   late final $WorkspaceFilesTable workspaceFiles = $WorkspaceFilesTable(this);
+  late final $WorkspaceAssetDeletionsTable workspaceAssetDeletions =
+      $WorkspaceAssetDeletionsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -21123,6 +21299,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceHistoryPolicies,
     workspaceRecordBatchReceipts,
     workspaceFiles,
+    workspaceAssetDeletions,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -41590,6 +41767,161 @@ typedef $$WorkspaceFilesTableProcessedTableManager =
       WorkspaceFileRow,
       PrefetchHooks Function({bool workspaceId, bool assetId})
     >;
+typedef $$WorkspaceAssetDeletionsTableCreateCompanionBuilder =
+    WorkspaceAssetDeletionsCompanion Function({
+      required String assetId,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceAssetDeletionsTableUpdateCompanionBuilder =
+    WorkspaceAssetDeletionsCompanion Function({
+      Value<String> assetId,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceAssetDeletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceAssetDeletionsTable> {
+  $$WorkspaceAssetDeletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get assetId => $composableBuilder(
+    column: $table.assetId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceAssetDeletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceAssetDeletionsTable> {
+  $$WorkspaceAssetDeletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get assetId => $composableBuilder(
+    column: $table.assetId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceAssetDeletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceAssetDeletionsTable> {
+  $$WorkspaceAssetDeletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get assetId =>
+      $composableBuilder(column: $table.assetId, builder: (column) => column);
+}
+
+class $$WorkspaceAssetDeletionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceAssetDeletionsTable,
+          WorkspaceAssetDeletionRow,
+          $$WorkspaceAssetDeletionsTableFilterComposer,
+          $$WorkspaceAssetDeletionsTableOrderingComposer,
+          $$WorkspaceAssetDeletionsTableAnnotationComposer,
+          $$WorkspaceAssetDeletionsTableCreateCompanionBuilder,
+          $$WorkspaceAssetDeletionsTableUpdateCompanionBuilder,
+          (
+            WorkspaceAssetDeletionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $WorkspaceAssetDeletionsTable,
+              WorkspaceAssetDeletionRow
+            >,
+          ),
+          WorkspaceAssetDeletionRow,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceAssetDeletionsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceAssetDeletionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceAssetDeletionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceAssetDeletionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceAssetDeletionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> assetId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceAssetDeletionsCompanion(
+                assetId: assetId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String assetId,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceAssetDeletionsCompanion.insert(
+                assetId: assetId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceAssetDeletionsTable,
+                    WorkspaceAssetDeletionRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $WorkspaceAssetDeletionsTable,
+                    WorkspaceAssetDeletionRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceAssetDeletionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceAssetDeletionsTable,
+      WorkspaceAssetDeletionRow,
+      $$WorkspaceAssetDeletionsTableFilterComposer,
+      $$WorkspaceAssetDeletionsTableOrderingComposer,
+      $$WorkspaceAssetDeletionsTableAnnotationComposer,
+      $$WorkspaceAssetDeletionsTableCreateCompanionBuilder,
+      $$WorkspaceAssetDeletionsTableUpdateCompanionBuilder,
+      (
+        WorkspaceAssetDeletionRow,
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceAssetDeletionsTable,
+          WorkspaceAssetDeletionRow
+        >,
+      ),
+      WorkspaceAssetDeletionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -41681,4 +42013,9 @@ class $AppDatabaseManager {
       );
   $$WorkspaceFilesTableTableManager get workspaceFiles =>
       $$WorkspaceFilesTableTableManager(_db, _db.workspaceFiles);
+  $$WorkspaceAssetDeletionsTableTableManager get workspaceAssetDeletions =>
+      $$WorkspaceAssetDeletionsTableTableManager(
+        _db,
+        _db.workspaceAssetDeletions,
+      );
 }

@@ -237,6 +237,39 @@ void main() {
           ),
           throwsA(isA<CloudWorkspaceException>()),
         );
+        await expectLater(
+          endpoints.workspaceState.patch(
+            authenticated,
+            .new(
+              workspaceId: workspace.id!,
+              requestId: 'two-guessed-attachments',
+              operations: [
+                for (final id in ['guessed-one', 'guessed-two'])
+                  .new(
+                    operation: .create,
+                    resourceKind: .tableRecord,
+                    resourceId: id,
+                    fieldMask: const [],
+                    data: jsonEncode({
+                      'tableId': 'private-table',
+                      'schemaRevision': 1,
+                      'values': {
+                        'label': id,
+                        'assets': ['${guessed.id}'],
+                      },
+                    }),
+                  ),
+              ],
+            ),
+          ),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'staged records cannot authorize one another',
+              CloudWorkspaceErrorCode.permissionDenied,
+            ),
+          ),
+        );
         final _ = await patch(
           .new(
             operation: .create,
@@ -617,6 +650,42 @@ void main() {
             where: (row) => row.objectId.equals(unlinked.id!),
           ),
           hasLength(1),
+        );
+        await expectLater(
+          endpoints.cloudWorkspace.deleteWorkspace(
+            memberSession,
+            .new(
+              workspaceId: workspace.id!,
+              requestId: 'member-erase',
+              confirmationName: workspace.name,
+              expectedWorkspaceRevision: workspace.revision,
+            ),
+          ),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'only the owner can delete the workspace',
+              CloudWorkspaceErrorCode.ownerRequired,
+            ),
+          ),
+        );
+        expect(
+          (await download()).downloadUrl,
+          'https://example.invalid/private',
+        );
+        await endpoints.cloudWorkspace.deleteWorkspace(
+          authenticated,
+          .new(
+            workspaceId: workspace.id!,
+            requestId: 'owner-erase',
+            confirmationName: workspace.name,
+            expectedWorkspaceRevision: workspace.revision,
+          ),
+        );
+        await expectLater(download(), throwsA(isA<CloudWorkspaceException>()));
+        expect(
+          (await WorkspaceObject.db.findById(session, object.id!))?.status,
+          'active',
         );
       },
     );

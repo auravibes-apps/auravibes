@@ -33,16 +33,19 @@ class const WorkspaceReferenceValidation(
           column['id'] as String: column['defaultValue'],
     };
     await ObjectRecordAttachments(session, member, transaction).validate(
-      schema: schema,
-      values: defaults,
-      previous: {
-        for (final column
-            in (previous['columns'] as List? ?? const []).whereType<Map>())
-          if (column['type'] == 'attachment' && column['defaultValue'] != null)
-            column['id'] as String: column['defaultValue'],
-      },
-      recordId: '',
-      tableId: tableId,
+      .new(
+        schema: schema,
+        values: defaults,
+        previous: {
+          for (final column
+              in (previous['columns'] as List? ?? const []).whereType<Map>())
+            if (column['type'] == 'attachment' &&
+                column['defaultValue'] != null)
+              column['id'] as String: column['defaultValue'],
+        },
+        recordId: '',
+        tableId: tableId,
+      ),
     );
     for (final column in (schema['columns'] as List).whereType<Map>()) {
       if (column['type'] == 'attachment' &&
@@ -62,12 +65,14 @@ class const WorkspaceReferenceValidation(
     bool assetSharingApproved = false,
   }) async {
     await ObjectRecordAttachments(session, member, transaction).validate(
-      schema: schema,
-      values: values,
-      previous: previous,
-      recordId: recordId,
-      tableId: tableId,
-      sharingApproved: assetSharingApproved,
+      .new(
+        schema: schema,
+        values: values,
+        previous: previous,
+        recordId: recordId,
+        tableId: tableId,
+        sharingApproved: assetSharingApproved,
+      ),
     );
     for (final column in _columns(schema)) {
       final _ = await _preserve((

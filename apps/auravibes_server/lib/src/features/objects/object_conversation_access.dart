@@ -1,5 +1,6 @@
 import 'package:serverpod/serverpod.dart';
 
+import '../../generated/protocol.dart';
 import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspaces;
 import 'object_item_access.dart';
@@ -12,40 +13,51 @@ class const ObjectConversationAccess(
   final String actorUserId,
   final Transaction transaction,
 ) {
+  ObjectRepository get _repository => ObjectRepository();
+
   Future<bool> canUse(int objectId) async {
-    final member = await workspaces.CloudWorkspaceRepository().findActiveMember(
-      session,
-      workspaceId: workspaceId,
-      userId: actorUserId,
-      transaction: transaction,
-    );
+    final member = await _member();
     if (member == null) return false;
     final items = ObjectItemAccess(session, member, transaction: transaction);
-    final repository = ObjectRepository();
-    if (await items.publiclyReadable(objectId) ||
-        await repository.hasReadableMessageReference(
-          session,
-          workspaceId: workspaceId,
-          objectId: objectId,
-          transaction: transaction,
-        )) {
-      return true;
-    }
-    if (await items.retained(objectId) ||
-        await repository.hasLiveReference(
-          session,
-          workspaceId: workspaceId,
-          objectId: objectId,
-          transaction: transaction,
-        )) {
-      return false;
-    }
-    final upload = await repository.findUpload(
+    if (await _shared(objectId, items)) return true;
+
+    return !await _retained(objectId, items) && await _uploader(objectId);
+  }
+
+  Future<WorkspaceMember?> _member() =>
+      workspaces.CloudWorkspaceRepository().findActiveMember(
+        session,
+        workspaceId: workspaceId,
+        userId: actorUserId,
+        transaction: transaction,
+      );
+
+  Future<bool> _shared(int id, ObjectItemAccess items) async =>
+      await items.publiclyReadable(id) ||
+      await _repository.hasReadableMessageReference(
+        session,
+        workspaceId: workspaceId,
+        objectId: id,
+        transaction: transaction,
+      );
+
+  Future<bool> _retained(int id, ObjectItemAccess items) async =>
+      await items.retained(id) ||
+      await _repository.hasLiveReference(
+        session,
+        workspaceId: workspaceId,
+        objectId: id,
+        transaction: transaction,
+      );
+
+  Future<bool> _uploader(int id) async {
+    final upload = await _repository.findUpload(
       session,
       workspaceId: workspaceId,
-      objectId: objectId,
+      objectId: id,
       transaction: transaction,
     );
+
     return upload?.actorUserId == actorUserId;
   }
 }

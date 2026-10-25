@@ -15,37 +15,16 @@ class const ObjectItemAccess(
   final String? excludedRecordId,
   final String? excludedTableId,
 }) {
+  ObjectHistoricalAssets get _history => .new(
+    session,
+    member.workspaceId,
+    transaction,
+  );
+
   Future<bool> canRead(int objectId) async {
-    final resources = await _resources();
-    for (final resource in resources) {
-      if (resource.deletedAt != null) continue;
-      final data = _data(resource);
-      if (resource.resourceKind == .table &&
-          resource.resourceId != excludedTableId &&
-          _defaultContains(data, '$objectId') &&
-          await WorkspaceTableAccess(transaction: transaction)
-              .canReadTable(session, member, resource)) {
-        return true;
-      }
-      if (resource.resourceKind == .file && data['assetId'] == '$objectId') {
-        return true;
-      }
-      if (resource.resourceKind != .tableRecord ||
-          resource.resourceId == excludedRecordId) {
-        continue;
-      }
-      final table = resources
-          .where(
-            (row) =>
-                row.resourceKind == .table && row.resourceId == data['tableId'],
-          )
-          .firstOrNull;
-      if (table == null || !_contains(table, data, '$objectId')) continue;
-      if (await WorkspaceTableAccess(transaction: transaction)
-          .canReadTable(session, member, table)) {
-        return true;
-      }
-    }
+    final sources = _ItemSources(this, await _resources());
+    if (await _ItemReaders(sources).readable('$objectId')) return true;
+
     return await _history.readable(objectId, member);
   }
 
@@ -67,65 +46,18 @@ class const ObjectItemAccess(
   );
 
   Future<bool> canReuseInTable(int objectId, String tableId) async {
-    final resources = await _resources();
-    final target = resources
-        .where(
-          (row) =>
-              row.resourceKind == .table &&
-              row.resourceId == tableId &&
-              row.deletedAt == null,
-        )
-        .firstOrNull;
+    final sources = _ItemSources(this, await _resources());
+    final target = sources.table(tableId);
     if (target == null) return false;
-    final targetReaders = _readers(target);
-    for (final source in resources.where(
-      (row) =>
-          row.resourceKind == .table &&
-          row.deletedAt == null &&
-          row.resourceId != excludedTableId,
-    )) {
-      if (!_defaultContains(_data(source), '$objectId')) continue;
-      if (targetReaders.difference(_readers(source)).isNotEmpty) continue;
-      if (await WorkspaceTableAccess(transaction: transaction)
-          .canReadTable(session, member, source)) {
-        return true;
-      }
-    }
 
-    for (final record in resources) {
-      if (record.resourceKind != .tableRecord ||
-          record.deletedAt != null ||
-          record.resourceId == excludedRecordId) {
-        continue;
-      }
-      final data = _data(record);
-      final source = resources
-          .where(
-            (row) =>
-                row.resourceKind == .table &&
-                row.resourceId == data['tableId'] &&
-                row.deletedAt == null,
-          )
-          .firstOrNull;
-      if (source == null || !_contains(source, data, '$objectId')) continue;
-      if (targetReaders.difference(_readers(source)).isNotEmpty) continue;
-      if (await WorkspaceTableAccess(transaction: transaction)
-          .canReadTable(session, member, source)) {
-        return true;
-      }
-    }
-    return await _history.readable(
-      objectId,
-      member,
-      targetReaders: targetReaders,
-    );
+    return await _reuse(objectId, sources, _readers(target));
   }
 
-  ObjectHistoricalAssets get _history => .new(
-    session,
-    member.workspaceId,
-    transaction,
-  );
+  Future<bool> _reuse(int id, _ItemSources sources, Set<String> readers) async {
+    if (await _ItemReuse(sources).allows('$id', readers)) return true;
+
+    return await _history.readable(id, member, targetReaders: readers);
+  }
 
   Future<List<WorkspaceResource>> _resources() => WorkspaceResource.db.find(
     session,
@@ -135,6 +67,116 @@ class const ObjectItemAccess(
     transaction: transaction,
   );
 }
+
+class const _ItemSources(
+  final ObjectItemAccess owner,
+  final List<WorkspaceResource> resources,
+) {
+  Iterable<WorkspaceResource> get live =>
+      resources.where((row) => row.deletedAt == null);
+  Iterable<WorkspaceResource> get tables => live.where(
+    (row) =>
+        row.resourceKind == .table && row.resourceId != owner.excludedTableId,
+  );
+  Iterable<WorkspaceResource> get records => live.where(
+    (row) =>
+        row.resourceKind == .tableRecord &&
+        row.resourceId != owner.excludedRecordId,
+  );
+
+  WorkspaceResource? table(Object? id) => live
+      .where((row) => row.resourceKind == .table && row.resourceId == id)
+      .firstOrNull;
+
+  WorkspaceResource? recordTable(WorkspaceResource record, String id) {
+    final data = _data(record);
+    final source = table(data['tableId']);
+
+    return source != null && _contains(source, data, id) ? source : null;
+  }
+
+  Future<bool> grant(WorkspaceResource table) =>
+      WorkspaceTableAccess(transaction: owner.transaction)
+          .canReadTable(owner.session, owner.member, table);
+}
+
+class const _ItemReaders(final _ItemSources sources) {
+  Future<bool> readable(String id) async {
+    for (final resource in sources.live) {
+      if (await _resource(resource, id)) return true;
+    }
+
+    return false;
+  }
+
+  Future<bool> _resource(WorkspaceResource resource, String id) async =>
+      switch (resource.resourceKind) {
+        .table => await _default(resource, id),
+        .file => _data(resource)['assetId'] == id,
+        .tableRecord => await _record(resource, id),
+        _ => false,
+      };
+
+  Future<bool> _default(WorkspaceResource resource, String id) async =>
+      resource.resourceId != sources.owner.excludedTableId &&
+      _defaultContains(_data(resource), id) &&
+      await sources.grant(resource);
+
+  Future<bool> _record(WorkspaceResource resource, String id) async {
+    if (resource.resourceId == sources.owner.excludedRecordId) return false;
+    final table = sources.recordTable(resource, id);
+
+    return table != null && await sources.grant(table);
+  }
+}
+
+class const _ItemReuse(final _ItemSources sources) {
+  Future<bool> allows(String id, Set<String> readers) async {
+    if (await _defaults(id, readers)) return true;
+
+    return await _records(id, readers);
+  }
+
+  Future<bool> _defaults(String id, Set<String> readers) async {
+    for (final table in sources.tables) {
+      if (await _default(table, id, readers)) return true;
+    }
+
+    return false;
+  }
+
+  Future<bool> _default(
+    WorkspaceResource table,
+    String id,
+    Set<String> readers,
+  ) async =>
+      _defaultContains(_data(table), id) &&
+      _audienceFits(table, readers) &&
+      await sources.grant(table);
+
+  Future<bool> _records(String id, Set<String> readers) async {
+    for (final record in sources.records) {
+      if (await _record(record, id, readers)) return true;
+    }
+
+    return false;
+  }
+
+  Future<bool> _record(
+    WorkspaceResource record,
+    String id,
+    Set<String> readers,
+  ) async {
+    final table = sources.recordTable(record, id);
+
+    return table != null &&
+        _audienceFits(table, readers) &&
+        await sources.grant(table);
+  }
+}
+
+bool _audienceFits(WorkspaceResource source, Set<String> readers) =>
+    readers.difference(_readers(source)).isEmpty;
 
 Map<String, dynamic> _data(WorkspaceResource row) =>
     jsonDecode(row.data) as Map<String, dynamic>;

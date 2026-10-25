@@ -54,29 +54,10 @@ class const CloudChatAttachmentUsecase({
   Future<ObjectResult> uploadAssetBytes({
     required MessageAttachmentToCreate attachment,
     required Uint8List bytes,
-  }) => CloudAppErrors.guardCall(.object, () async {
-    if (bytes.length != attachment.sizeBytes) {
-      throw StateError('Attachment changed before upload.');
-    }
-    final objects = <ObjectResult>[];
-    final uploads = <BeginUploadResult>[];
-    try {
-      final checksum = CloudAttachmentChecksum.fromBytes(bytes);
-      final upload = await _beginAttachmentUpload(
-        attachment,
-        bytes.length,
-        checksum,
-        purpose: 'workspace_asset',
-      );
-      uploads.add(upload);
-      await _uploadBytes(upload, bytes);
-      objects.add(await _completeAttachmentUpload(upload, checksum, bytes));
-    } on Object catch (error, stackTrace) {
-      await _cleanupAndRethrow(error, stackTrace, objects, uploads);
-    }
-
-    return objects.single;
-  });
+  }) => CloudAppErrors.guardCall(
+    .object,
+    () => _AssetUpload(this).call(attachment, bytes),
+  );
 
   Future<Uri> getDownload({required int objectId}) =>
       CloudAppErrors.guardCall(.object, () async {
@@ -133,40 +114,17 @@ extension on CloudChatAttachmentUsecase {
   Future<List<ObjectResult>> _uploadAttachments(
     List<MessageAttachmentToCreate> attachments,
   ) async {
-    final objects = <ObjectResult>[];
-    final owned = <ObjectResult>[];
-    final uploads = <BeginUploadResult>[];
-    try {
-      for (final attachment in attachments) {
-        if (attachment.assetId != null) {
-          objects.add(await _existingAttachment(attachment));
-        } else {
-          final uploaded = await _uploadAttachment(attachment, uploads);
-          owned.add(uploaded);
-          objects.add(uploaded);
-        }
-      }
-    } on Object catch (error, stackTrace) {
-      await _cleanupAndRethrow(error, stackTrace, owned, uploads);
-    }
-
-    return objects;
+    return await _DraftUploads(this).call(attachments);
   }
 
   Future<ObjectResult> _existingAttachment(
     MessageAttachmentToCreate attachment,
   ) async {
-    final id = int.tryParse(attachment.assetId ?? '');
+    final id = _sharedId(attachment.assetId);
     final describe = _describeObject;
-    if (id == null || id <= 0 || describe == null) {
-      throw StateError('Shared attachment is unavailable.');
-    }
+    if (describe == null) throw StateError('Shared attachment is unavailable.');
     final asset = await describe(objectId: id);
-    if (asset.objectId != id ||
-        asset.mimeType != attachment.mimeType ||
-        asset.sizeBytes != attachment.sizeBytes) {
-      throw StateError('Shared attachment metadata changed.');
-    }
+    _sharedMetadata(attachment, asset, id);
 
     return asset;
   }
@@ -268,4 +226,118 @@ extension on CloudChatAttachmentUsecase {
 
 abstract final class CloudAttachmentChecksum {
   static String fromBytes(Uint8List bytes) => sha256.convert(bytes).toString();
+}
+
+class _AssetUpload(final CloudChatAttachmentUsecase owner) {
+  final completed = <ObjectResult>[];
+  final begun = <BeginUploadResult>[];
+
+  Future<ObjectResult> call(
+    MessageAttachmentToCreate attachment,
+    Uint8List bytes,
+  ) async {
+    _uploadLength(attachment, bytes);
+    try {
+      return await start(attachment, bytes);
+    } on Object catch (error, stackTrace) {
+      await owner._cleanupAndRethrow(error, stackTrace, completed, begun);
+      rethrow;
+    }
+  }
+
+  Future<ObjectResult> start(
+    MessageAttachmentToCreate attachment,
+    Uint8List bytes,
+  ) async {
+    final checksum = CloudAttachmentChecksum.fromBytes(bytes);
+    final upload = await owner._beginAttachmentUpload(
+      attachment,
+      bytes.length,
+      checksum,
+      purpose: 'workspace_asset',
+    );
+    begun.add(upload);
+
+    return await send(upload, checksum, bytes);
+  }
+
+  Future<ObjectResult> send(
+    BeginUploadResult upload,
+    String checksum,
+    Uint8List bytes,
+  ) async {
+    await owner._uploadBytes(upload, bytes);
+    final asset = await owner._completeAttachmentUpload(
+      upload,
+      checksum,
+      bytes,
+    );
+    completed.add(asset);
+
+    return asset;
+  }
+}
+
+class _DraftUploads(final CloudChatAttachmentUsecase owner) {
+  final owned = <ObjectResult>[];
+  final begun = <BeginUploadResult>[];
+
+  Future<List<ObjectResult>> call(
+    List<MessageAttachmentToCreate> attachments,
+  ) async {
+    try {
+      return await all(attachments);
+    } on Object catch (error, stackTrace) {
+      await owner._cleanupAndRethrow(error, stackTrace, owned, begun);
+      rethrow;
+    }
+  }
+
+  Future<List<ObjectResult>> all(
+    List<MessageAttachmentToCreate> attachments,
+  ) async {
+    final objects = <ObjectResult>[];
+    for (final attachment in attachments) {
+      objects.add(await one(attachment));
+    }
+
+    return objects;
+  }
+
+  Future<ObjectResult> one(MessageAttachmentToCreate attachment) async {
+    if (attachment.assetId != null) {
+      return await owner._existingAttachment(attachment);
+    }
+    final uploaded = await owner._uploadAttachment(attachment, begun);
+    owned.add(uploaded);
+
+    return uploaded;
+  }
+}
+
+void _uploadLength(MessageAttachmentToCreate attachment, Uint8List bytes) {
+  if (bytes.length != attachment.sizeBytes) {
+    throw StateError('Attachment changed before upload.');
+  }
+}
+
+int _sharedId(String? raw) {
+  final id = int.tryParse(raw ?? '');
+  if (id == null || id <= 0) {
+    throw StateError('Shared attachment is unavailable.');
+  }
+
+  return id;
+}
+
+void _sharedMetadata(
+  MessageAttachmentToCreate attachment,
+  ObjectResult asset,
+  int id,
+) {
+  if (asset.objectId != id ||
+      asset.mimeType != attachment.mimeType ||
+      asset.sizeBytes != attachment.sizeBytes) {
+    throw StateError('Shared attachment metadata changed.');
+  }
 }

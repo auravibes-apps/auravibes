@@ -2,6 +2,7 @@
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -214,7 +215,10 @@ extension WorkspaceRepositoryOperations on WorkspaceRepository {
     }
 
     final attachmentPaths = await _attachmentPathsForWorkspace(id);
-    final deleted = await _database.workspaceDao.deleteWorkspace(id);
+    final deleted = await LocalWorkspaceAssetErasure(
+      _database,
+      _attachmentFileStore,
+    ).delete(id, () => _database.workspaceDao.deleteWorkspace(id));
     if (deleted) {
       final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
     }

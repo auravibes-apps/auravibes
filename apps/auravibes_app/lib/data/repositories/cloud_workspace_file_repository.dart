@@ -12,11 +12,10 @@ class const CloudWorkspaceFileRepository(
   Future<List<WorkspaceFile>> list({String? parentId}) async {
     final files = <WorkspaceFile>[];
     await for (final page in _FilePages(store).read()) {
-      files.addAll(_liveFiles(page).where((file) => file.parentId == parentId));
+      files.addAll(_inFolder(page, parentId));
     }
-    files.sort((left, right) => left.name.compareTo(right.name));
 
-    return files;
+    return _ordered(files);
   }
 
   @override
@@ -29,32 +28,16 @@ class const CloudWorkspaceFileRepository(
   }
 
   @override
-  Future<WorkspaceFile> create({
-    required String id,
-    required String name,
-    required String assetId,
-    String? parentId,
+  Future<WorkspaceFile> create(
+    WorkspaceFileDraft draft, {
     bool sharingApproved = false,
   }) async {
     final _ = await store.patch(
-      requestId: id,
-      operations: [
-        WorkspacePatchOperation(
-          operation: .create,
-          resourceKind: .file,
-          resourceId: id,
-          data: jsonEncode({
-            'name': name,
-            'parentId': parentId,
-            'assetId': assetId,
-            'sharingApproved': sharingApproved,
-          }),
-          fieldMask: const [],
-        ),
-      ],
+      requestId: draft.id,
+      operations: [_creation(draft, sharingApproved)],
     );
 
-    return await file(id);
+    return await file(draft.id);
   }
 
   @override
@@ -101,12 +84,36 @@ class const _FilePages(final CloudWorkspaceResourceStore store) {
   }
 }
 
+Iterable<WorkspaceFile> _inFolder(
+  List<WorkspaceResource> rows,
+  String? parent,
+) => _liveFiles(rows).where((file) => file.parentId == parent);
+List<WorkspaceFile> _ordered(List<WorkspaceFile> files) =>
+    files..sort((left, right) => left.name.compareTo(right.name));
+
+WorkspacePatchOperation _creation(
+  WorkspaceFileDraft draft,
+  bool sharingApproved,
+) => WorkspacePatchOperation(
+  operation: .create,
+  resourceKind: .file,
+  resourceId: draft.id,
+  data: _creationData(draft, sharingApproved),
+  fieldMask: const [],
+);
+String _creationData(WorkspaceFileDraft draft, bool sharingApproved) =>
+    jsonEncode({
+      'name': draft.name,
+      'parentId': draft.parentId,
+      'assetId': draft.assetId,
+      'sharingApproved': sharingApproved,
+    });
+
 Iterable<WorkspaceFile> _liveFiles(List<WorkspaceResource> rows) =>
     rows.where((row) => row.deletedAt == null).map(_file);
 
 WorkspaceFile _file(WorkspaceResource resource) {
   final data = CloudResourceMapper.decode(resource);
-  final metadata = data['asset'];
   final assetId = data['assetId'] as String;
 
   return WorkspaceFile(
@@ -114,16 +121,20 @@ WorkspaceFile _file(WorkspaceResource resource) {
     name: data['name'] as String,
     assetId: assetId,
     revision: resource.revision,
-    asset: metadata is Map && metadata['id'] == assetId
-        ? WorkspaceAsset(
-            id: assetId,
-            name: metadata['name'] as String,
-            mimeType: metadata['mimeType'] as String,
-            sizeBytes: metadata['sizeBytes'] as int,
-            checksum: metadata['checksum'] as String,
-          )
-        : null,
+    asset: _metadata(data['asset'], assetId),
     parentId: data['parentId'] as String?,
     canManage: data['canManageFile'] == true,
+  );
+}
+
+WorkspaceAsset? _metadata(Object? raw, String id) {
+  if (raw is! Map || raw['id'] != id) return null;
+
+  return WorkspaceAsset(
+    id: id,
+    name: raw['name'] as String,
+    mimeType: raw['mimeType'] as String,
+    sizeBytes: raw['sizeBytes'] as int,
+    checksum: raw['checksum'] as String,
   );
 }

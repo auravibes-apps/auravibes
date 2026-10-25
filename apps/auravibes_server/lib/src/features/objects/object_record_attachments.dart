@@ -13,69 +13,50 @@ class const ObjectRecordAttachments(
   final WorkspaceMember member,
   final Transaction transaction,
 ) {
-  Future<void> validate({
-    required Map<String, Object?> schema,
-    required Map<String, Object?> values,
-    required Map<String, Object?> previous,
-    required String recordId,
-    required String tableId,
-    bool sharingApproved = false,
-  }) async {
-    final columns = (schema['columns'] as List).whereType<Map>();
-    final access = ObjectItemAccess(
-      session,
-      member,
-      transaction: transaction,
-      excludedRecordId: recordId,
-      excludedTableId: recordId.isEmpty ? tableId : null,
-    );
-    for (final column in columns.where(
-      (column) => column['type'] == 'attachment',
-    )) {
-      final old = previous[column['id']];
-      if (await _preserve(column['id'] as String, values, old)) continue;
-      final current = values[column['id']];
-      if (current is! List) continue;
-      for (final value in current.cast<String>()) {
-        final id = int.tryParse(value);
-        if (id == null) throw const FormatException();
-        await _active(id);
-        if (old is List && old.contains(value)) continue;
-        if (await access.canReuseInTable(id, tableId)) continue;
-        await ObjectFileMutation(
-          session,
-          member.workspaceId,
-          member.userId,
-          transaction,
-          excludedRecordId: recordId,
-          excludedTableId: recordId.isEmpty ? tableId : null,
-        ).validate(
-          {
-            'assetId': value,
-            'sharingApproved': sharingApproved,
-          },
-          null,
-        );
-      }
+  Future<void> validate(ObjectAttachmentValues request) async {
+    final validation = _ColumnAttachments(this, request, _access(request));
+    final columns = (request.schema['columns'] as List)
+        .whereType<Map<String, dynamic>>()
+        .where(_attachment);
+    for (final column in columns) {
+      await validation.column(column);
     }
   }
 
+  ObjectItemAccess _access(ObjectAttachmentValues request) => ObjectItemAccess(
+    session,
+    member,
+    transaction: transaction,
+    excludedRecordId: request.recordId,
+    excludedTableId: _excludedTable(request),
+  );
+
+  ObjectFileMutation _sharing(ObjectAttachmentValues request) =>
+      ObjectFileMutation(
+        session,
+        member.workspaceId,
+        member.userId,
+        transaction,
+        excludedRecordId: request.recordId,
+        excludedTableId: _excludedTable(request),
+      );
+
   Future<bool> _preserve(
-    String columnId,
+    String id,
     Map<String, Object?> values,
     Object? old,
   ) async {
     if (old is! List || old.isEmpty) return false;
-    final projection = ObjectAttachmentProjection(session, member, transaction);
-    for (final id in old) {
-      if (await projection.readable(id)) continue;
-      if (values.containsKey(columnId) &&
-          jsonEncode(values[columnId]) != jsonEncode(old)) {
-        throw CloudWorkspaceException(code: .permissionDenied);
-      }
-      values[columnId] = old;
+    if (!await _unavailable(old)) return false;
+    _keep(id, values, old);
 
-      return true;
+    return true;
+  }
+
+  Future<bool> _unavailable(List<dynamic> ids) async {
+    final projection = ObjectAttachmentProjection(session, member, transaction);
+    for (final id in ids) {
+      if (!await projection.readable(id)) return true;
     }
 
     return false;
@@ -94,5 +75,58 @@ class const ObjectRecordAttachments(
         object.deletedAt != null) {
       throw CloudWorkspaceException(code: .permissionDenied);
     }
+  }
+
+  static void _keep(String id, Map<String, Object?> values, List<dynamic> old) {
+    if (values.containsKey(id) && jsonEncode(values[id]) != jsonEncode(old)) {
+      throw CloudWorkspaceException(code: .permissionDenied);
+    }
+    values[id] = old;
+  }
+
+  static bool _attachment(Map<String, dynamic> column) =>
+      column['type'] == 'attachment';
+  static String? _excludedTable(ObjectAttachmentValues request) =>
+      request.recordId.isEmpty ? request.tableId : null;
+}
+
+class const ObjectAttachmentValues({
+  required final Map<String, Object?> schema,
+  required final Map<String, Object?> values,
+  required final Map<String, Object?> previous,
+  required final String recordId,
+  required final String tableId,
+  final bool sharingApproved = false,
+});
+
+class const _ColumnAttachments(
+  final ObjectRecordAttachments owner,
+  final ObjectAttachmentValues request,
+  final ObjectItemAccess access,
+) {
+  Future<void> column(Map<String, dynamic> column) async {
+    final id = column['id'] as String;
+    final old = request.previous[id];
+    if (await owner._preserve(id, request.values, old)) return;
+    await _values(request.values[id], old);
+  }
+
+  Future<void> _values(Object? values, Object? old) async {
+    if (values is! List) return;
+    for (final value in values.cast<String>()) {
+      await _value(value, old);
+    }
+  }
+
+  Future<void> _value(String value, Object? old) async {
+    final id = int.tryParse(value);
+    if (id == null) throw const FormatException();
+    await owner._active(id);
+    if (old is List && old.contains(value)) return;
+    if (await access.canReuseInTable(id, request.tableId)) return;
+    await owner._sharing(request).validate({
+      'assetId': value,
+      'sharingApproved': request.sharingApproved,
+    }, null);
   }
 }

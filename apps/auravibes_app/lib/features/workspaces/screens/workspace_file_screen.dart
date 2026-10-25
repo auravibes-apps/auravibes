@@ -21,24 +21,57 @@ class const WorkspaceFileScreen({
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        ListTile(
-          leading: const Icon(Icons.arrow_back),
-          title: const TextLocale(LocaleKeys.workspace_assets_file),
-          onTap: onBack,
-        ),
-        switch (file) {
-          AsyncData(:final value) => _File(this, value),
-          AsyncError(:final error) => WorkspaceItemFailure(error: error),
-          AsyncLoading() => const Center(child: CircularProgressIndicator()),
-        },
-        AuraButton(
-          onPressed: () {
-            ref.invalidate(workspaceFileProvider(workspaceId, fileId));
-          },
-          child: const TextLocale(LocaleKeys.common_reload),
-        ),
+        _Back(onBack),
+        _Status(this, file),
+        _Reload(workspaceId, fileId, file),
       ],
     );
+  }
+}
+
+class const _Back(final VoidCallback onBack) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.arrow_back),
+    title: const TextLocale(LocaleKeys.workspace_assets_file),
+    onTap: onBack,
+  );
+}
+
+class const _Status(
+  final WorkspaceFileScreen owner,
+  final AsyncValue<WorkspaceFile> file,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (file.isLoading) return const Center(child: CircularProgressIndicator());
+
+    return switch (file) {
+      AsyncData(:final value) => _File(owner, value),
+      AsyncError(:final error) => WorkspaceItemFailure(error: error),
+      AsyncLoading() => const Center(child: CircularProgressIndicator()),
+    };
+  }
+}
+
+class const _Reload(
+  final String workspaceId,
+  final String fileId,
+  final AsyncValue<WorkspaceFile> file,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraButton(
+    onPressed: () => _reload(ref),
+    child: const TextLocale(LocaleKeys.common_reload),
+    identifier: 'workspace_file_reload',
+  );
+
+  void _reload(WidgetRef ref) {
+    final assetId = file.asData?.value.assetId;
+    if (assetId != null) {
+      ref.invalidate(workspaceAssetPreviewProvider(workspaceId, assetId));
+    }
+    ref.invalidate(workspaceFileProvider(workspaceId, fileId));
   }
 }
 

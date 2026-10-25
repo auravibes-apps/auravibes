@@ -44,21 +44,26 @@ class const ObjectHistoricalAssets(
     transaction: transaction,
   );
 
-  Future<WorkspaceResource?> _table(WorkspaceRevision snapshot) {
-    final id = snapshot.resourceKind == .table
-        ? snapshot.resourceId
-        : _data(snapshot.data)['tableId'] as String?;
+  Future<WorkspaceResource?> _table(WorkspaceRevision snapshot) =>
+      _currentTable(_tableId(snapshot));
 
-    return WorkspaceResource.db.findFirstRow(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) &
-          row.resourceKind.equals(.table) &
-          row.resourceId.equals(id) &
-          row.deletedAt.equals(null),
-      transaction: transaction,
-    );
-  }
+  Future<WorkspaceResource?> _currentTable(String? id) =>
+      WorkspaceResource.db.findFirstRow(
+        session,
+        where: (row) => _matches(row, id),
+        transaction: transaction,
+      );
+
+  Expression _matches(WorkspaceResourceTable row, String? id) =>
+      row.workspaceId.equals(workspaceId) &
+      row.resourceKind.equals(.table) &
+      row.resourceId.equals(id) &
+      row.deletedAt.equals(null);
+
+  static String? _tableId(WorkspaceRevision snapshot) =>
+      snapshot.resourceKind == .table
+      ? snapshot.resourceId
+      : _data(snapshot.data)['tableId'] as String?;
 }
 
 bool _audienceFits(WorkspaceResource table, Set<String>? targetReaders) {

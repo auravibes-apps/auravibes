@@ -7,27 +7,21 @@ class const CreateWorkspaceFileUsecase(
   final ManageWorkspaceAssetsUsecase assets,
   final OrganizeWorkspaceFilesUsecase files,
 ) {
-  Future<WorkspaceFile> call({
-    required String id,
-    required String name,
-    required WorkspaceAssetDraft source,
-    required String? parentId,
-    WorkspaceAsset? uploaded,
-  }) async {
-    if (id.isEmpty ||
-        id.length > 128 ||
-        name.trim().isEmpty ||
-        name.trim().length > 200) {
-      throw const WorkspaceAssetException(.invalid);
-    }
-    final asset = uploaded ?? await assets.upload(source.name, source.bytes);
+  Future<WorkspaceFile> call(WorkspaceFileUpload request) async {
+    _validate(request);
+    final source = request.source;
+    final asset =
+        request.uploaded ?? await assets.upload(source.name, source.bytes);
+
+    return await _create(request, asset);
+  }
+
+  Future<WorkspaceFile> _create(
+    WorkspaceFileUpload request,
+    WorkspaceAsset asset,
+  ) async {
     try {
-      return await files.create(
-        id: id,
-        name: name,
-        assetId: asset.id,
-        parentId: parentId,
-      );
+      return await files.create(_draft(request, asset));
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
         WorkspaceFileCreationFailure(asset, error),
@@ -35,7 +29,33 @@ class const CreateWorkspaceFileUsecase(
       );
     }
   }
+
+  static WorkspaceFileDraft _draft(
+    WorkspaceFileUpload request,
+    WorkspaceAsset asset,
+  ) => WorkspaceFileDraft(
+    id: request.id,
+    name: request.name,
+    assetId: asset.id,
+    parentId: request.parentId,
+  );
+
+  static void _validate(WorkspaceFileUpload request) {
+    final id = request.id;
+    final name = request.name.trim();
+    if (id.isEmpty || id.length > 128 || name.isEmpty || name.length > 200) {
+      throw const WorkspaceAssetException(.invalid);
+    }
+  }
 }
+
+class const WorkspaceFileUpload({
+  required final String id,
+  required final String name,
+  required final WorkspaceAssetDraft source,
+  required final String? parentId,
+  final WorkspaceAsset? uploaded,
+});
 
 /// A retry reuses the completed upload instead of storing the same bytes again.
 class const WorkspaceFileCreationFailure(

@@ -120,6 +120,7 @@ part 'app_database.g.dart';
     WorkspaceRecordBatchReceipts,
     WorkspaceAssets,
     WorkspaceFiles,
+    WorkspaceAssetDeletions,
   ],
   daos: [
     WorkspaceDao,
@@ -296,6 +297,7 @@ extension on AppDatabase {
     if (from >= AppDatabase._workspaceAssetsSchemaVersion) return;
     await m.createTable(workspaceAssets);
     await m.createTable(workspaceFiles);
+    await m.createTable(workspaceAssetDeletions);
     await _upgradeMessageAssetReferences(m);
   }
 

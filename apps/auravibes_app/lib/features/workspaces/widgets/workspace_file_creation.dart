@@ -23,65 +23,115 @@ class const WorkspaceFileCreation({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = WorkspaceItemFormState.use();
-    final source = useState<WorkspaceAssetDraft?>(null);
-    final uploaded = useState<WorkspaceAsset?>(null);
-    final id = useMemoized(() => const UuidV7().generate());
+    final draft = _useDraft();
     final ready = ref.watch(createWorkspaceFileUsecaseProvider(workspaceId));
-    final actions = _Actions(
-      this,
-      context,
-      ref,
-      state,
-      source,
-      uploaded,
-      id,
-      ready,
-    );
 
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .stretch,
-      children: [
-        AuraInput(
-          controller: state.name,
-          label: const TextLocale(LocaleKeys.workspace_assets_name),
-          enabled: !state.pending.value && uploaded.value == null,
-          identifier: 'workspace_file_name',
-        ),
-        AuraButton(
-          onPressed: () => unawaited(state.run(context, actions.pick)),
-          child: const TextLocale(LocaleKeys.workspace_assets_choose),
-          disabled: state.pending.value || uploaded.value != null,
-          identifier: 'workspace_file_choose',
-        ),
-        if (source.value case final picked?) Text(picked.name),
-        const TextLocale(LocaleKeys.workspace_assets_workspace_readable),
-        if (uploaded.value != null)
-          const TextLocale(LocaleKeys.workspace_assets_uploaded_retry),
-        AuraButton(
-          onPressed: () => unawaited(state.run(context, actions.save)),
-          child: const TextLocale(LocaleKeys.workspace_assets_create),
-          isLoading: state.pending.value,
-          disabled:
-              source.value == null ||
-              state.pending.value ||
-              !ready.hasValue ||
-              ready.isLoading,
-          identifier: 'workspace_file_create',
-        ),
-        if (ready.error case final error?) ...[
-          WorkspaceItemFailure(error: error),
-          AuraButton(
-            onPressed: actions.reload,
-            child: const TextLocale(LocaleKeys.common_reload),
-            disabled: state.pending.value,
-          ),
-        ],
-        if (state.error.value case final error?)
-          WorkspaceItemFailure(error: error),
-      ],
-    );
+    return _Form(.new(this, context, ref, state, draft, ready));
   }
+}
+
+class const _Draft(
+  final ValueNotifier<WorkspaceAssetDraft?> source,
+  final ValueNotifier<WorkspaceAsset?> uploaded,
+  final String id,
+);
+
+_Draft _useDraft() => _Draft(
+  useState(null),
+  useState(null),
+  useMemoized(() => const UuidV7().generate()),
+);
+
+class const _Form(final _Actions actions) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      _Name(actions),
+      _Choose(actions),
+      _Source(actions.draft),
+      _Create(actions),
+      _Readiness(actions),
+      _Failure(actions.state.error.value),
+    ],
+  );
+}
+
+class const _Name(final _Actions actions) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: actions.state.name,
+    label: const TextLocale(LocaleKeys.workspace_assets_name),
+    enabled:
+        !actions.state.pending.value && actions.draft.uploaded.value == null,
+    identifier: 'workspace_file_name',
+  );
+}
+
+class const _Choose(final _Actions actions) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: actions.choose,
+    child: const TextLocale(LocaleKeys.workspace_assets_choose),
+    disabled:
+        actions.state.pending.value || actions.draft.uploaded.value != null,
+    identifier: 'workspace_file_choose',
+  );
+}
+
+class const _Source(final _Draft draft) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (draft.source.value case final picked?) Text(picked.name),
+      const TextLocale(LocaleKeys.workspace_assets_workspace_readable),
+      if (draft.uploaded.value != null)
+        const TextLocale(LocaleKeys.workspace_assets_uploaded_retry),
+    ],
+  );
+}
+
+class const _Create(final _Actions actions) extends StatelessWidget {
+  bool get _disabled =>
+      actions.draft.source.value == null ||
+      actions.state.pending.value ||
+      !actions.ready.hasValue ||
+      actions.ready.isLoading;
+
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: actions.create,
+    child: const TextLocale(LocaleKeys.workspace_assets_create),
+    isLoading: actions.state.pending.value,
+    disabled: _disabled,
+    identifier: 'workspace_file_create',
+  );
+}
+
+class const _Readiness(final _Actions actions) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (actions.ready.error) {
+    final Object error => Column(
+      children: [
+        WorkspaceItemFailure(error: error),
+        AuraButton(
+          onPressed: actions.reload,
+          child: const TextLocale(LocaleKeys.common_reload),
+          disabled: actions.state.pending.value,
+        ),
+      ],
+    ),
+    null => const SizedBox.shrink(),
+  };
+}
+
+class const _Failure(final Object? error) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (error) {
+    final Object value => WorkspaceItemFailure(error: value),
+    null => const SizedBox.shrink(),
+  };
 }
 
 class const _Actions(
@@ -89,9 +139,7 @@ class const _Actions(
   final BuildContext context,
   final WidgetRef ref,
   final WorkspaceItemFormState state,
-  final ValueNotifier<WorkspaceAssetDraft?> source,
-  final ValueNotifier<WorkspaceAsset?> uploaded,
-  final String id,
+  final _Draft draft,
   final AsyncValue<CreateWorkspaceFileUsecase> ready,
 ) {
   void reload() {
@@ -101,31 +149,44 @@ class const _Actions(
       ..invalidate(createWorkspaceFileUsecaseProvider(owner.workspaceId));
   }
 
+  void choose() => unawaited(state.run(context, pick));
+  void create() => unawaited(state.run(context, save));
+
   Future<void> pick() async {
     final selected = await ref.read(chooseWorkspaceAssetUsecaseProvider)();
     if (!context.mounted || selected == null) return;
-    source.value = selected;
+    draft.source.value = selected;
     if (state.name.text.trim().isEmpty) state.name.text = selected.name;
   }
 
   Future<void> save() async {
-    final selected = source.value;
+    final selected = draft.source.value;
     if (selected == null) return;
-    final create = ready.requireValue;
+    final file = await _store(selected);
+    _open(file.id);
+  }
+
+  Future<WorkspaceFile> _store(WorkspaceAssetDraft selected) async {
     try {
-      final file = await create(
-        id: id,
+      return await ready.requireValue(_request(selected));
+    } on WorkspaceFileCreationFailure catch (failure) {
+      if (context.mounted) draft.uploaded.value = failure.uploaded;
+      rethrow;
+    }
+  }
+
+  WorkspaceFileUpload _request(WorkspaceAssetDraft selected) =>
+      WorkspaceFileUpload(
+        id: draft.id,
         name: state.name.text,
         source: selected,
         parentId: owner.parentId,
-        uploaded: uploaded.value,
+        uploaded: draft.uploaded.value,
       );
-      if (!context.mounted) return;
-      ref.invalidate(workspaceFilesProvider(owner.workspaceId, owner.parentId));
-      owner.onOpenFile(file.id);
-    } on WorkspaceFileCreationFailure catch (failure) {
-      if (context.mounted) uploaded.value = failure.uploaded;
-      rethrow;
-    }
+
+  void _open(String id) {
+    if (!context.mounted) return;
+    ref.invalidate(workspaceFilesProvider(owner.workspaceId, owner.parentId));
+    owner.onOpenFile(id);
   }
 }

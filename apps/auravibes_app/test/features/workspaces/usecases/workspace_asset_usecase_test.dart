@@ -79,14 +79,10 @@ void main() {
       ),
     );
     final first = await files.create(
-      id: 'first-file',
-      name: 'First',
-      assetId: asset.id,
+      .new(id: 'first-file', name: 'First', assetId: asset.id),
     );
     final second = await files.create(
-      id: 'second-file',
-      name: 'Second',
-      assetId: asset.id,
+      .new(id: 'second-file', name: 'Second', assetId: asset.id),
     );
     expect(first.id, isNot(second.id));
     expect(second.assetId, first.assetId);
@@ -98,14 +94,14 @@ void main() {
     expect(renamed.id, first.id);
     expect(renamed.assetId, asset.id);
     final replayed = await files.create(
-      id: first.id,
-      name: 'First',
-      assetId: asset.id,
+      .new(id: first.id, name: 'First', assetId: asset.id),
     );
     expect(replayed.name, 'Renamed');
     expect(replayed.revision, renamed.revision);
     await expectLater(
-      files.create(id: first.id, name: 'Changed payload', assetId: asset.id),
+      files.create(
+        .new(id: first.id, name: 'Changed payload', assetId: asset.id),
+      ),
       throwsA(isA<WorkspaceAssetException>()),
     );
     final trash = ManageWorkspaceTrashUsecase(
@@ -137,7 +133,7 @@ void main() {
     expect((await files.list()).map((file) => file.id), [first.id]);
     expect((await next.preview(asset.id)).bytes, 'hello'.codeUnits);
     await expectLater(
-      files.create(id: second.id, name: second.name, assetId: asset.id),
+      files.create(.new(id: second.id, name: second.name, assetId: asset.id)),
       throwsA(isA<Exception>()),
     );
 
@@ -217,7 +213,9 @@ void main() {
       throwsA(isA<WorkspaceTableException>()),
     );
     await expectLater(
-      files.create(id: 'guessed-file', name: 'Guessed', assetId: asset.id),
+      files.create(
+        .new(id: 'guessed-file', name: 'Guessed', assetId: asset.id),
+      ),
       throwsA(isA<WorkspaceAssetException>()),
     );
     await LocalWorkspaceHistoryRepository(

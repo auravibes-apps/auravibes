@@ -18,14 +18,7 @@ class const ObjectAttachmentProjection(
       (column) => column['type'] == 'attachment',
     )) {
       final id = column['id'] as String;
-      final value = values[id];
-      if (value is! List) continue;
-      for (final asset in value) {
-        if (!await readable(asset)) {
-          restricted.add(id);
-          break;
-        }
-      }
+      if (await _unreadable(values[id])) restricted.add(id);
     }
 
     return restricted;
@@ -45,5 +38,14 @@ class const ObjectAttachmentProjection(
     return object != null &&
         object.deletedAt == null &&
         object.status == 'active';
+  }
+
+  Future<bool> _unreadable(Object? value) async {
+    if (value is! List) return false;
+    for (final id in value) {
+      if (!await readable(id)) return true;
+    }
+
+    return false;
   }
 }
