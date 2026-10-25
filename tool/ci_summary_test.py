@@ -20,6 +20,8 @@ class CiSummaryTest(unittest.TestCase):
                 "run_code_checks": "false",
                 "run_server_integration": "false",
                 "renovate_config_changes": "false",
+                "run_ui_goldens": "false",
+                "run_generated_checks": "false",
             },
             "pull_request",
             False,
@@ -28,6 +30,8 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("Documentation", summary)
         self.assertIn("Skipped. Did not run", summary)
         self.assertIn("renovate.json did not change", summary)
+        self.assertIn("No UI golden inputs changed", summary)
+        self.assertIn("No generator inputs changed", summary)
         self.assertNotIn("passed", summary)
 
     def test_unknown_range_explains_conservative_checks(self):
@@ -38,6 +42,8 @@ class CiSummaryTest(unittest.TestCase):
                 "run_code_checks": "true",
                 "run_server_integration": "true",
                 "renovate_config_changes": "false",
+                "run_ui_goldens": "true",
+                "run_generated_checks": "true",
             },
             "push",
             True,
@@ -206,6 +212,7 @@ class CiSummaryTest(unittest.TestCase):
             output.write_text(
                 "platforms=[]\nrun_code_checks=false\n"
                 "run_server_integration=false\nrenovate_config_changes=false\n"
+                "run_ui_goldens=false\nrun_generated_checks=false\n"
             )
             summary = Path(directory) / "summary"
             subprocess.run(
@@ -229,7 +236,7 @@ class CiSummaryTest(unittest.TestCase):
             self.assertIn("Documentation", summary.read_text())
             self.assertIn("Skipped. Did not run", summary.read_text())
 
-    def test_workflow_routing_outputs_remain_unchanged(self):
+    def test_workflow_routing_outputs_classify_optional_checks(self):
         root = Path(__file__).resolve().parent.parent
         workflow = (root / ".github/workflows/ci.yml").read_text()
         block = workflow.split("      - name: Determine changed platforms\n", 1)[1]
@@ -255,6 +262,24 @@ class CiSummaryTest(unittest.TestCase):
                 "pull_request",
                 False,
                 "[]",
+                "true",
+                "false",
+                "false",
+            ),
+            (
+                "apps/auravibes_app/test/widgets/responsive_shell_test.dart",
+                "pull_request",
+                False,
+                "[]",
+                "true",
+                "false",
+                "false",
+            ),
+            (
+                "apps/auravibes_app/lib/features/models/generated_input.dart",
+                "pull_request",
+                False,
+                all_platforms,
                 "true",
                 "false",
                 "false",
@@ -332,6 +357,8 @@ class CiSummaryTest(unittest.TestCase):
             git("commit", "-qm", "base", "--allow-empty")
             base = git("rev-parse", "HEAD")
             git("update-ref", "refs/remotes/origin/main", base)
+            generated_source = "apps/auravibes_app/lib/features/models/generated_input.dart"
+            golden_source = "apps/auravibes_app/test/widgets/responsive_shell_test.dart"
             for path, event, unknown, platforms, code, server, renovate in cases:
                 with self.subTest(path=path, event=event, unknown=unknown):
                     if event == "workflow_dispatch":
@@ -343,7 +370,11 @@ class CiSummaryTest(unittest.TestCase):
                     git("read-tree", base)
                     changed = repo / path
                     changed.parent.mkdir(parents=True, exist_ok=True)
-                    changed.write_text("changed\n")
+                    changed.write_text(
+                        "part 'generated_input.g.dart';\n"
+                        if path == generated_source
+                        else "changed\n"
+                    )
                     git("add", path)
                     git("commit", "-qm", "changed")
                     head = git("rev-parse", "HEAD")
@@ -383,6 +414,16 @@ class CiSummaryTest(unittest.TestCase):
                             "run_code_checks": code,
                             "run_server_integration": server,
                             "renovate_config_changes": renovate,
+                            "run_ui_goldens": str(
+                                unknown
+                                or event in {"merge_group", "workflow_dispatch"}
+                                or path == golden_source
+                            ).lower(),
+                            "run_generated_checks": str(
+                                unknown
+                                or event in {"merge_group", "workflow_dispatch"}
+                                or path in {"pubspec.yaml", generated_source}
+                            ).lower(),
                         },
                     )
                     routing = summary.read_text()

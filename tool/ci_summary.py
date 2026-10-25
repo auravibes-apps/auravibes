@@ -66,11 +66,15 @@ def routing_summary(paths, outputs, event, unknown_range):
     server = outputs["run_server_integration"] == "true"
     platforms = json.loads(outputs["platforms"])
     renovate = outputs["renovate_config_changes"] == "true"
+    goldens = outputs["run_ui_goldens"] == "true"
+    generated = outputs["run_generated_checks"] == "true"
     lines += [
         f'| Code checks | {"Scheduled" if code else skip} | {"Conservative or code-check policy applies" if code else "Only documentation, metadata, Renovate configuration, or no changed paths"} |',
         f'| Server integration | {"Scheduled" if server else skip} | {"Server integration policy applies" if server else "No server, engine, or shared integration inputs changed"} |',
         f'| Platform builds | {text(", ".join(platforms)) if platforms else skip} | {"Full event/range policy or platform build inputs" if platforms else "No platform build inputs changed"} |',
         f'| Renovate validation | {"Scheduled" if renovate else skip} | {"renovate.json changed" if renovate else "Comparison unavailable. Configuration changes not determined" if unknown_range else "renovate.json did not change"} |',
+        f'| UI golden tests | {"Scheduled" if goldens else skip} | {"UI implementation, assets, or golden tests changed" if goldens else "No UI golden inputs changed"} |',
+        f'| Generated artifact checks | {"Scheduled" if generated else skip} | {"Generator inputs or generated sources changed" if generated else "No generator inputs changed"} |',
         "",
         "Scheduled checks do not yet have results. Skipped validators did not validate anything.",
     ]

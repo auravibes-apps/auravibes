@@ -19,6 +19,8 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": False,
                 "run_server_integration": False,
                 "renovate_config_changes": False,
+                "run_ui_goldens": False,
+                "run_generated_checks": False,
             },
         )
 
@@ -40,6 +42,8 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": False,
                 "run_server_integration": False,
                 "renovate_config_changes": True,
+                "run_ui_goldens": False,
+                "run_generated_checks": False,
             },
         )
 
@@ -54,6 +58,8 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": True,
                 "run_server_integration": False,
                 "renovate_config_changes": False,
+                "run_ui_goldens": False,
+                "run_generated_checks": False,
             },
         )
 
@@ -66,6 +72,8 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": True,
                 "run_server_integration": False,
                 "renovate_config_changes": True,
+                "run_ui_goldens": True,
+                "run_generated_checks": False,
             },
         )
 
@@ -111,6 +119,48 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 self.assertFalse(
                     classify_paths([path])["run_server_integration"]
                 )
+
+    def test_ui_goldens_only_run_for_visual_inputs(self):
+        cases = {
+            "apps/auravibes_app/lib/features/profile/screens/profile_screen.dart": True,
+            "apps/auravibes_app/lib/features/profile/profile_model.dart": False,
+            "apps/auravibes_app/test/widgets/responsive_shell_test.dart": True,
+            "apps/auravibes_app/test/features/profile/profile_model_test.dart": False,
+            "apps/auravibes_app/test/widgets/goldens/shell.png": True,
+            "packages/auravibes_ui/lib/src/atoms/aura_button.dart": True,
+            "packages/auravibes_ui/test/src/atoms/auravibes_text_test.dart": False,
+            "packages/auravibes_ui/test/src/organisms/auravibes_input_test.dart": True,
+        }
+
+        for path, expected in cases.items():
+            with self.subTest(path=path):
+                self.assertEqual(classify_paths([path])["run_ui_goldens"], expected)
+
+    def test_generated_checks_only_run_for_generator_inputs(self):
+        for path in (
+            ".fvmrc",
+            "pubspec.yaml",
+            "packages/auravibes_app/build.yaml",
+            "apps/auravibes_server/config/generator.yaml",
+            "apps/auravibes_server/config/app.spy.yaml",
+            "apps/auravibes_server/lib/src/endpoints/chat_endpoint.dart",
+            "apps/auravibes_server/test/integration/test_tools/serverpod_test_tools.dart",
+            "packages/auravibes_server_client/lib/src/protocol/chat.dart",
+            "tool/run_quiet.dart",
+            "packages/core/lib/core.dart",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(
+                    classify_paths([path])["run_generated_checks"],
+                    path != "packages/core/lib/core.dart",
+                )
+
+        source = "packages/core/lib/core.dart"
+        self.assertTrue(
+            classify_paths([source], generated_source_paths=[source])[
+                "run_generated_checks"
+            ]
+        )
 
 
 if __name__ == "__main__":
