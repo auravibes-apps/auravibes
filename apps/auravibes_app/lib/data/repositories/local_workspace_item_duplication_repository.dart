@@ -46,10 +46,19 @@ class const LocalWorkspaceItemDuplicationRepository(
     WorkspaceItemDuplication request,
   ) async {
     final view = await _views.read(request.sourceId);
-    final table = await LocalWorkspaceTableRepository(
-      database,
-      workspaceId,
-    ).table(view.tableId);
+    final table = view.isConnectedOnly
+        ? WorkspaceTable(
+            id: '',
+            name: view.name,
+            labelColumnId: '',
+            columns: const [],
+            revision: view.revision,
+            schemaRevision: 0,
+          )
+        : await LocalWorkspaceTableRepository(
+            database,
+            workspaceId,
+          ).table(view.tableId);
 
     return (view: view, table: table);
   }

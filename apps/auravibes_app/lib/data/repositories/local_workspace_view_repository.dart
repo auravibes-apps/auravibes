@@ -83,7 +83,7 @@ class const LocalWorkspaceViewRepository(
   }
 
   Future<void> _authorizeMove(WorkspaceView current, String? parentId) async {
-    await _source(current.tableId);
+    if (!current.isConnectedOnly) await _source(current.tableId);
     await _requireLocalParent(database, workspaceId, current.parentId);
     await _requireLocalParent(database, workspaceId, parentId);
   }

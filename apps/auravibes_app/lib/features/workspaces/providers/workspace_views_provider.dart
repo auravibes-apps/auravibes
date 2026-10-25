@@ -1,9 +1,12 @@
+import 'package:auravibes_app/features/service_connections/usecases/run_connector_tool_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/read_connected_workspace_view_usecase.dart';
 import 'package:auravibes_app/data/repositories/cloud_workspace_view_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -30,7 +33,7 @@ Future<ManageWorkspaceViewsUsecase> workspaceViewUsecase(
         )
       : await _cloudRepository(ref, session);
 
-  return await _usecase(ref, workspaceId, repository);
+  return await _usecase(ref, workspaceId, repository, session);
 }
 
 Future<WorkspaceViewRepository> _cloudRepository(
@@ -53,6 +56,7 @@ Future<ManageWorkspaceViewsUsecase> _usecase(
   Ref ref,
   String workspaceId,
   WorkspaceViewRepository repository,
+  WorkspaceSession session,
 ) async {
   _requireMounted(ref);
   final tables = ref.watch(workspaceTableUsecaseProvider(workspaceId).future);
@@ -68,6 +72,19 @@ Future<ManageWorkspaceViewsUsecase> _usecase(
     await tables,
     await query,
     await references,
+    validateConnected: session.cloud == null
+        ? (binding) => ref
+              .read(runConnectorToolUsecaseProvider)
+              .requireCurrent(
+                ReadConnectedWorkspaceViewUsecase.accessRequest(
+                  workspaceId,
+                  binding,
+                ),
+              )
+        : (_) async {},
+    canManageConnected:
+        (await ref.watch(workspaceAccessProvider(workspaceId).future)).role ==
+        'owner',
   );
 }
 
@@ -97,7 +114,7 @@ Future<WorkspaceViewData> workspaceViewData(
     workspaceViewUsecaseProvider(workspaceId).future,
   );
   final data = await usecase.open(viewId, offset: offset);
-  _observeViewSource(ref, workspaceId, data);
+  if (!data.view.isConnectedOnly) _observeViewSource(ref, workspaceId, data);
 
   return data;
 }

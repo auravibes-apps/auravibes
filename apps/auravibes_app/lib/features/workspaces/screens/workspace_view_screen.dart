@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_data.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_duplication_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chart.dart';
@@ -27,7 +30,10 @@ class const WorkspaceViewScreen({
   required final VoidCallback onBack,
   super.key,
 }) extends StatelessWidget {
-  void refresh(WidgetRef ref) => ref.invalidate(workspaceViewDataProvider);
+  void refresh(WidgetRef ref) {
+    ref.invalidate(workspaceConnectedViewProvider(workspaceId, viewId));
+    ref.invalidate(workspaceViewDataProvider);
+  }
 
   @override
   Widget build(BuildContext context) => _ViewSession(
@@ -143,6 +149,10 @@ class const _Popup(
 
   List<PopupMenuEntry<String>> _items(BuildContext _) => [
     const PopupMenuItem(
+      value: 'connected',
+      child: TextLocale(LocaleKeys.workspace_connected_configure),
+    ),
+    const PopupMenuItem(
       value: 'edit',
       child: TextLocale(LocaleKeys.workspace_views_edit),
     ),
@@ -188,7 +198,22 @@ class const _LoadState(final WorkspaceViewScreen owner)
       ),
     );
 
-    return _PageState(state, offset);
+    return Column(
+      children: [
+        if (state.value?.view.isConnectedOnly != true)
+          Expanded(child: _PageState(state, offset)),
+        if (state.value?.view.connected != null)
+          Flexible(
+            child: SingleChildScrollView(
+              child: WorkspaceConnectedData(
+                workspaceId: owner.workspaceId,
+                viewId: owner.viewId,
+                data: state.value,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -295,7 +320,15 @@ class const _Selected(
   final VoidCallback done,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => selection.mode == 'history'
+  Widget build(BuildContext context) =>
+      selection.mode == 'connected' ||
+          (selection.mode == 'edit' && selection.data.view.isConnectedOnly)
+      ? WorkspaceConnectedEditor(
+          workspaceId: owner.workspaceId,
+          view: selection.data.view,
+          onDone: done,
+        )
+      : selection.mode == 'history'
       ? WorkspaceViewHistory(
           workspaceId: owner.workspaceId,
           current: selection.data.view,

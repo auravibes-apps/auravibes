@@ -1369,6 +1369,18 @@ class EndpointWorkspaceView extends _isc.EndpointRef {
   @override
   String get name => 'workspaceView';
 
+  _ida.Future<String> readConnected(
+    int workspaceId,
+    String id,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceView',
+    'readConnected',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+    },
+  );
+
   _ida.Future<_i3ruzhns.WorkspaceView> duplicate(
     _itjnussb.DuplicateWorkspaceItemRequest request,
   ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(

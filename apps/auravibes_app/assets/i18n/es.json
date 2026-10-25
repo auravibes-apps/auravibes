@@ -2167,5 +2167,20 @@
     "previous": "Anterior",
     "stale": "Actualizando datos. Los resultados anteriores pueden haber cambiado.",
     "loading": "Cargando los datos actuales…"
+  },
+  "workspace_connected": {
+    "title": "Datos conectados",
+    "configure": "Configurar datos conectados",
+    "tool": "Herramienta de lectura",
+    "inputs": "Entradas (JSON)",
+    "connection": "Conexión",
+    "freshness": "Consultado a las {time}",
+    "disclosure": "Datos en vivo de la fuente. Verlos no envía estos datos a la IA.",
+    "failed": "Fuente no disponible, desconectada o acceso denegado. Actualiza o revisa la conexión y los permisos.",
+    "remove": "Quitar fuente conectada",
+    "denied": "Acceso denegado. Revisa los permisos actuales de la herramienta.",
+    "disconnected": "Conexión no disponible. Vuelve a conectarte o selecciona otra conexión.",
+    "repair": "El contrato de la herramienta cambió. Configura la fuente de nuevo.",
+    "empty": "No hay datos de la fuente."
   }
 }

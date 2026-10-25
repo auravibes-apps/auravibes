@@ -439,6 +439,75 @@ class const ServerToolExecutorService({
   final Set<String>? a2uiSupportedComponents,
   final ConnectorHttpClient? connectorHttpClient,
 }) {
+  Future<void> readConnectorAccess(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final toolId = arguments['toolId'] as String;
+    final resolved = resolveCloudConnectorTool(
+      toolId: toolId,
+      arguments: Map<String, dynamic>.from(arguments['args'] as Map),
+      revision: arguments['revision'] as String,
+    );
+    if (connectorToolWrites(resolved.tool)) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+    await const WorkspaceConnectorAccessUsecases().requireEnabled(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      toolId: toolId,
+      tool: resolved.tool,
+    );
+    final options = cloudConnectorConnectionOptions(
+      connector: resolved.connector,
+      serviceConnections: await _connectorServiceConnections(
+        session,
+        workspaceId,
+      ),
+      modelConnections: await _connectorModelConnections(session, workspaceId),
+    );
+    resolveCloudConnectorConnectionId(
+      connections: options,
+      requiresConnection: resolved.tool.requiresConnection,
+      requestedConnectionId: arguments['connectionId'] as String?,
+    );
+  }
+
+  Future<Object?> readConnector(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final resolved = resolveCloudConnectorTool(
+      toolId: arguments['toolId'] as String,
+      arguments: Map<String, dynamic>.from(arguments['args'] as Map),
+      revision: arguments['revision'] as String,
+    );
+    if (connectorToolWrites(resolved.tool)) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+
+    return await _executeConnectorTool(
+      session,
+      (workspaceId: workspaceId, userId: userId, turn: null),
+      ServerToolRequest(
+        id: '',
+        name: executeConnectorToolName,
+        arguments: arguments,
+      ),
+      await _connectorServiceConnections(session, workspaceId),
+      await _connectorModelConnections(session, workspaceId),
+    );
+  }
+
   Future<Object?> call(
     Session session,
     ConversationTurn turn,
@@ -514,7 +583,11 @@ class const ServerToolExecutorService({
         },
         executeConnectorToolName => await _executeConnectorTool(
           session,
-          turn,
+          (
+            workspaceId: turn.workspaceId,
+            userId: turn.initiatorUserId,
+            turn: turn,
+          ),
           request,
           serviceConnections,
           modelConnections,
@@ -595,7 +668,7 @@ class const ServerToolExecutorService({
 
   Future<Object?> _executeConnectorTool(
     Session session,
-    ConversationTurn turn,
+    ({int workspaceId, String userId, ConversationTurn? turn}) actor,
     ServerToolRequest request,
     List<Map<String, dynamic>> serviceConnections,
     List<Map<String, dynamic>> modelConnections,
@@ -642,8 +715,8 @@ class const ServerToolExecutorService({
 
     await const WorkspaceConnectorAccessUsecases().requireEnabled(
       session,
-      workspaceId: turn.workspaceId,
-      userId: turn.initiatorUserId,
+      workspaceId: actor.workspaceId,
+      userId: actor.userId,
       toolId: toolId.trim(),
       tool: resolved.tool,
     );
@@ -667,7 +740,7 @@ class const ServerToolExecutorService({
         final modelConnection = await WorkspaceModelConnection.db.findFirstRow(
           session,
           where: (table) =>
-              table.workspaceId.equals(turn.workspaceId) &
+              table.workspaceId.equals(actor.workspaceId) &
               table.connectionId.equals(resourceId) &
               table.deletedAt.equals(null),
         );
@@ -684,8 +757,8 @@ class const ServerToolExecutorService({
         }
         final secret = await _secret(
           session,
-          turn.workspaceId,
-          turn.initiatorUserId,
+          actor.workspaceId,
+          actor.userId,
           WorkspaceSecretKind.provider,
           resourceId,
         );
@@ -704,7 +777,7 @@ class const ServerToolExecutorService({
         final resourceId = cloudServiceConnectionId(connectionId);
         final resource = await _resource(
           session,
-          turn.workspaceId,
+          actor.workspaceId,
           WorkspaceResourceKind.serviceConnection,
           resourceId,
         );
@@ -720,10 +793,10 @@ class const ServerToolExecutorService({
         }
         final secret = await const WorkspaceSecretResolver().find(
           session,
-          workspaceId: turn.workspaceId,
+          workspaceId: actor.workspaceId,
           kind: WorkspaceSecretKind.provider,
           scope: WorkspaceSecretScope.workspace,
-          ownerUserId: turn.initiatorUserId,
+          ownerUserId: actor.userId,
           resourceId: resourceId,
         );
         if (secret == null) {
@@ -750,7 +823,7 @@ class const ServerToolExecutorService({
         const ResolveConnectorRequestTemplate(),
         _connectorHttpClient(
           session,
-          turn,
+          actor.turn,
           requireHttps: credentials.isNotEmpty,
           isCancelled: request.isCancelled,
         ),
@@ -760,7 +833,7 @@ class const ServerToolExecutorService({
       inputs: executionArguments,
       connectionId: connectionId ?? '',
       operationId: _connectorOperationId(request),
-      journal: CloudConnectorWriteJournal(session, turn.workspaceId),
+      journal: CloudConnectorWriteJournal(session, actor.workspaceId),
       credentials: credentials,
     ).call();
   }
@@ -1923,7 +1996,7 @@ class const ServerToolExecutorService({
 
   ConnectorHttpClient _connectorHttpClient(
     Session session,
-    ConversationTurn turn, {
+    ConversationTurn? turn, {
     required bool requireHttps,
     Future<bool> Function()? isCancelled,
   }) =>
@@ -1952,7 +2025,7 @@ class const ServerToolExecutorService({
 
   Future<UrlResponse> _request(
     Session session,
-    ConversationTurn turn,
+    ConversationTurn? turn,
     Uri uri,
     List<InternetAddress> addresses,
     UrlRequest input, {
@@ -1998,10 +2071,11 @@ class const ServerToolExecutorService({
 
   Future<void> _throwIfCancelled(
     Session session,
-    ConversationTurn turn, {
+    ConversationTurn? turn, {
     Future<bool> Function()? isCancelled,
   }) async {
-    if (await (isCancelled?.call() ?? _isCancelled(session, turn))) {
+    if (await (isCancelled?.call() ??
+        (turn == null ? Future.value(false) : _isCancelled(session, turn)))) {
       throw const ConversationCancelledException();
     }
   }
@@ -2035,16 +2109,18 @@ class const ServerToolExecutorService({
   Future<void> _closeClientOnCancellation(
     HttpClient client,
     Session session,
-    ConversationTurn turn,
+    ConversationTurn? turn,
     Completer<void> requestDone, {
     Future<bool> Function()? isCancelled,
   }) => closeOnServerSkillCancellation(
     isCancelled:
         isCancelled ??
-        () => const DatabaseConversationCancellationProbe().isCancelled(
-          session,
-          turn.id!,
-        ),
+        () => turn == null
+            ? Future.value(false)
+            : const DatabaseConversationCancellationProbe().isCancelled(
+                session,
+                turn.id!,
+              ),
     close: () {
       if (!requestDone.isCompleted) client.close(force: true);
     },

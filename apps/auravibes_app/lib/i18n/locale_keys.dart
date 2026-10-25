@@ -2818,4 +2818,20 @@ abstract class LocaleKeys {
   static const workspace_relational_previous = 'workspace_relational.previous';
   static const workspace_relational_stale = 'workspace_relational.stale';
   static const workspace_relational_loading = 'workspace_relational.loading';
+  static const workspace_connected_title = 'workspace_connected.title';
+  static const workspace_connected_configure = 'workspace_connected.configure';
+  static const workspace_connected_tool = 'workspace_connected.tool';
+  static const workspace_connected_inputs = 'workspace_connected.inputs';
+  static const workspace_connected_connection =
+      'workspace_connected.connection';
+  static const workspace_connected_freshness = 'workspace_connected.freshness';
+  static const workspace_connected_disclosure =
+      'workspace_connected.disclosure';
+  static const workspace_connected_failed = 'workspace_connected.failed';
+  static const workspace_connected_remove = 'workspace_connected.remove';
+  static const workspace_connected_denied = 'workspace_connected.denied';
+  static const workspace_connected_disconnected =
+      'workspace_connected.disconnected';
+  static const workspace_connected_repair = 'workspace_connected.repair';
+  static const workspace_connected_empty = 'workspace_connected.empty';
 }

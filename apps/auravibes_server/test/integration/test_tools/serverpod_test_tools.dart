@@ -579,6 +579,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iacs.AuthSuccess>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -608,6 +609,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_is.UuidValue>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -641,6 +643,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -674,6 +677,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iacs.AuthSuccess>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -703,6 +707,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_is.UuidValue>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -736,6 +741,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -769,6 +775,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -795,6 +802,7 @@ class _EmailIdpEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<bool>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -835,6 +843,7 @@ class _JwtRefreshEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iacs.AuthSuccess>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -874,6 +883,7 @@ class _AccountEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iq1nzpg1.AccountSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -902,6 +912,7 @@ class _AccountEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -942,6 +953,7 @@ class _AgentCatalogEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_im5t09y9.AgentCatalogPage>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -971,6 +983,7 @@ class _AgentCatalogEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1011,6 +1024,7 @@ class _CodexOAuthEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ixo9bpue.StartCodexOAuthResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1040,6 +1054,7 @@ class _CodexOAuthEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_isldeyi3.CompleteCodexOAuthResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1080,6 +1095,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_itibmfuz.ConversationSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1109,6 +1125,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_itibmfuz.ConversationSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1138,6 +1155,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_itibmfuz.ConversationSummary>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1167,6 +1185,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ids1u12p.ConversationPage>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1196,6 +1215,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_itibmfuz.ConversationSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1225,6 +1245,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_icvgm34f.ConversationMessageView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1254,6 +1275,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1283,6 +1305,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1312,6 +1335,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_iiqbx0k7.MessageBookmarkView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1341,6 +1365,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_inj3grkb.ConversationMessageSearchResult>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1370,6 +1395,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_itibmfuz.ConversationSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1399,6 +1425,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1428,6 +1455,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i43ad401.StartTurnResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1457,6 +1485,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1486,6 +1515,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i9qtpae9.TurnSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1515,6 +1545,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1544,6 +1575,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_idn3a4nr.BackgroundWorkView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1573,6 +1605,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_idn3a4nr.BackgroundWorkView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1602,6 +1635,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_idn3a4nr.BackgroundWorkView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1631,6 +1665,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1660,6 +1695,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1689,6 +1725,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1730,6 +1767,7 @@ class _ConversationEndpoint {
       },
       _localTestStreamManager.outputStreamController,
     );
+
     return _localTestStreamManager.outputStreamController.stream;
   }
 
@@ -1755,6 +1793,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1784,6 +1823,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1813,6 +1853,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1842,6 +1883,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1871,6 +1913,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1900,6 +1943,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_inw8tf3y.SubmitToolDecisionBatchResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1929,6 +1973,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1958,6 +2003,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1987,6 +2033,7 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2026,6 +2073,7 @@ class _McpCatalogEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ii9o7wlj.McpCatalogListing>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2066,6 +2114,7 @@ class _McpServerEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_itziva9n.VerifyMcpServerResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2095,6 +2144,7 @@ class _McpServerEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i3p8mp89.CreateMcpServerResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2124,6 +2174,7 @@ class _McpServerEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2153,6 +2204,7 @@ class _McpServerEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i3ijx64u.DiscoverMcpServerResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2192,6 +2244,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ifmbbpx3.ApiModelProvider>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2221,6 +2274,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_il9jpql1.ApiModel>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2250,6 +2304,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_imf0a6vt.ModelConnectionView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2279,6 +2334,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_imf0a6vt.ModelConnectionView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2308,6 +2364,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_imf0a6vt.ModelConnectionView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2337,6 +2394,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2366,6 +2424,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ipmnqqs6.WorkspaceModelSelectionView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2395,6 +2454,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2424,6 +2484,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<String>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2453,6 +2514,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2482,6 +2544,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_is6egp24.ModelSyncResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2511,6 +2574,7 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i8327bru.VerifyModelConnectionResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2551,6 +2615,7 @@ class _ObjectEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iewr42ao.BeginUploadResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2580,6 +2645,7 @@ class _ObjectEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ixfb6cdh.ObjectResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2609,6 +2675,7 @@ class _ObjectEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i3be6nne.GetDownloadResult>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2638,6 +2705,7 @@ class _ObjectEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2678,6 +2746,7 @@ class _SkillResourceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_i8gs5y5r.SkillResourceView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2707,6 +2776,7 @@ class _SkillResourceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i8gs5y5r.SkillResourceView?>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2736,6 +2806,7 @@ class _SkillResourceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i8gs5y5r.SkillResourceView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2765,6 +2836,7 @@ class _SkillResourceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i8gs5y5r.SkillResourceView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2794,6 +2866,7 @@ class _SkillResourceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2846,6 +2919,7 @@ class _WorkspaceStreamEndpoint {
       },
       _localTestStreamManager.outputStreamController,
     );
+
     return _localTestStreamManager.outputStreamController.stream;
   }
 }
@@ -2882,6 +2956,7 @@ class _WorkspaceCsvEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2922,6 +2997,7 @@ class _WorkspaceHistoryEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2951,6 +3027,7 @@ class _WorkspaceHistoryEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2984,6 +3061,7 @@ class _WorkspaceHistoryEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3017,6 +3095,7 @@ class _WorkspaceHistoryEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<String>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3046,6 +3125,7 @@ class _WorkspaceHistoryEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3086,6 +3166,7 @@ class _WorkspaceReferenceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3115,6 +3196,7 @@ class _WorkspaceReferenceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3144,6 +3226,7 @@ class _WorkspaceReferenceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ixyz6pla.WorkspaceResource>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3173,6 +3256,7 @@ class _WorkspaceReferenceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3213,6 +3297,7 @@ class _WorkspaceSecretEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iaeuxfaj.PutWorkspaceSecretResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3253,6 +3338,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3288,6 +3374,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ixyz6pla.WorkspaceResource>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3317,6 +3404,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iwsbsne8.ReadWorkspaceStateResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3346,6 +3434,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3375,6 +3464,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3404,6 +3494,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i9vt24tt.PatchWorkspaceStateResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3433,6 +3524,7 @@ class _WorkspaceStateEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ie85dmeq.MutateWorkspaceCredentialResponse>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3479,6 +3571,7 @@ class _WorkspaceTrashEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3512,6 +3605,7 @@ class _WorkspaceTrashEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3541,6 +3635,7 @@ class _WorkspaceTrashEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3570,6 +3665,7 @@ class _WorkspaceTrashEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<String>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3603,6 +3699,7 @@ class _WorkspaceTrashEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<String>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3620,6 +3717,40 @@ class _WorkspaceViewEndpoint {
   final _is.EndpointDispatch _endpointDispatch;
 
   final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> readConnected(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String id,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'readConnected',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'readConnected',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'id': id,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 
   _ida.Future<_i7rt6swg.WorkspaceView> duplicate(
     _ist.TestSessionBuilder sessionBuilder,
@@ -3643,6 +3774,7 @@ class _WorkspaceViewEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i7rt6swg.WorkspaceView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3672,6 +3804,7 @@ class _WorkspaceViewEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_i7rt6swg.WorkspaceView>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3705,6 +3838,7 @@ class _WorkspaceViewEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i7rt6swg.WorkspaceView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3738,6 +3872,7 @@ class _WorkspaceViewEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<String>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3767,6 +3902,7 @@ class _WorkspaceViewEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i7rt6swg.WorkspaceView>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3806,6 +3942,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_iyxk4tde.CloudWorkspaceSummary>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3834,6 +3971,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_i0azczsv.PendingWorkspaceInviteSummary>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3863,6 +4001,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iv02pgbq.CloudWorkspaceDetail>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3892,6 +4031,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_i7tlx5z8.CloudWorkspaceMemberSummary>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3921,6 +4061,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_i78h3alq.CloudWorkspaceInviteSummary>>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3950,6 +4091,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iyxk4tde.CloudWorkspaceSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -3979,6 +4121,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i0azczsv.PendingWorkspaceInviteSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4008,6 +4151,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_i78h3alq.CloudWorkspaceInviteSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4037,6 +4181,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4066,6 +4211,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iyxk4tde.CloudWorkspaceSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4095,6 +4241,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4124,6 +4271,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iyxk4tde.CloudWorkspaceSummary>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4153,6 +4301,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4182,6 +4331,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4211,6 +4361,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4240,6 +4391,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -4269,6 +4421,7 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

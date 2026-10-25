@@ -1,10 +1,71 @@
+import 'dart:convert';
+
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/accounts/authenticated_account_resolver.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_connected_validation.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_view_store.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
-import '../../generated/protocol.dart';
-import '../accounts/authenticated_account_resolver.dart';
-import 'workspace_view_store.dart';
-
 class WorkspaceViewEndpoint extends Endpoint {
+  WorkspaceViewEndpoint({ServerToolExecutorService? connectorExecutor})
+    : _connectorExecutor =
+          connectorExecutor ?? const ServerToolExecutorService();
+  final ServerToolExecutorService _connectorExecutor;
+  Future<String> readConnected(
+    Session session,
+    int workspaceId,
+    String id,
+  ) async {
+    try {
+      return await _readConnected(session, workspaceId, id);
+    } on AgentToolExecutionFailure catch (failure) {
+      final data = jsonDecode(failure.responseRaw) as Map<String, dynamic>;
+      final code = (data['error'] as Map?)?['code'];
+      throw WorkspaceConnectedReadException(
+        code: switch (code) {
+          'stale_contract' || 'invalid_tool_arguments' => 'repair',
+          final String value when value.startsWith('connection_') =>
+            'disconnected',
+          'tool_access_denied' => 'denied',
+          _ => 'failed',
+        },
+      );
+    }
+  }
+
+  Future<String> _readConnected(
+    Session session,
+    int workspaceId,
+    String id,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    final view = await read(session, workspaceId, id);
+    final data = jsonDecode(view.data) as Map<String, dynamic>;
+    final arguments = WorkspaceConnectedValidation.arguments(data['connected']);
+    final result = await _connectorExecutor.readConnector(
+      session,
+      workspaceId: workspaceId,
+      userId: account.userId,
+      arguments: arguments,
+    );
+    final current = await read(session, workspaceId, id);
+    if (current.revision != view.revision) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.staleRevision,
+      );
+    }
+    await _connectorExecutor.readConnectorAccess(
+      session,
+      workspaceId: workspaceId,
+      userId: account.userId,
+      arguments: arguments,
+    );
+
+    return jsonEncode(result);
+  }
+
   Future<WorkspaceView> duplicate(
     Session session,
     DuplicateWorkspaceItemRequest request,

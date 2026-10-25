@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
-
-import '../../generated/protocol.dart';
-import '../workspace_state/domain/workspace_query_filter_validation.dart';
+import 'package:auravibes_server/src/features/workspace_state/domain/workspace_query_filter_validation.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_connected_validation.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
 
 typedef WorkspaceViewInput = ({
   Map<String, Object?> data,
@@ -29,6 +29,7 @@ const _keys = {
   'revision',
   'query',
   'summaryColumnIds',
+  'connected',
 };
 final _bindingPattern = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,63}$');
 
@@ -67,13 +68,27 @@ WorkspaceViewInput _parse(String source, String id) {
   _checkDefinition(data['definition']);
   _checkQuery(data['query']);
   _checkSummary(data['summaryColumnIds']);
+  if (data['connected'] != null) {
+    WorkspaceConnectedValidation.arguments(data['connected']);
+  }
+
+  if (data['tableId'] == '') {
+    final bindings = _bindings(data['bindings'], connected: true);
+    for (final path in bindings.values) {
+      if (path.length > 512 ||
+          (path.isNotEmpty && !path.startsWith('/')) ||
+          path.split('/').length > 16) {
+        _invalid();
+      }
+    }
+  }
 
   return _input(data);
 }
 
 WorkspaceViewInput _input(Map<String, Object?> data) => (
   data: data,
-  bindings: _bindings(data['bindings']),
+  bindings: _bindings(data['bindings'], connected: data['tableId'] == ''),
   columnTypes: _types(data['columnTypes']),
   tableId: data['tableId'] as String,
   parentId: data['parentId'] as String?,
@@ -100,10 +115,14 @@ void _checkDefinition(Object? value) {
   );
 }
 
-Map<String, String> _bindings(Object? value) {
+Map<String, String> _bindings(Object? value, {bool connected = false}) {
   final bindings = _types(value);
   if (bindings.isEmpty || bindings.length > _maximumBindings) _invalid();
-  if (!bindings.keys.every(_bindingName)) _invalid();
+  if (!bindings.keys.every(
+    connected ? _bindingPattern.hasMatch : _bindingName,
+  )) {
+    _invalid();
+  }
 
   return bindings;
 }

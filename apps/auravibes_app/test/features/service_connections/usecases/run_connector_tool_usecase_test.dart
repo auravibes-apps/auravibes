@@ -66,6 +66,14 @@ void main() {
         operationId: 'search-operation',
       ));
       final _ = await run();
+      Future<void> current() => execute.requireCurrent((
+        workspaceId: 'workspace',
+        connectorId: connector.identifier,
+        toolSlug: connector.tools.single.slug,
+        arguments: {'query': 'example'},
+        operationId: '',
+      ));
+      await current();
       expect(requests, 1);
       final group = await database.toolsGroupsDao.getToolsGroupByName(
         workspaceId: 'workspace',
@@ -91,6 +99,7 @@ void main() {
         isEnabled: false,
       );
       await expectLater(run(), throwsA(isA<AgentToolExecutionFailure>()));
+      await expectLater(current(), throwsA(isA<AgentToolExecutionFailure>()));
       expect(requests, 1);
     },
   );
