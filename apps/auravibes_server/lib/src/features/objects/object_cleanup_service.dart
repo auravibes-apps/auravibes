@@ -38,6 +38,19 @@ class ObjectCleanupService({
     );
     return await _CleanupRun(this).call(session, run);
   }
+
+  static void _cleanupError(
+    Session session,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    session.log(
+      'Object cleanup failed.',
+      level: LogLevel.warning,
+      exception: error.runtimeType,
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 class const _CleanupRun(final ObjectCleanupService owner) {
@@ -110,19 +123,6 @@ class const _CleanupRun(final ObjectCleanupService owner) {
   );
 
   static bool _active(_Run run) => run.isActive?.call() ?? true;
-
-  static void cleanupError(
-    Session session,
-    Object error,
-    StackTrace stackTrace,
-  ) {
-    session.log(
-      'Object cleanup failed.',
-      level: LogLevel.warning,
-      exception: error.runtimeType,
-      stackTrace: stackTrace,
-    );
-  }
 }
 
 Future<void> runObjectCleanupWorker(
@@ -141,7 +141,7 @@ Future<void> runObjectCleanupWorker(
       ),
     ).runOnce(session, isActive: isActive, coordinator: coordinator);
   } on Object catch (error, stackTrace) {
-    _CleanupRun.cleanupError(session, error, stackTrace);
+    ObjectCleanupService._cleanupError(session, error, stackTrace);
   }
 }
 

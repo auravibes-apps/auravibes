@@ -1,5 +1,4 @@
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart'
-    as platform;
+import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset_location.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
@@ -17,7 +16,7 @@ class const SharedChatAttachmentImage({
   Widget build(BuildContext context) {
     final location = _location(localPath);
     if (location == null) {
-      return platform.ChatAttachmentImage(
+      return ChatAttachmentImage(
         localPath: localPath,
         width: width,
         height: height,
