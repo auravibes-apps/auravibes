@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset_location.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
@@ -66,11 +66,12 @@ class const _ReadyAsset(final ChatSharedAsset owner, final WorkspaceAsset asset)
 
 class const _AssetPicture(final ChatSharedAsset owner) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ChatAttachmentImage(
-    localPath: WorkspaceAssetLocation.create(
-      namespace: ref.watch(appStorageNamespaceProvider),
-      workspaceId: owner.workspaceId,
-      assetId: owner.assetId,
-    ).location,
-  );
+  Widget build(BuildContext context, WidgetRef ref) =>
+      SharedChatAttachmentImage(
+        localPath: WorkspaceAssetLocation.create(
+          namespace: ref.watch(appStorageNamespaceProvider),
+          workspaceId: owner.workspaceId,
+          assetId: owner.assetId,
+        ).location,
+      );
 }

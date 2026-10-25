@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -23,7 +23,7 @@ void main() {
           ).overrideWith((_) => pending.future),
         ],
         child: const MaterialApp(
-          home: ChatAttachmentImage(
+          home: SharedChatAttachmentImage(
             localPath: 'workspace-asset://asset/asset-test/one/asset',
           ),
         ),

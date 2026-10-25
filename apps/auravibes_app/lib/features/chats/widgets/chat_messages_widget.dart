@@ -36,7 +36,7 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
@@ -1750,7 +1750,7 @@ class const _AttachmentPreview({
     if (attachment.modality == MessageAttachmentModality.image) {
       return ClipRRect(
         borderRadius: const BorderRadius.all(Radius.circular(12)),
-        child: ChatAttachmentImage(localPath: attachment.localPath),
+        child: SharedChatAttachmentImage(localPath: attachment.localPath),
       );
     }
 

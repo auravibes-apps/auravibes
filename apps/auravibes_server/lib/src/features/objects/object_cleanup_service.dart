@@ -36,6 +36,12 @@ class ObjectCleanupService({
       coordinator: coordinator,
       now: DateTime.now().toUtc(),
     );
+    return await _CleanupRun(this).call(session, run);
+  }
+}
+
+class const _CleanupRun(final ObjectCleanupService owner) {
+  Future<int> call(Session session, _Run run) async {
     if (!_active(run)) return 0;
     final rows = await _pending(session, run.now);
 
@@ -43,11 +49,11 @@ class ObjectCleanupService({
   }
 
   Future<List<ObjectDeletion>> _pending(Session session, DateTime now) =>
-      repository.listPendingDeletions(
+      owner.repository.listPendingDeletions(
         session,
         now: now,
-        limit: batchSize,
-        maxAttempts: maxAttempts,
+        limit: owner.batchSize,
+        maxAttempts: owner.maxAttempts,
       );
 
   Future<int> _drain(
@@ -75,8 +81,8 @@ class ObjectCleanupService({
   }
 
   Future<bool> _delete(Session session, ObjectDeletion row, _Run run) async {
-    if (!await guard.allows(session, row, run.coordinator)) return false;
-    await store.delete(row.objectKey);
+    if (!await owner.guard.allows(session, row, run.coordinator)) return false;
+    await owner.store.delete(row.objectKey);
     if (!_active(run)) return false;
     await _complete(session, row, run);
 
@@ -84,7 +90,7 @@ class ObjectCleanupService({
   }
 
   Future<void> _complete(Session session, ObjectDeletion row, _Run run) =>
-      repository.completeDeletion(
+      owner.repository.completeDeletion(
         session,
         deletion: row,
         coordinator: run.coordinator,
@@ -95,7 +101,7 @@ class ObjectCleanupService({
     Session session,
     ObjectDeletion row,
     ({_Run run, Object error}) failure,
-  ) => repository.failDeletion(
+  ) => owner.repository.failDeletion(
     session,
     deletion: row,
     coordinator: failure.run.coordinator,
@@ -105,7 +111,7 @@ class ObjectCleanupService({
 
   static bool _active(_Run run) => run.isActive?.call() ?? true;
 
-  static void _cleanupError(
+  static void cleanupError(
     Session session,
     Object error,
     StackTrace stackTrace,
@@ -135,7 +141,7 @@ Future<void> runObjectCleanupWorker(
       ),
     ).runOnce(session, isActive: isActive, coordinator: coordinator);
   } on Object catch (error, stackTrace) {
-    ObjectCleanupService._cleanupError(session, error, stackTrace);
+    _CleanupRun.cleanupError(session, error, stackTrace);
   }
 }
 
