@@ -446,7 +446,7 @@ class const _DirectoryScroll(
     controller: scroll,
     padding: const EdgeInsets.all(16),
     children: [
-      _Breadcrumb(navigation),
+      if (navigation.state.path.isNotEmpty) _Breadcrumb(navigation),
       _DirectoryStatus(navigation),
       _Items(navigation),
     ],

@@ -19,6 +19,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,7 +52,7 @@ void main() {
     });
     final _ = await tester.pumpAndSettle();
     expect(find.byType(AuraInput), findsNothing);
-    expect(find.text('Directory'), findsWidgets);
+    expect(find.text('Directory'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('directory_create')));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Folder'), findsOneWidget);
@@ -131,6 +132,21 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
+    final row = find.ancestor(
+      of: find.text('Documents'),
+      matching: find.byType(AuraPressable),
+    );
+    final mouse = await tester.createGesture(
+      pointer: 42,
+      kind: PointerDeviceKind.mouse,
+    );
+    await mouse.addPointer(location: tester.getCenter(row));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.binding.mouseTracker.debugDeviceActiveCursor(1),
+      SystemMouseCursors.click,
+    );
+    await mouse.removePointer();
     await tester.longPress(find.text('Documents'));
     final _ = await tester.pumpAndSettle();
     expect(find.byType(Checkbox), findsOneWidget);
