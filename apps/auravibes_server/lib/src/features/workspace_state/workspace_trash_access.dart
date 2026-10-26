@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../workspaces/domain/workspace_roles.dart';
 import 'repositories/workspace_state_repository.dart';
 
@@ -13,6 +14,12 @@ class const WorkspaceTrashAccess(
   final Transaction transaction,
 ) {
   Future<({WorkspaceMember member, CloudWorkspace workspace})> lock() async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) trashDenied();
     final repository = WorkspaceStateRepository();
     final workspace = await repository.findWorkspace(
       session,

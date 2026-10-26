@@ -4,6 +4,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import 'domain/workspace_query_filter_validation.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_record_query_reference_access.dart';
@@ -91,6 +92,16 @@ class const _AuthorizedTable(
   final Transaction transaction,
 ) {
   Future<_AuthorizedSource> read() async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
     final repository = WorkspaceStateRepository();
     await _workspace(repository);
     final member = await repository.findMember(

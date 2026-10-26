@@ -28,6 +28,7 @@ class AgentCatalogRepository {
     required AgentCatalogStatus? status,
     required int limit,
     required AgentCatalogCursor? cursor,
+    required Transaction transaction,
   }) async {
     final rows = await session.db.unsafeQuery(
       _listSql,
@@ -41,6 +42,7 @@ class AgentCatalogRepository {
         'afterId': cursor?.id ?? '',
         'limit': limit,
       }),
+      transaction: transaction,
     );
 
     return [
@@ -52,6 +54,7 @@ class AgentCatalogRepository {
     Session session, {
     required int workspaceId,
     required String agentId,
+    required Transaction transaction,
   }) => WorkspaceResource.db.findFirstRow(
     session,
     where: (table) =>
@@ -59,12 +62,14 @@ class AgentCatalogRepository {
         table.resourceKind.equals(WorkspaceResourceKind.agent) &
         table.resourceId.equals(agentId) &
         table.deletedAt.equals(null),
+    transaction: transaction,
   );
 
   Future<List<WorkspaceResource>> findAssociations(
     Session session, {
     required int workspaceId,
     required String agentId,
+    required Transaction transaction,
   }) async {
     final rows = await session.db.unsafeQuery(
       _associationsSql,
@@ -72,6 +77,7 @@ class AgentCatalogRepository {
         'workspaceId': workspaceId,
         'agentId': agentId,
       }),
+      transaction: transaction,
     );
     return [
       for (final row in rows) _resourceFromColumns(row.toColumnMap()),

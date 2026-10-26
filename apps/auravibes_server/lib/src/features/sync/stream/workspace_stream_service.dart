@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
-import 'sync_wakeups.dart';
+import '../../accounts/auth_user_lock.dart';
+import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/workspace_table_access.dart';
+import 'sync_wakeups.dart';
 
 class const WorkspaceStreamService() {
   static const pageSize = 100;
@@ -30,28 +32,32 @@ class const WorkspaceStreamService() {
     Future<bool>? pendingWakeup;
     try {
       while (true) {
-        final member = await _requireMembership(
-          session,
-          request.workspaceId,
-          userId,
-        );
-        final events = await WorkspaceEvent.db.find(
-          session,
-          where: (table) =>
-              table.workspaceId.equals(request.workspaceId) &
-              (table.sequence > cursor),
-          orderBy: (table) => table.sequence,
-          limit: pageSize,
-        );
+        final events = await session.db.transaction((transaction) async {
+          final member = await _requireMembership(
+            session,
+            request.workspaceId,
+            userId,
+            transaction,
+          );
+          final rows = await WorkspaceEvent.db.find(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(request.workspaceId) &
+                (table.sequence > cursor),
+            orderBy: (table) => table.sequence,
+            limit: pageSize,
+            transaction: transaction,
+          );
+          final access = WorkspaceTableAccess(transaction: transaction);
+          return [
+            for (final event in rows)
+              await access.visibleEvent(session, member, event),
+          ];
+        });
 
         for (final event in events) {
           cursor = event.sequence;
-          final visible = await const WorkspaceTableAccess().visibleEvent(
-            session,
-            member,
-            event,
-          );
-          yield envelopeFor(visible);
+          yield envelopeFor(event);
         }
 
         if (events.length < pageSize) {
@@ -86,15 +92,32 @@ class const WorkspaceStreamService() {
     Session session,
     int workspaceId,
     String userId,
+    Transaction transaction,
   ) async {
-    final member = await WorkspaceMember.db.findFirstRow(
+    final authUser = await const AuthUserLock().lock(
       session,
-      where: (table) =>
-          table.workspaceId.equals(workspaceId) &
-          table.userId.equals(userId) &
-          table.removedAt.equals(null),
+      userId: userId,
+      transaction: transaction,
     );
-    if (member == null) {
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final repository = WorkspaceStateRepository();
+    final workspace = await repository.findWorkspace(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lock: true,
+    );
+    final member = await repository.findMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (workspace == null || member == null) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
