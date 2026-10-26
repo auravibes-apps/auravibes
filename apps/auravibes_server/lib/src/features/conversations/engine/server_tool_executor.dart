@@ -522,6 +522,70 @@ class const ServerToolExecutorService({
     userId: userId,
   ), arguments);
 
+  Future<Object?> executeWorkspaceViewConnector(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required String toolId,
+    required String revision,
+    required Map<String, Object?> arguments,
+    required String? connectionId,
+    required String operationId,
+  }) async {
+    if (operationId.isEmpty || operationId.length > 100) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+    final requestArguments = <String, dynamic>{
+      'toolId': toolId,
+      'revision': revision,
+      'args': arguments,
+      'connectionId': ?connectionId,
+      'operationId': operationId,
+    };
+    final connections = await _readConnections(session, workspaceId);
+
+    try {
+      return await _executeConnectorTool(
+        session,
+        (workspaceId: workspaceId, userId: userId, turn: null),
+        ServerToolRequest(
+          id: operationId,
+          name: executeConnectorToolName,
+          arguments: requestArguments,
+        ),
+        connections.services,
+        connections.models,
+      );
+    } on CloudWorkspaceException catch (_, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        'tool_access_denied',
+        'This tool is disabled or unavailable for your role. Ask a workspace owner or admin.',
+        stackTrace,
+      );
+    } on _CloudConnectorCommandException catch (error, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        error.code,
+        error.message,
+        stackTrace,
+      );
+    } on AgentToolExecutionFailure catch (failure, stackTrace) {
+      if (_trustedConnectorFailure(failure)) rethrow;
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    } on Object catch (_, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    }
+  }
+
   Future<Object?> _readConnector(
     Session session,
     _ConnectorReader actor,

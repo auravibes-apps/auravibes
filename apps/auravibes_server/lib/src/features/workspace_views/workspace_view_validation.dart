@@ -30,10 +30,15 @@ const _keys = {
   'query',
   'summaryColumnIds',
   'connected',
+  'action',
 };
 final _bindingPattern = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,63}$');
 
 abstract final class WorkspaceViewValidation {
+  static A2uiSavedAction action(Object? value) => A2uiSavedAction.fromJson(
+    Map<String, Object?>.from(value as Map),
+  );
+
   static void requestId(String value) {
     if (value.isEmpty || value.length > _maximumId) _invalid();
   }
@@ -74,9 +79,37 @@ WorkspaceViewInput _parse(String source, String id) {
 
 void _checkContent(Map<String, Object?> data) {
   _checkName(data['name'] as String);
-  _checkDefinition(data['definition']);
+  _checkDefinition(
+    data['definition'],
+    requiresUserAction: data['action'] != null,
+  );
   _checkQuery(data['query']);
   _checkSummary(data['summaryColumnIds']);
+  _checkAction(data);
+}
+
+void _checkAction(Map<String, Object?> data) {
+  final raw = data['action'];
+  if (raw == null) return;
+  final action = A2uiSavedAction.fromJson(
+    Map<String, Object?>.from(raw as Map),
+  );
+  final definition = Map<String, Object?>.from(data['definition'] as Map);
+  validateA2uiSavedActionInputs(
+    action,
+    (definition['components'] as List).cast<Map<String, Object?>>(),
+  );
+  switch (action.type) {
+    case A2uiSavedActionType.updateSelectedRecord:
+      if (data['tableId'] == '' ||
+          !_bindings(data['bindings']).values.toSet().containsAll(
+            action.inputs.keys,
+          )) {
+        _invalid();
+      }
+    case A2uiSavedActionType.connectorWrite:
+      validateA2uiSavedActionConnector(action, connectorDefinitions);
+  }
 }
 
 void _checkConnected(Map<String, Object?> data) {
@@ -121,9 +154,10 @@ void _checkName(String name) {
   if (name.trim().isEmpty || name.length > _maximumName) _invalid();
 }
 
-void _checkDefinition(Object? value) {
+void _checkDefinition(Object? value, {required bool requiresUserAction}) {
   final _ = A2uiSavedDefinition.fromJson(
     Map<String, Object?>.from(value as Map),
+    requiresUserAction: requiresUserAction,
   );
 }
 

@@ -3886,6 +3886,45 @@ class _WorkspaceViewEndpoint {
     });
   }
 
+  _ida.Future<String> submitAction(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String id,
+    int expectedRevision,
+    String formValuesJson,
+    String operationId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'submitAction',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'submitAction',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'id': id,
+            'expectedRevision': expectedRevision,
+            'formValuesJson': formValuesJson,
+            'operationId': operationId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_i7rt6swg.WorkspaceView> duplicate(
     _ist.TestSessionBuilder sessionBuilder,
     _i2sgszxu.DuplicateWorkspaceItemRequest request,

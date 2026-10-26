@@ -39,4 +39,40 @@ void main() {
       );
     }
   });
+
+  test('saved form surfaces require the action catalog and reject events', () {
+    final form = {
+      'version': 1,
+      'components': [
+        {
+          'id': 'root',
+          'component': 'TextField',
+          'label': 'Title',
+          'value': {'path': '/answers/title'},
+        },
+      ],
+    };
+    expect(
+      A2uiSavedDefinition.fromJson(
+        form,
+        requiresUserAction: true,
+      ).components.single['id'],
+      'root',
+    );
+    expect(
+      () => A2uiSavedDefinition.fromJson({
+        'version': 1,
+        'components': [
+          {
+            'id': 'root',
+            'component': 'TextField',
+            'label': 'Title',
+            'value': {'path': '/answers/title'},
+            'onSubmittedAction': {'actionName': 'execute'},
+          },
+        ],
+      }, requiresUserAction: true),
+      throwsFormatException,
+    );
+  });
 }

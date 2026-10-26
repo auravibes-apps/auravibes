@@ -105,6 +105,30 @@ void main() {
               clearSecret: false,
             ),
           );
+          await endpoints.workspaceState.mutateCredential(
+            authenticated,
+            MutateWorkspaceCredentialRequest(
+              workspaceId: workspace.id!,
+              requestId: 'write-connection',
+              resourceOperation: WorkspacePatchOperation(
+                operation: .create,
+                resourceKind: .serviceConnection,
+                resourceId: 'synthetic-submit',
+                data: jsonEncode({
+                  'id': 'synthetic-submit',
+                  'name': 'Form submit test',
+                  'serviceId': 'synthetic',
+                  'scope': 'workspace',
+                  'kind': 'customHttp',
+                }),
+                fieldMask: const [],
+              ),
+              secretKind: .provider,
+              scope: .workspace,
+              secret: 'synthetic-write-key',
+              clearSecret: false,
+            ),
+          );
           const toolId = 'connector/brave/web_search';
           final connector = connectorDefinitions.firstWhere(
             (item) => item.identifier == 'brave',
@@ -128,6 +152,19 @@ void main() {
                     'isEnabled': true,
                     'permissionMode': 'alwaysAllow',
                     'config': jsonEncode({'memberAccess': 'read'}),
+                  }),
+                  fieldMask: const [],
+                ),
+                WorkspacePatchOperation(
+                  operation: .create,
+                  resourceKind: .tool,
+                  resourceId: 'connector/synthetic/search',
+                  data: jsonEncode({
+                    'toolId': 'connector/synthetic/search',
+                    'name': 'Form submit test',
+                    'isEnabled': true,
+                    'permissionMode': 'alwaysAllow',
+                    'config': jsonEncode({'memberAccess': 'readWrite'}),
                   }),
                   fieldMask: const [],
                 ),
@@ -187,6 +224,56 @@ void main() {
               definition: jsonEncode(definition),
             ),
           );
+          final synthetic = connectorDefinitions.firstWhere(
+            (item) => item.identifier == 'synthetic',
+          );
+          final syntheticSearch = synthetic.tools.firstWhere(
+            (item) => item.slug == 'search',
+          );
+          await endpoints.workspaceView.save(
+            authenticated,
+            WorkspaceViewSaveRequest(
+              workspaceId: workspace.id!,
+              requestId: 'save-write-form',
+              viewId: 'write-view',
+              expectedRevision: 0,
+              definition: jsonEncode({
+                'id': 'write-view',
+                'name': 'Search form',
+                'tableId': '',
+                'parentId': null,
+                'bindings': {'source': ''},
+                'columnTypes': <String, String>{},
+                'revision': 0,
+                'connected': definition['connected'],
+                'action': {
+                  'version': 1,
+                  'type': 'connectorWrite',
+                  'toolId': 'connector/synthetic/search',
+                  'revision': connectorToolRevision(synthetic, syntheticSearch),
+                  'connectionId': 'service:synthetic-submit',
+                  'inputs': {'query': '/answers/query'},
+                },
+                'definition': {
+                  'version': 1,
+                  'components': [
+                    {
+                      'id': 'root',
+                      'component': 'Column',
+                      'children': ['query'],
+                    },
+                    {
+                      'id': 'query',
+                      'component': 'TextField',
+                      'label': 'Search query',
+                      'required': true,
+                      'value': {'path': '/answers/query'},
+                    },
+                  ],
+                },
+              }),
+            ),
+          );
           final connected = Map<String, Object?>.from(
             definition['connected'] as Map,
           );
@@ -225,12 +312,54 @@ void main() {
           var calls = 0;
           var revoke = false;
           var changeRevision = false;
+          var changeWriteViewRevision = false;
+          var responseStatusCode = 200;
+          final writeViewDefinition = {
+            'id': 'write-view',
+            'name': 'Search form',
+            'tableId': '',
+            'parentId': null,
+            'bindings': {'source': ''},
+            'columnTypes': <String, String>{},
+            'revision': 0,
+            'connected': definition['connected'],
+            'action': {
+              'version': 1,
+              'type': 'connectorWrite',
+              'toolId': 'connector/synthetic/search',
+              'revision': connectorToolRevision(synthetic, syntheticSearch),
+              'connectionId': 'service:synthetic-submit',
+              'inputs': {'query': '/answers/query'},
+            },
+            'definition': {
+              'version': 1,
+              'components': [
+                {
+                  'id': 'root',
+                  'component': 'Column',
+                  'children': ['query'],
+                },
+                {
+                  'id': 'query',
+                  'component': 'TextField',
+                  'label': 'Search query',
+                  'required': true,
+                  'value': {'path': '/answers/query'},
+                },
+              ],
+            },
+          };
           final endpoint = WorkspaceViewEndpoint(
             connectorExecutor: ServerToolExecutorService(
               connectorHttpClient: (request) =>
                   CancelableOperation.fromFuture(() async {
                     calls++;
-                    expect(request.headers.values, contains('synthetic-key'));
+                    expect(
+                      request.headers.values.any(
+                        (value) => value.contains('synthetic'),
+                      ),
+                      isTrue,
+                    );
                     if (changeRevision) {
                       changeRevision = false;
                       await endpoints.workspaceView.save(
@@ -244,6 +373,23 @@ void main() {
                             ...definition,
                             'revision': 1,
                             'name': 'Changed configuration',
+                          }),
+                        ),
+                      );
+                    }
+                    if (changeWriteViewRevision) {
+                      changeWriteViewRevision = false;
+                      await endpoints.workspaceView.save(
+                        authenticated,
+                        WorkspaceViewSaveRequest(
+                          workspaceId: workspace.id!,
+                          requestId: 'change-write-view',
+                          viewId: 'write-view',
+                          expectedRevision: 1,
+                          definition: jsonEncode({
+                            ...writeViewDefinition,
+                            'revision': 1,
+                            'name': 'Changed form',
                           }),
                         ),
                       );
@@ -266,8 +412,8 @@ void main() {
                       );
                     }
 
-                    return const UrlResponse(
-                      statusCode: 200,
+                    return UrlResponse(
+                      statusCode: responseStatusCode,
                       body: '{"live":true}',
                       headers: {},
                       elapsed: Duration.zero,
@@ -309,6 +455,131 @@ void main() {
             throwsA(isA<CloudWorkspaceException>()),
           );
           expect(calls, 3);
+          revoke = false;
+          final readToolResource = await WorkspaceResource.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.resourceId.equals(toolId),
+          );
+          await WorkspaceResource.db.updateRow(
+            session,
+            readToolResource!.copyWith(
+              data: jsonEncode({
+                ...jsonDecode(readToolResource.data) as Map<String, dynamic>,
+                'isEnabled': true,
+              }),
+            ),
+          );
+          final invalidForm = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              1,
+              jsonEncode({
+                'answers': {'query': 42},
+              }),
+              'invalid-form',
+            ),
+          );
+          expect(invalidForm['status'], 'validationFailed');
+          expect(calls, 3);
+          final completed = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              1,
+              jsonEncode({
+                'answers': {'query': 'approved query'},
+              }),
+              'approved-form',
+            ),
+          );
+          expect(
+            completed['status'],
+            'completed',
+            reason: completed.toString(),
+          );
+          expect(calls, 4);
+          responseStatusCode = 207;
+          final partial = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              1,
+              jsonEncode({
+                'answers': {'query': 'partial query'},
+              }),
+              'partial-form',
+            ),
+          );
+          expect(partial['status'], 'partial');
+          expect(partial['retryBlocked'], isTrue);
+          expect(partial['outcome'], 'uncertain');
+          expect(calls, 5);
+          final blockedRetry = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              1,
+              jsonEncode({
+                'answers': {'query': 'partial query'},
+              }),
+              'partial-form-retry',
+            ),
+          );
+          expect(blockedRetry['status'], 'partial');
+          expect(calls, 5);
+          responseStatusCode = 200;
+          changeWriteViewRevision = true;
+          final changedDuringAction = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              1,
+              jsonEncode({
+                'answers': {'query': 'changed form query'},
+              }),
+              'changed-form',
+            ),
+          );
+          expect(changedDuringAction['status'], 'completed');
+          expect(changedDuringAction['viewChangedDuringExecution'], isTrue);
+          expect(calls, 6);
+          final syntheticResource = await WorkspaceResource.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.resourceId.equals('connector/synthetic/search'),
+          );
+          await WorkspaceResource.db.updateRow(
+            session,
+            syntheticResource!.copyWith(
+              data: jsonEncode({
+                ...jsonDecode(syntheticResource.data) as Map<String, dynamic>,
+                'config': jsonEncode({'memberAccess': 'read'}),
+              }),
+            ),
+          );
+          final denied = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              2,
+              jsonEncode({
+                'answers': {'query': 'denied query'},
+              }),
+              'denied-form',
+            ),
+          );
+          expect(denied['status'], 'denied');
+          expect(calls, 6);
           final saved = await endpoints.workspaceView.read(
             authenticated,
             workspace.id!,

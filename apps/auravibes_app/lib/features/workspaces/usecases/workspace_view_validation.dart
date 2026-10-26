@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/project_connected_workspace_view_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/read_connected_workspace_view_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_view_action_validation.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 const _maximumName = 200;
@@ -16,6 +17,7 @@ abstract final class WorkspaceViewValidation {
   static void check(WorkspaceView view, WorkspaceTable table) {
     if (view.isConnectedOnly) {
       _checkConnected(view);
+      WorkspaceViewActionValidation.check(view);
 
       return;
     }
@@ -25,6 +27,7 @@ abstract final class WorkspaceViewValidation {
     if (view.connected case final connected?) {
       final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
     }
+    WorkspaceViewActionValidation.check(view, table);
     final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
   }
 

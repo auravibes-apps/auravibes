@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 
 class const WorkspaceViewChart({
   required final WorkspaceViewData data,
+  final String? workspaceId,
   super.key,
 }) extends StatelessWidget {
   WorkspaceColumn? get _column => data.table.columns
@@ -23,20 +24,21 @@ class const WorkspaceViewChart({
       return const TextLocale(LocaleKeys.workspace_relational_no_numbers);
     }
 
-    return _ChartContent(data, column);
+    return _ChartContent(data, column, workspaceId);
   }
 }
 
 class const _ChartContent(
   final WorkspaceViewData data,
   final WorkspaceColumn column,
+  final String? workspaceId,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
       const TextLocale(LocaleKeys.workspace_relational_chart_scope),
-      WorkspaceViewSurface(data: data),
+      WorkspaceViewSurface(data: data, workspaceId: workspaceId),
       _ChartValues(data, column),
     ],
   );

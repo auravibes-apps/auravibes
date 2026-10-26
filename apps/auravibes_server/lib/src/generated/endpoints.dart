@@ -2692,6 +2692,51 @@ class Endpoints extends _is.EndpointDispatch {
                         params['id'],
                       ),
         ),
+        'submitAction': _is.MethodConnector(
+          name: 'submitAction',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'expectedRevision': _is.ParameterDescription(
+              name: 'expectedRevision',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'formValuesJson': _is.ParameterDescription(
+              name: 'formValuesJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'operationId': _is.ParameterDescription(
+              name: 'operationId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .submitAction(
+                        session,
+                        params['workspaceId'],
+                        params['id'],
+                        params['expectedRevision'],
+                        params['formValuesJson'],
+                        params['operationId'],
+                      ),
+        ),
         'duplicate': _is.MethodConnector(
           name: 'duplicate',
           params: {

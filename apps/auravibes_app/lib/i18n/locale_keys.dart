@@ -2849,6 +2849,24 @@ abstract class LocaleKeys {
   static const workspace_views_unavailable = 'workspace_views.unavailable';
   static const workspace_views_limit = 'workspace_views.limit';
   static const workspace_views_save = 'workspace_views.save';
+  static const workspace_views_action_submit = 'workspace_views.action_submit';
+  static const workspace_views_action_submitting =
+      'workspace_views.action_submitting';
+  static const workspace_views_action_completed =
+      'workspace_views.action_completed';
+  static const workspace_views_action_approval =
+      'workspace_views.action_approval';
+  static const workspace_views_action_review = 'workspace_views.action_review';
+  static const workspace_views_action_invalid =
+      'workspace_views.action_invalid';
+  static const workspace_views_action_changed =
+      'workspace_views.action_changed';
+  static const workspace_views_action_completed_changed =
+      'workspace_views.action_completed_changed';
+  static const workspace_views_action_partial =
+      'workspace_views.action_partial';
+  static const workspace_views_action_uncertain =
+      'workspace_views.action_uncertain';
   static const workspace_views_no_tables = 'workspace_views.no_tables';
   static const workspace_views_no_views = 'workspace_views.no_views';
   static const workspace_csv_import = 'workspace_csv.import';

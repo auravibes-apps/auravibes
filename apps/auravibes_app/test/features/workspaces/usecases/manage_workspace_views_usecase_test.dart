@@ -42,6 +42,47 @@ Future<void> _persistence() async {
     table: table,
     columnIds: [table.labelColumnId],
   );
+  final form = await views.create(
+    name: 'Form',
+    table: table,
+    columnIds: [table.labelColumnId],
+  );
+  final savedForm = await views.save(
+    form
+        .edited(
+          name: form.name,
+          bindings: form.bindings,
+          columnTypes: form.columnTypes,
+          definition: .fromJson({
+            'version': 1,
+            'components': [
+              {
+                'id': 'root',
+                'component': 'Column',
+                'children': ['title'],
+              },
+              {
+                'id': 'title',
+                'component': 'TextField',
+                'label': 'Title',
+                'value': {'path': '/answers/title'},
+              },
+            ],
+          }),
+        )
+        .withAction(
+          .fromJson({
+            'version': 1,
+            'type': 'updateSelectedRecord',
+            'inputs': {table.labelColumnId: '/answers/title'},
+          }),
+        ),
+  );
+  final persistedForm = await LocalWorkspaceViewRepository(
+    database,
+    'workspace',
+  ).read(savedForm.id);
+  expect(persistedForm.action?.inputs, {table.labelColumnId: '/answers/title'});
   expect((await views.open(first.id)).records, isEmpty);
   final record = await tables.createRecord(
     table: table,
