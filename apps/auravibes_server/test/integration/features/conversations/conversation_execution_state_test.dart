@@ -1771,7 +1771,7 @@ void main() {
       expect(turn.status, ConversationStatuses.completed);
     });
 
-    test('worker cancels a queued turn after membership is revoked', () async {
+    test('worker cancels queued work after membership is revoked', () async {
       final fixture = await prepareExecution();
       final member = (await WorkspaceMember.db.findFirstRow(
         fixture.database,
@@ -1802,8 +1802,13 @@ void main() {
         where: (table) => table.turnId.equals(turn.id),
       ))!;
       expect(host.calls, 0);
-      expect(turn.status, ConversationStatuses.cancelled);
-      expect(job.status, ConversationJobStatuses.completed);
+      expect(turn.status, ConversationStatuses.queued);
+      expect(turn.revision, 1);
+      expect(job.status, ConversationJobStatuses.cancelled);
+      expect(job.attempt, 0);
+      expect(job.leaseOwner, isNull);
+      expect(job.leaseToken, isNull);
+      expect(job.leaseExpiresAt, isNull);
     });
 
     test(
@@ -2071,7 +2076,7 @@ void main() {
     });
 
     test(
-      'retry exhaustion after account deletion leaves turn for erasure cleanup',
+      'account deletion cancels exhausted job without failing turn content',
       () async {
         final fixture = await prepareExecution();
         final job = (await ConversationJob.db.findFirstRow(
@@ -2134,7 +2139,11 @@ void main() {
 
         expect(didWork, isFalse);
         expect(host.calls, 0);
-        expect(jobAfterClaim.status, job.status);
+        expect(jobAfterClaim.status, ConversationJobStatuses.cancelled);
+        expect(jobAfterClaim.attempt, job.maxAttempts);
+        expect(jobAfterClaim.leaseOwner, isNull);
+        expect(jobAfterClaim.leaseToken, isNull);
+        expect(jobAfterClaim.leaseExpiresAt, isNull);
         expect(jobAfterClaim.lastErrorCode, isNull);
         expect(turnAfterClaim.status, turn.status);
         expect(userAfterClaim.status, userMessage.status);

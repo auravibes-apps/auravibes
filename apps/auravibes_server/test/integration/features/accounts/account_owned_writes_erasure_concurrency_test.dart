@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentCompactionRangeSelected;
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart'
     show ConversationProgressPublisher;
@@ -793,6 +794,168 @@ void main() {
     });
 
     test(
+      'account deletion cancels non-exhausted shared jobs before dispatch',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        final workspace = await _createSharedWorkspace(
+          session,
+          userId: userId,
+          memberRole: 'admin',
+        );
+        final now = DateTime.now().toUtc();
+        final conversation = await Conversation.db.insertRow(
+          session,
+          Conversation(
+            workspaceId: workspace.id!,
+            stableId: 'account-erasure-unclaimed-job',
+            isPinned: false,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final userMessage = await ConversationMessage.db.insertRow(
+          session,
+          ConversationMessage(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            stableId: 'account-erasure-unclaimed-user-message',
+            role: 'user',
+            kind: 'text',
+            status: 'queued',
+            content: 'Queued user content.',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final assistantMessage = await ConversationMessage.db.insertRow(
+          session,
+          ConversationMessage(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            stableId: 'account-erasure-unclaimed-assistant-message',
+            role: 'assistant',
+            kind: 'text',
+            status: 'queued',
+            content: '',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final turn = await ConversationTurn.db.insertRow(
+          session,
+          ConversationTurn(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            requestId: 'account-erasure-unclaimed-turn',
+            requestHash: 'account-erasure-unclaimed-hash',
+            initiatorUserId: userId,
+            userMessageId: userMessage.id,
+            assistantMessageId: assistantMessage.id,
+            status: ConversationStatuses.queued,
+            revision: 1,
+            acceptedSequence: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          session,
+          userMessage.copyWith(turnId: turn.id),
+        );
+        await ConversationMessage.db.updateRow(
+          session,
+          assistantMessage.copyWith(turnId: turn.id),
+        );
+        final job = await ConversationJob.db.insertRow(
+          session,
+          ConversationJob(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            turnId: turn.id,
+            requestId: 'account-erasure-unclaimed-job',
+            kind: 'turn',
+            payloadJson: jsonEncode({'actorUserId': userId}),
+            status: 'queued',
+            attempt: 0,
+            maxAttempts: 3,
+            availableAt: DateTime.utc(2000),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        initializeTestAuthServices(session.serverpod);
+
+        await endpoints.account.deleteCurrentUser(authenticated);
+        final host = _CountingWorkerHost();
+        final didWork = await ConversationWorker(host: host).runOnce(
+          session,
+          workerId: 'account-erasure-unclaimed-worker',
+        );
+
+        final workspaceAfter = await CloudWorkspace.db.findById(
+          session,
+          workspace.id!,
+        );
+        final jobAfter = (await ConversationJob.db.findById(
+          session,
+          job.id!,
+        ))!;
+        final turnAfter = (await ConversationTurn.db.findById(
+          session,
+          turn.id!,
+        ))!;
+        final userMessageAfter = (await ConversationMessage.db.findById(
+          session,
+          userMessage.id!,
+        ))!;
+        final assistantMessageAfter = (await ConversationMessage.db.findById(
+          session,
+          assistantMessage.id!,
+        ))!;
+        final eligibleJob = await ConversationJob.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.id.equals(job.id) &
+              ((table.status.equals('queued') &
+                      (table.availableAt <= DateTime.now().toUtc())) |
+                  (table.status.equals('leased') &
+                      (table.leaseExpiresAt < DateTime.now().toUtc()))),
+        );
+
+        expect(workspaceAfter?.deletedAt, isNull);
+        expect(workspaceAfter?.erasureRequestedAt, isNull);
+        expect(
+          await AuthUser.db.findById(session, UuidValue.fromString(userId)),
+          isNull,
+        );
+        expect(didWork, isFalse);
+        expect(host.calls, 0);
+        expect(jobAfter.status, 'cancelled');
+        expect(jobAfter.attempt, 0);
+        expect(jobAfter.leaseOwner, isNull);
+        expect(jobAfter.leaseToken, isNull);
+        expect(jobAfter.leaseExpiresAt, isNull);
+        expect(eligibleJob, isNull);
+        expect(turnAfter.status, ConversationStatuses.queued);
+        expect(turnAfter.revision, 1);
+        expect(userMessageAfter.status, 'queued');
+        expect(userMessageAfter.content, 'Queued user content.');
+        expect(assistantMessageAfter.status, 'queued');
+        expect(assistantMessageAfter.content, isEmpty);
+      },
+    );
+
+    test(
       'account deletion fences conversation event and message writes',
       () async {
         final userId = const Uuid().v4().toString();
@@ -1409,6 +1572,40 @@ class _AccountDeletionBlockingCompactionHost implements ConversationEngineHost {
         keptTailMessageIds: const [],
       ),
     );
+  }
+}
+
+class _CountingWorkerHost implements ConversationEngineHost {
+  var calls = 0;
+
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    return const ConversationEngineResult(
+      content: 'Unexpected provider call.',
+      finishReason: 'stop',
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    );
+  }
+
+  @override
+  Future<ConversationCompactionResult> compact(
+    Session session, {
+    required ConversationJob job,
+    required List<ConversationMessage> messages,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    throw StateError('Unexpected compaction call.');
   }
 }
 
