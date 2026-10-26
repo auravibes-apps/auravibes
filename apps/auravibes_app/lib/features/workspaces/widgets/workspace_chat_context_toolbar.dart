@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:auravibes_app/features/workspaces/widgets/workspace_context_inspector.dart';
-
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -13,8 +10,9 @@ import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_
 import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_context_inspector.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_context_record_picker.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -36,8 +34,10 @@ class const WorkspaceChatContextToolbar({
   Widget build(BuildContext context, WidgetRef ref) {
     final error = useState<Object?>(null);
     final busy = useState(false);
+    final saving = useState(false);
+
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         Row(
           children: [
@@ -46,9 +46,7 @@ class const WorkspaceChatContextToolbar({
               onPressed: onClose,
               tooltip: LocaleKeys.common_close.tr(),
             ),
-            const Expanded(
-              child: const TextLocale(LocaleKeys.workspace_chat_title),
-            ),
+            const Expanded(child: TextLocale(LocaleKeys.workspace_chat_title)),
             AuraPopupMenuButton(
               items: [
                 AuraPopupMenuItem(
@@ -64,23 +62,28 @@ class const WorkspaceChatContextToolbar({
                   ),
                 ),
                 AuraPopupMenuItem(
+                  title: const TextLocale(LocaleKeys.workspace_chat_share),
                   onTap: busy.value
                       ? null
-                      : () => unawaited(_run(context, ref, false, error, busy)),
-                  title: const TextLocale(LocaleKeys.workspace_chat_share),
+                      : () => unawaited(
+                          _run(context, ref, false, error, busy, saving),
+                        ),
                 ),
                 AuraPopupMenuItem(
+                  title: const TextLocale(LocaleKeys.workspace_chat_revoke),
                   onTap: busy.value
                       ? null
-                      : () => unawaited(_run(context, ref, true, error, busy)),
-                  title: const TextLocale(LocaleKeys.workspace_chat_revoke),
+                      : () => unawaited(
+                          _run(context, ref, true, error, busy, saving),
+                        ),
                 ),
               ],
             ),
           ],
         ),
-        if (busy.value) const LinearProgressIndicator(),
-        if (error.value != null) WorkspaceItemFailure(error: error.value!),
+        if (saving.value) const LinearProgressIndicator(),
+        if (error.value case final Object failure)
+          WorkspaceItemFailure(error: failure),
       ],
     );
   }
@@ -91,9 +94,11 @@ class const WorkspaceChatContextToolbar({
     bool revoke,
     ValueNotifier<Object?> error,
     ValueNotifier<bool> busy,
+    ValueNotifier<bool> saving,
   ) async {
     busy.value = true;
     error.value = null;
+    var released = false;
     try {
       final selectedItem = _selectedItem(ref);
       final ids = revoke
@@ -106,15 +111,15 @@ class const WorkspaceChatContextToolbar({
       final selection = revoke
           ? null
           : WorkspaceContextSelection(
-              workspaceId: session.cloud == null
-                  ? workspaceId
-                  : '${session.cloud!.cloudWorkspaceId}',
+              workspaceId:
+                  session.cloud?.cloudWorkspaceId.toString() ?? workspaceId,
               conversationId: conversationId,
               itemId: selectedItem.id,
               kind: selectedItem.kind,
               parentId: _parent(ref),
               recordIds: ids,
             );
+      saving.value = true;
       final consent = await ref.read(
         workspaceConversationContextUsecaseProvider(workspaceId).future,
       );
@@ -126,6 +131,10 @@ class const WorkspaceChatContextToolbar({
       ref.invalidate(
         workspaceConversationContextProvider(workspaceId, conversationId),
       );
+      // Sharing controls stay available while an authorized AI turn continues.
+      busy.value = false;
+      saving.value = false;
+      released = true;
       final metadata = MessageMetadataEntity(
         modelMetadata: {
           'workspaceContextSelectionProof': {
@@ -134,14 +143,15 @@ class const WorkspaceChatContextToolbar({
           },
         },
       );
-      final content = revoke
+      final content = selection == null
           ? LocaleKeys.workspace_chat_revoked.tr()
-          : '${LocaleKeys.workspace_chat_shared.tr()}\n${jsonEncode(selection!.toJson())}';
-      await ref
+          : '${LocaleKeys.workspace_chat_shared.tr()}\n'
+                '${jsonEncode(selection.toJson())}';
+      final _ = await ref
           .read(sendMessageUsecaseProvider(workspaceId))
           .call(
             conversationId: conversationId,
-            draft: ChatDraft(
+            draft: .new(
               text: content,
               metadataJson: jsonEncode(metadata.toJson()),
             ),
@@ -149,12 +159,16 @@ class const WorkspaceChatContextToolbar({
     } on Object catch (failure) {
       if (context.mounted) error.value = failure;
     } finally {
-      if (context.mounted) busy.value = false;
+      if (context.mounted && !released) {
+        busy.value = false;
+        saving.value = false;
+      }
     }
   }
 
   String? _parent(WidgetRef ref) {
     final path = ref.read(directoryNavigationProvider(workspaceId)).path;
+
     return path.isEmpty ? null : path.last.parentId;
   }
 
@@ -172,6 +186,7 @@ class const WorkspaceChatContextToolbar({
     if (directory.path.isNotEmpty) {
       return WorkspaceChatItem(id: directory.path.last.id, kind: 'folder');
     }
+
     return item;
   }
 
@@ -198,6 +213,7 @@ class const WorkspaceChatContextToolbar({
           ],
         ),
       );
+
       return accepted == true ? [] : null;
     }
     final tables = await ref.read(
@@ -205,7 +221,8 @@ class const WorkspaceChatContextToolbar({
     );
     final table = await tables.table(item.id);
     if (!context.mounted) return null;
-    return showDialog<List<String>>(
+
+    return await showDialog<List<String>>(
       context: context,
       builder: (_) =>
           WorkspaceContextRecordPicker(workspaceId: workspaceId, table: table),

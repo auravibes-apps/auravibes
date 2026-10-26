@@ -14,50 +14,81 @@ class const WorkspaceContextInspector({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final future = useMemoized(
-      () async => (await ref.read(
+      () async => await (await ref.read(
         workspaceConversationContextUsecaseProvider(workspaceId).future,
       )).describe(conversationId),
       [workspaceId, conversationId],
     );
     final state = useFuture(future);
+
     return AlertDialog(
-      scrollable: true,
       title: const TextLocale(LocaleKeys.workspace_chat_title),
-      content: state.hasError
-          ? WorkspaceItemFailure(error: state.error!)
-          : state.connectionState != ConnectionState.done
-          ? const CircularProgressIndicator()
-          : _scope(state.data),
+      content: switch (state) {
+        AsyncSnapshot(:final Object error) => WorkspaceItemFailure(
+          error: error,
+        ),
+        AsyncSnapshot(connectionState: .done, :final data) =>
+          _WorkspaceContextScope(data: data),
+        _ => const CircularProgressIndicator(),
+      },
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const TextLocale(LocaleKeys.common_close),
         ),
       ],
+      scrollable: true,
     );
   }
+}
 
-  Widget _scope(Map<String, Object?>? data) {
+class const _WorkspaceContextScope({required final Map<String, Object?>? data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = this.data;
     if (data == null) return const TextLocale(LocaleKeys.workspace_chat_none);
     final rows = data['records'];
     final label = data['labelColumnId'];
+
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         if (data['name'] case final String name)
           Text(name)
         else
           const TextLocale(LocaleKeys.workspace_items_title),
         const TextLocale(LocaleKeys.workspace_chat_scope),
+        if (_hasRestrictedReferences(rows))
+          const TextLocale(LocaleKeys.workspace_chat_reference_scope),
         if (rows is List<Object?>)
-          for (final row in rows.whereType<Map<String, Object?>>())
-            ListTile(
-              title: Text(
-                '${(row['values'] as Map<String, Object?>)[label] ?? row['id']}',
+          for (final row in rows)
+            if (row is Map<String, Object?>)
+              ListTile(
+                title: Text(_recordLabel(row, label)),
+                subtitle: Text('${row['id']}'),
               ),
-              subtitle: Text('${row['id']}'),
-            ),
       ],
     );
   }
+}
+
+String _recordLabel(Map<String, Object?> row, Object? label) {
+  final values = row['values'];
+  if (values is! Map<String, Object?> || label is! String) {
+    return '${row['id']}';
+  }
+
+  return '${values[label] ?? row['id']}';
+}
+
+bool _hasRestrictedReferences(Object? rows) {
+  if (rows is! List<Object?>) return false;
+  for (final row in rows) {
+    if (row is! Map<String, Object?>) continue;
+    final restricted = row['restrictedReferenceColumns'];
+    if (restricted is List<Object?> && restricted.isNotEmpty) return true;
+  }
+
+  return false;
 }

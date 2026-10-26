@@ -7,7 +7,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_folders_pr
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
-import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_conversation_context_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -15,8 +15,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'workspace_conversation_context_provider.g.dart';
 
 @riverpod
-Future<ManageWorkspaceConversationContextUsecase>
-workspaceConversationContextUsecase(Ref ref, String workspaceId) async {
+Future<ManageWorkspaceChatContextUsecase> workspaceConversationContextUsecase(
+  Ref ref,
+  String workspaceId,
+) async {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
@@ -39,15 +41,17 @@ workspaceConversationContextUsecase(Ref ref, String workspaceId) async {
     final gateway = await ref.watch(
       cloudWorkspaceStateGatewayProvider(session).future,
     );
-    if (!ref.mounted || gateway == null)
+    if (!ref.mounted || gateway == null) {
       throw const WorkspaceTableException(denied: true);
+    }
     repository = CloudWorkspaceContextRepository(
       gateway.client,
       cloud.cloudWorkspaceId,
     );
   }
   final conversations = ref.watch(conversationRepositoryProvider);
-  return ManageWorkspaceConversationContextUsecase(
+
+  return ManageWorkspaceChatContextUsecase(
     workspaceId: cloud == null ? workspaceId : '${cloud.cloudWorkspaceId}',
     repository: repository,
     commands: commands,
@@ -63,6 +67,6 @@ Future<WorkspaceConversationContext> workspaceConversationContext(
   Ref ref,
   String workspaceId,
   String conversationId,
-) async => (await ref.watch(
+) async => await (await ref.watch(
   workspaceConversationContextUsecaseProvider(workspaceId).future,
 )).read(conversationId);

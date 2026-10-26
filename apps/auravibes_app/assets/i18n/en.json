@@ -2169,6 +2169,7 @@
     "loading": "Loading current data…"
   },
   "workspace_chat": {
+    "reference_scope": "Links outside this chat’s shared context stay hidden. Edit links in Directory.",
     "inspect": "Inspect shared context",
     "none": "No workspace items are shared with AI in this Conversation.",
     "title": "AI context",

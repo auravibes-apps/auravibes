@@ -3,8 +3,9 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-/// Explicit user action grants context; imported transcript metadata never does.
-class const ManageWorkspaceConversationContextUsecase({
+/// Explicit user action grants context; imported transcript metadata never
+/// does.
+class const ManageWorkspaceChatContextUsecase({
   required final String workspaceId,
   required final WorkspaceConversationContextRepository repository,
   required final WorkspaceConversationCommandUsecase commands,
@@ -12,7 +13,8 @@ class const ManageWorkspaceConversationContextUsecase({
 }) {
   Future<WorkspaceConversationContext> read(String conversationId) async {
     await _authorize(conversationId);
-    return repository.read(conversationId);
+
+    return await repository.read(conversationId);
   }
 
   Future<Map<String, Object?>?> describe(String conversationId) async {
@@ -20,7 +22,8 @@ class const ManageWorkspaceConversationContextUsecase({
     final selection = current.selection;
     if (selection == null) return null;
     if (selection.kind == 'directory') return {'kind': 'directory'};
-    return commands.call(
+
+    return await commands.call(
       selection: selection,
       arguments: {
         'action': 'read',
@@ -38,8 +41,9 @@ class const ManageWorkspaceConversationContextUsecase({
     await _authorize(conversationId);
     if (selection != null) {
       if (selection.conversationId != conversationId ||
-          selection.workspaceId != workspaceId)
+          selection.workspaceId != workspaceId) {
         throw const WorkspaceTableException(denied: true);
+      }
       if (selection.kind != 'directory') {
         final _ = await commands.call(
           selection: selection,
@@ -52,11 +56,13 @@ class const ManageWorkspaceConversationContextUsecase({
       }
     }
     await _authorize(conversationId);
-    return repository.save(conversationId, requestId, selection);
+
+    return await repository.save(conversationId, requestId, selection);
   }
 
   Future<void> _authorize(String conversationId) async {
-    if (!await canAccess(conversationId))
+    if (!await canAccess(conversationId)) {
       throw const WorkspaceTableException(denied: true);
+    }
   }
 }

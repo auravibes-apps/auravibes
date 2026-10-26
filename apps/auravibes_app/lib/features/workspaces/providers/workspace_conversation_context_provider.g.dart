@@ -16,13 +16,13 @@ final workspaceConversationContextUsecaseProvider =
 final class WorkspaceConversationContextUsecaseProvider
     extends
         $FunctionalProvider<
-          AsyncValue<ManageWorkspaceConversationContextUsecase>,
-          ManageWorkspaceConversationContextUsecase,
-          FutureOr<ManageWorkspaceConversationContextUsecase>
+          AsyncValue<ManageWorkspaceChatContextUsecase>,
+          ManageWorkspaceChatContextUsecase,
+          FutureOr<ManageWorkspaceChatContextUsecase>
         >
     with
-        $FutureModifier<ManageWorkspaceConversationContextUsecase>,
-        $FutureProvider<ManageWorkspaceConversationContextUsecase> {
+        $FutureModifier<ManageWorkspaceChatContextUsecase>,
+        $FutureProvider<ManageWorkspaceChatContextUsecase> {
   WorkspaceConversationContextUsecaseProvider._({
     required WorkspaceConversationContextUsecaseFamily super.from,
     required String super.argument,
@@ -47,11 +47,12 @@ final class WorkspaceConversationContextUsecaseProvider
 
   @$internal
   @override
-  $FutureProviderElement<ManageWorkspaceConversationContextUsecase>
-  $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
+  $FutureProviderElement<ManageWorkspaceChatContextUsecase> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<ManageWorkspaceConversationContextUsecase> create(Ref ref) {
+  FutureOr<ManageWorkspaceChatContextUsecase> create(Ref ref) {
     final argument = this.argument as String;
     return workspaceConversationContextUsecase(ref, argument);
   }
@@ -69,12 +70,12 @@ final class WorkspaceConversationContextUsecaseProvider
 }
 
 String _$workspaceConversationContextUsecaseHash() =>
-    r'80dde68928e64ee7ad1334197efd01e2edc85342';
+    r'1cd3911f87ace4a4c0a8f7ced9040ff194ede402';
 
 final class WorkspaceConversationContextUsecaseFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<ManageWorkspaceConversationContextUsecase>,
+          FutureOr<ManageWorkspaceChatContextUsecase>,
           String
         > {
   WorkspaceConversationContextUsecaseFamily._()
