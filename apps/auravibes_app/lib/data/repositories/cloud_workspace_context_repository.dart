@@ -31,13 +31,10 @@ class const CloudWorkspaceContextRepository(
   );
   WorkspaceConversationContext _decode(String value, String conversationId) {
     final data = jsonDecode(value) as Map<String, dynamic>;
+
     return WorkspaceConversationContext(
       id: data['id'] as String?,
-      selection: WorkspaceContextSelection.decode(
-        data['selection'],
-        '$workspaceId',
-        conversationId,
-      ),
+      selection: .decode(data['selection'], '$workspaceId', conversationId),
     );
   }
 }

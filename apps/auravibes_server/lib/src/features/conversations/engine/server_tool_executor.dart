@@ -1,7 +1,4 @@
 import 'dart:async';
-
-import 'workspace_conversation_commands.dart';
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -32,6 +29,7 @@ import 'background_work_result_reader.dart';
 import 'conversation_host_effects.dart';
 import 'server_agent_guidance.dart';
 import 'server_tool_runtime.dart';
+import 'workspace_conversation_commands.dart';
 
 typedef _ConnectorReader = ({int workspaceId, String userId});
 typedef _ConnectorReadTarget = ({
@@ -150,6 +148,7 @@ Map<String, Object?> cloudConnectorConnectionRecords({
       (record['connectorIds']! as List<String>).add(connector.identifier);
     }
   }
+
   return {
     'connections': [
       for (final record in connectionsById.values)
@@ -193,6 +192,7 @@ List<Map<String, Object?>> cloudConnectorToolRecords({
   records.sort(
     (left, right) => '${left['toolId']}'.compareTo('${right['toolId']}'),
   );
+
   return records;
 }
 
@@ -273,6 +273,7 @@ resolveCloudConnectorTool({
           StackTrace.current,
         );
       }
+
       return (connector: connector, tool: tool);
     }
   }
@@ -326,6 +327,7 @@ PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
     }),
     fieldMask: const [],
   );
+
   return PatchWorkspaceStateRequest(
     workspaceId: workspaceId,
     requestId: '$turnRequestId:$toolCallId:activate_skill:$skillId',
@@ -357,6 +359,7 @@ validateServerSkillRequestTarget(
       )) {
     throw const FormatException(publicUrlError);
   }
+
   return (uri: uri, addresses: addresses);
 }
 
@@ -376,6 +379,7 @@ Future<String> readBoundedServerSkillResponse(
       throw const FormatException('Tool response is too large.');
     }
   }
+
   return utf8.decode(bytes);
 }
 
@@ -570,6 +574,7 @@ class const ServerToolExecutorService({
         request.arguments,
       );
     }
+
     return switch (tool.descriptor.kind) {
       AgentResolvedToolKind.mcp => _runMcp(
         session,
@@ -619,6 +624,7 @@ class const ServerToolExecutorService({
         session,
         turn.workspaceId,
       );
+
       return switch (tool.descriptor.toolIdentifier) {
         listConnectorConnectionsToolName => cloudConnectorConnectionRecords(
           connectors: connectorDefinitions,
@@ -691,6 +697,7 @@ class const ServerToolExecutorService({
           table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
           table.deletedAt.equals(null),
     );
+
     return [
       for (final resource in resources)
         {'id': resource.resourceId, ..._jsonMap(resource.data)},
@@ -706,6 +713,7 @@ class const ServerToolExecutorService({
       where: (table) =>
           table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
     );
+
     return [
       for (final connection in connections)
         {
@@ -869,6 +877,7 @@ class const ServerToolExecutorService({
     if (connectionId != null) {
       executionArguments.remove('connectionId');
     }
+
     return await ConnectorRequestExecution(
       executor: ConnectorToolTemplateExecutor(
         const ResolveConnectorRequestTemplate(),
@@ -913,6 +922,7 @@ class const ServerToolExecutorService({
     if (work == null) {
       throw const FormatException('Background result is not available.');
     }
+
     return backgroundWorkResultPage(
       workId: work.stableId,
       status: work.status,
@@ -980,6 +990,7 @@ class const ServerToolExecutorService({
         ),
       );
     }
+
     return buildSkillActivationResult(
       manifest: manifest,
       content: _skillContent(target.slug, state, request.languageCode),
@@ -1008,6 +1019,7 @@ class const ServerToolExecutorService({
       if (resource == null) {
         throw const ServerToolNotConfiguredException();
       }
+
       return buildSkillResourceResult(
         skillSlug: target.skill,
         resourceSlug: target.resource,
@@ -1103,6 +1115,7 @@ class const ServerToolExecutorService({
           table.workspaceId.equals(turn.workspaceId) &
           table.deletedAt.equals(null),
     );
+
     return (
       conversation: conversation,
       selectedSkillIds: selectedSkillIds,
@@ -1181,6 +1194,7 @@ class const ServerToolExecutorService({
           a2uiSupportedComponents?.isEmpty == true) {
         return null;
       }
+
       return state.conversation.parentConversationStableId == null
           ? app.identifier
           : null;
@@ -1188,6 +1202,7 @@ class const ServerToolExecutorService({
     if (!cloudServiceSkillReady(app, state.serviceConnections)) {
       return null;
     }
+
     return app.identifier;
   }
 
@@ -1200,6 +1215,7 @@ class const ServerToolExecutorService({
         a2uiSupportedComponents == null) {
       return appSkill;
     }
+
     return a2uiSkillDefinitionForComponents(a2uiSupportedComponents!);
   }
 
@@ -1376,6 +1392,7 @@ class const ServerToolExecutorService({
         childId: child.id,
         state: 'waiting',
       );
+
       return ServerToolAwaitingSubAgents(
         children: [
           {
@@ -1455,6 +1472,7 @@ class const ServerToolExecutorService({
         (agentId != null && agentId is! String)) {
       throw const FormatException('Invalid sub-agent request.');
     }
+
     return (
       title: title,
       prompt: prompt,
@@ -1476,6 +1494,7 @@ class const ServerToolExecutorService({
     if (parent == null || parent.parentConversationStableId != null) {
       throw const ServerToolNotConfiguredException();
     }
+
     return parent;
   }
 
@@ -1517,6 +1536,7 @@ class const ServerToolExecutorService({
     final message = await ConversationMessage.db.findById(session, messageId);
     if (message?.metadataJson == null) return null;
     final selectionId = _jsonMap(message!.metadataJson!)['modelSelectionId'];
+
     return selectionId is String && selectionId.isNotEmpty ? selectionId : null;
   }
 
@@ -1601,6 +1621,7 @@ class const ServerToolExecutorService({
         decoded['status'] != 'running_in_background') {
       return resultJson;
     }
+
     return jsonEncode({...decoded, 'childConversationId': childConversationId});
   }
 
@@ -1667,6 +1688,7 @@ class const ServerToolExecutorService({
         ),
         transaction: transaction,
       );
+
       return null;
     });
     if (activeTurn == null ||
@@ -1818,6 +1840,7 @@ class const ServerToolExecutorService({
             cursor: query.cursor,
           ),
         );
+
     return {
       'agents': [
         for (final agent in page.agents)
@@ -1846,6 +1869,7 @@ class const ServerToolExecutorService({
           table.resourceId.equals(agentId) &
           table.deletedAt.equals(null),
     );
+
     return resource != null &&
         _agentTypes(_jsonMap(resource.data), 'sub_agent').isNotEmpty;
   }
@@ -1857,6 +1881,7 @@ class const ServerToolExecutorService({
       'subAgentList' => const ['sub_agent'],
       _ => const ['main', 'sub_agent'],
     };
+
     return filter == null || types.contains(filter) ? types : const [];
   }
 
@@ -1946,6 +1971,7 @@ class const ServerToolExecutorService({
             bearerToken: bearerToken,
             httpHeaders: httpHeaders,
           );
+
     return McpToolResult(
       content: switch (result['content']) {
         final List<dynamic> content =>
@@ -1991,6 +2017,7 @@ class const ServerToolExecutorService({
         'clientInfo': {'name': 'AuraVibes Server', 'version': '1.0.0'},
       });
       await sse.notify('notifications/initialized', const {});
+
       return await sse.request(2, 'tools/call', {
         'name': toolName,
         'arguments': arguments,
@@ -2035,6 +2062,7 @@ class const ServerToolExecutorService({
           decoded['result'] is! Map<String, dynamic>) {
         throw const FormatException('Invalid tool response.');
       }
+
       return decoded['result']! as Map<String, dynamic>;
     } on Object {
       await _throwIfCancelled(session, turn);
@@ -2061,6 +2089,7 @@ class const ServerToolExecutorService({
               requireHttps: requireHttps,
             );
             await _throwIfCancelled(session, turn);
+
             return _request(
               session,
               turn,
@@ -2105,6 +2134,7 @@ class const ServerToolExecutorService({
       rejectServerSkillRedirect(response.isRedirect);
       final headers = <String, List<String>>{};
       response.headers.forEach((name, values) => headers[name] = values);
+
       return UrlResponse(
         statusCode: response.statusCode,
         body: await _readResponse(response, idleTimeout: input.timeout),
@@ -2188,6 +2218,7 @@ class const ServerToolExecutorService({
   }) {
     final timeout = idleTimeout;
     if (timeout == null) return readBoundedServerSkillResponse(response);
+
     return readBoundedServerSkillResponse(response, idleTimeout: timeout);
   }
 
@@ -2206,6 +2237,7 @@ class const ServerToolExecutorService({
           table.deletedAt.equals(null),
     );
     if (resource == null) throw const ServerToolNotConfiguredException();
+
     return resource;
   }
 
@@ -2227,6 +2259,7 @@ class const ServerToolExecutorService({
   Map<String, dynamic> _jsonMap(String value) {
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) throw const FormatException();
+
     return decoded;
   }
 }

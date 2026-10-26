@@ -1,4 +1,4 @@
-import 'workspace_command.dart';
+import 'package:auravibes_engine/src/workspace_command.dart';
 
 /// Additional reference authority comes only from verified host creations.
 class const WorkspaceReferenceScope(
@@ -64,20 +64,26 @@ class const WorkspaceReferenceScope(
     Map<String, Object?> values,
     Map<String, Object?> previous,
   ) {
-    if (column['type'] != 'reference') return true;
-    final key = column['id'];
-    if (key is! String || !values.containsKey(key)) return true;
+    final added = _ReferenceValues.added(column, values, previous);
+    if (added.isEmpty) return true;
     final target = column['targetTableId'];
-    final old = _ReferenceValues.ids(previous[key]).toSet();
-    final added = _ReferenceValues.ids(values[key])
-        .where((id) => !old.contains(id));
 
-    return added.isEmpty ||
-        (target is String && added.every((id) => recordAllowed(target, id)));
+    return target is String && added.every((id) => recordAllowed(target, id));
   }
 }
 
 abstract final class _ReferenceValues {
+  static Iterable<String> added(
+    Map<String, Object?> column,
+    Map<String, Object?> values,
+    Map<String, Object?> previous,
+  ) {
+    final key = _key(column);
+    if (key == null || !values.containsKey(key)) return const [];
+
+    return _difference(values[key], previous[key]);
+  }
+
   static Iterable<String> ids(Object? value) => switch (value) {
     final String id when id.isNotEmpty => [id],
     final List<Object?> list => list.whereType<String>(),
@@ -88,6 +94,18 @@ abstract final class _ReferenceValues {
     List<Map<String, Object?>> columns,
     String id,
   ) => columns.where((column) => column['id'] == id).firstOrNull ?? const {};
+  static String? _key(Map<String, Object?> column) {
+    if (column['type'] != 'reference') return null;
+    final key = column['id'];
+
+    return key is String ? key : null;
+  }
+
+  static Iterable<String> _difference(Object? value, Object? previous) {
+    final old = ids(previous).toSet();
+
+    return ids(value).where((id) => !old.contains(id));
+  }
 }
 
 abstract final class _ReferenceProjection {
@@ -106,31 +124,19 @@ abstract final class _ReferenceProjection {
     );
   }
 
-  static Map<String, Object?> _select(
-    WorkspaceReferenceScope scope,
-    List<Map<String, Object?>> columns,
-    Map<String, Object?> values,
-  ) => {
-    for (final entry in values.entries)
-      if (_readable(
-        scope,
-        _ReferenceValues.column(columns, entry.key),
-        entry.value,
-      ))
-        entry.key: entry.value,
-  };
-
   static Map<String, Object?> column(
     WorkspaceReferenceScope scope,
     Map<String, Object?> column,
   ) {
     final result = {...column}..remove('targetTableId');
     if (column['type'] != 'reference') return result;
-    if (!_readable(scope, column, column['defaultValue']))
-      result.remove('defaultValue');
+    if (!_readable(scope, column, column['defaultValue'])) {
+      final _ = result.remove('defaultValue');
+    }
     final target = column['targetTableId'];
-    if (target is! String || !scope.tableAllowed(target))
-      result.remove('targetMatchColumnId');
+    if (target is! String || !scope.tableAllowed(target)) {
+      final _ = result.remove('targetMatchColumnId');
+    }
 
     return result;
   }
@@ -147,4 +153,18 @@ abstract final class _ReferenceProjection {
         _ReferenceValues.ids(value)
             .every((id) => scope.recordAllowed(target, id));
   }
+
+  static Map<String, Object?> _select(
+    WorkspaceReferenceScope scope,
+    List<Map<String, Object?>> columns,
+    Map<String, Object?> values,
+  ) => {
+    for (final entry in values.entries)
+      if (_readable(
+        scope,
+        _ReferenceValues.column(columns, entry.key),
+        entry.value,
+      ))
+        entry.key: entry.value,
+  };
 }

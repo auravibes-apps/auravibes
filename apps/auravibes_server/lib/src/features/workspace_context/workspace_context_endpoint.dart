@@ -11,6 +11,7 @@ class WorkspaceContextEndpoint extends Endpoint {
     String conversationId,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
+
     return WorkspaceContextStore(
       session,
       workspaceId,
@@ -27,6 +28,7 @@ class WorkspaceContextEndpoint extends Endpoint {
     String? selectionJson,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
+
     return WorkspaceContextStore(
       session,
       workspaceId,

@@ -143,12 +143,12 @@ abstract final class _ReceiptCodec {
 
     return metadata;
   }
-
-  static Object? _canonical(Object? value) => switch (value) {
-    final Map<String, dynamic> map => {
-      for (final key in map.keys.toList()..sort()) key: _canonical(map[key]),
-    },
-    final List<Object?> list => list.map(_canonical).toList(),
-    _ => value,
-  };
 }
+
+Object? _canonical(Object? value) => switch (value) {
+  final Map<String, dynamic> map => {
+    for (final key in map.keys.toList()..sort()) key: _canonical(map[key]),
+  },
+  final List<Object?> list => list.map(_canonical).toList(),
+  _ => value,
+};

@@ -68,6 +68,7 @@ bool serverToolCanRunInBackground(
 }) {
   if (!isTopLevelConversation) return false;
   final descriptor = tool.descriptor;
+
   return descriptor.kind == AgentResolvedToolKind.skillNative &&
       descriptor.skillSlug == agentsSkillSlug &&
       descriptor.toolIdentifier == runSubAgentToolName;
@@ -122,6 +123,7 @@ Set<String> cloudAuthorizedSkillIds({
         .map((data) => data['skillId'])
         .whereType<String>(),
   );
+
   return ids;
 }
 
@@ -201,6 +203,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
     instructions: instructions,
     connectorToolIds: connectorToolIds,
   );
+
   return SkillManifest(
     slug: slug,
     title: title,
@@ -249,6 +252,7 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   final descriptor = AgentResolvedToolName.skillControl(
     toolIdentifier: activateSkillToolName,
   );
+
   return [
     ServerResolvedTool(
       descriptor: descriptor,
@@ -291,6 +295,7 @@ List<String> _selectableCloudSkillSlugs({
         (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
       ..._selectableContentOnlyCloudSkillSlugs(),
   ];
+
   return selectable.toSet().toList()..sort();
 }
 
@@ -326,6 +331,7 @@ bool cloudUserSkillReady(
 ) {
   if (skill['id'] is! String || skill['isEnabled'] == false) return false;
   final connectorToolIds = skill['connectorToolIds'] as List? ?? const [];
+
   return connectorToolIds.every(
     (id) =>
         id is String &&
@@ -364,6 +370,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
       .where((tool) => serverToolIsExecutable(tool.descriptor))
       .fold(<String, ServerResolvedTool>{}, (unique, tool) {
         unique.putIfAbsent(tool.spec.name, () => tool);
+
         return unique;
       })
       .values
@@ -381,6 +388,7 @@ ServerResolvedTool _nativeTool({
     skillSlug: skillSlug,
     toolIdentifier: toolIdentifier,
   );
+
   return ServerResolvedTool(
     descriptor: descriptor,
     spec: ToolSpec(
@@ -398,6 +406,7 @@ bool cloudAppSkillEnabled(
   final setting = settings
       .where((candidate) => candidate['skillId'] == skillId)
       .lastOrNull;
+
   return setting?['isEnabled'] == true ||
       (setting == null && skillId == agentsSkillSlug);
 }
@@ -473,6 +482,7 @@ AgentToolPermissionResult resolveCloudToolPermission({
   if (conversationPermissionMode == 'alwaysAsk') {
     return AgentToolPermissionResult.needsConfirmation;
   }
+
   return switch (agentPermissionMode) {
     'alwaysAllow' => AgentToolPermissionResult.granted,
     'alwaysAsk' => AgentToolPermissionResult.needsConfirmation,
@@ -506,6 +516,7 @@ AgentToolPermissionResult defaultCloudToolPermission(
       serverToolIsExecutable(descriptor)) {
     return AgentToolPermissionResult.needsConfirmation;
   }
+
   return AgentToolPermissionResult.notConfigured;
 }
 
@@ -626,6 +637,7 @@ class ServerToolRuntime({
         .where((resource) {
           final data = _data(resource);
           final toolGroupId = data['toolGroupId'];
+
           return isCloudToolEnabled(
             toolData: data,
             toolGroupData: toolGroupId is String
@@ -711,6 +723,7 @@ class ServerToolRuntime({
               resource.resourceKind == WorkspaceResourceKind.skillSetting,
         )
         .map(_data);
+
     return materializeCloudSkillTools(
       selectedSkillIds: selectedSkillIds,
       appSkillSettings: appSkillSettings,
@@ -768,6 +781,7 @@ class ServerToolRuntime({
         if (existing.status == 'running') {
           await _recoverStaleRunning(session, existing);
         }
+
         return ServerToolDisposition.completed;
       }
       request = ServerToolRequest(
@@ -804,6 +818,7 @@ class ServerToolRuntime({
           'executionError',
           _boundedJson({'error': '$error'}),
         );
+
         return ServerToolDisposition.completed;
       }
     }
@@ -816,6 +831,7 @@ class ServerToolRuntime({
           'toolNotFound',
           _boundedJson({'error': 'Tool is no longer available.'}),
         );
+
         return ServerToolDisposition.completed;
       }
       await _insertResolved(
@@ -827,6 +843,7 @@ class ServerToolRuntime({
         digest: digest,
         status: 'toolNotFound',
       );
+
       return ServerToolDisposition.completed;
     }
     var executionRequest = request;
@@ -839,6 +856,7 @@ class ServerToolRuntime({
           AgentToolPermissionResult.notConfigured.name,
           _boundedJson({'error': 'Tool is not configured for cloud use.'}),
         );
+
         return ServerToolDisposition.completed;
       }
       await _insertResolved(
@@ -850,6 +868,7 @@ class ServerToolRuntime({
         digest: digest,
         status: AgentToolPermissionResult.notConfigured.name,
       );
+
       return ServerToolDisposition.completed;
     }
     final configuredPermission = await _permission(
@@ -891,6 +910,7 @@ class ServerToolRuntime({
               conversation.parentConversationStableId == null,
         ),
       );
+
       return ServerToolDisposition.awaitingApproval;
     }
     if (existing == null && permission != AgentToolPermissionResult.granted) {
@@ -903,6 +923,7 @@ class ServerToolRuntime({
         digest: digest,
         status: permission.name,
       );
+
       return ServerToolDisposition.completed;
     }
     if (!serverToolPermissionAllowsExecution(
@@ -917,6 +938,7 @@ class ServerToolRuntime({
           _boundedJson({'error': 'Tool permission is no longer granted.'}),
         );
       }
+
       return ServerToolDisposition.completed;
     }
 
@@ -993,6 +1015,7 @@ class ServerToolRuntime({
           call.id!,
         );
         if (waiting == null) return ServerToolDisposition.completed;
+
         return await _reconcileAwaitingSubAgents(session, waiting);
       }
       await _finish(session, call, 'success', _boundedJson(result));
@@ -1021,6 +1044,7 @@ class ServerToolRuntime({
       );
       rethrow;
     }
+
     return ServerToolDisposition.completed;
   }
 
@@ -1061,6 +1085,7 @@ class ServerToolRuntime({
       completion.then<ServerToolDisposition?>((value) => value),
       detachment.then<ServerToolDisposition?>((_) => null),
     ]);
+
     return disposition ?? ServerToolDisposition.completed;
   }
 
@@ -1087,6 +1112,7 @@ class ServerToolRuntime({
           executionSession,
           call.id!,
         );
+
         return waiting == null
             ? ServerToolDisposition.completed
             : await _reconcileAwaitingSubAgents(executionSession, waiting);
@@ -1098,6 +1124,7 @@ class ServerToolRuntime({
         result: _boundedJson(result),
         languageCode: languageCode,
       );
+
       return ServerToolDisposition.completed;
     } on AgentToolExecutionFailure catch (failure) {
       await _completeCancellableToolRecord(
@@ -1114,6 +1141,7 @@ class ServerToolRuntime({
         'phase=${failure.failurePhase}.',
         level: LogLevel.warning,
       );
+
       return ServerToolDisposition.completed;
     } on ConversationCancelledException {
       final detached = await _completeCancellableToolRecord(
@@ -1125,6 +1153,7 @@ class ServerToolRuntime({
         languageCode: languageCode,
       );
       if (!detached) rethrow;
+
       return ServerToolDisposition.completed;
     } on Object catch (error) {
       final detached = await _completeCancellableToolRecord(
@@ -1141,6 +1170,7 @@ class ServerToolRuntime({
         level: LogLevel.warning,
       );
       if (!detached) rethrow;
+
       return ServerToolDisposition.completed;
     } finally {
       await executionSession.close();
@@ -1280,6 +1310,7 @@ class ServerToolRuntime({
             transaction: transaction,
           );
           backgroundSubAgentStarted = true;
+
           return true;
         }
         final projection = result == null ? null : projectToolOutput(result);
@@ -1363,6 +1394,7 @@ class ServerToolRuntime({
           transaction: transaction,
         );
         backgroundCompleted = true;
+
         return true;
       }
       if (!serverToolCallCanTransition(
@@ -1392,6 +1424,7 @@ class ServerToolRuntime({
         ),
         transaction: transaction,
       );
+
       return false;
     });
     if (backgroundSubAgentStarted) {
@@ -1411,6 +1444,7 @@ class ServerToolRuntime({
           conversationId: parent.stableId,
         );
       }
+
       return true;
     }
     if (backgroundCompleted) {
@@ -1439,6 +1473,7 @@ class ServerToolRuntime({
         }
       }
     }
+
     return detached;
   }
 
@@ -1619,6 +1654,7 @@ class ServerToolRuntime({
           table.conversationId.equals(turn.conversationId) &
           table.stableId.equals(workStableId),
     );
+
     return work == null ||
         work.status == 'stopRequested' ||
         work.status == 'cancelled';
@@ -1752,6 +1788,7 @@ class ServerToolRuntime({
         .map((association) => association['permissionMode'])
         .whereType<String>()
         .firstOrNull;
+
     return resolveCloudToolPermission(
       workspacePermission: workspacePermission,
       agentPermissionMode: agentPermissionMode,
@@ -1766,6 +1803,7 @@ class ServerToolRuntime({
     final descriptor = _resolver.resolve(name);
     if (descriptor == null) return null;
     final schema = data['inputSchema'] ?? data['inputJsonSchema'];
+
     return ServerResolvedTool(
       descriptor: descriptor,
       outputSchema: switch (data['outputSchema']) {
@@ -1795,6 +1833,7 @@ class ServerToolRuntime({
     bool backgroundEligible = false,
   }) {
     final now = DateTime.now().toUtc();
+
     return ConversationToolCall.db.insertRow(
       session,
       ConversationToolCall(
@@ -1841,6 +1880,7 @@ class ServerToolRuntime({
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) {
       return null;
     }
+
     return ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
@@ -1972,6 +2012,7 @@ class ServerToolRuntime({
         descriptor?.toolIdentifier == runSubAgentToolName) {
       return true;
     }
+
     return false;
   }
 
@@ -2025,6 +2066,7 @@ class ServerToolRuntime({
       session,
       call.id!,
     );
+
     return recovered == null
         ? ServerToolDisposition.completed
         : _reconcileAwaitingSubAgents(session, recovered);
@@ -2048,6 +2090,7 @@ class ServerToolRuntime({
         'executionError',
         _boundedJson({'content': _subAgentFailedMessage}),
       );
+
       return ServerToolDisposition.completed;
     }
     final results = <Map<String, Object?>>[];
@@ -2076,6 +2119,7 @@ class ServerToolRuntime({
         results.length == 1 ? results.single : {'children': results},
       ),
     );
+
     return ServerToolDisposition.completed;
   }
 
@@ -2124,6 +2168,7 @@ class ServerToolRuntime({
       ConversationStatuses.cancelled => 'cancelled',
       _ => 'error',
     };
+
     return {
       'conversationId': conversationId,
       'status': status,
@@ -2139,17 +2184,20 @@ class ServerToolRuntime({
   Map<String, dynamic> _data(WorkspaceResource resource) {
     final value = jsonDecode(resource.data);
     if (value is! Map<String, dynamic>) throw const FormatException();
+
     return value;
   }
 
   Future<String> _digest(String value) async {
     final hash = await Sha256().hash(utf8.encode(value));
+
     return base64UrlEncode(hash.bytes);
   }
 
   Map<String, dynamic> _jsonMap(String value) {
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) throw const FormatException();
+
     return decoded;
   }
 
@@ -2159,6 +2207,7 @@ class ServerToolRuntime({
       SkillResourceResult(:final value) => value,
       _ => null,
     };
+
     return specialResult ?? jsonEncode(value);
   }
 
@@ -2180,6 +2229,7 @@ String _backgroundWorkFollowupPrompt({
           'cancelled' => 'cancelled by the user',
           _ => 'failed or ended without a result',
         };
+
   return [
     'Background work `$workId` $outcome.',
     'This is a new conversation event. The original tool call remains '
@@ -2205,5 +2255,6 @@ String _truncateUtf8(String value, int maxBytes) {
   while (end > 0 && (bytes[end] & 0xc0) == 0x80) {
     end--;
   }
+
   return utf8.decode(bytes.sublist(0, end));
 }

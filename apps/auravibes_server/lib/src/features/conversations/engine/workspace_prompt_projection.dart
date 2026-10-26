@@ -6,7 +6,8 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import 'workspace_conversation_commands.dart';
 
-/// Refreshes selected authorized data at the provider boundary, not from history.
+/// Refreshes selected authorized data at the provider boundary, not from
+/// history.
 class const WorkspacePromptProjection() {
   Future<List<Map<String, dynamic>>> call(
     Session session,
@@ -28,7 +29,10 @@ class const WorkspacePromptProjection() {
     }
     if (ids.isEmpty) return messages;
     final projection = <String, String>{};
-    for (final id in ids) projection[id] = await _fresh(session, turn, id);
+    for (final id in ids) {
+      projection[id] = await _fresh(session, turn, id);
+    }
+
     return [for (final message in messages) _message(message, projection)];
   }
 
@@ -55,6 +59,7 @@ class const WorkspacePromptProjection() {
         'context-projection',
         workspaceContextReadArguments(input, result),
       );
+
       return projectToolOutput(jsonEncode(fresh)).text;
     } on Object {
       // Deleted, revoked, inaccessible, or unavailable records never replay.
@@ -74,6 +79,7 @@ class const WorkspacePromptProjection() {
     }
     final calls = message['tool_calls'];
     if (calls is! List<Object?>) return message;
+
     return {
       ...message,
       'tool_calls': [

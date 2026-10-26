@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:drift/drift.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_conversation_context.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:drift/drift.dart';
 
 /// Only explicit host controls write these events; transcript imports cannot.
 class const LocalWorkspaceContextRepository(
@@ -14,13 +14,10 @@ class const LocalWorkspaceContextRepository(
   @override
   Future<WorkspaceConversationContext> read(String conversationId) async {
     final value = await latest(workspaceId, conversationId);
+
     return WorkspaceConversationContext(
       id: value?.id,
-      selection: WorkspaceContextSelection.decode(
-        value?.selection,
-        workspaceId,
-        conversationId,
-      ),
+      selection: .decode(value?.selection, workspaceId, conversationId),
     );
   }
 
@@ -30,12 +27,14 @@ class const LocalWorkspaceContextRepository(
     String requestId,
     WorkspaceContextSelection? selection,
   ) async {
-    await _save(
+    final write = _SelectionWrite(database, (
       workspaceId: workspaceId,
       conversationId: conversationId,
       requestId: requestId,
-      selection: selection?.toJson(),
-    );
+      encoded: selection == null ? null : jsonEncode(selection.toJson()),
+    ));
+    await database.transaction(write.save);
+
     return WorkspaceConversationContext(id: requestId, selection: selection);
   }
 
@@ -43,19 +42,10 @@ class const LocalWorkspaceContextRepository(
     String workspaceId,
     String conversationId,
   ) async {
-    final row = await database
-        .customSelect(
-          'SELECT id, selection FROM workspace_context_selections '
-          'WHERE workspace_id = ? AND conversation_id = ? ORDER BY rowid DESC LIMIT 1',
-          variables: [
-            Variable<String>(workspaceId),
-            Variable<String>(conversationId),
-          ],
-          readsFrom: {database.workspaceContextSelections},
-        )
-        .getSingleOrNull();
+    final row = await _latestRow(workspaceId, conversationId);
     if (row == null) return null;
     final value = row.readNullable<String>('selection');
+
     return (
       id: row.read<String>('id'),
       selection: value == null
@@ -64,33 +54,61 @@ class const LocalWorkspaceContextRepository(
     );
   }
 
-  Future<void> _save({
-    required String workspaceId,
-    required String conversationId,
-    required String requestId,
-    required Map<String, Object?>? selection,
-  }) => database.transaction(() async {
-    final existing = await (database.select(
-      database.workspaceContextSelections,
-    )..where((row) => row.id.equals(requestId))).getSingleOrNull();
-    final encoded = selection == null ? null : jsonEncode(selection);
+  Future<QueryRow?> _latestRow(String workspaceId, String conversationId) =>
+      database
+          .customSelect(
+            'SELECT id, selection FROM workspace_context_selections '
+            'WHERE workspace_id = ? AND conversation_id = ? '
+            'ORDER BY rowid DESC LIMIT 1',
+            variables: [
+              Variable<String>(workspaceId),
+              Variable<String>(conversationId),
+            ],
+            readsFrom: {database.workspaceContextSelections},
+          )
+          .getSingleOrNull();
+}
+
+typedef _SelectionValues = ({
+  String workspaceId,
+  String conversationId,
+  String requestId,
+  String? encoded,
+});
+
+class const _SelectionWrite(
+  final AppDatabase database,
+  final _SelectionValues values,
+) {
+  Future<void> save() async {
+    final existing = await _existing();
     if (existing != null) {
-      if (existing.workspaceId != workspaceId ||
-          existing.conversationId != conversationId ||
-          existing.selection != encoded) {
-        throw const WorkspaceTableException(conflict: true);
-      }
+      _validate(existing);
+
       return;
     }
     final _ = await database
         .into(database.workspaceContextSelections)
-        .insert(
-          WorkspaceContextSelectionsCompanion.insert(
-            id: requestId,
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-            selection: Value(encoded),
-          ),
-        );
-  });
+        .insert(_entry());
+  }
+
+  Future<WorkspaceContextSelectionRow?> _existing() => (database.select(
+    database.workspaceContextSelections,
+  )..where((row) => row.id.equals(values.requestId))).getSingleOrNull();
+
+  void _validate(WorkspaceContextSelectionRow existing) {
+    if (existing.workspaceId != values.workspaceId ||
+        existing.conversationId != values.conversationId ||
+        existing.selection != values.encoded) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+  }
+
+  WorkspaceContextSelectionsCompanion _entry() =>
+      WorkspaceContextSelectionsCompanion.insert(
+        id: values.requestId,
+        workspaceId: values.workspaceId,
+        conversationId: values.conversationId,
+        selection: .new(values.encoded),
+      );
 }

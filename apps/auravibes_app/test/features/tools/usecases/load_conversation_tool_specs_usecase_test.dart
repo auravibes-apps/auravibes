@@ -91,6 +91,7 @@ void main() {
         workspaceId: 'ws-1',
       );
       expect(result.map((spec) => spec.name), [
+        workspaceCommandToolName,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,
@@ -153,6 +154,7 @@ void main() {
         );
 
         expect(result.map((spec) => spec.name), [
+          workspaceCommandToolName,
           listConnectorConnectionsToolName,
           listConnectorToolsToolName,
           executeConnectorToolName,
@@ -214,6 +216,7 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        workspaceCommandToolName,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,
@@ -243,7 +246,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(5));
+      expect(result, hasLength(6));
       expect(result.firstOrNull?.name, 'tool-1');
     });
 
@@ -432,7 +435,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(7));
+      expect(result, hasLength(8));
     });
 
     test('constructor stores dependencies', () {
@@ -527,6 +530,7 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        workspaceCommandToolName,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,
@@ -599,6 +603,7 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
+        workspaceCommandToolName,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,

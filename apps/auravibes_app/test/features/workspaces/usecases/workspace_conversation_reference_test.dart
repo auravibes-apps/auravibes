@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -182,13 +181,17 @@ void main() {
         ),
       );
       var sequence = 0;
-      Future<Map> command(Map<String, Object?> arguments) async {
+      Future<Map<String, Object?>> command(
+        Map<String, Object?> arguments,
+      ) async {
         final result = await fixture.tools.call(
           conversationId: fixture.chatId,
           operationId: 'create-${sequence++}',
           arguments: arguments,
         );
-        if (result is! Map) throw StateError('Expected command result');
+        if (result is! Map<String, Object?>) {
+          throw StateError('Expected command result');
+        }
 
         return result;
       }
@@ -198,7 +201,7 @@ void main() {
         'name': 'Target',
         'labelName': 'Title',
       });
-      final target = await fixture.tables.table(targetResult['id'] as String);
+      final target = await fixture.tables.table(_resultId(targetResult));
       final targetRow = await command({
         'action': 'createRecord',
         'tableId': target.id,
@@ -211,7 +214,7 @@ void main() {
         'name': 'Source',
         'labelName': 'Title',
       });
-      var source = await fixture.tables.table(sourceResult['id'] as String);
+      var source = await fixture.tables.table(_resultId(sourceResult));
       final _ = await command({
         'action': 'saveColumn',
         'tableId': source.id,
@@ -240,7 +243,7 @@ void main() {
       });
       final current = await fixture.tables.record(
         source.id,
-        created['id'] as String,
+        _resultId(created),
       );
       expect(current.values[reference.id], targetRow['id']);
       final read = await command({'action': 'read', 'tableId': source.id});
@@ -270,7 +273,7 @@ Future<_Fixture> _create() async {
       );
   final conversations = ConversationRepository(database);
   final chat = await conversations.createConversation(
-    .new(title: 'Chat', workspaceId: 'one'),
+    const .new(title: 'Chat', workspaceId: 'one'),
   );
   final tables = OrganizeWorkspaceTablesUsecase(
     LocalWorkspaceTableRepository(database, 'one'),
@@ -290,4 +293,11 @@ Future<_Fixture> _create() async {
     context: context,
     tools: tools,
   );
+}
+
+String _resultId(Map<String, Object?> result) {
+  final id = result['id'];
+  if (id is! String) throw StateError('Missing result identity');
+
+  return id;
 }

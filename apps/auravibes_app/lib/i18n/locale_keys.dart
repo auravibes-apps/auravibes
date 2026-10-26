@@ -2873,4 +2873,16 @@ abstract class LocaleKeys {
   static const workspace_connected_unset = 'workspace_connected.unset';
   static const workspace_connected_remove_extra_inputs =
       'workspace_connected.remove_extra_inputs';
+  static const workspace_chat_reference_scope =
+      'workspace_chat.reference_scope';
+  static const workspace_chat_inspect = 'workspace_chat.inspect';
+  static const workspace_chat_none = 'workspace_chat.none';
+  static const workspace_chat_title = 'workspace_chat.title';
+  static const workspace_chat_share = 'workspace_chat.share';
+  static const workspace_chat_revoke = 'workspace_chat.revoke';
+  static const workspace_chat_scope = 'workspace_chat.scope';
+  static const workspace_chat_shared = 'workspace_chat.shared';
+  static const workspace_chat_revoked = 'workspace_chat.revoked';
+  static const workspace_chat_records = 'workspace_chat.records';
+  static const workspace_chat_structure = 'workspace_chat.structure';
 }

@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/repositories/local_workspace_command_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
@@ -15,7 +14,6 @@ part 'workspace_conversation_tools_provider.g.dart';
 WorkspaceConversationToolsUsecase workspaceConversationTools(
   Ref ref,
 ) => WorkspaceConversationToolsUsecase(
-  receipts: LocalWorkspaceCommandRepository(ref.watch(appDatabaseProvider)),
   conversations: ref.watch(conversationRepositoryProvider),
   context: (workspaceId) => LocalWorkspaceContextRepository(
     ref.read(appDatabaseProvider),
@@ -26,4 +24,5 @@ WorkspaceConversationToolsUsecase workspaceConversationTools(
     folders: await ref.read(workspaceFolderUsecaseProvider(workspaceId).future),
     views: await ref.read(workspaceViewUsecaseProvider(workspaceId).future),
   ),
+  receipts: .new(ref.watch(appDatabaseProvider)),
 );

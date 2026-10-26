@@ -20,58 +20,55 @@ void main() {
 
     setUp(fixture.setUp);
     for (final mode in agent.ConversationToolAccessMode.values) {
-      test(
-        'workspace mode $mode preserves current access and previews structure only',
-        () async {
-          final usecase = ResolveToolApprovalDecisionUsecase(
-            conversationToolsRepository: fixture.conversationToolsRepository,
-            toolsGroupsRepository: fixture.toolsGroupsRepository,
-            workspaceToolsRepository: fixture.workspaceToolsRepository,
-            workspaceAccess: (_, _) async => true,
-            getToolAccessMode: (_) async => mode,
-          );
-          for (final action in [
-            'read',
-            'createRecord',
-            'updateRecord',
-            'createTable',
-            'saveColumn',
-            'saveView',
-          ]) {
-            final result = await usecase.callForRequest((
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolCallId: 'call',
-              resolvedTool: ResolvedTool.workspaceCommand(),
-              argumentsRaw: jsonEncode({'action': action}),
-            ));
-            expect(
-              result.permissionResult,
-              mode == .allowAll ||
-                      ['read', 'createRecord', 'updateRecord'].contains(action)
-                  ? ToolPermissionResult.granted
-                  : ToolPermissionResult.needsConfirmation,
-            );
-          }
-          final denied = ResolveToolApprovalDecisionUsecase(
-            conversationToolsRepository: fixture.conversationToolsRepository,
-            toolsGroupsRepository: fixture.toolsGroupsRepository,
-            workspaceToolsRepository: fixture.workspaceToolsRepository,
-            workspaceAccess: (_, _) async => false,
-            getToolAccessMode: (_) async => mode,
-          );
+      test('workspace $mode access and structural previews', () async {
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          getToolAccessMode: (_) async => mode,
+          workspaceAccess: (_, _) async => true,
+        );
+        for (final action in [
+          'read',
+          'createRecord',
+          'updateRecord',
+          'createTable',
+          'saveColumn',
+          'saveView',
+        ]) {
+          final result = await usecase.callForRequest((
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'call',
+            resolvedTool: ResolvedTool.workspaceCommand(),
+            argumentsRaw: jsonEncode({'action': action}),
+          ));
           expect(
-            (await denied.callForRequest((
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolCallId: 'call',
-              resolvedTool: ResolvedTool.workspaceCommand(),
-              argumentsRaw: '{"action":"updateRecord"}',
-            ))).permissionResult,
-            ToolPermissionResult.disabledInWorkspace,
+            result.permissionResult,
+            mode == .allowAll ||
+                    ['read', 'createRecord', 'updateRecord'].contains(action)
+                ? ToolPermissionResult.granted
+                : ToolPermissionResult.needsConfirmation,
           );
-        },
-      );
+        }
+        final denied = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          getToolAccessMode: (_) async => mode,
+          workspaceAccess: (_, _) async => false,
+        );
+        expect(
+          (await denied.callForRequest((
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'call',
+            resolvedTool: ResolvedTool.workspaceCommand(),
+            argumentsRaw: '{"action":"updateRecord"}',
+          ))).permissionResult,
+          ToolPermissionResult.disabledInWorkspace,
+        );
+      });
     }
 
     for (final mode in agent.ConversationToolAccessMode.values) {

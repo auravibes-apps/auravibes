@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_ta
 import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_chat_context_toolbar.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_context_record_picker.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
@@ -299,9 +300,7 @@ void main() {
         expect(find.text('Hidden linked value'), findsNothing);
         expect(find.text(linked.id), findsNothing);
         expect(
-          find.text(
-            'Links outside this chat’s shared context stay hidden. Edit links in Directory.',
-          ),
+          find.text(LocaleKeys.workspace_chat_reference_scope.tr()),
           findsOneWidget,
         );
         await tester.tap(find.text('Close'));

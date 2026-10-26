@@ -157,7 +157,7 @@ final class WorkspaceConversationContextProvider
 }
 
 String _$workspaceConversationContextHash() =>
-    r'22bf8b646904c059a3e9deaf3c7b2b8281456143';
+    r'b8c151f3b336ebdbb2c2996988eafe58752af84c';
 
 final class WorkspaceConversationContextFamily extends $Family
     with
