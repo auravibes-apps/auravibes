@@ -4,6 +4,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../workspace_state/workspace_table_access.dart';
 import '../workspace_views/workspace_view_store.dart';
 
@@ -135,6 +136,14 @@ class _WorkspaceContextSelectionSaver {
     String requestId,
     String? selectionJson,
   ) async {
+    final authUser = await const AuthUserLock().lock(
+      store.session,
+      userId: store.actorUserId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(code: .authenticationRequired);
+    }
     final context = await store._authorize(transaction);
     final selection = await _validatedSelection(
       transaction,

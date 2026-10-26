@@ -5,6 +5,7 @@ import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../domain/workspace_roles.dart';
 import '../repositories/cloud_workspace_repository.dart' as workspace_repo;
 import '../workspace_erasure_cleanup.dart';
@@ -110,19 +111,19 @@ class CloudWorkspaceUseCases(
     return session.db.transaction((transaction) async {
       const endpoint = 'cloudWorkspace.createWorkspace';
       final requestHash = jsonEncode({'name': name});
-      await _repository.lockWorkspaceCreation(
+      final authUser = await const AuthUserLock().lock(
         session,
-        ownerUserId: userId,
-        transaction: transaction,
-      );
-      final authUser = await AuthUser.db.findById(
-        session,
-        UuidValue.fromString(userId),
+        userId: userId,
         transaction: transaction,
       );
       if (authUser == null) {
         _fail(CloudWorkspaceErrorCode.authenticationRequired);
       }
+      await _repository.lockWorkspaceCreation(
+        session,
+        ownerUserId: userId,
+        transaction: transaction,
+      );
       final receipt = await _repository.findReceipt(
         session,
         actorUserId: userId,
@@ -580,6 +581,7 @@ class CloudWorkspaceUseCases(
   }) => _mutate(
     session,
     userId: userId,
+    additionalUserIds: [request.newOwnerUserId],
     workspaceId: request.workspaceId,
     endpoint: 'cloudWorkspace.transferOwnership',
     requestId: request.requestId,
@@ -1101,6 +1103,7 @@ class CloudWorkspaceUseCases(
   Future<T> _mutate<T>(
     Session session, {
     required String userId,
+    List<String> additionalUserIds = const [],
     required int workspaceId,
     required String endpoint,
     required String requestId,
@@ -1113,6 +1116,17 @@ class CloudWorkspaceUseCases(
     )
     run,
   }) => session.db.transaction((transaction) async {
+    final userIds = {userId, ...additionalUserIds}.toList()..sort();
+    for (final id in userIds) {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: id,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        _fail(CloudWorkspaceErrorCode.authenticationRequired);
+      }
+    }
     final requestHash = jsonEncode(requestBody);
     final receipt = await _repository.findReceipt(
       session,

@@ -6,6 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../domain/virtual_workspace_model_selection.dart';
 import '../../workspaces/domain/workspace_roles.dart';
@@ -407,6 +408,16 @@ class ModelConnectionUseCases {
     if (selectionId.trim().isEmpty || selectionId.length > 500) _invalid();
 
     await session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.authenticationRequired,
+        );
+      }
       await _requireMember(
         session,
         workspaceId: request.workspaceId,

@@ -2810,12 +2810,20 @@ void main() {
             conversationId: 'conversation-1',
             toolCallId: 'background-cloud-call',
           );
+          final nonMemberUserId = const Uuid().v4().toString();
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(nonMemberUserId),
+              scopeNames: const {},
+            ),
+          );
           await expectLater(
             ConversationUseCases(
               conversation_repo.ConversationRepository(),
             ).detachToolCall(
               fixture.database,
-              userId: 'not-a-workspace-member',
+              userId: nonMemberUserId,
               request: request,
             ),
             throwsA(

@@ -11,6 +11,7 @@ import 'package:auravibes_server/src/features/workspaces/repositories/cloud_work
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
@@ -434,13 +435,21 @@ void main() {
 
     test('verify authorizes before probing', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
+      final nonMemberUserId = const Uuid().v4().toString();
+      await AuthUser.db.insertRow(
+        fixture.session,
+        AuthUser(
+          id: UuidValue.fromString(nonMemberUserId),
+          scopeNames: const {},
+        ),
+      );
       final probe = _FakeMcpServerProbe();
       final useCases = McpServerUseCases(McpServerRepository(), probe);
 
       await expectLater(
         useCases.verify(
           fixture.session,
-          userId: 'not-a-member',
+          userId: nonMemberUserId,
           request: _verifyRequest(fixture.workspaceId),
         ),
         throwsA(_cloudError(CloudWorkspaceErrorCode.membershipRequired)),
@@ -617,6 +626,10 @@ class _Fixture {
     session.passwords['workspaceSecretKey'] =
         'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
     final userId = const Uuid().v4().toString();
+    await AuthUser.db.insertRow(
+      session,
+      AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+    );
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(
           session,

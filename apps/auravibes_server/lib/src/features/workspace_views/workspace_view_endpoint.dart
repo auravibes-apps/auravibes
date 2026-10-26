@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/accounts/authenticated_account_resolver.dart';
+import 'package:auravibes_server/src/features/accounts/auth_user_lock.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_connected_validation.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_view_store.dart';
@@ -179,6 +180,7 @@ class WorkspaceViewEndpoint extends Endpoint {
     session,
     request.workspaceId,
     (store) => store.duplicate(request),
+    lockUser: true,
   );
   Future<List<WorkspaceView>> list(
     Session session,
@@ -195,7 +197,12 @@ class WorkspaceViewEndpoint extends Endpoint {
   Future<WorkspaceView> save(
     Session session,
     WorkspaceViewSaveRequest request,
-  ) => _access(session, request.workspaceId, (store) => store.save(request));
+  ) => _access(
+    session,
+    request.workspaceId,
+    (store) => store.save(request),
+    lockUser: true,
+  );
 }
 
 Map<String, Object?> _actionFailure(AgentToolExecutionFailure failure) {
@@ -274,11 +281,20 @@ String _failureCode(AgentToolExecutionFailure failure) {
 Future<T> _access<T>(
   Session session,
   int workspaceId,
-  Future<T> Function(WorkspaceViewStore) operation,
-) async {
+  Future<T> Function(WorkspaceViewStore) operation, {
+  bool lockUser = false,
+}) async {
   final account = await const AuthenticatedAccountResolver()(session);
 
   return session.db.transaction((transaction) async {
+    if (lockUser) {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: account.userId,
+        transaction: transaction,
+      );
+      if (authUser == null) _denied();
+    }
     final store = await _locked(
       session,
       workspaceId,

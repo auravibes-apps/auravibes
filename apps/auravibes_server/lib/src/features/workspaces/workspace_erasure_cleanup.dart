@@ -34,6 +34,7 @@ class const WorkspaceErasureCleanup(final Session session) {
           where: (row) =>
               row.deletedAt.notEquals(null) &
               row.erasureRequestedAt.notEquals(null),
+          orderBy: (row) => row.id,
           transaction: transaction,
           lockMode: LockMode.forUpdate,
         );

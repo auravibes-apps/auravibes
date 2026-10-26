@@ -7,6 +7,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../mcp_catalog/mcp_catalog_repository.dart';
 import '../mcp_catalog/mcp_catalog_use_cases.dart';
 import '../workspace_state/workspace_secret_cipher.dart';
@@ -545,6 +546,16 @@ class McpServerUseCases(
     required String userId,
     required Transaction transaction,
   }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
     final member = await _repository.findMember(
       session,
       workspaceId: workspaceId,

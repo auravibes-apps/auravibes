@@ -13,6 +13,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../objects/object_retained_assets.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../../workspaces/domain/workspace_roles.dart';
@@ -5769,6 +5770,14 @@ class ConversationUseCases {
     var publishWorkspaceWakeup = true;
     final result = await session.db.transaction((transaction) async {
       _requireId(requestId);
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        _fail(ConversationErrorCode.permissionDenied);
+      }
       final hash = base64UrlEncode(
         (await Sha256().hash(utf8.encode(jsonEncode(requestBody)))).bytes,
       );

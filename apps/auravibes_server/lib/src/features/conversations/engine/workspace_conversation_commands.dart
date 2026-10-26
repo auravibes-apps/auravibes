@@ -5,6 +5,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../workspace_context/workspace_context_store.dart';
 import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/domain/workspace_table_constraints.dart';
@@ -315,13 +316,23 @@ class _WorkspaceCommandPreparation {
     );
 
     return (
-      guard: (transaction) => commands._guard((
-        session: request.session,
-        turn: request.turn,
-        conversationId: selection.conversationId,
-        epoch: selectionId,
-        transaction: transaction,
-      )),
+      guard: (transaction) async {
+        final authUser = await const AuthUserLock().lock(
+          request.session,
+          userId: request.turn.initiatorUserId,
+          transaction: transaction,
+        );
+        if (authUser == null) {
+          throw CloudWorkspaceException(code: .authenticationRequired);
+        }
+        await commands._guard((
+          session: request.session,
+          turn: request.turn,
+          conversationId: selection.conversationId,
+          epoch: selectionId,
+          transaction: transaction,
+        ));
+      },
       references: references,
     );
   }

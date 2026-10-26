@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 
+import '../accounts/auth_user_lock.dart';
 import '../../generated/protocol.dart';
 import '../workspace_state/workspace_secret_cipher.dart';
 import 'mcp_oauth_credentials.dart';
@@ -106,6 +107,14 @@ class McpOAuthTokenResolver {
         : null;
     String? winningToken;
     final committed = await session.db.transaction((transaction) async {
+      if (snapshot.scope == WorkspaceSecretScope.user) {
+        final authUser = await const AuthUserLock().lock(
+          session,
+          userId: snapshot.ownerUserId,
+          transaction: transaction,
+        );
+        if (authUser == null) throw const McpOAuthReauthRequired();
+      }
       final workspace = await CloudWorkspace.db.findFirstRow(
         session,
         where: (table) =>
