@@ -2886,6 +2886,55 @@ void main() {
       expect(row.right - status.right, lessThan(100));
     });
 
+    testWidgets('shows guidance when a workspace tool fails without details', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        content: 'Final answer',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          thinking: 'Checking the workspace',
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tc-missing-error',
+              name: 'workspace_item',
+              argumentsRaw: '{"action":"read"}',
+              resultStatus: ToolCallResultStatus.executionError,
+            ),
+          ],
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('activity_tool_tc-missing-error')),
+      );
+      await tester.pump();
+      expect(
+        find.textContaining('No error details were provided.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('shared Directory location'), findsOneWidget);
+    });
+
     testWidgets('reveals a finished activity run in three compact levels', (
       tester,
     ) async {

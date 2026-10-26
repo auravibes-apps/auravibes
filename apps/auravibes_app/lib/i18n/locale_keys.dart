@@ -893,6 +893,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_arguments';
   static const chats_screens_chat_conversation_activity_result =
       'chats_screens.chat_conversation.activity_result';
+  static const chats_screens_chat_conversation_activity_failure_no_details =
+      'chats_screens.chat_conversation.activity_failure_no_details';
+  static const chats_screens_chat_conversation_activity_workspace_failure_no_details =
+      'chats_screens.chat_conversation.activity_workspace_failure_no_details';
   static const chats_screens_chat_conversation_activity_context_truncated =
       'chats_screens.chat_conversation.activity_context_truncated';
   static const chats_screens_chat_conversation_activity_persisted_truncated =

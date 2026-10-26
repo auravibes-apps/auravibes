@@ -3130,7 +3130,11 @@ class const _ActivityToolCallRow({
         ? ToolMetadataDecoder.decode(toolCall.argumentsRaw)
         : null;
     final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
+    final hasFailureWithoutDetails =
+        toolCall.resultStatus == ToolCallResultStatus.executionError &&
+        (decodedResponse == null || decodedResponse.isEmpty);
     final hasDetails =
+        hasFailureWithoutDetails ||
         decodedArgs?.isNotEmpty == true ||
         decodedResponse?.isNotEmpty == true ||
         toolCall.appData?.isNotEmpty == true;
@@ -3434,6 +3438,15 @@ class const _ActivityToolCallDetails({
                 container: true,
                 excludeSemantics: true,
                 label: value,
+              ),
+            if (toolCall.resultStatus == ToolCallResultStatus.executionError &&
+                (decodedResponse == null || decodedResponse!.isEmpty))
+              TextLocale(
+                toolCall.name == workspaceCommandToolName
+                    ? LocaleKeys
+                          .chats_screens_chat_conversation_activity_workspace_failure_no_details
+                    : LocaleKeys
+                          .chats_screens_chat_conversation_activity_failure_no_details,
               ),
             if (decodedResponse case final value? when value.isNotEmpty)
               Padding(

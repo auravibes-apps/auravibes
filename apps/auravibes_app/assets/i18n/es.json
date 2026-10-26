@@ -608,6 +608,8 @@
       "activity_thinking": "Razonamiento",
       "activity_arguments": "Argumentos",
       "activity_result": "Resultado",
+      "activity_failure_no_details": "No se proporcionaron detalles del error.",
+      "activity_workspace_failure_no_details": "No se proporcionaron detalles del error. Comprueba que este chat tenga una ubicación del Directorio compartida y que tengas permiso; luego inténtalo de nuevo.",
       "activity_context_truncated": "Respuesta de la herramienta: {originalBytes} bytes. Solo se recortó el contexto del modelo a {limitBytes} bytes; la respuesta completa sigue guardada.",
       "activity_persisted_truncated": "Respuesta de la herramienta: {originalBytes} bytes. El contexto del modelo se limitó a {limitBytes} bytes; la salida guardada también se recortó y el contenido eliminado no está disponible.",
       "activity_open_sub_agent": "Abrir subagente",

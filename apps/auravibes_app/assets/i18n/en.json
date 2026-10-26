@@ -608,6 +608,8 @@
       "activity_thinking": "Thinking",
       "activity_arguments": "Arguments",
       "activity_result": "Result",
+      "activity_failure_no_details": "No error details were provided.",
+      "activity_workspace_failure_no_details": "No error details were provided. Check that this chat has a shared Directory location and that you have permission, then retry.",
       "activity_context_truncated": "Tool response: {originalBytes} bytes. Only the model context was truncated to {limitBytes} bytes; the full response remains stored.",
       "activity_persisted_truncated": "Tool response: {originalBytes} bytes. The model context was limited to {limitBytes} bytes; saved output was also truncated, so removed content is unavailable.",
       "activity_open_sub_agent": "Open sub-agent",
