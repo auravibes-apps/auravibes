@@ -15,18 +15,44 @@ class CodexOAuthRepository {
     Session session, {
     required int workspaceId,
     required String userId,
+    Transaction? transaction,
   }) => WorkspaceMember.db.findFirstRow(
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) &
         table.userId.equals(userId) &
         table.removedAt.equals(null),
+    transaction: transaction,
+  );
+
+  Future<CloudWorkspace?> lockWorkspace(
+    Session session,
+    int workspaceId,
+    Transaction transaction,
+  ) => CloudWorkspace.db.findFirstRow(
+    session,
+    where: (table) => table.id.equals(workspaceId),
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+
+  Future<CodexOAuthTransaction?> findByTransactionId(
+    Session session,
+    String transactionId,
+  ) => CodexOAuthTransaction.db.findFirstRow(
+    session,
+    where: (table) => table.transactionId.equals(transactionId),
   );
 
   Future<CodexOAuthTransaction> insertTransaction(
     Session session,
     CodexOAuthTransaction transaction,
-  ) => CodexOAuthTransaction.db.insertRow(session, transaction);
+    Transaction databaseTransaction,
+  ) => CodexOAuthTransaction.db.insertRow(
+    session,
+    transaction,
+    transaction: databaseTransaction,
+  );
 
   Future<CodexOAuthTransaction?> lockTransaction(
     Session session,
