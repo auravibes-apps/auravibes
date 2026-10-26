@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_conversation_
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation_notifier.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -75,11 +76,11 @@ class const _WorkspaceChatContextToolbarContent({
 class _WorkspaceChatContextToolbarState({
   required final ValueNotifier<_WorkspaceChatContextToolbarStatus> status,
 }) {
-  var released = false;
+  var _released = false;
 
   void start() {
     status.value = const _WorkspaceChatContextToolbarStatus(busy: true);
-    released = false;
+    _released = false;
   }
 
   void showFailure(Object failure) {
@@ -102,11 +103,11 @@ class _WorkspaceChatContextToolbarState({
 
   void release() {
     status.value = const _WorkspaceChatContextToolbarStatus();
-    released = true;
+    _released = true;
   }
 
   void finish({required bool mounted}) {
-    if (!mounted || released) return;
+    if (!mounted || _released) return;
     status.value = const _WorkspaceChatContextToolbarStatus();
   }
 }
@@ -359,7 +360,7 @@ Future<List<String>?> _pickTableRecords(
   final table = await _loadContextTable(actions, item.id);
   if (!actions.context.mounted) return null;
 
-  return _showContextRecordPicker(actions, table);
+  return await _showContextRecordPicker(actions, table);
 }
 
 Future<WorkspaceTable> _loadContextTable(
@@ -386,13 +387,10 @@ Future<List<String>?> _showContextRecordPicker(
 
 class const _WorkspaceContextShareConfirmation() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const TextLocale(LocaleKeys.workspace_chat_share),
-    content: const TextLocale(LocaleKeys.workspace_chat_scope),
-    actions: [
-      const _WorkspaceContextCancelButton(),
-      const _WorkspaceContextAcceptButton(),
-    ],
+  Widget build(BuildContext context) => const AlertDialog(
+    title: TextLocale(LocaleKeys.workspace_chat_share),
+    content: TextLocale(LocaleKeys.workspace_chat_scope),
+    actions: [_WorkspaceContextCancelButton(), _WorkspaceContextAcceptButton()],
   );
 }
 
@@ -451,7 +449,7 @@ Future<WorkspaceConversationContext> _persistContextSelection(
     workspaceConversationContextUsecaseProvider(actions.workspaceId).future,
   );
 
-  return consent.save(
+  return await consent.save(
     actions.conversationId,
     const UuidV7().generate(),
     selection,
