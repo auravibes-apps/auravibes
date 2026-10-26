@@ -713,6 +713,12 @@ class _Store implements ObjectStore {
     required String mimeType,
     required int sizeBytes,
     required String checksumSha256,
-    required Duration expiresIn,
+    required DateTime expiresAt,
   }) => throw UnimplementedError();
+
+  @override
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
+  }) async => false;
 }

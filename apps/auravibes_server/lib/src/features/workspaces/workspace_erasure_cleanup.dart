@@ -74,10 +74,9 @@ class const WorkspaceErasureCleanup(final Session session) {
       session,
       where: (row) => row.workspaceId.equals(workspace.id!),
       transaction: transaction,
-      lockMode: LockMode.forUpdate,
     );
+    final now = DateTime.now().toUtc();
     for (final object in objects) {
-      if (!objectCleanupConfirmed) return false;
       final deletion = await ObjectDeletion.db.findFirstRow(
         session,
         where: (row) =>
@@ -86,7 +85,50 @@ class const WorkspaceErasureCleanup(final Session session) {
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (deletion?.completedAt == null) return false;
+      final upload = await ObjectUpload.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.objectId.equals(object.id!),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (upload != null) {
+        final verifiedUploadCleanup =
+            deletion?.completedAt != null &&
+            deletion?.uploadCleanupVerifiedAt != null &&
+            deletion?.uploadCleanupVerifiedGeneration ==
+                deletion?.cleanupGeneration &&
+            deletion?.uploadCleanupVerifiedExpiresAt == upload.expiresAt &&
+            upload.signingReservationCount == 0 &&
+            !upload.expiresAt.isAfter(now);
+        if (!verifiedUploadCleanup) {
+          if (deletion != null &&
+              (deletion.completedAt != null ||
+                  deletion.uploadCleanupVerifiedAt != null)) {
+            await ObjectDeletion.db.updateRow(
+              session,
+              deletion.copyWith(
+                cleanupGeneration: deletion.cleanupGeneration + 1,
+                completedAt: null,
+                uploadCleanupVerifiedAt: null,
+                uploadCleanupVerifiedGeneration: null,
+                uploadCleanupVerifiedExpiresAt: null,
+                attempts: 0,
+                availableAt: upload.expiresAt.isAfter(now)
+                    ? upload.expiresAt
+                    : now,
+                lastError: null,
+              ),
+              transaction: transaction,
+            );
+          }
+          return false;
+        }
+      } else if (deletion?.completedAt == null) {
+        return false;
+      }
+      if (!objectCleanupConfirmed) return false;
     }
     final pending = await ObjectDeletion.db.findFirstRow(
       session,
@@ -319,7 +361,23 @@ class const WorkspaceErasureCleanup(final Session session) {
           row.workspaceId.equals(workspaceId) & row.completedAt.equals(null),
       transaction: transaction,
     );
-    final needsAttention = deletions.any((row) => row.attempts >= 8);
+    final blockedByUploadSigning = deletions.any(
+      (row) => row.lastError == 'uploadSigningOutcomeUnresolved',
+    );
+    final blockedByUploadQuiescence = deletions.any(
+      (row) => row.lastError == 'uploadQuiescenceUnverified',
+    );
+    final needsAttention =
+        blockedByUploadSigning ||
+        blockedByUploadQuiescence ||
+        deletions.any((row) => row.attempts >= 8);
+    final failureReason = blockedByUploadSigning
+        ? 'uploadSigningOutcomeUnresolved'
+        : blockedByUploadQuiescence
+        ? 'uploadQuiescenceUnverified'
+        : needsAttention
+        ? 'objectCleanupFailed'
+        : null;
     final requests = await WorkspaceErasureRequest.db.find(
       session,
       where: (row) =>
@@ -332,7 +390,7 @@ class const WorkspaceErasureCleanup(final Session session) {
         session,
         request.copyWith(
           state: needsAttention ? 'needsAttention' : 'pending',
-          failureReason: needsAttention ? 'objectCleanupFailed' : null,
+          failureReason: failureReason,
         ),
         transaction: transaction,
       );

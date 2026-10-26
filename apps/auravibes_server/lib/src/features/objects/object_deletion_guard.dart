@@ -83,6 +83,7 @@ class const ObjectDeletionGuard() {
 
     return current != null &&
         current.completedAt == null &&
+        current.cleanupGeneration == deletion.cleanupGeneration &&
         current.objectId == deletion.objectId &&
         current.objectKey == deletion.objectKey;
   }

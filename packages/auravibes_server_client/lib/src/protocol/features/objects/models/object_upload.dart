@@ -22,6 +22,7 @@ abstract class ObjectUpload
     required this.requestId,
     required this.requestHash,
     required this.expiresAt,
+    this.signingReservationCount,
     this.completedAt,
     required this.createdAt,
   });
@@ -34,6 +35,7 @@ abstract class ObjectUpload
     required String requestId,
     required String requestHash,
     required DateTime expiresAt,
+    int? signingReservationCount,
     DateTime? completedAt,
     required DateTime createdAt,
   }) = _ObjectUploadImpl;
@@ -49,6 +51,8 @@ abstract class ObjectUpload
       expiresAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
+      signingReservationCount:
+          jsonSerialization['signingReservationCount'] as int?,
       completedAt: jsonSerialization['completedAt'] == null
           ? null
           : _isc.DateTimeJsonExtension.fromJson(
@@ -77,6 +81,8 @@ abstract class ObjectUpload
 
   DateTime expiresAt;
 
+  int? signingReservationCount;
+
   DateTime? completedAt;
 
   DateTime createdAt;
@@ -92,6 +98,7 @@ abstract class ObjectUpload
     String? requestId,
     String? requestHash,
     DateTime? expiresAt,
+    int? signingReservationCount,
     DateTime? completedAt,
     DateTime? createdAt,
   });
@@ -106,6 +113,8 @@ abstract class ObjectUpload
       'requestId': requestId,
       'requestHash': requestHash,
       'expiresAt': expiresAt.toJson(),
+      if (signingReservationCount != null)
+        'signingReservationCount': signingReservationCount,
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
       'createdAt': createdAt.toJson(),
     };
@@ -122,6 +131,8 @@ abstract class ObjectUpload
       'requestId': requestId,
       'requestHash': requestHash,
       'expiresAt': expiresAt.toJson(),
+      if (signingReservationCount != null)
+        'signingReservationCount': signingReservationCount,
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
       'createdAt': createdAt.toJson(),
     };
@@ -144,6 +155,7 @@ class _ObjectUploadImpl extends ObjectUpload {
     required String requestId,
     required String requestHash,
     required DateTime expiresAt,
+    int? signingReservationCount,
     DateTime? completedAt,
     required DateTime createdAt,
   }) : super._(
@@ -154,6 +166,7 @@ class _ObjectUploadImpl extends ObjectUpload {
          requestId: requestId,
          requestHash: requestHash,
          expiresAt: expiresAt,
+         signingReservationCount: signingReservationCount,
          completedAt: completedAt,
          createdAt: createdAt,
        );
@@ -170,6 +183,7 @@ class _ObjectUploadImpl extends ObjectUpload {
     String? requestId,
     String? requestHash,
     DateTime? expiresAt,
+    Object? signingReservationCount = _Undefined,
     Object? completedAt = _Undefined,
     DateTime? createdAt,
   }) {
@@ -181,6 +195,9 @@ class _ObjectUploadImpl extends ObjectUpload {
       requestId: requestId ?? this.requestId,
       requestHash: requestHash ?? this.requestHash,
       expiresAt: expiresAt ?? this.expiresAt,
+      signingReservationCount: signingReservationCount is int?
+          ? signingReservationCount
+          : this.signingReservationCount,
       completedAt: completedAt is DateTime? ? completedAt : this.completedAt,
       createdAt: createdAt ?? this.createdAt,
     );

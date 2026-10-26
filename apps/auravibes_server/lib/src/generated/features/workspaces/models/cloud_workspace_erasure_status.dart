@@ -21,6 +21,7 @@ abstract class CloudWorkspaceErasureStatus
     required this.state,
     required this.requestedAt,
     this.completedAt,
+    this.failureReason,
   });
 
   factory CloudWorkspaceErasureStatus({
@@ -30,6 +31,7 @@ abstract class CloudWorkspaceErasureStatus
     required String state,
     required DateTime requestedAt,
     DateTime? completedAt,
+    String? failureReason,
   }) = _CloudWorkspaceErasureStatusImpl;
 
   factory CloudWorkspaceErasureStatus.fromJson(
@@ -48,6 +50,7 @@ abstract class CloudWorkspaceErasureStatus
           : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['completedAt'],
             ),
+      failureReason: jsonSerialization['failureReason'] as String?,
     );
   }
 
@@ -63,6 +66,8 @@ abstract class CloudWorkspaceErasureStatus
 
   DateTime? completedAt;
 
+  String? failureReason;
+
   /// Returns a shallow copy of this [CloudWorkspaceErasureStatus]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -73,6 +78,7 @@ abstract class CloudWorkspaceErasureStatus
     String? state,
     DateTime? requestedAt,
     DateTime? completedAt,
+    String? failureReason,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -84,6 +90,7 @@ abstract class CloudWorkspaceErasureStatus
       'state': state,
       'requestedAt': requestedAt.toJson(),
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
+      if (failureReason != null) 'failureReason': failureReason,
     };
   }
 
@@ -97,6 +104,7 @@ abstract class CloudWorkspaceErasureStatus
       'state': state,
       'requestedAt': requestedAt.toJson(),
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
+      if (failureReason != null) 'failureReason': failureReason,
     };
   }
 
@@ -116,6 +124,7 @@ class _CloudWorkspaceErasureStatusImpl extends CloudWorkspaceErasureStatus {
     required String state,
     required DateTime requestedAt,
     DateTime? completedAt,
+    String? failureReason,
   }) : super._(
          workspaceId: workspaceId,
          workspaceName: workspaceName,
@@ -123,6 +132,7 @@ class _CloudWorkspaceErasureStatusImpl extends CloudWorkspaceErasureStatus {
          state: state,
          requestedAt: requestedAt,
          completedAt: completedAt,
+         failureReason: failureReason,
        );
 
   /// Returns a shallow copy of this [CloudWorkspaceErasureStatus]
@@ -136,6 +146,7 @@ class _CloudWorkspaceErasureStatusImpl extends CloudWorkspaceErasureStatus {
     String? state,
     DateTime? requestedAt,
     Object? completedAt = _Undefined,
+    Object? failureReason = _Undefined,
   }) {
     return CloudWorkspaceErasureStatus(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -144,6 +155,9 @@ class _CloudWorkspaceErasureStatusImpl extends CloudWorkspaceErasureStatus {
       state: state ?? this.state,
       requestedAt: requestedAt ?? this.requestedAt,
       completedAt: completedAt is DateTime? ? completedAt : this.completedAt,
+      failureReason: failureReason is String?
+          ? failureReason
+          : this.failureReason,
     );
   }
 }

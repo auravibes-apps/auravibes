@@ -1597,6 +1597,23 @@ void main() {
             requestId: 'erase-retry',
             state: 'needsAttention',
             requestedAt: .utc(2026),
+            failureReason: 'objectCleanupFailed',
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 6,
+            workspaceName: 'Gateway not verified',
+            requestId: 'erase-gateway',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'uploadQuiescenceUnverified',
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 5,
+            workspaceName: 'Signing unresolved',
+            requestId: 'erase-signing',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'uploadSigningOutcomeUnresolved',
           ),
           CloudWorkspaceErasureStatus(
             workspaceId: 3,
@@ -1643,7 +1660,21 @@ void main() {
       );
       expect(
         find.text(
-          'Cloud asset cleanup needs attention. Retry to resume the erasure.',
+          'Cloud erasure is blocked because the configured storage gateway '
+          'cannot verify that signed uploads and in-flight writes have '
+          'stopped. Expiry alone is not proof. There is no current '
+          'self-service action to establish this guarantee; a verified '
+          'gateway capability is required.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Cloud erasure is blocked because a signed-upload request is active '
+          'or its result is unknown. AuraVibes cannot safely resolve a '
+          'crashed signing request automatically. There is no current '
+          'self-service action to clear this blocker; a safe signing-recovery '
+          'capability is required.',
         ),
         findsOneWidget,
       );
@@ -1660,9 +1691,10 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Retry cleanup'), findsOneWidget);
 
-      await tester.ensureVisible(find.text('Retry cleanup'));
-      await tester.tap(find.text('Retry cleanup'));
+      await tester.ensureVisible(find.text('Retry cleanup').first);
+      await tester.tap(find.text('Retry cleanup').first);
       final _ = await tester.pumpAndSettle();
       final retryRequest =
           verify(() => endpoint.retryWorkspaceErasure(captureAny()))

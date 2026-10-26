@@ -13,7 +13,6 @@ class const ObjectWorkspaceErasure(
       session,
       where: (row) => row.workspaceId.equals(workspaceId),
       transaction: transaction,
-      lockMode: LockMode.forUpdate,
     );
     for (final object in objects) {
       await _queue(object);
@@ -21,25 +20,55 @@ class const ObjectWorkspaceErasure(
   }
 
   Future<void> _queue(WorkspaceObject object) async {
+    final now = DateTime.now().toUtc();
+    final upload = await ObjectUpload.db.findFirstRow(
+      session,
+      where: (row) => row.objectId.equals(object.id!),
+      transaction: transaction,
+    );
+    final availableAt = upload != null && upload.expiresAt.isAfter(now)
+        ? upload.expiresAt
+        : now;
     final existing = await ObjectDeletion.db.findFirstRow(
       session,
       where: (row) => row.objectId.equals(object.id!),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (existing != null) return;
-
-    final now = DateTime.now().toUtc();
-    await WorkspaceObject.db.updateRow(
-      session,
-      object.copyWith(
-        status: 'deleted',
-        revision: object.revision + 1,
-        updatedAt: now,
-        deletedAt: now,
-      ),
-      transaction: transaction,
-    );
+    if (existing != null) {
+      if (upload == null) return;
+      final uploadProofIsCurrent =
+          upload.signingReservationCount == 0 &&
+          !upload.expiresAt.isAfter(now) &&
+          existing.uploadCleanupVerifiedAt != null &&
+          existing.uploadCleanupVerifiedGeneration ==
+              existing.cleanupGeneration &&
+          existing.uploadCleanupVerifiedExpiresAt == upload.expiresAt;
+      final reopenCompletedDeletion =
+          existing.completedAt != null && !uploadProofIsCurrent;
+      final invalidateUploadProof =
+          existing.uploadCleanupVerifiedAt != null && !uploadProofIsCurrent;
+      final deferredUntilExpiry = existing.availableAt.isBefore(availableAt);
+      if (reopenCompletedDeletion ||
+          invalidateUploadProof ||
+          deferredUntilExpiry) {
+        await ObjectDeletion.db.updateRow(
+          session,
+          existing.copyWith(
+            cleanupGeneration: existing.cleanupGeneration + 1,
+            completedAt: reopenCompletedDeletion ? null : existing.completedAt,
+            uploadCleanupVerifiedAt: null,
+            uploadCleanupVerifiedGeneration: null,
+            uploadCleanupVerifiedExpiresAt: null,
+            attempts: reopenCompletedDeletion ? 0 : existing.attempts,
+            availableAt: availableAt,
+            lastError: null,
+          ),
+          transaction: transaction,
+        );
+      }
+      return;
+    }
     await ObjectDeletion.db.insertRow(
       session,
       ObjectDeletion(
@@ -50,7 +79,17 @@ class const ObjectWorkspaceErasure(
         expectedRevision: object.revision,
         requestedAt: now,
         attempts: 0,
-        availableAt: now,
+        availableAt: availableAt,
+      ),
+      transaction: transaction,
+    );
+    await WorkspaceObject.db.updateRow(
+      session,
+      object.copyWith(
+        status: 'deleted',
+        revision: object.revision + 1,
+        updatedAt: now,
+        deletedAt: now,
       ),
       transaction: transaction,
     );

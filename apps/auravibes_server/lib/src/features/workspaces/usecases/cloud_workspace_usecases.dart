@@ -1097,7 +1097,15 @@ class CloudWorkspaceUseCases(
       for (final deletion in pendingDeletions) {
         await ObjectDeletion.db.updateRow(
           session,
-          deletion.copyWith(attempts: 0, availableAt: now, lastError: null),
+          deletion.copyWith(
+            cleanupGeneration: deletion.cleanupGeneration + 1,
+            uploadCleanupVerifiedAt: null,
+            uploadCleanupVerifiedGeneration: null,
+            uploadCleanupVerifiedExpiresAt: null,
+            attempts: 0,
+            availableAt: now,
+            lastError: null,
+          ),
           transaction: transaction,
         );
       }
@@ -1132,6 +1140,7 @@ class CloudWorkspaceUseCases(
         state: erasure.state,
         requestedAt: erasure.requestedAt,
         completedAt: erasure.completedAt,
+        failureReason: erasure.failureReason,
       );
 
   Future<CloudWorkspace> _requireWorkspace(

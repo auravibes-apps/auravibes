@@ -22,11 +22,13 @@ class ObjectRepository {
     required int workspaceId,
     required int objectId,
     Transaction? transaction,
+    bool lock = false,
   }) => ObjectUpload.db.findFirstRow(
     session,
     where: (t) =>
         t.workspaceId.equals(workspaceId) & t.objectId.equals(objectId),
     transaction: transaction,
+    lockMode: lock ? LockMode.forUpdate : null,
   );
 
   Future<ObjectUpload?> findUploadByRequest(
@@ -35,6 +37,7 @@ class ObjectRepository {
     required String actorUserId,
     required String requestId,
     Transaction? transaction,
+    bool lock = false,
   }) => ObjectUpload.db.findFirstRow(
     session,
     where: (t) =>
@@ -42,6 +45,7 @@ class ObjectRepository {
         t.actorUserId.equals(actorUserId) &
         t.requestId.equals(requestId),
     transaction: transaction,
+    lockMode: lock ? LockMode.forUpdate : null,
   );
 
   Future<bool> hasLiveReference(
@@ -98,31 +102,69 @@ class ObjectRepository {
     limit: limit,
   );
 
-  Future<void> completeDeletion(
+  Future<bool> completeDeletion(
     Session session, {
     required ObjectDeletion deletion,
     required WorkerCoordinatorLease coordinator,
     required DateTime now,
+    required DateTime? expectedUploadExpiresAt,
   }) => session.db.transaction((transaction) async {
     if (!await ObjectDeletionGuard.ownsCoordinator(
       session,
       transaction,
       coordinator,
     )) {
-      return;
+      return false;
     }
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      deletion.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) return false;
     final current = await ObjectDeletion.db.findById(
       session,
       deletion.id!,
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (current == null || current.completedAt != null) return;
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return false;
+    }
+    final currentUpload = await findUpload(
+      session,
+      workspaceId: deletion.workspaceId,
+      objectId: deletion.objectId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (expectedUploadExpiresAt != null) {
+      if (currentUpload == null ||
+          currentUpload.expiresAt != expectedUploadExpiresAt ||
+          currentUpload.expiresAt.isAfter(now) ||
+          currentUpload.signingReservationCount != 0) {
+        return false;
+      }
+    } else if (currentUpload != null) {
+      return false;
+    }
     await ObjectDeletion.db.updateRow(
       session,
-      current.copyWith(completedAt: now, lastError: null),
+      current.copyWith(
+        completedAt: now,
+        lastError: null,
+        uploadCleanupVerifiedAt: expectedUploadExpiresAt == null ? null : now,
+        uploadCleanupVerifiedGeneration: expectedUploadExpiresAt == null
+            ? null
+            : current.cleanupGeneration,
+        uploadCleanupVerifiedExpiresAt: expectedUploadExpiresAt,
+      ),
       transaction: transaction,
     );
+    return true;
   });
 
   Future<void> failDeletion(
@@ -145,15 +187,100 @@ class ObjectRepository {
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (current == null || current.completedAt != null) return;
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return;
+    }
     final attempts = current.attempts + 1;
     final delayMinutes = 1 << (attempts - 1).clamp(0, 6);
     await ObjectDeletion.db.updateRow(
       session,
       current.copyWith(
+        cleanupGeneration: current.cleanupGeneration + 1,
+        uploadCleanupVerifiedAt: null,
+        uploadCleanupVerifiedGeneration: null,
+        uploadCleanupVerifiedExpiresAt: null,
         attempts: attempts,
         availableAt: now.add(Duration(minutes: delayMinutes)),
         lastError: error,
+      ),
+      transaction: transaction,
+    );
+  });
+
+  Future<void> deferDeletionUntilUploadExpiry(
+    Session session, {
+    required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
+    required DateTime expiresAt,
+  }) => session.db.transaction((transaction) async {
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
+    final current = await ObjectDeletion.db.findById(
+      session,
+      deletion.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return;
+    }
+    await ObjectDeletion.db.updateRow(
+      session,
+      current.copyWith(
+        cleanupGeneration: current.cleanupGeneration + 1,
+        uploadCleanupVerifiedAt: null,
+        uploadCleanupVerifiedGeneration: null,
+        uploadCleanupVerifiedExpiresAt: null,
+        availableAt: expiresAt,
+        lastError: null,
+      ),
+      transaction: transaction,
+    );
+  });
+
+  Future<void> blockDeletionForUploadQuiescence(
+    Session session, {
+    required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
+    required DateTime retryAt,
+    required String reason,
+  }) => session.db.transaction((transaction) async {
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
+    final current = await ObjectDeletion.db.findById(
+      session,
+      deletion.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return;
+    }
+    await ObjectDeletion.db.updateRow(
+      session,
+      current.copyWith(
+        cleanupGeneration: current.cleanupGeneration + 1,
+        uploadCleanupVerifiedAt: null,
+        uploadCleanupVerifiedGeneration: null,
+        uploadCleanupVerifiedExpiresAt: null,
+        availableAt: retryAt,
+        lastError: reason,
       ),
       transaction: transaction,
     );

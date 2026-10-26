@@ -17,6 +17,7 @@ void main() {
             await ObjectCleanupService(
               store: _Store(deleted),
               repository: repository,
+              purgeReadyWorkspaceErasures: (_, _) async => 0,
               guard: _Guard(allowed),
             ).runOnce(
               _Session(),
@@ -56,6 +57,15 @@ class _Repository extends ObjectRepository {
   final bool allowed;
   bool completed = false;
   @override
+  Future<ObjectUpload?> findUpload(
+    Session session, {
+    required int workspaceId,
+    required int objectId,
+    Transaction? transaction,
+    bool lock = false,
+  }) async => null;
+
+  @override
   Future<List<ObjectDeletion>> listPendingDeletions(
     Session session, {
     required DateTime now,
@@ -75,13 +85,15 @@ class _Repository extends ObjectRepository {
     ),
   ];
   @override
-  Future<void> completeDeletion(
+  Future<bool> completeDeletion(
     Session session, {
     required ObjectDeletion deletion,
     required WorkerCoordinatorLease coordinator,
     required DateTime now,
+    required DateTime? expectedUploadExpiresAt,
   }) async {
     completed = true;
+    return true;
   }
 }
 
@@ -92,6 +104,12 @@ class _Store extends UnconfiguredObjectStore {
   Future<void> delete(String key) async {
     deleted.add(key);
   }
+
+  @override
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
+  }) async => true;
 }
 
 class _Session implements Session {

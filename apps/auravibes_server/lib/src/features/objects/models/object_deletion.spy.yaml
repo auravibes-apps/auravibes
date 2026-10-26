@@ -8,6 +8,10 @@ fields:
   expectedRevision: int
   requestedAt: DateTime
   completedAt: DateTime?
+  cleanupGeneration: int, default=0
+  uploadCleanupVerifiedAt: DateTime?
+  uploadCleanupVerifiedGeneration: int?
+  uploadCleanupVerifiedExpiresAt: DateTime?
   attempts: int
   availableAt: DateTime
   lastError: String?

@@ -86,6 +86,7 @@ class ObjectUseCases {
         actorUserId: userId,
         requestId: request.requestId,
         transaction: transaction,
+        lock: true,
       );
       if (existing != null) {
         if (existing.requestHash != hash ||
@@ -101,6 +102,18 @@ class ObjectUseCases {
         if (object == null) {
           throw ObjectException(code: ObjectErrorCode.objectNotFound);
         }
+        if (object.deletedAt != null || object.status != 'pending') {
+          throw ObjectException(code: ObjectErrorCode.objectNotFound);
+        }
+        await ObjectUpload.db.updateRow(
+          session,
+          existing.copyWith(
+            signingReservationCount: existing.signingReservationCount == null
+                ? null
+                : existing.signingReservationCount! + 1,
+          ),
+          transaction: transaction,
+        );
         return (object: object, expiresAt: existing.expiresAt);
       }
 
@@ -130,26 +143,60 @@ class ObjectUseCases {
           requestId: request.requestId,
           requestHash: hash,
           expiresAt: expiresAt,
+          signingReservationCount: 1,
           createdAt: now,
         ),
         transaction: transaction,
       );
       return (object: created, expiresAt: expiresAt);
     });
-    return _signedUpload(upload.object, upload.expiresAt);
+    final signed = await _signedUpload(
+      session,
+      upload.object,
+      upload.expiresAt,
+    );
+    await session.db.transaction((transaction) async {
+      await _lockActorWorkspaceMember(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        transaction: transaction,
+      );
+      final current = await repository.findObject(
+        session,
+        workspaceId: request.workspaceId,
+        objectId: upload.object.id!,
+        transaction: transaction,
+        lock: true,
+      );
+      if (current == null ||
+          current.status != 'pending' ||
+          current.deletedAt != null) {
+        throw ObjectException(code: ObjectErrorCode.objectNotFound);
+      }
+    });
+    return signed;
   }
 
   Future<BeginUploadResult> _signedUpload(
+    Session session,
     WorkspaceObject object,
     DateTime expiresAt,
   ) async {
-    final signed = await store.signPut(
-      key: object.objectKey,
-      mimeType: object.mimeType,
-      sizeBytes: object.sizeBytes,
-      checksumSha256: object.checksumSha256,
-      expiresIn: expiresAt.difference(DateTime.now().toUtc()),
-    );
+    final SignedObjectRequest signed;
+    try {
+      signed = await store.signPut(
+        key: object.objectKey,
+        mimeType: object.mimeType,
+        sizeBytes: object.sizeBytes,
+        checksumSha256: object.checksumSha256,
+        expiresAt: expiresAt,
+      );
+    } on Object catch (error, stackTrace) {
+      await _finishSigning(session, object, signedExpiry: null);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    await _finishSigning(session, object, signedExpiry: signed.expiresAt);
     return BeginUploadResult(
       objectId: object.id!,
       revision: object.revision,
@@ -158,6 +205,43 @@ class ObjectUseCases {
       expiresAt: signed.expiresAt,
     );
   }
+
+  Future<void> _finishSigning(
+    Session session,
+    WorkspaceObject object, {
+    required DateTime? signedExpiry,
+  }) => session.db.transaction((transaction) async {
+    await CloudWorkspace.db.findById(
+      session,
+      object.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final upload = await repository.findUpload(
+      session,
+      workspaceId: object.workspaceId,
+      objectId: object.id!,
+      transaction: transaction,
+      lock: true,
+    );
+    if (upload == null) return;
+    final expiresAt =
+        signedExpiry != null && signedExpiry.isAfter(upload.expiresAt)
+        ? signedExpiry
+        : upload.expiresAt;
+    await ObjectUpload.db.updateRow(
+      session,
+      upload.copyWith(
+        expiresAt: expiresAt,
+        signingReservationCount: switch (upload.signingReservationCount) {
+          null => null,
+          final count when count > 0 => count - 1,
+          _ => 0,
+        },
+      ),
+      transaction: transaction,
+    );
+  });
 
   Future<ObjectResult> completeUpload(
     Session session, {

@@ -2504,6 +2504,15 @@ class const _AvailableCloudDataContent({
   );
 }
 
+String _cloudErasureStatusAttentionKey(String? failureReason) =>
+    switch (failureReason) {
+      'uploadSigningOutcomeUnresolved' =>
+        LocaleKeys.cloud_workspaces_erasure_status_upload_signing_unresolved,
+      'uploadQuiescenceUnverified' =>
+        LocaleKeys.cloud_workspaces_erasure_status_upload_quiescence_unverified,
+      _ => LocaleKeys.cloud_workspaces_erasure_status_attention,
+    };
+
 class const _WorkspaceErasureStatuses({
   required final CloudAccountSession account,
   required final List<CloudWorkspaceErasureStatus> statuses,
@@ -2526,14 +2535,15 @@ class const _WorkspaceErasureStatuses({
                 TextLocale(switch (status.state) {
                   'complete' =>
                     LocaleKeys.cloud_workspaces_erasure_status_complete,
-                  'needsAttention' =>
-                    LocaleKeys.cloud_workspaces_erasure_status_attention,
+                  'needsAttention' => _cloudErasureStatusAttentionKey(
+                    status.failureReason,
+                  ),
                   _ => LocaleKeys.cloud_workspaces_erasure_status_pending,
                 }),
               ],
               crossAxisAlignment: .start,
             ),
-            trailing: status.state == 'needsAttention'
+            trailing: _canRetryCloudErasure(status)
                 ? AuraButton(
                     onPressed: () => actions.retryWorkspaceErasure(
                       account.key,
@@ -2572,6 +2582,11 @@ class const _WorkspaceErasureStatuses({
     ],
   );
 }
+
+bool _canRetryCloudErasure(CloudWorkspaceErasureStatus status) =>
+    status.state == 'needsAttention' &&
+    status.failureReason != 'uploadSigningOutcomeUnresolved' &&
+    status.failureReason != 'uploadQuiescenceUnverified';
 
 class const _PendingWorkspaceInvites({
   required final CloudAccountSession account,
