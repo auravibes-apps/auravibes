@@ -13,10 +13,15 @@ typedef _Run = ({
   WorkerCoordinatorLease coordinator,
   DateTime now,
 });
+typedef PurgeReadyWorkspaceErasures = Future<int> Function(
+  Session session,
+  WorkerCoordinatorLease coordinator,
+);
 
 class ObjectCleanupService({
   required final ObjectStore store,
   ObjectRepository? repository,
+  PurgeReadyWorkspaceErasures? purgeReadyWorkspaceErasures,
   final ObjectDeletionGuard guard = const .new(),
   final ({int batchSize, int maxAttempts}) limits = (
     batchSize: 20,
@@ -24,6 +29,10 @@ class ObjectCleanupService({
   ),
 }) {
   final ObjectRepository repository = repository ?? ObjectRepository();
+  final PurgeReadyWorkspaceErasures purgeReadyWorkspaceErasures =
+      purgeReadyWorkspaceErasures ??
+      ((session, coordinator) =>
+          WorkspaceErasureCleanup(session).purgeReady(coordinator));
   int get batchSize => limits.batchSize;
   int get maxAttempts => limits.maxAttempts;
 
@@ -60,7 +69,7 @@ class const _CleanupRun(final ObjectCleanupService owner) {
     final rows = await _pending(session, run.now);
     final completed = await _drain(session, rows, run);
     if (_active(run)) {
-      await WorkspaceErasureCleanup(session).purgeReady(run.coordinator);
+      await owner.purgeReadyWorkspaceErasures(session, run.coordinator);
     }
     return completed;
   }
@@ -99,20 +108,68 @@ class const _CleanupRun(final ObjectCleanupService owner) {
 
   Future<bool> _delete(Session session, ObjectDeletion row, _Run run) async {
     if (!await owner.guard.allows(session, row, run.coordinator)) return false;
-    await owner.store.delete(row.objectKey);
-    if (!_active(run)) return false;
-    await _complete(session, row, run);
-
-    return true;
-  }
-
-  Future<void> _complete(Session session, ObjectDeletion row, _Run run) =>
-      owner.repository.completeDeletion(
+    final upload = await owner.repository.findUpload(
+      session,
+      workspaceId: row.workspaceId,
+      objectId: row.objectId,
+    );
+    if (upload != null && run.now.isBefore(upload.expiresAt)) {
+      await owner.repository.deferDeletionUntilUploadExpiry(
         session,
         deletion: row,
         coordinator: run.coordinator,
-        now: run.now,
+        expiresAt: upload.expiresAt,
       );
+      return false;
+    }
+    if (upload != null &&
+        (upload.signingReservationCount == null ||
+            upload.signingReservationCount! > 0)) {
+      await owner.repository.blockDeletionForUploadQuiescence(
+        session,
+        deletion: row,
+        coordinator: run.coordinator,
+        retryAt: run.now.add(objectCleanupInterval),
+        reason: 'uploadSigningOutcomeUnresolved',
+      );
+      return false;
+    }
+    if (upload != null &&
+        !await owner.store.confirmsUploadQuiescence(
+          key: row.objectKey,
+          expiresAt: upload.expiresAt,
+        )) {
+      await owner.repository.blockDeletionForUploadQuiescence(
+        session,
+        deletion: row,
+        coordinator: run.coordinator,
+        retryAt: run.now.add(objectCleanupInterval),
+        reason: 'uploadQuiescenceUnverified',
+      );
+      return false;
+    }
+    await owner.store.delete(row.objectKey);
+    if (!_active(run)) return false;
+    return await _complete(
+      session,
+      row,
+      run,
+      expectedUploadExpiresAt: upload?.expiresAt,
+    );
+  }
+
+  Future<bool> _complete(
+    Session session,
+    ObjectDeletion row,
+    _Run run, {
+    required DateTime? expectedUploadExpiresAt,
+  }) => owner.repository.completeDeletion(
+    session,
+    deletion: row,
+    coordinator: run.coordinator,
+    now: run.now,
+    expectedUploadExpiresAt: expectedUploadExpiresAt,
+  );
 
   Future<void> _fail(
     Session session,

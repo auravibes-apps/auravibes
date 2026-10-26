@@ -19,7 +19,16 @@ abstract interface class ObjectStore {
     required String mimeType,
     required int sizeBytes,
     required String checksumSha256,
-    required Duration expiresIn,
+    required DateTime expiresAt,
+  });
+
+  /// Confirms that no upload signed through this store can still write [key].
+  ///
+  /// This must include both pending signing requests and uploads already in
+  /// flight when [expiresAt] passed. A timestamp alone is not proof of this.
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
   });
 
   Future<ObjectMetadata?> head(String key);
@@ -55,8 +64,14 @@ class const UnconfiguredObjectStore() implements ObjectStore {
     required String mimeType,
     required int sizeBytes,
     required String checksumSha256,
-    required Duration expiresIn,
+    required DateTime expiresAt,
   }) async => _missing();
+
+  @override
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
+  }) async => false;
 }
 
 /// Narrow private-store adapter. The gateway issues short-lived object URLs;
@@ -74,8 +89,8 @@ class HttpObjectStore({required final Uri endpoint, final String? bearerToken})
     required String mimeType,
     required int sizeBytes,
     required String checksumSha256,
-    required Duration expiresIn,
-  }) => _sign('PUT', key, expiresIn, {
+    required DateTime expiresAt,
+  }) => _sign('PUT', key, expiresAt, {
     'content-type': mimeType,
     'content-length': '$sizeBytes',
     'x-checksum-sha256': checksumSha256,
@@ -86,7 +101,7 @@ class HttpObjectStore({required final Uri endpoint, final String? bearerToken})
     required String key,
     required String contentDisposition,
     required Duration expiresIn,
-  }) => _sign('GET', key, expiresIn, {
+  }) => _sign('GET', key, DateTime.now().toUtc().add(expiresIn), {
     'response-content-disposition': contentDisposition,
     'response-cache-control': 'no-store',
   });
@@ -94,16 +109,21 @@ class HttpObjectStore({required final Uri endpoint, final String? bearerToken})
   Future<SignedObjectRequest> _sign(
     String method,
     String key,
-    Duration expiresIn,
+    DateTime requestedExpiresAt,
     Map<String, String> values,
   ) async {
-    final expiresAt = DateTime.now().toUtc().add(expiresIn);
+    final gatewayExpirySeconds =
+        requestedExpiresAt.toUtc().millisecondsSinceEpoch ~/ 1000;
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+      gatewayExpirySeconds * 1000,
+      isUtc: true,
+    );
     final client = HttpClient();
     try {
       final request = await client.postUrl(
         _uri(key, {
           'sign': method,
-          'expires': '${expiresAt.millisecondsSinceEpoch ~/ 1000}',
+          'expires': '$gatewayExpirySeconds',
           ...values,
         }),
       );
@@ -127,6 +147,14 @@ class HttpObjectStore({required final Uri endpoint, final String? bearerToken})
       client.close(force: true);
     }
   }
+
+  /// The current custom gateway contract has no quiescence operation, so this
+  /// adapter cannot prove that an expired upload URL has no request in flight.
+  @override
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
+  }) async => false;
 
   @override
   Future<ObjectMetadata?> head(String key) async {

@@ -7,6 +7,7 @@ fields:
   requestId: String
   requestHash: String
   expiresAt: DateTime
+  signingReservationCount: int?
   completedAt: DateTime?
   createdAt: DateTime
 indexes:

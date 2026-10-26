@@ -6,3 +6,4 @@ fields:
   state: String
   requestedAt: DateTime
   completedAt: DateTime?
+  failureReason: String?

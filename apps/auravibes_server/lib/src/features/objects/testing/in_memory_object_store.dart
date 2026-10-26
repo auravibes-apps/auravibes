@@ -22,15 +22,24 @@ class InMemoryObjectStore implements ObjectStore {
     required String mimeType,
     required int sizeBytes,
     required String checksumSha256,
-    required Duration expiresIn,
-  }) async => _signed(key, expiresIn);
+    required DateTime expiresAt,
+  }) async => _signedUntil(key, expiresAt);
 
   SignedObjectRequest _signed(String key, Duration expiresIn) {
-    final expiresAt = DateTime.now().toUtc().add(expiresIn);
+    return _signedUntil(key, DateTime.now().toUtc().add(expiresIn));
+  }
+
+  SignedObjectRequest _signedUntil(String key, DateTime expiresAt) {
     return SignedObjectRequest(
       url: Uri.parse('https://object.test/$key'),
       headers: const {},
       expiresAt: expiresAt,
     );
   }
+
+  @override
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
+  }) async => true;
 }
