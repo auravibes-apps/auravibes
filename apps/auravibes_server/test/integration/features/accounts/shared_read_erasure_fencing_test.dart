@@ -39,18 +39,15 @@ void main() {
           });
           await acquired.future.timeout(const Duration(seconds: 5));
 
-          final finishedReads = <String>{};
           final readers = _readers(endpoints, fixture);
+          final finishedReads = <String>{};
+          final readAttempts = <String, _ReadAttempt>{};
           final readFutures = [
             for (final entry in readers.entries)
-              entry.value().then<void>(
-                (_) {
-                  finishedReads.add(entry.key);
-                },
-                onError: (Object _, StackTrace _) {
-                  finishedReads.add(entry.key);
-                },
-              ),
+              _attemptRead(entry.value).then<void>((attempt) {
+                readAttempts[entry.key] = attempt;
+                finishedReads.add(entry.key);
+              }),
           ];
           Object? deletionError;
           var deletionFinished = false;
@@ -85,6 +82,18 @@ void main() {
             isNull,
           );
           expect(finishedReads, readers.keys.toSet());
+          _expectRaceReadAttempts(
+            readAttempts,
+            expectedNames: readers.keys.toSet(),
+            allowedErrorCodes: {
+              CloudWorkspaceErrorCode.authenticationRequired,
+              CloudWorkspaceErrorCode.emailAccountRequired,
+              CloudWorkspaceErrorCode.permissionDenied,
+            },
+          );
+          for (final entry in readers.entries) {
+            await _expectAccountReadDenied(entry.key, entry.value);
+          }
         },
         timeout: const Timeout(Duration(seconds: 30)),
       );
@@ -112,18 +121,15 @@ void main() {
           });
           await acquired.future.timeout(const Duration(seconds: 5));
 
-          final finishedReads = <String>{};
           final readers = _readers(endpoints, fixture);
+          final finishedReads = <String>{};
+          final readAttempts = <String, _ReadAttempt>{};
           final readFutures = [
             for (final entry in readers.entries)
-              entry.value().then<void>(
-                (_) {
-                  finishedReads.add(entry.key);
-                },
-                onError: (Object _, StackTrace _) {
-                  finishedReads.add(entry.key);
-                },
-              ),
+              _attemptRead(entry.value).then<void>((attempt) {
+                readAttempts[entry.key] = attempt;
+                finishedReads.add(entry.key);
+              }),
           ];
           Object? erasureError;
           var erasureFinished = false;
@@ -160,6 +166,37 @@ void main() {
           expect(erasureError, isNull);
           expect(erasureFinished, isTrue);
           expect(finishedReads, readers.keys.toSet());
+          _expectRaceReadAttempts(
+            readAttempts,
+            expectedNames: readers.keys.toSet(),
+            allowedErrorCodes: {
+              CloudWorkspaceErrorCode.authenticationRequired,
+              CloudWorkspaceErrorCode.emailAccountRequired,
+              CloudWorkspaceErrorCode.workspaceNotFound,
+              CloudWorkspaceErrorCode.membershipRequired,
+              CloudWorkspaceErrorCode.permissionDenied,
+            },
+          );
+          for (final entry in readers.entries) {
+            if (entry.key == 'workspace list' ||
+                entry.key == 'pending invites') {
+              continue;
+            }
+            await _expectWorkspaceReadDenied(entry.key, entry.value);
+          }
+          final remainingWorkspaces =
+              await readers['workspace list']!() as List<CloudWorkspaceSummary>;
+          expect(
+            remainingWorkspaces.map((workspace) => workspace.id),
+            isNot(contains(fixture.workspace.id)),
+          );
+          final remainingInvites =
+              await readers['pending invites']!()
+                  as List<PendingWorkspaceInviteSummary>;
+          expect(
+            remainingInvites.map((invite) => invite.workspaceId),
+            isNot(contains(fixture.workspace.id)),
+          );
         },
         timeout: const Timeout(Duration(seconds: 45)),
       );
@@ -200,7 +237,7 @@ void main() {
   );
 }
 
-Map<String, Future<void> Function()> _readers(
+Map<String, Future<Object?> Function()> _readers(
   TestEndpoints endpoints,
   _Fixture fixture,
 ) {
@@ -211,116 +248,177 @@ Map<String, Future<void> Function()> _readers(
     'revision': 1,
   });
   return {
-    'object describe': () async {
-      await endpoints.object.describe(
-        fixture.authenticated,
-        GetDownloadRequest(
-          workspaceId: workspaceId,
-          objectId: fixture.objectId,
-        ),
-      );
-    },
-    'agent list': () async {
-      await endpoints.agentCatalog.list(
-        fixture.authenticated,
-        ListAgentsRequest(workspaceId: workspaceId, search: '', limit: 20),
-      );
-    },
-    'agent resources': () async {
-      await endpoints.agentCatalog.getResources(
-        fixture.authenticated,
-        GetAgentResourcesRequest(
-          workspaceId: workspaceId,
-          agentId: 'read-agent',
-        ),
-      );
-    },
-    'workspace list': () async {
-      await endpoints.cloudWorkspace.listAuthorizedWorkspaces(
-        fixture.authenticated,
-      );
-    },
-    'pending invites': () async {
-      await endpoints.cloudWorkspace.listPendingInvites(fixture.authenticated);
-    },
-    'workspace detail': () async {
-      await endpoints.cloudWorkspace.getWorkspaceDetail(
-        fixture.authenticated,
-        GetCloudWorkspaceDetailRequest(workspaceId: workspaceId),
-      );
-    },
-    'workspace members': () async {
-      await endpoints.cloudWorkspace.listMembers(
-        fixture.authenticated,
-        ListWorkspaceMembersRequest(workspaceId: workspaceId),
-      );
-    },
-    'workspace invites': () async {
-      await endpoints.cloudWorkspace.listWorkspaceInvites(
-        fixture.authenticated,
-        ListCloudWorkspaceInvitesRequest(workspaceId: workspaceId),
-      );
-    },
-    'workspace stream': () async {
-      await endpoints.workspaceStream
-          .subscribe(
-            fixture.authenticated,
-            WorkspaceSubscribeRequest(
-              workspaceId: workspaceId,
-              afterSequence: 0,
-              activeTurnIds: const [],
-            ),
-          )
-          .first;
-    },
-    'record query': () async {
-      await endpoints.workspaceState.queryRecords(
-        fixture.authenticated,
-        workspaceId,
-        'read-table',
-        '{}',
-      );
-    },
-    'reference targets': () async {
-      await endpoints.workspaceReference.tableTargets(
-        fixture.authenticated,
-        WorkspaceReferenceTableRequest(
-          workspaceId: workspaceId,
-          tableId: 'read-table',
-        ),
-      );
-    },
-    'trash list': () async {
-      await endpoints.workspaceTrash.list(fixture.authenticated, workspaceId);
-    },
-    'deleted reference': () async {
-      await endpoints.workspaceTrash.deletedReference(
-        fixture.authenticated,
-        workspaceId,
-        'read-table',
-        'read-record',
-      );
-    },
-    'history policy': () async {
-      await endpoints.workspaceHistory.policy(
-        fixture.authenticated,
-        workspaceId,
-      );
-    },
-    'history': () async {
-      await endpoints.workspaceHistory.history(
-        fixture.authenticated,
-        workspaceId,
-        target,
-      );
-    },
-    'content reports': () async {
-      await endpoints.workspaceContentReport.list(
-        fixture.authenticated,
-        workspaceId,
-      );
-    },
+    'object describe': () => endpoints.object.describe(
+      fixture.authenticated,
+      GetDownloadRequest(
+        workspaceId: workspaceId,
+        objectId: fixture.objectId,
+      ),
+    ),
+    'agent list': () => endpoints.agentCatalog.list(
+      fixture.authenticated,
+      ListAgentsRequest(workspaceId: workspaceId, search: '', limit: 20),
+    ),
+    'agent resources': () => endpoints.agentCatalog.getResources(
+      fixture.authenticated,
+      GetAgentResourcesRequest(
+        workspaceId: workspaceId,
+        agentId: 'read-agent',
+      ),
+    ),
+    'workspace list': () => endpoints.cloudWorkspace.listAuthorizedWorkspaces(
+      fixture.authenticated,
+    ),
+    'pending invites': () =>
+        endpoints.cloudWorkspace.listPendingInvites(fixture.authenticated),
+    'workspace detail': () => endpoints.cloudWorkspace.getWorkspaceDetail(
+      fixture.authenticated,
+      GetCloudWorkspaceDetailRequest(workspaceId: workspaceId),
+    ),
+    'workspace members': () => endpoints.cloudWorkspace.listMembers(
+      fixture.authenticated,
+      ListWorkspaceMembersRequest(workspaceId: workspaceId),
+    ),
+    'workspace invites': () => endpoints.cloudWorkspace.listWorkspaceInvites(
+      fixture.authenticated,
+      ListCloudWorkspaceInvitesRequest(workspaceId: workspaceId),
+    ),
+    'workspace stream': () => endpoints.workspaceStream
+        .subscribe(
+          fixture.authenticated,
+          WorkspaceSubscribeRequest(
+            workspaceId: workspaceId,
+            afterSequence: 0,
+            activeTurnIds: const [],
+          ),
+        )
+        .first,
+    'record query': () => endpoints.workspaceState.queryRecords(
+      fixture.authenticated,
+      workspaceId,
+      'read-table',
+      '{}',
+    ),
+    'reference targets': () => endpoints.workspaceReference.tableTargets(
+      fixture.authenticated,
+      WorkspaceReferenceTableRequest(
+        workspaceId: workspaceId,
+        tableId: 'read-table',
+      ),
+    ),
+    'trash list': () =>
+        endpoints.workspaceTrash.list(fixture.authenticated, workspaceId),
+    'deleted reference': () => endpoints.workspaceTrash.deletedReference(
+      fixture.authenticated,
+      workspaceId,
+      'read-table',
+      'read-record',
+    ),
+    'history policy': () => endpoints.workspaceHistory.policy(
+      fixture.authenticated,
+      workspaceId,
+    ),
+    'history': () => endpoints.workspaceHistory.history(
+      fixture.authenticated,
+      workspaceId,
+      target,
+    ),
+    'content reports': () => endpoints.workspaceContentReport.list(
+      fixture.authenticated,
+      workspaceId,
+    ),
   };
+}
+
+typedef _Reader = Future<Object?> Function();
+
+Future<_ReadAttempt> _attemptRead(_Reader reader) async {
+  try {
+    return _ReadAttempt.success(await reader());
+  } catch (error) {
+    return _ReadAttempt.failure(error);
+  }
+}
+
+void _expectRaceReadAttempts(
+  Map<String, _ReadAttempt> attempts, {
+  required Set<String> expectedNames,
+  required Set<CloudWorkspaceErrorCode> allowedErrorCodes,
+}) {
+  expect(attempts.keys, expectedNames);
+  for (final entry in attempts.entries) {
+    final error = entry.value.error;
+    if (error == null) {
+      expect(entry.value.result, isNotNull, reason: entry.key);
+      continue;
+    }
+    if (entry.key == 'object describe' && error is ObjectException) {
+      expect(error.code, ObjectErrorCode.objectNotFound, reason: entry.key);
+      continue;
+    }
+    expect(
+      error,
+      isA<CloudWorkspaceException>().having(
+        (exception) => exception.code,
+        'code',
+        predicate(allowedErrorCodes.contains),
+      ),
+      reason: '${entry.key} completed with an unexpected error',
+    );
+  }
+}
+
+Future<void> _expectAccountReadDenied(String name, _Reader reader) async {
+  await expectLater(
+    reader(),
+    throwsA(
+      isA<CloudWorkspaceException>().having(
+        (exception) => exception.code,
+        'code',
+        anyOf(
+          CloudWorkspaceErrorCode.authenticationRequired,
+          CloudWorkspaceErrorCode.emailAccountRequired,
+        ),
+      ),
+    ),
+    reason: '$name remained readable after account deletion',
+  );
+}
+
+Future<void> _expectWorkspaceReadDenied(String name, _Reader reader) async {
+  final workspaceDenied = isA<CloudWorkspaceException>().having(
+    (exception) => exception.code,
+    'code',
+    anyOf(
+      CloudWorkspaceErrorCode.workspaceNotFound,
+      CloudWorkspaceErrorCode.membershipRequired,
+      CloudWorkspaceErrorCode.permissionDenied,
+    ),
+  );
+  final expectedError = name == 'object describe'
+      ? anyOf(
+          workspaceDenied,
+          isA<ObjectException>().having(
+            (exception) => exception.code,
+            'code',
+            ObjectErrorCode.objectNotFound,
+          ),
+        )
+      : workspaceDenied;
+  await expectLater(
+    reader(),
+    throwsA(expectedError),
+    reason: '$name remained readable after workspace erasure',
+  );
+}
+
+class _ReadAttempt {
+  const _ReadAttempt.success(this.result) : error = null;
+
+  const _ReadAttempt.failure(this.error) : result = null;
+
+  final Object? result;
+  final Object? error;
 }
 
 Future<_Fixture> _createFixture(
