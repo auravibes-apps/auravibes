@@ -50,8 +50,10 @@ func (b *s3Bucket) head(ctx context.Context, key string) (storedObject, error) {
 	return storedObject{body: io.NopCloser(bytes.NewReader(nil)), size: aws.ToInt64(o.ContentLength), contentType: aws.ToString(o.ContentType), checksum: o.Metadata["checksum-sha256"]}, nil
 }
 
+var errReplicaProvenanceUnavailable = errors.New("replica lifetime provenance unavailable")
+
 // No ledger currently proves whether replication was ever enabled for a key.
 // Checking today's bucket configuration cannot exclude historical replicas.
 func (b *s3Bucket) delete(context.Context, string) error {
-	return errors.New("replica lifetime provenance unavailable")
+	return errReplicaProvenanceUnavailable
 }

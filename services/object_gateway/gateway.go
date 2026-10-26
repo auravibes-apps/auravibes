@@ -169,6 +169,12 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err = g.bucket.delete(r.Context(), key); err != nil {
+			if errors.Is(err, errReplicaProvenanceUnavailable) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				_, _ = io.WriteString(w, `{"code":"replica_provenance_unavailable"}`)
+				return
+			}
 			http.Error(w, "storage unavailable", 502)
 			return
 		}
