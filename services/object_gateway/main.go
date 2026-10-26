@@ -31,8 +31,16 @@ func run(ctx context.Context) error {
 	if err != nil || capacity < 1 {
 		return errors.New("invalid upload capacity")
 	}
+	downloadCapacity, err := strconv.Atoi(os.Getenv("GATEWAY_MAX_CONCURRENT_DOWNLOADS"))
+	if err != nil || downloadCapacity < 1 {
+		return errors.New("invalid download capacity")
+	}
+	requestTimeoutSeconds, err := strconv.Atoi(os.Getenv("GATEWAY_REQUEST_TIMEOUT_SECONDS"))
+	if err != nil || requestTimeoutSeconds < 1 || int64(requestTimeoutSeconds) > int64((1<<63-1)/int64(time.Second)) {
+		return errors.New("invalid request timeout")
+	}
 	readTimeoutSeconds, err := strconv.Atoi(os.Getenv("GATEWAY_READ_TIMEOUT_SECONDS"))
-	if err != nil || readTimeoutSeconds < 1 {
+	if err != nil || readTimeoutSeconds < 1 || int64(readTimeoutSeconds) > int64((1<<63-1)/int64(time.Second)) {
 		return errors.New("invalid request read timeout")
 	}
 	db, bucketName, region := os.Getenv("GATEWAY_DATABASE_URL"), os.Getenv("S3_BUCKET"), os.Getenv("AWS_REGION")
@@ -87,12 +95,12 @@ func run(ctx context.Context) error {
 			o.UsePathStyle = true
 		}
 	})
-	g := &gateway{ledger: l, bucket: &s3Bucket{client: client, name: bucketName, allowAWSErasure: erasureMode == "aws-s3"}, controlToken: control, signingKey: []byte(secret), publicBase: base, uploadSlots: make(chan struct{}, capacity), allowedOrigins: origins, now: time.Now}
+	g := &gateway{ledger: l, bucket: &s3Bucket{client: client, name: bucketName, allowAWSErasure: erasureMode == "aws-s3"}, controlToken: control, signingKey: []byte(secret), publicBase: base, uploadSlots: make(chan struct{}, capacity), downloadSlots: make(chan struct{}, downloadCapacity), requestTimeout: time.Duration(requestTimeoutSeconds) * time.Second, allowedOrigins: origins, now: time.Now}
 	addr := os.Getenv("GATEWAY_LISTEN_ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
-	server := &http.Server{Addr: addr, Handler: g, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: time.Duration(readTimeoutSeconds) * time.Second}
+	server := &http.Server{Addr: addr, Handler: g, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: time.Duration(readTimeoutSeconds) * time.Second, WriteTimeout: time.Duration(requestTimeoutSeconds) * time.Second}
 	return server.ListenAndServe()
 }
 func main() {

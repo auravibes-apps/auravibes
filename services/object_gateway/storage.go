@@ -50,63 +50,8 @@ func (b *s3Bucket) head(ctx context.Context, key string) (storedObject, error) {
 	return storedObject{body: io.NopCloser(bytes.NewReader(nil)), size: aws.ToInt64(o.ContentLength), contentType: aws.ToString(o.ContentType), checksum: o.Metadata["checksum-sha256"]}, nil
 }
 
-// The caller has already durably fenced this key. Exact-key version deletion
-// requires sole-writer access and a provider with AWS S3 version semantics.
-func (b *s3Bucket) delete(ctx context.Context, key string) error {
-	if !b.allowAWSErasure {
-		return errors.New("provider erasure verification unavailable")
-	}
-	seen := map[string]bool{}
-	for {
-		page, err := b.client.ListObjectVersions(ctx, &s3.ListObjectVersionsInput{Bucket: aws.String(b.name), Prefix: aws.String(key)})
-		if err != nil {
-			return err
-		}
-		count := 0
-		for _, item := range page.Versions {
-			if aws.ToString(item.Key) == key {
-				count++
-				if item.VersionId == nil {
-					return errors.New("missing version identity")
-				}
-				if seen[aws.ToString(item.VersionId)] {
-					return errors.New("version deletion did not converge")
-				}
-				seen[aws.ToString(item.VersionId)] = true
-				if _, err = b.client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: aws.String(b.name), Key: aws.String(key), VersionId: item.VersionId}); err != nil {
-					return err
-				}
-			}
-		}
-		for _, item := range page.DeleteMarkers {
-			if aws.ToString(item.Key) == key {
-				count++
-				if item.VersionId == nil {
-					return errors.New("missing version identity")
-				}
-				if seen[aws.ToString(item.VersionId)] {
-					return errors.New("version deletion did not converge")
-				}
-				seen[aws.ToString(item.VersionId)] = true
-				if _, err = b.client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: aws.String(b.name), Key: aws.String(key), VersionId: item.VersionId}); err != nil {
-					return err
-				}
-			}
-		}
-		if count == 0 {
-			if aws.ToBool(page.IsTruncated) {
-				return errors.New("unverifiable version listing")
-			}
-			break
-		}
-	}
-	// A versionless provider response is not sufficient; check current object too.
-	_, err := b.client.HeadObject(ctx, &s3.HeadObjectInput{Bucket: aws.String(b.name), Key: aws.String(key)})
-	if errors.Is(storageError(err), errNotFound) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	return errors.New("object still exists")
+// No ledger currently proves whether replication was ever enabled for a key.
+// Checking today's bucket configuration cannot exclude historical replicas.
+func (b *s3Bucket) delete(context.Context, string) error {
+	return errors.New("replica lifetime provenance unavailable")
 }

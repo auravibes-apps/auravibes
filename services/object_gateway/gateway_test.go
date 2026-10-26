@@ -139,7 +139,7 @@ func (b *fakeBucket) delete(_ context.Context, key string) error {
 }
 
 func testGateway(l *fakeLedger, b *fakeBucket) *gateway {
-	return &gateway{ledger: l, bucket: b, controlToken: "test-control-token-with-sufficient-length", signingKey: []byte(strings.Repeat("k", 32)), publicBase: mustURL("https://gateway.example/objects"), uploadSlots: make(chan struct{}, 2), allowedOrigins: map[string]bool{"https://app.example": true}, now: time.Now}
+	return &gateway{ledger: l, bucket: b, controlToken: "test-control-token-with-sufficient-length", signingKey: []byte(strings.Repeat("k", 32)), publicBase: mustURL("https://gateway.example/objects"), uploadSlots: make(chan struct{}, 2), downloadSlots: make(chan struct{}, 2), requestTimeout: time.Second * 5, allowedOrigins: map[string]bool{"https://app.example": true}, now: time.Now}
 }
 func mustURL(s string) *url.URL {
 	u, err := url.Parse(s)
@@ -337,5 +337,101 @@ func TestMismatchedRegistrationCannotSignOrAttest(t *testing.T) {
 	}
 	if got := call("POST", "?sign=GET", strings.Repeat("a", 64)); got != 403 {
 		t.Fatal(got)
+	}
+}
+
+type blockingReadBucket struct {
+	*fakeBucket
+	started chan struct{}
+}
+
+func (b *blockingReadBucket) get(ctx context.Context, _ string) (storedObject, error) {
+	select {
+	case b.started <- struct{}{}:
+	default:
+	}
+	<-ctx.Done()
+	return storedObject{}, ctx.Err()
+}
+
+func TestDownloadConcurrencyAndUpstreamTimeout(t *testing.T) {
+	l := newFakeLedger()
+	base := newFakeBucket()
+	g := testGateway(l, base)
+	blocked := &blockingReadBucket{fakeBucket: base, started: make(chan struct{}, 1)}
+	g.bucket = blocked
+	g.downloadSlots = make(chan struct{}, 1)
+	g.requestTimeout = 50 * time.Millisecond
+	q := url.Values{"sign": {"GET"}, "expires": {strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)}, "response-content-disposition": {"attachment"}, "response-cache-control": {"no-store"}}
+	signed := control(g, "POST", "https://gateway.example/objects/"+testKey+"?"+q.Encode())
+	if signed.Code != 200 {
+		t.Fatal(signed.Code)
+	}
+	done := make(chan int, 1)
+	go func() {
+		w := httptest.NewRecorder()
+		g.ServeHTTP(w, httptest.NewRequest("GET", signed.Body.String(), nil))
+		done <- w.Code
+	}()
+	select {
+	case <-blocked.started:
+	case <-time.After(time.Second):
+		t.Fatal("upstream not started")
+	}
+	w := httptest.NewRecorder()
+	g.ServeHTTP(w, httptest.NewRequest("GET", signed.Body.String(), nil))
+	if w.Code != 503 {
+		t.Fatalf("concurrency not bounded: %d", w.Code)
+	}
+	select {
+	case status := <-done:
+		if status != 503 {
+			t.Fatal(status)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("upstream timeout failed")
+	}
+	if len(g.downloadSlots) != 0 {
+		t.Fatal("download slot leaked")
+	}
+}
+
+type largeReadBucket struct{ *fakeBucket }
+type zeroReader struct{}
+
+func (zeroReader) Read(p []byte) (int, error) { clear(p); return len(p), nil }
+func (b *largeReadBucket) get(context.Context, string) (storedObject, error) {
+	const size = 64 * 1024 * 1024
+	return storedObject{body: io.NopCloser(io.LimitReader(zeroReader{}, size)), size: size, contentType: "application/octet-stream"}, nil
+}
+func TestSlowDownloadClientReleasesSlot(t *testing.T) {
+	g := testGateway(newFakeLedger(), newFakeBucket())
+	g.bucket = &largeReadBucket{newFakeBucket()}
+	g.downloadSlots = make(chan struct{}, 1)
+	g.requestTimeout = 100 * time.Millisecond
+	q := url.Values{"sign": {"GET"}, "expires": {strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)}, "response-content-disposition": {"attachment"}, "response-cache-control": {"no-store"}}
+	signed := control(g, "POST", "https://gateway.example/objects/"+testKey+"?"+q.Encode())
+	if signed.Code != 200 {
+		t.Fatal(signed.Code)
+	}
+	server := httptest.NewUnstartedServer(g)
+	server.Config.WriteTimeout = g.requestTimeout
+	server.Start()
+	defer server.Close()
+	parsed, err := url.Parse(signed.Body.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.Get(server.URL + parsed.RequestURI())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	deadline := time.Now().Add(3 * time.Second)
+	for len(g.downloadSlots) > 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if len(g.downloadSlots) != 0 {
+		t.Fatal("slow client held download slot beyond timeout")
 	}
 }

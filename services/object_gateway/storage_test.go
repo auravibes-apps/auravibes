@@ -46,25 +46,12 @@ func (f *versionClient) ListObjectVersions(_ context.Context, in *s3.ListObjectV
 	}
 	return out, nil
 }
-func TestVersionedErasureRequiresProviderEvidenceAndRemovesVersions(t *testing.T) {
-	ctx := context.Background()
-	client := &versionClient{versions: map[string]bool{"v1": false, "v2": false, "marker": true}}
-	b := &s3Bucket{client: client, name: "test"}
-	if err := b.delete(ctx, "test"); err == nil || len(client.versions) != 3 {
-		t.Fatal("unverified provider allowed deletion")
-	}
-	b.allowAWSErasure = true
-	if err := b.delete(ctx, "test"); err != nil || len(client.versions) != 0 {
-		t.Fatal("versions not erased")
-	}
-	client.versions["v3"] = false
-	client.failDelete = true
-	if err := b.delete(ctx, "test"); err == nil {
-		t.Fatal("retention error ignored")
-	}
-	client.failDelete = false
-	client.failList = true
-	if err := b.delete(ctx, "test"); err == nil {
-		t.Fatal("unsupported version listing accepted")
+func TestErasureRemainsBlockedWithoutReplicaHistory(t *testing.T) {
+	client := &versionClient{versions: map[string]bool{"v1": false}}
+	for _, enabled := range []bool{false, true} {
+		b := &s3Bucket{client: client, name: "test", allowAWSErasure: enabled}
+		if err := b.delete(context.Background(), "test"); err == nil || len(client.versions) != 1 {
+			t.Fatal("erasure was incorrectly attested")
+		}
 	}
 }

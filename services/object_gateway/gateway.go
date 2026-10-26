@@ -53,6 +53,8 @@ type gateway struct {
 	signingKey     []byte
 	publicBase     *url.URL
 	uploadSlots    chan struct{}
+	downloadSlots  chan struct{}
+	requestTimeout time.Duration
 	allowedOrigins map[string]bool
 	now            func() time.Time
 }
@@ -69,6 +71,9 @@ type claims struct {
 }
 
 func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), g.requestTimeout)
+	defer cancel()
+	r = r.WithContext(ctx)
 	w.Header().Set("Cache-Control", "no-store")
 	if origin := r.Header.Get("Origin"); origin != "" {
 		if !g.allowedOrigins[origin] {
@@ -248,6 +253,13 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 		return
 	}
 	if r.Method == "GET" {
+		select {
+		case g.downloadSlots <- struct{}{}:
+			defer func() { <-g.downloadSlots }()
+		default:
+			http.Error(w, "busy", 503)
+			return
+		}
 		obj, err := g.bucket.get(r.Context(), key)
 		if err != nil {
 			fail(w, err)
