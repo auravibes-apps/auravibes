@@ -63,7 +63,17 @@ class _Repository extends ObjectRepository {
     required int objectId,
     Transaction? transaction,
     bool lock = false,
-  }) async => null;
+  }) async => .new(
+    workspaceId: 1,
+    objectId: 1,
+    actorUserId: 'user',
+    requestId: 'request',
+    requestHash: 'hash',
+    expiresAt: DateTime.utc(2100),
+    gatewayRegistrationId: 'a' * 64,
+    signingReservationCount: 1,
+    createdAt: DateTime.utc(2026),
+  );
 
   @override
   Future<List<ObjectDeletion>> listPendingDeletions(
@@ -91,6 +101,7 @@ class _Repository extends ObjectRepository {
     required WorkerCoordinatorLease coordinator,
     required DateTime now,
     required DateTime? expectedUploadExpiresAt,
+    required String? expectedUploadRegistrationId,
   }) async {
     completed = true;
     return true;
@@ -101,7 +112,7 @@ class _Store extends UnconfiguredObjectStore {
   _Store(this.deleted);
   final List<String> deleted;
   @override
-  Future<void> delete(String key) async {
+  Future<void> delete(String key, {String? registrationId}) async {
     deleted.add(key);
   }
 
@@ -109,6 +120,7 @@ class _Store extends UnconfiguredObjectStore {
   Future<bool> confirmsUploadQuiescence({
     required String key,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => true;
 }
 

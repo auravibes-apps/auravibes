@@ -96,6 +96,8 @@ class ObjectRepository {
     session,
     where: (t) =>
         t.completedAt.equals(null) &
+        (t.lastError.equals(null) |
+            t.lastError.notEquals('legacyUploadUnverifiable')) &
         (t.availableAt <= now) &
         (t.attempts < maxAttempts),
     orderBy: (t) => t.availableAt,
@@ -108,6 +110,7 @@ class ObjectRepository {
     required WorkerCoordinatorLease coordinator,
     required DateTime now,
     required DateTime? expectedUploadExpiresAt,
+    required String? expectedUploadRegistrationId,
   }) => session.db.transaction((transaction) async {
     if (!await ObjectDeletionGuard.ownsCoordinator(
       session,
@@ -144,10 +147,15 @@ class ObjectRepository {
     if (expectedUploadExpiresAt != null) {
       if (currentUpload == null ||
           currentUpload.expiresAt != expectedUploadExpiresAt ||
-          currentUpload.expiresAt.isAfter(now) ||
-          currentUpload.signingReservationCount != 0) {
+          currentUpload.gatewayRegistrationId != expectedUploadRegistrationId ||
+          expectedUploadRegistrationId == null) {
         return false;
       }
+      await ObjectUpload.db.updateRow(
+        session,
+        currentUpload.copyWith(signingReservationCount: 0),
+        transaction: transaction,
+      );
     } else if (currentUpload != null) {
       return false;
     }
@@ -161,6 +169,7 @@ class ObjectRepository {
             ? null
             : current.cleanupGeneration,
         uploadCleanupVerifiedExpiresAt: expectedUploadExpiresAt,
+        uploadCleanupVerifiedRegistrationId: expectedUploadRegistrationId,
       ),
       transaction: transaction,
     );
@@ -201,6 +210,7 @@ class ObjectRepository {
         uploadCleanupVerifiedAt: null,
         uploadCleanupVerifiedGeneration: null,
         uploadCleanupVerifiedExpiresAt: null,
+        uploadCleanupVerifiedRegistrationId: null,
         attempts: attempts,
         availableAt: now.add(Duration(minutes: delayMinutes)),
         lastError: error,
@@ -240,6 +250,7 @@ class ObjectRepository {
         uploadCleanupVerifiedAt: null,
         uploadCleanupVerifiedGeneration: null,
         uploadCleanupVerifiedExpiresAt: null,
+        uploadCleanupVerifiedRegistrationId: null,
         availableAt: expiresAt,
         lastError: null,
       ),
@@ -251,7 +262,7 @@ class ObjectRepository {
     Session session, {
     required ObjectDeletion deletion,
     required WorkerCoordinatorLease coordinator,
-    required DateTime retryAt,
+    required DateTime? retryAt,
     required String reason,
   }) => session.db.transaction((transaction) async {
     if (!await ObjectDeletionGuard.ownsCoordinator(
@@ -279,7 +290,8 @@ class ObjectRepository {
         uploadCleanupVerifiedAt: null,
         uploadCleanupVerifiedGeneration: null,
         uploadCleanupVerifiedExpiresAt: null,
-        availableAt: retryAt,
+        uploadCleanupVerifiedRegistrationId: null,
+        availableAt: retryAt ?? current.availableAt,
         lastError: reason,
       ),
       transaction: transaction,

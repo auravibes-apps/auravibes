@@ -627,12 +627,7 @@ class const ServerConversationAttachmentReader()
     required List<int> objectIds,
   }) async {
     if (objectIds.isEmpty) return const [];
-    final endpoint = Platform.environment['OBJECT_STORE_ENDPOINT'];
-    if (endpoint == null) throw const ConversationAttachmentException('store');
-    final store = HttpObjectStore(
-      endpoint: Uri.parse(endpoint),
-      bearerToken: Platform.environment['OBJECT_STORE_BEARER_TOKEN'],
-    );
+    final store = HttpObjectStore.fromEnvironment();
     final result = <ConversationAttachment>[];
     for (final objectId in objectIds.toSet()) {
       final object = await WorkspaceObject.db.findFirstRow(
@@ -649,10 +644,15 @@ class const ServerConversationAttachmentReader()
       if (!object.mimeType.startsWith('image/')) {
         throw const ConversationAttachmentException('unsupported');
       }
+      final upload = await ObjectUpload.db.findFirstRow(
+        session,
+        where: (row) => row.objectId.equals(objectId),
+      );
       final signed = await store.signGet(
         key: object.objectKey,
         contentDisposition: 'attachment',
         expiresIn: const Duration(minutes: 1),
+        registrationId: upload?.gatewayRegistrationId,
       );
       final bytes = await _readSignedObject(signed, object.sizeBytes);
       result.add(

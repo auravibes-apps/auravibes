@@ -12,6 +12,7 @@ fields:
   uploadCleanupVerifiedAt: DateTime?
   uploadCleanupVerifiedGeneration: int?
   uploadCleanupVerifiedExpiresAt: DateTime?
+  uploadCleanupVerifiedRegistrationId: String?
   attempts: int
   availableAt: DateTime
   lastError: String?

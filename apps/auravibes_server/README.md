@@ -31,6 +31,25 @@ worktrees. Keep other application secrets in `passwords.yaml`, or provide them
 as `SERVERPOD_PASSWORD_<key>` environment variables. Do not commit either
 credentials file.
 
+## Private object storage
+
+Configure the registered storage gateway for new uploads with
+`OBJECT_STORE_GATEWAY_ENDPOINT` and `OBJECT_STORE_GATEWAY_BEARER_TOKEN`.
+Configure the old storage endpoint separately with
+`OBJECT_STORE_LEGACY_ENDPOINT` and, when required,
+`OBJECT_STORE_LEGACY_BEARER_TOKEN`. Keep endpoint credentials in the runtime's
+secret configuration, not in tracked files.
+
+The server persists a gateway registration ID before registering or signing a
+new object key. Keep that ID in the database with its upload row; the client
+does not receive it. Existing upload rows without an ID remain legacy and are
+routed only to the explicitly configured legacy endpoint. Do not register
+legacy keys in the new gateway or use it as a fallback for missing legacy
+configuration. Legacy uploads without registration provenance remain blocked
+from cloud erasure. Gateway quiescence must confirm that registered-key reads
+and writes have drained before deletion; provider deletion remains fail-closed
+until the gateway can verify its provider-side deletion result.
+
 ## Integration tests
 
 Set `test.database` in `config/passwords.yaml` to the same value as

@@ -27,6 +27,7 @@ abstract class ObjectDeletion
     this.uploadCleanupVerifiedAt,
     this.uploadCleanupVerifiedGeneration,
     this.uploadCleanupVerifiedExpiresAt,
+    this.uploadCleanupVerifiedRegistrationId,
     required this.attempts,
     required this.availableAt,
     this.lastError,
@@ -45,6 +46,7 @@ abstract class ObjectDeletion
     DateTime? uploadCleanupVerifiedAt,
     int? uploadCleanupVerifiedGeneration,
     DateTime? uploadCleanupVerifiedExpiresAt,
+    String? uploadCleanupVerifiedRegistrationId,
     required int attempts,
     required DateTime availableAt,
     String? lastError,
@@ -81,6 +83,8 @@ abstract class ObjectDeletion
           : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['uploadCleanupVerifiedExpiresAt'],
             ),
+      uploadCleanupVerifiedRegistrationId:
+          jsonSerialization['uploadCleanupVerifiedRegistrationId'] as String?,
       attempts: jsonSerialization['attempts'] as int,
       availableAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['availableAt'],
@@ -118,6 +122,8 @@ abstract class ObjectDeletion
 
   DateTime? uploadCleanupVerifiedExpiresAt;
 
+  String? uploadCleanupVerifiedRegistrationId;
+
   int attempts;
 
   DateTime availableAt;
@@ -143,6 +149,7 @@ abstract class ObjectDeletion
     DateTime? uploadCleanupVerifiedAt,
     int? uploadCleanupVerifiedGeneration,
     DateTime? uploadCleanupVerifiedExpiresAt,
+    String? uploadCleanupVerifiedRegistrationId,
     int? attempts,
     DateTime? availableAt,
     String? lastError,
@@ -167,6 +174,9 @@ abstract class ObjectDeletion
       if (uploadCleanupVerifiedExpiresAt != null)
         'uploadCleanupVerifiedExpiresAt': uploadCleanupVerifiedExpiresAt
             ?.toJson(),
+      if (uploadCleanupVerifiedRegistrationId != null)
+        'uploadCleanupVerifiedRegistrationId':
+            uploadCleanupVerifiedRegistrationId,
       'attempts': attempts,
       'availableAt': availableAt.toJson(),
       if (lastError != null) 'lastError': lastError,
@@ -193,6 +203,9 @@ abstract class ObjectDeletion
       if (uploadCleanupVerifiedExpiresAt != null)
         'uploadCleanupVerifiedExpiresAt': uploadCleanupVerifiedExpiresAt
             ?.toJson(),
+      if (uploadCleanupVerifiedRegistrationId != null)
+        'uploadCleanupVerifiedRegistrationId':
+            uploadCleanupVerifiedRegistrationId,
       'attempts': attempts,
       'availableAt': availableAt.toJson(),
       if (lastError != null) 'lastError': lastError,
@@ -243,6 +256,7 @@ class _ObjectDeletionImpl extends ObjectDeletion {
     DateTime? uploadCleanupVerifiedAt,
     int? uploadCleanupVerifiedGeneration,
     DateTime? uploadCleanupVerifiedExpiresAt,
+    String? uploadCleanupVerifiedRegistrationId,
     required int attempts,
     required DateTime availableAt,
     String? lastError,
@@ -259,6 +273,8 @@ class _ObjectDeletionImpl extends ObjectDeletion {
          uploadCleanupVerifiedAt: uploadCleanupVerifiedAt,
          uploadCleanupVerifiedGeneration: uploadCleanupVerifiedGeneration,
          uploadCleanupVerifiedExpiresAt: uploadCleanupVerifiedExpiresAt,
+         uploadCleanupVerifiedRegistrationId:
+             uploadCleanupVerifiedRegistrationId,
          attempts: attempts,
          availableAt: availableAt,
          lastError: lastError,
@@ -281,6 +297,7 @@ class _ObjectDeletionImpl extends ObjectDeletion {
     Object? uploadCleanupVerifiedAt = _Undefined,
     Object? uploadCleanupVerifiedGeneration = _Undefined,
     Object? uploadCleanupVerifiedExpiresAt = _Undefined,
+    Object? uploadCleanupVerifiedRegistrationId = _Undefined,
     int? attempts,
     DateTime? availableAt,
     Object? lastError = _Undefined,
@@ -305,6 +322,10 @@ class _ObjectDeletionImpl extends ObjectDeletion {
           uploadCleanupVerifiedExpiresAt is DateTime?
           ? uploadCleanupVerifiedExpiresAt
           : this.uploadCleanupVerifiedExpiresAt,
+      uploadCleanupVerifiedRegistrationId:
+          uploadCleanupVerifiedRegistrationId is String?
+          ? uploadCleanupVerifiedRegistrationId
+          : this.uploadCleanupVerifiedRegistrationId,
       attempts: attempts ?? this.attempts,
       availableAt: availableAt ?? this.availableAt,
       lastError: lastError is String? ? lastError : this.lastError,
@@ -377,6 +398,13 @@ class ObjectDeletionUpdateTable extends _is.UpdateTable<ObjectDeletionTable> {
     value,
   );
 
+  _is.ColumnValue<String, String> uploadCleanupVerifiedRegistrationId(
+    String? value,
+  ) => _is.ColumnValue(
+    table.uploadCleanupVerifiedRegistrationId,
+    value,
+  );
+
   _is.ColumnValue<int, int> attempts(int value) => _is.ColumnValue(
     table.attempts,
     value,
@@ -443,6 +471,10 @@ class ObjectDeletionTable extends _is.Table<int?> {
       'uploadCleanupVerifiedExpiresAt',
       this,
     );
+    uploadCleanupVerifiedRegistrationId = _is.ColumnString(
+      'uploadCleanupVerifiedRegistrationId',
+      this,
+    );
     attempts = _is.ColumnInt(
       'attempts',
       this,
@@ -481,6 +513,8 @@ class ObjectDeletionTable extends _is.Table<int?> {
 
   late final _is.ColumnDateTime uploadCleanupVerifiedExpiresAt;
 
+  late final _is.ColumnString uploadCleanupVerifiedRegistrationId;
+
   late final _is.ColumnInt attempts;
 
   late final _is.ColumnDateTime availableAt;
@@ -501,6 +535,7 @@ class ObjectDeletionTable extends _is.Table<int?> {
     uploadCleanupVerifiedAt,
     uploadCleanupVerifiedGeneration,
     uploadCleanupVerifiedExpiresAt,
+    uploadCleanupVerifiedRegistrationId,
     attempts,
     availableAt,
     lastError,

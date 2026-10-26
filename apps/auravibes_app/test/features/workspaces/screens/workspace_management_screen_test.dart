@@ -1616,6 +1616,14 @@ void main() {
             failureReason: 'uploadSigningOutcomeUnresolved',
           ),
           CloudWorkspaceErasureStatus(
+            workspaceId: 7,
+            workspaceName: 'Legacy object',
+            requestId: 'erase-legacy-object',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'legacyUploadUnverifiable',
+          ),
+          CloudWorkspaceErasureStatus(
             workspaceId: 3,
             workspaceName: 'Complete',
             requestId: 'erase-complete',
@@ -1660,11 +1668,17 @@ void main() {
       );
       expect(
         find.text(
-          'Cloud erasure is blocked because the configured storage gateway '
-          'cannot verify that signed uploads and in-flight writes have '
-          'stopped. Expiry alone is not proof. There is no current '
-          'self-service action to establish this guarantee; a verified '
-          'gateway capability is required.',
+          'The gateway has closed this object to new signatures, uploads and '
+          'reads, and is waiting for requests already in flight to finish. '
+          'You can retry cleanup after they finish.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Cloud erasure is blocked because this older object has no verified '
+          'gateway registration. The current app cannot safely delete it or '
+          'resolve this blocker.',
         ),
         findsOneWidget,
       );
@@ -1691,7 +1705,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Retry cleanup'), findsOneWidget);
+      expect(find.text('Retry cleanup'), findsNWidgets(2));
 
       await tester.ensureVisible(find.text('Retry cleanup').first);
       await tester.tap(find.text('Retry cleanup').first);
@@ -1702,6 +1716,16 @@ void main() {
                   .single
               as RetryCloudWorkspaceErasureRequest;
       expect(retryRequest.requestId, 'erase-retry');
+
+      await tester.ensureVisible(find.text('Retry cleanup').last);
+      await tester.tap(find.text('Retry cleanup').last);
+      final _ = await tester.pumpAndSettle();
+      final gatewayRetryRequest =
+          verify(() => endpoint.retryWorkspaceErasure(captureAny()))
+                  .captured
+                  .single
+              as RetryCloudWorkspaceErasureRequest;
+      expect(gatewayRetryRequest.requestId, 'erase-gateway');
 
       await tester.ensureVisible(find.text('Erase workspace data'));
       await tester.tap(find.text('Erase workspace data'));

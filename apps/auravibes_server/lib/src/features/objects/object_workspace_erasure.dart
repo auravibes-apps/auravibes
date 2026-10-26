@@ -26,9 +26,9 @@ class const ObjectWorkspaceErasure(
       where: (row) => row.objectId.equals(object.id!),
       transaction: transaction,
     );
-    final availableAt = upload != null && upload.expiresAt.isAfter(now)
-        ? upload.expiresAt
-        : now;
+    // The gateway closes the registered key before erasure. URL expiry is
+    // therefore not the cleanup gate; its durable write ledger is.
+    final availableAt = now;
     final existing = await ObjectDeletion.db.findFirstRow(
       session,
       where: (row) => row.objectId.equals(object.id!),
@@ -39,11 +39,13 @@ class const ObjectWorkspaceErasure(
       if (upload == null) return;
       final uploadProofIsCurrent =
           upload.signingReservationCount == 0 &&
-          !upload.expiresAt.isAfter(now) &&
           existing.uploadCleanupVerifiedAt != null &&
           existing.uploadCleanupVerifiedGeneration ==
               existing.cleanupGeneration &&
-          existing.uploadCleanupVerifiedExpiresAt == upload.expiresAt;
+          existing.uploadCleanupVerifiedExpiresAt == upload.expiresAt &&
+          upload.gatewayRegistrationId != null &&
+          existing.uploadCleanupVerifiedRegistrationId ==
+              upload.gatewayRegistrationId;
       final reopenCompletedDeletion =
           existing.completedAt != null && !uploadProofIsCurrent;
       final invalidateUploadProof =
@@ -60,6 +62,7 @@ class const ObjectWorkspaceErasure(
             uploadCleanupVerifiedAt: null,
             uploadCleanupVerifiedGeneration: null,
             uploadCleanupVerifiedExpiresAt: null,
+            uploadCleanupVerifiedRegistrationId: null,
             attempts: reopenCompletedDeletion ? 0 : existing.attempts,
             availableAt: availableAt,
             lastError: null,

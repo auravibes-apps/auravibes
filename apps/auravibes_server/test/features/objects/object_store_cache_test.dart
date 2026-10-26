@@ -15,7 +15,7 @@ void main() {
       return uri;
     });
     final store = HttpObjectStore(
-      endpoint: Uri(
+      legacyEndpoint: Uri(
         scheme: 'http',
         host: server.address.address,
         port: server.port,
@@ -49,7 +49,7 @@ void main() {
       return uri;
     });
     final store = HttpObjectStore(
-      endpoint: Uri(
+      legacyEndpoint: Uri(
         scheme: 'http',
         host: server.address.address,
         port: server.port,

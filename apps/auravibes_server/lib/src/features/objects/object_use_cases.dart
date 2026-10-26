@@ -73,6 +73,7 @@ class ObjectUseCases {
     final now = DateTime.now().toUtc();
     final expiresAt = now.add(const Duration(minutes: 10));
     final key = '${request.workspaceId}/${_opaqueKey()}';
+    final registrationId = _opaqueKey(bytes: 32);
     final upload = await session.db.transaction((transaction) async {
       await _lockActorWorkspaceMember(
         session,
@@ -105,6 +106,12 @@ class ObjectUseCases {
         if (object.deletedAt != null || object.status != 'pending') {
           throw ObjectException(code: ObjectErrorCode.objectNotFound);
         }
+        final existingRegistrationId = existing.gatewayRegistrationId;
+        if (existingRegistrationId == null) {
+          throw ObjectException(
+            code: ObjectErrorCode.uploadProvenanceUnavailable,
+          );
+        }
         await ObjectUpload.db.updateRow(
           session,
           existing.copyWith(
@@ -114,7 +121,11 @@ class ObjectUseCases {
           ),
           transaction: transaction,
         );
-        return (object: object, expiresAt: existing.expiresAt);
+        return (
+          object: object,
+          expiresAt: existing.expiresAt,
+          registrationId: existingRegistrationId,
+        );
       }
 
       final created = await WorkspaceObject.db.insertRow(
@@ -143,17 +154,23 @@ class ObjectUseCases {
           requestId: request.requestId,
           requestHash: hash,
           expiresAt: expiresAt,
+          gatewayRegistrationId: registrationId,
           signingReservationCount: 1,
           createdAt: now,
         ),
         transaction: transaction,
       );
-      return (object: created, expiresAt: expiresAt);
+      return (
+        object: created,
+        expiresAt: expiresAt,
+        registrationId: registrationId,
+      );
     });
     final signed = await _signedUpload(
       session,
       upload.object,
       upload.expiresAt,
+      registrationId: upload.registrationId,
     );
     await session.db.transaction((transaction) async {
       await _lockActorWorkspaceMember(
@@ -181,16 +198,22 @@ class ObjectUseCases {
   Future<BeginUploadResult> _signedUpload(
     Session session,
     WorkspaceObject object,
-    DateTime expiresAt,
-  ) async {
+    DateTime expiresAt, {
+    required String registrationId,
+  }) async {
     final SignedObjectRequest signed;
     try {
+      await store.registerFreshKey(
+        key: object.objectKey,
+        registrationId: registrationId,
+      );
       signed = await store.signPut(
         key: object.objectKey,
         mimeType: object.mimeType,
         sizeBytes: object.sizeBytes,
         checksumSha256: object.checksumSha256,
         expiresAt: expiresAt,
+        registrationId: registrationId,
       );
     } on Object catch (error, stackTrace) {
       await _finishSigning(session, object, signedExpiry: null);
@@ -284,7 +307,10 @@ class ObjectUseCases {
     });
     final object = initial.object;
     if (!initial.scan) return _ObjectResults.from(object);
-    final metadata = await store.head(object.objectKey);
+    final metadata = await store.head(
+      object.objectKey,
+      registrationId: initial.upload.gatewayRegistrationId,
+    );
     if (metadata == null ||
         metadata.sizeBytes != object.sizeBytes ||
         metadata.mimeType != object.mimeType ||
@@ -534,10 +560,10 @@ class ObjectUseCases {
     });
   }
 
-  String _opaqueKey() {
+  String _opaqueKey({int bytes = 24}) {
     final random = Random.secure();
     return List.generate(
-      24,
+      bytes,
       (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
     ).join();
   }
@@ -624,12 +650,19 @@ class const _ObjectReader(final ObjectUseCases owner, final Session session) {
   ) async {
     final pending = await session.db.transaction((transaction) async {
       final object = await _read(userId, request, transaction);
+      final upload = await owner.repository.findUpload(
+        session,
+        workspaceId: request.workspaceId,
+        objectId: request.objectId,
+        transaction: transaction,
+      );
       return (
         object: object,
         signed: owner.store.signGet(
           key: object.objectKey,
           contentDisposition: safeContentDisposition(object.displayName),
           expiresIn: const Duration(minutes: 5),
+          registrationId: upload?.gatewayRegistrationId,
         ),
       );
     });

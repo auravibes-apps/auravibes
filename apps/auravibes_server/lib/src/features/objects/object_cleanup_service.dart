@@ -113,32 +113,22 @@ class const _CleanupRun(final ObjectCleanupService owner) {
       workspaceId: row.workspaceId,
       objectId: row.objectId,
     );
-    if (upload != null && run.now.isBefore(upload.expiresAt)) {
-      await owner.repository.deferDeletionUntilUploadExpiry(
-        session,
-        deletion: row,
-        coordinator: run.coordinator,
-        expiresAt: upload.expiresAt,
-      );
-      return false;
-    }
-    if (upload != null &&
-        (upload.signingReservationCount == null ||
-            upload.signingReservationCount! > 0)) {
+    final registrationId = upload?.gatewayRegistrationId;
+    if (upload == null || registrationId == null) {
       await owner.repository.blockDeletionForUploadQuiescence(
         session,
         deletion: row,
         coordinator: run.coordinator,
-        retryAt: run.now.add(objectCleanupInterval),
-        reason: 'uploadSigningOutcomeUnresolved',
+        retryAt: null,
+        reason: 'legacyUploadUnverifiable',
       );
       return false;
     }
-    if (upload != null &&
-        !await owner.store.confirmsUploadQuiescence(
-          key: row.objectKey,
-          expiresAt: upload.expiresAt,
-        )) {
+    if (!await owner.store.confirmsUploadQuiescence(
+      key: row.objectKey,
+      expiresAt: upload.expiresAt,
+      registrationId: registrationId,
+    )) {
       await owner.repository.blockDeletionForUploadQuiescence(
         session,
         deletion: row,
@@ -148,13 +138,14 @@ class const _CleanupRun(final ObjectCleanupService owner) {
       );
       return false;
     }
-    await owner.store.delete(row.objectKey);
+    await owner.store.delete(row.objectKey, registrationId: registrationId);
     if (!_active(run)) return false;
     return await _complete(
       session,
       row,
       run,
-      expectedUploadExpiresAt: upload?.expiresAt,
+      expectedUploadExpiresAt: upload.expiresAt,
+      expectedUploadRegistrationId: registrationId,
     );
   }
 
@@ -163,12 +154,14 @@ class const _CleanupRun(final ObjectCleanupService owner) {
     ObjectDeletion row,
     _Run run, {
     required DateTime? expectedUploadExpiresAt,
+    required String? expectedUploadRegistrationId,
   }) => owner.repository.completeDeletion(
     session,
     deletion: row,
     coordinator: run.coordinator,
     now: run.now,
     expectedUploadExpiresAt: expectedUploadExpiresAt,
+    expectedUploadRegistrationId: expectedUploadRegistrationId,
   );
 
   Future<void> _fail(
@@ -192,14 +185,12 @@ Future<void> runObjectCleanupWorker(
   required bool Function() isActive,
 }) async {
   if (!isActive()) return;
-  final endpoint = Platform.environment['OBJECT_STORE_ENDPOINT'];
-  if (endpoint == null) return;
+  final endpoint = Platform.environment['OBJECT_STORE_GATEWAY_ENDPOINT'];
+  final legacyEndpoint = Platform.environment['OBJECT_STORE_LEGACY_ENDPOINT'];
+  if (endpoint == null && legacyEndpoint == null) return;
   try {
     await ObjectCleanupService(
-      store: HttpObjectStore(
-        endpoint: Uri.parse(endpoint),
-        bearerToken: Platform.environment['OBJECT_STORE_BEARER_TOKEN'],
-      ),
+      store: HttpObjectStore.fromEnvironment(),
     ).runOnce(session, isActive: isActive, coordinator: coordinator);
   } on Object catch (error, stackTrace) {
     ObjectCleanupService._cleanupError(session, error, stackTrace);

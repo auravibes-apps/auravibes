@@ -4,16 +4,25 @@ class InMemoryObjectStore implements ObjectStore {
   final objects = <String, ObjectMetadata>{};
 
   @override
-  Future<void> delete(String key) async => objects.remove(key);
+  Future<void> registerFreshKey({
+    required String key,
+    required String registrationId,
+  }) async {}
 
   @override
-  Future<ObjectMetadata?> head(String key) async => objects[key];
+  Future<void> delete(String key, {String? registrationId}) async =>
+      objects.remove(key);
+
+  @override
+  Future<ObjectMetadata?> head(String key, {String? registrationId}) async =>
+      objects[key];
 
   @override
   Future<SignedObjectRequest> signGet({
     required String key,
     required String contentDisposition,
     required Duration expiresIn,
+    String? registrationId,
   }) async => _signed(key, expiresIn);
 
   @override
@@ -23,6 +32,7 @@ class InMemoryObjectStore implements ObjectStore {
     required int sizeBytes,
     required String checksumSha256,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => _signedUntil(key, expiresAt);
 
   SignedObjectRequest _signed(String key, Duration expiresIn) {
@@ -41,5 +51,6 @@ class InMemoryObjectStore implements ObjectStore {
   Future<bool> confirmsUploadQuiescence({
     required String key,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => true;
 }

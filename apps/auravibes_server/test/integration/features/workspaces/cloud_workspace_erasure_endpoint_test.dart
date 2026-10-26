@@ -99,7 +99,7 @@ void main() {
     );
 
     test(
-      'defers object deletion until outstanding upload expiry',
+      'does not treat a legacy upload expiry as erasure proof',
       () async {
         final userId = const Uuid().v4().toString();
         final authenticated = builder.copyWith(
@@ -190,7 +190,8 @@ void main() {
 
         expect(status.state, 'pending');
         expect(deletion, isNotNull);
-        expect(deletion!.availableAt, isNot(lessThan(uploadExpiry)));
+        expect(deletion!.availableAt.isBefore(now), isFalse);
+        expect(deletion.availableAt.isBefore(uploadExpiry), isTrue);
         expect(deletion.completedAt, isNull);
         expect(
           await CloudWorkspace.db.findById(session, workspace.id!),
@@ -298,6 +299,70 @@ void main() {
         ),
       );
       expect(store.signCalls, 0);
+    });
+
+    test('persists a gateway registration before signing an upload', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      await AuthUser.db.insertRow(
+        session,
+        AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+      );
+      await EmailAccount.db.insertRow(
+        session,
+        EmailAccount(
+          authUserId: UuidValue.fromString(userId),
+          email: '$userId@example.invalid',
+          passwordHash: 'unused',
+        ),
+      );
+      final workspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            session,
+            name: 'Registered upload',
+            ownerUserId: userId,
+            now: DateTime.now().toUtc(),
+          );
+      const requestId = 'registered-upload';
+      final store = _RegistrationAwareObjectStore(session);
+      final objects = ObjectUseCases(
+        store: store,
+        scanner: const UnconfiguredObjectScanner(),
+      );
+
+      await objects.beginUpload(
+        session,
+        userId: userId,
+        request: BeginUploadRequest(
+          workspaceId: workspace.id!,
+          requestId: '$requestId-$userId',
+          purpose: 'workspace_asset',
+          displayName: 'registered.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 4,
+          checksumSha256: 'e' * 64,
+        ),
+      );
+      final upload = await ObjectUpload.db.findFirstRow(
+        session,
+        where: (row) => row.requestId.equals('$requestId-$userId'),
+      );
+
+      expect(store.operations, ['register', 'sign']);
+      expect(store.registrationAtRegistration, isNotNull);
+      expect(
+        store.registrationAtRegistration,
+        matches(RegExp(r'^[a-f0-9]{64}$')),
+      );
+      expect(store.registrationAtRegistration, store.registeredId);
+      expect(store.signingRegistrationId, store.registrationAtRegistration);
+      expect(upload?.gatewayRegistrationId, store.registrationAtRegistration);
     });
 
     test(
@@ -447,6 +512,7 @@ void main() {
             requestId: 'late-upload-$userId',
             requestHash: 'synthetic-late-upload-hash',
             expiresAt: now.add(const Duration(minutes: 10)),
+            gatewayRegistrationId: _registrationId(object.id!),
             signingReservationCount: 0,
             createdAt: now,
           ),
@@ -544,7 +610,7 @@ void main() {
     );
 
     test(
-      'reopens legacy completion and requires verified post-expiry deletion',
+      'reopens legacy completion and keeps unproven upload blocked',
       () async {
         final userId = const Uuid().v4().toString();
         final authenticated = builder.copyWith(
@@ -664,27 +730,21 @@ void main() {
           store: store,
           purgeReadyWorkspaceErasures: (_, _) async => 0,
         );
-        expect(await cleanup.runOnce(session, coordinator: lease), 1);
-        final verified = (await ObjectDeletion.db.findFirstRow(
+        expect(await cleanup.runOnce(session, coordinator: lease), 0);
+        final blocked = (await ObjectDeletion.db.findFirstRow(
           session,
           where: (row) => row.objectId.equals(object.id!),
         ))!;
-        final upload = (await ObjectUpload.db.findFirstRow(
-          session,
-          where: (row) => row.objectId.equals(object.id!),
-        ))!;
-        expect(verified.completedAt, isNotNull);
-        expect(verified.uploadCleanupVerifiedAt, isNotNull);
-        expect(
-          verified.uploadCleanupVerifiedGeneration,
-          verified.cleanupGeneration,
-        );
-        expect(verified.uploadCleanupVerifiedExpiresAt, upload.expiresAt);
-        expect(store.objects, isNot(contains(object.objectKey)));
-        expect(await erasureCleanup.purgeReady(lease), 1);
+        expect(blocked.completedAt, isNull);
+        expect(blocked.lastError, 'legacyUploadUnverifiable');
+        expect(blocked.uploadCleanupVerifiedAt, isNull);
+        expect(store.quiescenceCalls, 0);
+        expect(store.deleteAttempts, 0);
+        expect(store.objects, contains(object.objectKey));
+        expect(await erasureCleanup.purgeReady(lease), 0);
         expect(
           await CloudWorkspace.db.findById(session, workspace.id!),
-          isNull,
+          isNotNull,
         );
       },
     );
@@ -746,6 +806,7 @@ void main() {
             requestId: 'rescheduled-upload-$userId',
             requestHash: 'synthetic-rescheduled-upload-hash',
             expiresAt: expiresAt,
+            gatewayRegistrationId: _registrationId(object.id!),
             signingReservationCount: 0,
             createdAt: now,
           ),
@@ -911,6 +972,7 @@ void main() {
             requestId: 'ordinary-upload-$userId',
             requestHash: 'synthetic-ordinary-upload-hash',
             expiresAt: now.subtract(const Duration(minutes: 1)),
+            gatewayRegistrationId: _registrationId(object.id!),
             signingReservationCount: 0,
             createdAt: now,
           ),
@@ -1126,7 +1188,9 @@ void main() {
           where: (row) => row.objectId.equals(upload.objectId),
         );
         expect(queued, isNotNull);
-        expect(queued!.availableAt.isBefore(upload.expiresAt), isFalse);
+        // Quiescence, not URL expiry, determines when a registered key can be
+        // deleted. The cleanup job is available immediately.
+        expect(queued!.availableAt.isBefore(upload.expiresAt), isTrue);
 
         final expiredAt = DateTime.now().toUtc().subtract(
           const Duration(seconds: 1),
@@ -1152,7 +1216,20 @@ void main() {
           authenticated,
         )).single;
         expect(blocked.state, 'needsAttention');
-        expect(blocked.failureReason, 'uploadSigningOutcomeUnresolved');
+        expect(blocked.failureReason, 'uploadQuiescenceUnverified');
+        final retryableDeletion = (await ObjectDeletion.db.findFirstRow(
+          session,
+          where: (row) => row.objectId.equals(upload.objectId),
+        ))!;
+        final retryableUpload = (await ObjectUpload.db.findFirstRow(
+          session,
+          where: (row) => row.objectId.equals(upload.objectId),
+        ))!;
+        expect(retryableDeletion.attempts, 0);
+        expect(
+          retryableUpload.gatewayRegistrationId,
+          upload.gatewayRegistrationId,
+        );
         expect(store.deleteAttempts, 0);
         expect(
           await CloudWorkspace.db.findById(session, workspace.id!),
@@ -1183,7 +1260,7 @@ void main() {
     );
 
     test(
-      'keeps unknown and crashed signer rows blocked despite gateway attestation',
+      'keeps legacy signer rows blocked despite gateway attestation',
       () async {
         final userId = const Uuid().v4().toString();
         final authenticated = builder.copyWith(
@@ -1272,15 +1349,18 @@ void main() {
           authenticated,
         )).single;
         expect(pending.state, 'needsAttention');
-        expect(pending.failureReason, 'uploadSigningOutcomeUnresolved');
-        expect(store.quiescenceCalls, 0);
-        expect(store.deleteAttempts, 0);
+        expect(pending.failureReason, 'legacyUploadUnverifiable');
+        for (var index = 0; index < 2; index++) {
+          final key = 'private/unresolved-$index';
+          expect(store.quiescenceKeys, isNot(contains(key)));
+          expect(store.deleteKeys, isNot(contains(key)));
+        }
         expect(
           await ObjectDeletion.db.find(
             session,
             where: (row) =>
                 row.workspaceId.equals(workspace.id!) &
-                row.lastError.equals('uploadSigningOutcomeUnresolved'),
+                row.lastError.equals('legacyUploadUnverifiable'),
           ),
           hasLength(2),
         );
@@ -1300,7 +1380,7 @@ void main() {
               authenticated,
             )).single;
         expect(stillBlocked.state, 'needsAttention');
-        expect(stillBlocked.failureReason, 'uploadSigningOutcomeUnresolved');
+        expect(stillBlocked.failureReason, 'legacyUploadUnverifiable');
         expect(store.quiescenceCalls, 0);
         expect(store.deleteAttempts, 0);
         expect(
@@ -1398,6 +1478,20 @@ void main() {
             revision: 1,
             createdAt: now,
             updatedAt: now,
+          ),
+        );
+        await ObjectUpload.db.insertRow(
+          session,
+          ObjectUpload(
+            workspaceId: workspace.id!,
+            objectId: object.id!,
+            actorUserId: userId,
+            requestId: 'erase-object-upload-$userId',
+            requestHash: 'synthetic-erase-object-upload-hash',
+            expiresAt: now.subtract(const Duration(minutes: 1)),
+            gatewayRegistrationId: _registrationId(object.id!),
+            signingReservationCount: 0,
+            createdAt: now,
           ),
         );
         await WorkspaceResource.db.insertRow(
@@ -1694,6 +1788,9 @@ Future<void> _clearCoordinator(Session session) =>
       where: (row) => row.key.equals('global'),
     );
 
+String _registrationId(int objectId) =>
+    objectId.toRadixString(16).padLeft(64, '0');
+
 Future<void> _insertOAuthTransaction(
   Session session, {
   required int workspaceId,
@@ -1742,20 +1839,25 @@ class _RetryingObjectStore extends InMemoryObjectStore {
   bool uploadQuiescenceConfirmed = true;
   int deleteAttempts = 0;
   int quiescenceCalls = 0;
+  final deleteKeys = <String>[];
+  final quiescenceKeys = <String>[];
 
   @override
-  Future<void> delete(String key) async {
+  Future<void> delete(String key, {String? registrationId}) async {
     deleteAttempts++;
+    deleteKeys.add(key);
     if (failDeletes) throw StateError('temporary object-store failure');
-    await super.delete(key);
+    await super.delete(key, registrationId: registrationId);
   }
 
   @override
   Future<bool> confirmsUploadQuiescence({
     required String key,
     required DateTime expiresAt,
+    String? registrationId,
   }) async {
     quiescenceCalls++;
+    quiescenceKeys.add(key);
     return uploadQuiescenceConfirmed;
   }
 }
@@ -1765,12 +1867,12 @@ class _BlockingDeleteObjectStore extends _RetryingObjectStore {
   final releaseDelete = Completer<void>();
 
   @override
-  Future<void> delete(String key) async {
+  Future<void> delete(String key, {String? registrationId}) async {
     if (!deleteStarted.isCompleted) {
       deleteStarted.complete();
       await releaseDelete.future;
     }
-    await super.delete(key);
+    await super.delete(key, registrationId: registrationId);
   }
 }
 
@@ -1788,6 +1890,7 @@ class _BlockingUploadStore extends InMemoryObjectStore {
     required int sizeBytes,
     required String checksumSha256,
     required DateTime expiresAt,
+    String? registrationId,
   }) async {
     final index = signCalls++;
     if (index < started.length) {
@@ -1805,12 +1908,13 @@ class _BlockingUploadStore extends InMemoryObjectStore {
   Future<bool> confirmsUploadQuiescence({
     required String key,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => uploadQuiescenceConfirmed;
 
   @override
-  Future<void> delete(String key) async {
+  Future<void> delete(String key, {String? registrationId}) async {
     deleteAttempts++;
-    await super.delete(key);
+    await super.delete(key, registrationId: registrationId);
   }
 }
 
@@ -1824,6 +1928,7 @@ class _CountingUploadStore extends InMemoryObjectStore {
     required int sizeBytes,
     required String checksumSha256,
     required DateTime expiresAt,
+    String? registrationId,
   }) async {
     signCalls++;
     return super.signPut(
@@ -1832,6 +1937,57 @@ class _CountingUploadStore extends InMemoryObjectStore {
       sizeBytes: sizeBytes,
       checksumSha256: checksumSha256,
       expiresAt: expiresAt,
+      registrationId: registrationId,
+    );
+  }
+}
+
+class _RegistrationAwareObjectStore extends InMemoryObjectStore {
+  _RegistrationAwareObjectStore(this.session);
+
+  final Session session;
+  final operations = <String>[];
+  String? registrationAtRegistration;
+  String? registeredId;
+  String? signingRegistrationId;
+
+  @override
+  Future<void> registerFreshKey({
+    required String key,
+    required String registrationId,
+  }) async {
+    operations.add('register');
+    registeredId = registrationId;
+    final object = await WorkspaceObject.db.findFirstRow(
+      session,
+      where: (row) => row.objectKey.equals(key),
+    );
+    if (object == null) return;
+    final upload = await ObjectUpload.db.findFirstRow(
+      session,
+      where: (row) => row.objectId.equals(object.id!),
+    );
+    registrationAtRegistration = upload?.gatewayRegistrationId;
+  }
+
+  @override
+  Future<SignedObjectRequest> signPut({
+    required String key,
+    required String mimeType,
+    required int sizeBytes,
+    required String checksumSha256,
+    required DateTime expiresAt,
+    String? registrationId,
+  }) {
+    operations.add('sign');
+    signingRegistrationId = registrationId;
+    return super.signPut(
+      key: key,
+      mimeType: mimeType,
+      sizeBytes: sizeBytes,
+      checksumSha256: checksumSha256,
+      expiresAt: expiresAt,
+      registrationId: registrationId,
     );
   }
 }

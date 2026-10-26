@@ -147,6 +147,8 @@ const _objectLocalizationKeys = <ObjectErrorCode, String>{
   .idempotencyConflict: LocaleKeys.cloud_errors_conflict,
   .objectReferenced: LocaleKeys.cloud_errors_conflict,
   .configurationMissing: LocaleKeys.cloud_errors_unavailable,
+  .uploadProvenanceUnavailable:
+      LocaleKeys.cloud_errors_upload_provenance_unavailable,
   .scanFailed: LocaleKeys.cloud_errors_unavailable,
 };
 

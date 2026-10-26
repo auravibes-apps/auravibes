@@ -2510,6 +2510,8 @@ String _cloudErasureStatusAttentionKey(String? failureReason) =>
         LocaleKeys.cloud_workspaces_erasure_status_upload_signing_unresolved,
       'uploadQuiescenceUnverified' =>
         LocaleKeys.cloud_workspaces_erasure_status_upload_quiescence_unverified,
+      'legacyUploadUnverifiable' =>
+        LocaleKeys.cloud_workspaces_erasure_status_legacy_upload_unverifiable,
       _ => LocaleKeys.cloud_workspaces_erasure_status_attention,
     };
 
@@ -2586,7 +2588,7 @@ class const _WorkspaceErasureStatuses({
 bool _canRetryCloudErasure(CloudWorkspaceErasureStatus status) =>
     status.state == 'needsAttention' &&
     status.failureReason != 'uploadSigningOutcomeUnresolved' &&
-    status.failureReason != 'uploadQuiescenceUnverified';
+    status.failureReason != 'legacyUploadUnverifiable';
 
 class const _PendingWorkspaceInvites({
   required final CloudAccountSession account,
