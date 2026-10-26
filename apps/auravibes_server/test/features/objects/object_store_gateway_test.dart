@@ -31,6 +31,159 @@ void main() {
     expect(request.authorization, 'Bearer gateway-secret');
   });
 
+  test('treats a registration conflict as unverified provenance', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      request.response.statusCode = HttpStatus.conflict;
+      request.response.write('conflict\n');
+      await request.response.close();
+      return _ObservedRequest.from(request);
+    });
+
+    await expectLater(
+      _store(server).registerFreshKey(
+        key: objectKey,
+        registrationId: registrationId,
+      ),
+      throwsA(isA<ObjectStoreRegistrationConflictException>()),
+    );
+
+    final request = await observed;
+    expect(request.query['register'], '1');
+  });
+
+  test(
+    'rejects insecure gateway endpoints without exposing credentials',
+    () async {
+      final store = HttpObjectStore(
+        gatewayEndpoint: Uri.parse('http://gateway.invalid/objects'),
+        gatewayBearerToken: 'gateway-secret',
+      );
+
+      await expectLater(
+        store.registerFreshKey(key: objectKey, registrationId: registrationId),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              isNot(contains('gateway.invalid')),
+              isNot(contains('gateway-secret')),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'rejects insecure legacy endpoints without exposing credentials',
+    () async {
+      final store = HttpObjectStore(
+        legacyEndpoint: Uri.parse('http://legacy.invalid/objects'),
+        legacyBearerToken: 'legacy-secret',
+      );
+
+      await expectLater(
+        store.delete(objectKey),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              isNot(contains('legacy.invalid')),
+              isNot(contains('legacy-secret')),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  test('reports gateway delete quiescence as pending', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      request.response.statusCode = HttpStatus.conflict;
+      request.response.write('pending\n');
+      await request.response.close();
+      return _ObservedRequest.from(request);
+    });
+
+    await expectLater(
+      _store(server).delete(objectKey, registrationId: registrationId),
+      throwsA(isA<ObjectStoreDeletePendingException>()),
+    );
+
+    final request = await observed;
+    expect(request.method, 'DELETE');
+    expect(request.registrationId, registrationId);
+  });
+
+  test('decodes the explicit provider deletion blocker response', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      request.response.statusCode = HttpStatus.unprocessableEntity;
+      request.response.write('{"code":"replica_provenance_unavailable"}');
+      await request.response.close();
+      return _ObservedRequest.from(request);
+    });
+
+    await expectLater(
+      _store(server).delete(objectKey, registrationId: registrationId),
+      throwsA(
+        isA<ObjectStoreDeleteBlockedException>().having(
+          (error) => error.code,
+          'code',
+          'replica_provenance_unavailable',
+        ),
+      ),
+    );
+
+    final request = await observed;
+    expect(request.method, 'DELETE');
+    expect(request.registrationId, registrationId);
+  });
+
+  test('fails closed on an unrecognized gateway 422 response', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      request.response.statusCode = HttpStatus.unprocessableEntity;
+      request.response.write('{"code":"unknown_blocker"}');
+      await request.response.close();
+      return _ObservedRequest.from(request);
+    });
+
+    await expectLater(
+      _store(server).delete(objectKey, registrationId: registrationId),
+      throwsStateError,
+    );
+
+    final request = await observed;
+    expect(request.method, 'DELETE');
+    expect(request.registrationId, registrationId);
+  });
+
+  test('keeps an untyped gateway 502 as a transient error', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      request.response.statusCode = HttpStatus.badGateway;
+      request.response.write('storage unavailable');
+      await request.response.close();
+      return _ObservedRequest.from(request);
+    });
+
+    await expectLater(
+      _store(server).delete(objectKey, registrationId: registrationId),
+      throwsStateError,
+    );
+    expect((await observed).method, 'DELETE');
+  });
+
   test('quiesces by registration and treats pending as unverified', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));
@@ -46,6 +199,7 @@ void main() {
             : quiesceCount == 1
             ? HttpStatus.conflict
             : HttpStatus.noContent;
+        if (quiesceCount == 1) request.response.write('pending\n');
         await request.response.close();
         if (quiesceCount == 2) break;
       }
@@ -70,7 +224,7 @@ void main() {
       requests.map(
         (request) => request.query['register'] ?? request.query['quiesce'],
       ),
-      ['1', '1', '1', '1'],
+      ['1', '1'],
     );
     expect(
       requests.every((request) => request.registrationId == registrationId),
@@ -83,6 +237,111 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'distinguishes unknown gateway registration from pending quiescence',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final observed = server.first.then((request) async {
+        request.response.statusCode = HttpStatus.conflict;
+        request.response.write('conflict\n');
+        await request.response.close();
+        return _ObservedRequest.from(request);
+      });
+
+      await expectLater(
+        _store(server).confirmsUploadQuiescence(
+          key: objectKey,
+          expiresAt: DateTime.utc(2026, 10, 26),
+          registrationId: registrationId,
+        ),
+        throwsA(isA<ObjectStoreRegistrationConflictException>()),
+      );
+
+      final request = await observed;
+      expect(request.query, {'quiesce': '1'});
+    },
+  );
+
+  test('fails closed on an unknown 409 quiescence body', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      request.response.statusCode = HttpStatus.conflict;
+      request.response.write('unexpected\n');
+      await request.response.close();
+      return _ObservedRequest.from(request);
+    });
+
+    await expectLater(
+      _store(server).confirmsUploadQuiescence(
+        key: objectKey,
+        expiresAt: DateTime.utc(2026, 10, 26),
+        registrationId: registrationId,
+      ),
+      throwsStateError,
+    );
+    expect((await observed).query, {'quiesce': '1'});
+  });
+
+  test(
+    'does not register unknown keys during head, get signing or quiesce',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final requests = <_ObservedRequest>[];
+      final serving = () async {
+        await for (final request in server) {
+          final observed = _ObservedRequest.from(request);
+          requests.add(observed);
+          request.response.statusCode = HttpStatus.conflict;
+          request.response.write('conflict\n');
+          await request.response.close();
+          if (requests.length == 3) break;
+        }
+      }();
+      final store = _store(server);
+
+      await expectLater(
+        store.head(objectKey, registrationId: registrationId),
+        throwsStateError,
+      );
+      await expectLater(
+        store.signGet(
+          key: objectKey,
+          contentDisposition: 'attachment; filename="file.txt"',
+          expiresIn: const Duration(minutes: 1),
+          registrationId: registrationId,
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        store.confirmsUploadQuiescence(
+          key: objectKey,
+          expiresAt: DateTime.utc(2026, 10, 26),
+          registrationId: registrationId,
+        ),
+        throwsA(isA<ObjectStoreRegistrationConflictException>()),
+      );
+      await serving;
+
+      expect(requests.map((request) => request.method), [
+        'HEAD',
+        'POST',
+        'POST',
+      ]);
+      expect(requests.map((request) => request.query['sign']), [
+        null,
+        'GET',
+        null,
+      ]);
+      expect(
+        requests.every((request) => !request.query.containsKey('register')),
+        isTrue,
+      );
+    },
+  );
 
   test('uses one registration identity for every gateway operation', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -107,7 +366,7 @@ void main() {
           request.response.write('https://gateway.invalid/signed');
         }
         await request.response.close();
-        if (requests.length == 9) break;
+        if (requests.length == 6) break;
       }
     }();
     final store = _store(server);
@@ -146,7 +405,7 @@ void main() {
     await store.delete(objectKey, registrationId: registrationId);
     await serving;
 
-    expect(requests, hasLength(9));
+    expect(requests, hasLength(6));
     expect(
       requests.map((request) => request.registrationId),
       everyElement(registrationId),
@@ -156,11 +415,77 @@ void main() {
       everyElement('Bearer gateway-secret'),
     );
     expect(requests[1].query['sign'], 'PUT');
-    expect(requests[3].method, 'HEAD');
-    expect(requests[5].query['sign'], 'GET');
-    expect(requests[5].query['response-cache-control'], 'no-store');
-    expect(requests[7].query['quiesce'], '1');
-    expect(requests[8].method, 'DELETE');
+    expect(requests[2].method, 'HEAD');
+    expect(requests[3].query['sign'], 'GET');
+    expect(requests[3].query['response-cache-control'], 'no-store');
+    expect(requests[4].query['quiesce'], '1');
+    expect(requests[5].method, 'DELETE');
+  });
+
+  test(
+    'requires gateway DELETE to positively confirm object removal',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final observed = server.first.then((request) async {
+        final result = _ObservedRequest.from(request);
+        request.response.statusCode = HttpStatus.conflict;
+        request.response.write('pending\n');
+        await request.response.close();
+        return result;
+      });
+
+      await expectLater(
+        _store(server).delete(objectKey, registrationId: registrationId),
+        throwsA(isA<ObjectStoreDeletePendingException>()),
+      );
+
+      final request = await observed;
+      expect(request.method, 'DELETE');
+      expect(request.registrationId, registrationId);
+    },
+  );
+
+  test(
+    'delete treats a gateway registration conflict as a permanent blocker',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final observed = server.first.then((request) async {
+        request.response.statusCode = HttpStatus.conflict;
+        request.response.write('conflict\n');
+        await request.response.close();
+        return _ObservedRequest.from(request);
+      });
+
+      await expectLater(
+        _store(server).delete(objectKey, registrationId: registrationId),
+        throwsA(isA<ObjectStoreRegistrationConflictException>()),
+      );
+      expect((await observed).method, 'DELETE');
+    },
+  );
+
+  test('allows legacy DELETE 404 for an already absent object', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final observed = server.first.then((request) async {
+      final result = _ObservedRequest.from(request);
+      request.response.statusCode = HttpStatus.notFound;
+      await request.response.close();
+      return result;
+    });
+    final store = HttpObjectStore(
+      legacyEndpoint: _endpoint(server),
+      legacyBearerToken: 'legacy-secret',
+    );
+
+    await store.delete(objectKey);
+
+    final request = await observed;
+    expect(request.method, 'DELETE');
+    expect(request.registrationId, isNull);
+    expect(request.authorization, 'Bearer legacy-secret');
   });
 
   test('legacy operations use only the explicit legacy endpoint', () async {

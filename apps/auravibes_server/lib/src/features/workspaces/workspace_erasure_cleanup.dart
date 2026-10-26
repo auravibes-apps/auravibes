@@ -387,17 +387,29 @@ class const WorkspaceErasureCleanup(final Session session) {
     final blockedByLegacyUpload = deletions.any(
       (row) => row.lastError == 'legacyUploadUnverifiable',
     );
+    final blockedByRegistration = deletions.any(
+      (row) => row.lastError == 'gatewayRegistrationUnverified',
+    );
+    final blockedByProviderDeletion = deletions.any(
+      (row) => row.lastError == 'providerDeletionUnverified',
+    );
     final needsAttention =
         blockedByUploadSigning ||
         blockedByUploadQuiescence ||
         blockedByLegacyUpload ||
+        blockedByRegistration ||
+        blockedByProviderDeletion ||
         deletions.any((row) => row.attempts >= 8);
     final failureReason = blockedByUploadSigning
         ? 'uploadSigningOutcomeUnresolved'
-        : blockedByUploadQuiescence
-        ? 'uploadQuiescenceUnverified'
+        : blockedByRegistration
+        ? 'gatewayRegistrationUnverified'
         : blockedByLegacyUpload
         ? 'legacyUploadUnverifiable'
+        : blockedByProviderDeletion
+        ? 'providerDeletionUnverified'
+        : blockedByUploadQuiescence
+        ? 'uploadQuiescenceUnverified'
         : needsAttention
         ? 'objectCleanupFailed'
         : null;

@@ -1094,7 +1094,10 @@ class CloudWorkspaceUseCases(
         lockMode: LockMode.forUpdate,
       );
       if (pendingDeletions.any(
-        (row) => row.lastError == 'legacyUploadUnverifiable',
+        (row) =>
+            row.lastError == 'legacyUploadUnverifiable' ||
+            row.lastError == 'providerDeletionUnverified' ||
+            row.lastError == 'gatewayRegistrationUnverified',
       )) {
         return erasure;
       }

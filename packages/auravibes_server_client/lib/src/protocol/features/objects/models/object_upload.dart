@@ -23,10 +23,11 @@ abstract class ObjectUpload
     required this.requestHash,
     required this.expiresAt,
     this.gatewayRegistrationId,
+    String? gatewayRegistrationState,
     this.signingReservationCount,
     this.completedAt,
     required this.createdAt,
-  });
+  }) : gatewayRegistrationState = gatewayRegistrationState ?? 'registered';
 
   factory ObjectUpload({
     int? id,
@@ -37,6 +38,7 @@ abstract class ObjectUpload
     required String requestHash,
     required DateTime expiresAt,
     String? gatewayRegistrationId,
+    String? gatewayRegistrationState,
     int? signingReservationCount,
     DateTime? completedAt,
     required DateTime createdAt,
@@ -55,6 +57,8 @@ abstract class ObjectUpload
       ),
       gatewayRegistrationId:
           jsonSerialization['gatewayRegistrationId'] as String?,
+      gatewayRegistrationState:
+          jsonSerialization['gatewayRegistrationState'] as String?,
       signingReservationCount:
           jsonSerialization['signingReservationCount'] as int?,
       completedAt: jsonSerialization['completedAt'] == null
@@ -87,6 +91,8 @@ abstract class ObjectUpload
 
   String? gatewayRegistrationId;
 
+  String gatewayRegistrationState;
+
   int? signingReservationCount;
 
   DateTime? completedAt;
@@ -105,6 +111,7 @@ abstract class ObjectUpload
     String? requestHash,
     DateTime? expiresAt,
     String? gatewayRegistrationId,
+    String? gatewayRegistrationState,
     int? signingReservationCount,
     DateTime? completedAt,
     DateTime? createdAt,
@@ -122,6 +129,7 @@ abstract class ObjectUpload
       'expiresAt': expiresAt.toJson(),
       if (gatewayRegistrationId != null)
         'gatewayRegistrationId': gatewayRegistrationId,
+      'gatewayRegistrationState': gatewayRegistrationState,
       if (signingReservationCount != null)
         'signingReservationCount': signingReservationCount,
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
@@ -142,6 +150,7 @@ abstract class ObjectUpload
       'expiresAt': expiresAt.toJson(),
       if (gatewayRegistrationId != null)
         'gatewayRegistrationId': gatewayRegistrationId,
+      'gatewayRegistrationState': gatewayRegistrationState,
       if (signingReservationCount != null)
         'signingReservationCount': signingReservationCount,
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
@@ -167,6 +176,7 @@ class _ObjectUploadImpl extends ObjectUpload {
     required String requestHash,
     required DateTime expiresAt,
     String? gatewayRegistrationId,
+    String? gatewayRegistrationState,
     int? signingReservationCount,
     DateTime? completedAt,
     required DateTime createdAt,
@@ -179,6 +189,7 @@ class _ObjectUploadImpl extends ObjectUpload {
          requestHash: requestHash,
          expiresAt: expiresAt,
          gatewayRegistrationId: gatewayRegistrationId,
+         gatewayRegistrationState: gatewayRegistrationState,
          signingReservationCount: signingReservationCount,
          completedAt: completedAt,
          createdAt: createdAt,
@@ -197,6 +208,7 @@ class _ObjectUploadImpl extends ObjectUpload {
     String? requestHash,
     DateTime? expiresAt,
     Object? gatewayRegistrationId = _Undefined,
+    String? gatewayRegistrationState,
     Object? signingReservationCount = _Undefined,
     Object? completedAt = _Undefined,
     DateTime? createdAt,
@@ -212,6 +224,8 @@ class _ObjectUploadImpl extends ObjectUpload {
       gatewayRegistrationId: gatewayRegistrationId is String?
           ? gatewayRegistrationId
           : this.gatewayRegistrationId,
+      gatewayRegistrationState:
+          gatewayRegistrationState ?? this.gatewayRegistrationState,
       signingReservationCount: signingReservationCount is int?
           ? signingReservationCount
           : this.signingReservationCount,

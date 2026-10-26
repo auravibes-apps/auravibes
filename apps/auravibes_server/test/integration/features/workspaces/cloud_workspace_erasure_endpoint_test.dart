@@ -335,27 +335,47 @@ void main() {
         store: store,
         scanner: const UnconfiguredObjectScanner(),
       );
+      final request = BeginUploadRequest(
+        workspaceId: workspace.id!,
+        requestId: '$requestId-$userId',
+        purpose: 'workspace_asset',
+        displayName: 'registered.txt',
+        mimeType: 'text/plain',
+        sizeBytes: 4,
+        checksumSha256: 'e' * 64,
+      );
 
-      await objects.beginUpload(
+      final firstSigning = objects.beginUpload(
         session,
         userId: userId,
-        request: BeginUploadRequest(
-          workspaceId: workspace.id!,
-          requestId: '$requestId-$userId',
-          purpose: 'workspace_asset',
-          displayName: 'registered.txt',
-          mimeType: 'text/plain',
-          sizeBytes: 4,
-          checksumSha256: 'e' * 64,
+        request: request,
+      );
+      await store.registrationStarted.future.timeout(
+        const Duration(seconds: 5),
+      );
+      await expectLater(
+        objects.beginUpload(session, userId: userId, request: request),
+        throwsA(
+          isA<ObjectException>().having(
+            (error) => error.code,
+            'code',
+            ObjectErrorCode.uploadProvenanceUnavailable,
+          ),
         ),
       );
+      expect(store.operations, ['register']);
+      expect(store.registrationStatesAtSigning, isEmpty);
+      store.releaseRegistration.complete();
+      await firstSigning;
+      await objects.beginUpload(session, userId: userId, request: request);
       final upload = await ObjectUpload.db.findFirstRow(
         session,
         where: (row) => row.requestId.equals('$requestId-$userId'),
       );
 
-      expect(store.operations, ['register', 'sign']);
+      expect(store.operations, ['register', 'sign', 'sign']);
       expect(store.registrationAtRegistration, isNotNull);
+      expect(store.registrationStateAtRegistration, 'registering');
       expect(
         store.registrationAtRegistration,
         matches(RegExp(r'^[a-f0-9]{64}$')),
@@ -363,7 +383,104 @@ void main() {
       expect(store.registrationAtRegistration, store.registeredId);
       expect(store.signingRegistrationId, store.registrationAtRegistration);
       expect(upload?.gatewayRegistrationId, store.registrationAtRegistration);
+      expect(upload?.gatewayRegistrationState, 'registered');
+      expect(store.registrationStatesAtSigning, ['registered', 'registered']);
     });
+
+    test(
+      'erasure winning during registration prevents the first PUT signature',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              session,
+              name: 'Erased during gateway registration',
+              ownerUserId: userId,
+              now: DateTime.now().toUtc(),
+            );
+        final store = _RegistrationAwareObjectStore(session);
+        final objects = ObjectUseCases(
+          store: store,
+          scanner: const UnconfiguredObjectScanner(),
+        );
+        final request = BeginUploadRequest(
+          workspaceId: workspace.id!,
+          requestId: 'erase-during-registration-$userId',
+          purpose: 'workspace_asset',
+          displayName: 'pending.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 4,
+          checksumSha256: 'f' * 64,
+        );
+        final signing = objects.beginUpload(
+          session,
+          userId: userId,
+          request: request,
+        );
+        final outcome = signing.then<Object>(
+          (result) => result,
+          onError: (Object error, StackTrace _) => error,
+        );
+        await store.registrationStarted.future.timeout(
+          const Duration(seconds: 5),
+        );
+        final upload = await ObjectUpload.db.findFirstRow(
+          session,
+          where: (row) => row.requestId.equals(request.requestId),
+        );
+        expect(upload?.gatewayRegistrationState, 'registering');
+
+        final erasure = await endpoints.cloudWorkspace.eraseWorkspace(
+          authenticated,
+          EraseCloudWorkspaceRequest(
+            workspaceId: workspace.id!,
+            confirmationName: workspace.name,
+            requestId: 'erase-during-registration-$userId',
+            expectedWorkspaceRevision: workspace.revision,
+          ),
+        );
+        expect(erasure.state, 'pending');
+        store.releaseRegistration.complete();
+
+        final result = await outcome;
+        expect(
+          result,
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.membershipRequired,
+          ),
+        );
+        expect(store.operations, ['register']);
+        expect(store.registrationStatesAtSigning, isEmpty);
+        final completedUpload = await ObjectUpload.db.findFirstRow(
+          session,
+          where: (row) => row.requestId.equals(request.requestId),
+        );
+        expect(completedUpload?.gatewayRegistrationState, 'registering');
+        expect(completedUpload?.signingReservationCount, 0);
+      },
+      timeout: const Timeout(Duration(seconds: 20)),
+    );
 
     test(
       'signing completion cannot return a URL after object deletion wins',
@@ -1391,6 +1508,134 @@ void main() {
     );
 
     test(
+      'provider replica blocker persists across retry and outranks pending cleanup',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              session,
+              name: 'Provider deletion blocker',
+              ownerUserId: userId,
+              now: now,
+            );
+        final blockedObject = await _insertRegisteredUpload(
+          session,
+          workspaceId: workspace.id!,
+          userId: userId,
+          objectKey: 'private/provider-blocked-$userId',
+          requestId: 'provider-blocked-$userId',
+          now: now,
+        );
+        final pendingObject = await _insertRegisteredUpload(
+          session,
+          workspaceId: workspace.id!,
+          userId: userId,
+          objectKey: 'private/quiescence-pending-$userId',
+          requestId: 'quiescence-pending-$userId',
+          now: now,
+        );
+        final request = EraseCloudWorkspaceRequest(
+          workspaceId: workspace.id!,
+          confirmationName: workspace.name,
+          requestId: 'erase-provider-blocker-$userId',
+          expectedWorkspaceRevision: workspace.revision,
+        );
+        final initial = await endpoints.cloudWorkspace.eraseWorkspace(
+          authenticated,
+          request,
+        );
+        expect(initial.state, 'pending');
+        final pendingDeletion = await ObjectDeletion.db.findFirstRow(
+          session,
+          where: (row) => row.objectId.equals(pendingObject.id!),
+        );
+        await ObjectDeletion.db.updateRow(
+          session,
+          pendingDeletion!.copyWith(
+            lastError: 'uploadQuiescenceUnverified',
+            availableAt: now.add(const Duration(days: 1)),
+          ),
+        );
+        final lease = await const WorkerCoordinatorRepository()
+            .acquireCoordinator(
+              session,
+              ownerId: 'provider-blocker-test-$userId',
+            );
+        expect(lease, isNotNull);
+        final store = _ProviderBlockedObjectStore(
+          blockedKeys: {blockedObject.objectKey},
+        );
+
+        await ObjectCleanupService(store: store).runOnce(
+          session,
+          coordinator: lease!,
+        );
+
+        final blockedRows = await ObjectDeletion.db.find(
+          session,
+          where: (row) => row.workspaceId.equals(workspace.id!),
+        );
+        final providerDeletion = blockedRows.singleWhere(
+          (row) => row.objectId == blockedObject.id,
+        );
+        final retryableDeletion = blockedRows.singleWhere(
+          (row) => row.objectId == pendingObject.id,
+        );
+        expect(providerDeletion.lastError, 'providerDeletionUnverified');
+        expect(providerDeletion.attempts, 0);
+        expect(retryableDeletion.lastError, 'uploadQuiescenceUnverified');
+        expect(store.deleteAttempts, 1);
+
+        final status = (await endpoints.cloudWorkspace.listWorkspaceErasures(
+          authenticated,
+        )).single;
+        expect(status.state, 'needsAttention');
+        expect(status.failureReason, 'providerDeletionUnverified');
+        final retry = await endpoints.cloudWorkspace.retryWorkspaceErasure(
+          authenticated,
+          RetryCloudWorkspaceErasureRequest(requestId: request.requestId),
+        );
+        expect(retry.state, 'needsAttention');
+        expect(retry.failureReason, 'providerDeletionUnverified');
+        await ObjectCleanupService(store: store).runOnce(
+          session,
+          coordinator: lease,
+        );
+        expect(store.deleteAttempts, 1);
+        final afterRetry = await ObjectDeletion.db.findById(
+          session,
+          retryableDeletion.id!,
+        );
+        expect(afterRetry?.lastError, 'uploadQuiescenceUnverified');
+        expect(afterRetry?.availableAt, now.add(const Duration(days: 1)));
+        expect(
+          await CloudWorkspace.db.findById(session, workspace.id!),
+          isNotNull,
+        );
+      },
+    );
+
+    test(
       'keeps a tombstone until retries erase assets and workspace data',
       () async {
         final userId = const Uuid().v4().toString();
@@ -1816,6 +2061,48 @@ Future<void> _insertOAuthTransaction(
   );
 }
 
+Future<WorkspaceObject> _insertRegisteredUpload(
+  Session session, {
+  required int workspaceId,
+  required String userId,
+  required String objectKey,
+  required String requestId,
+  required DateTime now,
+}) async {
+  final object = await WorkspaceObject.db.insertRow(
+    session,
+    WorkspaceObject(
+      workspaceId: workspaceId,
+      objectKey: objectKey,
+      purpose: 'workspace_asset',
+      displayName: '$requestId.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 4,
+      checksumSha256: 'a' * 64,
+      status: 'active',
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
+  await ObjectUpload.db.insertRow(
+    session,
+    ObjectUpload(
+      workspaceId: workspaceId,
+      objectId: object.id!,
+      actorUserId: userId,
+      requestId: requestId,
+      requestHash: 'synthetic-$requestId',
+      expiresAt: now.subtract(const Duration(minutes: 1)),
+      gatewayRegistrationId: _registrationId(object.id!),
+      gatewayRegistrationState: 'registered',
+      signingReservationCount: 0,
+      createdAt: now,
+    ),
+  );
+  return object;
+}
+
 ByteData _syntheticBytes(int length) => ByteData(length)..setUint8(0, 1);
 
 Future<void> _insertToolSamplingPolicy(
@@ -1859,6 +2146,31 @@ class _RetryingObjectStore extends InMemoryObjectStore {
     quiescenceCalls++;
     quiescenceKeys.add(key);
     return uploadQuiescenceConfirmed;
+  }
+}
+
+class _ProviderBlockedObjectStore extends InMemoryObjectStore {
+  _ProviderBlockedObjectStore({required this.blockedKeys});
+
+  final Set<String> blockedKeys;
+  int deleteAttempts = 0;
+
+  @override
+  Future<bool> confirmsUploadQuiescence({
+    required String key,
+    required DateTime expiresAt,
+    String? registrationId,
+  }) async => true;
+
+  @override
+  Future<void> delete(String key, {String? registrationId}) async {
+    deleteAttempts++;
+    if (blockedKeys.contains(key)) {
+      throw const ObjectStoreDeleteBlockedException(
+        'replica_provenance_unavailable',
+      );
+    }
+    await super.delete(key, registrationId: registrationId);
   }
 }
 
@@ -1948,8 +2260,12 @@ class _RegistrationAwareObjectStore extends InMemoryObjectStore {
   final Session session;
   final operations = <String>[];
   String? registrationAtRegistration;
+  String? registrationStateAtRegistration;
   String? registeredId;
   String? signingRegistrationId;
+  final registrationStatesAtSigning = <String?>[];
+  final registrationStarted = Completer<void>();
+  final releaseRegistration = Completer<void>();
 
   @override
   Future<void> registerFreshKey({
@@ -1968,6 +2284,9 @@ class _RegistrationAwareObjectStore extends InMemoryObjectStore {
       where: (row) => row.objectId.equals(object.id!),
     );
     registrationAtRegistration = upload?.gatewayRegistrationId;
+    registrationStateAtRegistration = upload?.gatewayRegistrationState;
+    registrationStarted.complete();
+    await releaseRegistration.future;
   }
 
   @override
@@ -1978,9 +2297,20 @@ class _RegistrationAwareObjectStore extends InMemoryObjectStore {
     required String checksumSha256,
     required DateTime expiresAt,
     String? registrationId,
-  }) {
+  }) async {
     operations.add('sign');
     signingRegistrationId = registrationId;
+    final object = await WorkspaceObject.db.findFirstRow(
+      session,
+      where: (row) => row.objectKey.equals(key),
+    );
+    if (object != null) {
+      final upload = await ObjectUpload.db.findFirstRow(
+        session,
+        where: (row) => row.objectId.equals(object.id!),
+      );
+      registrationStatesAtSigning.add(upload?.gatewayRegistrationState);
+    }
     return super.signPut(
       key: key,
       mimeType: mimeType,

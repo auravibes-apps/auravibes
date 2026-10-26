@@ -13,6 +13,13 @@ class const SignedObjectRequest({
   required final DateTime expiresAt,
 });
 
+class const ObjectStoreDeletePendingException() implements Exception;
+
+class const ObjectStoreDeleteBlockedException(final String code)
+    implements Exception;
+
+class const ObjectStoreRegistrationConflictException() implements Exception;
+
 abstract interface class ObjectStore {
   Future<void> registerFreshKey({
     required String key,
@@ -137,7 +144,21 @@ class HttpObjectStore implements ObjectStore {
             : 'Registered object gateway is not configured.',
       );
     }
+    _requireSecureEndpoint(endpoint);
     return endpoint;
+  }
+
+  void _requireSecureEndpoint(Uri endpoint) {
+    if (endpoint.scheme == 'https') return;
+    if (endpoint.scheme == 'http' && _isLoopbackHost(endpoint.host)) return;
+    throw StateError(
+      'Object storage endpoints must use HTTPS except for loopback.',
+    );
+  }
+
+  bool _isLoopbackHost(String host) {
+    if (host.toLowerCase() == 'localhost') return true;
+    return InternetAddress.tryParse(host)?.isLoopback ?? false;
   }
 
   String? _token(String? registrationId) =>
@@ -179,7 +200,11 @@ class HttpObjectStore implements ObjectStore {
       );
       _authorize(request, registrationId);
       final response = await request.close();
-      await response.drain<void>();
+      final body = await response.transform(const Utf8Decoder()).join();
+      if (response.statusCode == HttpStatus.conflict &&
+          body.trim() == 'conflict') {
+        throw const ObjectStoreRegistrationConflictException();
+      }
       if (response.statusCode != HttpStatus.noContent) {
         throw StateError(
           'Object gateway registration failed (${response.statusCode}).',
@@ -219,9 +244,6 @@ class HttpObjectStore implements ObjectStore {
     required Duration expiresIn,
     String? registrationId,
   }) async {
-    if (registrationId != null) {
-      await _register(key: key, registrationId: registrationId);
-    }
     return _sign(
       'GET',
       key,
@@ -281,7 +303,6 @@ class HttpObjectStore implements ObjectStore {
     String? registrationId,
   }) async {
     if (registrationId == null) return false;
-    await _register(key: key, registrationId: registrationId);
     final client = HttpClient();
     try {
       final request = await client.postUrl(
@@ -289,9 +310,16 @@ class HttpObjectStore implements ObjectStore {
       );
       _authorize(request, registrationId);
       final response = await request.close();
-      await response.drain<void>();
       if (response.statusCode == HttpStatus.noContent) return true;
-      if (response.statusCode == HttpStatus.conflict) return false;
+      if (response.statusCode == HttpStatus.conflict) {
+        final body = await response.transform(const Utf8Decoder()).join();
+        if (body.trim() == 'pending') return false;
+        if (body.trim() == 'conflict') {
+          throw const ObjectStoreRegistrationConflictException();
+        }
+      } else {
+        await response.drain<void>();
+      }
       throw StateError(
         'Object gateway quiescence failed (${response.statusCode}).',
       );
@@ -305,9 +333,6 @@ class HttpObjectStore implements ObjectStore {
     String key, {
     String? registrationId,
   }) async {
-    if (registrationId != null) {
-      await _register(key: key, registrationId: registrationId);
-    }
     final client = HttpClient();
     try {
       final request = await client.openUrl(
@@ -337,15 +362,51 @@ class HttpObjectStore implements ObjectStore {
       final request = await client.deleteUrl(_uri(registrationId, key));
       _authorize(request, registrationId);
       final response = await request.close();
-      await response.drain<void>();
-      if (response.statusCode != HttpStatus.noContent &&
-          response.statusCode != HttpStatus.notFound) {
+      if (registrationId != null &&
+          response.statusCode == HttpStatus.conflict) {
+        final body = await response.transform(const Utf8Decoder()).join();
+        if (body.trim() == 'pending') {
+          throw const ObjectStoreDeletePendingException();
+        }
+        if (body.trim() == 'conflict') {
+          throw const ObjectStoreRegistrationConflictException();
+        }
         throw StateError(
           'Object deletion failed (${response.statusCode}).',
         );
       }
+      if (response.statusCode == HttpStatus.noContent) return;
+      if (registrationId == null &&
+          response.statusCode == HttpStatus.notFound) {
+        await response.drain<void>();
+        return;
+      }
+      if (registrationId != null &&
+          response.statusCode == HttpStatus.unprocessableEntity) {
+        final body = await response.transform(const Utf8Decoder()).join();
+        if (_isReplicaProvenanceBlocker(body)) {
+          throw const ObjectStoreDeleteBlockedException(
+            'replica_provenance_unavailable',
+          );
+        }
+      } else {
+        await response.drain<void>();
+      }
+      throw StateError(
+        'Object deletion failed (${response.statusCode}).',
+      );
     } finally {
       client.close(force: true);
+    }
+  }
+
+  bool _isReplicaProvenanceBlocker(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map &&
+          decoded['code'] == 'replica_provenance_unavailable';
+    } on FormatException {
+      return false;
     }
   }
 }

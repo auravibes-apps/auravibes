@@ -97,7 +97,9 @@ class ObjectRepository {
     where: (t) =>
         t.completedAt.equals(null) &
         (t.lastError.equals(null) |
-            t.lastError.notEquals('legacyUploadUnverifiable')) &
+            (t.lastError.notEquals('legacyUploadUnverifiable') &
+                t.lastError.notEquals('providerDeletionUnverified') &
+                t.lastError.notEquals('gatewayRegistrationUnverified'))) &
         (t.availableAt <= now) &
         (t.attempts < maxAttempts),
     orderBy: (t) => t.availableAt,
@@ -258,7 +260,7 @@ class ObjectRepository {
     );
   });
 
-  Future<void> blockDeletionForUploadQuiescence(
+  Future<void> markDeletionBlocked(
     Session session, {
     required ObjectDeletion deletion,
     required WorkerCoordinatorLease coordinator,

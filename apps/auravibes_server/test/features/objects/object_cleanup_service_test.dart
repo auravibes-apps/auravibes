@@ -44,6 +44,127 @@ void main() {
     expect(service.maxAttempts, 8);
   });
 
+  test(
+    'gateway 409 stays pending without consuming a cleanup attempt',
+    () async {
+      final repository = _Repository(true);
+      final store = _Store(<String>[])
+        ..deleteError = const ObjectStoreDeletePendingException();
+      final count =
+          await ObjectCleanupService(
+            store: store,
+            repository: repository,
+            purgeReadyWorkspaceErasures: (_, _) async => 0,
+            guard: const _Guard(true),
+          ).runOnce(
+            _Session(),
+            coordinator: .new(
+              key: 'global',
+              ownerId: 'worker',
+              fencingToken: 1,
+              expiresAt: .utc(2100),
+            ),
+          );
+
+      expect(count, 0);
+      expect(repository.blockedReason, 'uploadQuiescenceUnverified');
+      expect(repository.blockedRetryAt, isNotNull);
+      expect(repository.failures, isEmpty);
+      expect(repository.completed, isFalse);
+    },
+  );
+
+  test(
+    'gateway registration conflict is a non-retryable cleanup blocker',
+    () async {
+      final repository = _Repository(true);
+      final store = _Store(<String>[])
+        ..quiescenceError = const ObjectStoreRegistrationConflictException();
+      final count =
+          await ObjectCleanupService(
+            store: store,
+            repository: repository,
+            purgeReadyWorkspaceErasures: (_, _) async => 0,
+            guard: const _Guard(true),
+          ).runOnce(
+            _Session(),
+            coordinator: .new(
+              key: 'global',
+              ownerId: 'worker',
+              fencingToken: 1,
+              expiresAt: .utc(2100),
+            ),
+          );
+
+      expect(count, 0);
+      expect(store.deleted, isEmpty);
+      expect(repository.blockedReason, 'gatewayRegistrationUnverified');
+      expect(repository.blockedRetryAt, isNull);
+      expect(repository.failures, isEmpty);
+    },
+  );
+
+  test(
+    'provider provenance 422 becomes a durable non-retryable blocker',
+    () async {
+      final repository = _Repository(true);
+      final store = _Store(<String>[])
+        ..deleteError = const ObjectStoreDeleteBlockedException(
+          'replica_provenance_unavailable',
+        );
+      final count =
+          await ObjectCleanupService(
+            store: store,
+            repository: repository,
+            purgeReadyWorkspaceErasures: (_, _) async => 0,
+            guard: const _Guard(true),
+          ).runOnce(
+            _Session(),
+            coordinator: .new(
+              key: 'global',
+              ownerId: 'worker',
+              fencingToken: 1,
+              expiresAt: .utc(2100),
+            ),
+          );
+
+      expect(count, 0);
+      expect(repository.blockedReason, 'providerDeletionUnverified');
+      expect(repository.blockedRetryAt, isNull);
+      expect(repository.failures, isEmpty);
+      expect(repository.completed, isFalse);
+    },
+  );
+
+  test(
+    'unknown provider blocker remains a retryable cleanup failure',
+    () async {
+      final repository = _Repository(true);
+      final store = _Store(<String>[])
+        ..deleteError = const ObjectStoreDeleteBlockedException('unknown');
+      final count =
+          await ObjectCleanupService(
+            store: store,
+            repository: repository,
+            purgeReadyWorkspaceErasures: (_, _) async => 0,
+            guard: const _Guard(true),
+          ).runOnce(
+            _Session(),
+            coordinator: .new(
+              key: 'global',
+              ownerId: 'worker',
+              fencingToken: 1,
+              expiresAt: .utc(2100),
+            ),
+          );
+
+      expect(count, 0);
+      expect(repository.blockedReason, isNull);
+      expect(repository.failures, ['ObjectStoreDeleteBlockedException']);
+      expect(repository.completed, isFalse);
+    },
+  );
+
   test('object store delete remains adapter-owned', () {
     expect(
       () => const UnconfiguredObjectStore().delete('key'),
@@ -56,6 +177,9 @@ class _Repository extends ObjectRepository {
   _Repository(this.allowed);
   final bool allowed;
   bool completed = false;
+  String? blockedReason;
+  DateTime? blockedRetryAt;
+  final failures = <String>[];
   @override
   Future<ObjectUpload?> findUpload(
     Session session, {
@@ -106,13 +230,39 @@ class _Repository extends ObjectRepository {
     completed = true;
     return true;
   }
+
+  @override
+  Future<void> markDeletionBlocked(
+    Session session, {
+    required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
+    required DateTime? retryAt,
+    required String reason,
+  }) async {
+    blockedReason = reason;
+    blockedRetryAt = retryAt;
+  }
+
+  @override
+  Future<void> failDeletion(
+    Session session, {
+    required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
+    required DateTime now,
+    required String error,
+  }) async {
+    failures.add(error);
+  }
 }
 
 class _Store extends UnconfiguredObjectStore {
   _Store(this.deleted);
   final List<String> deleted;
+  Object? deleteError;
+  Object? quiescenceError;
   @override
   Future<void> delete(String key, {String? registrationId}) async {
+    if (deleteError case final error?) throw error;
     deleted.add(key);
   }
 
@@ -121,7 +271,10 @@ class _Store extends UnconfiguredObjectStore {
     required String key,
     required DateTime expiresAt,
     String? registrationId,
-  }) async => true;
+  }) async {
+    if (quiescenceError case final error?) throw error;
+    return true;
+  }
 }
 
 class _Session implements Session {

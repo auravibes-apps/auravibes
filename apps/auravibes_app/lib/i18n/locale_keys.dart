@@ -2285,6 +2285,10 @@ abstract class LocaleKeys {
       'cloud_workspaces.erasure_status_upload_quiescence_unverified';
   static const cloud_workspaces_erasure_status_legacy_upload_unverifiable =
       'cloud_workspaces.erasure_status_legacy_upload_unverifiable';
+  static const cloud_workspaces_erasure_status_provider_deletion_unverified =
+      'cloud_workspaces.erasure_status_provider_deletion_unverified';
+  static const cloud_workspaces_erasure_status_gateway_registration_unverified =
+      'cloud_workspaces.erasure_status_gateway_registration_unverified';
   static const cloud_workspaces_erasure_status_complete =
       'cloud_workspaces.erasure_status_complete';
   static const cloud_workspaces_erasure_pending =

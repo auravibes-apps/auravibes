@@ -1624,6 +1624,22 @@ void main() {
             failureReason: 'legacyUploadUnverifiable',
           ),
           CloudWorkspaceErasureStatus(
+            workspaceId: 8,
+            workspaceName: 'Provider deletion unavailable',
+            requestId: 'erase-provider',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'providerDeletionUnverified',
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 9,
+            workspaceName: 'Registration unverified',
+            requestId: 'erase-registration',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'gatewayRegistrationUnverified',
+          ),
+          CloudWorkspaceErasureStatus(
             workspaceId: 3,
             workspaceName: 'Complete',
             requestId: 'erase-complete',
@@ -1679,6 +1695,32 @@ void main() {
           'Cloud erasure is blocked because this older object has no verified '
           'gateway registration. The current app cannot safely delete it or '
           'resolve this blocker.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Cloud erasure is blocked because the gateway cannot verify deletion',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'This blocker has no self-service retry; erasure cannot complete '
+          'until a provider erasure capability is available.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Cloud erasure is blocked because the gateway could not verify this',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'AuraVibes will not recreate the registration or treat the object '
+          'as deleted.',
         ),
         findsOneWidget,
       );

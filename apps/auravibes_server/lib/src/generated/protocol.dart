@@ -3320,6 +3320,13 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'String?',
         ),
         _isp.ColumnDefinition(
+          name: 'gatewayRegistrationState',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+          columnDefault: '\'registered\'',
+        ),
+        _isp.ColumnDefinition(
           name: 'signingReservationCount',
           columnType: _isp.ColumnType.bigint,
           isNullable: true,

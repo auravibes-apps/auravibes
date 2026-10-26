@@ -107,7 +107,10 @@ class ObjectUseCases {
           throw ObjectException(code: ObjectErrorCode.objectNotFound);
         }
         final existingRegistrationId = existing.gatewayRegistrationId;
-        if (existingRegistrationId == null) {
+        final existingRegistrationState = existing.gatewayRegistrationState;
+        if (existingRegistrationId == null ||
+            (existingRegistrationState != 'pending' &&
+                existingRegistrationState != 'registered')) {
           throw ObjectException(
             code: ObjectErrorCode.uploadProvenanceUnavailable,
           );
@@ -125,6 +128,7 @@ class ObjectUseCases {
           object: object,
           expiresAt: existing.expiresAt,
           registrationId: existingRegistrationId,
+          registrationState: existingRegistrationState,
         );
       }
 
@@ -155,6 +159,7 @@ class ObjectUseCases {
           requestHash: hash,
           expiresAt: expiresAt,
           gatewayRegistrationId: registrationId,
+          gatewayRegistrationState: 'pending',
           signingReservationCount: 1,
           createdAt: now,
         ),
@@ -164,13 +169,16 @@ class ObjectUseCases {
         object: created,
         expiresAt: expiresAt,
         registrationId: registrationId,
+        registrationState: 'pending',
       );
     });
     final signed = await _signedUpload(
       session,
       upload.object,
       upload.expiresAt,
+      userId: userId,
       registrationId: upload.registrationId,
+      registrationState: upload.registrationState,
     );
     await session.db.transaction((transaction) async {
       await _lockActorWorkspaceMember(
@@ -199,14 +207,31 @@ class ObjectUseCases {
     Session session,
     WorkspaceObject object,
     DateTime expiresAt, {
+    required String userId,
     required String registrationId,
+    required String registrationState,
   }) async {
     final SignedObjectRequest signed;
     try {
-      await store.registerFreshKey(
-        key: object.objectKey,
+      final registerKey = await _claimGatewayRegistration(
+        session,
+        object: object,
+        userId: userId,
         registrationId: registrationId,
+        expectedState: registrationState,
       );
+      if (registerKey) {
+        await store.registerFreshKey(
+          key: object.objectKey,
+          registrationId: registrationId,
+        );
+        await _markGatewayRegistration(
+          session,
+          object: object,
+          userId: userId,
+          registrationId: registrationId,
+        );
+      }
       signed = await store.signPut(
         key: object.objectKey,
         mimeType: object.mimeType,
@@ -228,6 +253,104 @@ class ObjectUseCases {
       expiresAt: signed.expiresAt,
     );
   }
+
+  Future<bool> _claimGatewayRegistration(
+    Session session, {
+    required WorkspaceObject object,
+    required String userId,
+    required String registrationId,
+    required String expectedState,
+  }) => session.db.transaction((transaction) async {
+    await _lockActorWorkspaceMember(
+      session,
+      userId: userId,
+      workspaceId: object.workspaceId,
+      transaction: transaction,
+    );
+    final currentObject = await repository.findObject(
+      session,
+      workspaceId: object.workspaceId,
+      objectId: object.id!,
+      transaction: transaction,
+      lock: true,
+    );
+    final upload = await repository.findUpload(
+      session,
+      workspaceId: object.workspaceId,
+      objectId: object.id!,
+      transaction: transaction,
+      lock: true,
+    );
+    if (currentObject == null ||
+        currentObject.status != 'pending' ||
+        currentObject.deletedAt != null) {
+      throw ObjectException(code: ObjectErrorCode.objectNotFound);
+    }
+    if (upload == null || upload.gatewayRegistrationId != registrationId) {
+      throw ObjectException(code: ObjectErrorCode.uploadProvenanceUnavailable);
+    }
+    if (upload.gatewayRegistrationState == 'registered') {
+      if (expectedState == 'registered' || expectedState == 'pending') {
+        return false;
+      }
+    }
+    if (upload.gatewayRegistrationState == 'registering') {
+      throw ObjectException(code: ObjectErrorCode.uploadProvenanceUnavailable);
+    }
+    if (expectedState != 'pending' ||
+        upload.gatewayRegistrationState != 'pending') {
+      throw ObjectException(code: ObjectErrorCode.uploadProvenanceUnavailable);
+    }
+    await ObjectUpload.db.updateRow(
+      session,
+      upload.copyWith(gatewayRegistrationState: 'registering'),
+      transaction: transaction,
+    );
+    return true;
+  });
+
+  Future<void> _markGatewayRegistration(
+    Session session, {
+    required WorkspaceObject object,
+    required String userId,
+    required String registrationId,
+  }) => session.db.transaction((transaction) async {
+    await _lockActorWorkspaceMember(
+      session,
+      userId: userId,
+      workspaceId: object.workspaceId,
+      transaction: transaction,
+    );
+    final currentObject = await repository.findObject(
+      session,
+      workspaceId: object.workspaceId,
+      objectId: object.id!,
+      transaction: transaction,
+      lock: true,
+    );
+    final upload = await repository.findUpload(
+      session,
+      workspaceId: object.workspaceId,
+      objectId: object.id!,
+      transaction: transaction,
+      lock: true,
+    );
+    if (currentObject == null ||
+        currentObject.status != 'pending' ||
+        currentObject.deletedAt != null) {
+      throw ObjectException(code: ObjectErrorCode.objectNotFound);
+    }
+    if (upload == null ||
+        upload.gatewayRegistrationId != registrationId ||
+        upload.gatewayRegistrationState != 'registering') {
+      throw ObjectException(code: ObjectErrorCode.uploadProvenanceUnavailable);
+    }
+    await ObjectUpload.db.updateRow(
+      session,
+      upload.copyWith(gatewayRegistrationState: 'registered'),
+      transaction: transaction,
+    );
+  });
 
   Future<void> _finishSigning(
     Session session,

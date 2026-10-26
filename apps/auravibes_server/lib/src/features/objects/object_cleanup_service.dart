@@ -115,7 +115,7 @@ class const _CleanupRun(final ObjectCleanupService owner) {
     );
     final registrationId = upload?.gatewayRegistrationId;
     if (upload == null || registrationId == null) {
-      await owner.repository.blockDeletionForUploadQuiescence(
+      await owner.repository.markDeletionBlocked(
         session,
         deletion: row,
         coordinator: run.coordinator,
@@ -124,12 +124,25 @@ class const _CleanupRun(final ObjectCleanupService owner) {
       );
       return false;
     }
-    if (!await owner.store.confirmsUploadQuiescence(
-      key: row.objectKey,
-      expiresAt: upload.expiresAt,
-      registrationId: registrationId,
-    )) {
-      await owner.repository.blockDeletionForUploadQuiescence(
+    final bool quiesced;
+    try {
+      quiesced = await owner.store.confirmsUploadQuiescence(
+        key: row.objectKey,
+        expiresAt: upload.expiresAt,
+        registrationId: registrationId,
+      );
+    } on ObjectStoreRegistrationConflictException {
+      await owner.repository.markDeletionBlocked(
+        session,
+        deletion: row,
+        coordinator: run.coordinator,
+        retryAt: null,
+        reason: 'gatewayRegistrationUnverified',
+      );
+      return false;
+    }
+    if (!quiesced) {
+      await owner.repository.markDeletionBlocked(
         session,
         deletion: row,
         coordinator: run.coordinator,
@@ -138,7 +151,37 @@ class const _CleanupRun(final ObjectCleanupService owner) {
       );
       return false;
     }
-    await owner.store.delete(row.objectKey, registrationId: registrationId);
+    try {
+      await owner.store.delete(row.objectKey, registrationId: registrationId);
+    } on ObjectStoreDeletePendingException {
+      await owner.repository.markDeletionBlocked(
+        session,
+        deletion: row,
+        coordinator: run.coordinator,
+        retryAt: run.now.add(objectCleanupInterval),
+        reason: 'uploadQuiescenceUnverified',
+      );
+      return false;
+    } on ObjectStoreDeleteBlockedException catch (error) {
+      if (error.code != 'replica_provenance_unavailable') rethrow;
+      await owner.repository.markDeletionBlocked(
+        session,
+        deletion: row,
+        coordinator: run.coordinator,
+        retryAt: null,
+        reason: 'providerDeletionUnverified',
+      );
+      return false;
+    } on ObjectStoreRegistrationConflictException {
+      await owner.repository.markDeletionBlocked(
+        session,
+        deletion: row,
+        coordinator: run.coordinator,
+        retryAt: null,
+        reason: 'gatewayRegistrationUnverified',
+      );
+      return false;
+    }
     if (!_active(run)) return false;
     return await _complete(
       session,
