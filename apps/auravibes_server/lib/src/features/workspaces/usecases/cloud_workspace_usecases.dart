@@ -1,11 +1,13 @@
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 
 import '../../../generated/protocol.dart';
 import '../domain/workspace_roles.dart';
 import '../repositories/cloud_workspace_repository.dart' as workspace_repo;
+import '../workspace_erasure_cleanup.dart';
 
 class CloudWorkspaceUseCases(
   final workspace_repo.CloudWorkspaceRepository _repository,
@@ -27,6 +29,14 @@ class CloudWorkspaceUseCases(
     session,
     email: _normalizeEmail(email),
     now: DateTime.now().toUtc(),
+  );
+
+  Future<List<CloudWorkspaceSummary>> listOwnedDeletedWorkspacesForErasure(
+    Session session, {
+    required String userId,
+  }) => _repository.listOwnedDeletedWorkspacesForErasure(
+    session,
+    userId: userId,
   );
 
   Future<CloudWorkspaceDetail> getWorkspaceDetail(
@@ -86,6 +96,7 @@ class CloudWorkspaceUseCases(
       workspaceId: request.workspaceId,
       now: DateTime.now().toUtc(),
     );
+
     return invites.map(_inviteSummary).toList();
   }
 
@@ -761,6 +772,189 @@ class CloudWorkspaceUseCases(
       );
     },
   );
+
+  Future<CloudWorkspaceErasureStatus> eraseWorkspace(
+    Session session, {
+    required String userId,
+    required EraseCloudWorkspaceRequest request,
+  }) async {
+    final requestHash = base64UrlEncode(
+      (await Sha256().hash(
+        utf8.encode(
+          jsonEncode({
+            'workspaceId': request.workspaceId,
+            'confirmationName': request.confirmationName,
+            'expectedWorkspaceRevision': request.expectedWorkspaceRevision,
+          }),
+        ),
+      )).bytes,
+    );
+    final erasure = await session.db.transaction((transaction) async {
+      final replay = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (replay != null) {
+        if (replay.requestHash != requestHash) {
+          _fail(CloudWorkspaceErrorCode.idempotencyConflict);
+        }
+        return replay;
+      }
+      final priorWorkspaceErasure = await WorkspaceErasureRequest.db
+          .findFirstRow(
+            session,
+            where: (row) =>
+                row.ownerUserId.equals(userId) &
+                row.workspaceId.equals(request.workspaceId),
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+      if (priorWorkspaceErasure != null) return priorWorkspaceErasure;
+
+      final workspace = await _repository.findWorkspace(
+        session,
+        request.workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (workspace == null) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+      _requireOwner(workspace, userId);
+      _requireRevision(workspace.revision, request.expectedWorkspaceRevision);
+      if (request.confirmationName != workspace.name) {
+        _fail(CloudWorkspaceErrorCode.confirmationNameMismatch);
+      }
+      if (workspace.erasureRequestedAt != null) {
+        _fail(CloudWorkspaceErrorCode.workspaceErasurePending);
+      }
+      final now = DateTime.now().toUtc();
+      final created = await WorkspaceErasureRequest.db.insertRow(
+        session,
+        WorkspaceErasureRequest(
+          workspaceId: workspace.id!,
+          workspaceName: workspace.name,
+          ownerUserId: userId,
+          requestId: request.requestId,
+          requestHash: requestHash,
+          state: 'pending',
+          requestedAt: now,
+        ),
+        transaction: transaction,
+      );
+      await _repository.softDeleteWorkspace(
+        session,
+        workspace: workspace,
+        now: now,
+        transaction: transaction,
+        erasureRequestedAt: now,
+      );
+      return created;
+    });
+    await WorkspaceErasureCleanup(session).purgeAfterRequest(
+      erasure.workspaceId,
+    );
+    final status = await WorkspaceErasureRequest.db.findFirstRow(
+      session,
+      where: (row) =>
+          row.ownerUserId.equals(userId) &
+          row.requestId.equals(erasure.requestId),
+    );
+    return _status(status ?? erasure);
+  }
+
+  Future<List<CloudWorkspaceErasureStatus>> listWorkspaceErasures(
+    Session session, {
+    required String userId,
+  }) async {
+    final rows = await WorkspaceErasureRequest.db.find(
+      session,
+      where: (row) => row.ownerUserId.equals(userId),
+      orderBy: (row) => row.requestedAt.desc(),
+      limit: 100,
+    );
+    return rows.map(_status).toList();
+  }
+
+  Future<CloudWorkspaceErasureStatus> retryWorkspaceErasure(
+    Session session, {
+    required String userId,
+    required RetryCloudWorkspaceErasureRequest request,
+  }) async {
+    final status = await session.db.transaction((transaction) async {
+      final erasure = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (erasure == null) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+      if (erasure.state != 'needsAttention') return erasure;
+      final workspace = await _repository.findWorkspace(
+        session,
+        erasure.workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (workspace == null || workspace.erasureRequestedAt == null) {
+        return await _completeErasure(session, erasure, transaction);
+      }
+      final pendingDeletions = await ObjectDeletion.db.find(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(erasure.workspaceId) &
+            row.completedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      final now = DateTime.now().toUtc();
+      for (final deletion in pendingDeletions) {
+        await ObjectDeletion.db.updateRow(
+          session,
+          deletion.copyWith(attempts: 0, availableAt: now, lastError: null),
+          transaction: transaction,
+        );
+      }
+      return await WorkspaceErasureRequest.db.updateRow(
+        session,
+        erasure.copyWith(state: 'pending', failureReason: null),
+        transaction: transaction,
+      );
+    });
+    return _status(status);
+  }
+
+  Future<WorkspaceErasureRequest> _completeErasure(
+    Session session,
+    WorkspaceErasureRequest erasure,
+    Transaction transaction,
+  ) => WorkspaceErasureRequest.db.updateRow(
+    session,
+    erasure.copyWith(
+      state: 'complete',
+      completedAt: DateTime.now().toUtc(),
+      failureReason: null,
+    ),
+    transaction: transaction,
+  );
+
+  CloudWorkspaceErasureStatus _status(WorkspaceErasureRequest erasure) =>
+      CloudWorkspaceErasureStatus(
+        workspaceId: erasure.workspaceId,
+        workspaceName: erasure.workspaceName,
+        requestId: erasure.requestId,
+        state: erasure.state,
+        requestedAt: erasure.requestedAt,
+        completedAt: erasure.completedAt,
+      );
 
   Future<CloudWorkspace> _requireWorkspace(
     Session session,

@@ -55,11 +55,19 @@ class const ObjectDeletionGuard() {
     Session session,
     ObjectDeletion deletion,
     Transaction transaction,
-  ) async => !await ObjectRetainedAssets(
-    session,
-    deletion.workspaceId,
-    transaction,
-  ).retained(deletion.objectId);
+  ) async {
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      deletion.workspaceId,
+      transaction: transaction,
+    );
+    if (workspace?.erasureRequestedAt != null) return true;
+    return !await ObjectRetainedAssets(
+      session,
+      deletion.workspaceId,
+      transaction,
+    ).retained(deletion.objectId);
+  }
 
   Future<bool> _pending(
     Session session,

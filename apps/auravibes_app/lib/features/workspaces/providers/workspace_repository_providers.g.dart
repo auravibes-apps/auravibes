@@ -55,7 +55,7 @@ final class WorkspaceRepositoryProvider
 }
 
 String _$workspaceRepositoryHash() =>
-    r'96f74b688323770a79710d688fd7017b36b54fd3';
+    r'98be7275557b9e92691a11e7f369259542351ed9';
 
 @ProviderFor(allWorkspaces)
 final allWorkspacesProvider = AllWorkspacesProvider._();

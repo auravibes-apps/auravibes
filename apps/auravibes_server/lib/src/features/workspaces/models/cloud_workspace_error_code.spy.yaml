@@ -24,3 +24,4 @@ values:
   - idempotencyConflict
   - conflict
   - incompatibleRelationship
+  - workspaceErasurePending

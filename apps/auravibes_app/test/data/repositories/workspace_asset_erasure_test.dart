@@ -3,15 +3,22 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_credential_erasure.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/legacy_api_key_storage.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 void main() {
   test(
@@ -145,6 +152,13 @@ void main() {
         await database.select(database.workspaceAssetDeletions).get(),
         hasLength(1),
       );
+      expect(await cleanup.hasPendingCleanup(workspace.id), isTrue);
+      expect(
+        (await database.select(database.workspaceAssetDeletions).get())
+            .single
+            .workspaceId,
+        workspace.id,
+      );
       store.fail = true;
       await cleanup.flush();
       expect(
@@ -266,7 +280,7 @@ void main() {
       clearWorkspaceDrafts: (_) => Future<void>.value(),
       cleanupDeletedAssets: LocalWorkspaceAssetErasure(database, store).flush,
     );
-    await delete(id: workspace.id, activeWorkspaceId: null);
+    final _ = await delete(id: workspace.id, activeWorkspaceId: null);
     expect(store.deleted, ['owned']);
   });
 
@@ -309,6 +323,209 @@ void main() {
       expect(store.deleted, hasLength(2));
     },
   );
+
+  Future<void> verifyCredentialErasure() async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    const ownedReference = 'service-credential:owned';
+    const sharedReference = 'service-credential:shared';
+    const legacyReference = '123e4567-e89b-42d3-a456-426614174000';
+    var failOwnedCredential = true;
+    final deletedSecureReferences = <String>[];
+    final deletedLegacyReferences = <String>[];
+    final encryptionService = _MockEncryptionService();
+    when(() => encryptionService.deleteCredential(any()))
+        .thenAnswer((invocation) async {
+          final reference = invocation.positionalArguments.single as String?;
+          if (reference == ownedReference && failOwnedCredential) {
+            throw StateError('Transient secure-store failure');
+          }
+          final secureReference = reference;
+          if (secureReference != null &&
+              secureReference.startsWith('service-credential:')) {
+            deletedSecureReferences.add(secureReference);
+          }
+        });
+    final legacyStorage = _MockLegacyApiKeyStorage();
+    when(() => legacyStorage.isLegacyReference(any())).thenReturn(false);
+    when(() => legacyStorage.isLegacyReference(legacyReference))
+        .thenReturn(true);
+    when(() => legacyStorage.delete(legacyReference)).thenAnswer((_) {
+      deletedLegacyReferences.add(legacyReference);
+
+      return Future<void>.value();
+    });
+    final credentialErasure = LocalWorkspaceCredentialErasure(
+      database,
+      encryptionService,
+      legacyApiKeyStorage: legacyStorage,
+    );
+    final repository = WorkspaceRepository(
+      database,
+      credentialErasure: credentialErasure,
+    );
+    final workspace = await repository.createWorkspace(
+      const .new(name: 'Workspace to erase', type: .local),
+    );
+    final otherWorkspace = await repository.createWorkspace(
+      const .new(name: 'Workspace retaining shared credential', type: .local),
+    );
+    await _serviceConnection(
+      database,
+      workspace.id,
+      'owned-connection',
+      ownedReference,
+    );
+    await _serviceConnection(
+      database,
+      workspace.id,
+      'legacy-connection',
+      legacyReference,
+    );
+    await _serviceConnection(
+      database,
+      workspace.id,
+      'shared-connection-to-erase',
+      sharedReference,
+    );
+    await _serviceConnection(
+      database,
+      otherWorkspace.id,
+      'shared-connection-to-retain',
+      sharedReference,
+    );
+
+    expect(await repository.deleteWorkspace(workspace.id), isTrue);
+    expect(await repository.getWorkspaceById(workspace.id), isNull);
+    expect(
+      await credentialErasure.hasPendingForWorkspace(workspace.id),
+      isTrue,
+    );
+    expect(
+      (await database.select(database.workspaceCredentialDeletions).get()).map(
+        (job) => job.credentialReference,
+      ),
+      containsAll([ownedReference, sharedReference, legacyReference]),
+    );
+
+    await credentialErasure.flush();
+
+    expect(
+      (await database.select(database.workspaceCredentialDeletions).get()).map(
+        (job) => job.credentialReference,
+      ),
+      [ownedReference],
+    );
+    expect(
+      await database.select(database.serviceConnections).get(),
+      hasLength(1),
+    );
+    expect(deletedSecureReferences, isEmpty);
+    expect(deletedLegacyReferences, [legacyReference]);
+
+    failOwnedCredential = false;
+    await credentialErasure.flush();
+
+    expect(
+      await database.select(database.workspaceCredentialDeletions).get(),
+      isEmpty,
+    );
+    expect(deletedSecureReferences, [ownedReference]);
+    expect(deletedLegacyReferences, [legacyReference]);
+    expect(
+      (await database.select(database.serviceConnections).get()).single.id,
+      'shared-connection-to-retain',
+    );
+  }
+
+  test(
+    'credential erasure retries and preserves shared references',
+    verifyCredentialErasure,
+  );
+
+  test('failed chat attachment deletion remains queued for retry', () async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final store = _Store()..failFileDeletion = true;
+    final repository = WorkspaceRepository(
+      database,
+      attachmentFileStore: store,
+    );
+    final workspace = await repository.createWorkspace(
+      const .new(name: 'Workspace with chat attachment', type: .local),
+    );
+    final conversation = await database.conversationDao.insertConversation(
+      .new(workspaceId: .new(workspace.id), title: const .new('Conversation')),
+    );
+    final message = await database.messageDao.insertMessage(
+      .new(
+        conversationId: .new(conversation.id),
+        content: const .new('Attachment'),
+        messageType: const .new(MessagesTableType.text),
+        isUser: const .new(true),
+        status: const .new(MessageTableStatus.sent),
+      ),
+    );
+    const localPath = '/support/chat-attachment.png';
+    final _ = await database
+        .into(database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: localPath,
+            fileName: 'chat-attachment.png',
+            displayName: const .new('chat-attachment.png'),
+            mimeType: 'image/png',
+            modality: MessageAttachmentModality.image.name,
+            sizeBytes: 10,
+          ),
+        );
+
+    expect(await repository.deleteWorkspace(workspace.id), isTrue);
+    expect(await repository.getWorkspaceById(workspace.id), isNull);
+    expect(await database.select(database.messageAttachments).get(), isEmpty);
+    expect(
+      (await database.select(database.workspaceAttachmentDeletions).get())
+          .single
+          .localPath,
+      localPath,
+    );
+
+    final erasure = LocalWorkspaceAssetErasure(database, store);
+    await erasure.flush();
+    expect(store.deletedFiles, isEmpty);
+    expect(await erasure.hasPendingCleanup(workspace.id), isTrue);
+
+    store.failFileDeletion = false;
+    await erasure.flush();
+    expect(store.deletedFiles, [localPath]);
+    expect(
+      await database.select(database.workspaceAttachmentDeletions).get(),
+      isEmpty,
+    );
+    expect(await erasure.hasPendingCleanup(workspace.id), isFalse);
+  });
+}
+
+Future<void> _serviceConnection(
+  AppDatabase database,
+  String workspaceId,
+  String id,
+  String credentialReference,
+) async {
+  final _ = await database
+      .into(database.serviceConnections)
+      .insert(
+        ServiceConnectionsCompanion.insert(
+          id: .new(id),
+          name: id,
+          serviceId: 'test',
+          kind: .customHttp,
+          authenticationType: .apiKey,
+          encryptedAuthValue: .new(credentialReference),
+          workspaceId: workspaceId,
+        ),
+      );
 }
 
 Future<void> _asset(
@@ -334,11 +551,20 @@ Future<void> _asset(
 
 class _Store extends AttachmentFileStore {
   final deleted = <String>[];
+  final deletedFiles = <String>[];
   bool fail = false;
+  bool failFileDeletion = false;
+
   @override
   Future<void> deleteAsset(String id) async {
     if (fail) throw StateError('Transient byte removal failure');
     deleted.add(id);
+  }
+
+  @override
+  Future<void> deleteFile(String localPath) async {
+    if (failFileDeletion) throw StateError('Transient file deletion failure');
+    deletedFiles.add(localPath);
   }
 }
 
@@ -379,3 +605,7 @@ class _InterruptedStore extends _RacingStore {
     throw StateError('Interrupted byte writer');
   }
 }
+
+class _MockEncryptionService extends Mock implements EncryptionService;
+
+class _MockLegacyApiKeyStorage extends Mock implements LegacyApiKeyStorage;

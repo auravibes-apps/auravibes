@@ -108,6 +108,8 @@ const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
   .ownerCannotLeave: LocaleKeys.cloud_errors_conflict,
   .ownerCannotBeRemoved: LocaleKeys.cloud_errors_conflict,
   .ownershipTransferRequired: LocaleKeys.cloud_errors_conflict,
+  .workspaceErasurePending:
+      LocaleKeys.cloud_accounts_workspace_erasure_pending_error,
   .inviteExpired: LocaleKeys.cloud_errors_conflict,
   .inviteRevoked: LocaleKeys.cloud_errors_conflict,
   .inviteEmailMismatch: LocaleKeys.cloud_errors_conflict,

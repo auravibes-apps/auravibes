@@ -43,10 +43,12 @@ import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_attachment_deletions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_content_reports.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_context_selections.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_credential_deletions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
@@ -124,6 +126,8 @@ part 'app_database.g.dart';
     WorkspaceAssets,
     WorkspaceFiles,
     WorkspaceAssetDeletions,
+    WorkspaceAttachmentDeletions,
+    WorkspaceCredentialDeletions,
     WorkspaceCommandReceipts,
     WorkspaceContextSelections,
     WorkspaceContentReports,
@@ -225,7 +229,14 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAssetsSchemaVersion + 1;
   static const int _workspaceReportingSchemaVersion =
       _workspaceCommandSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceReportingSchemaVersion;
+  static const int _workspaceCredentialDeletionsSchemaVersion =
+      _workspaceReportingSchemaVersion + 1;
+  static const int _workspaceAttachmentDeletionsSchemaVersion =
+      _workspaceCredentialDeletionsSchemaVersion + 1;
+  static const int _workspaceAssetDeletionOwnerSchemaVersion =
+      _workspaceAttachmentDeletionsSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _workspaceAssetDeletionOwnerSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -276,6 +287,8 @@ extension on AppDatabase {
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
     await _upgradeWorkspaceContentSchema(m, from);
+    await _upgradeWorkspaceAttachmentDeletionsSchema(m, from);
+    await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
   }
 
   Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {
@@ -287,6 +300,37 @@ extension on AppDatabase {
     await _upgradeWorkspaceCommandsSchema(m, from);
     await _upgradeWorkspaceReportingSchema(m, from);
     await _upgradeConnectorWritesSchema(m, from);
+    await _upgradeWorkspaceCredentialDeletionsSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceCredentialDeletionsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceCredentialDeletionsSchemaVersion) return;
+    await m.createTable(workspaceCredentialDeletions);
+  }
+
+  Future<void> _upgradeWorkspaceAttachmentDeletionsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceAttachmentDeletionsSchemaVersion) return;
+    await m.createTable(workspaceAttachmentDeletions);
+  }
+
+  Future<void> _upgradeWorkspaceAssetDeletionOwnerSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceAssetDeletionOwnerSchemaVersion) return;
+    if (await _columnExists('workspace_asset_deletions', 'workspace_id')) {
+      return;
+    }
+    await m.addColumn(
+      workspaceAssetDeletions,
+      workspaceAssetDeletions.workspaceId,
+    );
   }
 
   Future<void> _upgradeWorkspaceViewsSchema(Migrator m, int from) async {

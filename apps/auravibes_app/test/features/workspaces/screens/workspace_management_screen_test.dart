@@ -349,6 +349,17 @@ void main() {
           expectedInviteRevision: 1,
         ),
       );
+      registerFallbackValue(
+        RetryCloudWorkspaceErasureRequest(requestId: 'fixture'),
+      );
+      registerFallbackValue(
+        EraseCloudWorkspaceRequest(
+          workspaceId: 1,
+          confirmationName: 'Fixture',
+          requestId: 'fixture',
+          expectedWorkspaceRevision: 1,
+        ),
+      );
     });
 
     setUp(() {
@@ -378,6 +389,7 @@ void main() {
       ValueNotifier<bool>? viewNotifier,
       WorkspaceSelectionRepository? selectionRepository,
       WorkspaceConfigurationArchiveUsecase? archiveUsecase,
+      bool cleanupPending = false,
     }) {
       final useRepo = repo ?? repository;
       final restoredWorkspaceIds = <String>[];
@@ -420,6 +432,7 @@ void main() {
                       restoredWorkspaceIds.add,
                   clearWorkspaceDrafts: (_) => Future<void>.value(),
                   cleanupDeletedAssets: Future<void>.value,
+                  hasPendingCleanup: (_) async => cleanupPending,
                 ),
               ),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
@@ -585,8 +598,14 @@ void main() {
           when(otherEndpoint.listAuthorizedWorkspaces)
               .thenAnswer((_) async => []);
           when(otherEndpoint.listPendingInvites).thenAnswer((_) async => []);
+          when(otherEndpoint.listWorkspaceErasures).thenAnswer((_) async => []);
+          when(otherEndpoint.listOwnedDeletedWorkspacesForErasure)
+              .thenAnswer((_) async => []);
           when(endpoint.listAuthorizedWorkspaces).thenAnswer((_) async => []);
           when(() => client.cloudWorkspace).thenReturn(endpoint);
+          when(endpoint.listWorkspaceErasures).thenAnswer((_) async => []);
+          when(endpoint.listOwnedDeletedWorkspacesForErasure)
+              .thenAnswer((_) async => []);
           final failure = CloudWorkspaceException(code: code);
           when(() => endpoint.acceptInvite(any())).thenAnswer((_) async {
             expired = true;
@@ -1529,6 +1548,160 @@ void main() {
       );
     });
 
+    Future<void> showDurableErasureStates(WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final local = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Local Studio', type: .local),
+      );
+      const account = CloudAccountSession(
+        serverUrl: 'http://localhost:8080',
+        userId: 'account-1',
+        email: 'owner@example.test',
+      );
+      final client = _UnusedCloudClient();
+      final endpoint = _CloudEndpoint();
+      final retryStatus = CloudWorkspaceErasureStatus(
+        workspaceId: 2,
+        workspaceName: 'Needs retry',
+        requestId: 'erase-retry',
+        state: 'pending',
+        requestedAt: .utc(2026),
+      );
+      when(() => client.cloudWorkspace).thenReturn(endpoint);
+      when(() => endpoint.retryWorkspaceErasure(any()))
+          .thenAnswer((_) async => retryStatus);
+      when(() => endpoint.eraseWorkspace(any())).thenAnswer(
+        (_) async => CloudWorkspaceErasureStatus(
+          workspaceId: 4,
+          workspaceName: 'Legacy Cloud',
+          requestId: 'erase-legacy',
+          state: 'pending',
+          requestedAt: .utc(2026),
+        ),
+      );
+      final cloudState = CloudWorkspaceViewState(
+        workspaces: const [],
+        pendingInvites: const [],
+        erasures: [
+          CloudWorkspaceErasureStatus(
+            workspaceId: 1,
+            workspaceName: 'Pending',
+            requestId: 'erase-pending',
+            state: 'pending',
+            requestedAt: .utc(2026),
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 2,
+            workspaceName: 'Needs retry',
+            requestId: 'erase-retry',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 3,
+            workspaceName: 'Complete',
+            requestId: 'erase-complete',
+            state: 'complete',
+            requestedAt: .utc(2026),
+            completedAt: .utc(2026, 1, 2),
+          ),
+        ],
+        deletedOwnedWorkspaces: [
+          CloudWorkspaceSummary(
+            id: 4,
+            name: 'Legacy Cloud',
+            role: 'owner',
+            revision: 5,
+            sequence: 6,
+            createdAt: .utc(2026),
+            updatedAt: .utc(2026),
+          ),
+        ],
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: local.id,
+          repo: repository,
+          accounts: const [account],
+          connectView: true,
+          cloudWorkspaceState: cloudState,
+          clients: {account.key: client},
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Workspace erasure status'), findsOneWidget);
+      expect(
+        find.text(
+          'Erasure is pending cloud asset cleanup. '
+          'The workspace is inaccessible while cleanup runs.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Cloud asset cleanup needs attention. Retry to resume the erasure.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Backup and provider retention are not configured here',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(find.text('Retry cleanup'));
+      await tester.tap(find.text('Retry cleanup'));
+      final _ = await tester.pumpAndSettle();
+      final retryRequest =
+          verify(() => endpoint.retryWorkspaceErasure(captureAny()))
+                  .captured
+                  .single
+              as RetryCloudWorkspaceErasureRequest;
+      expect(retryRequest.requestId, 'erase-retry');
+
+      await tester.ensureVisible(find.text('Erase workspace data'));
+      await tester.tap(find.text('Erase workspace data'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'Completed Connector actions and downloaded exports are not '
+          'recalled.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      final _ = verifyNever(() => endpoint.eraseWorkspace(any()));
+
+      await tester.ensureVisible(find.text('Erase workspace data'));
+      await tester.tap(find.text('Erase workspace data'));
+      final _ = await tester.pumpAndSettle();
+      final eraseConfirmation = find.byType(AuraConfirmDialog);
+      expect(eraseConfirmation, findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: eraseConfirmation,
+          matching: find.text('Erase workspace data'),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      final eraseRequest =
+          verify(() => endpoint.eraseWorkspace(captureAny())).captured.single
+              as EraseCloudWorkspaceRequest;
+      expect(eraseRequest.workspaceId, 4);
+      expect(eraseRequest.confirmationName, 'Legacy Cloud');
+    }
+
+    testWidgets(
+      'cloud erasure status and retention disclosure',
+      showDurableErasureStates,
+    );
+
     testWidgets('search folds accents across workspace sources', (
       tester,
     ) async {
@@ -2173,7 +2346,10 @@ void main() {
         const WorkspaceToCreate(name: 'Beta Workspace', type: .local),
       );
 
-      await _pumpAndInit(tester, _buildScreen(workspaceId: beta.id));
+      await _pumpAndInit(
+        tester,
+        _buildScreen(workspaceId: beta.id, cleanupPending: true),
+      );
       final _ = await tester.pumpAndSettle();
       await tester.enterText(find.byType(AuraInput), 'Alpha');
       final _ = await tester.pumpAndSettle();
@@ -2213,6 +2389,13 @@ void main() {
 
       expect(await repository.getWorkspaceById(alpha.id), isNull);
       expect(await repository.getWorkspaceById(beta.id), isNotNull);
+      expect(
+        find.text(
+          'Workspace was removed from this device, but local file or '
+          'credential cleanup is still queued for retry.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows hidden workspace selections before deleting', (

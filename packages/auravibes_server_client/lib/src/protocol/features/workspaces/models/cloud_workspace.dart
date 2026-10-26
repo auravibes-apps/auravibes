@@ -23,6 +23,7 @@ abstract class CloudWorkspace
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.erasureRequestedAt,
   });
 
   factory CloudWorkspace({
@@ -34,6 +35,7 @@ abstract class CloudWorkspace
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    DateTime? erasureRequestedAt,
   }) = _CloudWorkspaceImpl;
 
   factory CloudWorkspace.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -52,6 +54,11 @@ abstract class CloudWorkspace
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
           : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+      erasureRequestedAt: jsonSerialization['erasureRequestedAt'] == null
+          ? null
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['erasureRequestedAt'],
+            ),
     );
   }
 
@@ -74,6 +81,8 @@ abstract class CloudWorkspace
 
   DateTime? deletedAt;
 
+  DateTime? erasureRequestedAt;
+
   /// Returns a shallow copy of this [CloudWorkspace]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -86,6 +95,7 @@ abstract class CloudWorkspace
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    DateTime? erasureRequestedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -99,6 +109,8 @@ abstract class CloudWorkspace
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (erasureRequestedAt != null)
+        'erasureRequestedAt': erasureRequestedAt?.toJson(),
     };
   }
 
@@ -114,6 +126,8 @@ abstract class CloudWorkspace
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (erasureRequestedAt != null)
+        'erasureRequestedAt': erasureRequestedAt?.toJson(),
     };
   }
 
@@ -135,6 +149,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    DateTime? erasureRequestedAt,
   }) : super._(
          id: id,
          name: name,
@@ -144,6 +159,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
+         erasureRequestedAt: erasureRequestedAt,
        );
 
   /// Returns a shallow copy of this [CloudWorkspace]
@@ -159,6 +175,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
+    Object? erasureRequestedAt = _Undefined,
   }) {
     return CloudWorkspace(
       id: id is int? ? id : this.id,
@@ -169,6 +186,9 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
+      erasureRequestedAt: erasureRequestedAt is DateTime?
+          ? erasureRequestedAt
+          : this.erasureRequestedAt,
     );
   }
 }

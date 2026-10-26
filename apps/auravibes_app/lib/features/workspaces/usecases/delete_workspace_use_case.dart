@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/chats/providers/background_work_repositor
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_deletion_result.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_workspace_use_case.g.dart';
@@ -14,8 +15,10 @@ class DeleteWorkspaceUseCase {
     required this._restoreBackgroundWorkAfterFailedDeletion,
     required this._clearWorkspaceDrafts,
     required this._cleanupDeletedAssets,
+    this.hasPendingCleanup,
   });
 
+  final Future<bool> Function(String workspaceId)? hasPendingCleanup;
   final WorkspaceRepository _repository;
   final Future<void> Function(String workspaceId)
   _prepareBackgroundWorkDeletion;
@@ -30,7 +33,7 @@ class DeleteWorkspaceUseCase {
   ///
   /// [activeWorkspaceId] is the ID of the currently active workspace.
   ///
-  Future<void> call({
+  Future<WorkspaceDeletionResult> call({
     required String id,
     required String? activeWorkspaceId,
   }) async {
@@ -52,10 +55,17 @@ class DeleteWorkspaceUseCase {
     if (deletedWorkspace) {
       await _clearWorkspaceDrafts(id);
       await _cleanupDeletedAssets();
+      if (await (hasPendingCleanup ?? _noPendingCleanup)(id)) {
+        return WorkspaceDeletionResult.cleanupPending;
+      }
     }
     assert(deletedWorkspace, 'Workspace must be deleted.');
+
+    return WorkspaceDeletionResult.complete;
   }
 }
+
+Future<bool> _noPendingCleanup(String _) async => false;
 
 /// Provides a [DeleteWorkspaceUseCase] instance.
 @riverpod
@@ -63,6 +73,7 @@ DeleteWorkspaceUseCase deleteWorkspaceUseCase(Ref ref) {
   final backgroundWorkCoordinator = ref.watch(
     backgroundWorkCoordinatorProvider,
   );
+  final assetErasure = ref.watch(workspaceAssetErasureProvider);
 
   return DeleteWorkspaceUseCase(
     repository: ref.watch(workspaceRepositoryProvider),
@@ -73,6 +84,7 @@ DeleteWorkspaceUseCase deleteWorkspaceUseCase(Ref ref) {
     clearWorkspaceDrafts: ref
         .watch(conversationDraftCleanupUsecaseProvider)
         .clearWorkspace,
-    cleanupDeletedAssets: ref.watch(workspaceAssetErasureProvider).flush,
+    cleanupDeletedAssets: assetErasure.flush,
+    hasPendingCleanup: assetErasure.hasPendingCleanup,
   );
 }

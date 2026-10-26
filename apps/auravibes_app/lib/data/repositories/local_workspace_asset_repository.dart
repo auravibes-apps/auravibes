@@ -53,7 +53,7 @@ class const _LocalAssetUpload(final LocalWorkspaceAssetRepository owner) {
       await LocalWorkspaceAssetErasure(
         owner.database,
         owner.store,
-      ).recoverUntrackedWrite(metadata.id);
+      ).recoverUntrackedWrite(metadata.id, workspaceId: owner.workspaceId);
       rethrow;
     }
   }

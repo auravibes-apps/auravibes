@@ -40,6 +40,30 @@ extension CloudWorkspaceRepositoryReadOperations on CloudWorkspaceRepository {
     return _client.cloudWorkspace.listPendingInvites();
   }
 
+  Future<List<CloudWorkspaceErasureStatus>> listWorkspaceErasures() {
+    return _client.cloudWorkspace.listWorkspaceErasures();
+  }
+
+  Future<List<CloudWorkspaceSummary>> listOwnedDeletedWorkspacesForErasure() {
+    return _client.cloudWorkspace.listOwnedDeletedWorkspacesForErasure();
+  }
+
+  Future<CloudWorkspaceErasureStatus> eraseWorkspace({
+    required int workspaceId,
+    required String confirmationName,
+    required int expectedWorkspaceRevision,
+  }) => _client.cloudWorkspace.eraseWorkspace(
+    .new(
+      workspaceId: workspaceId,
+      confirmationName: confirmationName,
+      requestId: const UuidV7().generate(),
+      expectedWorkspaceRevision: expectedWorkspaceRevision,
+    ),
+  );
+
+  Future<CloudWorkspaceErasureStatus> retryWorkspaceErasure(String requestId) =>
+      _client.cloudWorkspace.retryWorkspaceErasure(.new(requestId: requestId));
+
   Future<CloudWorkspaceDetail> getWorkspaceDetail(int workspaceId) {
     return _client.cloudWorkspace.getWorkspaceDetail(
       .new(workspaceId: workspaceId),

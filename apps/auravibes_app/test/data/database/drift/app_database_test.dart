@@ -43,7 +43,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 43);
+      expect(fixture.database.schemaVersion, 46);
     });
 
     test('schema41 assets survive context and reporting migrations', () async {
@@ -123,7 +123,7 @@ void main() {
           .getSingle();
       expect(retained.read<String>('name'), 'Retained');
       expect(retained.read<String>('asset_id'), 'asset');
-      expect(sqliteDb.userVersion, 43);
+      expect(sqliteDb.userVersion, 46);
       final revision = await database
           .customSelect(
             '''
@@ -151,11 +151,21 @@ void main() {
         'retry',
       );
       expect(
+        (await database.select(database.workspaceAssetDeletions).get())
+            .single
+            .workspaceId,
+        isNull,
+      );
+      expect(
         await database.select(database.workspaceContextSelections).get(),
         isEmpty,
       );
       expect(
         await database.select(database.workspaceCommandReceipts).get(),
+        isEmpty,
+      );
+      expect(
+        await database.select(database.workspaceAttachmentDeletions).get(),
         isEmpty,
       );
       final attachment = await database

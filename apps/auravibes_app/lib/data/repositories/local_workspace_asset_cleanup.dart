@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_retention.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_credential_erasure.dart';
 import 'package:drift/drift.dart';
 
 /// Explicit content deletion releases only references removed by that mutation.
@@ -10,11 +11,16 @@ import 'package:drift/drift.dart';
 class const LocalWorkspaceAssetCleanup(
   final AppDatabase database,
   final String workspaceId,
-  final AttachmentFileStore store,
-) {
+  final AttachmentFileStore store, {
+  final LocalWorkspaceCredentialErasure? credentialErasure,
+}) {
   Future<void> flush() async {
     await LocalWorkspaceAssetRetention(database, workspaceId).authorize();
-    await LocalWorkspaceAssetErasure(database, store).flush();
+    await LocalWorkspaceAssetErasure(
+      database,
+      store,
+      credentialErasure: credentialErasure,
+    ).flush();
     for (final row in await _pending()) {
       if (await _removeBytes(row.id)) await _removeMetadata(row.id);
     }

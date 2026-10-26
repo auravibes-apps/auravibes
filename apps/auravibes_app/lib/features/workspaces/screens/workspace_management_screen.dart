@@ -20,6 +20,7 @@ import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_u
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_configuration_archive_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_deletion_result.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -669,7 +670,11 @@ bool _hasMatchingAvailableWorkspace(
   _WorkspaceListData data,
 ) =>
     _hasMatchingWorkspace(state, account, data) ||
-    _hasMatchingInvite(state, data.searchQuery);
+    _hasMatchingInvite(state, data.searchQuery) ||
+    _hasMatchingErasure(state, data.searchQuery) ||
+    state.deletedOwnedWorkspaces.any(
+      (workspace) => _matchesWorkspaceName(workspace.name, data.searchQuery),
+    );
 
 bool _hasMatchingWorkspace(
   CloudWorkspaceViewState state,
@@ -687,6 +692,10 @@ bool _hasMatchingWorkspace(
 bool _hasMatchingInvite(CloudWorkspaceViewState state, String query) => state
     .pendingInvites
     .any((invite) => _matchesWorkspaceName(invite.workspaceName, query));
+
+bool _hasMatchingErasure(CloudWorkspaceViewState state, String query) => state
+    .erasures
+    .any((erasure) => _matchesWorkspaceName(erasure.workspaceName, query));
 
 Set<CloudAccountKey> _matchingCloudAccountIds(
   List<_CloudAccountWorkspaceState> accountStates,
@@ -1637,17 +1646,24 @@ extension on _WorkspaceListActions {
   ) async {
     final failed = <WorkspaceEntity>[];
     var removedActive = false;
+    var cleanupPending = false;
     for (final workspace in workspaces) {
       final attempt = await _deleteWorkspaceTarget(this, workspace);
       if (!attempt.succeeded) failed.add(workspace);
       removedActive |= attempt.removedActive;
+      cleanupPending |= attempt.cleanupPending;
     }
     await _finishWorkspaceBulkDeletion(this, removedActive);
+    if (cleanupPending && context.mounted) {
+      _showCleanupPending(context);
+    }
 
     return failed;
   }
 
-  Future<void> _deleteWithoutConfirmation(WorkspaceEntity workspace) async {
+  Future<WorkspaceDeletionResult> _deleteWithoutConfirmation(
+    WorkspaceEntity workspace,
+  ) async {
     final accountId = workspace.cloudAccountId;
     if (workspace.cloudWorkspaceId != null) {
       if (accountId == null) {
@@ -1655,10 +1671,10 @@ extension on _WorkspaceListActions {
       }
       await _detach(workspace, accountId);
 
-      return;
+      return WorkspaceDeletionResult.complete;
     }
 
-    await ref
+    return await ref
         .read(deleteWorkspaceUseCaseProvider)
         .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
   }
@@ -1717,7 +1733,7 @@ extension on _WorkspaceListActions {
   }
 
   Future<void> _deleteAndHandle(WorkspaceEntity workspace) async {
-    await _delete(workspace);
+    final result = await _delete(workspace);
     if (!context.mounted) return;
     if (ref.read(WorkspaceManagementMutations.delete) case MutationError(
       :final error,
@@ -1725,6 +1741,9 @@ extension on _WorkspaceListActions {
       _showError(context, error);
 
       return;
+    }
+    if (result == WorkspaceDeletionResult.cleanupPending) {
+      _showCleanupPending(context);
     }
     if (workspace.id == activeWorkspaceId) {
       await switchAfterActiveWorkspaceRemoval();
@@ -1735,20 +1754,24 @@ extension on _WorkspaceListActions {
     return _confirmDestructive(
       title: const TextLocale(LocaleKeys.workspace_management_delete_title),
       message: Text(
-        LocaleKeys.workspace_management_delete_confirm.tr(
-          namedArgs: {'name': workspace.name},
-        ),
+        (workspace.cloudWorkspaceId == null
+                ? LocaleKeys.workspace_management_delete_confirm
+                : LocaleKeys.workspace_management_delete_cloud_mirror_confirm)
+            .tr(namedArgs: {'name': workspace.name}),
       ),
       actions: _deleteConfirmationActions,
     );
   }
 
-  Future<void> _delete(WorkspaceEntity workspace) {
-    return WorkspaceManagementMutations.delete.run(ref, (_) {
-      return ref
+  Future<WorkspaceDeletionResult> _delete(WorkspaceEntity workspace) async {
+    var result = WorkspaceDeletionResult.complete;
+    await WorkspaceManagementMutations.delete.run(ref, (_) async {
+      result = await ref
           .read(deleteWorkspaceUseCaseProvider)
           .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
     });
+
+    return result;
   }
 
   Future<String?> _confirmedRemovalAccountId(WorkspaceEntity workspace) async {
@@ -1781,18 +1804,23 @@ extension on _WorkspaceListActions {
   }
 }
 
-typedef _WorkspaceDeleteAttempt = ({bool succeeded, bool removedActive});
+typedef _WorkspaceDeleteAttempt = ({
+  bool succeeded,
+  bool removedActive,
+  bool cleanupPending,
+});
 
 Future<_WorkspaceDeleteAttempt> _deleteWorkspaceTarget(
   _WorkspaceListActions actions,
   WorkspaceEntity workspace,
 ) async {
   try {
-    await actions._deleteWithoutConfirmation(workspace);
+    final result = await actions._deleteWithoutConfirmation(workspace);
 
     return (
       succeeded: true,
       removedActive: workspace.id == actions.activeWorkspaceId,
+      cleanupPending: result == WorkspaceDeletionResult.cleanupPending,
     );
   } on Object catch (error, stackTrace) {
     _logger.warning(
@@ -1801,8 +1829,18 @@ Future<_WorkspaceDeleteAttempt> _deleteWorkspaceTarget(
       stackTrace,
     );
 
-    return (succeeded: false, removedActive: false);
+    return (succeeded: false, removedActive: false, cleanupPending: false);
   }
+}
+
+void _showCleanupPending(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(
+      LocaleKeys.workspace_management_delete_cleanup_pending,
+    ),
+    variant: .info,
+  );
 }
 
 Future<void> _finishWorkspaceBulkDeletion(
@@ -1822,6 +1860,57 @@ Future<void> _finishWorkspaceBulkDeletion(
 }
 
 extension on _WorkspaceListActions {
+  Future<void> eraseDeletedWorkspace(
+    CloudAccountKey key,
+    CloudWorkspaceSummary workspace,
+  ) async {
+    final confirmed = await _confirmDestructive(
+      title: Text(
+        LocaleKeys.cloud_workspaces_erase_legacy_title.tr(
+          namedArgs: {'name': workspace.name},
+        ),
+      ),
+      message: const TextLocale(LocaleKeys.cloud_workspaces_erase_message),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.cloud_workspaces_erase),
+        cancelLabel: TextLocale(LocaleKeys.common_cancel),
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      final useCases = await _requireCloudWorkspaceUseCases(key);
+      final status = await useCases.erase(workspace);
+      ref
+        ..invalidate(cloudWorkspaceStateProvider(key))
+        ..invalidate(allWorkspacesProvider);
+      if (!context.mounted) return;
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: TextLocale(
+          status.state == 'complete'
+              ? LocaleKeys.cloud_workspaces_erasure_complete
+              : LocaleKeys.cloud_workspaces_erasure_pending,
+        ),
+        variant: status.state == 'complete' ? .success : .info,
+      );
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
+  Future<void> retryWorkspaceErasure(
+    CloudAccountKey key,
+    String requestId,
+  ) async {
+    try {
+      final useCases = await _requireCloudWorkspaceUseCases(key);
+      final _ = await useCases.retryErasure(requestId);
+      ref.invalidate(cloudWorkspaceStateProvider(key));
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
   void retryCloudAccount(CloudAccountKey key) {
     ref
       ..invalidate(cloudAccountHealthProvider(key))
@@ -2389,6 +2478,13 @@ class const _AvailableCloudDataContent({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
+      _WorkspaceErasureStatuses(
+        account: account,
+        statuses: value.erasures,
+        deletedOwnedWorkspaces: value.deletedOwnedWorkspaces,
+        searchQuery: searchQuery,
+        actions: actions,
+      ),
       _PendingWorkspaceInvites(
         account: account,
         invites: value.pendingInvites,
@@ -2404,6 +2500,75 @@ class const _AvailableCloudDataContent({
         workspaces: value.workspaces,
         actions: actions,
       ),
+    ],
+  );
+}
+
+class const _WorkspaceErasureStatuses({
+  required final CloudAccountSession account,
+  required final List<CloudWorkspaceErasureStatus> statuses,
+  required final List<CloudWorkspaceSummary> deletedOwnedWorkspaces,
+  required final String searchQuery,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      if (statuses.isNotEmpty)
+        const TextLocale(LocaleKeys.cloud_workspaces_erasure_status_title),
+      for (final status in statuses)
+        if (_matchesWorkspaceName(status.workspaceName, searchQuery))
+          AuraTile(
+            child: AuraColumn(
+              children: [
+                Text(status.workspaceName),
+                TextLocale(switch (status.state) {
+                  'complete' =>
+                    LocaleKeys.cloud_workspaces_erasure_status_complete,
+                  'needsAttention' =>
+                    LocaleKeys.cloud_workspaces_erasure_status_attention,
+                  _ => LocaleKeys.cloud_workspaces_erasure_status_pending,
+                }),
+              ],
+              crossAxisAlignment: .start,
+            ),
+            trailing: status.state == 'needsAttention'
+                ? AuraButton(
+                    onPressed: () => actions.retryWorkspaceErasure(
+                      account.key,
+                      status.requestId,
+                    ),
+                    child: const TextLocale(
+                      LocaleKeys.cloud_workspaces_erasure_retry,
+                    ),
+                  )
+                : null,
+          ),
+      if (deletedOwnedWorkspaces.any(
+        (workspace) => _matchesWorkspaceName(workspace.name, searchQuery),
+      ))
+        const TextLocale(
+          LocaleKeys.cloud_workspaces_deleted_owned_requires_erasure,
+        ),
+      for (final workspace in deletedOwnedWorkspaces)
+        if (_matchesWorkspaceName(workspace.name, searchQuery))
+          AuraTile(
+            child: AuraColumn(
+              children: [
+                Text(workspace.name),
+                const TextLocale(
+                  LocaleKeys.cloud_workspaces_deleted_owned_description,
+                ),
+              ],
+              crossAxisAlignment: .start,
+            ),
+            trailing: AuraButton(
+              onPressed: () =>
+                  actions.eraseDeletedWorkspace(account.key, workspace),
+              child: const TextLocale(LocaleKeys.cloud_workspaces_erase),
+            ),
+          ),
     ],
   );
 }

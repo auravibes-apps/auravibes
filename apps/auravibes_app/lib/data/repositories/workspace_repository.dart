@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_credential_erasure.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -24,10 +25,13 @@ class WorkspaceRepository(
   /// The database instance for workspace operations.
   final AppDatabase _database, {
   final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+  LocalWorkspaceCredentialErasure? credentialErasure,
 }) with
     _WorkspaceRepositoryOperationsApi,
     _WorkspaceRepositoryCloudApi,
     _WorkspaceRepositoryQueryApi {
+  final LocalWorkspaceCredentialErasure? _credentialErasure = credentialErasure;
+
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
 
@@ -214,16 +218,11 @@ extension WorkspaceRepositoryOperations on WorkspaceRepository {
       return false; // Return false instead of throwing for delete operations.
     }
 
-    final attachmentPaths = await _attachmentPathsForWorkspace(id);
-    final deleted = await LocalWorkspaceAssetErasure(
+    return await LocalWorkspaceAssetErasure(
       _database,
       _attachmentFileStore,
+      credentialErasure: _credentialErasure,
     ).delete(id, () => _database.workspaceDao.deleteWorkspace(id));
-    if (deleted) {
-      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
-    }
-
-    return deleted;
   }
 }
 
@@ -465,36 +464,6 @@ extension on WorkspaceRepository {
     cloudWorkspaceId: data.cloudWorkspaceId,
     cloudAccountId: data.cloudAccountId,
   );
-
-  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
-    final rows = await _workspaceAttachmentRows(id);
-
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
-  }
-
-  Future<List<TypedResult>> _workspaceAttachmentRows(String id) async {
-    return await (_database.select(_database.messageAttachments).join([
-      innerJoin(
-        _database.messages,
-        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
-      ),
-      innerJoin(
-        _database.conversations,
-        _database.conversations.id.equalsExp(_database.messages.conversationId),
-      ),
-    ])..where(_database.conversations.workspaceId.equals(id))).get();
-  }
-
-  Future<void> _deleteAttachmentFile(String localPath) async {
-    try {
-      await _attachmentFileStore.deleteFile(localPath);
-    } on Object {
-      return;
-    }
-  }
 }
 
 extension on WorkspaceRepository {

@@ -132,6 +132,7 @@ workspaceView:
 cloudWorkspace:
   - listAuthorizedWorkspaces:
   - listPendingInvites:
+  - listOwnedDeletedWorkspacesForErasure:
   - getWorkspaceDetail:
   - listMembers:
   - listWorkspaceInvites:
@@ -147,3 +148,6 @@ cloudWorkspace:
   - updateMemberRole:
   - removeMember:
   - deleteWorkspace:
+  - eraseWorkspace:
+  - listWorkspaceErasures:
+  - retryWorkspaceErasure:

@@ -6,6 +6,7 @@ import '../../generated/protocol.dart';
 import 'object_deletion_guard.dart';
 import 'object_repository.dart';
 import 'object_store.dart';
+import '../workspaces/workspace_erasure_cleanup.dart';
 
 typedef _Run = ({
   bool Function()? isActive,
@@ -57,8 +58,11 @@ class const _CleanupRun(final ObjectCleanupService owner) {
   Future<int> call(Session session, _Run run) async {
     if (!_active(run)) return 0;
     final rows = await _pending(session, run.now);
-
-    return await _drain(session, rows, run);
+    final completed = await _drain(session, rows, run);
+    if (_active(run)) {
+      await WorkspaceErasureCleanup(session).purgeReady(run.coordinator);
+    }
+    return completed;
   }
 
   Future<List<ObjectDeletion>> _pending(Session session, DateTime now) =>

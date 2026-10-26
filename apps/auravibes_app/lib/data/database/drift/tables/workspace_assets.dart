@@ -32,6 +32,7 @@ class WorkspaceFiles extends Table with TableMixin {
 @DataClassName('WorkspaceAssetDeletionRow')
 class WorkspaceAssetDeletions extends Table {
   TextColumn get assetId => text()();
+  TextColumn get workspaceId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {assetId};

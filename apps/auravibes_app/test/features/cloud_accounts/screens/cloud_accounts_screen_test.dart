@@ -1,16 +1,25 @@
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/test_app.dart';
+
+class _MockAuthStore extends Mock implements ServerpodAuthStore;
+class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;
 
 void main() {
   testWidgets('account action labels explain their outcomes in English', (
@@ -52,13 +61,140 @@ void main() {
       find.text(
         'Permanently delete first@example.test and its sign-in credentials? '
         'Your access to shared cloud workspaces will end, but their content '
-        'will remain. Delete or transfer any cloud workspaces you own first. '
+        'will remain. Transfer or explicitly erase any cloud workspaces you '
+        'own first. '
         'This cannot be undone.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Shared workspace audit and event history may still contain your '
+        'account identifier after account deletion. The retention treatment '
+        'for those shared records has not been configured.',
       ),
       findsOneWidget,
     );
     expect(find.text('Delete cloud account'), findsNWidgets(2));
   });
+
+  testWidgets(
+    'account deletion result explains retained shared actor identifiers',
+    (tester) async {
+      const account = CloudAccountSession(
+        serverUrl: 'https://one.example',
+        userId: 'same',
+        email: 'first@example.test',
+      );
+      final store = _MockAuthStore();
+      final repository = _MockWorkspaceRepository();
+      var remoteDeleteCalls = 0;
+      when(
+        () => repository.deleteCloudWorkspaceMirrorsForAccount(
+          'same',
+          serverUrl: 'https://one.example',
+        ),
+      ).thenAnswer((_) async => 0);
+      when(() => repository.getWorkspaceById('local'))
+          .thenAnswer((_) async => null);
+      when(
+        () => store.removeAccount(
+          serverUrl: 'https://one.example',
+          userId: 'same',
+        ),
+      ).thenAnswer((_) => Future<void>.value());
+      final useCases = CloudAccountUseCases(
+        store: store,
+        workspaceRepository: repository,
+        deleteRemoteAccount: ({required serverUrl, required userId}) {
+          remoteDeleteCalls++;
+
+          return Future<void>.value();
+        },
+        invalidateAccount: (serverUrl, userId) {
+          expect(serverUrl, 'https://one.example');
+          expect(userId, 'same');
+        },
+      );
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: const CloudAccountsScreen(workspaceId: 'local'),
+            overrides: [
+              cloudAccountsProvider.overrideWith((ref) async => [account]),
+              checkCloudAccountUsecaseProvider.overrideWith(
+                (ref) => CheckCloudAccountUsecase(
+                  check: (key) async => key.accountId,
+                ),
+              ),
+              cloudAccountUseCasesProvider.overrideWithValue(useCases),
+              workspaceRepositoryProvider.overrideWithValue(repository),
+              allWorkspacesProvider.overrideWith(
+                (ref) => Stream.value([
+                  WorkspaceEntity(
+                    id: 'local',
+                    name: 'Local',
+                    type: .local,
+                    createdAt: .new(2026),
+                    updatedAt: .new(2026),
+                  ),
+                ]),
+              ),
+            ],
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete cloud account'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Shared workspace audit and event history'),
+        findsOneWidget,
+      );
+      final confirmDialog = find.byType(AuraConfirmDialog);
+      expect(confirmDialog, findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: confirmDialog,
+          matching: find.text('Delete cloud account'),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(confirmDialog, findsNothing);
+      expect(tester.takeException(), isNull);
+      expect(remoteDeleteCalls, 1);
+      verify(
+        () => store.removeAccount(
+          serverUrl: 'https://one.example',
+          userId: 'same',
+        ),
+      ).called(1);
+      expect(find.text('Account access removed'), findsOneWidget);
+      expect(
+        find.textContaining('account deletion does not erase those records'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Completed Connector actions and downloaded exports remain '
+          'outside AuraVibes deletion',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Done'));
+      final _ = await tester.pumpAndSettle();
+      verify(
+        () => repository.deleteCloudWorkspaceMirrorsForAccount(
+          'same',
+          serverUrl: 'https://one.example',
+        ),
+      ).called(1);
+    },
+  );
 
   testWidgets('account action labels explain their outcomes in Spanish', (
     tester,
@@ -111,8 +247,10 @@ void main() {
         '${_spanishChar(0xBF)}Eliminar definitivamente first@example.test '
         'y sus credenciales de acceso? Perder${_spanishChar(0xE1)}s acceso a '
         'los espacios en la nube compartidos, pero su contenido '
-        'permanecer${_spanishChar(0xE1)}. Primero '
-        'elimina o transfiere los espacios en la nube que posees. Esta '
+        'permanecer${_spanishChar(0xE1)}. Primero transfiere o borra '
+        'expl${_spanishChar(0xED)}citamente los espacios en la nube que '
+        'posees. '
+        'Esta '
         'acci${_spanishChar(0xF3)}n no se puede deshacer.',
       ),
       findsOneWidget,

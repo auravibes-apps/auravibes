@@ -55,7 +55,7 @@ final class WorkspaceAssetErasureProvider
 }
 
 String _$workspaceAssetErasureHash() =>
-    r'e455c17ef341c7c472fdce517f4a5dec71ca2738';
+    r'581816faf27fe49ed2f7052dd150d7f05787ad4f';
 
 @ProviderFor(selectWorkspaceAssetAttachment)
 final selectWorkspaceAssetAttachmentProvider =

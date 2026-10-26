@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -266,6 +267,7 @@ void main() {
           );
 
       expect(await repository.deleteWorkspace(createdWorkspace.id), isTrue);
+      await LocalWorkspaceAssetErasure(database, fileStore).flush();
 
       expect(fileStore.deleted, ['/support/image.png']);
     });

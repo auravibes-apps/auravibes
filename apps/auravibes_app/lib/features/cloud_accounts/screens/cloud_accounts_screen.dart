@@ -155,10 +155,20 @@ class const _AccountList({
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(messageKey.tr(namedArgs: {'email': account.email})),
-          const SizedBox(height: 8),
-          const TextLocale(
-            LocaleKeys.cloud_accounts_remove_local_mirrors_warning,
-          ),
+          if (deleteCloudAccount) ...[
+            const SizedBox(height: 8),
+            const TextLocale(LocaleKeys.cloud_accounts_delete_data_notice),
+            const SizedBox(height: 8),
+            const TextLocale(
+              LocaleKeys.cloud_accounts_delete_retained_actor_ids_notice,
+            ),
+          ],
+          if (!deleteCloudAccount) ...[
+            const SizedBox(height: 8),
+            const TextLocale(
+              LocaleKeys.cloud_accounts_remove_local_mirrors_warning,
+            ),
+          ],
         ],
       ),
       actions: AuraConfirmDialogActions(
@@ -168,9 +178,9 @@ class const _AccountList({
     );
     if (confirmed != true) return;
 
-    final activeWorkspace = (await ref.read(allWorkspacesProvider.future))
-        .where((workspace) => workspace.id == workspaceId)
-        .firstOrNull;
+    final activeWorkspace = await ref
+        .read(workspaceRepositoryProvider)
+        .getWorkspaceById(workspaceId);
 
     try {
       await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
@@ -204,6 +214,8 @@ class const _AccountList({
           localizationKey,
         CloudWorkspaceException(code: .ownershipTransferRequired) =>
           LocaleKeys.cloud_accounts_delete_owned_workspaces_error,
+        CloudWorkspaceException(code: .workspaceErasurePending) =>
+          LocaleKeys.cloud_accounts_workspace_erasure_pending_error,
         CloudWorkspaceException(code: .authenticationRequired) =>
           LocaleKeys.cloud_accounts_session_expired,
         CloudWorkspaceException(code: .emailAccountRequired) =>
@@ -219,6 +231,18 @@ class const _AccountList({
         variant: .error,
       );
       return;
+    }
+    if (deleteCloudAccount && context.mounted) {
+      await AuraDialogs.alert(
+        context: context,
+        title: const TextLocale(LocaleKeys.cloud_accounts_delete_result_title),
+        message: const TextLocale(
+          LocaleKeys.cloud_accounts_delete_result_notice,
+        ),
+        dismissLabel: const TextLocale(
+          LocaleKeys.cloud_accounts_delete_result_dismiss,
+        ),
+      );
     }
     if (!context.mounted ||
         activeWorkspace?.cloudAccount != account.key ||

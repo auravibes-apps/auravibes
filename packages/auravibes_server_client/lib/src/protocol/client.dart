@@ -236,6 +236,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspaces/models/
     as _i0tihsii;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
     as _i91wh5vy;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_erasure_status.dart'
+    as _im4ecs98;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _iin9r2cd;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -248,6 +250,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspaces/models/
     as _iieqdqzc;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/delete_cloud_workspace_request.dart'
     as _ied6jb7p;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/erase_cloud_workspace_request.dart'
+    as _ijrepm58;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _ic69zisf;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/invite_workspace_member_request.dart'
@@ -266,6 +270,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspaces/models/
     as _idlpsnny;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/renew_workspace_invite_request.dart'
     as _i6br37rg;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/retry_cloud_workspace_erasure_request.dart'
+    as _imaulmtf;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _ic8yezfe;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
@@ -1559,6 +1565,14 @@ class EndpointCloudWorkspace extends _isc.EndpointRef {
         {},
       );
 
+  _ida.Future<List<_ib73r5sl.CloudWorkspaceSummary>>
+  listOwnedDeletedWorkspacesForErasure() =>
+      caller.callServerEndpoint<List<_ib73r5sl.CloudWorkspaceSummary>>(
+        'cloudWorkspace',
+        'listOwnedDeletedWorkspacesForErasure',
+        {},
+      );
+
   _ida.Future<_i91wh5vy.CloudWorkspaceDetail> getWorkspaceDetail(
     _ic69zisf.GetCloudWorkspaceDetailRequest request,
   ) => caller.callServerEndpoint<_i91wh5vy.CloudWorkspaceDetail>(
@@ -1676,6 +1690,30 @@ class EndpointCloudWorkspace extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<void>(
     'cloudWorkspace',
     'deleteWorkspace',
+    {'request': request},
+  );
+
+  _ida.Future<_im4ecs98.CloudWorkspaceErasureStatus> eraseWorkspace(
+    _ijrepm58.EraseCloudWorkspaceRequest request,
+  ) => caller.callServerEndpoint<_im4ecs98.CloudWorkspaceErasureStatus>(
+    'cloudWorkspace',
+    'eraseWorkspace',
+    {'request': request},
+  );
+
+  _ida.Future<List<_im4ecs98.CloudWorkspaceErasureStatus>>
+  listWorkspaceErasures() =>
+      caller.callServerEndpoint<List<_im4ecs98.CloudWorkspaceErasureStatus>>(
+        'cloudWorkspace',
+        'listWorkspaceErasures',
+        {},
+      );
+
+  _ida.Future<_im4ecs98.CloudWorkspaceErasureStatus> retryWorkspaceErasure(
+    _imaulmtf.RetryCloudWorkspaceErasureRequest request,
+  ) => caller.callServerEndpoint<_im4ecs98.CloudWorkspaceErasureStatus>(
+    'cloudWorkspace',
+    'retryWorkspaceErasure',
     {'request': request},
   );
 }

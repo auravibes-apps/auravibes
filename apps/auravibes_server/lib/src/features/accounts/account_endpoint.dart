@@ -20,14 +20,21 @@ class AccountEndpoint extends Endpoint {
         ownerUserId: userId,
         transaction: transaction,
       );
-      final ownedWorkspace = await CloudWorkspace.db.findFirstRow(
+      final ownedWorkspaces = await CloudWorkspace.db.find(
         session,
-        where: (table) =>
-            table.ownerUserId.equals(userId) & table.deletedAt.equals(null),
+        where: (table) => table.ownerUserId.equals(userId),
+        orderBy: (table) => table.id,
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (ownedWorkspace != null) {
+      if (ownedWorkspaces.any(
+        (workspace) => workspace.erasureRequestedAt != null,
+      )) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.workspaceErasurePending,
+        );
+      }
+      if (ownedWorkspaces.isNotEmpty) {
         throw CloudWorkspaceException(
           code: CloudWorkspaceErrorCode.ownershipTransferRequired,
         );
@@ -51,6 +58,16 @@ class AccountEndpoint extends Endpoint {
       final _ = await CodexOAuthTransaction.db.deleteWhere(
         session,
         where: (table) => table.userId.equals(userId),
+        transaction: transaction,
+      );
+      final _ = await WorkspaceMutationReceipt.db.deleteWhere(
+        session,
+        where: (table) => table.actorUserId.equals(userId),
+        transaction: transaction,
+      );
+      final _ = await WorkspaceErasureRequest.db.deleteWhere(
+        session,
+        where: (table) => table.ownerUserId.equals(userId),
         transaction: transaction,
       );
       await AuthServices.instance.authUsers.delete(

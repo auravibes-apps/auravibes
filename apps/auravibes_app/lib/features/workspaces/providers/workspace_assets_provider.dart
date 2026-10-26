@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/cloud_workspace_file_repository.
 import 'package:auravibes_app/data/repositories/local_workspace_asset_cleanup.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_credential_erasure.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_file_repository.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_attachment_adapter.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
@@ -17,6 +18,7 @@ import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_fi
 import 'package:auravibes_app/features/workspaces/usecases/save_workspace_asset_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_asset_attachment_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_assets_provider.g.dart';
@@ -26,6 +28,7 @@ LocalWorkspaceAssetErasure workspaceAssetErasure(Ref ref) =>
     LocalWorkspaceAssetErasure(
       ref.watch(appDatabaseProvider),
       ref.watch(attachmentFileStoreProvider),
+      credentialErasure: _credentialErasure(ref),
     );
 
 @riverpod
@@ -74,11 +77,22 @@ Future<WorkspaceAssetRepository> _localAssets(
 ) async {
   final database = ref.watch(appDatabaseProvider);
   final store = ref.watch(attachmentFileStoreProvider);
-  await LocalWorkspaceAssetCleanup(database, workspaceId, store).flush();
+  await LocalWorkspaceAssetCleanup(
+    database,
+    workspaceId,
+    store,
+    credentialErasure: _credentialErasure(ref),
+  ).flush();
   _requireMounted(ref);
 
   return LocalWorkspaceAssetRepository(database, workspaceId, store);
 }
+
+LocalWorkspaceCredentialErasure _credentialErasure(Ref ref) =>
+    LocalWorkspaceCredentialErasure(
+      ref.watch(appDatabaseProvider),
+      ref.watch(encryptionServiceProvider),
+    );
 
 Future<CloudWorkspaceStateGateway> _gateway(
   Ref ref,

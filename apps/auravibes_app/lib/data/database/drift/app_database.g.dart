@@ -21150,8 +21150,19 @@ class $WorkspaceAssetDeletionsTable extends WorkspaceAssetDeletions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [assetId];
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [assetId, workspaceId];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -21172,6 +21183,15 @@ class $WorkspaceAssetDeletionsTable extends WorkspaceAssetDeletions
     } else if (isInserting) {
       context.missing(_assetIdMeta);
     }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21188,6 +21208,10 @@ class $WorkspaceAssetDeletionsTable extends WorkspaceAssetDeletions
         DriftSqlType.string,
         data['${effectivePrefix}asset_id'],
       )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      ),
     );
   }
 
@@ -21200,16 +21224,25 @@ class $WorkspaceAssetDeletionsTable extends WorkspaceAssetDeletions
 class WorkspaceAssetDeletionRow extends DataClass
     implements Insertable<WorkspaceAssetDeletionRow> {
   final String assetId;
-  const WorkspaceAssetDeletionRow({required this.assetId});
+  final String? workspaceId;
+  const WorkspaceAssetDeletionRow({required this.assetId, this.workspaceId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['asset_id'] = Variable<String>(assetId);
+    if (!nullToAbsent || workspaceId != null) {
+      map['workspace_id'] = Variable<String>(workspaceId);
+    }
     return map;
   }
 
   WorkspaceAssetDeletionsCompanion toCompanion(bool nullToAbsent) {
-    return WorkspaceAssetDeletionsCompanion(assetId: Value(assetId));
+    return WorkspaceAssetDeletionsCompanion(
+      assetId: Value(assetId),
+      workspaceId: workspaceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workspaceId),
+    );
   }
 
   factory WorkspaceAssetDeletionRow.fromJson(
@@ -21219,68 +21252,90 @@ class WorkspaceAssetDeletionRow extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return WorkspaceAssetDeletionRow(
       assetId: serializer.fromJson<String>(json['assetId']),
+      workspaceId: serializer.fromJson<String?>(json['workspaceId']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{'assetId': serializer.toJson<String>(assetId)};
+    return <String, dynamic>{
+      'assetId': serializer.toJson<String>(assetId),
+      'workspaceId': serializer.toJson<String?>(workspaceId),
+    };
   }
 
-  WorkspaceAssetDeletionRow copyWith({String? assetId}) =>
-      WorkspaceAssetDeletionRow(assetId: assetId ?? this.assetId);
+  WorkspaceAssetDeletionRow copyWith({
+    String? assetId,
+    Value<String?> workspaceId = const Value.absent(),
+  }) => WorkspaceAssetDeletionRow(
+    assetId: assetId ?? this.assetId,
+    workspaceId: workspaceId.present ? workspaceId.value : this.workspaceId,
+  );
   WorkspaceAssetDeletionRow copyWithCompanion(
     WorkspaceAssetDeletionsCompanion data,
   ) {
     return WorkspaceAssetDeletionRow(
       assetId: data.assetId.present ? data.assetId.value : this.assetId,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
     );
   }
 
   @override
   String toString() {
     return (StringBuffer('WorkspaceAssetDeletionRow(')
-          ..write('assetId: $assetId')
+          ..write('assetId: $assetId, ')
+          ..write('workspaceId: $workspaceId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => assetId.hashCode;
+  int get hashCode => Object.hash(assetId, workspaceId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is WorkspaceAssetDeletionRow && other.assetId == this.assetId);
+      (other is WorkspaceAssetDeletionRow &&
+          other.assetId == this.assetId &&
+          other.workspaceId == this.workspaceId);
 }
 
 class WorkspaceAssetDeletionsCompanion
     extends UpdateCompanion<WorkspaceAssetDeletionRow> {
   final Value<String> assetId;
+  final Value<String?> workspaceId;
   final Value<int> rowid;
   const WorkspaceAssetDeletionsCompanion({
     this.assetId = const Value.absent(),
+    this.workspaceId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceAssetDeletionsCompanion.insert({
     required String assetId,
+    this.workspaceId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : assetId = Value(assetId);
   static Insertable<WorkspaceAssetDeletionRow> custom({
     Expression<String>? assetId,
+    Expression<String>? workspaceId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (assetId != null) 'asset_id': assetId,
+      if (workspaceId != null) 'workspace_id': workspaceId,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   WorkspaceAssetDeletionsCompanion copyWith({
     Value<String>? assetId,
+    Value<String?>? workspaceId,
     Value<int>? rowid,
   }) {
     return WorkspaceAssetDeletionsCompanion(
       assetId: assetId ?? this.assetId,
+      workspaceId: workspaceId ?? this.workspaceId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -21290,6 +21345,9 @@ class WorkspaceAssetDeletionsCompanion
     final map = <String, Expression>{};
     if (assetId.present) {
       map['asset_id'] = Variable<String>(assetId.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -21301,6 +21359,494 @@ class WorkspaceAssetDeletionsCompanion
   String toString() {
     return (StringBuffer('WorkspaceAssetDeletionsCompanion(')
           ..write('assetId: $assetId, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceAttachmentDeletionsTable extends WorkspaceAttachmentDeletions
+    with
+        TableInfo<
+          $WorkspaceAttachmentDeletionsTable,
+          WorkspaceAttachmentDeletion
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceAttachmentDeletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localPathMeta = const VerificationMeta(
+    'localPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPath = GeneratedColumn<String>(
+    'local_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [workspaceId, localPath];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_attachment_deletions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceAttachmentDeletion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('local_path')) {
+      context.handle(
+        _localPathMeta,
+        localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localPathMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, localPath};
+  @override
+  WorkspaceAttachmentDeletion map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceAttachmentDeletion(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      localPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_path'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceAttachmentDeletionsTable createAlias(String alias) {
+    return $WorkspaceAttachmentDeletionsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceAttachmentDeletion extends DataClass
+    implements Insertable<WorkspaceAttachmentDeletion> {
+  final String workspaceId;
+  final String localPath;
+  const WorkspaceAttachmentDeletion({
+    required this.workspaceId,
+    required this.localPath,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['local_path'] = Variable<String>(localPath);
+    return map;
+  }
+
+  WorkspaceAttachmentDeletionsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceAttachmentDeletionsCompanion(
+      workspaceId: Value(workspaceId),
+      localPath: Value(localPath),
+    );
+  }
+
+  factory WorkspaceAttachmentDeletion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceAttachmentDeletion(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      localPath: serializer.fromJson<String>(json['localPath']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'localPath': serializer.toJson<String>(localPath),
+    };
+  }
+
+  WorkspaceAttachmentDeletion copyWith({
+    String? workspaceId,
+    String? localPath,
+  }) => WorkspaceAttachmentDeletion(
+    workspaceId: workspaceId ?? this.workspaceId,
+    localPath: localPath ?? this.localPath,
+  );
+  WorkspaceAttachmentDeletion copyWithCompanion(
+    WorkspaceAttachmentDeletionsCompanion data,
+  ) {
+    return WorkspaceAttachmentDeletion(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      localPath: data.localPath.present ? data.localPath.value : this.localPath,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceAttachmentDeletion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('localPath: $localPath')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, localPath);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceAttachmentDeletion &&
+          other.workspaceId == this.workspaceId &&
+          other.localPath == this.localPath);
+}
+
+class WorkspaceAttachmentDeletionsCompanion
+    extends UpdateCompanion<WorkspaceAttachmentDeletion> {
+  final Value<String> workspaceId;
+  final Value<String> localPath;
+  final Value<int> rowid;
+  const WorkspaceAttachmentDeletionsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceAttachmentDeletionsCompanion.insert({
+    required String workspaceId,
+    required String localPath,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       localPath = Value(localPath);
+  static Insertable<WorkspaceAttachmentDeletion> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? localPath,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (localPath != null) 'local_path': localPath,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceAttachmentDeletionsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? localPath,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceAttachmentDeletionsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      localPath: localPath ?? this.localPath,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (localPath.present) {
+      map['local_path'] = Variable<String>(localPath.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceAttachmentDeletionsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('localPath: $localPath, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceCredentialDeletionsTable extends WorkspaceCredentialDeletions
+    with
+        TableInfo<
+          $WorkspaceCredentialDeletionsTable,
+          WorkspaceCredentialDeletion
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceCredentialDeletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _credentialReferenceMeta =
+      const VerificationMeta('credentialReference');
+  @override
+  late final GeneratedColumn<String> credentialReference =
+      GeneratedColumn<String>(
+        'credential_reference',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [workspaceId, credentialReference];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_credential_deletions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceCredentialDeletion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('credential_reference')) {
+      context.handle(
+        _credentialReferenceMeta,
+        credentialReference.isAcceptableOrUnknown(
+          data['credential_reference']!,
+          _credentialReferenceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_credentialReferenceMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, credentialReference};
+  @override
+  WorkspaceCredentialDeletion map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceCredentialDeletion(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      credentialReference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}credential_reference'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceCredentialDeletionsTable createAlias(String alias) {
+    return $WorkspaceCredentialDeletionsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceCredentialDeletion extends DataClass
+    implements Insertable<WorkspaceCredentialDeletion> {
+  /// Scalar ID only; cleanup receipts outlive workspace cascade deletion.
+  final String workspaceId;
+  final String credentialReference;
+  const WorkspaceCredentialDeletion({
+    required this.workspaceId,
+    required this.credentialReference,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['credential_reference'] = Variable<String>(credentialReference);
+    return map;
+  }
+
+  WorkspaceCredentialDeletionsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceCredentialDeletionsCompanion(
+      workspaceId: Value(workspaceId),
+      credentialReference: Value(credentialReference),
+    );
+  }
+
+  factory WorkspaceCredentialDeletion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceCredentialDeletion(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      credentialReference: serializer.fromJson<String>(
+        json['credentialReference'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'credentialReference': serializer.toJson<String>(credentialReference),
+    };
+  }
+
+  WorkspaceCredentialDeletion copyWith({
+    String? workspaceId,
+    String? credentialReference,
+  }) => WorkspaceCredentialDeletion(
+    workspaceId: workspaceId ?? this.workspaceId,
+    credentialReference: credentialReference ?? this.credentialReference,
+  );
+  WorkspaceCredentialDeletion copyWithCompanion(
+    WorkspaceCredentialDeletionsCompanion data,
+  ) {
+    return WorkspaceCredentialDeletion(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      credentialReference: data.credentialReference.present
+          ? data.credentialReference.value
+          : this.credentialReference,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceCredentialDeletion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('credentialReference: $credentialReference')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, credentialReference);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceCredentialDeletion &&
+          other.workspaceId == this.workspaceId &&
+          other.credentialReference == this.credentialReference);
+}
+
+class WorkspaceCredentialDeletionsCompanion
+    extends UpdateCompanion<WorkspaceCredentialDeletion> {
+  final Value<String> workspaceId;
+  final Value<String> credentialReference;
+  final Value<int> rowid;
+  const WorkspaceCredentialDeletionsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.credentialReference = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceCredentialDeletionsCompanion.insert({
+    required String workspaceId,
+    required String credentialReference,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       credentialReference = Value(credentialReference);
+  static Insertable<WorkspaceCredentialDeletion> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? credentialReference,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (credentialReference != null)
+        'credential_reference': credentialReference,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceCredentialDeletionsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? credentialReference,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceCredentialDeletionsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      credentialReference: credentialReference ?? this.credentialReference,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (credentialReference.present) {
+      map['credential_reference'] = Variable<String>(credentialReference.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceCredentialDeletionsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('credentialReference: $credentialReference, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -22955,6 +23501,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkspaceFilesTable workspaceFiles = $WorkspaceFilesTable(this);
   late final $WorkspaceAssetDeletionsTable workspaceAssetDeletions =
       $WorkspaceAssetDeletionsTable(this);
+  late final $WorkspaceAttachmentDeletionsTable workspaceAttachmentDeletions =
+      $WorkspaceAttachmentDeletionsTable(this);
+  late final $WorkspaceCredentialDeletionsTable workspaceCredentialDeletions =
+      $WorkspaceCredentialDeletionsTable(this);
   late final $WorkspaceContextSelectionsTable workspaceContextSelections =
       $WorkspaceContextSelectionsTable(this);
   late final $WorkspaceCommandReceiptsTable workspaceCommandReceipts =
@@ -23106,6 +23656,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceRecordBatchReceipts,
     workspaceFiles,
     workspaceAssetDeletions,
+    workspaceAttachmentDeletions,
+    workspaceCredentialDeletions,
     workspaceContextSelections,
     workspaceCommandReceipts,
     workspaceContentReports,
@@ -44132,11 +44684,13 @@ typedef $$WorkspaceFilesTableProcessedTableManager =
 typedef $$WorkspaceAssetDeletionsTableCreateCompanionBuilder =
     WorkspaceAssetDeletionsCompanion Function({
       required String assetId,
+      Value<String?> workspaceId,
       Value<int> rowid,
     });
 typedef $$WorkspaceAssetDeletionsTableUpdateCompanionBuilder =
     WorkspaceAssetDeletionsCompanion Function({
       Value<String> assetId,
+      Value<String?> workspaceId,
       Value<int> rowid,
     });
 
@@ -44151,6 +44705,11 @@ class $$WorkspaceAssetDeletionsTableFilterComposer
   });
   ColumnFilters<String> get assetId => $composableBuilder(
     column: $table.assetId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -44168,6 +44727,11 @@ class $$WorkspaceAssetDeletionsTableOrderingComposer
     column: $table.assetId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$WorkspaceAssetDeletionsTableAnnotationComposer
@@ -44181,6 +44745,11 @@ class $$WorkspaceAssetDeletionsTableAnnotationComposer
   });
   GeneratedColumn<String> get assetId =>
       $composableBuilder(column: $table.assetId, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => column,
+  );
 }
 
 class $$WorkspaceAssetDeletionsTableTableManager
@@ -44230,17 +44799,21 @@ class $$WorkspaceAssetDeletionsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> assetId = const Value.absent(),
+                Value<String?> workspaceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceAssetDeletionsCompanion(
                 assetId: assetId,
+                workspaceId: workspaceId,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String assetId,
+                Value<String?> workspaceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceAssetDeletionsCompanion.insert(
                 assetId: assetId,
+                workspaceId: workspaceId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -44282,6 +44855,360 @@ typedef $$WorkspaceAssetDeletionsTableProcessedTableManager =
         >,
       ),
       WorkspaceAssetDeletionRow,
+      PrefetchHooks Function()
+    >;
+typedef $$WorkspaceAttachmentDeletionsTableCreateCompanionBuilder =
+    WorkspaceAttachmentDeletionsCompanion Function({
+      required String workspaceId,
+      required String localPath,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceAttachmentDeletionsTableUpdateCompanionBuilder =
+    WorkspaceAttachmentDeletionsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> localPath,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceAttachmentDeletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceAttachmentDeletionsTable> {
+  $$WorkspaceAttachmentDeletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceAttachmentDeletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceAttachmentDeletionsTable> {
+  $$WorkspaceAttachmentDeletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceAttachmentDeletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceAttachmentDeletionsTable> {
+  $$WorkspaceAttachmentDeletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get localPath =>
+      $composableBuilder(column: $table.localPath, builder: (column) => column);
+}
+
+class $$WorkspaceAttachmentDeletionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceAttachmentDeletionsTable,
+          WorkspaceAttachmentDeletion,
+          $$WorkspaceAttachmentDeletionsTableFilterComposer,
+          $$WorkspaceAttachmentDeletionsTableOrderingComposer,
+          $$WorkspaceAttachmentDeletionsTableAnnotationComposer,
+          $$WorkspaceAttachmentDeletionsTableCreateCompanionBuilder,
+          $$WorkspaceAttachmentDeletionsTableUpdateCompanionBuilder,
+          (
+            WorkspaceAttachmentDeletion,
+            BaseReferences<
+              _$AppDatabase,
+              $WorkspaceAttachmentDeletionsTable,
+              WorkspaceAttachmentDeletion
+            >,
+          ),
+          WorkspaceAttachmentDeletion,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceAttachmentDeletionsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceAttachmentDeletionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceAttachmentDeletionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceAttachmentDeletionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceAttachmentDeletionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> localPath = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceAttachmentDeletionsCompanion(
+                workspaceId: workspaceId,
+                localPath: localPath,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String localPath,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceAttachmentDeletionsCompanion.insert(
+                workspaceId: workspaceId,
+                localPath: localPath,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceAttachmentDeletionsTable,
+                    WorkspaceAttachmentDeletion
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $WorkspaceAttachmentDeletionsTable,
+                    WorkspaceAttachmentDeletion
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceAttachmentDeletionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceAttachmentDeletionsTable,
+      WorkspaceAttachmentDeletion,
+      $$WorkspaceAttachmentDeletionsTableFilterComposer,
+      $$WorkspaceAttachmentDeletionsTableOrderingComposer,
+      $$WorkspaceAttachmentDeletionsTableAnnotationComposer,
+      $$WorkspaceAttachmentDeletionsTableCreateCompanionBuilder,
+      $$WorkspaceAttachmentDeletionsTableUpdateCompanionBuilder,
+      (
+        WorkspaceAttachmentDeletion,
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceAttachmentDeletionsTable,
+          WorkspaceAttachmentDeletion
+        >,
+      ),
+      WorkspaceAttachmentDeletion,
+      PrefetchHooks Function()
+    >;
+typedef $$WorkspaceCredentialDeletionsTableCreateCompanionBuilder =
+    WorkspaceCredentialDeletionsCompanion Function({
+      required String workspaceId,
+      required String credentialReference,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceCredentialDeletionsTableUpdateCompanionBuilder =
+    WorkspaceCredentialDeletionsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> credentialReference,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceCredentialDeletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceCredentialDeletionsTable> {
+  $$WorkspaceCredentialDeletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get credentialReference => $composableBuilder(
+    column: $table.credentialReference,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceCredentialDeletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceCredentialDeletionsTable> {
+  $$WorkspaceCredentialDeletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get credentialReference => $composableBuilder(
+    column: $table.credentialReference,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceCredentialDeletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceCredentialDeletionsTable> {
+  $$WorkspaceCredentialDeletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get credentialReference => $composableBuilder(
+    column: $table.credentialReference,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkspaceCredentialDeletionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceCredentialDeletionsTable,
+          WorkspaceCredentialDeletion,
+          $$WorkspaceCredentialDeletionsTableFilterComposer,
+          $$WorkspaceCredentialDeletionsTableOrderingComposer,
+          $$WorkspaceCredentialDeletionsTableAnnotationComposer,
+          $$WorkspaceCredentialDeletionsTableCreateCompanionBuilder,
+          $$WorkspaceCredentialDeletionsTableUpdateCompanionBuilder,
+          (
+            WorkspaceCredentialDeletion,
+            BaseReferences<
+              _$AppDatabase,
+              $WorkspaceCredentialDeletionsTable,
+              WorkspaceCredentialDeletion
+            >,
+          ),
+          WorkspaceCredentialDeletion,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceCredentialDeletionsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceCredentialDeletionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceCredentialDeletionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceCredentialDeletionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceCredentialDeletionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> credentialReference = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceCredentialDeletionsCompanion(
+                workspaceId: workspaceId,
+                credentialReference: credentialReference,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String credentialReference,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceCredentialDeletionsCompanion.insert(
+                workspaceId: workspaceId,
+                credentialReference: credentialReference,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceCredentialDeletionsTable,
+                    WorkspaceCredentialDeletion
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $WorkspaceCredentialDeletionsTable,
+                    WorkspaceCredentialDeletion
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceCredentialDeletionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceCredentialDeletionsTable,
+      WorkspaceCredentialDeletion,
+      $$WorkspaceCredentialDeletionsTableFilterComposer,
+      $$WorkspaceCredentialDeletionsTableOrderingComposer,
+      $$WorkspaceCredentialDeletionsTableAnnotationComposer,
+      $$WorkspaceCredentialDeletionsTableCreateCompanionBuilder,
+      $$WorkspaceCredentialDeletionsTableUpdateCompanionBuilder,
+      (
+        WorkspaceCredentialDeletion,
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceCredentialDeletionsTable,
+          WorkspaceCredentialDeletion
+        >,
+      ),
+      WorkspaceCredentialDeletion,
       PrefetchHooks Function()
     >;
 typedef $$WorkspaceContextSelectionsTableCreateCompanionBuilder =
@@ -45865,6 +46792,18 @@ class $AppDatabaseManager {
       $$WorkspaceAssetDeletionsTableTableManager(
         _db,
         _db.workspaceAssetDeletions,
+      );
+  $$WorkspaceAttachmentDeletionsTableTableManager
+  get workspaceAttachmentDeletions =>
+      $$WorkspaceAttachmentDeletionsTableTableManager(
+        _db,
+        _db.workspaceAttachmentDeletions,
+      );
+  $$WorkspaceCredentialDeletionsTableTableManager
+  get workspaceCredentialDeletions =>
+      $$WorkspaceCredentialDeletionsTableTableManager(
+        _db,
+        _db.workspaceCredentialDeletions,
       );
   $$WorkspaceContextSelectionsTableTableManager
   get workspaceContextSelections =>

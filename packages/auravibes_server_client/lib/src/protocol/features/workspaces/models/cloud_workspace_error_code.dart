@@ -35,7 +35,8 @@ enum CloudWorkspaceErrorCode implements _isc.SerializableModel {
   staleRevision,
   idempotencyConflict,
   conflict,
-  incompatibleRelationship;
+  incompatibleRelationship,
+  workspaceErasurePending;
 
   static CloudWorkspaceErrorCode fromJson(String name) {
     switch (name) {
@@ -85,6 +86,8 @@ enum CloudWorkspaceErrorCode implements _isc.SerializableModel {
         return CloudWorkspaceErrorCode.conflict;
       case 'incompatibleRelationship':
         return CloudWorkspaceErrorCode.incompatibleRelationship;
+      case 'workspaceErasurePending':
+        return CloudWorkspaceErrorCode.workspaceErasurePending;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "CloudWorkspaceErrorCode"',

@@ -37,6 +37,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _iar0fwau;
 import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view.dart'
     as _i3ruzhns;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_erasure_status.dart'
+    as _im4ecs98;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _iin9r2cd;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -324,6 +326,8 @@ import 'features/workspaces/models/cloud_workspace.dart' as _iyfjt29r;
 import 'features/workspaces/models/cloud_workspace_capabilities.dart'
     as _i1uzipdf;
 import 'features/workspaces/models/cloud_workspace_detail.dart' as _ixqnubu3;
+import 'features/workspaces/models/cloud_workspace_erasure_status.dart'
+    as _ivydga9x;
 import 'features/workspaces/models/cloud_workspace_error_code.dart'
     as _ikaytupt;
 import 'features/workspaces/models/cloud_workspace_exception.dart' as _iq0v59d3;
@@ -338,6 +342,8 @@ import 'features/workspaces/models/decline_workspace_invite_request.dart'
     as _izpvgmoh;
 import 'features/workspaces/models/delete_cloud_workspace_request.dart'
     as _irqsg6pc;
+import 'features/workspaces/models/erase_cloud_workspace_request.dart'
+    as _ik86166c;
 import 'features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _i3slgemv;
 import 'features/workspaces/models/invite_workspace_member_request.dart'
@@ -356,6 +362,8 @@ import 'features/workspaces/models/rename_cloud_workspace_request.dart'
     as _ifsfc78n;
 import 'features/workspaces/models/renew_workspace_invite_request.dart'
     as _ivko4e0f;
+import 'features/workspaces/models/retry_cloud_workspace_erasure_request.dart'
+    as _iber7w4r;
 import 'features/workspaces/models/revoke_workspace_invite_request.dart'
     as _iwlbozzh;
 import 'features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
@@ -363,6 +371,7 @@ import 'features/workspaces/models/transfer_cloud_workspace_ownership_request.da
 import 'features/workspaces/models/update_workspace_member_role_request.dart'
     as _i2qmz98c;
 import 'features/workspaces/models/workspace_audit_record.dart' as _ifp2sq2r;
+import 'features/workspaces/models/workspace_erasure_request.dart' as _iu5zc1k0;
 import 'features/workspaces/models/workspace_event.dart' as _ivvnnphu;
 import 'features/workspaces/models/workspace_invite.dart' as _ilpykuxc;
 import 'features/workspaces/models/workspace_member.dart' as _i56tb1yu;
@@ -541,6 +550,7 @@ export 'features/workspaces/models/accept_workspace_invite_request.dart';
 export 'features/workspaces/models/cloud_workspace.dart';
 export 'features/workspaces/models/cloud_workspace_capabilities.dart';
 export 'features/workspaces/models/cloud_workspace_detail.dart';
+export 'features/workspaces/models/cloud_workspace_erasure_status.dart';
 export 'features/workspaces/models/cloud_workspace_error_code.dart';
 export 'features/workspaces/models/cloud_workspace_exception.dart';
 export 'features/workspaces/models/cloud_workspace_invite_summary.dart';
@@ -549,6 +559,7 @@ export 'features/workspaces/models/cloud_workspace_summary.dart';
 export 'features/workspaces/models/create_cloud_workspace_request.dart';
 export 'features/workspaces/models/decline_workspace_invite_request.dart';
 export 'features/workspaces/models/delete_cloud_workspace_request.dart';
+export 'features/workspaces/models/erase_cloud_workspace_request.dart';
 export 'features/workspaces/models/get_cloud_workspace_detail_request.dart';
 export 'features/workspaces/models/invite_workspace_member_request.dart';
 export 'features/workspaces/models/leave_cloud_workspace_request.dart';
@@ -558,10 +569,12 @@ export 'features/workspaces/models/pending_workspace_invite_summary.dart';
 export 'features/workspaces/models/remove_workspace_member_request.dart';
 export 'features/workspaces/models/rename_cloud_workspace_request.dart';
 export 'features/workspaces/models/renew_workspace_invite_request.dart';
+export 'features/workspaces/models/retry_cloud_workspace_erasure_request.dart';
 export 'features/workspaces/models/revoke_workspace_invite_request.dart';
 export 'features/workspaces/models/transfer_cloud_workspace_ownership_request.dart';
 export 'features/workspaces/models/update_workspace_member_role_request.dart';
 export 'features/workspaces/models/workspace_audit_record.dart';
+export 'features/workspaces/models/workspace_erasure_request.dart';
 export 'features/workspaces/models/workspace_event.dart';
 export 'features/workspaces/models/workspace_invite.dart';
 export 'features/workspaces/models/workspace_member.dart';
@@ -1126,6 +1139,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _ixqnubu3.CloudWorkspaceDetail) {
       return _ixqnubu3.CloudWorkspaceDetail.fromJson(data) as T;
     }
+    if (t == _ivydga9x.CloudWorkspaceErasureStatus) {
+      return _ivydga9x.CloudWorkspaceErasureStatus.fromJson(data) as T;
+    }
     if (t == _ikaytupt.CloudWorkspaceErrorCode) {
       return _ikaytupt.CloudWorkspaceErrorCode.fromJson(data) as T;
     }
@@ -1149,6 +1165,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _irqsg6pc.DeleteCloudWorkspaceRequest) {
       return _irqsg6pc.DeleteCloudWorkspaceRequest.fromJson(data) as T;
+    }
+    if (t == _ik86166c.EraseCloudWorkspaceRequest) {
+      return _ik86166c.EraseCloudWorkspaceRequest.fromJson(data) as T;
     }
     if (t == _i3slgemv.GetCloudWorkspaceDetailRequest) {
       return _i3slgemv.GetCloudWorkspaceDetailRequest.fromJson(data) as T;
@@ -1177,6 +1196,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _ivko4e0f.RenewWorkspaceInviteRequest) {
       return _ivko4e0f.RenewWorkspaceInviteRequest.fromJson(data) as T;
     }
+    if (t == _iber7w4r.RetryCloudWorkspaceErasureRequest) {
+      return _iber7w4r.RetryCloudWorkspaceErasureRequest.fromJson(data) as T;
+    }
     if (t == _iwlbozzh.RevokeWorkspaceInviteRequest) {
       return _iwlbozzh.RevokeWorkspaceInviteRequest.fromJson(data) as T;
     }
@@ -1189,6 +1211,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ifp2sq2r.WorkspaceAuditRecord) {
       return _ifp2sq2r.WorkspaceAuditRecord.fromJson(data) as T;
+    }
+    if (t == _iu5zc1k0.WorkspaceErasureRequest) {
+      return _iu5zc1k0.WorkspaceErasureRequest.fromJson(data) as T;
     }
     if (t == _ivvnnphu.WorkspaceEvent) {
       return _ivvnnphu.WorkspaceEvent.fromJson(data) as T;
@@ -2151,6 +2176,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_ivydga9x.CloudWorkspaceErasureStatus?>()) {
+      return (data != null
+              ? _ivydga9x.CloudWorkspaceErasureStatus.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_ikaytupt.CloudWorkspaceErrorCode?>()) {
       return (data != null
               ? _ikaytupt.CloudWorkspaceErrorCode.fromJson(data)
@@ -2196,6 +2227,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_irqsg6pc.DeleteCloudWorkspaceRequest?>()) {
       return (data != null
               ? _irqsg6pc.DeleteCloudWorkspaceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ik86166c.EraseCloudWorkspaceRequest?>()) {
+      return (data != null
+              ? _ik86166c.EraseCloudWorkspaceRequest.fromJson(data)
               : null)
           as T;
     }
@@ -2253,6 +2290,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_iber7w4r.RetryCloudWorkspaceErasureRequest?>()) {
+      return (data != null
+              ? _iber7w4r.RetryCloudWorkspaceErasureRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_iwlbozzh.RevokeWorkspaceInviteRequest?>()) {
       return (data != null
               ? _iwlbozzh.RevokeWorkspaceInviteRequest.fromJson(data)
@@ -2275,6 +2318,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_ifp2sq2r.WorkspaceAuditRecord?>()) {
       return (data != null
               ? _ifp2sq2r.WorkspaceAuditRecord.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_iu5zc1k0.WorkspaceErasureRequest?>()) {
+      return (data != null
+              ? _iu5zc1k0.WorkspaceErasureRequest.fromJson(data)
               : null)
           as T;
     }
@@ -2514,6 +2563,12 @@ class Protocol extends _isc.SerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_im4ecs98.CloudWorkspaceErasureStatus>) {
+      return (data as List)
+              .map((e) => deserialize<_im4ecs98.CloudWorkspaceErasureStatus>(e))
+              .toList()
+          as T;
+    }
     try {
       return _iacc.Protocol().deserialize<T>(data, t);
     } on _isc.DeserializationTypeNotFoundException catch (_) {}
@@ -2726,6 +2781,7 @@ class Protocol extends _isc.SerializationManager {
       _iyfjt29r.CloudWorkspace => 'CloudWorkspace',
       _i1uzipdf.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
       _ixqnubu3.CloudWorkspaceDetail => 'CloudWorkspaceDetail',
+      _ivydga9x.CloudWorkspaceErasureStatus => 'CloudWorkspaceErasureStatus',
       _ikaytupt.CloudWorkspaceErrorCode => 'CloudWorkspaceErrorCode',
       _iq0v59d3.CloudWorkspaceException => 'CloudWorkspaceException',
       _i4buxtw8.CloudWorkspaceInviteSummary => 'CloudWorkspaceInviteSummary',
@@ -2735,6 +2791,7 @@ class Protocol extends _isc.SerializationManager {
       _izpvgmoh.DeclineWorkspaceInviteRequest =>
         'DeclineWorkspaceInviteRequest',
       _irqsg6pc.DeleteCloudWorkspaceRequest => 'DeleteCloudWorkspaceRequest',
+      _ik86166c.EraseCloudWorkspaceRequest => 'EraseCloudWorkspaceRequest',
       _i3slgemv.GetCloudWorkspaceDetailRequest =>
         'GetCloudWorkspaceDetailRequest',
       _iojw3n39.InviteWorkspaceMemberRequest => 'InviteWorkspaceMemberRequest',
@@ -2747,12 +2804,15 @@ class Protocol extends _isc.SerializationManager {
       _ioya5p5j.RemoveWorkspaceMemberRequest => 'RemoveWorkspaceMemberRequest',
       _ifsfc78n.RenameCloudWorkspaceRequest => 'RenameCloudWorkspaceRequest',
       _ivko4e0f.RenewWorkspaceInviteRequest => 'RenewWorkspaceInviteRequest',
+      _iber7w4r.RetryCloudWorkspaceErasureRequest =>
+        'RetryCloudWorkspaceErasureRequest',
       _iwlbozzh.RevokeWorkspaceInviteRequest => 'RevokeWorkspaceInviteRequest',
       _i7ana9ux.TransferCloudWorkspaceOwnershipRequest =>
         'TransferCloudWorkspaceOwnershipRequest',
       _i2qmz98c.UpdateWorkspaceMemberRoleRequest =>
         'UpdateWorkspaceMemberRoleRequest',
       _ifp2sq2r.WorkspaceAuditRecord => 'WorkspaceAuditRecord',
+      _iu5zc1k0.WorkspaceErasureRequest => 'WorkspaceErasureRequest',
       _ivvnnphu.WorkspaceEvent => 'WorkspaceEvent',
       _ilpykuxc.WorkspaceInvite => 'WorkspaceInvite',
       _i56tb1yu.WorkspaceMember => 'WorkspaceMember',
@@ -3117,6 +3177,8 @@ class Protocol extends _isc.SerializationManager {
         return 'CloudWorkspaceCapabilities';
       case _ixqnubu3.CloudWorkspaceDetail():
         return 'CloudWorkspaceDetail';
+      case _ivydga9x.CloudWorkspaceErasureStatus():
+        return 'CloudWorkspaceErasureStatus';
       case _ikaytupt.CloudWorkspaceErrorCode():
         return 'CloudWorkspaceErrorCode';
       case _iq0v59d3.CloudWorkspaceException():
@@ -3133,6 +3195,8 @@ class Protocol extends _isc.SerializationManager {
         return 'DeclineWorkspaceInviteRequest';
       case _irqsg6pc.DeleteCloudWorkspaceRequest():
         return 'DeleteCloudWorkspaceRequest';
+      case _ik86166c.EraseCloudWorkspaceRequest():
+        return 'EraseCloudWorkspaceRequest';
       case _i3slgemv.GetCloudWorkspaceDetailRequest():
         return 'GetCloudWorkspaceDetailRequest';
       case _iojw3n39.InviteWorkspaceMemberRequest():
@@ -3151,6 +3215,8 @@ class Protocol extends _isc.SerializationManager {
         return 'RenameCloudWorkspaceRequest';
       case _ivko4e0f.RenewWorkspaceInviteRequest():
         return 'RenewWorkspaceInviteRequest';
+      case _iber7w4r.RetryCloudWorkspaceErasureRequest():
+        return 'RetryCloudWorkspaceErasureRequest';
       case _iwlbozzh.RevokeWorkspaceInviteRequest():
         return 'RevokeWorkspaceInviteRequest';
       case _i7ana9ux.TransferCloudWorkspaceOwnershipRequest():
@@ -3159,6 +3225,8 @@ class Protocol extends _isc.SerializationManager {
         return 'UpdateWorkspaceMemberRoleRequest';
       case _ifp2sq2r.WorkspaceAuditRecord():
         return 'WorkspaceAuditRecord';
+      case _iu5zc1k0.WorkspaceErasureRequest():
+        return 'WorkspaceErasureRequest';
       case _ivvnnphu.WorkspaceEvent():
         return 'WorkspaceEvent';
       case _ilpykuxc.WorkspaceInvite():
@@ -3756,6 +3824,9 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'CloudWorkspaceDetail') {
       return deserialize<_ixqnubu3.CloudWorkspaceDetail>(data['data']);
     }
+    if (dataClassName == 'CloudWorkspaceErasureStatus') {
+      return deserialize<_ivydga9x.CloudWorkspaceErasureStatus>(data['data']);
+    }
     if (dataClassName == 'CloudWorkspaceErrorCode') {
       return deserialize<_ikaytupt.CloudWorkspaceErrorCode>(data['data']);
     }
@@ -3779,6 +3850,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'DeleteCloudWorkspaceRequest') {
       return deserialize<_irqsg6pc.DeleteCloudWorkspaceRequest>(data['data']);
+    }
+    if (dataClassName == 'EraseCloudWorkspaceRequest') {
+      return deserialize<_ik86166c.EraseCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'GetCloudWorkspaceDetailRequest') {
       return deserialize<_i3slgemv.GetCloudWorkspaceDetailRequest>(
@@ -3811,6 +3885,11 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'RenewWorkspaceInviteRequest') {
       return deserialize<_ivko4e0f.RenewWorkspaceInviteRequest>(data['data']);
     }
+    if (dataClassName == 'RetryCloudWorkspaceErasureRequest') {
+      return deserialize<_iber7w4r.RetryCloudWorkspaceErasureRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'RevokeWorkspaceInviteRequest') {
       return deserialize<_iwlbozzh.RevokeWorkspaceInviteRequest>(data['data']);
     }
@@ -3826,6 +3905,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceAuditRecord') {
       return deserialize<_ifp2sq2r.WorkspaceAuditRecord>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceErasureRequest') {
+      return deserialize<_iu5zc1k0.WorkspaceErasureRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceEvent') {
       return deserialize<_ivvnnphu.WorkspaceEvent>(data['data']);

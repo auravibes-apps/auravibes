@@ -239,6 +239,8 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/accept
     as _i3cjuwla;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
     as _iv02pgbq;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_erasure_status.dart'
+    as _ii5ucqby;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i78h3alq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -251,6 +253,8 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/declin
     as _inamn2d7;
 import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
     as _imv0e49a;
+import 'package:auravibes_server/src/generated/features/workspaces/models/erase_cloud_workspace_request.dart'
+    as _i8pu4ysx;
 import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _ifw8zf1l;
 import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
@@ -269,6 +273,8 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/rename
     as _i03e4t22;
 import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
     as _iidbk7at;
+import 'package:auravibes_server/src/generated/features/workspaces/models/retry_cloud_workspace_erasure_request.dart'
+    as _is5nu506;
 import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _immu2eqq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
@@ -4145,6 +4151,35 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
+  _ida.Future<List<_iyxk4tde.CloudWorkspaceSummary>>
+  listOwnedDeletedWorkspacesForErasure(
+    _ist.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'cloudWorkspace',
+            method: 'listOwnedDeletedWorkspacesForErasure',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'cloudWorkspace',
+          methodName: 'listOwnedDeletedWorkspacesForErasure',
+          parameters: _ist.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_iyxk4tde.CloudWorkspaceSummary>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_iv02pgbq.CloudWorkspaceDetail> getWorkspaceDetail(
     _ist.TestSessionBuilder sessionBuilder,
     _ifw8zf1l.GetCloudWorkspaceDetailRequest request,
@@ -4573,6 +4608,91 @@ class _CloudWorkspaceEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_ii5ucqby.CloudWorkspaceErasureStatus> eraseWorkspace(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i8pu4ysx.EraseCloudWorkspaceRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'cloudWorkspace',
+            method: 'eraseWorkspace',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'cloudWorkspace',
+          methodName: 'eraseWorkspace',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_ii5ucqby.CloudWorkspaceErasureStatus>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_ii5ucqby.CloudWorkspaceErasureStatus>>
+  listWorkspaceErasures(_ist.TestSessionBuilder sessionBuilder) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'cloudWorkspace',
+            method: 'listWorkspaceErasures',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'cloudWorkspace',
+          methodName: 'listWorkspaceErasures',
+          parameters: _ist.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ii5ucqby.CloudWorkspaceErasureStatus>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_ii5ucqby.CloudWorkspaceErasureStatus> retryWorkspaceErasure(
+    _ist.TestSessionBuilder sessionBuilder,
+    _is5nu506.RetryCloudWorkspaceErasureRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'cloudWorkspace',
+            method: 'retryWorkspaceErasure',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'cloudWorkspace',
+          methodName: 'retryWorkspaceErasure',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_ii5ucqby.CloudWorkspaceErasureStatus>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

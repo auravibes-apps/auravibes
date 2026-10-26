@@ -1,0 +1,6 @@
+class: EraseCloudWorkspaceRequest
+fields:
+  workspaceId: int
+  confirmationName: String
+  requestId: String
+  expectedWorkspaceRevision: int

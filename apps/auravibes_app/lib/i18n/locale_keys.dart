@@ -2106,6 +2106,10 @@ abstract class LocaleKeys {
       'workspace_management.delete_title';
   static const workspace_management_delete_confirm =
       'workspace_management.delete_confirm';
+  static const workspace_management_delete_cleanup_pending =
+      'workspace_management.delete_cleanup_pending';
+  static const workspace_management_delete_cloud_mirror_confirm =
+      'workspace_management.delete_cloud_mirror_confirm';
   static const workspace_management_delete_active_error =
       'workspace_management.delete_active_error';
   static const workspace_management_delete_last_error =
@@ -2263,6 +2267,30 @@ abstract class LocaleKeys {
   static const cloud_workspaces_delete = 'cloud_workspaces.delete';
   static const cloud_workspaces_delete_confirm =
       'cloud_workspaces.delete_confirm';
+  static const cloud_workspaces_erase = 'cloud_workspaces.erase';
+  static const cloud_workspaces_erase_title = 'cloud_workspaces.erase_title';
+  static const cloud_workspaces_erase_message =
+      'cloud_workspaces.erase_message';
+  static const cloud_workspaces_erasure_status_title =
+      'cloud_workspaces.erasure_status_title';
+  static const cloud_workspaces_erasure_status_pending =
+      'cloud_workspaces.erasure_status_pending';
+  static const cloud_workspaces_erasure_status_attention =
+      'cloud_workspaces.erasure_status_attention';
+  static const cloud_workspaces_erasure_status_complete =
+      'cloud_workspaces.erasure_status_complete';
+  static const cloud_workspaces_erasure_pending =
+      'cloud_workspaces.erasure_pending';
+  static const cloud_workspaces_erasure_complete =
+      'cloud_workspaces.erasure_complete';
+  static const cloud_workspaces_erasure_retry =
+      'cloud_workspaces.erasure_retry';
+  static const cloud_workspaces_deleted_owned_requires_erasure =
+      'cloud_workspaces.deleted_owned_requires_erasure';
+  static const cloud_workspaces_deleted_owned_description =
+      'cloud_workspaces.deleted_owned_description';
+  static const cloud_workspaces_erase_legacy_title =
+      'cloud_workspaces.erase_legacy_title';
   static const cloud_workspaces_transfer_ownership =
       'cloud_workspaces.transfer_ownership';
   static const cloud_workspaces_transfer_confirm =
@@ -2351,6 +2379,18 @@ abstract class LocaleKeys {
   static const cloud_accounts_delete_message = 'cloud_accounts.delete_message';
   static const cloud_accounts_delete_owned_workspaces_error =
       'cloud_accounts.delete_owned_workspaces_error';
+  static const cloud_accounts_workspace_erasure_pending_error =
+      'cloud_accounts.workspace_erasure_pending_error';
+  static const cloud_accounts_delete_data_notice =
+      'cloud_accounts.delete_data_notice';
+  static const cloud_accounts_delete_retained_actor_ids_notice =
+      'cloud_accounts.delete_retained_actor_ids_notice';
+  static const cloud_accounts_delete_result_title =
+      'cloud_accounts.delete_result_title';
+  static const cloud_accounts_delete_result_notice =
+      'cloud_accounts.delete_result_notice';
+  static const cloud_accounts_delete_result_dismiss =
+      'cloud_accounts.delete_result_dismiss';
   static const cloud_accounts_delete_local_cleanup_failed =
       'cloud_accounts.delete_local_cleanup_failed';
   static const cloud_accounts_delete_failed = 'cloud_accounts.delete_failed';

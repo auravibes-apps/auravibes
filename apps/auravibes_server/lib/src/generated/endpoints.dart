@@ -164,6 +164,8 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/declin
     as _inamn2d7;
 import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
     as _imv0e49a;
+import 'package:auravibes_server/src/generated/features/workspaces/models/erase_cloud_workspace_request.dart'
+    as _i8pu4ysx;
 import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _ifw8zf1l;
 import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
@@ -180,6 +182,8 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/rename
     as _i03e4t22;
 import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
     as _iidbk7at;
+import 'package:auravibes_server/src/generated/features/workspaces/models/retry_cloud_workspace_erasure_request.dart'
+    as _is5nu506;
 import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _immu2eqq;
 import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
@@ -2884,6 +2888,18 @@ class Endpoints extends _is.EndpointDispatch {
                           as _ij5poshv.CloudWorkspaceEndpoint)
                       .listPendingInvites(session),
         ),
+        'listOwnedDeletedWorkspacesForErasure': _is.MethodConnector(
+          name: 'listOwnedDeletedWorkspacesForErasure',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
+                      .listOwnedDeletedWorkspacesForErasure(session),
+        ),
         'getWorkspaceDetail': _is.MethodConnector(
           name: 'getWorkspaceDetail',
           params: {
@@ -3196,6 +3212,60 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['cloudWorkspace']
                           as _ij5poshv.CloudWorkspaceEndpoint)
                       .deleteWorkspace(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'eraseWorkspace': _is.MethodConnector(
+          name: 'eraseWorkspace',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i8pu4ysx.EraseCloudWorkspaceRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
+                      .eraseWorkspace(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listWorkspaceErasures': _is.MethodConnector(
+          name: 'listWorkspaceErasures',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
+                      .listWorkspaceErasures(session),
+        ),
+        'retryWorkspaceErasure': _is.MethodConnector(
+          name: 'retryWorkspaceErasure',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_is5nu506.RetryCloudWorkspaceErasureRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['cloudWorkspace']
+                          as _ij5poshv.CloudWorkspaceEndpoint)
+                      .retryWorkspaceErasure(
                         session,
                         params['request'],
                       ),
