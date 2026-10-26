@@ -37,10 +37,7 @@ class const _EditState(
 }) {
   factory use(BuildContext context, WorkspaceViewData data) => _EditState(
     useTextEditingController(text: data.view.name),
-    useTextEditingController(
-      text: const JsonEncoder.withIndent('  ')
-          .convert(data.view.definition.toJson()),
-    ),
+    useTextEditingController(text: _definitionText(data)),
     useState(data.view.bindings.values.toSet()),
     WorkspaceTableActions.use(context),
     useState(data.view.query),
@@ -102,6 +99,9 @@ class const _EditState(
     }
     bindings['field$index'] = id;
   }
+
+  static String _definitionText(WorkspaceViewData data) =>
+      const JsonEncoder.withIndent('  ').convert(data.view.definition.toJson());
 }
 
 class const _Form(final WorkspaceViewEditor owner, final _EditState state)

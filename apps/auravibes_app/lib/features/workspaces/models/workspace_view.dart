@@ -168,6 +168,9 @@ class const WorkspaceView({
     summaryColumnIds: summaryColumnIds,
     connected: connected,
   );
+}
+
+extension WorkspaceViewActionUpdate on WorkspaceView {
   WorkspaceView withAction(A2uiSavedAction? value) => .new(
     id: id,
     name: name,

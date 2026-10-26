@@ -9,14 +9,25 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:uuid/v7.dart';
 
-typedef WorkspaceConnectorActionExecutor = Future<Object?> Function({
-  required String workspaceId,
-  required String viewId,
-  required int expectedRevision,
-  required A2uiSavedAction action,
-  required Map<String, Object?> formValues,
-  required Map<String, Object?> arguments,
-  required String operationId,
+typedef WorkspaceConnectorActionRequest = ({
+  String workspaceId,
+  String viewId,
+  int expectedRevision,
+  A2uiSavedAction action,
+  Map<String, Object?> formValues,
+  Map<String, Object?> arguments,
+  String operationId,
+});
+
+typedef WorkspaceConnectorActionExecutor = Future<Object?> Function(
+  WorkspaceConnectorActionRequest request,
+);
+
+typedef _WorkspaceViewActionValues = ({
+  A2uiSavedAction action,
+  Map<String, Object?> formValues,
+  WorkspaceTable? table,
+  Map<String, Object?> inputs,
 });
 
 typedef WorkspaceViewActionApproval = Future<bool> Function({
@@ -32,146 +43,236 @@ class const SubmitWorkspaceViewActionUsecase({
   required final WorkspaceConnectorActionExecutor executeConnector,
 }) {
   Future<Object?> call({
-    required String workspaceId,
-    required String viewId,
-    required int expectedRevision,
-    required Map<String, Object?> formValues,
+    required WorkspaceViewActionRequest request,
     required WorkspaceViewActionApproval approve,
-    String? recordId,
-    String? requestId,
-    ConversationToolAccessMode mode = .defaultMode,
   }) async {
-    final operationId = _operationId(requestId);
-    final view = await views.read(viewId);
-    if (view.revision != expectedRevision) {
-      throw const WorkspaceTableException(conflict: true);
-    }
+    final submission = await _WorkspaceViewActionPreparation(
+      views: views,
+      tables: tables,
+    ).prepare(request, approve);
+
+    return await switch (submission.action.type) {
+      .updateSelectedRecord => _WorkspaceViewOwnedActionSubmission(
+        views: views,
+        tables: tables,
+        editRecords: editRecords,
+      ).submit(submission),
+      .connectorWrite => _WorkspaceViewConnectorActionSubmission(
+        views: views,
+        executeConnector: executeConnector,
+      ).submit(submission),
+    };
+  }
+}
+
+class const _WorkspaceViewActionPreparation({
+  required final WorkspaceViewRepository views,
+  required final OrganizeWorkspaceTablesUsecase tables,
+}) {
+  Future<_PreparedWorkspaceViewAction> prepare(
+    WorkspaceViewActionRequest request,
+    WorkspaceViewActionApproval approve,
+  ) async {
+    final view = await _readCurrentView(request);
     final action = view.action;
     if (action == null) throw const WorkspaceTableException();
-    final normalized = _normalize(view, formValues);
-    final table = view.isConnectedOnly
-        ? null
-        : await tables.table(view.tableId);
-    WorkspaceViewActionValidation.check(view, table);
-    final inputs = _actionInputs(action, normalized);
-    if (action.type == A2uiSavedActionType.updateSelectedRecord) {
-      final ownedTable = table;
-      if (ownedTable == null) throw const WorkspaceTableException();
+    final values = await _prepareValues(view, action, request.formValues);
 
-      return await _updateOwned(
-        view: view,
-        table: ownedTable,
-        tables: tables,
-        action: action,
-        inputs: inputs,
-        recordId: recordId,
-        expectedRevision: expectedRevision,
-        operationId: operationId,
-        mode: mode,
-        approve: approve,
-        editRecords: editRecords,
-        views: views,
+    return _prepared(request, view, values, approve);
+  }
+
+  _PreparedWorkspaceViewAction _prepared(
+    WorkspaceViewActionRequest request,
+    WorkspaceView view,
+    _WorkspaceViewActionValues values,
+    WorkspaceViewActionApproval approve,
+  ) => _PreparedWorkspaceViewAction(
+    request: request,
+    operationId: _operationId(request.requestId),
+    view: view,
+    action: values.action,
+    formValues: values.formValues,
+    table: values.table,
+    inputs: values.inputs,
+    approve: approve,
+  );
+
+  Future<_WorkspaceViewActionValues> _prepareValues(
+    WorkspaceView view,
+    A2uiSavedAction action,
+    Map<String, Object?> values,
+  ) async {
+    final formValues = _normalize(view, values);
+    final table = await _tableFor(view);
+    WorkspaceViewActionValidation.check(view, table);
+
+    return (
+      action: action,
+      formValues: formValues,
+      table: table,
+      inputs: _actionInputs(action, formValues),
+    );
+  }
+
+  Future<WorkspaceView> _readCurrentView(
+    WorkspaceViewActionRequest request,
+  ) async {
+    final view = await views.read(request.viewId);
+    if (view.revision != request.expectedRevision) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+
+    return view;
+  }
+
+  Future<WorkspaceTable?> _tableFor(WorkspaceView view) async =>
+      view.isConnectedOnly ? null : await tables.table(view.tableId);
+}
+
+class const _WorkspaceViewOwnedActionSubmission({
+  required final WorkspaceViewRepository views,
+  required final OrganizeWorkspaceTablesUsecase tables,
+  required final EditWorkspaceRecordsUsecase editRecords,
+}) {
+  Future<Object?> submit(_PreparedWorkspaceViewAction submission) async {
+    final change = await _change(submission);
+
+    return await editRecords.apply(
+      [change],
+      requestId: submission.operationId,
+      mode: submission.request.mode,
+      approve: (_) => _approve(submission, change),
+    );
+  }
+
+  Future<bool> _approve(
+    _PreparedWorkspaceViewAction submission,
+    WorkspaceRecordChange change,
+  ) async {
+    await _requireSubmissionView(submission);
+
+    return await submission.approve(
+      view: submission.view,
+      action: submission.action,
+      values: change.values,
+    );
+  }
+
+  Future<WorkspaceRecordChange> _change(
+    _PreparedWorkspaceViewAction submission,
+  ) async {
+    final table = _editableTable(submission.table);
+    final recordId = _requiredRecordId(submission.request.recordId);
+    final record = await tables.record(submission.view.tableId, recordId);
+    final values = _values(table, record, submission);
+    await _requireSubmissionView(submission);
+
+    return WorkspaceRecordChange(table: table, record: record, values: values);
+  }
+
+  Future<void> _requireSubmissionView(
+    _PreparedWorkspaceViewAction submission,
+  ) => _requireCurrentView(
+    views,
+    submission.request.viewId,
+    submission.request.expectedRevision,
+  );
+
+  WorkspaceTable _editableTable(WorkspaceTable? table) {
+    if (table == null) throw const WorkspaceTableException();
+    if (!table.canEditRecords) {
+      throw const WorkspaceTableException(denied: true);
+    }
+
+    return table;
+  }
+
+  String _requiredRecordId(String? recordId) {
+    if (recordId == null || recordId.isEmpty) {
+      throw const WorkspaceTableException();
+    }
+
+    return recordId;
+  }
+
+  Map<String, Object?> _values(
+    WorkspaceTable table,
+    WorkspaceRecord record,
+    _PreparedWorkspaceViewAction submission,
+  ) {
+    final values = _normalizeOwnedInputs(table, submission.inputs);
+    if (!WorkspaceColumnValidation.accepts(table.columns, {
+      ...record.values,
+      ...values,
+    })) {
+      throw WorkspaceViewFormValidationException(
+        _ownedInputErrors(table, record.values, submission.action, values),
       );
     }
 
-    return await _submitConnector(
-      workspaceId: workspaceId,
-      view: view,
-      action: action,
-      viewId: view.id,
-      formValues: normalized,
-      inputs: inputs,
-      expectedRevision: expectedRevision,
-      operationId: operationId,
-      mode: mode,
-      approve: approve,
-      views: views,
-      executeConnector: executeConnector,
-    );
+    return values;
   }
 }
 
-Future<Object?> _updateOwned({
-  required WorkspaceView view,
-  required WorkspaceTable table,
-  required OrganizeWorkspaceTablesUsecase tables,
-  required A2uiSavedAction action,
-  required Map<String, Object?> inputs,
-  required String? recordId,
-  required int expectedRevision,
-  required String operationId,
-  required ConversationToolAccessMode mode,
-  required WorkspaceViewActionApproval approve,
-  required EditWorkspaceRecordsUsecase editRecords,
-  required WorkspaceViewRepository views,
-}) async {
-  if (!table.canEditRecords) throw const WorkspaceTableException(denied: true);
-  if (recordId == null || recordId.isEmpty) {
-    throw const WorkspaceTableException();
+class const _WorkspaceViewConnectorActionSubmission({
+  required final WorkspaceViewRepository views,
+  required final WorkspaceConnectorActionExecutor executeConnector,
+}) {
+  Future<Object?> submit(_PreparedWorkspaceViewAction submission) async {
+    _validateConnectorArguments(submission.action, submission.inputs);
+    if (!await _approve(submission)) return false;
+    await _requireCurrentView(
+      views,
+      submission.request.viewId,
+      submission.request.expectedRevision,
+    );
+
+    return await executeConnector(_request(submission));
   }
-  final record = await tables.record(view.tableId, recordId);
-  final normalizedInputs = _normalizeOwnedInputs(table, inputs);
-  final nextValues = {...record.values, ...normalizedInputs};
-  if (!WorkspaceColumnValidation.accepts(table.columns, nextValues)) {
-    throw WorkspaceViewFormValidationException(
-      _ownedInputErrors(table, record.values, action, normalizedInputs),
+
+  Future<bool> _approve(_PreparedWorkspaceViewAction submission) async {
+    if (submission.request.mode != .defaultMode) return true;
+
+    return await submission.approve(
+      view: submission.view,
+      action: submission.action,
+      values: submission.inputs,
     );
   }
-  await _requireCurrentView(views, view.id, expectedRevision);
 
-  return await editRecords.apply(
-    [
-      WorkspaceRecordChange(
-        table: table,
-        record: record,
-        values: normalizedInputs,
-      ),
-    ],
-    requestId: operationId,
-    mode: mode,
-    approve: (_) async {
-      await _requireCurrentView(views, view.id, expectedRevision);
-
-      return await approve(
-        view: view,
-        action: action,
-        values: normalizedInputs,
-      );
-    },
+  WorkspaceConnectorActionRequest _request(
+    _PreparedWorkspaceViewAction submission,
+  ) => (
+    workspaceId: submission.request.workspaceId,
+    viewId: submission.request.viewId,
+    expectedRevision: submission.request.expectedRevision,
+    action: submission.action,
+    formValues: submission.formValues,
+    arguments: submission.inputs,
+    operationId: submission.operationId,
   );
 }
 
-Future<Object?> _submitConnector({
-  required String workspaceId,
-  required WorkspaceView view,
-  required A2uiSavedAction action,
-  required String viewId,
-  required Map<String, Object?> formValues,
-  required Map<String, Object?> inputs,
-  required int expectedRevision,
-  required String operationId,
-  required ConversationToolAccessMode mode,
-  required WorkspaceViewActionApproval approve,
-  required WorkspaceViewRepository views,
-  required WorkspaceConnectorActionExecutor executeConnector,
-}) async {
-  _validateConnectorArguments(action, inputs);
-  if (mode == .defaultMode &&
-      !await approve(view: view, action: action, values: inputs)) {
-    return false;
-  }
-  await _requireCurrentView(views, view.id, expectedRevision);
+class const WorkspaceViewActionRequest({
+  required final String workspaceId,
+  required final String viewId,
+  required final int expectedRevision,
+  required final Map<String, Object?> formValues,
+  final String? recordId,
+  final String? requestId,
+  final ConversationToolAccessMode mode = .defaultMode,
+});
 
-  return await executeConnector(
-    workspaceId: workspaceId,
-    viewId: viewId,
-    expectedRevision: expectedRevision,
-    action: action,
-    formValues: formValues,
-    arguments: inputs,
-    operationId: operationId,
-  );
-}
+class const _PreparedWorkspaceViewAction({
+  required final WorkspaceViewActionRequest request,
+  required final String operationId,
+  required final WorkspaceView view,
+  required final A2uiSavedAction action,
+  required final Map<String, Object?> formValues,
+  required final WorkspaceTable? table,
+  required final Map<String, Object?> inputs,
+  required final WorkspaceViewActionApproval approve,
+});
 
 Future<void> _requireCurrentView(
   WorkspaceViewRepository views,
@@ -203,14 +304,36 @@ void _validateConnectorArguments(
 
 ({ConnectorDefinition connector, ConnectorToolDefinition tool})
 _connectorTarget(A2uiSavedAction action) {
-  for (final connector in connectorDefinitions) {
-    for (final tool in connector.tools) {
-      if (connectorToolId(connector, tool) == action.toolId) {
-        return (connector: connector, tool: tool);
-      }
-    }
-  }
-  throw const WorkspaceTableException();
+  final connector = _connectorForAction(action);
+  final tool = _toolForAction(connector, action);
+
+  return (connector: connector, tool: tool);
+}
+
+ConnectorDefinition _connectorForAction(A2uiSavedAction action) {
+  final connector = connectorDefinitions
+      .where((connector) => _containsAction(connector, action))
+      .firstOrNull;
+  if (connector == null) throw const WorkspaceTableException();
+
+  return connector;
+}
+
+bool _containsAction(ConnectorDefinition connector, A2uiSavedAction action) =>
+    connector.tools.any(
+      (tool) => connectorToolId(connector, tool) == action.toolId,
+    );
+
+ConnectorToolDefinition _toolForAction(
+  ConnectorDefinition connector,
+  A2uiSavedAction action,
+) {
+  final tool = connector.tools
+      .where((tool) => connectorToolId(connector, tool) == action.toolId)
+      .firstOrNull;
+  if (tool == null) throw const WorkspaceTableException();
+
+  return tool;
 }
 
 Map<String, Object?> _normalize(

@@ -13,14 +13,16 @@ void main() {
     () async {
       final fixture = _Fixture();
       final called = await fixture.usecase.call(
-        workspaceId: 'workspace',
-        viewId: 'view',
-        expectedRevision: 2,
-        recordId: 'record',
-        formValues: {
-          'answers': {'title': 'Updated'},
-        },
-        requestId: 'form-submit',
+        request: const .new(
+          workspaceId: 'workspace',
+          viewId: 'view',
+          expectedRevision: 2,
+          formValues: {
+            'answers': {'title': 'Updated'},
+          },
+          recordId: 'record',
+          requestId: 'form-submit',
+        ),
         approve: ({required view, required action, required values}) async {
           expect(view.id, 'view');
           expect(action.type, A2uiSavedActionType.updateSelectedRecord);
@@ -42,14 +44,16 @@ void main() {
   test('allow-all is explicit and skips the approval callback', () async {
     final fixture = _Fixture();
     final _ = await fixture.usecase.call(
-      workspaceId: 'workspace',
-      viewId: 'view',
-      expectedRevision: 2,
-      recordId: 'record',
-      formValues: {
-        'answers': {'title': 'Updated'},
-      },
-      mode: .allowAll,
+      request: const .new(
+        workspaceId: 'workspace',
+        viewId: 'view',
+        expectedRevision: 2,
+        formValues: {
+          'answers': {'title': 'Updated'},
+        },
+        recordId: 'record',
+        mode: .allowAll,
+      ),
       approve: ({required view, required action, required values}) async =>
           fail('allow-all must not ask'),
     );
@@ -64,14 +68,16 @@ void main() {
       fixture.views.changeAfterFirstRead = true;
       await expectLater(
         fixture.usecase.call(
-          workspaceId: 'workspace',
-          viewId: 'view',
-          expectedRevision: 2,
-          recordId: 'record',
-          formValues: {
-            'answers': {'title': 'Updated'},
-          },
-          mode: .allowAll,
+          request: const .new(
+            workspaceId: 'workspace',
+            viewId: 'view',
+            expectedRevision: 2,
+            formValues: {
+              'answers': {'title': 'Updated'},
+            },
+            recordId: 'record',
+            mode: .allowAll,
+          ),
           approve: ({required view, required action, required values}) async =>
               fail('allow-all must not ask'),
         ),
@@ -85,13 +91,15 @@ void main() {
     final fixture = _Fixture();
     await expectLater(
       fixture.usecase.call(
-        workspaceId: 'workspace',
-        viewId: 'view',
-        expectedRevision: 1,
-        recordId: 'record',
-        formValues: {
-          'answers': {'title': 'Updated'},
-        },
+        request: const .new(
+          workspaceId: 'workspace',
+          viewId: 'view',
+          expectedRevision: 1,
+          formValues: {
+            'answers': {'title': 'Updated'},
+          },
+          recordId: 'record',
+        ),
         approve: ({required view, required action, required values}) async =>
             true,
       ),
@@ -99,13 +107,15 @@ void main() {
     );
     await expectLater(
       fixture.usecase.call(
-        workspaceId: 'workspace',
-        viewId: 'view',
-        expectedRevision: 2,
-        recordId: 'record',
-        formValues: {
-          'answers': {'title': 42},
-        },
+        request: const .new(
+          workspaceId: 'workspace',
+          viewId: 'view',
+          expectedRevision: 2,
+          formValues: {
+            'answers': {'title': 42},
+          },
+          recordId: 'record',
+        ),
         approve: ({required view, required action, required values}) async =>
             true,
       ),
@@ -178,15 +188,8 @@ class const _FixtureParts({
       views: views,
       tables: tables,
       editRecords: .new(batch),
-      executeConnector: ({
-        required workspaceId,
-        required viewId,
-        required expectedRevision,
-        required action,
-        required formValues,
-        required arguments,
-        required operationId,
-      }) async => throw StateError('unexpected Connector action'),
+      executeConnector: (_) async =>
+          throw StateError('unexpected Connector action'),
     );
 
     return .new(

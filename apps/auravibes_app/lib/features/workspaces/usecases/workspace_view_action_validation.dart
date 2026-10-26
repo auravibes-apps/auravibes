@@ -20,14 +20,25 @@ abstract final class WorkspaceViewActionValidation {
     WorkspaceTable? table,
     A2uiSavedAction action,
   ) {
-    if (view.isConnectedOnly ||
-        table == null ||
-        table.id != view.tableId ||
-        !view.bindings.values.toSet().containsAll(action.inputs.keys) ||
-        action.inputs.keys.any(
-          (id) => !table.columns.any((column) => column.id == id),
-        )) {
+    if (!_ownsTable(view, table) ||
+        !_inputsAreBound(view, action) ||
+        !_inputColumnsExist(table, action)) {
       throw const WorkspaceTableException();
     }
   }
+
+  static bool _ownsTable(WorkspaceView view, WorkspaceTable? table) =>
+      !view.isConnectedOnly && table != null && table.id == view.tableId;
+
+  static bool _inputsAreBound(WorkspaceView view, A2uiSavedAction action) =>
+      view.bindings.values.toSet().containsAll(action.inputs.keys);
+
+  static bool _inputColumnsExist(
+    WorkspaceTable? table,
+    A2uiSavedAction action,
+  ) =>
+      table != null &&
+      action.inputs.keys.every(
+        (id) => table.columns.any((column) => column.id == id),
+      );
 }

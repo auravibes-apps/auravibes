@@ -17,24 +17,29 @@ abstract final class WorkspaceViewValidation {
   static void check(WorkspaceView view, WorkspaceTable table) {
     if (view.isConnectedOnly) {
       _checkConnected(view);
-      WorkspaceViewActionValidation.check(view);
-
-      return;
+    } else {
+      _checkOwned(view, table);
     }
-    if (!table.canManage) throw const WorkspaceTableException(denied: true);
-    if (!_validConfiguration(view, table)) _invalid();
-    _checkQuery(view, table);
-    if (view.connected case final connected?) {
-      final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
-    }
-    WorkspaceViewActionValidation.check(view, table);
-    final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
+    WorkspaceViewActionValidation.check(
+      view,
+      view.isConnectedOnly ? null : table,
+    );
   }
 
   static bool needsRepair(WorkspaceView view, WorkspaceTable table) =>
       view.columnTypes.keys.any((id) => !_typeMatches(view, id, table)) ||
       !_dependencies(view).every(view.columnTypes.containsKey) ||
       !_queryCompatible(view, table);
+
+  static void _checkOwned(WorkspaceView view, WorkspaceTable table) {
+    if (!table.canManage) throw const WorkspaceTableException(denied: true);
+    if (!_validConfiguration(view, table)) _invalid();
+    _checkQuery(view, table);
+    if (view.connected case final connected?) {
+      final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
+    }
+    final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
+  }
 }
 
 void _checkConnected(WorkspaceView view) {
