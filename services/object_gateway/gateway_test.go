@@ -437,9 +437,10 @@ func TestSlowDownloadClientReleasesSlot(t *testing.T) {
 }
 
 type heldStream struct {
-	started chan struct{}
-	release chan struct{}
-	failed  bool
+	started     chan struct{}
+	release     chan struct{}
+	failed      bool
+	closeFailed bool
 }
 
 func (s *heldStream) Read(p []byte) (int, error) {
@@ -455,7 +456,12 @@ func (s *heldStream) Read(p []byte) (int, error) {
 	}
 	return 0, io.EOF
 }
-func (s *heldStream) Close() error { return nil }
+func (s *heldStream) Close() error {
+	if s.closeFailed {
+		return errors.New("uncertain close")
+	}
+	return nil
+}
 
 type heldStreamBucket struct {
 	*fakeBucket
@@ -466,10 +472,10 @@ func (b *heldStreamBucket) get(context.Context, string) (storedObject, error) {
 	return storedObject{body: b.stream, size: 4, contentType: "text/plain"}, nil
 }
 func TestQuiescenceDrainsAdmittedDownload(t *testing.T) {
-	for _, failStream := range []bool{false, true} {
-		t.Run(strconv.FormatBool(failStream), func(t *testing.T) {
+	for _, scenario := range []string{"complete", "aborted", "uncertain close"} {
+		t.Run(scenario, func(t *testing.T) {
 			l := newFakeLedger()
-			stream := &heldStream{started: make(chan struct{}), release: make(chan struct{}), failed: failStream}
+			stream := &heldStream{started: make(chan struct{}), release: make(chan struct{}), failed: scenario != "complete", closeFailed: scenario == "uncertain close"}
 			g := testGateway(l, newFakeBucket())
 			g.bucket = &heldStreamBucket{newFakeBucket(), stream}
 			q := url.Values{"sign": {"GET"}, "expires": {strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)}, "response-content-disposition": {"attachment"}, "response-cache-control": {"no-store"}}
@@ -496,7 +502,7 @@ func TestQuiescenceDrainsAdmittedDownload(t *testing.T) {
 			restarted := testGateway(l, newFakeBucket())
 			got := control(restarted, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code
 			expected := 204
-			if failStream {
+			if scenario == "uncertain close" {
 				expected = 409
 			}
 			if got != expected {
@@ -608,5 +614,53 @@ func TestReadCleanupTimeoutReleasesDownloadSlot(t *testing.T) {
 	}
 	if got := control(g, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code; got != 409 {
 		t.Fatalf("uncertain cleanup attested: %d", got)
+	}
+}
+
+func TestClosedKeyCannotHead(t *testing.T) {
+	l := newFakeLedger()
+	b := newFakeBucket()
+	b.objects[testKey] = storedObject{body: io.NopCloser(strings.NewReader("data")), size: 4, contentType: "text/plain"}
+	g := testGateway(l, b)
+	if got := control(g, "HEAD", "https://gateway.example/objects/"+testKey).Code; got != 200 {
+		t.Fatal(got)
+	}
+	if got := control(g, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code; got != 204 {
+		t.Fatal(got)
+	}
+	if got := control(g, "HEAD", "https://gateway.example/objects/"+testKey).Code; got != 403 {
+		t.Fatalf("closed key HEAD: %d", got)
+	}
+}
+
+type heldHeadBucket struct {
+	*fakeBucket
+	started, release chan struct{}
+}
+
+func (b *heldHeadBucket) head(context.Context, string) (storedObject, error) {
+	close(b.started)
+	<-b.release
+	return storedObject{size: 4, contentType: "text/plain"}, nil
+}
+func TestQuiescenceDrainsAdmittedHead(t *testing.T) {
+	l := newFakeLedger()
+	b := &heldHeadBucket{newFakeBucket(), make(chan struct{}), make(chan struct{})}
+	g := testGateway(l, b.fakeBucket)
+	g.bucket = b
+	done := make(chan struct{})
+	go func() { control(g, "HEAD", "https://gateway.example/objects/"+testKey); close(done) }()
+	select {
+	case <-b.started:
+	case <-time.After(time.Second):
+		t.Fatal("HEAD not admitted")
+	}
+	if got := control(g, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code; got != 409 {
+		t.Fatalf("HEAD was not drained: %d", got)
+	}
+	close(b.release)
+	<-done
+	if got := control(g, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code; got != 204 {
+		t.Fatalf("HEAD did not finish: %d", got)
 	}
 }

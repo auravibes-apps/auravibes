@@ -135,12 +135,19 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == "POST" && q.Get("sign") != "":
 		g.sign(w, r, key, id)
 	case r.Method == "HEAD":
-		if err := g.ledger.allow(r.Context(), key, id); err != nil && !errors.Is(err, errClosed) {
+		idBytes := make([]byte, 24)
+		if _, err := rand.Read(idBytes); err != nil {
+			http.Error(w, "unavailable", 503)
+			return
+		}
+		reservation := hex.EncodeToString(idBytes)
+		if err := g.ledger.start(r.Context(), key, id, reservation); err != nil {
 			fail(w, err)
 			return
 		}
 		obj, err := g.bucket.head(r.Context(), key)
 		if err != nil {
+			g.finishRead(r.Context(), key, reservation)
 			fail(w, err)
 			return
 		}
@@ -148,6 +155,9 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", obj.contentType)
 		w.Header().Set("X-Checksum-Sha256", obj.checksum)
 		w.WriteHeader(200)
+		_ = http.NewResponseController(w).Flush()
+		g.finishRead(r.Context(), key, reservation)
+
 	case r.Method == "DELETE":
 		ready, err := g.ledger.close(r.Context(), key, id)
 		if err != nil {
@@ -277,17 +287,19 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 			fail(w, err)
 			return
 		}
-		defer obj.body.Close()
 		w.Header().Set("Content-Type", obj.contentType)
 		w.Header().Set("Content-Length", strconv.FormatInt(obj.size, 10))
 		w.Header().Set("Content-Disposition", c.Disposition)
-		written, err := io.Copy(w, obj.body)
-		if err != nil || written != obj.size {
+		written, copyErr := io.Copy(w, obj.body)
+		closeErr := obj.body.Close()
+		if closeErr != nil {
 			return
 		}
-		if err = http.NewResponseController(w).Flush(); err != nil {
-			return
+		if copyErr == nil && written == obj.size {
+			_ = http.NewResponseController(w).Flush()
 		}
+		// The read and all gateway writes have ended. External buffered bytes
+		// may still be delivered, but no further stream operation can start.
 		g.finishRead(r.Context(), key, reservation)
 		return
 	}
