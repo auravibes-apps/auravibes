@@ -2789,6 +2789,7 @@ void main() {
         final host = _BlockingCompletingHost();
         final renewalStarted = Completer<void>();
         final releaseRenewal = Completer<void>();
+        final timerScheduled = Completer<void>();
         final scheduledTimers = <_ManualTimer>[];
         final worker = ConversationWorker(
           host: host,
@@ -2796,6 +2797,7 @@ void main() {
           renewalTimer: (duration, callback) {
             final timer = _ManualTimer(callback);
             scheduledTimers.add(timer);
+            if (!timerScheduled.isCompleted) timerScheduled.complete();
             return timer;
           },
           renewLease: (jobId, leaseToken) async {
@@ -2816,6 +2818,7 @@ void main() {
           worker: worker,
         );
         await host.started.future.timeout(const Duration(seconds: 2));
+        await timerScheduled.future.timeout(const Duration(seconds: 2));
         expect(scheduledTimers, hasLength(1));
         scheduledTimers.single.fire();
         await renewalStarted.future.timeout(const Duration(seconds: 2));
@@ -3009,6 +3012,93 @@ void main() {
     );
 
     test(
+      'erasure fences turn dispatch, assistant checkpoints, and result commits',
+      () async {
+        final fixture = await _preparePromptlessExecution(sessionBuilder);
+        await endpoints.conversation.queueConversationMessage(
+          fixture.session,
+          QueueConversationMessageRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'turn-erasure-queue-${fixture.userId}',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision: 1,
+            clientMessageId: 'turn-erasure-message-${fixture.userId}',
+            content: 'Prompt',
+            attachmentIds: const [],
+          ),
+        );
+        await endpoints.conversation.continueConversation(
+          fixture.session,
+          ContinueConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'turn-erasure-continue-${fixture.userId}',
+            conversationId: fixture.conversationId,
+            expectedProjectionRevision: 2,
+          ),
+        );
+        await ProviderAdmissionLock.db.deleteWhere(
+          fixture.database,
+          where: (table) => table.key.equals('global'),
+        );
+        final workspace = (await CloudWorkspace.db.findById(
+          fixture.database,
+          fixture.workspaceId,
+        ))!;
+        final dispatchTransactionHeld = Completer<void>();
+        final releaseDispatchTransaction = Completer<void>();
+        final host = _CheckpointAfterReleaseHost();
+        int? workerBackendPid;
+        final worker = runConversationWorker(
+          fixture.session.build(),
+          isActive: () => true,
+          worker: ConversationWorker(
+            host: host,
+            afterTurnDispatch: (session, transaction) async {
+              workerBackendPid =
+                  (await session.db.unsafeQuery(
+                        'SELECT pg_backend_pid() AS "pid"',
+                        transaction: transaction,
+                      )).single.toColumnMap()['pid']
+                      as int;
+              dispatchTransactionHeld.complete();
+              await releaseDispatchTransaction.future;
+            },
+          ),
+        );
+
+        await host.started.future.timeout(const Duration(seconds: 2));
+        await dispatchTransactionHeld.future.timeout(
+          const Duration(seconds: 2),
+        );
+        final erasureUpdate = CloudWorkspace.db.updateRow(
+          fixture.session.build(),
+          workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+        );
+        final erasureWaitObserved = await _waitForWorkspaceLockWait(
+          fixture.database,
+          workerBackendPid: workerBackendPid!,
+        );
+        releaseDispatchTransaction.complete();
+        await erasureUpdate;
+        host.release.complete();
+        await worker.timeout(const Duration(seconds: 5));
+
+        final turn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.initiatorUserId.equals(fixture.userId),
+        ))!;
+        final assistant = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        expect(erasureWaitObserved, isTrue);
+        expect(assistant.content, isEmpty);
+      },
+    );
+
+    test(
       'approval pause and decision submission complete without lock inversion',
       () async {
         final fixture = await _preparePromptlessExecution(sessionBuilder);
@@ -3092,7 +3182,7 @@ void main() {
                 decision: 'approve',
               ),
             );
-        final decisionWaitObserved = await _waitForConversationLockWait(
+        final decisionWaitObserved = await _waitForAuthUserLockWait(
           fixture.database,
           workerBackendPid: workerBackendPid!,
         );
@@ -3104,8 +3194,7 @@ void main() {
         expect(
           decisionWaitObserved,
           isTrue,
-          reason:
-              'The decision should wait on the worker-held conversation lock.',
+          reason: 'The decision should wait on the worker-held AuthUser lock.',
         );
         final turn = (await ConversationTurn.db.findById(
           fixture.database,
@@ -3250,7 +3339,7 @@ Future<_ExecutionFixture> _preparePromptlessExecution(
   );
 }
 
-Future<bool> _waitForConversationLockWait(
+Future<bool> _waitForAuthUserLockWait(
   Session session, {
   required int workerBackendPid,
 }) async {
@@ -3266,7 +3355,6 @@ Future<bool> _waitForConversationLockWait(
           AND @workerBackendPid = ANY(pg_blocking_pids(pid))
           AND wait_event_type = 'Lock'
           AND state = 'active'
-          AND query ILIKE '%conversation%'
       ) AS "waiting"
     ''',
       parameters: QueryParameters.named({'workerBackendPid': workerBackendPid}),
@@ -3482,6 +3570,33 @@ class _CountingCompletingHost({
         messageIds: ['$messageId'],
         keptTailMessageIds: const [],
       ),
+    );
+  }
+}
+
+class _CheckpointAfterReleaseHost extends _CountingCompletingHost {
+  final release = Completer<void>();
+
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    if (!started.isCompleted) started.complete();
+    await release.future;
+    await liveTurns.text('after erasure');
+    await liveTurns.flush();
+    return const ConversationEngineResult(
+      content: 'after erasure',
+      finishReason: 'stop',
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
     );
   }
 }

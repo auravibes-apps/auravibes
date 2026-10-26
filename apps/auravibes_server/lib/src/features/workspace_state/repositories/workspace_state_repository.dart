@@ -74,20 +74,26 @@ class WorkspaceStateRepository {
     required int workspaceId,
     required int afterSequence,
     required int limit,
+    required Transaction transaction,
   }) => WorkspaceEvent.db.find(
     session,
     where: (t) =>
         t.workspaceId.equals(workspaceId) & (t.sequence > afterSequence),
     orderBy: (t) => t.sequence,
     limit: limit,
+    transaction: transaction,
   );
 
-  Future<WorkspaceEvent?> firstEvent(Session session, int workspaceId) =>
-      WorkspaceEvent.db.findFirstRow(
-        session,
-        where: (t) => t.workspaceId.equals(workspaceId),
-        orderBy: (t) => t.sequence,
-      );
+  Future<WorkspaceEvent?> firstEvent(
+    Session session,
+    int workspaceId, {
+    required Transaction transaction,
+  }) => WorkspaceEvent.db.findFirstRow(
+    session,
+    where: (t) => t.workspaceId.equals(workspaceId),
+    orderBy: (t) => t.sequence,
+    transaction: transaction,
+  );
 
   Future<WorkspaceResource?> findResource(
     Session session, {

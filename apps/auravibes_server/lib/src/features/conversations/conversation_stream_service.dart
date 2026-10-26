@@ -3,10 +3,24 @@ import 'dart:async';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../sync/stream/sync_wakeups.dart';
 import 'engine/a2ui_protocol.dart';
 
-class const ConversationStreamService() {
+typedef ConversationWakeupStreamFactory =
+    Stream<ConversationSubscribeRequest> Function(
+      Session session,
+      String channel,
+    );
+typedef ConversationProgressStreamFactory =
+    Stream<ConversationStreamEvent> Function(Session session, String channel);
+
+class const ConversationStreamService({
+  final ConversationWakeupStreamFactory wakeupStream =
+      _defaultConversationWakeupStream,
+  final ConversationProgressStreamFactory progressStream =
+      _defaultConversationProgressStream,
+}) {
   static const pageSize = 100;
   static const pollInterval = Duration(seconds: 1);
 
@@ -22,7 +36,8 @@ class const ConversationStreamService() {
     }
 
     final wakeups = StreamIterator<ConversationSubscribeRequest>(
-      session.messages.createStream<ConversationSubscribeRequest>(
+      wakeupStream(
+        session,
         SyncWakeups.conversationChannel(
           request.workspaceId,
           request.conversationId,
@@ -30,7 +45,8 @@ class const ConversationStreamService() {
       ),
     );
     final progress = StreamIterator<ConversationStreamEvent>(
-      session.messages.createStream<ConversationStreamEvent>(
+      progressStream(
+        session,
         SyncWakeups.conversationProgressChannel(
           request.workspaceId,
           request.conversationId,
@@ -42,25 +58,19 @@ class const ConversationStreamService() {
     Future<bool>? pendingProgress;
     try {
       while (true) {
-        final conversation = await _requireMembership(
+        final page = await _readPage(
           session,
           workspaceId: request.workspaceId,
           conversationId: request.conversationId,
           userId: userId,
-        );
-        final events = await ConversationEvent.db.find(
-          session,
-          where: (table) =>
-              table.conversationId.equals(conversation.id!) &
-              (table.sequence > cursor),
-          orderBy: (table) => table.sequence,
-          limit: pageSize,
+          afterSequence: cursor,
         );
         final components = cloudA2uiComponentsForClient(
           request.a2uiSupportedComponents,
-          isChildConversation: conversation.parentConversationStableId != null,
+          isChildConversation:
+              page.conversation.parentConversationStableId != null,
         );
-        for (final event in events) {
+        for (final event in page.events) {
           cursor = event.sequence;
           final outgoing = eventFor(
             event,
@@ -68,7 +78,7 @@ class const ConversationStreamService() {
           );
           if (canDeliver(outgoing, components)) yield outgoing;
         }
-        if (events.length < pageSize) {
+        if (page.events.length < pageSize) {
           final wakeup = pendingWakeup ??= wakeups.moveNext().whenComplete(
             () => pendingWakeup = null,
           );
@@ -80,9 +90,21 @@ class const ConversationStreamService() {
             progressEvent.then((hasEvent) => hasEvent ? 'progress' : 'none'),
             Future<String>.delayed(pollInterval, () => 'poll'),
           ]);
-          if (source == 'progress' &&
-              canDeliver(progress.current, components)) {
-            yield progress.current;
+          if (source == 'progress') {
+            final activeConversation = await _readConversation(
+              session,
+              workspaceId: request.workspaceId,
+              conversationId: request.conversationId,
+              userId: userId,
+            );
+            final progressComponents = cloudA2uiComponentsForClient(
+              request.a2uiSupportedComponents,
+              isChildConversation:
+                  activeConversation.parentConversationStableId != null,
+            );
+            if (canDeliver(progress.current, progressComponents)) {
+              yield progress.current;
+            }
           }
         }
       }
@@ -113,18 +135,91 @@ class const ConversationStreamService() {
       event.kind != ConversationEventType.a2uiMessage ||
       isCloudA2uiPayloadSupported(event.payloadJson, components);
 
-  Future<Conversation> _requireMembership(
+  Future<({Conversation conversation, List<ConversationEvent> events})>
+  _readPage(
     Session session, {
     required int workspaceId,
     required String conversationId,
     required String userId,
+    required int afterSequence,
   }) async {
+    return session.db.transaction((transaction) async {
+      final conversation = await _requireActiveConversation(
+        session,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        userId: userId,
+        transaction: transaction,
+      );
+      final events = await ConversationEvent.db.find(
+        session,
+        where: (table) =>
+            table.conversationId.equals(conversation.id!) &
+            (table.sequence > afterSequence),
+        orderBy: (table) => table.sequence,
+        limit: pageSize,
+        transaction: transaction,
+      );
+      return (conversation: conversation, events: events);
+    });
+  }
+
+  Future<Conversation> _readConversation(
+    Session session, {
+    required int workspaceId,
+    required String conversationId,
+    required String userId,
+  }) => session.db.transaction(
+    (transaction) => _requireActiveConversation(
+      session,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      userId: userId,
+      transaction: transaction,
+    ),
+  );
+
+  Future<Conversation> _requireActiveConversation(
+    Session session, {
+    required int workspaceId,
+    required String conversationId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw ConversationException(code: ConversationErrorCode.permissionDenied);
+    }
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.membershipRequired,
+      );
+    }
+    if (workspace.deletedAt != null) {
+      throw ConversationException(code: ConversationErrorCode.notFound);
+    }
+    if (workspace.erasureRequestedAt != null) {
+      throw ConversationException(
+        code: ConversationErrorCode.permissionDenied,
+      );
+    }
     final member = await WorkspaceMember.db.findFirstRow(
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) &
           table.userId.equals(userId) &
           table.removedAt.equals(null),
+      transaction: transaction,
     );
     if (member == null) {
       throw CloudWorkspaceException(
@@ -137,6 +232,7 @@ class const ConversationStreamService() {
           table.workspaceId.equals(workspaceId) &
           table.stableId.equals(conversationId) &
           table.deletedAt.equals(null),
+      transaction: transaction,
     );
     if (conversation == null) {
       throw ConversationException(code: ConversationErrorCode.notFound);
@@ -144,3 +240,13 @@ class const ConversationStreamService() {
     return conversation;
   }
 }
+
+Stream<ConversationSubscribeRequest> _defaultConversationWakeupStream(
+  Session session,
+  String channel,
+) => session.messages.createStream<ConversationSubscribeRequest>(channel);
+
+Stream<ConversationStreamEvent> _defaultConversationProgressStream(
+  Session session,
+  String channel,
+) => session.messages.createStream<ConversationStreamEvent>(channel);

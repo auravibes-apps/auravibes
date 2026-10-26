@@ -1,6 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentCompactionRangeSelected;
+import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart'
+    show ConversationProgressPublisher;
+import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
 import 'package:auravibes_server/src/features/model_connections/domain/virtual_workspace_model_selection.dart';
 import 'package:auravibes_server/src/features/objects/object_scanner.dart';
 import 'package:auravibes_server/src/features/objects/object_store.dart';
@@ -609,6 +615,102 @@ void main() {
       );
       expect(jobs.length, race.writeError == null ? 1 : 0);
     });
+
+    test(
+      'account deletion fences in-flight compaction result commits',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        final workspace = await _createSharedWorkspace(
+          session,
+          userId: userId,
+          memberRole: 'admin',
+        );
+        final now = DateTime.now().toUtc();
+        final conversation = await Conversation.db.insertRow(
+          session,
+          Conversation(
+            workspaceId: workspace.id!,
+            stableId: 'compact-in-flight-account-erasure',
+            isPinned: false,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final source = await ConversationMessage.db.insertRow(
+          session,
+          ConversationMessage(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            stableId: 'compact-in-flight-source',
+            role: 'user',
+            kind: 'text',
+            status: 'sent',
+            content: 'Synthetic source for compaction.',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        initializeTestAuthServices(session.serverpod);
+        await endpoints.conversation.compact(
+          authenticated,
+          CompactConversationRequest(
+            workspaceId: workspace.id!,
+            requestId: 'compact-in-flight-account-erasure',
+            conversationId: conversation.stableId,
+            expectedConversationRevision: conversation.revision,
+          ),
+        );
+
+        final eventsBeforeDeletion = await WorkspaceEvent.db.find(
+          session,
+          where: (row) => row.workspaceId.equals(workspace.id!),
+        );
+        final host = _AccountDeletionBlockingCompactionHost(source.id!);
+        final worker = ConversationWorker(host: host).runOnce(
+          session,
+          workerId: 'account-erasure-compaction-worker',
+        );
+        try {
+          await host.started.future.timeout(const Duration(seconds: 10));
+          await endpoints.account.deleteCurrentUser(authenticated);
+          expect(
+            await AuthUser.db.findById(session, UuidValue.fromString(userId)),
+            isNull,
+          );
+        } finally {
+          if (!host.release.isCompleted) host.release.complete();
+          await worker.timeout(const Duration(seconds: 10));
+        }
+
+        expect(
+          await ConversationMessage.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.stableId.equals(
+                  'compact-in-flight-account-erasure:compaction-summary',
+                ),
+          ),
+          isNull,
+        );
+        expect(
+          await WorkspaceEvent.db.find(
+            session,
+            where: (row) => row.workspaceId.equals(workspace.id!),
+          ),
+          hasLength(eventsBeforeDeletion.length),
+        );
+      },
+    );
 
     test('account deletion fences conversation cancellation writes', () async {
       final userId = const Uuid().v4().toString();
@@ -1242,6 +1344,46 @@ class _AccountDeletionRace {
   final Object? writeError;
   final Object? deletionError;
   final AuthUser? authUserAfterDeletion;
+}
+
+class _AccountDeletionBlockingCompactionHost implements ConversationEngineHost {
+  _AccountDeletionBlockingCompactionHost(this.messageId);
+
+  final int messageId;
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async => throw StateError('This test only expects compaction.');
+
+  @override
+  Future<ConversationCompactionResult> compact(
+    Session session, {
+    required ConversationJob job,
+    required List<ConversationMessage> messages,
+    Future<void>? leaseLost,
+  }) async {
+    started.complete();
+    await release.future;
+    return ConversationCompactionResult(
+      summary: 'Synthetic summary after account deletion.',
+      providerId: 'synthetic-provider',
+      modelId: 'synthetic-model',
+      range: AgentCompactionRangeSelected(
+        fromMessageId: '$messageId',
+        throughMessageId: '$messageId',
+        messageIds: ['$messageId'],
+        keptTailMessageIds: const [],
+      ),
+    );
+  }
 }
 
 class _BlockingObjectScanner implements ObjectScanner {

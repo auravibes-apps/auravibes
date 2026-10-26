@@ -305,5 +305,75 @@ void main() {
         );
       },
     );
+
+    test('workspace snapshot reads reject erasure-pending data', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      await AuthUser.db.insertRow(
+        session,
+        AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+      );
+      await EmailAccount.db.insertRow(
+        session,
+        EmailAccount(
+          authUserId: UuidValue.fromString(userId),
+          email: '$userId@example.com',
+          passwordHash: 'unused',
+        ),
+      );
+      final workspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            session,
+            name: 'Pending erasure',
+            ownerUserId: userId,
+            now: DateTime.now().toUtc(),
+          );
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
+        session,
+        WorkspaceResource(
+          workspaceId: workspace.id!,
+          resourceKind: WorkspaceResourceKind.folder,
+          resourceId: 'sensitive-folder',
+          data: jsonEncode({'name': 'Sensitive folder'}),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await CloudWorkspace.db.updateRow(
+        session,
+        workspace.copyWith(erasureRequestedAt: now),
+      );
+
+      await expectLater(
+        endpoints.workspaceState.read(
+          authenticated,
+          ReadWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            pages: [
+              WorkspaceResourcePageRequest(
+                resourceKind: WorkspaceResourceKind.folder,
+                limit: 10,
+              ),
+            ],
+            eventLimit: 10,
+          ),
+        ),
+        throwsA(
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.permissionDenied,
+          ),
+        ),
+      );
+    });
   });
 }

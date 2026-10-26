@@ -42,13 +42,40 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Session session, {
     required String userId,
     required ReadWorkspaceStateRequest request,
-  }) async {
-    final member = await _authorize(session, request.workspaceId, userId);
-    final workspace = await _repository.findWorkspace(
+  }) => session.db.transaction((transaction) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await CloudWorkspace.db.findById(
       session,
       request.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
     );
-    if (workspace == null) {
+    if (workspace == null || workspace.deletedAt != null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.membershipRequired,
+      );
+    }
+    if (workspace.erasureRequestedAt != null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.permissionDenied,
+      );
+    }
+    final member = await _repository.findMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (member == null) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
@@ -64,7 +91,12 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
     }
 
-    final pageReader = WorkspaceTablePageReader(_repository, session, member);
+    final pageReader = WorkspaceTablePageReader(
+      _repository,
+      session,
+      member,
+      transaction,
+    );
     final pages = [
       for (final selector in request.pages) await pageReader.page(selector),
     ];
@@ -72,6 +104,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final firstEvent = await _repository.firstEvent(
       session,
       request.workspaceId,
+      transaction: transaction,
     );
     final earliest = firstEvent?.sequence;
     final after = request.afterSequence;
@@ -84,6 +117,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             workspaceId: request.workspaceId,
             afterSequence: after,
             limit: request.eventLimit,
+            transaction: transaction,
           );
 
     return ReadWorkspaceStateResponse(
@@ -91,7 +125,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       currentSequence: workspace.sequence,
       events: [
         for (final event in events)
-          await const WorkspaceTableAccess().visibleEvent(
+          await WorkspaceTableAccess(transaction: transaction).visibleEvent(
             session,
             member,
             event,
@@ -100,7 +134,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       earliestRetainedSequence: earliest,
       requiresSnapshot: requiresSnapshot,
     );
-  }
+  });
 
   Future<PatchWorkspaceStateResponse> patch(
     Session session, {

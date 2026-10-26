@@ -1771,74 +1771,77 @@ class ConversationUseCases {
     Session session, {
     required String userId,
     required ListMessageBookmarksRequest request,
-  }) async {
-    await _requireMember(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
-    );
-    final bookmarks = await MessageBookmark.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.userId.equals(userId),
-      orderBy: (table) => table.createdAt.desc(),
-    );
-    if (bookmarks.isEmpty) return const [];
-
-    final workspace = await CloudWorkspace.db.findById(
-      session,
-      request.workspaceId,
-    );
-    if (workspace == null ||
-        workspace.deletedAt != null ||
-        workspace.erasureRequestedAt != null) {
-      return const [];
-    }
-    final messages = await ConversationMessage.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.id.inSet(
-            bookmarks.map((bookmark) => bookmark.messageId).toSet(),
-          ),
-    );
-    final messagesById = {for (final message in messages) message.id!: message};
-    final conversations = await Conversation.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.id.inSet(
-            bookmarks.map((bookmark) => bookmark.conversationId).toSet(),
-          ),
-    );
-    final conversationsById = {
-      for (final conversation in conversations) conversation.id!: conversation,
-    };
-    final result = <MessageBookmarkView>[];
-    for (final bookmark in bookmarks) {
-      final conversation = conversationsById[bookmark.conversationId];
-      if (conversation == null || conversation.deletedAt != null) continue;
-      final targetMessage = messagesById[bookmark.messageId];
-      final message = targetMessage?.conversationId == conversation.id
-          ? targetMessage
-          : null;
-      final view = mapMessageBookmarkView(
-        conversationId: conversation.stableId,
-        messageId: bookmark.messageStableId,
-        contentSnapshot: bookmark.contentSnapshot,
-        roleSnapshot: bookmark.roleSnapshot,
-        messageCreatedAtSnapshot: bookmark.messageCreatedAt,
-        content: message?.content,
-        role: message?.role,
-        createdAt: message?.createdAt,
-        conversationTitle: conversation.title,
-        workspaceName: workspace.name,
+  }) => _withActiveWorkspaceRead(
+    session,
+    workspaceId: request.workspaceId,
+    userId: userId,
+    read: (transaction) async {
+      final bookmarks = await MessageBookmark.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.userId.equals(userId),
+        orderBy: (table) => table.createdAt.desc(),
+        transaction: transaction,
       );
-      result.add(view);
-    }
-    return result;
-  }
+      if (bookmarks.isEmpty) return const [];
+
+      final workspace = await CloudWorkspace.db.findById(
+        session,
+        request.workspaceId,
+        transaction: transaction,
+      );
+      if (workspace == null) _fail(ConversationErrorCode.permissionDenied);
+      final messages = await ConversationMessage.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.id.inSet(
+              bookmarks.map((bookmark) => bookmark.messageId).toSet(),
+            ),
+        transaction: transaction,
+      );
+      final messagesById = {
+        for (final message in messages) message.id!: message,
+      };
+      final conversations = await Conversation.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.id.inSet(
+              bookmarks.map((bookmark) => bookmark.conversationId).toSet(),
+            ),
+        transaction: transaction,
+      );
+      final conversationsById = {
+        for (final conversation in conversations)
+          conversation.id!: conversation,
+      };
+      final result = <MessageBookmarkView>[];
+      for (final bookmark in bookmarks) {
+        final conversation = conversationsById[bookmark.conversationId];
+        if (conversation == null || conversation.deletedAt != null) continue;
+        final targetMessage = messagesById[bookmark.messageId];
+        final message = targetMessage?.conversationId == conversation.id
+            ? targetMessage
+            : null;
+        final view = mapMessageBookmarkView(
+          conversationId: conversation.stableId,
+          messageId: bookmark.messageStableId,
+          contentSnapshot: bookmark.contentSnapshot,
+          roleSnapshot: bookmark.roleSnapshot,
+          messageCreatedAtSnapshot: bookmark.messageCreatedAt,
+          content: message?.content,
+          role: message?.role,
+          createdAt: message?.createdAt,
+          conversationTitle: conversation.title,
+          workspaceName: workspace.name,
+        );
+        result.add(view);
+      }
+      return result;
+    },
+  );
 
   Future<List<BackgroundWorkView>> listBackgroundWorks(
     Session session, {

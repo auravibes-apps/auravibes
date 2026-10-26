@@ -8,6 +8,7 @@ class const WorkspaceTablePageReader(
   final WorkspaceStateRepository _repository,
   final Session _session,
   final WorkspaceMember _member,
+  final Transaction _transaction,
 ) {
   static const _batchSize = 100;
 
@@ -41,6 +42,7 @@ class const WorkspaceTablePageReader(
     kind: kind,
     limit: _batchSize,
     afterResourceId: cursor,
+    transaction: _transaction,
   );
 
   Future<void> _appendVisible(
@@ -49,11 +51,14 @@ class const WorkspaceTablePageReader(
     int limit,
   ) async {
     for (final row in candidates) {
-      final visible = await const WorkspaceTableAccess().visible(
-        _session,
-        _member,
-        row,
-      );
+      final visible =
+          await WorkspaceTableAccess(
+            transaction: _transaction,
+          ).visible(
+            _session,
+            _member,
+            row,
+          );
       if (visible != null) rows.add(visible);
       if (rows.length > limit) break;
     }
