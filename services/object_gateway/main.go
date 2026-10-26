@@ -100,7 +100,7 @@ func run(ctx context.Context) error {
 	if addr == "" {
 		addr = ":8080"
 	}
-	server := &http.Server{Addr: addr, Handler: g, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: time.Duration(readTimeoutSeconds) * time.Second, WriteTimeout: time.Duration(requestTimeoutSeconds) * time.Second}
+	server := newServer(addr, g, time.Duration(readTimeoutSeconds)*time.Second, time.Duration(requestTimeoutSeconds)*time.Second)
 	return server.ListenAndServe()
 }
 func main() {
@@ -108,4 +108,8 @@ func main() {
 		log.Print("gateway stopped: ", err)
 		os.Exit(1)
 	}
+}
+
+func newServer(addr string, handler http.Handler, readTimeout, writeTimeout time.Duration) *http.Server {
+	return &http.Server{Addr: addr, Handler: handler, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: readTimeout, WriteTimeout: writeTimeout, IdleTimeout: 30 * time.Second}
 }
