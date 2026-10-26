@@ -790,6 +790,32 @@ class CloudWorkspaceUseCases(
       )).bytes,
     );
     final erasure = await session.db.transaction((transaction) async {
+      final replayCandidate = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+      );
+      final priorCandidate = replayCandidate == null
+          ? await WorkspaceErasureRequest.db.findFirstRow(
+              session,
+              where: (row) =>
+                  row.ownerUserId.equals(userId) &
+                  row.workspaceId.equals(request.workspaceId),
+              transaction: transaction,
+            )
+          : null;
+      final workspaceId =
+          replayCandidate?.workspaceId ??
+          priorCandidate?.workspaceId ??
+          request.workspaceId;
+      final workspace = await _repository.findWorkspace(
+        session,
+        workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
       final replay = await WorkspaceErasureRequest.db.findFirstRow(
         session,
         where: (row) =>
@@ -804,6 +830,9 @@ class CloudWorkspaceUseCases(
         }
         return replay;
       }
+      if (workspaceId != request.workspaceId) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
       final priorWorkspaceErasure = await WorkspaceErasureRequest.db
           .findFirstRow(
             session,
@@ -814,16 +843,10 @@ class CloudWorkspaceUseCases(
             lockMode: LockMode.forUpdate,
           );
       if (priorWorkspaceErasure != null) return priorWorkspaceErasure;
-
-      final workspace = await _repository.findWorkspace(
-        session,
-        request.workspaceId,
-        transaction: transaction,
-        lock: true,
-      );
       if (workspace == null) {
         _fail(CloudWorkspaceErrorCode.workspaceNotFound);
       }
+
       _requireOwner(workspace, userId);
       _requireRevision(workspace.revision, request.expectedWorkspaceRevision);
       if (request.confirmationName != workspace.name) {
@@ -893,6 +916,22 @@ class CloudWorkspaceUseCases(
     required RetryCloudWorkspaceErasureRequest request,
   }) async {
     final status = await session.db.transaction((transaction) async {
+      final candidate = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+      );
+      if (candidate == null) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+      final workspace = await _repository.findWorkspace(
+        session,
+        candidate.workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
       final erasure = await WorkspaceErasureRequest.db.findFirstRow(
         session,
         where: (row) =>
@@ -905,12 +944,6 @@ class CloudWorkspaceUseCases(
         _fail(CloudWorkspaceErrorCode.workspaceNotFound);
       }
       if (erasure.state != 'needsAttention') return erasure;
-      final workspace = await _repository.findWorkspace(
-        session,
-        erasure.workspaceId,
-        transaction: transaction,
-        lock: true,
-      );
       if (workspace == null || workspace.erasureRequestedAt == null) {
         return await _completeErasure(session, erasure, transaction);
       }

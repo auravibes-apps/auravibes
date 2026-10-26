@@ -39,9 +39,11 @@ class CodexOAuthRepository {
   Future<CodexOAuthTransaction?> findByTransactionId(
     Session session,
     String transactionId,
+    Transaction? transaction,
   ) => CodexOAuthTransaction.db.findFirstRow(
     session,
     where: (table) => table.transactionId.equals(transactionId),
+    transaction: transaction,
   );
 
   Future<CodexOAuthTransaction> insertTransaction(

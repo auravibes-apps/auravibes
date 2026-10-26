@@ -6,6 +6,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../repositories/codex_oauth_repository.dart';
@@ -43,6 +44,16 @@ class CodexOAuthUseCases(
     late final String clientId;
     late final String redirectUri;
     await session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.authenticationRequired,
+        );
+      }
       final workspace = await _repository.lockWorkspace(
         session,
         request.workspaceId,
@@ -116,12 +127,23 @@ class CodexOAuthUseCases(
         request.code.isEmpty) {
       return _invalid();
     }
-    final initial = await _repository.findByTransactionId(
-      session,
-      request.transactionId,
-    );
-    if (initial == null || initial.userId != userId) return _invalid();
     return session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.authenticationRequired,
+        );
+      }
+      final initial = await _repository.findByTransactionId(
+        session,
+        request.transactionId,
+        transaction,
+      );
+      if (initial == null || initial.userId != userId) return _invalid();
       final workspace = await _repository.lockWorkspace(
         session,
         initial.workspaceId,

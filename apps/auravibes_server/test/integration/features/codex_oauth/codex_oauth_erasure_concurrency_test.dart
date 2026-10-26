@@ -9,6 +9,7 @@ import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
+import '../../test_tools/auth_services_test_helper.dart';
 import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
@@ -127,6 +128,229 @@ void main() {
           isEmpty,
         );
       });
+
+      test(
+        'account deletion waits for an in-flight OAuth token write',
+        () async {
+          final userId = const Uuid().v4().toString();
+          final ownerId = const Uuid().v4().toString();
+          final authenticated = builder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              userId,
+              const {},
+            ),
+          );
+          final session = authenticated.build();
+          session.passwords['workspaceSecretKey'] =
+              'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+          session.passwords['openAICodexOAuthClientId'] = 'synthetic-client-id';
+          session.passwords['openAICodexOAuthRedirectUri'] =
+              'http://localhost/callback';
+          await _insertAccount(session, userId);
+          initializeTestAuthServices(session.serverpod);
+          final now = DateTime.now().toUtc();
+          final workspace = await _createSharedWorkspace(
+            session,
+            ownerId: ownerId,
+            memberId: userId,
+            name: 'Account deletion OAuth race',
+            now: now,
+          );
+          const connectionId = 'account-deletion-codex-connection';
+          final started =
+              await CodexOAuthUseCases(
+                CodexOAuthRepository(),
+              ).start(
+                session,
+                userId: userId,
+                request: StartCodexOAuthRequest(
+                  workspaceId: workspace.id!,
+                  connectionId: connectionId,
+                ),
+              );
+          final exchangeStarted = Completer<void>();
+          final releaseExchange = Completer<void>();
+          final completing =
+              CodexOAuthUseCases(
+                CodexOAuthRepository(),
+                exchange: (_, _, _) async {
+                  exchangeStarted.complete();
+                  await releaseExchange.future;
+                  return const {
+                    'access_token': 'synthetic-account-access-token',
+                    'refresh_token': 'synthetic-account-refresh-token',
+                  };
+                },
+              ).complete(
+                session,
+                userId: userId,
+                request: CompleteCodexOAuthRequest(
+                  transactionId: started.transactionId,
+                  state: Uri.parse(started.authorizationUrl)
+                      .queryParameters['state']!,
+                  code: 'synthetic-account-code',
+                ),
+              );
+          await exchangeStarted.future.timeout(const Duration(seconds: 5));
+
+          Object? deletionError;
+          final deleting = endpoints.account
+              .deleteCurrentUser(authenticated)
+              .then<void>(
+                (_) {},
+                onError: (Object error, StackTrace _) => deletionError = error,
+              );
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          releaseExchange.complete();
+          final completed = await completing.timeout(
+            const Duration(seconds: 10),
+          );
+          await deleting.timeout(const Duration(seconds: 10));
+
+          expect(completed.configured, isTrue);
+          expect(deletionError, isNull);
+          expect(
+            await WorkspaceSecret.db.find(
+              session,
+              where: (row) => row.ownerUserId.equals(userId),
+            ),
+            isEmpty,
+          );
+          expect(
+            await CodexOAuthTransaction.db.find(
+              session,
+              where: (row) => row.userId.equals(userId),
+            ),
+            isEmpty,
+          );
+          expect(
+            await AuthUser.db.findById(session, UuidValue.fromString(userId)),
+            isNull,
+          );
+        },
+      );
+
+      test(
+        'account deletion and OAuth start serialize on the AuthUser row',
+        () async {
+          final userId = const Uuid().v4().toString();
+          final ownerId = const Uuid().v4().toString();
+          final authenticated = builder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              userId,
+              const {},
+            ),
+          );
+          final session = authenticated.build();
+          session.passwords['workspaceSecretKey'] =
+              'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+          session.passwords['openAICodexOAuthClientId'] = 'synthetic-client-id';
+          session.passwords['openAICodexOAuthRedirectUri'] =
+              'http://localhost/callback';
+          await _insertAccount(session, userId);
+          initializeTestAuthServices(session.serverpod);
+          final now = DateTime.now().toUtc();
+          final workspace = await _createSharedWorkspace(
+            session,
+            ownerId: ownerId,
+            memberId: userId,
+            name: 'Account deletion start race',
+            now: now,
+          );
+
+          final lockSession = builder.build();
+          final lockAcquired = Completer<void>();
+          final releaseLock = Completer<void>();
+          final holdingUserLock = lockSession.db.transaction((
+            transaction,
+          ) async {
+            final authUser = await AuthUser.db.findById(
+              lockSession,
+              UuidValue.fromString(userId),
+              transaction: transaction,
+              lockMode: LockMode.forUpdate,
+            );
+            expect(authUser, isNotNull);
+            lockAcquired.complete();
+            await releaseLock.future;
+          });
+          await lockAcquired.future.timeout(const Duration(seconds: 5));
+
+          var startFinished = false;
+          Object? startError;
+          final starting =
+              CodexOAuthUseCases(
+                    CodexOAuthRepository(),
+                  )
+                  .start(
+                    session,
+                    userId: userId,
+                    request: StartCodexOAuthRequest(
+                      workspaceId: workspace.id!,
+                      connectionId: 'account-deletion-start-connection',
+                    ),
+                  )
+                  .then<void>(
+                    (_) => startFinished = true,
+                    onError: (Object error, StackTrace _) {
+                      startError = error;
+                      startFinished = true;
+                    },
+                  );
+          var deletionFinished = false;
+          Object? deletionError;
+          final deleting = endpoints.account
+              .deleteCurrentUser(authenticated)
+              .then<void>(
+                (_) => deletionFinished = true,
+                onError: (Object error, StackTrace _) {
+                  deletionError = error;
+                  deletionFinished = true;
+                },
+              );
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          final startWasBlocked = !startFinished;
+          final deletionWasBlocked = !deletionFinished;
+          releaseLock.complete();
+          await holdingUserLock.timeout(const Duration(seconds: 10));
+          await Future.wait([starting, deleting]).timeout(
+            const Duration(seconds: 10),
+          );
+
+          expect(startWasBlocked, isTrue);
+          expect(deletionWasBlocked, isTrue);
+          expect(deletionError, isNull);
+          expect(
+            startError,
+            anyOf(
+              isNull,
+              isA<CloudWorkspaceException>().having(
+                (error) => error.code,
+                'code',
+                CloudWorkspaceErrorCode.authenticationRequired,
+              ),
+            ),
+          );
+          expect(
+            await AuthUser.db.findById(session, UuidValue.fromString(userId)),
+            isNull,
+          );
+          expect(
+            await WorkspaceSecret.db.find(
+              session,
+              where: (row) => row.ownerUserId.equals(userId),
+            ),
+            isEmpty,
+          );
+          expect(
+            await CodexOAuthTransaction.db.find(
+              session,
+              where: (row) => row.userId.equals(userId),
+            ),
+            isEmpty,
+          );
+        },
+      );
 
       test(
         'rejects OAuth completion for an erasure-pending workspace',
@@ -259,4 +483,32 @@ Future<void> _insertAccount(Session session, String userId) async {
       passwordHash: 'unused',
     ),
   );
+}
+
+Future<CloudWorkspace> _createSharedWorkspace(
+  Session session, {
+  required String ownerId,
+  required String memberId,
+  required String name,
+  required DateTime now,
+}) async {
+  final workspace = await workspace_repo.CloudWorkspaceRepository()
+      .createWorkspace(
+        session,
+        name: name,
+        ownerUserId: ownerId,
+        now: now,
+      );
+  await WorkspaceMember.db.insertRow(
+    session,
+    WorkspaceMember(
+      workspaceId: workspace.id!,
+      userId: memberId,
+      role: 'admin',
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
+  return workspace;
 }

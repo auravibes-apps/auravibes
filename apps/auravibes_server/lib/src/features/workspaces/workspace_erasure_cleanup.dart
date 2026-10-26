@@ -293,9 +293,10 @@ class const WorkspaceErasureCleanup(final Session session) {
       session,
       where: (row) => row.state.notEquals('complete'),
       transaction: transaction,
-      lockMode: LockMode.forUpdate,
     );
-    for (final workspaceId in requests.map((row) => row.workspaceId).toSet()) {
+    final workspaceIds = requests.map((row) => row.workspaceId).toSet().toList()
+      ..sort();
+    for (final workspaceId in workspaceIds) {
       await _refreshStatus(workspaceId, transaction);
     }
   }
