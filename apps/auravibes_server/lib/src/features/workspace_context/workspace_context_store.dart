@@ -15,73 +15,13 @@ class const WorkspaceContextStore(
 ) {
   Future<String> read() => session.db.transaction(readInTransaction);
 
-  Future<String> readInTransaction(Transaction transaction) async {
-    final context = await _authorize(transaction);
-    final event = await WorkspaceConversationContext.db.findFirstRow(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) &
-          row.conversationId.equals(context.conversation.id) &
-          row.actorUserId.equals(actorUserId),
-      orderBy: (row) => row.id.desc(),
-      transaction: transaction,
-    );
-    final selection = _decode(event?.selectionJson);
-    if (selection != null) {
-      await _validate(selection, context.member, transaction);
-    }
-
-    return jsonEncode({
-      'id': event?.stableId,
-      'selection': selection?.toJson(),
-    });
-  }
+  Future<String> readInTransaction(Transaction transaction) =>
+      _WorkspaceContextSelectionReader(this).read(transaction);
 
   Future<String> save(
     String requestId,
     String? selectionJson,
-  ) => session.db.transaction((transaction) async {
-    final context = await _authorize(transaction);
-    if (requestId.isEmpty || requestId.length > 100) _invalid();
-    final selection = _decode(selectionJson);
-    if (selectionJson != null && selection == null) _invalid();
-    if (selection != null) {
-      await _validate(selection, context.member, transaction);
-    }
-    final encoded = selection == null ? null : jsonEncode(selection.toJson());
-    final previous = await WorkspaceConversationContext.db.findFirstRow(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) & row.stableId.equals(requestId),
-      transaction: transaction,
-    );
-    if (previous != null) {
-      if (previous.conversationId != context.conversation.id ||
-          previous.actorUserId != actorUserId ||
-          previous.selectionJson != encoded) {
-        throw CloudWorkspaceException(code: .idempotencyConflict);
-      }
-
-      return jsonEncode({
-        'id': previous.stableId,
-        'selection': selection?.toJson(),
-      });
-    }
-    await WorkspaceConversationContext.db.insertRow(
-      session,
-      WorkspaceConversationContext(
-        workspaceId: workspaceId,
-        conversationId: context.conversation.id!,
-        stableId: requestId,
-        actorUserId: actorUserId,
-        selectionJson: encoded,
-        createdAt: DateTime.now().toUtc(),
-      ),
-      transaction: transaction,
-    );
-
-    return jsonEncode({'id': requestId, 'selection': selection?.toJson()});
-  });
+  ) => _WorkspaceContextSelectionSaver(this).save(requestId, selectionJson);
 
   WorkspaceContextSelection? _decode(String? value) {
     if (value == null) return null;
@@ -95,71 +35,17 @@ class const WorkspaceContextStore(
 
   Future<({WorkspaceMember member, Conversation conversation})> _authorize(
     Transaction transaction,
-  ) async {
-    final workspace = await CloudWorkspace.db.findById(
-      session,
-      workspaceId,
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    if (workspace == null) _denied();
-    final member = await WorkspaceMember.db.findFirstRow(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) &
-          row.userId.equals(actorUserId) &
-          row.removedAt.equals(null),
-      transaction: transaction,
-    );
-    if (member == null) _denied();
-    final conversation = await Conversation.db.findFirstRow(
-      session,
-      where: (row) =>
-          row.workspaceId.equals(workspaceId) &
-          row.stableId.equals(conversationId) &
-          row.deletedAt.equals(null),
-      transaction: transaction,
-    );
-    if (conversation == null) _denied();
-
-    return (member: member, conversation: conversation);
-  }
+  ) => _WorkspaceContextAuthorizer(this).authorize(transaction);
 
   Future<void> _validate(
     WorkspaceContextSelection selection,
     WorkspaceMember member,
     Transaction transaction,
-  ) async {
-    if (selection.kind == 'directory') {
-      if (selection.itemId.isNotEmpty || selection.recordIds.isNotEmpty) {
-        _invalid();
-      }
-      return;
-    }
-    if (selection.kind == 'view') {
-      final view = await WorkspaceViewStore(
-        session,
-        member,
-        transaction,
-      ).read(selection.itemId);
-      final data = jsonDecode(view.data) as Map<String, dynamic>;
-      await _records(
-        selection.recordIds,
-        data['tableId'] as String,
-        member,
-        transaction,
-      );
-      return;
-    }
-    final kind = selection.kind == 'folder'
-        ? WorkspaceResourceKind.folder
-        : WorkspaceResourceKind.table;
-    final item = await _visible(kind, selection.itemId, member, transaction);
-    if (kind == .folder && selection.recordIds.isNotEmpty) _invalid();
-    if (kind == .table) {
-      await _records(selection.recordIds, item.resourceId, member, transaction);
-    }
-  }
+  ) => _WorkspaceContextSelectionValidator(this).validate(
+    selection,
+    member,
+    transaction,
+  );
 
   Future<void> _records(
     List<String> ids,
@@ -196,6 +82,276 @@ class const WorkspaceContextStore(
     return visible;
   }
 }
+
+class _WorkspaceContextSelectionReader {
+  const _WorkspaceContextSelectionReader(this.store);
+
+  final WorkspaceContextStore store;
+
+  Future<String> read(Transaction transaction) async {
+    final context = await store._authorize(transaction);
+    final event = await _latestEvent(context.conversation, transaction);
+    final selection = store._decode(event?.selectionJson);
+    if (selection != null) {
+      await store._validate(selection, context.member, transaction);
+    }
+
+    return jsonEncode({
+      'id': event?.stableId,
+      'selection': selection?.toJson(),
+    });
+  }
+
+  Future<WorkspaceConversationContext?> _latestEvent(
+    Conversation conversation,
+    Transaction transaction,
+  ) => WorkspaceConversationContext.db.findFirstRow(
+    store.session,
+    where: (row) =>
+        row.workspaceId.equals(store.workspaceId) &
+        row.conversationId.equals(conversation.id) &
+        row.actorUserId.equals(store.actorUserId),
+    orderBy: (row) => row.id.desc(),
+    transaction: transaction,
+  );
+}
+
+class _WorkspaceContextSelectionSaver {
+  const _WorkspaceContextSelectionSaver(this.store);
+
+  final WorkspaceContextStore store;
+
+  Future<String> save(String requestId, String? selectionJson) =>
+      store.session.db.transaction(
+        (transaction) => _saveInTransaction(
+          transaction,
+          requestId,
+          selectionJson,
+        ),
+      );
+
+  Future<String> _saveInTransaction(
+    Transaction transaction,
+    String requestId,
+    String? selectionJson,
+  ) async {
+    final context = await store._authorize(transaction);
+    final selection = await _validatedSelection(
+      transaction,
+      requestId,
+      selectionJson,
+      context.member,
+    );
+    final encoded = _encode(selection);
+    final previous = await _previous(requestId, transaction);
+    if (previous != null) return _replay(previous, context, selection, encoded);
+
+    await _insert(
+      transaction,
+      requestId,
+      context.conversation.id!,
+      encoded,
+    );
+
+    return _selectionResult(requestId, selection);
+  }
+
+  Future<WorkspaceContextSelection?> _validatedSelection(
+    Transaction transaction,
+    String requestId,
+    String? selectionJson,
+    WorkspaceMember member,
+  ) async {
+    if (requestId.isEmpty || requestId.length > 100) _invalid();
+    final selection = store._decode(selectionJson);
+    if (selectionJson != null && selection == null) _invalid();
+    if (selection != null) {
+      await store._validate(selection, member, transaction);
+    }
+
+    return selection;
+  }
+
+  String? _encode(WorkspaceContextSelection? selection) =>
+      selection == null ? null : jsonEncode(selection.toJson());
+
+  Future<WorkspaceConversationContext?> _previous(
+    String requestId,
+    Transaction transaction,
+  ) => WorkspaceConversationContext.db.findFirstRow(
+    store.session,
+    where: (row) =>
+        row.workspaceId.equals(store.workspaceId) &
+        row.stableId.equals(requestId),
+    transaction: transaction,
+  );
+
+  String _replay(
+    WorkspaceConversationContext previous,
+    ({WorkspaceMember member, Conversation conversation}) context,
+    WorkspaceContextSelection? selection,
+    String? encoded,
+  ) {
+    if (previous.conversationId != context.conversation.id ||
+        previous.actorUserId != store.actorUserId ||
+        previous.selectionJson != encoded) {
+      throw CloudWorkspaceException(code: .idempotencyConflict);
+    }
+
+    return _selectionResult(previous.stableId, selection);
+  }
+
+  Future<void> _insert(
+    Transaction transaction,
+    String requestId,
+    int conversationId,
+    String? encoded,
+  ) => WorkspaceConversationContext.db.insertRow(
+    store.session,
+    WorkspaceConversationContext(
+      workspaceId: store.workspaceId,
+      conversationId: conversationId,
+      stableId: requestId,
+      actorUserId: store.actorUserId,
+      selectionJson: encoded,
+      createdAt: DateTime.now().toUtc(),
+    ),
+    transaction: transaction,
+  );
+}
+
+class _WorkspaceContextSelectionValidator {
+  const _WorkspaceContextSelectionValidator(this.store);
+
+  final WorkspaceContextStore store;
+
+  Future<void> validate(
+    WorkspaceContextSelection selection,
+    WorkspaceMember member,
+    Transaction transaction,
+  ) async {
+    if (selection.kind == 'directory') {
+      _validateDirectory(selection);
+      return;
+    }
+    if (selection.kind == 'view') {
+      await _validateView(selection, member, transaction);
+      return;
+    }
+    await _validateItem(selection, member, transaction);
+  }
+
+  void _validateDirectory(WorkspaceContextSelection selection) {
+    if (selection.itemId.isNotEmpty || selection.recordIds.isNotEmpty) {
+      _invalid();
+    }
+  }
+
+  Future<void> _validateView(
+    WorkspaceContextSelection selection,
+    WorkspaceMember member,
+    Transaction transaction,
+  ) async {
+    final view = await WorkspaceViewStore(
+      store.session,
+      member,
+      transaction,
+    ).read(selection.itemId);
+    final data = jsonDecode(view.data) as Map<String, dynamic>;
+    await store._records(
+      selection.recordIds,
+      data['tableId'] as String,
+      member,
+      transaction,
+    );
+  }
+
+  Future<void> _validateItem(
+    WorkspaceContextSelection selection,
+    WorkspaceMember member,
+    Transaction transaction,
+  ) async {
+    final kind = selection.kind == 'folder'
+        ? WorkspaceResourceKind.folder
+        : WorkspaceResourceKind.table;
+    final item = await store._visible(
+      kind,
+      selection.itemId,
+      member,
+      transaction,
+    );
+    if (kind == .folder && selection.recordIds.isNotEmpty) _invalid();
+    if (kind == .table) {
+      await store._records(
+        selection.recordIds,
+        item.resourceId,
+        member,
+        transaction,
+      );
+    }
+  }
+}
+
+class _WorkspaceContextAuthorizer {
+  const _WorkspaceContextAuthorizer(this.store);
+
+  final WorkspaceContextStore store;
+
+  Future<({WorkspaceMember member, Conversation conversation})> authorize(
+    Transaction transaction,
+  ) async {
+    final _ = await _workspace(transaction);
+    final member = await _member(transaction);
+    final conversation = await _conversation(transaction);
+
+    return (member: member, conversation: conversation);
+  }
+
+  Future<CloudWorkspace> _workspace(Transaction transaction) async {
+    final workspace = await CloudWorkspace.db.findById(
+      store.session,
+      store.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _denied();
+
+    return workspace;
+  }
+
+  Future<WorkspaceMember> _member(Transaction transaction) async {
+    final member = await WorkspaceMember.db.findFirstRow(
+      store.session,
+      where: (row) =>
+          row.workspaceId.equals(store.workspaceId) &
+          row.userId.equals(store.actorUserId) &
+          row.removedAt.equals(null),
+      transaction: transaction,
+    );
+    if (member == null) _denied();
+
+    return member;
+  }
+
+  Future<Conversation> _conversation(Transaction transaction) async {
+    final conversation = await Conversation.db.findFirstRow(
+      store.session,
+      where: (row) =>
+          row.workspaceId.equals(store.workspaceId) &
+          row.stableId.equals(store.conversationId) &
+          row.deletedAt.equals(null),
+      transaction: transaction,
+    );
+    if (conversation == null) _denied();
+
+    return conversation;
+  }
+}
+
+String _selectionResult(
+  String? id,
+  WorkspaceContextSelection? selection,
+) => jsonEncode({'id': id, 'selection': selection?.toJson()});
 
 Never _denied() => throw CloudWorkspaceException(code: .permissionDenied);
 Never _invalid() => throw CloudWorkspaceException(code: .validationFailed);
