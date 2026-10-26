@@ -88,6 +88,10 @@ workspaceStream:
 workspaceContext:
   - read:
   - save:
+workspaceContentReport:
+  - submit:
+  - list:
+  - resolve:
 workspaceCsv:
   - preview:
 workspaceHistory:

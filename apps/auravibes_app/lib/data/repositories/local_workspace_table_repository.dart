@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_attribution.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_purge_guard.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_batch_receipt.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
@@ -38,16 +39,21 @@ class const LocalWorkspaceTableRepository(
     required String name,
     required String labelName,
     String? parentId,
-  }) => _TableWriter(_database, _workspaceId).create(name, labelName, parentId);
+    String? aiConversationId,
+  }) => _TableWriter(
+    _database,
+    _workspaceId,
+  ).create(name, labelName, parentId, aiConversationId: aiConversationId);
   @override
   Future<WorkspaceTable> updateMetadata({
     required WorkspaceTable table,
     required String name,
     required String? parentId,
+    String? aiConversationId,
   }) => _TableWriter(
     _database,
     _workspaceId,
-  ).updateMetadata(table, name, parentId);
+  ).updateMetadata(table, name, parentId, aiConversationId: aiConversationId);
 
   @override
   Future<WorkspaceTable> renameLabel({
@@ -64,7 +70,11 @@ class const LocalWorkspaceTableRepository(
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
     required WorkspaceColumn column,
-  }) => _TableWriter(_database, _workspaceId).saveColumn(table, column);
+    String? aiConversationId,
+  }) => _TableWriter(
+    _database,
+    _workspaceId,
+  ).saveColumn(table, column, aiConversationId: aiConversationId);
 
   @override
   Future<List<WorkspaceRecord>> records(String tableId) async {
@@ -88,13 +98,21 @@ class const LocalWorkspaceTableRepository(
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
-  }) => _RecordWriter(_database, _workspaceId).create(table, values);
+    String? aiConversationId,
+  }) => _RecordWriter(
+    _database,
+    _workspaceId,
+  ).create(table, values, aiConversationId: aiConversationId);
   @override
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
     required Map<String, Object?> values,
-  }) => _RecordWriter(_database, _workspaceId).update(table, record, values);
+    String? aiConversationId,
+  }) => _RecordWriter(
+    _database,
+    _workspaceId,
+  ).update(table, record, values, aiConversationId: aiConversationId);
 }
 
 class const _TableProjection(final LocalWorkspaceTableRepository owner) {
@@ -430,33 +448,63 @@ class const _TableWriter(
   Future<WorkspaceTable> create(
     String name,
     String labelName,
-    String? parentId,
-  ) => _database.transaction(() async {
+    String? parentId, {
+    String? aiConversationId,
+  }) => _database.transaction(() async {
     await _checkLocalWorkspace(_database, _workspaceId);
     await _checkParent(_database, _workspaceId, parentId);
 
-    return await _insert((
+    final created = await _insert((
       name: name,
       labelName: labelName,
       parentId: parentId,
     ));
+    await _attribute('table', created.id, created.revision, aiConversationId);
+
+    return created;
   });
 
   Future<WorkspaceTable> updateMetadata(
     WorkspaceTable table,
     String name,
-    String? parentId,
-  ) => _database.transaction(() async {
+    String? parentId, {
+    String? aiConversationId,
+  }) => _database.transaction(() async {
     final row = await _metadataTarget(table, parentId);
     await _writeMetadata(_database, row, (name: name, parentId: parentId));
 
-    return await _read(table.id);
+    final updated = await _read(table.id);
+    await _attribute('table', updated.id, updated.revision, aiConversationId);
+
+    return updated;
   });
 
   Future<WorkspaceTable> saveColumn(
     WorkspaceTable table,
-    WorkspaceColumn column,
-  ) => _database.transaction(() => _saveColumn(table, column));
+    WorkspaceColumn column, {
+    String? aiConversationId,
+  }) => _database.transaction(() async {
+    final updated = await _saveColumn(table, column);
+    await _attribute('table', updated.id, updated.revision, aiConversationId);
+
+    return updated;
+  });
+
+  Future<void> _attribute(
+    String kind,
+    String resourceId,
+    int revision,
+    String? conversationId,
+  ) async {
+    if (conversationId == null) return;
+    await LocalWorkspaceHistoryAttribution(_database).aiRevision(
+      workspaceId: _workspaceId,
+      kind: kind,
+      resourceId: resourceId,
+      revision: revision,
+      conversationId: conversationId,
+    );
+  }
 
   Future<WorkspaceTableRow> _metadataTarget(
     WorkspaceTable table,
@@ -549,18 +597,42 @@ class const _RecordWriter(
     WorkspaceTable table,
     Map<String, Object?> values, {
     bool applyDefaults = true,
-  }) => _database.transaction(
-    () async => await _insert(
+    String? aiConversationId,
+  }) => _database.transaction(() async {
+    final created = await _insert(
       table.id,
       await _prepare(table, values, applyDefaults: applyDefaults),
-    ),
-  );
+    );
+    await _attribute(created, aiConversationId);
+
+    return created;
+  });
 
   Future<WorkspaceRecord> update(
     WorkspaceTable table,
     WorkspaceRecord record,
-    Map<String, Object?> values,
-  ) => _database.transaction(() => _update(table, record, values));
+    Map<String, Object?> values, {
+    String? aiConversationId,
+  }) => _database.transaction(() async {
+    final updated = await _update(table, record, values);
+    await _attribute(updated, aiConversationId);
+
+    return updated;
+  });
+
+  Future<void> _attribute(
+    WorkspaceRecord record,
+    String? conversationId,
+  ) async {
+    if (conversationId == null) return;
+    await LocalWorkspaceHistoryAttribution(_database).aiRevision(
+      workspaceId: _workspaceId,
+      kind: 'record',
+      resourceId: record.id,
+      revision: record.revision,
+      conversationId: conversationId,
+    );
+  }
 
   Future<Map<String, Object?>> _prepare(
     WorkspaceTable table,

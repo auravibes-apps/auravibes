@@ -58,6 +58,15 @@ class const WorkspaceHistoryRetention(
 
   Future<void> _deleteRows(Iterable<WorkspaceRevision> expired) async {
     for (final row in expired) {
+      await WorkspaceContentReport.db.deleteWhere(
+        session,
+        where: (report) =>
+            report.workspaceId.equals(workspaceId) &
+            report.resourceKind.equals(row.resourceKind) &
+            report.resourceId.equals(row.resourceId) &
+            report.revision.equals(row.revision),
+        transaction: transaction,
+      );
       final _ = await WorkspaceRevision.db.deleteRow(
         session,
         row,

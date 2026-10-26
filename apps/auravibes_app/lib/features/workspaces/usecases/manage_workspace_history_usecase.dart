@@ -1,3 +1,5 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_content_report.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_content_report_action.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -25,6 +27,24 @@ class const ManageWorkspaceHistoryUsecase(
 
   Future<List<WorkspaceRevision>> history(WorkspaceTrashTarget target) =>
       repository.history(target);
+
+  Future<String> submitReport(WorkspaceTrashTarget target) =>
+      repository.submitReport(target);
+
+  Future<List<WorkspaceContentReport>> reports() => repository.reports();
+
+  Future<WorkspaceContentReport?> resolveReport(
+    String reportId,
+    WorkspaceContentReportAction action, {
+    required Future<bool> Function() approveRemoval,
+    ConversationToolAccessMode mode = .defaultMode,
+  }) async {
+    if (action == .remove && mode == .defaultMode && !await approveRemoval()) {
+      return null;
+    }
+
+    return await repository.resolveReport(reportId, action);
+  }
 
   Future<bool> restore(
     WorkspaceTrashTarget target,

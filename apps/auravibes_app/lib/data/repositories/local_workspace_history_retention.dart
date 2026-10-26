@@ -50,14 +50,29 @@ LIMIT 1
     return rows.isNotEmpty;
   }
 
-  Future<void> _prune() => database.customStatement(
-    '''
+  Future<void> _prune() async {
+    await database.customStatement(
+      '''
 DELETE FROM workspace_revisions WHERE workspace_id = ? AND revision > 0
 AND (CAST(strftime('%s', 'now') AS INTEGER) - captured_at) / 86400 >=
 (SELECT days FROM workspace_history_policies WHERE workspace_id = ?)
 ''',
-    [workspaceId, workspaceId],
-  );
+      [workspaceId, workspaceId],
+    );
+    await database.customStatement(
+      '''
+DELETE FROM workspace_content_reports WHERE workspace_id = ?
+AND NOT EXISTS (
+SELECT 1 FROM workspace_revisions AS retained
+WHERE retained.workspace_id = workspace_content_reports.workspace_id
+AND retained.kind = workspace_content_reports.kind
+AND retained.resource_id = workspace_content_reports.resource_id
+AND retained.revision = workspace_content_reports.revision
+)
+''',
+      [workspaceId],
+    );
+  }
 
   Future<WorkspaceHistoryPolicyRow?> _row() => (database.select(
     database.workspaceHistoryPolicies,

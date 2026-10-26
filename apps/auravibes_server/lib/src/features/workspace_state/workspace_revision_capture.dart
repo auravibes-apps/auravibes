@@ -9,11 +9,23 @@ class const WorkspaceRevisionCapture(
   final Session session,
   final Transaction transaction,
 ) {
-  Future<void> save(WorkspaceResource resource) async {
+  Future<void> save(
+    WorkspaceResource resource, {
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
+  }) async {
     if (!_historical(resource.resourceKind)) return;
     final key = _RevisionKey.resource(resource);
     if (await _existing(key) != null) return;
-    await _insert(resource);
+    await _insert(
+      resource,
+      actorUserId: actorUserId,
+      aiInvolved: aiInvolved,
+      operation: operation,
+      conversationId: conversationId,
+    );
     await WorkspaceHistoryRetention(
       session,
       resource.workspaceId,
@@ -43,11 +55,24 @@ class const WorkspaceRevisionCapture(
     }
   }
 
-  Future<void> _insert(WorkspaceResource resource) async {
+  Future<void> _insert(
+    WorkspaceResource resource, {
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
+  }) async {
     final data = await _data(resource);
     final _ = await WorkspaceRevision.db.insertRow(
       session,
-      _snapshot(resource, data),
+      _snapshot(
+        resource,
+        data,
+        actorUserId: actorUserId,
+        aiInvolved: aiInvolved,
+        operation: operation,
+        conversationId: conversationId,
+      ),
       transaction: transaction,
     );
   }
@@ -96,15 +121,25 @@ class const _RevisionKey(
 
 bool _historical(WorkspaceResourceKind kind) =>
     kind == .table || kind == .tableRecord;
-WorkspaceRevision _snapshot(WorkspaceResource resource, String data) =>
-    WorkspaceRevision(
-      workspaceId: resource.workspaceId,
-      resourceKind: resource.resourceKind,
-      resourceId: resource.resourceId,
-      revision: resource.revision,
-      data: data,
-      capturedAt: DateTime.now().toUtc(),
-    );
+WorkspaceRevision _snapshot(
+  WorkspaceResource resource,
+  String data, {
+  String? actorUserId,
+  bool? aiInvolved,
+  String? operation,
+  String? conversationId,
+}) => WorkspaceRevision(
+  workspaceId: resource.workspaceId,
+  resourceKind: resource.resourceKind,
+  resourceId: resource.resourceId,
+  revision: resource.revision,
+  data: data,
+  capturedAt: DateTime.now().toUtc(),
+  actorUserId: actorUserId,
+  aiInvolved: aiInvolved,
+  operation: operation,
+  conversationId: conversationId,
+);
 Expression _tableMatches(
   WorkspaceResourceTable row,
   int workspaceId,

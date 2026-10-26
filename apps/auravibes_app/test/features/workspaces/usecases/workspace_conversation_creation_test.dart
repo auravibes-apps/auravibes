@@ -308,11 +308,13 @@ class _InterruptedTableRepository extends LocalWorkspaceTableRepository {
     required String name,
     required String labelName,
     String? parentId,
+    String? aiConversationId,
   }) async {
     final _ = await super.create(
       name: name,
       labelName: labelName,
       parentId: parentId,
+      aiConversationId: aiConversationId,
     );
     throw StateError('Simulated interruption before receipt commit');
   }

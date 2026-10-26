@@ -12,6 +12,7 @@ typedef _CommandInput = ({
   WorkspaceContextSelection selection,
   Map<String, dynamic> arguments,
   WorkspaceReferenceScope references,
+  String? conversationId,
 });
 
 /// Executes selected content through the same validated boundaries as editors.
@@ -24,10 +25,12 @@ class const WorkspaceConversationCommandUsecase({
     required WorkspaceContextSelection selection,
     required Map<String, dynamic> arguments,
     WorkspaceReferenceScope? references,
+    String? conversationId,
   }) => _ItemCommand(this, (
     selection: selection,
     arguments: arguments,
     references: references ?? WorkspaceReferenceScope(selection, const []),
+    conversationId: conversationId,
   )).call();
 
   Future<void> authorizeReceipt(Map<String, Object?> result) =>
@@ -249,6 +252,7 @@ class const _ItemCreation(
       name: _Arguments.string(input.arguments, 'name'),
       labelName: _Arguments.string(input.arguments, 'labelName'),
       parentId: parent,
+      aiConversationId: input.conversationId,
     );
 
     return _Snapshots.table(table);
@@ -291,6 +295,7 @@ class const _TableCommand(
         table: table,
         name: _Arguments.string(input.arguments, 'name'),
         parentId: table.parentId,
+        aiConversationId: input.conversationId,
       ),
     );
   }
@@ -305,6 +310,7 @@ class const _RecordCreation(
     final created = await command.owner.tables.createRecord(
       table: table,
       values: _values(),
+      aiConversationId: command.input.conversationId,
     );
 
     return _Snapshots.record(table.id, created);
@@ -337,6 +343,7 @@ class const _RecordUpdate(
       table: table,
       record: current,
       values: _values(current),
+      aiConversationId: command.input.conversationId,
     );
 
     return _Snapshots.record(table.id, updated);
@@ -382,6 +389,7 @@ class const _ColumnSave(
     final updated = await command.owner.tables.saveColumn(
       table: table,
       column: _column(),
+      aiConversationId: command.input.conversationId,
     );
 
     return _Snapshots.table(updated);

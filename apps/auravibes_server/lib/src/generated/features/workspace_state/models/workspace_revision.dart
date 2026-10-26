@@ -25,6 +25,10 @@ abstract class WorkspaceRevision
     required this.revision,
     required this.data,
     required this.capturedAt,
+    this.actorUserId,
+    this.aiInvolved,
+    this.operation,
+    this.conversationId,
   });
 
   factory WorkspaceRevision({
@@ -35,6 +39,10 @@ abstract class WorkspaceRevision
     required int revision,
     required String data,
     required DateTime capturedAt,
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
   }) = _WorkspaceRevisionImpl;
 
   factory WorkspaceRevision.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -50,6 +58,12 @@ abstract class WorkspaceRevision
       capturedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['capturedAt'],
       ),
+      actorUserId: jsonSerialization['actorUserId'] as String?,
+      aiInvolved: jsonSerialization['aiInvolved'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['aiInvolved']),
+      operation: jsonSerialization['operation'] as String?,
+      conversationId: jsonSerialization['conversationId'] as String?,
     );
   }
 
@@ -72,6 +86,14 @@ abstract class WorkspaceRevision
 
   DateTime capturedAt;
 
+  String? actorUserId;
+
+  bool? aiInvolved;
+
+  String? operation;
+
+  String? conversationId;
+
   @override
   _is.Table<int?> get table => t;
 
@@ -86,6 +108,10 @@ abstract class WorkspaceRevision
     int? revision,
     String? data,
     DateTime? capturedAt,
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -98,6 +124,10 @@ abstract class WorkspaceRevision
       'revision': revision,
       'data': data,
       'capturedAt': capturedAt.toJson(),
+      if (actorUserId != null) 'actorUserId': actorUserId,
+      if (aiInvolved != null) 'aiInvolved': aiInvolved,
+      if (operation != null) 'operation': operation,
+      if (conversationId != null) 'conversationId': conversationId,
     };
   }
 
@@ -112,6 +142,10 @@ abstract class WorkspaceRevision
       'revision': revision,
       'data': data,
       'capturedAt': capturedAt.toJson(),
+      if (actorUserId != null) 'actorUserId': actorUserId,
+      if (aiInvolved != null) 'aiInvolved': aiInvolved,
+      if (operation != null) 'operation': operation,
+      if (conversationId != null) 'conversationId': conversationId,
     };
   }
 
@@ -154,6 +188,10 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
     required int revision,
     required String data,
     required DateTime capturedAt,
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
@@ -162,6 +200,10 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
          revision: revision,
          data: data,
          capturedAt: capturedAt,
+         actorUserId: actorUserId,
+         aiInvolved: aiInvolved,
+         operation: operation,
+         conversationId: conversationId,
        );
 
   /// Returns a shallow copy of this [WorkspaceRevision]
@@ -176,6 +218,10 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
     int? revision,
     String? data,
     DateTime? capturedAt,
+    Object? actorUserId = _Undefined,
+    Object? aiInvolved = _Undefined,
+    Object? operation = _Undefined,
+    Object? conversationId = _Undefined,
   }) {
     return WorkspaceRevision(
       id: id is int? ? id : this.id,
@@ -185,6 +231,12 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
       revision: revision ?? this.revision,
       data: data ?? this.data,
       capturedAt: capturedAt ?? this.capturedAt,
+      actorUserId: actorUserId is String? ? actorUserId : this.actorUserId,
+      aiInvolved: aiInvolved is bool? ? aiInvolved : this.aiInvolved,
+      operation: operation is String? ? operation : this.operation,
+      conversationId: conversationId is String?
+          ? conversationId
+          : this.conversationId,
     );
   }
 }
@@ -227,6 +279,27 @@ class WorkspaceRevisionUpdateTable
         table.capturedAt,
         value,
       );
+
+  _is.ColumnValue<String, String> actorUserId(String? value) => _is.ColumnValue(
+    table.actorUserId,
+    value,
+  );
+
+  _is.ColumnValue<bool, bool> aiInvolved(bool? value) => _is.ColumnValue(
+    table.aiInvolved,
+    value,
+  );
+
+  _is.ColumnValue<String, String> operation(String? value) => _is.ColumnValue(
+    table.operation,
+    value,
+  );
+
+  _is.ColumnValue<String, String> conversationId(String? value) =>
+      _is.ColumnValue(
+        table.conversationId,
+        value,
+      );
 }
 
 class WorkspaceRevisionTable extends _is.Table<int?> {
@@ -258,6 +331,22 @@ class WorkspaceRevisionTable extends _is.Table<int?> {
       'capturedAt',
       this,
     );
+    actorUserId = _is.ColumnString(
+      'actorUserId',
+      this,
+    );
+    aiInvolved = _is.ColumnBool(
+      'aiInvolved',
+      this,
+    );
+    operation = _is.ColumnString(
+      'operation',
+      this,
+    );
+    conversationId = _is.ColumnString(
+      'conversationId',
+      this,
+    );
   }
 
   late final WorkspaceRevisionUpdateTable updateTable;
@@ -274,6 +363,14 @@ class WorkspaceRevisionTable extends _is.Table<int?> {
 
   late final _is.ColumnDateTime capturedAt;
 
+  late final _is.ColumnString actorUserId;
+
+  late final _is.ColumnBool aiInvolved;
+
+  late final _is.ColumnString operation;
+
+  late final _is.ColumnString conversationId;
+
   @override
   List<_is.Column> get columns => [
     id,
@@ -283,6 +380,10 @@ class WorkspaceRevisionTable extends _is.Table<int?> {
     revision,
     data,
     capturedAt,
+    actorUserId,
+    aiInvolved,
+    operation,
+    conversationId,
   ];
 }
 

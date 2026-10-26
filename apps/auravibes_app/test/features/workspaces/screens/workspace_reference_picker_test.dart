@@ -408,6 +408,7 @@ class _Tables extends Fake implements WorkspaceTableRepository {
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
+    String? aiConversationId,
   }) async {
     saved = values;
 

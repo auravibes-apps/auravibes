@@ -207,6 +207,8 @@ import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
 import '../features/workspace_context/workspace_context_endpoint.dart'
     as _ikyf4f6l;
+import '../features/workspace_state/workspace_content_report_endpoint.dart'
+    as _ie5xfhcl;
 import '../features/workspace_state/workspace_csv_endpoint.dart' as _iml0si8c;
 import '../features/workspace_state/workspace_history_endpoint.dart'
     as _iro98jgh;
@@ -299,6 +301,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'workspaceContext',
+          null,
+        ),
+      'workspaceContentReport': _ie5xfhcl.WorkspaceContentReportEndpoint()
+        ..initialize(
+          server,
+          'workspaceContentReport',
           null,
         ),
       'workspaceCsv': _iml0si8c.WorkspaceCsvEndpoint()
@@ -1990,6 +1998,99 @@ class Endpoints extends _is.EndpointDispatch {
                         params['conversationId'],
                         params['requestId'],
                         params['selectionJson'],
+                      ),
+        ),
+      },
+    );
+    connectors['workspaceContentReport'] = _is.EndpointConnector(
+      name: 'workspaceContentReport',
+      endpoint: endpoints['workspaceContentReport']!,
+      methodConnectors: {
+        'submit': _is.MethodConnector(
+          name: 'submit',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'targetJson': _is.ParameterDescription(
+              name: 'targetJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'reportId': _is.ParameterDescription(
+              name: 'reportId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceContentReport']
+                          as _ie5xfhcl.WorkspaceContentReportEndpoint)
+                      .submit(
+                        session,
+                        params['workspaceId'],
+                        params['targetJson'],
+                        params['reportId'],
+                      ),
+        ),
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceContentReport']
+                          as _ie5xfhcl.WorkspaceContentReportEndpoint)
+                      .list(
+                        session,
+                        params['workspaceId'],
+                      ),
+        ),
+        'resolve': _is.MethodConnector(
+          name: 'resolve',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'reportId': _is.ParameterDescription(
+              name: 'reportId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'action': _is.ParameterDescription(
+              name: 'action',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceContentReport']
+                          as _ie5xfhcl.WorkspaceContentReportEndpoint)
+                      .resolve(
+                        session,
+                        params['workspaceId'],
+                        params['reportId'],
+                        params['action'],
                       ),
         ),
       },

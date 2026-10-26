@@ -20,6 +20,16 @@ abstract final class WorkspaceHistoryApproval {
         ),
       ) ??
       false;
+
+  static Future<bool> removeReportedContent(BuildContext context) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) => const _ApprovalDialog(
+          notice: LocaleKeys.workspace_items_history_report_remove_notice,
+          action: LocaleKeys.workspace_items_history_report_remove,
+        ),
+      ) ??
+      false;
 }
 
 class const _ApprovalDialog({

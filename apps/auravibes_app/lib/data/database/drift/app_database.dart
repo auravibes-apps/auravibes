@@ -45,6 +45,7 @@ import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_content_reports.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_context_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
@@ -125,6 +126,7 @@ part 'app_database.g.dart';
     WorkspaceAssetDeletions,
     WorkspaceCommandReceipts,
     WorkspaceContextSelections,
+    WorkspaceContentReports,
   ],
   daos: [
     WorkspaceDao,
@@ -221,7 +223,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceHistorySchemaVersion + 1;
   static const int _workspaceCommandSchemaVersion =
       _workspaceAssetsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceCommandSchemaVersion;
+  static const int _workspaceReportingSchemaVersion =
+      _workspaceCommandSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceReportingSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -281,6 +285,7 @@ extension on AppDatabase {
     await _upgradeWorkspaceRevisionSchema(m, from);
     await _upgradeWorkspaceAssetsSchema(m, from);
     await _upgradeWorkspaceCommandsSchema(m, from);
+    await _upgradeWorkspaceReportingSchema(m, from);
     await _upgradeConnectorWritesSchema(m, from);
   }
 
@@ -320,6 +325,15 @@ extension on AppDatabase {
     if (from >= AppDatabase._workspaceCommandSchemaVersion) return;
     await m.createTable(workspaceContextSelections);
     await m.createTable(workspaceCommandReceipts);
+  }
+
+  Future<void> _upgradeWorkspaceReportingSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceReportingSchemaVersion) return;
+    await m.addColumn(workspaceRevisions, workspaceRevisions.actorUserId);
+    await m.addColumn(workspaceRevisions, workspaceRevisions.aiInvolved);
+    await m.addColumn(workspaceRevisions, workspaceRevisions.operation);
+    await m.addColumn(workspaceRevisions, workspaceRevisions.conversationId);
+    await m.createTable(workspaceContentReports);
   }
 
   Future<void> _upgradeConnectorWritesSchema(Migrator m, int from) async {
