@@ -29,27 +29,6 @@ class ObjectUseCases {
   final ObjectRepository repository;
   final workspace_repo.CloudWorkspaceRepository workspaceRepository;
 
-  Future<void> authorize(
-    Session session, {
-    required int workspaceId,
-    required String userId,
-  }) async {
-    final workspace = await workspaceRepository.findActiveWorkspace(
-      session,
-      workspaceId,
-    );
-    final member = await workspaceRepository.findActiveMember(
-      session,
-      workspaceId: workspaceId,
-      userId: userId,
-    );
-    if (workspace == null || member == null) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.membershipRequired,
-      );
-    }
-  }
-
   Future<ObjectResult> describe(
     Session session, {
     required String userId,
@@ -362,16 +341,7 @@ class ObjectUseCases {
     required String userId,
     required GetDownloadRequest request,
   }) async {
-    final object = await _ObjectReader(this, session).read(userId, request);
-    final signed = await store.signGet(
-      key: object.objectKey,
-      contentDisposition: safeContentDisposition(object.displayName),
-      expiresIn: const Duration(minutes: 5),
-    );
-    return GetDownloadResult(
-      downloadUrl: signed.url.toString(),
-      expiresAt: signed.expiresAt,
-    );
+    return await _ObjectReader(this, session).download(userId, request);
   }
 
   Future<void> delete(
@@ -560,47 +530,56 @@ class const _ObjectReader(final ObjectUseCases owner, final Session session) {
   Future<WorkspaceObject> read(
     String userId,
     GetDownloadRequest request,
+  ) => session.db.transaction(
+    (transaction) => _read(userId, request, transaction),
+  );
+
+  Future<GetDownloadResult> download(
+    String userId,
+    GetDownloadRequest request,
   ) async {
-    await owner.authorize(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
+    final pending = await session.db.transaction((transaction) async {
+      final object = await _read(userId, request, transaction);
+      return (
+        object: object,
+        signed: owner.store.signGet(
+          key: object.objectKey,
+          contentDisposition: safeContentDisposition(object.displayName),
+          expiresIn: const Duration(minutes: 5),
+        ),
+      );
+    });
+    final signed = await pending.signed;
+    return GetDownloadResult(
+      downloadUrl: signed.url.toString(),
+      expiresAt: signed.expiresAt,
     );
-    final object = await _object(request);
-    final actor = await member(request.workspaceId, userId);
-    if (!await _canRead(actor, request.objectId)) {
+  }
+
+  Future<WorkspaceObject> _read(
+    String userId,
+    GetDownloadRequest request,
+    Transaction transaction,
+  ) async {
+    final authorization = await owner._lockActorWorkspaceMember(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      transaction: transaction,
+    );
+    final object = _active(
+      await owner.repository.findObject(
+        session,
+        workspaceId: request.workspaceId,
+        objectId: request.objectId,
+        transaction: transaction,
+      ),
+    );
+    if (!await _canRead(authorization.member, request.objectId, transaction)) {
       throw ObjectException(code: .objectNotFound);
     }
 
     return object;
-  }
-
-  Future<WorkspaceMember> member(
-    int workspaceId,
-    String userId, {
-    Transaction? transaction,
-  }) async {
-    final actor = await owner.workspaceRepository.findActiveMember(
-      session,
-      workspaceId: workspaceId,
-      userId: userId,
-      transaction: transaction,
-    );
-    if (actor == null) {
-      throw CloudWorkspaceException(code: .membershipRequired);
-    }
-
-    return actor;
-  }
-
-  Future<WorkspaceObject> _object(GetDownloadRequest request) async {
-    final object = await owner.repository.findObject(
-      session,
-      workspaceId: request.workspaceId,
-      objectId: request.objectId,
-    );
-
-    return _active(object);
   }
 
   static WorkspaceObject _active(WorkspaceObject? object) {
@@ -613,16 +592,28 @@ class const _ObjectReader(final ObjectUseCases owner, final Session session) {
     return object;
   }
 
-  Future<bool> _canRead(WorkspaceMember actor, int objectId) async =>
-      await _messageReference(actor.workspaceId, objectId) ||
-      await ObjectItemAccess(session, actor).canRead(objectId);
-
-  Future<bool> _messageReference(int workspaceId, int objectId) =>
-      owner.repository.hasReadableMessageReference(
+  Future<bool> _canRead(
+    WorkspaceMember actor,
+    int objectId,
+    Transaction transaction,
+  ) async =>
+      await _messageReference(actor.workspaceId, objectId, transaction) ||
+      await ObjectItemAccess(
         session,
-        workspaceId: workspaceId,
-        objectId: objectId,
-      );
+        actor,
+        transaction: transaction,
+      ).canRead(objectId);
+
+  Future<bool> _messageReference(
+    int workspaceId,
+    int objectId,
+    Transaction transaction,
+  ) => owner.repository.hasReadableMessageReference(
+    session,
+    workspaceId: workspaceId,
+    objectId: objectId,
+    transaction: transaction,
+  );
 }
 
 abstract final class _ObjectResults {

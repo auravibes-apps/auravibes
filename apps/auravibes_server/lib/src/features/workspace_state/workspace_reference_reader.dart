@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_table_access.dart';
 
@@ -49,6 +50,16 @@ class const WorkspaceReferenceReader(
   }
 
   Future<WorkspaceMember> _member(Transaction transaction) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
     final repository = WorkspaceStateRepository();
     final workspace = await repository.findWorkspace(
       session,
