@@ -469,35 +469,62 @@ void main() {
 
     Future<
       ({
-        String toolId,
         WorkspaceResource server,
         WorkspaceSecret secret,
-        Map<String, dynamic> data,
+        WorkspaceResource tool,
+        WorkspaceResource group,
+        Map<String, dynamic> serverData,
+        Map<String, dynamic> toolData,
+        Map<String, dynamic> groupData,
       })
     >
     configureMcpServer(_Fixture fixture) async {
       fixture.database.passwords['workspaceSecretKey'] =
           'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-      const toolId = 'mcp/server-1/read';
       const serverId = 'server-1';
+      const groupId = 'server-1-group';
+      const descriptorName = 'mcp_server-1_server_read';
       final now = DateTime.now().toUtc();
-      await WorkspaceResource.db.insertRow(
+      final groupData = <String, dynamic>{
+        'id': groupId,
+        'name': 'Server tools',
+        'mcpServerId': serverId,
+        'isEnabled': true,
+        'permissionMode': 'alwaysAllow',
+      };
+      final group = await WorkspaceResource.db.insertRow(
         fixture.database,
         WorkspaceResource(
           workspaceId: fixture.workspaceId,
-          resourceKind: .tool,
-          resourceId: toolId,
-          data: jsonEncode({
-            'toolId': toolId,
-            'isEnabled': true,
-            'permissionMode': 'alwaysAllow',
-          }),
+          resourceKind: .toolGroup,
+          resourceId: groupId,
+          data: jsonEncode(groupData),
           revision: 1,
           createdAt: now,
           updatedAt: now,
         ),
       );
-      final data = <String, dynamic>{
+      final toolData = <String, dynamic>{
+        'name': descriptorName,
+        'toolId': 'read',
+        'mcpServerId': serverId,
+        'toolGroupId': groupId,
+        'isEnabled': true,
+        'permissionMode': 'alwaysAllow',
+      };
+      final tool = await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .tool,
+          resourceId: serverId,
+          data: jsonEncode(toolData),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final serverData = <String, dynamic>{
         'url': 'https://mcp.example.test/mcp',
         'transport': {'type': 'streamableHttp'},
         'authType': 'bearer',
@@ -511,7 +538,7 @@ void main() {
           workspaceId: fixture.workspaceId,
           resourceKind: .mcpServer,
           resourceId: serverId,
-          data: jsonEncode(data),
+          data: jsonEncode(serverData),
           revision: 1,
           createdAt: now,
           updatedAt: now,
@@ -544,22 +571,38 @@ void main() {
           updatedAt: now,
         ),
       );
-      return (toolId: toolId, server: server, secret: secret, data: data);
+      return (
+        server: server,
+        secret: secret,
+        tool: tool,
+        group: group,
+        serverData: serverData,
+        toolData: toolData,
+        groupData: groupData,
+      );
     }
 
     test(
-      'MCP request dispatch rejects edited server and rotated credentials',
+      'MCP dispatch rejects changed server, tool, group, and credential snapshots',
       () async {
-        for (final mutation in ['server', 'secret']) {
+        for (final mutation in [
+          'server',
+          'secret',
+          'toolServer',
+          'remoteTool',
+          'group',
+        ]) {
           final fixture = await prepare();
           final configured = await configureMcpServer(fixture);
           final fence = await McpToolDispatchFence.capture(
             session: fixture.database,
             workspaceId: fixture.workspaceId,
             userId: fixture.userId,
-            toolId: configured.toolId,
+            toolId: configured.server.resourceId,
             serverId: configured.server.resourceId,
-            serverData: configured.data,
+            expectedDescriptorName: 'mcp_server-1_server_read',
+            expectedRemoteToolId: 'read',
+            serverData: configured.serverData,
             initialSecret: configured.secret,
           );
           if (mutation == 'server') {
@@ -567,13 +610,13 @@ void main() {
               fixture.database,
               configured.server.copyWith(
                 data: jsonEncode({
-                  ...configured.data,
+                  ...configured.serverData,
                   'url': 'https://changed.example.test/mcp',
                 }),
                 revision: configured.server.revision + 1,
               ),
             );
-          } else {
+          } else if (mutation == 'secret') {
             final encrypted = await const WorkspaceSecretCipher().encrypt(
               fixture.database,
               'rotated-mcp-secret',
@@ -587,6 +630,36 @@ void main() {
                 nonce: encrypted.nonce,
                 authenticationTag: encrypted.authenticationTag,
                 revision: configured.secret.revision + 1,
+              ),
+            );
+          } else if (mutation == 'toolServer') {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.tool.copyWith(
+                data: jsonEncode({
+                  ...configured.toolData,
+                  'mcpServerId': 'server-2',
+                }),
+                revision: configured.tool.revision + 1,
+              ),
+            );
+          } else if (mutation == 'remoteTool') {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.tool.copyWith(
+                data: jsonEncode({...configured.toolData, 'toolId': 'write'}),
+                revision: configured.tool.revision + 1,
+              ),
+            );
+          } else {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.group.copyWith(
+                data: jsonEncode({
+                  ...configured.groupData,
+                  'mcpServerId': 'server-2',
+                }),
+                revision: configured.group.revision + 1,
               ),
             );
           }

@@ -73,7 +73,12 @@ final class McpToolDispatchFence {
     required this.userId,
     required this.toolId,
     required this.serverId,
+    required this.expectedDescriptorName,
+    required this.expectedRemoteToolId,
     required this.serverData,
+    required this.toolData,
+    required this.toolGroupId,
+    required this.toolGroupData,
     required this.secret,
   });
 
@@ -82,7 +87,12 @@ final class McpToolDispatchFence {
   final String userId;
   final String toolId;
   final String serverId;
+  final String expectedDescriptorName;
+  final String expectedRemoteToolId;
   final Map<String, dynamic> serverData;
+  final Map<String, dynamic> toolData;
+  final String? toolGroupId;
+  final Map<String, dynamic>? toolGroupData;
   final WorkspaceSecret? secret;
 
   static Future<McpToolDispatchFence> capture({
@@ -91,6 +101,8 @@ final class McpToolDispatchFence {
     required String userId,
     required String toolId,
     required String serverId,
+    required String expectedDescriptorName,
+    required String expectedRemoteToolId,
     required Map<String, dynamic> serverData,
     required WorkspaceSecret? initialSecret,
     bool allowSecretRotation = false,
@@ -103,11 +115,63 @@ final class McpToolDispatchFence {
       userId: userId,
       toolId: toolId,
       serverId: serverId,
+      expectedDescriptorName: expectedDescriptorName,
+      expectedRemoteToolId: expectedRemoteToolId,
       serverData: Map.unmodifiable(serverData),
+      toolData: const {},
+      toolGroupId: null,
+      toolGroupData: null,
       secret: null,
     );
+    late Map<String, dynamic> toolData;
+    late String? toolGroupId;
+    late Map<String, dynamic>? toolGroupData;
     await session.db.transaction((transaction) async {
       await fence._requireServerAccess(transaction);
+      final currentTool = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.tool) &
+            table.resourceId.equals(toolId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (currentTool == null) {
+        throw const ServerToolNotConfiguredException();
+      }
+      toolData = _decodeMcpServerData(currentTool.data);
+      if (!fence._matchesToolDescriptor(toolData)) {
+        throw const ServerToolNotConfiguredException();
+      }
+      final rawToolGroupId = toolData['toolGroupId'];
+      if (rawToolGroupId != null && rawToolGroupId is! String) {
+        throw const ServerToolNotConfiguredException();
+      }
+      toolGroupId = rawToolGroupId as String?;
+      if (toolGroupId case final groupId?) {
+        final currentToolGroup = await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.resourceKind.equals(WorkspaceResourceKind.toolGroup) &
+              table.resourceId.equals(groupId) &
+              table.deletedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (currentToolGroup == null) {
+          throw const ServerToolNotConfiguredException();
+        }
+        final currentGroupData = _decodeMcpServerData(currentToolGroup.data);
+        toolGroupData = currentGroupData;
+        if (!_matchesMcpToolGroup(currentGroupData, serverId)) {
+          throw const ServerToolNotConfiguredException();
+        }
+      } else {
+        toolGroupData = null;
+      }
       final currentSecret = await const WorkspaceSecretResolver()
           .findForInitiator(
             session,
@@ -142,7 +206,14 @@ final class McpToolDispatchFence {
       userId: userId,
       toolId: toolId,
       serverId: serverId,
+      expectedDescriptorName: expectedDescriptorName,
+      expectedRemoteToolId: expectedRemoteToolId,
       serverData: Map.unmodifiable(serverData),
+      toolData: Map.unmodifiable(toolData),
+      toolGroupId: toolGroupId,
+      toolGroupData: toolGroupData == null
+          ? null
+          : Map.unmodifiable(toolGroupData!),
       secret: secret,
     );
   }
@@ -163,6 +234,46 @@ final class McpToolDispatchFence {
 
   Future<void> _requireCurrent(Transaction transaction) async {
     await _requireServerAccess(transaction);
+    final currentTool = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.tool) &
+          table.resourceId.equals(toolId) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (currentTool == null) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final currentToolData = _decodeMcpServerData(currentTool.data);
+    final rawToolGroupId = currentToolData['toolGroupId'];
+    if (!_sameJsonDefinition(toolData, currentToolData) ||
+        !_matchesToolDescriptor(currentToolData) ||
+        rawToolGroupId != toolGroupId) {
+      throw const ServerToolNotConfiguredException();
+    }
+    if (toolGroupId case final groupId?) {
+      final currentToolGroup = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.toolGroup) &
+            table.resourceId.equals(groupId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (currentToolGroup == null || toolGroupData == null) {
+        throw const ServerToolNotConfiguredException();
+      }
+      final currentGroupData = _decodeMcpServerData(currentToolGroup.data);
+      if (!_sameJsonDefinition(toolGroupData!, currentGroupData) ||
+          !_matchesMcpToolGroup(currentGroupData, serverId)) {
+        throw const ServerToolNotConfiguredException();
+      }
+    }
     final currentSecret = await const WorkspaceSecretResolver()
         .findForInitiator(
           session,
@@ -207,6 +318,18 @@ final class McpToolDispatchFence {
       throw const ServerToolNotConfiguredException();
     }
   }
+
+  bool _matchesToolDescriptor(Map<String, dynamic> data) {
+    if ((data['name'] ?? data['fullName']) != expectedDescriptorName) {
+      return false;
+    }
+    final configuredServerId = data['mcpServerId'];
+    if (configuredServerId != null && configuredServerId != serverId) {
+      return false;
+    }
+    final configuredToolId = data['toolId'];
+    return configuredToolId == null || configuredToolId == expectedRemoteToolId;
+  }
 }
 
 Map<String, dynamic> _decodeMcpServerData(String data) {
@@ -227,7 +350,19 @@ bool _sameMcpServerDefinition(
     return _canonicalJsonMap(definition);
   }
 
-  return jsonEncode(comparable(before)) == jsonEncode(comparable(after));
+  return _sameJsonDefinition(comparable(before), comparable(after));
+}
+
+bool _sameJsonDefinition(
+  Map<String, dynamic> before,
+  Map<String, dynamic> after,
+) =>
+    jsonEncode(_canonicalJsonMap(before)) ==
+    jsonEncode(_canonicalJsonMap(after));
+
+bool _matchesMcpToolGroup(Map<String, dynamic> data, String serverId) {
+  final configuredServerId = data['mcpServerId'];
+  return configuredServerId == null || configuredServerId == serverId;
 }
 
 Map<String, dynamic> _canonicalJsonMap(Map<String, dynamic> data) {
@@ -2350,6 +2485,8 @@ class const ServerToolExecutorService({
       userId: turn.initiatorUserId,
       toolId: tool.descriptor.tableId,
       serverId: serverId,
+      expectedDescriptorName: tool.descriptor.fullName,
+      expectedRemoteToolId: tool.descriptor.toolIdentifier,
       serverData: data,
       initialSecret: secret,
       allowSecretRotation: data['authType'] == 'oauth',
