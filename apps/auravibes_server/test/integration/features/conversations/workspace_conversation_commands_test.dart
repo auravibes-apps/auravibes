@@ -129,7 +129,7 @@ void main() {
             content: 'Selection',
             metadataJson: jsonEncode({
               'modelMetadata': {
-                workspaceContextMetadataKey: selection?.toJson(),
+                'workspaceContextSelection': selection?.toJson(),
               },
             }),
             revision: 1,

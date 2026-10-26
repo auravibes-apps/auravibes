@@ -6,7 +6,6 @@ export 'package:auravibes_engine/src/workspace_context_selection.dart';
 
 const workspaceCommandToolName = 'workspace_item';
 const workspaceCommandTableId = 'host.workspace.item';
-const workspaceContextMetadataKey = 'workspaceContextSelection';
 
 /// Commands carry IDs and expected revisions; hosts own grants and execution.
 ToolSpec workspaceCommandToolSpec() => ToolSpec(

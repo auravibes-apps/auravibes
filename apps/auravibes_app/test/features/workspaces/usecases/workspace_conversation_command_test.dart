@@ -191,7 +191,7 @@ void main() {
         status: .sent,
         metadata: jsonEncode(
           MessageMetadataEntity(
-            modelMetadata: {workspaceContextMetadataKey: selection.toJson()},
+            modelMetadata: {'workspaceContextSelection': selection.toJson()},
           ).toJson(),
         ),
       ),
@@ -303,7 +303,7 @@ void main() {
         status: .sent,
         metadata: jsonEncode(
           const MessageMetadataEntity(
-            modelMetadata: {workspaceContextMetadataKey: null},
+            modelMetadata: {'workspaceContextSelection': null},
           ).toJson(),
         ),
       ),
@@ -370,7 +370,7 @@ void main() {
         status: .sent,
         metadata: jsonEncode(
           MessageMetadataEntity(
-            modelMetadata: {workspaceContextMetadataKey: grant.toJson()},
+            modelMetadata: {'workspaceContextSelection': grant.toJson()},
           ).toJson(),
         ),
       ),
@@ -514,7 +514,7 @@ void main() {
         metadata: jsonEncode(
           MessageMetadataEntity(
             modelMetadata: {
-              workspaceContextMetadataKey: {
+              'workspaceContextSelection': {
                 ...grant.toJson(),
                 'conversationId': fork.id,
               },
@@ -540,7 +540,7 @@ void main() {
         status: .sent,
         metadata: jsonEncode(
           const MessageMetadataEntity(
-            modelMetadata: {workspaceContextMetadataKey: null},
+            modelMetadata: {'workspaceContextSelection': null},
           ).toJson(),
         ),
       ),
