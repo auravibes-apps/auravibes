@@ -48,7 +48,9 @@ Future<bool> hasActiveConversationAccess(
   final workspace = await CloudWorkspace.db.findFirstRow(
     session,
     where: (table) =>
-        table.id.equals(workspaceId) & table.deletedAt.equals(null),
+        table.id.equals(workspaceId) &
+        table.deletedAt.equals(null) &
+        table.erasureRequestedAt.equals(null),
   );
   if (workspace == null) return false;
   final member = await WorkspaceMember.db.findFirstRow(

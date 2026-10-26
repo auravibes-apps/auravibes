@@ -224,7 +224,9 @@ class ModelConnectionUseCases {
     final workspace = await CloudWorkspace.db.findFirstRow(
       session,
       where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
@@ -630,7 +632,9 @@ class ModelConnectionUseCases {
     final workspace = await CloudWorkspace.db.findFirstRow(
       session,
       where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );

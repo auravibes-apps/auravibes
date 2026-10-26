@@ -15,31 +15,43 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     Session session, {
     required String userId,
     required ListSkillResourcesRequest request,
-  }) async {
-    await _requireMember(session, request.workspaceId, userId);
+  }) => session.db.transaction((transaction) async {
+    await _requireActorMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     final resources = await _repository.list(
       session,
       workspaceId: request.workspaceId,
       skillId: request.skillId,
+      transaction: transaction,
     );
 
     return resources.map(_view).toList();
-  }
+  });
 
   Future<SkillResourceView?> get(
     Session session, {
     required String userId,
     required GetSkillResourceRequest request,
-  }) async {
-    await _requireMember(session, request.workspaceId, userId);
+  }) => session.db.transaction((transaction) async {
+    await _requireActorMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     final resource = await _repository.find(
       session,
       workspaceId: request.workspaceId,
       resourceId: request.resourceId,
+      transaction: transaction,
     );
 
     return resource == null ? null : _view(resource);
-  }
+  });
 
   Future<SkillResourceView> create(
     Session session, {
@@ -219,27 +231,7 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     return member;
   }
 
-  Future<WorkspaceMember> _requireManager(
-    Session session,
-    int workspaceId,
-    String userId,
-    Transaction transaction,
-  ) async {
-    final member = await _requireMember(
-      session,
-      workspaceId,
-      userId,
-      transaction,
-    );
-    if (member.role != WorkspaceRoles.owner &&
-        member.role != WorkspaceRoles.admin) {
-      _permissionDenied();
-    }
-
-    return member;
-  }
-
-  Future<WorkspaceMember> _requireActorManager(
+  Future<WorkspaceMember> _requireActorMember(
     Session session, {
     required int workspaceId,
     required String userId,
@@ -254,12 +246,34 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     final workspace = await CloudWorkspace.db.findFirstRow(
       session,
       where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
     if (workspace == null) _permissionDenied();
-    return _requireManager(session, workspaceId, userId, transaction);
+    return _requireMember(session, workspaceId, userId, transaction);
+  }
+
+  Future<WorkspaceMember> _requireActorManager(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final member = await _requireActorMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (member.role != WorkspaceRoles.owner &&
+        member.role != WorkspaceRoles.admin) {
+      _permissionDenied();
+    }
+
+    return member;
   }
 
   Future<void> _requireSkill(
@@ -307,7 +321,9 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     final workspace = await CloudWorkspace.db.findFirstRow(
       session,
       where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );

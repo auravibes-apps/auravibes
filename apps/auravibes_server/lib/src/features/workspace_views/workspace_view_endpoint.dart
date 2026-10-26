@@ -328,9 +328,12 @@ Future<void> _lockWorkspace(
   int id,
   Transaction transaction,
 ) async {
-  final row = await CloudWorkspace.db.findById(
+  final row = await CloudWorkspace.db.findFirstRow(
     session,
-    id,
+    where: (workspace) =>
+        workspace.id.equals(id) &
+        workspace.deletedAt.equals(null) &
+        workspace.erasureRequestedAt.equals(null),
     transaction: transaction,
     lockMode: LockMode.forUpdate,
   );

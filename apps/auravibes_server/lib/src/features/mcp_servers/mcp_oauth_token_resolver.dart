@@ -119,7 +119,8 @@ class McpOAuthTokenResolver {
         session,
         where: (table) =>
             table.id.equals(snapshot.workspaceId) &
-            table.deletedAt.equals(null),
+            table.deletedAt.equals(null) &
+            table.erasureRequestedAt.equals(null),
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );

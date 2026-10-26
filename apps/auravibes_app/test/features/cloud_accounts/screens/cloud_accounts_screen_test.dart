@@ -73,8 +73,10 @@ void main() {
     );
     expect(
       find.textContaining(
-        'Pending or accepted workspace invitations may retain your email '
-        'address, including a normalized copy, after account deletion',
+        'Workspace invitations in any status (pending, accepted, '
+        'expired, declined, or revoked) may retain your email address, '
+        'including a normalized copy, after account deletion; no expiry is '
+        'configured for those addresses',
       ),
       findsOneWidget,
     );
@@ -199,8 +201,10 @@ void main() {
       );
       expect(
         find.textContaining(
-          'Pending or accepted workspace invitations may retain your email '
-          'address, including a normalized copy',
+          'Workspace invitations in any status (pending, accepted, '
+          'expired, declined, or revoked) may retain your email address, '
+          'including a normalized copy; no expiry is configured for those '
+          'addresses',
         ),
         findsOneWidget,
       );
@@ -296,9 +300,19 @@ void main() {
     );
     expect(
       find.textContaining(
-        'Las invitaciones pendientes o aceptadas a espacios pueden conservar '
-        'tu direcci${_spanishChar(0xF3)}n de correo, incluida una copia '
-        'normalizada',
+        'Las invitaciones a espacios, sin importar su estado',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        'pendientes, aceptadas, vencidas, rechazadas o revocadas',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        'no hay una caducidad configurada para esas direcciones',
       ),
       findsOneWidget,
     );

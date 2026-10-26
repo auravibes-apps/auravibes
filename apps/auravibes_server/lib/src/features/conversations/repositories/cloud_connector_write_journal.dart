@@ -37,9 +37,12 @@ class const CloudConnectorWriteJournal(
   }
 
   Future<void> _lock(Transaction transaction) async {
-    final workspace = await CloudWorkspace.db.findById(
+    final workspace = await CloudWorkspace.db.findFirstRow(
       _session,
-      _workspaceId,
+      where: (row) =>
+          row.id.equals(_workspaceId) &
+          row.deletedAt.equals(null) &
+          row.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );

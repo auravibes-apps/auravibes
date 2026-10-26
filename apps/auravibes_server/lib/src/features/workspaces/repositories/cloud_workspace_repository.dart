@@ -146,7 +146,10 @@ class CloudWorkspaceRepository {
     final workspace = lock
         ? await CloudWorkspace.db.findFirstRow(
             session,
-            where: (t) => t.id.equals(id),
+            where: (t) =>
+                t.id.equals(id) &
+                t.deletedAt.equals(null) &
+                t.erasureRequestedAt.equals(null),
             transaction: transaction,
             lockMode: LockMode.forUpdate,
           )
@@ -155,7 +158,9 @@ class CloudWorkspaceRepository {
             id,
             transaction: transaction,
           );
-    return workspace?.deletedAt == null ? workspace : null;
+    return workspace?.deletedAt == null && workspace?.erasureRequestedAt == null
+        ? workspace
+        : null;
   }
 
   Future<CloudWorkspace?> findWorkspace(

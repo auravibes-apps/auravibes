@@ -24,7 +24,10 @@ class McpServerRepository {
     required Transaction transaction,
   }) => CloudWorkspace.db.findFirstRow(
     session,
-    where: (t) => t.id.equals(workspaceId) & t.deletedAt.equals(null),
+    where: (t) =>
+        t.id.equals(workspaceId) &
+        t.deletedAt.equals(null) &
+        t.erasureRequestedAt.equals(null),
     transaction: transaction,
     lockMode: LockMode.forUpdate,
   );

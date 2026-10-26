@@ -1095,9 +1095,12 @@ Future<void> _authorizedWorkspace(
   _CommandExecution command,
   Transaction transaction,
 ) async {
-  final workspace = await CloudWorkspace.db.findById(
+  final workspace = await CloudWorkspace.db.findFirstRow(
     command.session,
-    command.turn.workspaceId,
+    where: (row) =>
+        row.id.equals(command.turn.workspaceId) &
+        row.deletedAt.equals(null) &
+        row.erasureRequestedAt.equals(null),
     transaction: transaction,
     lockMode: LockMode.forUpdate,
   );

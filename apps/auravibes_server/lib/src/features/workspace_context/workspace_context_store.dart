@@ -136,14 +136,6 @@ class _WorkspaceContextSelectionSaver {
     String requestId,
     String? selectionJson,
   ) async {
-    final authUser = await const AuthUserLock().lock(
-      store.session,
-      userId: store.actorUserId,
-      transaction: transaction,
-    );
-    if (authUser == null) {
-      throw CloudWorkspaceException(code: .authenticationRequired);
-    }
     final context = await store._authorize(transaction);
     final selection = await _validatedSelection(
       transaction,
@@ -309,6 +301,14 @@ class _WorkspaceContextAuthorizer {
   Future<({WorkspaceMember member, Conversation conversation})> authorize(
     Transaction transaction,
   ) async {
+    final authUser = await const AuthUserLock().lock(
+      store.session,
+      userId: store.actorUserId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(code: .authenticationRequired);
+    }
     final _ = await _workspace(transaction);
     final member = await _member(transaction);
     final conversation = await _conversation(transaction);
@@ -317,9 +317,12 @@ class _WorkspaceContextAuthorizer {
   }
 
   Future<CloudWorkspace> _workspace(Transaction transaction) async {
-    final workspace = await CloudWorkspace.db.findById(
+    final workspace = await CloudWorkspace.db.findFirstRow(
       store.session,
-      store.workspaceId,
+      where: (row) =>
+          row.id.equals(store.workspaceId) &
+          row.deletedAt.equals(null) &
+          row.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );

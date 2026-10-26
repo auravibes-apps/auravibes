@@ -1742,7 +1742,11 @@ class ConversationUseCases {
       session,
       request.workspaceId,
     );
-    if (workspace == null || workspace.deletedAt != null) return const [];
+    if (workspace == null ||
+        workspace.deletedAt != null ||
+        workspace.erasureRequestedAt != null) {
+      return const [];
+    }
     final messages = await ConversationMessage.db.find(
       session,
       where: (table) =>
@@ -4405,7 +4409,9 @@ class ConversationUseCases {
     final workspace = await CloudWorkspace.db.findFirstRow(
       session,
       where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
@@ -5865,7 +5871,9 @@ class ConversationUseCases {
       final workspace = await CloudWorkspace.db.findFirstRow(
         session,
         where: (table) =>
-            table.id.equals(workspaceId) & table.deletedAt.equals(null),
+            table.id.equals(workspaceId) &
+            table.deletedAt.equals(null) &
+            table.erasureRequestedAt.equals(null),
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
