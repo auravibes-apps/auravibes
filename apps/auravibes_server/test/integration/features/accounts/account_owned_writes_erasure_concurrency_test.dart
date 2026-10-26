@@ -359,6 +359,76 @@ void main() {
     );
 
     test(
+      'scanner failure updates shared object after account deletion',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        final workspace = await _createSharedWorkspace(
+          session,
+          userId: userId,
+          memberRole: 'admin',
+        );
+        final store = InMemoryObjectStore();
+        final scanner = _BlockingObjectScanner();
+        final objects = ObjectUseCases(store: store, scanner: scanner);
+        final upload = await objects.beginUpload(
+          session,
+          userId: userId,
+          request: _beginUploadRequest(workspace.id!, 'scan-failure-race'),
+        );
+        final object = await WorkspaceObject.db.findById(
+          session,
+          upload.objectId,
+        );
+        expect(object, isNotNull);
+        store.objects[object!.objectKey] = ObjectMetadata(
+          sizeBytes: object.sizeBytes,
+          mimeType: object.mimeType,
+          checksumSha256: object.checksumSha256,
+        );
+        initializeTestAuthServices(session.serverpod);
+
+        Object? completionError;
+        final completing = objects
+            .completeUpload(
+              session,
+              userId: userId,
+              request: CompleteUploadRequest(
+                workspaceId: workspace.id!,
+                objectId: object.id!,
+              ),
+            )
+            .then<void>(
+              (_) {},
+              onError: (Object error, StackTrace _) => completionError = error,
+            );
+        await scanner.started.future.timeout(const Duration(seconds: 5));
+        await endpoints.account.deleteCurrentUser(authenticated);
+        scanner.result.completeError(StateError('Synthetic scan failure.'));
+        await completing.timeout(const Duration(seconds: 10));
+
+        expect(
+          completionError,
+          isA<ObjectException>().having(
+            (error) => error.code,
+            'code',
+            ObjectErrorCode.scanFailed,
+          ),
+        );
+        expect(
+          (await WorkspaceObject.db.findById(session, object.id!))?.status,
+          'scan_error',
+        );
+      },
+    );
+
+    test(
       'account deletion fences invite acceptance and membership writes',
       () async {
         final userId = const Uuid().v4().toString();
@@ -420,6 +490,12 @@ void main() {
           ),
           isNull,
         );
+        final retainedInvite = await WorkspaceInvite.db.findById(
+          session,
+          invite.id!,
+        );
+        expect(retainedInvite?.email, email);
+        expect(retainedInvite?.normalizedEmail, email.toLowerCase());
       },
     );
 
@@ -604,6 +680,141 @@ void main() {
         turn!.status,
         race.writeError == null ? 'cancelled' : 'queued',
       );
+    });
+
+    test(
+      'account deletion fences conversation event and message writes',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        final workspace = await _createSharedWorkspace(
+          session,
+          userId: userId,
+          memberRole: 'admin',
+        );
+        final now = DateTime.now().toUtc();
+        await Conversation.db.insertRow(
+          session,
+          Conversation(
+            workspaceId: workspace.id!,
+            stableId: 'message-event-erasure-race',
+            isPinned: false,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        initializeTestAuthServices(session.serverpod);
+
+        final race = await _raceWithAccountDeletion(
+          builder: builder,
+          session: session,
+          userId: userId,
+          settleDuration: const Duration(milliseconds: 500),
+          delete: () => endpoints.account.deleteCurrentUser(authenticated),
+          write: () async {
+            await endpoints.conversation.queueConversationMessage(
+              authenticated,
+              QueueConversationMessageRequest(
+                workspaceId: workspace.id!,
+                requestId: 'message-event-write-race',
+                conversationId: 'message-event-erasure-race',
+                expectedProjectionRevision: 1,
+                clientMessageId: 'message-event-race',
+                content: 'Synthetic message for erasure race.',
+                attachmentIds: const [],
+              ),
+            );
+          },
+        );
+
+        _expectSerializedDeletion(race);
+        final message = await ConversationMessage.db.findFirstRow(
+          session,
+          where: (row) => row.stableId.equals('message-event-race'),
+        );
+        final event = await ConversationEvent.db.findFirstRow(
+          session,
+          where: (row) => row.requestId.equals('message-event-write-race'),
+        );
+        expect(message != null, race.writeError == null);
+        expect(event != null, race.writeError == null);
+        expect(event?.actorUserId, race.writeError == null ? userId : isNull);
+      },
+    );
+
+    test('account deletion fences skill resource mutations', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
+        session,
+        WorkspaceResource(
+          workspaceId: workspace.id!,
+          resourceKind: WorkspaceResourceKind.skill,
+          resourceId: 'erasure-race-skill',
+          data: jsonEncode({'id': 'erasure-race-skill', 'name': 'Skill'}),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      initializeTestAuthServices(session.serverpod);
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        settleDuration: const Duration(milliseconds: 500),
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await endpoints.skillResource.create(
+            authenticated,
+            CreateSkillResourceRequest(
+              workspaceId: workspace.id!,
+              requestId: 'skill-create-erasure-race',
+              skillId: 'erasure-race-skill',
+              resourceId: 'erasure-race-resource',
+              title: 'Race resource',
+              description: 'Synthetic race test.',
+              content: 'No sensitive content.',
+            ),
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final resource = await SkillResource.db.findFirstRow(
+        session,
+        where: (row) => row.resourceId.equals('erasure-race-resource'),
+      );
+      final event = await WorkspaceEvent.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.kind.equals('skill_resource_updated') &
+            row.resourceId.equals('erasure-race-skill'),
+      );
+      expect(resource != null, race.writeError == null);
+      expect(event != null, race.writeError == null);
+      expect(event?.actorUserId, race.writeError == null ? userId : isNull);
     });
 
     test('account deletion fences content report submissions', () async {
@@ -926,6 +1137,7 @@ Future<_AccountDeletionRace> _raceWithAccountDeletion({
   required String userId,
   required Future<void> Function() delete,
   required Future<void> Function() write,
+  Duration settleDuration = const Duration(milliseconds: 100),
 }) async {
   final lockSession = builder.build();
   final lockAcquired = Completer<void>();
@@ -961,7 +1173,7 @@ Future<_AccountDeletionRace> _raceWithAccountDeletion({
       deletionFinished = true;
     },
   );
-  await Future<void>.delayed(const Duration(milliseconds: 100));
+  await Future<void>.delayed(settleDuration);
   final writeWasBlocked = !writeFinished;
   final deletionWasBlocked = !deletionFinished;
   releaseLock.complete();

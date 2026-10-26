@@ -237,7 +237,6 @@ class ObjectUseCases {
     } catch (_) {
       await _recordScanFailure(
         session,
-        userId: userId,
         object: object,
         status: 'scan_error',
       );
@@ -247,7 +246,6 @@ class ObjectUseCases {
     if (completedStatus != 'active') {
       await _recordScanFailure(
         session,
-        userId: userId,
         object: object,
         status: completedStatus,
       );
@@ -328,33 +326,17 @@ class ObjectUseCases {
 
   Future<void> _recordScanFailure(
     Session session, {
-    required String userId,
     required WorkspaceObject object,
     required String status,
   }) async {
     await session.db.transaction((transaction) async {
-      final actor = await const AuthUserLock().lock(
-        session,
-        userId: userId,
-        transaction: transaction,
-      );
-      if (actor == null) return;
       final workspace = await workspaceRepository.findActiveWorkspace(
         session,
         object.workspaceId,
         transaction: transaction,
         lock: true,
       );
-      if (workspace == null ||
-          await workspaceRepository.findActiveMember(
-                session,
-                workspaceId: object.workspaceId,
-                userId: userId,
-                transaction: transaction,
-              ) ==
-              null) {
-        return;
-      }
+      if (workspace == null || workspace.erasureRequestedAt != null) return;
       final locked = await repository.findObject(
         session,
         workspaceId: object.workspaceId,

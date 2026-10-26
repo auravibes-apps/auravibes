@@ -71,6 +71,13 @@ void main() {
       find.textContaining('Shared workspace revisions, content reports'),
       findsOneWidget,
     );
+    expect(
+      find.textContaining(
+        'Pending or accepted workspace invitations may retain your email '
+        'address, including a normalized copy, after account deletion',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Delete cloud account'), findsNWidgets(2));
   });
 
@@ -192,6 +199,13 @@ void main() {
       );
       expect(
         find.textContaining(
+          'Pending or accepted workspace invitations may retain your email '
+          'address, including a normalized copy',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
           'Completed Connector actions and downloaded exports remain '
           'outside AuraVibes deletion',
         ),
@@ -277,6 +291,14 @@ void main() {
       find.textContaining(
         'Las revisiones compartidas, los reportes de contenido, los turnos y '
         'eventos de conversaci${_spanishChar(0xF3)}n',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        'Las invitaciones pendientes o aceptadas a espacios pueden conservar '
+        'tu direcci${_spanishChar(0xF3)}n de correo, incluida una copia '
+        'normalizada',
       ),
       findsOneWidget,
     );

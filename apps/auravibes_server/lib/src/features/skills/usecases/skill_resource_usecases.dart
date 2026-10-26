@@ -2,6 +2,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../repositories/skill_resource_repository.dart';
 
@@ -45,7 +46,12 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     required String userId,
     required CreateSkillResourceRequest request,
   }) => session.db.transaction((transaction) async {
-    await _requireManager(session, request.workspaceId, userId);
+    await _requireActorManager(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     _validate(
       request.title,
       request.description,
@@ -118,7 +124,12 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     required String userId,
     required UpdateSkillResourceRequest request,
   }) => session.db.transaction((transaction) async {
-    await _requireManager(session, request.workspaceId, userId);
+    await _requireActorManager(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     _validate(request.title, request.description, request.content, 'id');
     final existing = await _repository.find(
       session,
@@ -156,7 +167,12 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     required String userId,
     required DeleteSkillResourceRequest request,
   }) => session.db.transaction((transaction) async {
-    await _requireManager(session, request.workspaceId, userId);
+    await _requireActorManager(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     final existing = await _repository.find(
       session,
       workspaceId: request.workspaceId,
@@ -188,14 +204,16 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
   Future<WorkspaceMember> _requireMember(
     Session session,
     int workspaceId,
-    String userId,
-  ) async {
+    String userId, [
+    Transaction? transaction,
+  ]) async {
     final member = await WorkspaceMember.db.findFirstRow(
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) &
           table.userId.equals(userId) &
           table.removedAt.equals(null),
+      transaction: transaction,
     );
     if (member == null) _permissionDenied();
     return member;
@@ -205,14 +223,43 @@ class SkillResourceUseCases(final SkillResourceDataRepository _repository) {
     Session session,
     int workspaceId,
     String userId,
+    Transaction transaction,
   ) async {
-    final member = await _requireMember(session, workspaceId, userId);
+    final member = await _requireMember(
+      session,
+      workspaceId,
+      userId,
+      transaction,
+    );
     if (member.role != WorkspaceRoles.owner &&
         member.role != WorkspaceRoles.admin) {
       _permissionDenied();
     }
 
     return member;
+  }
+
+  Future<WorkspaceMember> _requireActorManager(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) _permissionDenied();
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _permissionDenied();
+    return _requireManager(session, workspaceId, userId, transaction);
   }
 
   Future<void> _requireSkill(

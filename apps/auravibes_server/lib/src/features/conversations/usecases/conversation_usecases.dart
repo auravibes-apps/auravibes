@@ -2086,6 +2086,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       eventId: 'user-message:${request.clientMessageId}',
       kind: ConversationEventType.messageQueued,
@@ -2168,6 +2176,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.messageEdited,
       payloadJson: jsonEncode({'messageId': request.messageId}),
@@ -2229,6 +2245,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.messageReordered,
       payloadJson: jsonEncode({
@@ -2354,6 +2378,14 @@ class ConversationUseCases {
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
         actorUserId: userId,
+        authorizeBeforeConversationLock: (transaction) async {
+          await _lockActorWorkspaceMember(
+            session,
+            workspaceId: request.workspaceId,
+            userId: userId,
+            transaction: transaction,
+          );
+        },
         requestId: request.requestId,
         kind: ConversationEventType.executionStarted,
         payloadJson: jsonEncode({
@@ -2612,6 +2644,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.executionStopped,
       payloadJson: jsonEncode({'requestId': request.requestId}),
@@ -2738,6 +2778,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.messageRemoved,
       payloadJson: jsonEncode({'messageId': request.messageId}),
@@ -2791,6 +2839,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.settingsChanged,
       payloadJson: jsonEncode({
