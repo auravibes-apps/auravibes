@@ -1703,7 +1703,8 @@
     "validation": "The cloud request is invalid.",
     "conflict": "The cloud resource changed. Refresh and try again.",
     "malformed_resource": "Cloud data could not be loaded safely.",
-    "unavailable": "The cloud service is unavailable. Try again."
+    "unavailable": "The cloud service is unavailable. Try again.",
+    "upload_provenance_unavailable": "This older upload has no verified gateway registration and cannot be safely resumed."
   },
   "cloud_workspaces": {
     "title": "Cloud Workspaces",
@@ -1717,12 +1718,15 @@
     "delete_confirm": "Type {name} to permanently delete this cloud workspace and its local data.",
     "erase": "Erase workspace data",
     "erase_title": "Type {name} to erase this cloud workspace",
-    "erase_message": "This removes workspace content, conversations, revisions, trash, Connections and credentials from AuraVibes after cloud asset cleanup finishes. Workspace history follows its configurable policy during ordinary use. Explicit workspace erasure deletes all remaining workspace revisions regardless of that policy. Trash, backup, and provider retention are not configured here. Retry from Cloud Workspaces is available for retryable cleanup failures. Signed-upload and gateway-verification blockers have no current self-service resolution and remain pending until a safe recovery capability is available. A minimal owner-scoped status record remains after workspace removal so you can view cleanup status and retry retryable failures; it includes the workspace ID and name plus your account ID. No expiry is configured for this record, and account deletion removes it. Completed Connector actions and downloaded exports are not recalled.",
+    "erase_message": "This removes workspace content, conversations, revisions, trash, Connections and credentials from AuraVibes after cloud asset cleanup finishes. Workspace history follows its configurable policy during ordinary use. Explicit workspace erasure deletes all remaining workspace revisions regardless of that policy. Trash, backup, and provider retention are not configured here. Retry from Cloud Workspaces is available for retryable cleanup failures and when the gateway is waiting for requests already in flight. Legacy uploads without verified gateway registration cannot be safely erased by this app. A minimal owner-scoped status record remains after workspace removal so you can view cleanup status and retry retryable failures; it includes the workspace ID and name plus your account ID. No expiry is configured for this record, and account deletion removes it. Completed Connector actions and downloaded exports are not recalled.",
     "erasure_status_title": "Workspace erasure status",
     "erasure_status_pending": "Erasure is pending cloud asset cleanup. The workspace is inaccessible while cleanup runs.",
     "erasure_status_attention": "Cloud asset cleanup needs attention. Retry is available for retryable cleanup failures.",
     "erasure_status_upload_signing_unresolved": "Cloud erasure is blocked because a signed-upload request is active or its result is unknown. AuraVibes cannot safely resolve a crashed signing request automatically. There is no current self-service action to clear this blocker; a safe signing-recovery capability is required.",
-    "erasure_status_upload_quiescence_unverified": "Cloud erasure is blocked because the configured storage gateway cannot verify that signed uploads and in-flight writes have stopped. Expiry alone is not proof. There is no current self-service action to establish this guarantee; a verified gateway capability is required.",
+    "erasure_status_upload_quiescence_unverified": "The gateway has closed this object to new signatures, uploads and reads, and is waiting for requests already in flight to finish. You can retry cleanup after they finish.",
+    "erasure_status_legacy_upload_unverifiable": "Cloud erasure is blocked because this older object has no verified gateway registration. The current app cannot safely delete it or resolve this blocker.",
+    "erasure_status_provider_deletion_unverified": "Cloud erasure is blocked because the gateway cannot verify deletion of this object's provider replicas. This blocker has no self-service retry; erasure cannot complete until a provider erasure capability is available.",
+    "erasure_status_gateway_registration_unverified": "Cloud erasure is blocked because the gateway could not verify this object's registration. AuraVibes will not recreate the registration or treat the object as deleted.",
     "erasure_status_complete": "AuraVibes workspace content and assets were erased. Workspace history follows its configurable policy during ordinary use. Explicit workspace erasure deletes all remaining workspace revisions regardless of that policy. A minimal owner-scoped status record remains to confirm cleanup completed; it includes the workspace ID and name plus your account ID. No expiry is configured for this record, and account deletion removes it. Trash, backup, and provider retention are not configured here; external actions and downloaded exports remain outside this erasure.",
     "erasure_pending": "Workspace erasure is pending cloud asset cleanup.",
     "erasure_complete": "AuraVibes workspace erasure completed.",

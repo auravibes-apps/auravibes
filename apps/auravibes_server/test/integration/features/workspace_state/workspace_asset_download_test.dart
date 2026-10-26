@@ -84,6 +84,22 @@ void main() {
             updatedAt: now,
           ),
         );
+        final registrationId = 'c' * 64;
+        await ObjectUpload.db.insertRow(
+          session,
+          .new(
+            workspaceId: workspace.id!,
+            objectId: object.id!,
+            actorUserId: user,
+            requestId: 'registered-message-upload',
+            requestHash: 'registered-message-upload-hash',
+            expiresAt: now.add(const Duration(minutes: 10)),
+            gatewayRegistrationId: registrationId,
+            signingReservationCount: 0,
+            completedAt: now,
+            createdAt: now,
+          ),
+        );
         await ObjectReference.db.insertRow(
           session,
           .new(
@@ -93,8 +109,9 @@ void main() {
             createdAt: now,
           ),
         );
+        final store = _Store();
         final usecases = ObjectUseCases(
-          store: _Store(),
+          store: store,
           scanner: const UnconfiguredObjectScanner(),
         );
         Future<GetDownloadResult> download() => usecases.getDownload(
@@ -106,6 +123,7 @@ void main() {
           (await download()).downloadUrl,
           'https://example.invalid/private',
         );
+        expect(store.lastSignGetRegistrationId, registrationId);
         final unlinked = await WorkspaceObject.db.insertRow(
           session,
           object.copyWith(
@@ -693,20 +711,34 @@ void main() {
 }
 
 class _Store implements ObjectStore {
+  String? lastSignGetRegistrationId;
+
+  @override
+  Future<void> registerFreshKey({
+    required String key,
+    required String registrationId,
+  }) async {}
+
   @override
   Future<SignedObjectRequest> signGet({
     required String key,
     required String contentDisposition,
     required Duration expiresIn,
-  }) async => .new(
-    url: Uri.parse('https://example.invalid/private'),
-    headers: const {},
-    expiresAt: DateTime.now().toUtc().add(expiresIn),
-  );
+    String? registrationId,
+  }) async {
+    lastSignGetRegistrationId = registrationId;
+    return .new(
+      url: Uri.parse('https://example.invalid/private'),
+      headers: const {},
+      expiresAt: DateTime.now().toUtc().add(expiresIn),
+    );
+  }
+
   @override
-  Future<void> delete(String key) async {}
+  Future<void> delete(String key, {String? registrationId}) async {}
   @override
-  Future<ObjectMetadata?> head(String key) async => null;
+  Future<ObjectMetadata?> head(String key, {String? registrationId}) async =>
+      null;
   @override
   Future<SignedObjectRequest> signPut({
     required String key,
@@ -714,11 +746,13 @@ class _Store implements ObjectStore {
     required int sizeBytes,
     required String checksumSha256,
     required DateTime expiresAt,
+    String? registrationId,
   }) => throw UnimplementedError();
 
   @override
   Future<bool> confirmsUploadQuiescence({
     required String key,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => false;
 }

@@ -2255,6 +2255,8 @@ abstract class LocaleKeys {
   static const cloud_errors_malformed_resource =
       'cloud_errors.malformed_resource';
   static const cloud_errors_unavailable = 'cloud_errors.unavailable';
+  static const cloud_errors_upload_provenance_unavailable =
+      'cloud_errors.upload_provenance_unavailable';
   static const cloud_workspaces_title = 'cloud_workspaces.title';
   static const cloud_workspaces_subtitle = 'cloud_workspaces.subtitle';
   static const cloud_workspaces_detail_title = 'cloud_workspaces.detail_title';
@@ -2281,6 +2283,12 @@ abstract class LocaleKeys {
       'cloud_workspaces.erasure_status_upload_signing_unresolved';
   static const cloud_workspaces_erasure_status_upload_quiescence_unverified =
       'cloud_workspaces.erasure_status_upload_quiescence_unverified';
+  static const cloud_workspaces_erasure_status_legacy_upload_unverifiable =
+      'cloud_workspaces.erasure_status_legacy_upload_unverifiable';
+  static const cloud_workspaces_erasure_status_provider_deletion_unverified =
+      'cloud_workspaces.erasure_status_provider_deletion_unverified';
+  static const cloud_workspaces_erasure_status_gateway_registration_unverified =
+      'cloud_workspaces.erasure_status_gateway_registration_unverified';
   static const cloud_workspaces_erasure_status_complete =
       'cloud_workspaces.erasure_status_complete';
   static const cloud_workspaces_erasure_pending =

@@ -1093,6 +1093,14 @@ class CloudWorkspaceUseCases(
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
+      if (pendingDeletions.any(
+        (row) =>
+            row.lastError == 'legacyUploadUnverifiable' ||
+            row.lastError == 'providerDeletionUnverified' ||
+            row.lastError == 'gatewayRegistrationUnverified',
+      )) {
+        return erasure;
+      }
       final now = DateTime.now().toUtc();
       for (final deletion in pendingDeletions) {
         await ObjectDeletion.db.updateRow(
@@ -1102,6 +1110,7 @@ class CloudWorkspaceUseCases(
             uploadCleanupVerifiedAt: null,
             uploadCleanupVerifiedGeneration: null,
             uploadCleanupVerifiedExpiresAt: null,
+            uploadCleanupVerifiedRegistrationId: null,
             attempts: 0,
             availableAt: now,
             lastError: null,

@@ -1616,6 +1616,30 @@ void main() {
             failureReason: 'uploadSigningOutcomeUnresolved',
           ),
           CloudWorkspaceErasureStatus(
+            workspaceId: 7,
+            workspaceName: 'Legacy object',
+            requestId: 'erase-legacy-object',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'legacyUploadUnverifiable',
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 8,
+            workspaceName: 'Provider deletion unavailable',
+            requestId: 'erase-provider',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'providerDeletionUnverified',
+          ),
+          CloudWorkspaceErasureStatus(
+            workspaceId: 9,
+            workspaceName: 'Registration unverified',
+            requestId: 'erase-registration',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'gatewayRegistrationUnverified',
+          ),
+          CloudWorkspaceErasureStatus(
             workspaceId: 3,
             workspaceName: 'Complete',
             requestId: 'erase-complete',
@@ -1660,11 +1684,43 @@ void main() {
       );
       expect(
         find.text(
-          'Cloud erasure is blocked because the configured storage gateway '
-          'cannot verify that signed uploads and in-flight writes have '
-          'stopped. Expiry alone is not proof. There is no current '
-          'self-service action to establish this guarantee; a verified '
-          'gateway capability is required.',
+          'The gateway has closed this object to new signatures, uploads and '
+          'reads, and is waiting for requests already in flight to finish. '
+          'You can retry cleanup after they finish.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Cloud erasure is blocked because this older object has no verified '
+          'gateway registration. The current app cannot safely delete it or '
+          'resolve this blocker.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Cloud erasure is blocked because the gateway cannot verify deletion',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'This blocker has no self-service retry; erasure cannot complete '
+          'until a provider erasure capability is available.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Cloud erasure is blocked because the gateway could not verify this',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'AuraVibes will not recreate the registration or treat the object '
+          'as deleted.',
         ),
         findsOneWidget,
       );
@@ -1691,7 +1747,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Retry cleanup'), findsOneWidget);
+      expect(find.text('Retry cleanup'), findsNWidgets(2));
 
       await tester.ensureVisible(find.text('Retry cleanup').first);
       await tester.tap(find.text('Retry cleanup').first);
@@ -1702,6 +1758,16 @@ void main() {
                   .single
               as RetryCloudWorkspaceErasureRequest;
       expect(retryRequest.requestId, 'erase-retry');
+
+      await tester.ensureVisible(find.text('Retry cleanup').last);
+      await tester.tap(find.text('Retry cleanup').last);
+      final _ = await tester.pumpAndSettle();
+      final gatewayRetryRequest =
+          verify(() => endpoint.retryWorkspaceErasure(captureAny()))
+                  .captured
+                  .single
+              as RetryCloudWorkspaceErasureRequest;
+      expect(gatewayRetryRequest.requestId, 'erase-gateway');
 
       await tester.ensureVisible(find.text('Erase workspace data'));
       await tester.tap(find.text('Erase workspace data'));

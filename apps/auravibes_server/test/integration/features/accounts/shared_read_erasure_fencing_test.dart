@@ -613,10 +613,17 @@ class _BlockingSigner implements ObjectStore {
   final release = Completer<void>();
 
   @override
+  Future<void> registerFreshKey({
+    required String key,
+    required String registrationId,
+  }) async {}
+
+  @override
   Future<SignedObjectRequest> signGet({
     required String key,
     required String contentDisposition,
     required Duration expiresIn,
+    String? registrationId,
   }) async {
     started.complete();
     await release.future;
@@ -628,10 +635,11 @@ class _BlockingSigner implements ObjectStore {
   }
 
   @override
-  Future<void> delete(String key) async {}
+  Future<void> delete(String key, {String? registrationId}) async {}
 
   @override
-  Future<ObjectMetadata?> head(String key) async => null;
+  Future<ObjectMetadata?> head(String key, {String? registrationId}) async =>
+      null;
 
   @override
   Future<SignedObjectRequest> signPut({
@@ -640,11 +648,13 @@ class _BlockingSigner implements ObjectStore {
     required int sizeBytes,
     required String checksumSha256,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => throw UnimplementedError();
 
   @override
   Future<bool> confirmsUploadQuiescence({
     required String key,
     required DateTime expiresAt,
+    String? registrationId,
   }) async => false;
 }

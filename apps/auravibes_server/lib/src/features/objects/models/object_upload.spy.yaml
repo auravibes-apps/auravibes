@@ -7,6 +7,8 @@ fields:
   requestId: String
   requestHash: String
   expiresAt: DateTime
+  gatewayRegistrationId: String?
+  gatewayRegistrationState: String, default='registered'
   signingReservationCount: int?
   completedAt: DateTime?
   createdAt: DateTime
