@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:auravibes_server/src/features/objects/object_cleanup_service.dart';
 import 'package:auravibes_server/src/features/objects/object_store.dart';
@@ -54,6 +55,22 @@ void main() {
               ownerUserId: userId,
               now: now,
             );
+        final oauthTransactionId = 'oauth-target-$userId';
+        final retainedOauthTransactionId = 'oauth-retained-$userId';
+        await _insertOAuthTransaction(
+          session,
+          workspaceId: workspace.id!,
+          userId: userId,
+          transactionId: oauthTransactionId,
+          now: now,
+        );
+        await _insertOAuthTransaction(
+          session,
+          workspaceId: legacyWorkspace.id!,
+          userId: userId,
+          transactionId: retainedOauthTransactionId,
+          now: now,
+        );
         await session.db.transaction((transaction) async {
           await workspace_repo.CloudWorkspaceRepository().softDeleteWorkspace(
             session,
@@ -258,6 +275,30 @@ void main() {
           isEmpty,
         );
         expect(await WorkspaceObject.db.findById(session, object.id!), isNull);
+        expect(
+          await CodexOAuthTransaction.db.find(
+            session,
+            where: (row) => row.transactionId.equals(oauthTransactionId),
+          ),
+          isEmpty,
+        );
+        final retainedOauthTransaction = await CodexOAuthTransaction.db.find(
+          session,
+          where: (row) => row.transactionId.equals(retainedOauthTransactionId),
+        );
+        expect(retainedOauthTransaction, hasLength(1));
+        expect(
+          retainedOauthTransaction.single.verifierCiphertext.lengthInBytes,
+          24,
+        );
+        expect(retainedOauthTransaction.single.verifierNonce.lengthInBytes, 12);
+        expect(
+          retainedOauthTransaction
+              .single
+              .verifierAuthenticationTag
+              .lengthInBytes,
+          16,
+        );
         final complete = await endpoints.cloudWorkspace.listWorkspaceErasures(
           authenticated,
         );
@@ -292,6 +333,14 @@ void main() {
           await CloudWorkspace.db.findById(session, legacyWorkspace.id!),
           isNull,
         );
+        expect(
+          await CodexOAuthTransaction.db.find(
+            session,
+            where: (row) =>
+                row.transactionId.equals(retainedOauthTransactionId),
+          ),
+          isEmpty,
+        );
 
         initializeTestAuthServices(session.serverpod);
         await endpoints.account.deleteCurrentUser(authenticated);
@@ -306,6 +355,33 @@ void main() {
     );
   });
 }
+
+Future<void> _insertOAuthTransaction(
+  Session session, {
+  required int workspaceId,
+  required String userId,
+  required String transactionId,
+  required DateTime now,
+}) async {
+  final _ = await CodexOAuthTransaction.db.insertRow(
+    session,
+    CodexOAuthTransaction(
+      transactionId: transactionId,
+      workspaceId: workspaceId,
+      connectionId: 'connection-$transactionId',
+      userId: userId,
+      stateHash: 'synthetic-state-hash',
+      verifierCiphertext: _syntheticBytes(24),
+      verifierNonce: _syntheticBytes(12),
+      verifierAuthenticationTag: _syntheticBytes(16),
+      redirectUri: 'http://localhost/callback',
+      expiresAt: now.add(const Duration(minutes: 10)),
+      createdAt: now,
+    ),
+  );
+}
+
+ByteData _syntheticBytes(int length) => ByteData(length)..setUint8(0, 1);
 
 class _RetryingObjectStore extends InMemoryObjectStore {
   bool failDeletes = true;

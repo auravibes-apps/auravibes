@@ -154,6 +154,13 @@ void main() {
         find.textContaining('Shared workspace audit and event history'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining(
+          'Those status records remain after workspace removal so owners can '
+          'view or retry cleanup; no expiry is configured.',
+        ),
+        findsOneWidget,
+      );
       final confirmDialog = find.byType(AuraConfirmDialog);
       expect(confirmDialog, findsOneWidget);
       await tester.tap(
@@ -182,6 +189,12 @@ void main() {
         find.textContaining(
           'Completed Connector actions and downloaded exports remain '
           'outside AuraVibes deletion',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'owner-scoped workspace erasure status records were removed',
         ),
         findsOneWidget,
       );

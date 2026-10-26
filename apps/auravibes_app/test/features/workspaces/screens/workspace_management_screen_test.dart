@@ -1649,7 +1649,14 @@ void main() {
       );
       expect(
         find.textContaining(
-          'Backup and provider retention are not configured here',
+          'Trash, backup, and provider retention are not configured here',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'No expiry is configured for this record, '
+          'and account deletion removes it.',
         ),
         findsOneWidget,
       );
@@ -1673,6 +1680,20 @@ void main() {
           'recalled.',
         ),
         findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'No expiry is configured for this record, '
+          'and account deletion removes it.',
+        ),
+        findsNWidgets(2),
+      );
+      expect(
+        find.textContaining(
+          'Workspace revision history follows its configurable '
+          'workspace policy.',
+        ),
+        findsNWidgets(2),
       );
       await tester.tap(find.text('Cancel'));
       final _ = await tester.pumpAndSettle();
