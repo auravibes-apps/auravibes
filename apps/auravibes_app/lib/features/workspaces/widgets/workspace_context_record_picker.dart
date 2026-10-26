@@ -66,9 +66,7 @@ class const _PickerHeader(final _PickerState state) extends StatelessWidget {
     children: [
       const TextLocale(LocaleKeys.workspace_chat_records),
       TextField(
-        decoration: InputDecoration(
-          labelText: LocaleKeys.workspace_items_search.tr(),
-        ),
+        decoration: .new(labelText: LocaleKeys.workspace_items_search.tr()),
         onChanged: _search,
       ),
     ],

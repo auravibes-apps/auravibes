@@ -9,8 +9,10 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
   name: workspaceCommandToolName,
   description:
       'Read or edit explicitly shared workspace items by stable ID. '
-      'Never infer access from another Conversation. Read only selected records. '
-      'Use current revisions; refresh after conflicts. Structural edits require '
+      'Never infer access from another Conversation. '
+      'Read only selected records. '
+      'Use current revisions; refresh after conflicts. '
+      'Structural edits require '
       'approval in default mode. Opening an item does not share its data.',
   inputJsonSchema: const {
     'type': 'object',
@@ -91,18 +93,26 @@ class WorkspaceContextSelection {
         value['conversationId'] != conversationId ||
         value['itemId'] is! String ||
         value['kind'] is! String ||
-        value['recordIds'] is! List<Object?>)
+        value['recordIds'] is! List<Object?>) {
       return null;
+    }
     if (value['parentId'] != null && value['parentId'] is! String) return null;
-    if (value['kind'] != 'directory' && (value['itemId'] as String).isEmpty) return null;
+    if (value['kind'] != 'directory' && (value['itemId'] as String).isEmpty) {
+      return null;
+    }
     final records = value['recordIds'] as List<Object?>;
     if (records.length > 50 ||
         records.any((id) => id is! String || id.isEmpty) ||
         records.toSet().length != records.length ||
-        !{'directory', 'folder', 'table', 'view'}.contains(value['kind']))
+        !{'directory', 'folder', 'table', 'view'}.contains(value['kind'])) {
       return null;
-    if (value['kind'] == 'directory' && ((value['itemId'] as String).isNotEmpty || records.isNotEmpty)) return null;
+    }
+    if (value['kind'] == 'directory' &&
+        ((value['itemId'] as String).isNotEmpty || records.isNotEmpty)) {
+      return null;
+    }
     if (value['kind'] == 'folder' && records.isNotEmpty) return null;
+
     return WorkspaceContextSelection(
       workspaceId: workspaceId,
       conversationId: conversationId,
@@ -131,8 +141,9 @@ WorkspaceContextSelection workspaceCreatedContext(
     if (owned == null) ...selection.recordIds,
     for (final resource in created)
       if (resource['kind'] == 'record' && resource['tableId'] == id)
-        resource['id'] as String,
+        if (resource['id'] case final String recordId) recordId,
   };
+
   return WorkspaceContextSelection(
     workspaceId: selection.workspaceId,
     conversationId: selection.conversationId,
@@ -155,6 +166,7 @@ Map<String, dynamic> workspaceContextReadArguments(
       ? output
       : const <String, dynamic>{};
   final created = (input['action'] as String? ?? '').startsWith('create');
+
   return {
     'action': 'read',
     'id': created ? result['id'] : input['id'],

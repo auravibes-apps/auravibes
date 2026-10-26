@@ -1,5 +1,3 @@
-import 'workspace_prompt_projection.dart';
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -15,11 +13,12 @@ import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import '../domain/conversation_values.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
-import 'conversation_host_effects.dart';
 import 'a2ui_protocol.dart';
+import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
-import 'server_agent_guidance.dart';
+import 'workspace_prompt_projection.dart';
 
 class const ConversationEngineResult({
   required final String content,
@@ -62,6 +61,7 @@ String appendDurableSkillActivations(
 String _toolResultForContext(ConversationToolCall call) {
   if (call.name == workspaceCommandToolName) return workspaceContextUnavailable;
   final result = call.resultJson ?? call.status;
+
   return projectToolOutput(result).text;
 }
 
@@ -92,6 +92,7 @@ String providerCredential(String providerId, String secret) {
   if (value is! Map || value['access_token'] is! String) {
     throw const ConversationEngineConfigurationException('provider_secret');
   }
+
   return value['access_token']! as String;
 }
 
@@ -197,6 +198,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
       ),
     );
   }
+
   return entries..sort((left, right) => left.slug.compareTo(right.slug));
 }
 
@@ -239,6 +241,7 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
           ),
     );
   }
+
   return candidates;
 }
 
@@ -407,6 +410,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
       ).map((message) => Map<String, dynamic>.from(message)),
     );
   }
+
   return exchanges;
 }
 
@@ -439,6 +443,7 @@ List<AgentSkill> cloudAppSkillsForIds(
       }
     }
   }
+
   return appSkills;
 }
 
@@ -882,6 +887,7 @@ final class const ServerConversationEngineHost({
       ];
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         await response.close();
+
         return ConversationEngineResult(
           content: response.content,
           finishReason: 'awaiting_sub_agents',
@@ -898,6 +904,7 @@ final class const ServerConversationEngineHost({
       }
       if (paused) {
         await response.close();
+
         return ConversationEngineResult(
           content: response.content,
           finishReason: 'stop',
@@ -955,6 +962,7 @@ final class const ServerConversationEngineHost({
       throw const ConversationCancelledException();
     }
     final usage = providerResponse.usage;
+
     return ConversationEngineResult(
       content: response.content,
       finishReason: providerResponse.finishReason.value,
@@ -1044,6 +1052,7 @@ final class const ServerConversationEngineHost({
               ],
       });
     }
+
     return result;
   }
 
@@ -1070,6 +1079,7 @@ final class const ServerConversationEngineHost({
         a2uiSupportedComponents: a2uiSupportedComponents,
       ),
     );
+
     return cloudRequestMessagesWithToolExchanges(
       baseMessages: baseMessages,
       toolExchanges: toolExchanges,
@@ -1131,6 +1141,7 @@ final class const ServerConversationEngineHost({
         ),
       ),
     ];
+
     return messages;
   }
 
@@ -1163,6 +1174,7 @@ final class const ServerConversationEngineHost({
           table.resourceKind.equals(WorkspaceResourceKind.agentAssociation) &
           table.deletedAt.equals(null),
     );
+
     return (
       content: switch (agentData['content']) {
         final String content => content,
@@ -1256,6 +1268,7 @@ final class const ServerConversationEngineHost({
                 candidate.identifier == skillId || candidate.slug == skillId,
           )
           .firstOrNull;
+
       return definition != null &&
           cloudServiceSkillReady(definition, serviceConnections);
     });
@@ -1300,6 +1313,7 @@ final class const ServerConversationEngineHost({
         ),
       );
     }
+
     return withManifests;
   }
 
@@ -1400,6 +1414,7 @@ final class const ServerConversationEngineHost({
         'compaction_summary',
       );
     }
+
     return ConversationCompactionResult(
       summary: appendDurableSkillActivations(
         summary,
@@ -1472,6 +1487,7 @@ final class const ServerConversationEngineHost({
       if (messageId == null) continue;
       (toolCallIdsByMessageId[messageId] ??= <String>{}).add(work.toolCallId);
     }
+
     return toolCallIdsByMessageId;
   }
 
@@ -1595,6 +1611,7 @@ final class const ServerConversationEngineHost({
     final override = modelOverride is Map ? modelOverride : const {};
     int? nonNegativeInt(String key) {
       final value = override[key];
+
       return value is int && value >= 0 ? value : null;
     }
 
@@ -1617,6 +1634,7 @@ final class const ServerConversationEngineHost({
         : modelSupportsStrict
         ? ToolSamplingPolicy.prefer
         : ToolSamplingPolicy.off;
+
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
@@ -1670,6 +1688,7 @@ final class const ServerConversationEngineHost({
               _closeClientAfter(responseBody, client, transportDone),
               () => cancellationProbe.isCancelled(session, turnId),
             );
+
       return ProviderTransportResponse(
         statusCode: response.statusCode,
         retryAfter: _providerRetryAfter(response.headers.value('retry-after')),
@@ -1778,6 +1797,7 @@ Uri providerRequestUri(String providerId, Uri baseUri) {
     _ => 'chat/completions',
   };
   final path = baseUri.path.replaceFirst(RegExp(r'/$'), '');
+
   return baseUri.replace(path: '$path/$endpoint', query: null);
 }
 
@@ -1792,6 +1812,7 @@ List<ServerToolRequest> _toolRequests(
   final message = (choices.first as Map)['message'];
   final calls = message is Map ? message['tool_calls'] : null;
   if (calls is! List) return const [];
+
   return calls
       .map((value) {
         if (value is! Map ||
@@ -1804,6 +1825,7 @@ List<ServerToolRequest> _toolRequests(
         if (function['name'] is! String || arguments is! Map<String, dynamic>) {
           throw const FormatException('Invalid provider tool call.');
         }
+
         return ServerToolRequest(
           id: value['id']! as String,
           name: function['name']! as String,
@@ -1816,6 +1838,7 @@ List<ServerToolRequest> _toolRequests(
 
 Map<String, dynamic> _assistantToolMessage(Map<String, dynamic>? raw) {
   final message = ((raw!['choices'] as List).first as Map)['message'] as Map;
+
   return Map<String, dynamic>.from(message);
 }
 
@@ -1903,6 +1926,7 @@ String? conversationPromptCheckpointTranscriptId({
   for (final message in messages) {
     if (message.stableId == activeCheckpointStableId) return '${message.id}';
   }
+
   return null;
 }
 
@@ -1914,6 +1938,7 @@ AgentTranscriptMessageSnapshot _messageSnapshot(
     final String source => _jsonObject(source),
     null => const <String, dynamic>{},
   };
+
   return AgentTranscriptMessageSnapshot(
     id: '${message.id}',
     role: switch (message.role) {
@@ -1973,6 +1998,7 @@ Map<String, dynamic> _jsonObject(String source) {
   if (value is! Map<String, dynamic>) {
     throw const ConversationEngineConfigurationException('resource_data');
   }
+
   return value;
 }
 
@@ -2009,6 +2035,7 @@ List<ReasoningOption> _reasoningOptions(
     final options = [
       for (final item in decoded) ?ReasoningOption.fromJson(item),
     ];
+
     return options.isEmpty && supportsReasoning
         ? const [ReasoningOption.toggle()]
         : options;

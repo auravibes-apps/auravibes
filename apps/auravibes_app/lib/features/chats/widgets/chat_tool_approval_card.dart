@@ -27,7 +27,10 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
     show AgentToolGrantLevel, toolCallApprovalDigest;
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show executeConnectorToolName, normalizeToolCallUserFacingDescription;
+    show
+        executeConnectorToolName,
+        normalizeToolCallUserFacingDescription,
+        workspaceCommandToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -1974,7 +1977,8 @@ class _AllowButtonChildren {
              identifier: 'tool_approval_allow_once',
            ),
          ),
-         if (!handler._isCloudCall)
+         if (!handler._isCloudCall &&
+             handler.toolCall.name != workspaceCommandToolName)
            Expanded(
              child: AuraButton(
                onPressed: () =>

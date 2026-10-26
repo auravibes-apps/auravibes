@@ -48,8 +48,8 @@ class const _ViewPicker(final String workspaceId) extends StatelessWidget {
       child: ListView(
         children: [
           ListTile(
-            title: const TextLocale(LocaleKeys.workspace_items_title),
             leading: const Icon(Icons.folder_outlined),
+            title: const TextLocale(LocaleKeys.workspace_items_title),
             onTap: () =>
                 Navigator.of(context)
                     .pop(const WorkspaceChatItem(id: '', kind: 'directory')),
@@ -103,8 +103,8 @@ class const _TableChoices(final String workspaceId) extends ConsumerWidget {
 class const _TableChoice(final WorkspaceTable table) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
-    title: Text(table.name),
     leading: const Icon(Icons.table_chart_outlined),
+    title: Text(table.name),
     onTap: () =>
         Navigator.of(context)
             .pop(WorkspaceChatItem(id: table.id, kind: 'table')),

@@ -46,6 +46,81 @@ void main() {
       expect(fixture.database.schemaVersion, 42);
     });
 
+    test('schema41 assets survive protected-context42 migration', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 41
+        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+        ..execute(
+          'CREATE TABLE conversations '
+          '(id TEXT PRIMARY KEY, workspace_id TEXT)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?,?)', [
+          'chat',
+          'existing',
+        ])
+        ..execute(
+          'CREATE TABLE workspace_assets '
+          '(id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT)',
+        )
+        ..execute('INSERT INTO workspace_assets VALUES (?,?,?)', [
+          'asset',
+          'existing',
+          'Retained',
+        ])
+        ..execute(
+          'CREATE TABLE workspace_files '
+          '(id TEXT PRIMARY KEY, asset_id TEXT)',
+        )
+        ..execute('INSERT INTO workspace_files VALUES (?,?)', ['file', 'asset'])
+        ..execute(
+          'CREATE TABLE workspace_asset_deletions '
+          '(asset_id TEXT PRIMARY KEY)',
+        )
+        ..execute('INSERT INTO workspace_asset_deletions VALUES (?)', [
+          'retry',
+        ]);
+      _createHistorySources(sqliteDb);
+      sqliteDb
+        ..execute('ALTER TABLE message_attachments ADD COLUMN asset_id TEXT')
+        ..execute('INSERT INTO message_attachments VALUES (?,?)', [
+          'attachment',
+          'asset',
+        ]);
+      final database = AppDatabase(connection: NativeDatabase.opened(sqliteDb));
+      addTearDown(database.close);
+      final retained = await database
+          .customSelect(
+            'SELECT a.name, f.asset_id FROM workspace_assets a '
+            'JOIN workspace_files f ON f.asset_id = a.id',
+          )
+          .getSingle();
+      expect(retained.read<String>('name'), 'Retained');
+      expect(retained.read<String>('asset_id'), 'asset');
+      expect(sqliteDb.userVersion, 42);
+      expect(
+        (await database.select(database.workspaceAssetDeletions).get())
+            .single
+            .assetId,
+        'retry',
+      );
+      expect(
+        await database.select(database.workspaceContextSelections).get(),
+        isEmpty,
+      );
+      expect(
+        await database.select(database.workspaceCommandReceipts).get(),
+        isEmpty,
+      );
+      final attachment = await database
+          .customSelect(
+            'SELECT asset_id FROM message_attachments WHERE id = ?',
+            variables: [const Variable<String>('attachment')],
+          )
+          .getSingle();
+      expect(attachment.read<String>('asset_id'), 'asset');
+    });
+
     test(
       'schema39 migration preserves records and captures later revisions',
       () async {

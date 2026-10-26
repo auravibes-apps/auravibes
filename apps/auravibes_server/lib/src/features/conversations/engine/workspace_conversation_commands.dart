@@ -171,8 +171,9 @@ class const WorkspaceConversationCommands({
       _denied();
     }
     final visible = await _visible(session, member, .table, selection.itemId);
-    if (action == 'read')
+    if (action == 'read') {
       return _read(session, member, visible, selection, authority.references);
+    }
     final table = await _raw(session, visible);
     if (action == 'createView') {
       return _view(

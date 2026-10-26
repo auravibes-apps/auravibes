@@ -2,10 +2,10 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
-import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/models/tool_approval_decision.dart';
@@ -49,8 +49,9 @@ class ResolveToolApprovalDecisionUsecase({
   Future<ToolApprovalDecision> callForRequest(
     agent.AgentToolApprovalRequest<ResolvedTool> request,
   ) async {
-    if (request.resolvedTool.isWorkspaceCommand)
-      return _workspaceDecision(request);
+    if (request.resolvedTool.isWorkspaceCommand) {
+      return await _workspaceDecision(request);
+    }
     final id = await resolvePermissionTableId(
       conversationId: request.conversationId,
       workspaceId: request.workspaceId,
@@ -66,36 +67,12 @@ class ResolveToolApprovalDecisionUsecase({
     );
   }
 
-  Future<ToolApprovalDecision> _workspaceDecision(
-    agent.AgentToolApprovalRequest<ResolvedTool> request,
-  ) async {
-    if (!await (workspaceAccess?.call(
-          request.conversationId,
-          request.workspaceId,
-        ) ??
-        Future.value(false))) {
-      return ToolApprovalDecision(
-        toolCallId: request.toolCallId,
-        permissionResult: .disabledInWorkspace,
-      );
-    }
-    final approval = _workspaceApproval(request.argumentsRaw);
-    return _applyToolAccessMode(
-      decision: ToolApprovalDecision(
-        toolCallId: request.toolCallId,
-        permissionResult: approval ? .needsConfirmation : .granted,
-        permissionTableId: agent.workspaceCommandTableId,
-      ),
-      conversationId: request.conversationId,
-      getToolAccessMode: getToolAccessMode,
-    );
-  }
-
   Future<String?> resolvePermissionTableId({
     required String conversationId,
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) {
+    if (resolvedTool.isWorkspaceCommand) return Future.value();
     if (resolvedTool.isConnectorCommand) {
       return _resolveConnectorPermission(
         workspaceId,
@@ -116,6 +93,32 @@ class ResolveToolApprovalDecisionUsecase({
     }
 
     return _resolveMcpPermission(mcpServerId, resolvedTool.toolIdentifier);
+  }
+
+  Future<ToolApprovalDecision> _workspaceDecision(
+    agent.AgentToolApprovalRequest<ResolvedTool> request,
+  ) async {
+    if (!await (workspaceAccess?.call(
+          request.conversationId,
+          request.workspaceId,
+        ) ??
+        Future.value(false))) {
+      return ToolApprovalDecision(
+        toolCallId: request.toolCallId,
+        permissionResult: .disabledInWorkspace,
+      );
+    }
+    final approval = _workspaceApproval(request.argumentsRaw);
+
+    return await _applyToolAccessMode(
+      decision: .new(
+        toolCallId: request.toolCallId,
+        permissionResult: approval ? .needsConfirmation : .granted,
+        permissionTableId: agent.workspaceCommandTableId,
+      ),
+      conversationId: request.conversationId,
+      getToolAccessMode: getToolAccessMode,
+    );
   }
 
   Future<ToolApprovalDecision> _configuredForRequest(
@@ -282,6 +285,7 @@ resolveToolApprovalDecisionUsecaseProvider =
 bool _workspaceApproval(String? arguments) {
   try {
     final decoded = jsonDecode(arguments ?? 'null');
+
     return decoded is! Map<String, dynamic> ||
         agent.workspaceCommandNeedsApproval(decoded);
   } on FormatException {

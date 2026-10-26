@@ -1,6 +1,4 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -18,6 +16,8 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
@@ -175,11 +175,11 @@ class AppAgentContinuationAdapter({
     return [
       ...skillContextMessages,
       ...await BuildPromptChatMessages(
-        workspaceProjection: workspaceContextProjection?.call,
         modalitiesInput: model.workspaceModelSelection.modalitiesInput,
         supportsImageToolResults:
             model.modelsProvider.type == ModelProvidersType.anthropic &&
             (model.modelConnection.url?.trim().isEmpty ?? true),
+        workspaceProjection: workspaceContextProjection?.call,
       )(messages),
     ];
   }
@@ -246,9 +246,6 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
   ref,
 ) {
   return AppAgentContinuationAdapter(
-    workspaceContextProjection: ProjectWorkspaceChatContextUsecase(
-      ref.watch(workspaceConversationToolsProvider),
-    ),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
     modelSelectionStore: (workspaceId) =>
@@ -284,6 +281,9 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
     conversationLanguageRuntime: ref.watch(
       conversationAgentLanguageRuntimeProvider,
+    ),
+    workspaceContextProjection: .new(
+      ref.watch(workspaceConversationToolsProvider),
     ),
   );
 });
