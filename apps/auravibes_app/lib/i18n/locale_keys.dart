@@ -2857,6 +2857,12 @@ abstract class LocaleKeys {
   static const workspace_items_trash = 'workspace_items.trash';
   static const workspace_items_trash_action = 'workspace_items.trash_action';
   static const workspace_items_trash_impact = 'workspace_items.trash_impact';
+  static const workspace_items_trash_delete_all =
+      'workspace_items.trash_delete_all';
+  static const workspace_items_trash_delete_all_notice =
+      'workspace_items.trash_delete_all_notice';
+  static const workspace_items_trash_restore_notice =
+      'workspace_items.trash_restore_notice';
   static const workspace_items_trash_empty = 'workspace_items.trash_empty';
   static const workspace_items_trash_restore = 'workspace_items.trash_restore';
   static const workspace_items_trash_restored =

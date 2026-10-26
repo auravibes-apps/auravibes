@@ -11,6 +11,23 @@ abstract final class WorkspaceHistoryApproval {
       ) ??
       false;
 
+  static Future<bool> trashAction(
+    BuildContext context, {
+    required bool all,
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (_) => _ApprovalDialog(
+          notice: all
+              ? LocaleKeys.workspace_items_trash_delete_all_notice
+              : LocaleKeys.workspace_items_trash_restore_notice,
+          action: all
+              ? LocaleKeys.workspace_items_trash_delete_all
+              : LocaleKeys.workspace_items_trash_restore,
+        ),
+      ) ??
+      false;
+
   static Future<bool> configure(BuildContext context) async =>
       await showDialog<bool>(
         context: context,

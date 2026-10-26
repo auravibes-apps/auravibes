@@ -107,8 +107,22 @@ void main() {
         final batch = (await trash.list()).single;
         await tester.tap(button('open_trash'));
         final _ = await tester.pumpAndSettle();
-        await tester.tap(button('workspace_trash_restore_${batch.id}'));
+        final before = tester.getSize(find.byType(WorkspaceTrashPanel));
+        await tester.tap(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is AuraPopupMenuButton &&
+                widget.identifier == 'workspace_trash_menu_${batch.id}',
+          ),
+        );
         final _ = await tester.pumpAndSettle();
+        await tester.tap(find.text('Restore').last);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expect((await folders.list()), isEmpty);
+        await tester.tap(button('workspace_history_confirm'));
+        final _ = await tester.pumpAndSettle();
+        expect(tester.getSize(find.byType(WorkspaceTrashPanel)), before);
         expect((await folders.list()).single.id, folder.id);
         expect(await trash.list(), isEmpty);
         expect(tester.takeException(), isNull);

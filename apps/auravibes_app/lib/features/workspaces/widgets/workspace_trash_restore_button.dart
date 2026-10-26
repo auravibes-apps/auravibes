@@ -23,7 +23,7 @@ class const WorkspaceTrashRestoreButton({
       action: action,
       batchId: batchId,
       onPressed: () => unawaited(
-        action.run(() => _restore(context, ref, workspaceId, batchId)),
+        action.run(() => restoreTrashBatch(context, ref, workspaceId, batchId)),
       ),
     );
   }
@@ -60,7 +60,7 @@ class const _RestoreButton({
   );
 }
 
-Future<void> _restore(
+Future<void> restoreTrashBatch(
   BuildContext context,
   WidgetRef ref,
   String workspaceId,

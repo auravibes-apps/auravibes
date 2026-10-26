@@ -287,16 +287,36 @@ void main() {
         await _settle(tester);
         await tester.tap(button('open_trash'));
         await _settle(tester);
-        final purge = button('workspace_permanent_delete_${record.id}');
-        await tester.scrollUntilVisible(purge, 200);
-        await tester.tap(purge);
+        Future<void> openPurge() async {
+          await tester.tap(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is AuraPopupMenuButton &&
+                  widget.identifier == 'workspace_trash_menu_${batch.id}',
+            ),
+          );
+          await _settle(tester);
+          await tester.tap(find.text('Delete permanently').last);
+        }
+
+        await openPurge();
         final _ = await tester.pump();
         final _ = await tester.pump(const Duration(milliseconds: 400));
         await tester.ensureVisible(button('workspace_history_cancel'));
         await tester.tap(button('workspace_history_cancel'));
         await _settle(tester);
         expect((await trash.list()).single.id, batch.id);
-        await tester.tap(purge);
+        if (width == 1200) {
+          await tester.tap(
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is AuraIconButton &&
+                  widget.identifier == 'workspace_trash_delete_all',
+            ),
+          );
+        } else {
+          await openPurge();
+        }
         final _ = await tester.pump();
         final _ = await tester.pump(const Duration(milliseconds: 400));
         await tester.ensureVisible(button('workspace_history_confirm'));
