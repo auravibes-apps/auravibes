@@ -4176,6 +4176,10 @@ class Protocol extends _is.DatabaseSerializationManager {
             ),
             _isp.IndexElementDefinition(
               type: _isp.IndexElementDefinitionType.column,
+              definition: 'actorUserId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
               definition: 'id',
             ),
           ],
