@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
@@ -14,38 +15,46 @@ class const WorkspaceConversationCommandUsecase({
   Future<Map<String, Object?>> call({
     required WorkspaceContextSelection selection,
     required Map<String, dynamic> arguments,
+    WorkspaceReferenceScope? references,
   }) async {
+    references ??= WorkspaceReferenceScope(selection, const []);
     final action = arguments['action'];
     if (selection.kind == 'folder' &&
         action != 'createFolder' &&
         action != 'createTable') {
-      return _folder(selection, arguments);
+      return await _folder(selection, arguments);
     }
-    if (selection.kind == 'view') return _view(selection, arguments);
+    if (selection.kind == 'view') return await _view(selection, arguments);
     if (action == 'createTable' || action == 'createFolder') {
-      return _createItem(selection, arguments);
+      return await _createItem(selection, arguments);
     }
     final tableId = arguments['tableId'];
     if (selection.kind != 'table' || tableId != selection.itemId) {
       throw const WorkspaceTableException(denied: true);
     }
     final table = await tables.table(selection.itemId);
-    return switch (arguments['action']) {
-      'read' => _read(table, selection),
-      'updateRecord' => _update(table, selection, arguments),
-      'createRecord' => _createRecord(table, arguments),
+
+    return await switch (arguments['action']) {
+      'read' => _read(table, selection, references),
+      'updateRecord' => _update(table, selection, arguments, references),
+      'createRecord' => _createRecord(table, arguments, references),
       'renameTable' => _renameTable(table, arguments),
-      'saveColumn' => _saveColumn(table, arguments),
+      'saveColumn' => _saveColumn(table, arguments, references),
       'createView' => _createView(table, arguments),
       _ => throw const WorkspaceTableException(),
     };
   }
 
   Future<void> authorizeReceipt(Map<String, Object?> result) async {
-    final id = result['id'] as String;
+    final id = result['id'];
+    if (id is! String) throw const WorkspaceTableException(denied: true);
     switch (result['kind']) {
       case 'record':
-        final table = await tables.table(result['tableId'] as String);
+        final tableId = result['tableId'];
+        if (tableId is! String) {
+          throw const WorkspaceTableException(denied: true);
+        }
+        final table = await tables.table(tableId);
         if (!table.canEditRecords) {
           throw const WorkspaceTableException(denied: true);
         }
@@ -54,14 +63,20 @@ class const WorkspaceConversationCommandUsecase({
         final table = await tables.table(id);
         if (!table.canManage) throw const WorkspaceTableException(denied: true);
       case 'folder':
-        final candidates = await folders!.list(
+        final organizer = folders;
+        if (organizer == null) {
+          throw const WorkspaceTableException(denied: true);
+        }
+        final candidates = await organizer.list(
           parentId: result['parentId'] as String?,
         );
         if (!candidates.any((folder) => folder.id == id && folder.canManage)) {
           throw const WorkspaceTableException(denied: true);
         }
       case 'view':
-        final data = await views!.open(id);
+        final manager = views;
+        if (manager == null) throw const WorkspaceTableException(denied: true);
+        final data = await manager.open(id);
         if (!data.view.canManage) {
           throw const WorkspaceTableException(denied: true);
         }
@@ -101,6 +116,7 @@ class const WorkspaceConversationCommandUsecase({
       name: _string(arguments, 'name'),
       parentId: folder.parentId,
     );
+
     return {
       'id': updated.id,
       'kind': 'folder',
@@ -136,11 +152,12 @@ class const WorkspaceConversationCommandUsecase({
     final saved = await usecase.save(
       data.view.edited(
         name: _string(arguments, 'name'),
-        definition: A2uiSavedDefinition.fromJson(_map(arguments, 'definition')),
+        definition: .fromJson(_map(arguments, 'definition')),
         bindings: bindings,
         columnTypes: types,
       ),
     );
+
     return {'id': saved.id, 'kind': 'view', 'revision': saved.revision};
   }
 
@@ -160,6 +177,7 @@ class const WorkspaceConversationCommandUsecase({
       final usecase = folders;
       if (usecase == null) throw const WorkspaceTableException();
       final folder = await usecase.create(name: name, parentId: parent);
+
       return {
         'id': folder.id,
         'kind': 'folder',
@@ -172,18 +190,25 @@ class const WorkspaceConversationCommandUsecase({
       labelName: _string(arguments, 'labelName'),
       parentId: parent,
     );
+
     return _tableResult(table);
   }
 
   Future<Map<String, Object?>> _createRecord(
     WorkspaceTable table,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) async {
     _currentTable(table, arguments);
-    final record = await tables.createRecord(
-      table: table,
-      values: _map(arguments, 'values'),
+    final values = WorkspaceTableConstraints.defaults(
+      table.columns,
+      _map(arguments, 'values'),
     );
+    if (!references.valuesAllowed(_referenceColumns(table), values, const {})) {
+      throw const WorkspaceTableException(denied: true);
+    }
+    final record = await tables.createRecord(table: table, values: values);
+
     return {
       'id': record.id,
       'kind': 'record',
@@ -197,6 +222,7 @@ class const WorkspaceConversationCommandUsecase({
     Map<String, dynamic> arguments,
   ) async {
     _currentTable(table, arguments);
+
     return _tableResult(
       await tables.updateMetadata(
         table: table,
@@ -209,9 +235,22 @@ class const WorkspaceConversationCommandUsecase({
   Future<Map<String, Object?>> _saveColumn(
     WorkspaceTable table,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) async {
     _currentTable(table, arguments);
-    final column = WorkspaceColumn.fromJson(_map(arguments, 'column'));
+    final input = _map(arguments, 'column');
+    final previous =
+        table.columns
+            .where((column) => column.id == input['id'])
+            .firstOrNull
+            ?.toJson() ??
+        <String, Object?>{};
+    final merged = {...previous, ...input};
+    if (!references.columnAllowed(merged, previous)) {
+      throw const WorkspaceTableException(denied: true);
+    }
+    final column = WorkspaceColumn.fromJson(merged);
+
     return _tableResult(await tables.saveColumn(table: table, column: column));
   }
 
@@ -233,12 +272,14 @@ class const WorkspaceConversationCommandUsecase({
       columnIds: ids.cast<String>(),
       parentId: table.parentId,
     );
+
     return {'id': view.id, 'kind': 'view', 'revision': view.revision};
   }
 
   Future<Map<String, Object?>> _read(
     WorkspaceTable table,
     WorkspaceContextSelection selection,
+    WorkspaceReferenceScope references,
   ) async => {
     'id': table.id,
     'name': table.name,
@@ -247,11 +288,11 @@ class const WorkspaceConversationCommandUsecase({
     'labelColumnId': table.labelColumnId,
     'columns': [
       for (final column in table.columns)
-        {...column.toJson()}..remove('targetTableId'),
+        references.readableColumn(column.toJson()),
     ],
     'records': [
       for (final id in selection.recordIds)
-        _record(await tables.record(table.id, id)),
+        _record(await tables.record(table.id, id), table, references),
     ],
   };
 
@@ -259,6 +300,7 @@ class const WorkspaceConversationCommandUsecase({
     WorkspaceTable table,
     WorkspaceContextSelection selection,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) async {
     final id = arguments['id'];
     if (id is! String || !selection.recordIds.contains(id)) {
@@ -273,11 +315,19 @@ class const WorkspaceConversationCommandUsecase({
     if (values is! Map<String, Object?>) {
       throw const WorkspaceTableException();
     }
+    if (!references.valuesAllowed(
+      _referenceColumns(table),
+      values,
+      current.values,
+    )) {
+      throw const WorkspaceTableException(denied: true);
+    }
     final updated = await tables.updateRecord(
       table: table,
       record: current,
-      values: values,
+      values: {...current.values, ...values},
     );
+
     return {
       'id': updated.id,
       'kind': 'record',
@@ -287,15 +337,31 @@ class const WorkspaceConversationCommandUsecase({
   }
 }
 
-Map<String, Object?> _record(WorkspaceRecord record) => {
-  'id': record.id,
-  'revision': record.revision,
-  'values': {
+List<Map<String, Object?>> _referenceColumns(WorkspaceTable table) => [
+  for (final column in table.columns) column.toJson(),
+];
+
+Map<String, Object?> _record(
+  WorkspaceRecord record,
+  WorkspaceTable table,
+  WorkspaceReferenceScope references,
+) {
+  final projected = references.projectValues(_referenceColumns(table), {
     for (final entry in record.values.entries)
       if (!record.restrictedReferenceColumns.contains(entry.key))
         entry.key: entry.value,
-  },
-};
+  });
+
+  return {
+    'id': record.id,
+    'revision': record.revision,
+    'values': projected.values,
+    'restrictedReferenceColumns': {
+      ...record.restrictedReferenceColumns,
+      ...projected.restricted,
+    }.toList(),
+  };
+}
 
 void _currentTable(WorkspaceTable table, Map<String, dynamic> arguments) {
   if (table.revision != arguments['revision'] ||
@@ -313,11 +379,13 @@ Map<String, Object?> _tableResult(WorkspaceTable table) => {
 String _string(Map<String, dynamic> arguments, String key) {
   final value = arguments[key];
   if (value is! String) throw const WorkspaceTableException();
+
   return value;
 }
 
 Map<String, Object?> _map(Map<String, dynamic> arguments, String key) {
   final value = arguments[key];
   if (value is! Map<String, Object?>) throw const WorkspaceTableException();
+
   return value;
 }

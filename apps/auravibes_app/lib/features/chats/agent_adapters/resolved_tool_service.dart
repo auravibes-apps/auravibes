@@ -2,9 +2,6 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
-import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
-
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
@@ -29,6 +26,8 @@ import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_u
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
@@ -100,7 +99,7 @@ class ResolvedToolService {
     BrowserSkillToolRunner? browserSkillToolRunner,
     ConnectorCommandUsecase? connectorCommandUsecase,
     ConversationAgentLanguageRuntime? conversationLanguageRuntime,
-    WorkspaceConversationToolsUsecase? workspaceConversationTools,
+    this.workspaceConversationTools,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -120,12 +119,11 @@ class ResolvedToolService {
            connectorCommandUsecase: connectorCommandUsecase,
            conversationLanguageRuntime: conversationLanguageRuntime,
          ),
-       ),
-       _workspaceConversationTools = workspaceConversationTools;
-  new _cloud() : _delegate = null, _workspaceConversationTools = null;
+       );
+  new _cloud() : _delegate = null, workspaceConversationTools = null;
 
+  final WorkspaceConversationToolsUsecase? workspaceConversationTools;
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
-  final WorkspaceConversationToolsUsecase? _workspaceConversationTools;
   final Map<({String conversationId, String toolCallId}), Map<String, Object?>>
   _mcpAppResultData = {};
 
@@ -152,10 +150,12 @@ class ResolvedToolService {
     }
 
     if (tool.isWorkspaceCommand) {
-      final commands = _workspaceConversationTools;
-      if (commands == null)
+      final commands = workspaceConversationTools;
+      if (commands == null) {
         throw StateError('Workspace commands are not configured.');
-      return commands.call(
+      }
+
+      return await commands.call(
         conversationId: conversationId,
         arguments: arguments,
         operationId: toolCallId,
@@ -1088,10 +1088,10 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
             .read(browserSessionProvider(workspaceId, conversationId).notifier)
             .runSkillTool(toolSlug, arguments),
     connectorCommandUsecase: ref.watch(connectorCommandUsecaseProvider),
-    workspaceConversationTools: ref.watch(workspaceConversationToolsProvider),
     conversationLanguageRuntime: ref.watch(
       conversationAgentLanguageRuntimeProvider,
     ),
+    workspaceConversationTools: ref.watch(workspaceConversationToolsProvider),
   );
 });
 

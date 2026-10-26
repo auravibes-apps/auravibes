@@ -42,22 +42,39 @@ class const WorkspaceConversationToolsUsecase({
         ) ??
         [];
     final scope = workspaceCreatedContext(selection, created, arguments);
+    final references = WorkspaceReferenceScope(selection, created);
     final command = await commands(conversation.workspaceId);
     if (arguments['action'] == 'read') {
-      return command.call(selection: scope, arguments: arguments);
+      final result = await command.call(
+        selection: scope,
+        arguments: arguments,
+        references: references,
+      );
+      final current = await context(conversation.workspaceId)
+          .latest(conversation.workspaceId, conversationId);
+      if (current?.id != event.id) {
+        throw const WorkspaceTableException(denied: true);
+      }
+
+      return result;
     }
     final store = receipts;
     if (store == null || operationId == null || operationId.isEmpty) {
       throw const WorkspaceTableException();
     }
-    return store.execute(
+
+    return await store.execute((
       workspaceId: conversation.workspaceId,
       conversationId: conversationId,
       selectionId: event.id,
       requestId: operationId,
       arguments: arguments,
-      run: () => command.call(selection: scope, arguments: arguments),
+      run: () => command.call(
+        selection: scope,
+        arguments: arguments,
+        references: references,
+      ),
       authorizeReplay: command.authorizeReceipt,
-    );
+    ));
   }
 }

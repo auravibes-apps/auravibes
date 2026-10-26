@@ -7,12 +7,29 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../../workspace_context/workspace_context_store.dart';
 import '../../workspace_state/repositories/workspace_state_repository.dart';
+import '../../workspace_state/domain/workspace_table_constraints.dart';
 import '../../workspace_state/usecases/workspace_state_usecases.dart';
 import '../../workspace_state/workspace_table_access.dart';
 import '../../workspace_views/workspace_view_store.dart';
 
-/// Host-owned commands reuse ordinary resource authorization and mutation rules.
-class const WorkspaceConversationCommands() {
+typedef _CommandAuthority = ({
+  Future<void> Function(Transaction) guard,
+  WorkspaceReferenceScope references,
+});
+
+typedef _RecordReadScope = ({
+  Session session,
+  WorkspaceMember member,
+  String tableId,
+  List<Map<String, Object?>> columns,
+  WorkspaceReferenceScope references,
+});
+
+/// Host-owned commands reuse ordinary resource authorization and mutation
+/// rules.
+class const WorkspaceConversationCommands({
+  final Future<void> Function()? beforeMutation,
+}) {
   Future<Object?> call(
     Session session,
     ConversationTurn turn,
@@ -28,6 +45,7 @@ class const WorkspaceConversationCommands() {
     if (event == null || selected == null) _denied();
     final created = await _created(session, turn, event.id);
     final scope = workspaceCreatedContext(selected, created, arguments);
+    if (arguments['action'] != 'read') await beforeMutation?.call();
     final result = await _execute(
       session,
       turn,
@@ -35,14 +53,47 @@ class const WorkspaceConversationCommands() {
       arguments,
       member,
       scope,
+      (
+        guard: (transaction) => _guard(
+          session,
+          turn,
+          selected.conversationId,
+          event.id,
+          transaction,
+        ),
+        references: WorkspaceReferenceScope(selected, created),
+      ),
     );
+    if (arguments['action'] == 'read') {
+      final current = await _selection(session, turn);
+      if (current?.id != event.id) _denied();
+    }
     if ((arguments['action'] as String).startsWith('create')) {
       return {
         ...result as Map<String, Object?>,
         'contextSelectionId': event.id,
       };
     }
+
     return result;
+  }
+
+  Future<void> _guard(
+    Session session,
+    ConversationTurn turn,
+    String conversationId,
+    String epoch,
+    Transaction transaction,
+  ) async {
+    final current = jsonDecode(
+      await WorkspaceContextStore(
+        session,
+        turn.workspaceId,
+        conversationId,
+        turn.initiatorUserId,
+      ).readInTransaction(transaction),
+    ) as Map<String, dynamic>;
+    if (current['id'] != epoch) _denied();
   }
 
   Future<List<Map<String, Object?>>> _created(
@@ -69,6 +120,7 @@ class const WorkspaceConversationCommands() {
         result.add(value);
       }
     }
+
     return result;
   }
 
@@ -79,26 +131,58 @@ class const WorkspaceConversationCommands() {
     Map<String, dynamic> arguments,
     WorkspaceMember member,
     WorkspaceContextSelection selection,
+    _CommandAuthority authority,
   ) async {
     final action = arguments['action'];
     if (selection.kind == 'view') {
-      return _view(session, turn, operationId, selection, arguments);
+      return _view(
+        session,
+        turn,
+        operationId,
+        selection,
+        arguments,
+        authority.guard,
+      );
     }
     if (selection.kind == 'folder' &&
         action != 'createFolder' &&
         action != 'createTable') {
-      return _folder(session, turn, member, selection, operationId, arguments);
+      return _folder(
+        session,
+        turn,
+        member,
+        selection,
+        operationId,
+        arguments,
+        authority.guard,
+      );
     }
     if (action == 'createFolder' || action == 'createTable') {
-      return _createItem(session, turn, operationId, selection, arguments);
+      return _createItem(
+        session,
+        turn,
+        operationId,
+        selection,
+        arguments,
+        authority.guard,
+      );
     }
     if (selection.kind != 'table' || arguments['tableId'] != selection.itemId) {
       _denied();
     }
-    final table = await _visible(session, member, .table, selection.itemId);
-    if (action == 'read') return _read(session, member, table, selection);
+    final visible = await _visible(session, member, .table, selection.itemId);
+    if (action == 'read')
+      return _read(session, member, visible, selection, authority.references);
+    final table = await _raw(session, visible);
     if (action == 'createView') {
-      return _view(session, turn, operationId, selection, arguments);
+      return _view(
+        session,
+        turn,
+        operationId,
+        selection,
+        arguments,
+        authority.guard,
+      );
     }
     final operation = await _operation(
       session,
@@ -107,16 +191,19 @@ class const WorkspaceConversationCommands() {
       selection,
       operationId,
       arguments,
+      authority.references,
     );
     await WorkspaceStateUseCases(WorkspaceStateRepository()).patch(
       session,
       userId: turn.initiatorUserId,
+      guard: authority.guard,
       request: PatchWorkspaceStateRequest(
         workspaceId: turn.workspaceId,
         requestId: _requestId(turn, operationId),
         operations: [operation],
       ),
     );
+
     return {
       'id': operation.resourceId,
       'kind': operation.resourceKind == .tableRecord
@@ -132,7 +219,9 @@ class const WorkspaceConversationCommands() {
     String operationId,
     WorkspaceContextSelection selection,
     Map<String, dynamic> arguments,
+    Future<void> Function(Transaction) guard,
   ) => session.db.transaction((transaction) async {
+    await guard(transaction);
     final workspace = await CloudWorkspace.db.findById(
       session,
       turn.workspaceId,
@@ -171,6 +260,7 @@ class const WorkspaceConversationCommands() {
             ...jsonDecode(current!.data) as Map<String, dynamic>,
             'name': _string(arguments, 'name'),
             'bindings': _map(arguments, 'bindings'),
+            'columnTypes': _viewColumnTypes(table, _map(arguments, 'bindings')),
             'definition': _map(arguments, 'definition'),
           };
     final saved = await store.save(
@@ -182,6 +272,7 @@ class const WorkspaceConversationCommands() {
         definition: jsonEncode(data),
       ),
     );
+
     return {'id': saved.stableId, 'kind': 'view', 'revision': saved.revision};
   });
 
@@ -197,6 +288,7 @@ class const WorkspaceConversationCommands() {
     }
     final columns = (_data(table)['columns'] as List<Object?>)
         .cast<Map<String, dynamic>>();
+
     return {
       'id': _stableId(operationId, 'view'),
       'name': _string(arguments, 'name'),
@@ -233,6 +325,7 @@ class const WorkspaceConversationCommands() {
     WorkspaceContextSelection selection,
     String operationId,
     Map<String, dynamic> arguments,
+    Future<void> Function(Transaction) guard,
   ) async {
     if (arguments['id'] != selection.itemId) _denied();
     final folder = await _visible(session, member, .folder, selection.itemId);
@@ -249,6 +342,7 @@ class const WorkspaceConversationCommands() {
     await WorkspaceStateUseCases(WorkspaceStateRepository()).patch(
       session,
       userId: turn.initiatorUserId,
+      guard: guard,
       request: PatchWorkspaceStateRequest(
         workspaceId: turn.workspaceId,
         requestId: _requestId(turn, operationId),
@@ -267,6 +361,7 @@ class const WorkspaceConversationCommands() {
         ],
       ),
     );
+
     return {'id': folder.resourceId, 'kind': 'folder'};
   }
 
@@ -282,6 +377,7 @@ class const WorkspaceConversationCommands() {
           row.removedAt.equals(null),
     );
     if (member == null) _denied();
+
     return member;
   }
 
@@ -308,6 +404,7 @@ class const WorkspaceConversationCommands() {
     ) as Map<String, dynamic>;
     final id = result['id'];
     if (id is! String) return null;
+
     return (
       id: id,
       selection: WorkspaceContextSelection.decode(
@@ -339,6 +436,7 @@ class const WorkspaceConversationCommands() {
       row,
     );
     if (visible == null) _denied();
+
     return visible;
   }
 
@@ -347,10 +445,18 @@ class const WorkspaceConversationCommands() {
     WorkspaceMember member,
     WorkspaceResource table,
     WorkspaceContextSelection selection,
+    WorkspaceReferenceScope references,
   ) async {
+    final raw = await _raw(session, table);
     final data = _data(table);
-    final columns = (data['columns'] as List<Object?>)
-        .cast<Map<String, dynamic>>();
+    final scope = (
+      session: session,
+      member: member,
+      tableId: table.resourceId,
+      columns: _columns(raw),
+      references: references,
+    );
+
     return {
       'id': table.resourceId,
       'name': data['name'],
@@ -358,26 +464,49 @@ class const WorkspaceConversationCommands() {
       'schemaRevision': data['schemaRevision'],
       'labelColumnId': data['labelColumnId'],
       'columns': [
-        for (final column in columns) {...column}..remove('targetTableId'),
+        for (final column in _columns(table)) references.readableColumn(column),
       ],
       'records': [
-        for (final id in selection.recordIds)
-          await _record(session, member, table.resourceId, id),
+        for (final id in selection.recordIds) await _record(scope, id),
       ],
     };
   }
 
   Future<Map<String, Object?>> _record(
-    Session session,
-    WorkspaceMember member,
-    String tableId,
+    _RecordReadScope scope,
     String id,
   ) async {
-    final record = await _visible(session, member, .tableRecord, id);
+    final record = await _visible(
+      scope.session,
+      scope.member,
+      .tableRecord,
+      id,
+    );
     final data = _data(record);
-    if (data['tableId'] != tableId) _denied();
-    return {'id': id, 'revision': record.revision, 'values': data['values']};
+    if (data['tableId'] != scope.tableId) _denied();
+    final values = (data['values'] as Map).cast<String, Object?>();
+    final readable = scope.references.projectValues(scope.columns, values);
+
+    return {
+      'id': id,
+      'revision': record.revision,
+      'values': readable.values,
+      'restrictedReferenceColumns': readable.restricted,
+    };
   }
+
+  Future<WorkspaceResource> _raw(
+    Session session,
+    WorkspaceResource visible,
+  ) async {
+    final raw = await WorkspaceResource.db.findById(session, visible.id!);
+    if (raw == null || raw.workspaceId != visible.workspaceId) _denied();
+
+    return raw;
+  }
+
+  List<Map<String, Object?>> _columns(WorkspaceResource table) =>
+      (_data(table)['columns'] as List).cast<Map<String, Object?>>();
 
   Future<WorkspacePatchOperation> _operation(
     Session session,
@@ -386,9 +515,11 @@ class const WorkspaceConversationCommands() {
     WorkspaceContextSelection selection,
     String operationId,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) async {
     final data = _data(table);
     if (arguments['schemaRevision'] != data['schemaRevision']) _conflict();
+
     return switch (arguments['action']) {
       'updateRecord' => _updateRecord(
         session,
@@ -396,10 +527,16 @@ class const WorkspaceConversationCommands() {
         table,
         selection,
         arguments,
+        references,
       ),
-      'createRecord' => _createRecord(table, operationId, arguments),
+      'createRecord' => _createRecord(
+        table,
+        operationId,
+        arguments,
+        references,
+      ),
       'renameTable' => _renameTable(table, arguments),
-      'saveColumn' => _saveColumn(table, operationId, arguments),
+      'saveColumn' => _saveColumn(table, operationId, arguments, references),
       _ => throw const FormatException('Unsupported workspace action.'),
     };
   }
@@ -410,11 +547,17 @@ class const WorkspaceConversationCommands() {
     WorkspaceResource table,
     WorkspaceContextSelection selection,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) async {
     final id = _string(arguments, 'id');
     if (!selection.recordIds.contains(id)) _denied();
     final current = await _visible(session, member, .tableRecord, id);
     if (_data(current)['tableId'] != table.resourceId) _denied();
+    final stored = await _raw(session, current);
+    final previous = (_data(stored)['values'] as Map).cast<String, Object?>();
+    final input = _map(arguments, 'values');
+    if (!references.valuesAllowed(_columns(table), input, previous)) _denied();
+
     return WorkspacePatchOperation(
       operation: .update,
       resourceKind: .tableRecord,
@@ -423,7 +566,7 @@ class const WorkspaceConversationCommands() {
       data: jsonEncode({
         'tableId': table.resourceId,
         'schemaRevision': arguments['schemaRevision'],
-        'values': _map(arguments, 'values'),
+        'values': {...previous, ...input},
       }),
       fieldMask: [],
     );
@@ -433,8 +576,15 @@ class const WorkspaceConversationCommands() {
     WorkspaceResource table,
     String operationId,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) {
     _current(table, arguments);
+    final values = WorkspaceTableConstraints.defaults(
+      _data(table),
+      _map(arguments, 'values'),
+    );
+    if (!references.valuesAllowed(_columns(table), values, const {})) _denied();
+
     return WorkspacePatchOperation(
       operation: .create,
       resourceKind: .tableRecord,
@@ -442,7 +592,7 @@ class const WorkspaceConversationCommands() {
       data: jsonEncode({
         'tableId': table.resourceId,
         'schemaRevision': arguments['schemaRevision'],
-        'values': _map(arguments, 'values'),
+        'values': values,
       }),
       fieldMask: [],
     );
@@ -453,6 +603,7 @@ class const WorkspaceConversationCommands() {
     Map<String, dynamic> arguments,
   ) {
     _current(table, arguments);
+
     return WorkspacePatchOperation(
       operation: .update,
       resourceKind: .table,
@@ -470,12 +621,18 @@ class const WorkspaceConversationCommands() {
     WorkspaceResource table,
     String operationId,
     Map<String, dynamic> arguments,
+    WorkspaceReferenceScope references,
   ) {
     _current(table, arguments);
     final data = _data(table);
-    final column = _map(arguments, 'column');
+    final input = _map(arguments, 'column');
     final columns = (data['columns'] as List<Object?>)
         .cast<Map<String, dynamic>>();
+    final previous =
+        columns.where((column) => column['id'] == input['id']).firstOrNull ??
+        <String, Object?>{};
+    final column = {...previous, ...input};
+    if (!references.columnAllowed(column, previous)) _denied();
     final id = column['id'];
     if (id is! String) throw const FormatException('Column ID is required.');
     if (id.isNotEmpty && !columns.any((existing) => existing['id'] == id)) {
@@ -485,6 +642,7 @@ class const WorkspaceConversationCommands() {
       ...column,
       'id': id.isEmpty ? _stableId(operationId, 'column') : id,
     };
+
     return WorkspacePatchOperation(
       operation: .update,
       resourceKind: .table,
@@ -509,6 +667,7 @@ class const WorkspaceConversationCommands() {
     String operationId,
     WorkspaceContextSelection selection,
     Map<String, dynamic> arguments,
+    Future<void> Function(Transaction) guard,
   ) async {
     if (selection.kind != 'directory' && selection.kind != 'folder') _denied();
     final parent = selection.kind == 'directory' ? null : selection.itemId;
@@ -519,6 +678,7 @@ class const WorkspaceConversationCommands() {
     await WorkspaceStateUseCases(WorkspaceStateRepository()).patch(
       session,
       userId: turn.initiatorUserId,
+      guard: guard,
       request: PatchWorkspaceStateRequest(
         workspaceId: turn.workspaceId,
         requestId: _requestId(turn, operationId),
@@ -547,6 +707,7 @@ class const WorkspaceConversationCommands() {
         ],
       ),
     );
+
     return {'id': id, 'kind': table ? 'table' : 'folder', 'parentId': parent};
   }
 }
@@ -561,6 +722,7 @@ String _string(Map<String, dynamic> arguments, String key) {
   if (value is! String) {
     throw const FormatException('Invalid workspace request.');
   }
+
   return value;
 }
 
@@ -569,6 +731,7 @@ int _revision(Map<String, dynamic> arguments) {
   if (value is! int || value < 1) {
     throw const FormatException('Expected revision is required.');
   }
+
   return value;
 }
 
@@ -577,6 +740,7 @@ Map<String, dynamic> _map(Map<String, dynamic> arguments, String key) {
   if (value is! Map<String, dynamic>) {
     throw const FormatException('Invalid workspace request.');
   }
+
   return value;
 }
 
@@ -589,6 +753,7 @@ Never _conflict() => throw CloudWorkspaceException(code: .conflict);
 
 Map<String, dynamic> _tableData(WorkspaceResource table) {
   final data = _data(table);
+
   return {
     for (final key in [
       'name',
@@ -599,5 +764,19 @@ Map<String, dynamic> _tableData(WorkspaceResource table) {
       'memberAccess',
     ])
       if (data.containsKey(key)) key: data[key],
+  };
+}
+
+Map<String, Object?> _viewColumnTypes(
+  WorkspaceResource table,
+  Map<String, dynamic> bindings,
+) {
+  final columns = (_data(table)['columns'] as List<Object?>)
+      .cast<Map<String, dynamic>>();
+
+  return {
+    for (final column in columns)
+      if (bindings.values.contains(column['id']))
+        column['id'] as String: column['type'],
   };
 }

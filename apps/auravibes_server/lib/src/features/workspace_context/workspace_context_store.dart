@@ -13,7 +13,9 @@ class const WorkspaceContextStore(
   final String conversationId,
   final String actorUserId,
 ) {
-  Future<String> read() => session.db.transaction((transaction) async {
+  Future<String> read() => session.db.transaction(readInTransaction);
+
+  Future<String> readInTransaction(Transaction transaction) async {
     final context = await _authorize(transaction);
     final event = await WorkspaceConversationContext.db.findFirstRow(
       session,
@@ -25,13 +27,15 @@ class const WorkspaceContextStore(
       transaction: transaction,
     );
     final selection = _decode(event?.selectionJson);
-    if (selection != null)
+    if (selection != null) {
       await _validate(selection, context.member, transaction);
+    }
+
     return jsonEncode({
       'id': event?.stableId,
       'selection': selection?.toJson(),
     });
-  });
+  }
 
   Future<String> save(
     String requestId,
@@ -41,8 +45,9 @@ class const WorkspaceContextStore(
     if (requestId.isEmpty || requestId.length > 100) _invalid();
     final selection = _decode(selectionJson);
     if (selectionJson != null && selection == null) _invalid();
-    if (selection != null)
+    if (selection != null) {
       await _validate(selection, context.member, transaction);
+    }
     final encoded = selection == null ? null : jsonEncode(selection.toJson());
     final previous = await WorkspaceConversationContext.db.findFirstRow(
       session,
@@ -56,6 +61,7 @@ class const WorkspaceContextStore(
           previous.selectionJson != encoded) {
         throw CloudWorkspaceException(code: .idempotencyConflict);
       }
+
       return jsonEncode({
         'id': previous.stableId,
         'selection': selection?.toJson(),
@@ -73,11 +79,13 @@ class const WorkspaceContextStore(
       ),
       transaction: transaction,
     );
+
     return jsonEncode({'id': requestId, 'selection': selection?.toJson()});
   });
 
   WorkspaceContextSelection? _decode(String? value) {
     if (value == null) return null;
+
     return WorkspaceContextSelection.decode(
       jsonDecode(value),
       '$workspaceId',
@@ -113,6 +121,7 @@ class const WorkspaceContextStore(
       transaction: transaction,
     );
     if (conversation == null) _denied();
+
     return (member: member, conversation: conversation);
   }
 
@@ -122,8 +131,9 @@ class const WorkspaceContextStore(
     Transaction transaction,
   ) async {
     if (selection.kind == 'directory') {
-      if (selection.itemId.isNotEmpty || selection.recordIds.isNotEmpty)
+      if (selection.itemId.isNotEmpty || selection.recordIds.isNotEmpty) {
         _invalid();
+      }
       return;
     }
     if (selection.kind == 'view') {
@@ -146,8 +156,9 @@ class const WorkspaceContextStore(
         : WorkspaceResourceKind.table;
     final item = await _visible(kind, selection.itemId, member, transaction);
     if (kind == .folder && selection.recordIds.isNotEmpty) _invalid();
-    if (kind == .table)
+    if (kind == .table) {
       await _records(selection.recordIds, item.resourceId, member, transaction);
+    }
   }
 
   Future<void> _records(
@@ -181,6 +192,7 @@ class const WorkspaceContextStore(
     final visible = await WorkspaceTableAccess(transaction: transaction)
         .visible(session, member, row);
     if (visible == null) _denied();
+
     return visible;
   }
 }

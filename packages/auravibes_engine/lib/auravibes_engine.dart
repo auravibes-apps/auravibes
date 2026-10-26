@@ -118,3 +118,4 @@ export 'src/url_content_transformer.dart';
 export 'src/url_tool.dart';
 
 export 'src/workspace_command.dart';
+export 'src/workspace_reference_scope.dart';

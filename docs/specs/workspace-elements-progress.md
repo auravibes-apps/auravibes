@@ -779,3 +779,21 @@ The migration warning is also repaired on root without importing partial Assets 
 Hosted CI at published `63f6b9658` exposed one stale test expectation: app database schema is now40, but `app_providers_test.dart` still expected39. The assertion now expects40, and all12 tests in that provider suite pass under pinned Flutter3.47.8.
 
 The root worktree had assertion and progress edits, so its clean-only `validate:generated` command correctly refused to run. A separate clean worktree at `45c6f9479` bootstrapped from the pinned dependency cache after online Pub returned `Attempting to send request on closed client`. `validate:generated` passed there with no generated diff. Commit `4eee5ba18` remains an ancestor of the integration branch. After `git push --dry-run` succeeded, commit `ffd35c4a8` was pushed and verified with both `git ls-remote` and draft PR #1693. CI for `ffd35c4a8` is pending; the parent remains open and19 of26 children were previously accepted.
+
+### #1687 behavior checkpoint — 2026-10-25 (active; not accepted)
+
+- Integration46 merged at `ab84329e5`; protected selection/receipts baseline remains `55f1eb04`.
+- App eight-suite run:82 passing (`/tmp/auravibes-1687-app-behavior-all.log`). Covers atomic rollback, stable IDs/replay after reopen, mode/approval policy, selected-only prompt projection, real host runner, responsive pane and explicit consent controls.
+- Authenticated cloud full-action/access/provider-replay workflow passes (`/tmp/auravibes-1687-cloud-actions-green.log`). View rebinding exposed stale columnTypes; command now derives them from current schema/new bindings. This follows the same validated View store as manual editing.
+- Additional regressions: actual fork inherits no protected grant, forged imported user metadata rewritten to the fork still denied; default prompt/compaction strips archived workspace arguments and outputs (6 prompt tests pass); paginated51-row picker preserves selected IDs across pages/search, all controls reachable at400×450/200% with180px keyboard inset (3 consent/picker tests pass).
+- Picker uses one bounded paginated scroll rather than nested scrolling, which failed real pointer checks under the short viewport. Row text is visually bounded while keeping full accessible strings.
+- Remaining gates: owned fatal/style analysis, strict method metrics, full rerun after cleanup, Assets complete schema41 integration followed by41→42 and older-data migration proof, clean generated-artifact check, parent-owned native review. No issue closure/readiness claim yet.
+
+### #1687 cloud reference disclosure — verified security correction
+
+- Root cause: ordinary source-table read permission exposed stored reference cells and schema defaults even when their target was outside the chat's protected share. Archived tool output could repeat the same identifiers at the model boundary.
+- Shared host-derived scope now permits explicit selected rows and verified same-Conversation creations only. Schema/default/row writes reject newly guessed targets; ordinary manual authorization and transaction guards still run. Partial updates preserve omitted hidden links, and schema label edits preserve hidden target metadata.
+- Read projections remove unshared target IDs/defaults/cells and provide restricted-column state. The context inspector explains that hidden links can be edited in Directory. Opening an item or allowing all tool asks does not create a sharing grant.
+- Failing-first evidence: `/tmp/auravibes-1687-reference-scope-red.log` (local) and `/tmp/auravibes-1687-cloud-reference-red.log` (authenticated cloud) show the retained foreign ID in source output before correction.
+- Verification: `/tmp/auravibes-1687-disclosure-local-final.log` —18 passing local persistence/fork/history/reference/consent/repair/prompt tests. `/tmp/auravibes-1687-disclosure-cloud-final.log` — authenticated full workflow passes, including archived-reference provider projection, revocation, unchanged hidden references, actor/table access, stale revisions and atomic revoke/replacement guards.
+- No automatic review blocked a candidate, and no review controls were changed. Remaining issue acceptance includes the full strict metric sweep, Assets41→protected42 migration integration/proof, generated clean proof, and broader parent/native acceptance. This checkpoint does not close #1687.

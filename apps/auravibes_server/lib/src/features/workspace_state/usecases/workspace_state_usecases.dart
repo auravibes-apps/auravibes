@@ -162,6 +162,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           session,
           transaction,
         ).requirePatch(request);
+        await guard?.call(transaction);
         final receipt = await _findReceipt(
           session,
           request.workspaceId,
@@ -183,7 +184,6 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           );
         }
 
-        await guard?.call(transaction);
         await moves.apply(session, member, transaction);
         final response = await _commitOperations(
           session,

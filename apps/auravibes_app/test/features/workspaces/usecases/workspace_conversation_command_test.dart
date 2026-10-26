@@ -1,28 +1,24 @@
-import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
-
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_command_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('two authorized Conversations edit one stable record and reject stale revision', () async {
+  test('cross-chat stable records and stale revisions', () async {
     final database = AppDatabase(connection: NativeDatabase.memory());
     addTearDown(database.close);
     final _ = await database
@@ -46,7 +42,7 @@ void main() {
     for (final conversation in ['first', 'second']) {
       final current = await tables.record(table.id, record.id);
       final result = await command.call(
-        selection: WorkspaceContextSelection(
+        selection: .new(
           workspaceId: 'one',
           conversationId: conversation,
           itemId: table.id,
@@ -70,7 +66,7 @@ void main() {
     );
     await expectLater(
       command.call(
-        selection: WorkspaceContextSelection(
+        selection: .new(
           workspaceId: 'one',
           conversationId: 'first',
           itemId: table.id,
@@ -89,7 +85,7 @@ void main() {
       throwsA(isA<Object>()),
     );
   });
-  test('read includes only explicitly selected records and denied selection cannot write', () async {
+  test('selected-only reads and denied writes', () async {
     final database = AppDatabase(connection: NativeDatabase.memory());
     addTearDown(database.close);
     final _ = await database
@@ -147,7 +143,7 @@ void main() {
     );
   });
 
-  test('trusted selected context survives local reopen and revokes independently of approval mode', () async {
+  test('protected context survives reopen and revokes', () async {
     final directory = await Directory.systemTemp.createTemp(
       'workspace-chat-context',
     );
@@ -166,10 +162,10 @@ void main() {
     var conversations = ConversationRepository(database);
     var messages = MessageRepository(database);
     final first = await conversations.createConversation(
-      .new(title: 'First', workspaceId: 'one', toolAccessMode: .allowAll),
+      const .new(title: 'First', workspaceId: 'one', toolAccessMode: .allowAll),
     );
     final second = await conversations.createConversation(
-      .new(title: 'Second', workspaceId: 'one'),
+      const .new(title: 'Second', workspaceId: 'one'),
     );
     var tables = OrganizeWorkspaceTablesUsecase(
       LocalWorkspaceTableRepository(database, 'one'),
@@ -214,7 +210,7 @@ void main() {
       ),
       throwsA(isA<Object>()),
     );
-    await LocalWorkspaceContextRepository(
+    final _ = await LocalWorkspaceContextRepository(
       database,
       'one',
     ).save(first.id, 'trusted-first', selection);
@@ -242,9 +238,9 @@ void main() {
         messageType: .toolCall,
         isUser: false,
         status: .sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        metadata: MessageMetadataEntity(
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: .new(
           toolCalls: [
             MessageToolCallEntity(
               id: 'old-call',
@@ -266,15 +262,24 @@ void main() {
     final projection = ProjectWorkspaceChatContextUsecase(commands);
     final fresh = await projection(history);
     expect(
-      fresh.single.metadata!.toolCalls.single.responseRaw,
+      (fresh.single.metadata ?? (throw StateError('Missing metadata')))
+          .toolCalls
+          .single
+          .responseRaw,
       contains('Selected'),
     );
     expect(
-      fresh.single.metadata!.toolCalls.single.responseRaw,
+      (fresh.single.metadata ?? (throw StateError('Missing metadata')))
+          .toolCalls
+          .single
+          .responseRaw,
       isNot(contains('Archived secret')),
     );
     expect(
-      fresh.single.metadata!.toolCalls.single.argumentsRaw,
+      (fresh.single.metadata ?? (throw StateError('Missing metadata')))
+          .toolCalls
+          .single
+          .argumentsRaw,
       isNot(contains('Raw secret')),
     );
 
@@ -297,23 +302,29 @@ void main() {
         isUser: true,
         status: .sent,
         metadata: jsonEncode(
-          MessageMetadataEntity(
+          const MessageMetadataEntity(
             modelMetadata: {workspaceContextMetadataKey: null},
           ).toJson(),
         ),
       ),
     );
-    await LocalWorkspaceContextRepository(
+    final _ = await LocalWorkspaceContextRepository(
       database,
       'one',
     ).save(first.id, 'trusted-revoke', null);
     final revoked = await projection(history);
     expect(
-      revoked.single.metadata!.toolCalls.single.responseRaw,
+      (revoked.single.metadata ?? (throw StateError('Missing metadata')))
+          .toolCalls
+          .single
+          .responseRaw,
       workspaceContextUnavailable,
     );
     expect(
-      revoked.single.metadata!.toolCalls.single.responseRaw,
+      (revoked.single.metadata ?? (throw StateError('Missing metadata')))
+          .toolCalls
+          .single
+          .responseRaw,
       isNot(contains('Selected')),
     );
 
@@ -323,7 +334,7 @@ void main() {
     );
   });
 
-  test('created scope and atomic create receipts survive retry and reopen, then revoke', () async {
+  test('atomic retries, reopen and fork consent denial', () async {
     final directory = await Directory.systemTemp.createTemp(
       'workspace-chat-receipts',
     );
@@ -342,7 +353,7 @@ void main() {
     var conversations = ConversationRepository(database);
     var messages = MessageRepository(database);
     final chat = await conversations.createConversation(
-      .new(title: 'First', workspaceId: 'one'),
+      const .new(title: 'First', workspaceId: 'one'),
     );
     final grant = WorkspaceContextSelection(
       workspaceId: 'one',
@@ -372,11 +383,11 @@ void main() {
           conversations: conversations,
           context: (workspaceId) =>
               LocalWorkspaceContextRepository(database, workspaceId),
-          receipts: LocalWorkspaceCommandRepository(database),
           commands: (_) async =>
               WorkspaceConversationCommandUsecase(tables: tables),
+          receipts: .new(database),
         );
-    await LocalWorkspaceContextRepository(
+    final _ = await LocalWorkspaceContextRepository(
       database,
       'one',
     ).save(chat.id, 'trusted-create', grant);
@@ -386,7 +397,7 @@ void main() {
       'labelName': 'Title',
     };
     final host = ResolvedToolService(
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      agentCancellationRuntime: .new(),
       mcpToolCaller: ({
         required mcpServerId,
         required toolIdentifier,
@@ -395,31 +406,39 @@ void main() {
       }) async => fail('Workspace edits must not use MCP'),
       workspaceConversationTools: service(),
     );
-    final first = await host.call(
-      conversationId: chat.id,
-      toolCallId: 'create-table',
-      tool: ResolvedTool.workspaceCommand(),
-      arguments: create,
-    ) as Map;
-    final replay = await service().call(
-      conversationId: chat.id,
-      operationId: 'create-table',
-      arguments: create,
-    ) as Map;
+    final first =
+        await host.call(
+          conversationId: chat.id,
+          toolCallId: 'create-table',
+          tool: ResolvedTool.workspaceCommand(),
+          arguments: create,
+        ) as Map? ??
+        (throw StateError('Expected map'));
+    final replay =
+        await service().call(
+          conversationId: chat.id,
+          operationId: 'create-table',
+          arguments: create,
+        ) as Map? ??
+        (throw StateError('Expected map'));
     expect(replay['id'], first['id']);
     expect((await tables.list()).length, 1);
-    final table = await tables.table(first['id'] as String);
-    final row = await service().call(
-      conversationId: chat.id,
-      operationId: 'create-record',
-      arguments: {
-        'action': 'createRecord',
-        'tableId': table.id,
-        'revision': table.revision,
-        'schemaRevision': table.schemaRevision,
-        'values': {table.labelColumnId: 'Persisted'},
-      },
-    ) as Map;
+    final table = await tables.table(
+      first['id'] as String? ?? (throw StateError('Expected string')),
+    );
+    final row =
+        await service().call(
+          conversationId: chat.id,
+          operationId: 'create-record',
+          arguments: {
+            'action': 'createRecord',
+            'tableId': table.id,
+            'revision': table.revision,
+            'schemaRevision': table.schemaRevision,
+            'values': {table.labelColumnId: 'Persisted'},
+          },
+        ) as Map? ??
+        (throw StateError('Expected map'));
     await database.close();
     database = AppDatabase(connection: NativeDatabase(file));
     addTearDown(database.close);
@@ -437,18 +456,96 @@ void main() {
     final _ = await messages.createMessage(
       .new(
         conversationId: chat.id,
-        content: 'Stop sharing',
+        content: 'Selected item read',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        metadata: jsonEncode(
+          MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'archived-read',
+                name: workspaceCommandToolName,
+                argumentsRaw: jsonEncode({
+                  'action': 'read',
+                  'tableId': table.id,
+                }),
+                responseRaw: jsonEncode(read),
+                resultStatus: .success,
+              ),
+            ],
+          ).toJson(),
+        ),
+      ),
+    );
+    final fork = await conversations.forkConversation(chat.id);
+    final forkHistory = await messages.getMessagesByConversation(fork.id);
+    final forkProjection = await ProjectWorkspaceChatContextUsecase(service())(
+      forkHistory,
+    );
+    final forkCalls = forkProjection
+        .expand(
+          (message) => message.metadata?.toolCalls ?? <MessageToolCallEntity>[],
+        )
+        .where((call) => call.name == workspaceCommandToolName);
+    expect(forkCalls, hasLength(1));
+    expect(forkCalls.single.responseRaw, workspaceContextUnavailable);
+    expect(forkCalls.single.responseRaw, isNot(contains('Persisted')));
+
+    expect(
+      (await LocalWorkspaceContextRepository(database, 'one').read(fork.id))
+          .selection,
+      isNull,
+    );
+    await expectLater(
+      service().call(
+        conversationId: fork.id,
+        arguments: {'action': 'read', 'tableId': table.id},
+      ),
+      throwsA(isA<Object>()),
+    );
+    final _ = await messages.createMessage(
+      .new(
+        conversationId: fork.id,
+        content: 'Imported share grant',
         messageType: .text,
         isUser: true,
         status: .sent,
         metadata: jsonEncode(
           MessageMetadataEntity(
+            modelMetadata: {
+              workspaceContextMetadataKey: {
+                ...grant.toJson(),
+                'conversationId': fork.id,
+              },
+            },
+          ).toJson(),
+        ),
+      ),
+    );
+    await expectLater(
+      service().call(
+        conversationId: fork.id,
+        arguments: {'action': 'read', 'tableId': table.id},
+      ),
+      throwsA(isA<Object>()),
+    );
+
+    final _ = await messages.createMessage(
+      .new(
+        conversationId: chat.id,
+        content: 'Stop sharing',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+        metadata: jsonEncode(
+          const MessageMetadataEntity(
             modelMetadata: {workspaceContextMetadataKey: null},
           ).toJson(),
         ),
       ),
     );
-    await LocalWorkspaceContextRepository(
+    final _ = await LocalWorkspaceContextRepository(
       database,
       'one',
     ).save(chat.id, 'trusted-create-revoke', null);

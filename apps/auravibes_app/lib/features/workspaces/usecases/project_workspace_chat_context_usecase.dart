@@ -28,6 +28,7 @@ class const ProjectWorkspaceChatContextUsecase(
         message.copyWith(metadata: metadata.copyWith(toolCalls: calls)),
       );
     }
+
     return result;
   }
 
@@ -47,8 +48,9 @@ class const ProjectWorkspaceChatContextUsecase(
         await tools.call(conversationId: conversationId, arguments: read),
       );
     } on Object {
-      // Missing, revoked, deleted, stale, or unavailable scope stays out of prompts.
+      response = workspaceContextUnavailable;
     }
+
     return workspaceToolCallForContext(call, projectToolOutput(response).text);
   }
 }
@@ -65,22 +67,26 @@ MessageToolCallEntity workspaceToolCallForContext(
         appData: null,
       );
 
-List<MessageEntity> redactWorkspaceToolHistory(List<MessageEntity> messages) =>
-    [
-      for (final message in messages)
-        message.metadata == null
-            ? message
-            : message.copyWith(
-                metadata: message.metadata!.copyWith(
-                  toolCalls: [
-                    for (final call in message.metadata!.toolCalls)
-                      call.name == workspaceCommandToolName
-                          ? workspaceToolCallForContext(
-                              call,
-                              workspaceContextUnavailable,
-                            )
-                          : call,
-                  ],
-                ),
-              ),
-    ];
+List<MessageEntity> redactWorkspaceToolHistory(List<MessageEntity> messages) {
+  final result = <MessageEntity>[];
+  for (final message in messages) {
+    final metadata = message.metadata;
+    if (metadata == null) {
+      result.add(message);
+      continue;
+    }
+    final calls = <MessageToolCallEntity>[];
+    for (final call in metadata.toolCalls) {
+      if (call.name == workspaceCommandToolName) {
+        calls.add(
+          workspaceToolCallForContext(call, workspaceContextUnavailable),
+        );
+      } else {
+        calls.add(call);
+      }
+    }
+    result.add(message.copyWith(metadata: metadata.copyWith(toolCalls: calls)));
+  }
+
+  return result;
+}

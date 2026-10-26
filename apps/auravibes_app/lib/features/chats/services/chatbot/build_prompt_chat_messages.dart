@@ -1,14 +1,12 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
-
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
-
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_attachment_bytes.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show ChatMessage, ChatMessageRole;
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -47,15 +45,19 @@ class const BuildPromptChatMessages({
 }) {
   static const _agentBuilder = agent.BuildPromptChatMessages();
 
-  Future<List<ChatMessage>> call(List<MessageEntity> messages) async =>
-      _buildPromptMessages(
-        _agentBuilder,
-        modalitiesInput,
-        supportsImageToolResults,
-        workspaceProjection == null
-            ? redactWorkspaceToolHistory(messages)
-            : await workspaceProjection!(messages),
-      );
+  Future<List<ChatMessage>> call(List<MessageEntity> messages) async {
+    final projection = workspaceProjection;
+    final authorized = projection == null
+        ? redactWorkspaceToolHistory(messages)
+        : await projection(messages);
+
+    return await _buildPromptMessages(
+      _agentBuilder,
+      modalitiesInput,
+      supportsImageToolResults,
+      authorized,
+    );
+  }
 }
 
 Future<List<ChatMessage>> _buildPromptMessages(
