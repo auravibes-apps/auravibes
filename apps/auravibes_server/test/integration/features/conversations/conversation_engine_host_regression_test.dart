@@ -123,6 +123,94 @@ Future<_Fixture> _prepareConversationFixture(
   );
 }
 
+Future<void> _configureRegressionProvider(_Fixture fixture) async {
+  fixture.database.passwords['workspaceSecretKey'] =
+      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+  final now = DateTime.now().toUtc();
+  await WorkspaceModelConnection.db.insertRow(
+    fixture.database,
+    WorkspaceModelConnection(
+      workspaceId: fixture.workspaceId,
+      connectionId: 'connection-1',
+      providerId: 'openai',
+      name: 'Provider',
+      url: 'https://provider.test/v1',
+      hasSecret: true,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
+  await ApiModel.db.insertRow(
+    fixture.database,
+    ApiModel(
+      providerId: 'openai',
+      modelId: 'model-1',
+      name: 'Model',
+      limitContext: 1,
+      limitOutput: 1,
+      modalitiesInput: const ['text'],
+      modalitiesOutput: const ['text'],
+      costInput: 0,
+      costCacheRead: 0,
+      costOutput: 0,
+      openWeights: false,
+      supportsReasoning: false,
+      isCanonical: true,
+      supportsPriorityMode: false,
+      supportsToolCalls: true,
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
+  final encrypted = await const WorkspaceSecretCipher().encrypt(
+    fixture.database,
+    'test-secret',
+    workspaceId: fixture.workspaceId,
+    resourceId: 'connection-1',
+  );
+  await WorkspaceSecret.db.insertRow(
+    fixture.database,
+    WorkspaceSecret(
+      workspaceId: fixture.workspaceId,
+      secretKind: WorkspaceSecretKind.provider,
+      scope: WorkspaceSecretScope.user,
+      ownerUserId: WorkspaceResourceValidation.secretOwnerKey(
+        WorkspaceSecretScope.user,
+        fixture.userId,
+      ),
+      resourceId: 'connection-1',
+      ciphertext: encrypted.ciphertext,
+      nonce: encrypted.nonce,
+      authenticationTag: encrypted.authenticationTag,
+      algorithm: 'AES-256-GCM',
+      keyVersion: 1,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
+  final user = fixture.messages.singleWhere(
+    (message) => message.role == 'user',
+  );
+  await ConversationMessage.db.updateRow(
+    fixture.database,
+    user.copyWith(
+      metadataJson: jsonEncode({
+        'modelSelectionId': VirtualWorkspaceModelSelectionId.encode(
+          connectionId: 'connection-1',
+          modelId: 'model-1',
+        ),
+      }),
+    ),
+  );
+  fixture.messages = await ConversationMessage.db.find(
+    fixture.database,
+    where: (table) => table.conversationId.equals(fixture.conversationId),
+    orderBy: (table) => table.id,
+  );
+}
+
 void main() {
   withServerpod('ConversationEngineHostRegression', (
     sessionBuilder,
@@ -379,94 +467,6 @@ void main() {
       );
     });
 
-    Future<void> configureProvider(_Fixture fixture) async {
-      fixture.database.passwords['workspaceSecretKey'] =
-          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-      final now = DateTime.now().toUtc();
-      await WorkspaceModelConnection.db.insertRow(
-        fixture.database,
-        WorkspaceModelConnection(
-          workspaceId: fixture.workspaceId,
-          connectionId: 'connection-1',
-          providerId: 'openai',
-          name: 'Provider',
-          url: 'https://provider.test/v1',
-          hasSecret: true,
-          revision: 1,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-      await ApiModel.db.insertRow(
-        fixture.database,
-        ApiModel(
-          providerId: 'openai',
-          modelId: 'model-1',
-          name: 'Model',
-          limitContext: 1,
-          limitOutput: 1,
-          modalitiesInput: const ['text'],
-          modalitiesOutput: const ['text'],
-          costInput: 0,
-          costCacheRead: 0,
-          costOutput: 0,
-          openWeights: false,
-          supportsReasoning: false,
-          isCanonical: true,
-          supportsPriorityMode: false,
-          supportsToolCalls: true,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-      final encrypted = await const WorkspaceSecretCipher().encrypt(
-        fixture.database,
-        'test-secret',
-        workspaceId: fixture.workspaceId,
-        resourceId: 'connection-1',
-      );
-      await WorkspaceSecret.db.insertRow(
-        fixture.database,
-        WorkspaceSecret(
-          workspaceId: fixture.workspaceId,
-          secretKind: WorkspaceSecretKind.provider,
-          scope: WorkspaceSecretScope.user,
-          ownerUserId: WorkspaceResourceValidation.secretOwnerKey(
-            WorkspaceSecretScope.user,
-            fixture.userId,
-          ),
-          resourceId: 'connection-1',
-          ciphertext: encrypted.ciphertext,
-          nonce: encrypted.nonce,
-          authenticationTag: encrypted.authenticationTag,
-          algorithm: 'AES-256-GCM',
-          keyVersion: 1,
-          revision: 1,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-      final user = fixture.messages.singleWhere(
-        (message) => message.role == 'user',
-      );
-      await ConversationMessage.db.updateRow(
-        fixture.database,
-        user.copyWith(
-          metadataJson: jsonEncode({
-            'modelSelectionId': VirtualWorkspaceModelSelectionId.encode(
-              connectionId: 'connection-1',
-              modelId: 'model-1',
-            ),
-          }),
-        ),
-      );
-      fixture.messages = await ConversationMessage.db.find(
-        fixture.database,
-        where: (table) => table.conversationId.equals(fixture.conversationId),
-        orderBy: (table) => table.id,
-      );
-    }
-
     Future<
       ({
         WorkspaceResource server,
@@ -679,7 +679,7 @@ void main() {
 
     test('provider dispatch is denied when workspace erasure wins', () async {
       final fixture = await prepare();
-      await configureProvider(fixture);
+      await _configureRegressionProvider(fixture);
       var dispatches = 0;
       final host = ServerConversationEngineHost(
         admissionGate: _BeforeProviderAdmissionGate((session, job) async {
@@ -716,63 +716,6 @@ void main() {
       );
       expect(dispatches, 0);
     });
-
-    test(
-      'provider response latency does not hold the workspace fence',
-      () async {
-        final fixture = await prepare();
-        await configureProvider(fixture);
-        final dispatched = Completer<void>();
-        final providerResponse = Completer<ProviderTransportResponse>();
-        final host = ServerConversationEngineHost(
-          admissionGate: const _ImmediateAdmissionGate(),
-          lookup: (_) async => [InternetAddress('8.8.8.8')],
-          providerTransport: (_) {
-            if (!dispatched.isCompleted) dispatched.complete();
-            return providerResponse.future;
-          },
-        );
-        final run = host.executeTurn(
-          fixture.database,
-          job: fixture.job,
-          turn: fixture.turn,
-          messages: fixture.messages,
-          liveTurns: const _NoopProgressPublisher(),
-        );
-        await dispatched.future.timeout(const Duration(seconds: 5));
-        final workspace = (await CloudWorkspace.db.findById(
-          fixture.database,
-          fixture.workspaceId,
-        ))!;
-        var erasedBeforeResponse = false;
-        final erase = CloudWorkspace.db.updateRow(
-          fixture.database,
-          workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
-        );
-        try {
-          await erase.timeout(const Duration(seconds: 2));
-          erasedBeforeResponse = true;
-        } on TimeoutException {
-          // Complete the provider response below so a regression cannot strand
-          // a database transaction while this test reports the held fence.
-        }
-        providerResponse.complete(
-          ProviderTransportResponse(
-            statusCode: HttpStatus.ok,
-            body: Stream.value(
-              utf8.encode(
-                'data: {"id":"response","choices":[{"delta":{"content":"private"},"finish_reason":"stop"}]}\n\n'
-                'data: [DONE]\n\n',
-              ),
-            ),
-          ),
-        );
-        await erase;
-
-        expect(erasedBeforeResponse, isTrue);
-        await expectLater(run, throwsA(isA<ConversationCancelledException>()));
-      },
-    );
 
     test(
       'claimed continuation clears the queued marker without losing the result',
@@ -1160,7 +1103,7 @@ void main() {
       'resumed all-denied calls are sent to the provider as a terminal exchange',
       () async {
         final fixture = await prepare();
-        await configureProvider(fixture);
+        await _configureRegressionProvider(fixture);
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
@@ -1245,7 +1188,7 @@ void main() {
       'does not inject the A2UI catalog prompt before capability activation',
       () async {
         final fixture = await prepare();
-        await configureProvider(fixture);
+        await _configureRegressionProvider(fixture);
         final requests = <Map<String, dynamic>>[];
         final host = ServerConversationEngineHost(
           admissionGate: const _ImmediateAdmissionGate(),
@@ -2280,7 +2223,7 @@ void main() {
       'child carries its initiating parent turn model selection',
       () async {
         final fixture = await prepare();
-        await configureProvider(fixture);
+        await _configureRegressionProvider(fixture);
         final now = DateTime.now().toUtc();
         await ConversationJob.db.updateRow(
           fixture.database,
@@ -2527,6 +2470,77 @@ void main() {
       expect(call.resultJson, isNull);
     });
   });
+
+  // Provider latency and workspace erasure overlap database transactions.
+  // Use a fresh database without the rollback proxy's single-transaction limit.
+  withServerpod(
+    'ConversationEngineHostRegression provider response latency',
+    (sessionBuilder, endpoints) {
+      Future<_Fixture> prepare() =>
+          _prepareConversationFixture(sessionBuilder, endpoints);
+
+      test(
+        'provider response latency does not hold the workspace fence',
+        () async {
+          final fixture = await prepare();
+          await _configureRegressionProvider(fixture);
+          final dispatched = Completer<void>();
+          final providerResponse = Completer<ProviderTransportResponse>();
+          final host = ServerConversationEngineHost(
+            admissionGate: const _ImmediateAdmissionGate(),
+            lookup: (_) async => [InternetAddress('8.8.8.8')],
+            providerTransport: (_) {
+              if (!dispatched.isCompleted) dispatched.complete();
+              return providerResponse.future;
+            },
+          );
+          final run = host.executeTurn(
+            fixture.database,
+            job: fixture.job,
+            turn: fixture.turn,
+            messages: fixture.messages,
+            liveTurns: const _NoopProgressPublisher(),
+          );
+          await dispatched.future.timeout(const Duration(seconds: 5));
+          final workspace = (await CloudWorkspace.db.findById(
+            fixture.database,
+            fixture.workspaceId,
+          ))!;
+          var erasedBeforeResponse = false;
+          final erase = CloudWorkspace.db.updateRow(
+            fixture.database,
+            workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+          );
+          try {
+            await erase.timeout(const Duration(seconds: 2));
+            erasedBeforeResponse = true;
+          } on TimeoutException {
+            // Complete the provider response below so a regression cannot strand
+            // a database transaction while this test reports the held fence.
+          }
+          providerResponse.complete(
+            ProviderTransportResponse(
+              statusCode: HttpStatus.ok,
+              body: Stream.value(
+                utf8.encode(
+                  'data: {"id":"response","choices":[{"delta":{"content":"private"},"finish_reason":"stop"}]}\n\n'
+                  'data: [DONE]\n\n',
+                ),
+              ),
+            ),
+          );
+          await erase;
+
+          expect(erasedBeforeResponse, isTrue);
+          await expectLater(
+            run,
+            throwsA(isA<ConversationCancelledException>()),
+          );
+        },
+      );
+    },
+    rollbackDatabase: RollbackDatabase.disabled,
+  );
 
   // Workspace deletion and a detached executor can overlap database writes.
   // Use a fresh database without the rollback proxy's single-transaction limit.
