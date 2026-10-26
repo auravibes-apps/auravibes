@@ -2131,6 +2131,94 @@ void main() {
         expect(completedExecution.status, ConversationStatuses.completed);
       },
     );
+
+    test('connector result is not persisted after workspace erasure', () async {
+      final fixture = await prepare();
+      final assistant = fixture.messages.singleWhere(
+        (message) => message.id == fixture.turn.assistantMessageId,
+      );
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: WorkspaceResourceKind.tool,
+          resourceId: 'connector/duckduckgo/search',
+          data: jsonEncode({
+            'toolId': 'connector/duckduckgo/search',
+            'isEnabled': true,
+            'permissionMode': 'alwaysAllow',
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: WorkspaceResourceKind.toolPermission,
+          resourceId: 'command-allow',
+          data: jsonEncode({
+            'toolId': executeConnectorToolName,
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final conversation = (await Conversation.db.findById(
+        fixture.database,
+        fixture.conversationId,
+      ))!;
+      await Conversation.db.updateRow(
+        fixture.database,
+        conversation.copyWith(toolAccessMode: 'allow_all'),
+      );
+      var executorCalls = 0;
+      final runtime = ServerToolRuntime(
+        executor: (session, _, _, _) async {
+          executorCalls++;
+          final workspace = (await CloudWorkspace.db.findById(
+            session,
+            fixture.workspaceId,
+          ))!;
+          await CloudWorkspace.db.updateRow(
+            session,
+            workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+          );
+          return {'content': 'synthetic connector response'};
+        },
+      );
+
+      final disposition = await runtime.handle(
+        fixture.database,
+        turn: fixture.turn,
+        messageId: assistant.id!,
+        request: const ServerToolRequest(
+          id: 'erasure-after-connector-response',
+          name: executeConnectorToolName,
+          arguments: {
+            'toolId': 'connector/duckduckgo/search',
+            'args': {'query': 'synthetic read'},
+          },
+        ),
+      );
+
+      final call = (await ConversationToolCall.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.stableId.equals('erasure-after-connector-response'),
+      ))!;
+      expect(disposition, ServerToolDisposition.completed);
+      expect(executorCalls, 1);
+      expect(call.status, 'running');
+      expect(call.resultJson, isNull);
+    });
   });
 
   // Workspace deletion and a detached executor can overlap database writes.

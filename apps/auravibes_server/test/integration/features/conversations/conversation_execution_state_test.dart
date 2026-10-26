@@ -19,6 +19,7 @@ import 'package:auravibes_server/src/features/conversations/workers/conversation
 import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 
+import '../../test_tools/auth_services_test_helper.dart';
 import '../../test_tools/serverpod_test_tools.dart';
 
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
@@ -175,6 +176,24 @@ void main() {
         conversationDatabaseId: conversation.id!,
         conversationId: conversation.stableId,
       );
+    }
+
+    Future<void> deleteFixtureAccount(_ExecutionFixture fixture) async {
+      final newOwnerId = const Uuid().v4().toString();
+      await AuthUser.db.insertRow(
+        fixture.database,
+        AuthUser(id: UuidValue.fromString(newOwnerId), scopeNames: const {}),
+      );
+      final workspace = (await CloudWorkspace.db.findById(
+        fixture.database,
+        fixture.workspaceId,
+      ))!;
+      await CloudWorkspace.db.updateRow(
+        fixture.database,
+        workspace.copyWith(ownerUserId: newOwnerId),
+      );
+      initializeTestAuthServices(fixture.database.serverpod);
+      await endpoints.account.deleteCurrentUser(fixture.session);
     }
 
     ConversationJobDispatcher dispatcherFor(
@@ -2052,6 +2071,332 @@ void main() {
     });
 
     test(
+      'retry exhaustion after account deletion leaves turn for erasure cleanup',
+      () async {
+        final fixture = await prepareExecution();
+        final job = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          job.turnId!,
+        ))!;
+        final userMessage = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.userMessageId!,
+        ))!;
+        final assistantMessage = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          job.copyWith(attempt: job.maxAttempts),
+        );
+        await deleteFixtureAccount(fixture);
+        final eventsBeforeClaim = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+
+        final host = _CountingCompletingHost();
+        final didWork = await ConversationWorker(host: host).runOnce(
+          fixture.database,
+          workerId: 'erased-retry-exhaustion-worker',
+        );
+
+        final jobAfterClaim = (await ConversationJob.db.findById(
+          fixture.database,
+          job.id!,
+        ))!;
+        final turnAfterClaim = (await ConversationTurn.db.findById(
+          fixture.database,
+          turn.id!,
+        ))!;
+        final userAfterClaim = (await ConversationMessage.db.findById(
+          fixture.database,
+          userMessage.id!,
+        ))!;
+        final assistantAfterClaim = (await ConversationMessage.db.findById(
+          fixture.database,
+          assistantMessage.id!,
+        ))!;
+        final eventsAfterClaim = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+
+        expect(didWork, isFalse);
+        expect(host.calls, 0);
+        expect(jobAfterClaim.status, job.status);
+        expect(jobAfterClaim.lastErrorCode, isNull);
+        expect(turnAfterClaim.status, turn.status);
+        expect(userAfterClaim.status, userMessage.status);
+        expect(assistantAfterClaim.status, assistantMessage.status);
+        expect(assistantAfterClaim.content, assistantMessage.content);
+        expect(eventsAfterClaim, hasLength(eventsBeforeClaim.length));
+      },
+    );
+
+    test('claim exhausts all jobs across a changing candidate page', () async {
+      final fixture = await prepareExecution();
+      final now = DateTime.now().toUtc();
+      final jobIds = <int>[];
+      await fixture.database.db.transaction((transaction) async {
+        final existingJobs = await ConversationJob.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+          transaction: transaction,
+        );
+        for (final job in existingJobs) {
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            job.copyWith(
+              status: ConversationJobStatuses.completed,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+        }
+        for (var index = 0; index < 101; index++) {
+          final job = await ConversationJob.db.insertRow(
+            fixture.database,
+            ConversationJob(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationDatabaseId,
+              requestId: 'exhausted-page-$index',
+              kind: ConversationJobKinds.compact,
+              payloadJson: jsonEncode({'actorUserId': fixture.userId}),
+              status: ConversationJobStatuses.queued,
+              attempt: 1,
+              maxAttempts: 1,
+              availableAt: now,
+              createdAt: now,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+          jobIds.add(job.id!);
+        }
+      });
+
+      final leases = ConversationJobLeases();
+      for (var index = 0; index < 101; index++) {
+        final claimed = await leases.claim(
+          fixture.database,
+          workerId: 'exhaustion-page-worker',
+          leaseToken: const Uuid().v4().toString(),
+          now: now,
+        );
+        expect(claimed?.status, ConversationJobStatuses.failed);
+      }
+      final claimed = await leases.claim(
+        fixture.database,
+        workerId: 'exhaustion-page-worker',
+        leaseToken: const Uuid().v4().toString(),
+        now: now,
+      );
+      final jobs = await ConversationJob.db.find(
+        fixture.database,
+        where: (table) => table.id.inSet(jobIds.toSet()),
+      );
+
+      expect(claimed, isNull);
+      expect(jobs, hasLength(101));
+      expect(
+        jobs.every((job) => job.status == ConversationJobStatuses.failed),
+        isTrue,
+      );
+    });
+
+    test(
+      'pending erasure prevents waiting sub-agent reconciliation writes',
+      () async {
+        final fixture = await prepareExecution();
+        final job = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          job.turnId!,
+        ))!;
+        final assistantMessage = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        final now = DateTime.now().toUtc();
+        final call = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: turn.id!,
+            messageId: assistantMessage.id!,
+            stableId: 'erasure-waiting-sub-agent-call',
+            name: 'run-sub-agent',
+            argumentsJson: '{}',
+            argumentsDigest: 'erasure-waiting-sub-agent-digest',
+            status: 'awaitingSubAgents',
+            resultJson: '{}',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          job.copyWith(status: ConversationJobStatuses.waitingForSubAgents),
+        );
+        final workspace = (await CloudWorkspace.db.findById(
+          fixture.database,
+          fixture.workspaceId,
+        ))!;
+        await CloudWorkspace.db.updateRow(
+          fixture.database,
+          workspace.copyWith(erasureRequestedAt: now),
+        );
+        final eventsBeforeReconcile = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+
+        final didWork = await ConversationWorker(
+          host: _CountingCompletingHost(),
+        ).runOnce(fixture.database, workerId: 'erasure-reconcile-worker');
+
+        final callAfterReconcile = (await ConversationToolCall.db.findById(
+          fixture.database,
+          call.id!,
+        ))!;
+        final jobAfterReconcile = (await ConversationJob.db.findById(
+          fixture.database,
+          job.id!,
+        ))!;
+        final turnAfterReconcile = (await ConversationTurn.db.findById(
+          fixture.database,
+          turn.id!,
+        ))!;
+        final eventsAfterReconcile = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+
+        expect(didWork, isFalse);
+        expect(callAfterReconcile.status, call.status);
+        expect(callAfterReconcile.resultJson, call.resultJson);
+        expect(
+          jobAfterReconcile.status,
+          ConversationJobStatuses.waitingForSubAgents,
+        );
+        expect(turnAfterReconcile.status, turn.status);
+        expect(eventsAfterReconcile, hasLength(eventsBeforeReconcile.length));
+      },
+    );
+
+    test(
+      'detached sub-agent completion after account deletion writes no result',
+      () async {
+        final fixture = await prepareExecution();
+        final turn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.initiatorUserId.equals(fixture.userId),
+        ))!;
+        final assistantMessage = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        final now = DateTime.now().toUtc();
+        const workId = 'deleted-account-detached-work';
+        final call = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: turn.id!,
+            messageId: assistantMessage.id!,
+            stableId: 'deleted-account-detached-call',
+            name: 'run-sub-agent',
+            argumentsJson: '{}',
+            argumentsDigest: 'deleted-account-detached-digest',
+            backgroundEligible: true,
+            backgroundWorkStableId: workId,
+            status: 'runningInBackground',
+            resultJson: jsonEncode({'status': 'running_in_background'}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final work = await BackgroundWorkRecord.db.insertRow(
+          fixture.database,
+          BackgroundWorkRecord(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            conversationToolCallId: call.id!,
+            originatingMessageId: assistantMessage.id!,
+            stableId: workId,
+            toolCallId: call.stableId,
+            toolKind: 'skill.native',
+            status: 'running',
+            statusPreview: 'Running',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await deleteFixtureAccount(fixture);
+        final eventsBeforeCompletion = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+
+        await ServerToolRuntime().completeDetachedSubAgentWork(
+          fixture.database,
+          call: call,
+          result: const {'status': 'success', 'content': 'should not persist'},
+        );
+
+        final callAfterCompletion = (await ConversationToolCall.db.findById(
+          fixture.database,
+          call.id!,
+        ))!;
+        final workAfterCompletion = (await BackgroundWorkRecord.db.findById(
+          fixture.database,
+          work.id!,
+        ))!;
+        final eventsAfterCompletion = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+
+        expect(callAfterCompletion.status, call.status);
+        expect(callAfterCompletion.resultJson, call.resultJson);
+        expect(workAfterCompletion.status, work.status);
+        expect(workAfterCompletion.resultContent, isNull);
+        expect(eventsAfterCompletion, hasLength(eventsBeforeCompletion.length));
+      },
+    );
+
+    test(
       'approved tool decision wakes a live dispatcher after its durable commit',
       () async {
         final fixture = await prepareExecution();
@@ -2883,6 +3228,363 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
+    Future<_ExecutionFixture> prepareQueuedExecution() async {
+      final fixture = await _preparePromptlessExecution(sessionBuilder);
+      await endpoints.conversation.queueConversationMessage(
+        fixture.session,
+        QueueConversationMessageRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'erasure-queue-${fixture.userId}',
+          conversationId: fixture.conversationId,
+          expectedProjectionRevision: 1,
+          clientMessageId: 'erasure-message-${fixture.userId}',
+          content: 'Synthetic prompt.',
+          attachmentIds: const [],
+        ),
+      );
+      await endpoints.conversation.continueConversation(
+        fixture.session,
+        ContinueConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'erasure-continue-${fixture.userId}',
+          conversationId: fixture.conversationId,
+          expectedProjectionRevision: 2,
+        ),
+      );
+      await ProviderAdmissionLock.db.deleteWhere(
+        fixture.database,
+        where: (table) => table.key.equals('global'),
+      );
+
+      return fixture;
+    }
+
+    Future<void> deleteFixtureAccount(_ExecutionFixture fixture) async {
+      final newOwnerId = const Uuid().v4().toString();
+      await AuthUser.db.insertRow(
+        fixture.database,
+        AuthUser(id: UuidValue.fromString(newOwnerId), scopeNames: const {}),
+      );
+      final workspace = (await CloudWorkspace.db.findById(
+        fixture.database,
+        fixture.workspaceId,
+      ))!;
+      await CloudWorkspace.db.updateRow(
+        fixture.database,
+        workspace.copyWith(ownerUserId: newOwnerId),
+      );
+      initializeTestAuthServices(fixture.database.serverpod);
+      await endpoints.account.deleteCurrentUser(fixture.session);
+    }
+
+    test(
+      'provider failure after account deletion or pending erasure writes no result state',
+      () async {
+        for (final deleteAccount in [true, false]) {
+          final fixture = await prepareQueuedExecution();
+          final turn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.initiatorUserId.equals(fixture.userId),
+          ))!;
+          final userMessage = (await ConversationMessage.db.findById(
+            fixture.database,
+            turn.userMessageId!,
+          ))!;
+          final assistantMessage = (await ConversationMessage.db.findById(
+            fixture.database,
+            turn.assistantMessageId!,
+          ))!;
+          final now = DateTime.now().toUtc();
+          final workId = 'failure-erasure-work-${fixture.userId}';
+          final toolCall = await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationDatabaseId,
+              turnId: turn.id!,
+              messageId: assistantMessage.id!,
+              stableId: 'failure-erasure-call-${fixture.userId}',
+              name: 'background-work',
+              argumentsJson: '{}',
+              argumentsDigest: 'failure-erasure-digest-${fixture.userId}',
+              backgroundWorkStableId: workId,
+              status: 'runningInBackground',
+              resultJson: jsonEncode({'status': 'running_in_background'}),
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          await BackgroundWorkRecord.db.insertRow(
+            fixture.database,
+            BackgroundWorkRecord(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationDatabaseId,
+              conversationToolCallId: toolCall.id!,
+              originatingMessageId: userMessage.id,
+              stableId: workId,
+              toolCallId: toolCall.stableId,
+              toolKind: 'skill.native',
+              status: 'running',
+              statusPreview: BackgroundWorkPreviews.queuedForContinuation,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          await ConversationMessage.db.updateRow(
+            fixture.database,
+            userMessage.copyWith(
+              metadataJson: jsonEncode({
+                'isBackgroundWorkCompletion': true,
+                'backgroundWorkId': workId,
+              }),
+            ),
+          );
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(turn.id!),
+          ))!;
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            job.copyWith(attempt: job.maxAttempts - 1),
+          );
+
+          final host = _FailingAfterReleaseHost();
+          final worker = ConversationWorker(host: host).runOnce(
+            fixture.database,
+            workerId: 'erasure-failure-${fixture.userId}',
+          );
+          try {
+            await host.started.future.timeout(const Duration(seconds: 10));
+            if (deleteAccount) {
+              await deleteFixtureAccount(fixture);
+              expect(
+                await AuthUser.db.findById(
+                  fixture.database,
+                  UuidValue.fromString(fixture.userId),
+                ),
+                isNull,
+              );
+            } else {
+              final workspace = (await CloudWorkspace.db.findById(
+                fixture.database,
+                fixture.workspaceId,
+              ))!;
+              await CloudWorkspace.db.updateRow(
+                fixture.database,
+                workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+              );
+            }
+
+            final jobBeforeFailure = (await ConversationJob.db.findById(
+              fixture.database,
+              job.id!,
+            ))!;
+            final turnBeforeFailure = (await ConversationTurn.db.findById(
+              fixture.database,
+              turn.id!,
+            ))!;
+            final userBeforeFailure = (await ConversationMessage.db.findById(
+              fixture.database,
+              userMessage.id!,
+            ))!;
+            final assistantBeforeFailure = (await ConversationMessage.db
+                .findById(
+                  fixture.database,
+                  assistantMessage.id!,
+                ))!;
+            final eventsBeforeFailure = await ConversationEvent.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(fixture.conversationDatabaseId),
+            );
+            final backgroundBeforeFailure = (await BackgroundWorkRecord.db
+                .findFirstRow(
+                  fixture.database,
+                  where: (table) =>
+                      table.workspaceId.equals(fixture.workspaceId) &
+                      table.stableId.equals(workId),
+                ))!;
+
+            host.release.complete();
+            await worker.timeout(const Duration(seconds: 10));
+
+            final jobAfterFailure = (await ConversationJob.db.findById(
+              fixture.database,
+              job.id!,
+            ))!;
+            final turnAfterFailure = (await ConversationTurn.db.findById(
+              fixture.database,
+              turn.id!,
+            ))!;
+            final userAfterFailure = (await ConversationMessage.db.findById(
+              fixture.database,
+              userMessage.id!,
+            ))!;
+            final assistantAfterFailure = (await ConversationMessage.db
+                .findById(
+                  fixture.database,
+                  assistantMessage.id!,
+                ))!;
+            final eventsAfterFailure = await ConversationEvent.db.find(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(fixture.conversationDatabaseId),
+            );
+            final backgroundAfterFailure = (await BackgroundWorkRecord.db
+                .findFirstRow(
+                  fixture.database,
+                  where: (table) =>
+                      table.workspaceId.equals(fixture.workspaceId) &
+                      table.stableId.equals(workId),
+                ))!;
+
+            expect(jobAfterFailure.status, jobBeforeFailure.status);
+            expect(jobAfterFailure.lastErrorCode, isNull);
+            expect(turnAfterFailure.status, turnBeforeFailure.status);
+            expect(userAfterFailure.status, userBeforeFailure.status);
+            expect(
+              assistantAfterFailure.status,
+              assistantBeforeFailure.status,
+            );
+            expect(
+              assistantAfterFailure.content,
+              assistantBeforeFailure.content,
+            );
+            expect(eventsAfterFailure, hasLength(eventsBeforeFailure.length));
+            expect(
+              backgroundAfterFailure.status,
+              backgroundBeforeFailure.status,
+            );
+            expect(
+              backgroundAfterFailure.statusPreview,
+              backgroundBeforeFailure.statusPreview,
+            );
+          } finally {
+            if (!host.release.isCompleted) host.release.complete();
+            await worker.timeout(const Duration(seconds: 10));
+          }
+        }
+      },
+    );
+
+    test(
+      'provider cancellation after pending erasure writes no cancellation state',
+      () async {
+        final fixture = await prepareQueuedExecution();
+        final job = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          job.turnId!,
+        ))!;
+        final userMessage = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.userMessageId!,
+        ))!;
+        final assistantMessage = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        final host = _FailingAfterReleaseHost(
+          const ConversationCancelledException(),
+        );
+        final worker = ConversationWorker(host: host).runOnce(
+          fixture.database,
+          workerId: 'erasure-cancellation-${fixture.userId}',
+        );
+
+        try {
+          await host.started.future.timeout(const Duration(seconds: 10));
+          final workspace = (await CloudWorkspace.db.findById(
+            fixture.database,
+            fixture.workspaceId,
+          ))!;
+          await CloudWorkspace.db.updateRow(
+            fixture.database,
+            workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+          );
+          final jobBeforeCancellation = (await ConversationJob.db.findById(
+            fixture.database,
+            job.id!,
+          ))!;
+          final turnBeforeCancellation = (await ConversationTurn.db.findById(
+            fixture.database,
+            turn.id!,
+          ))!;
+          final userBeforeCancellation = (await ConversationMessage.db.findById(
+            fixture.database,
+            userMessage.id!,
+          ))!;
+          final assistantBeforeCancellation = (await ConversationMessage.db
+              .findById(
+                fixture.database,
+                assistantMessage.id!,
+              ))!;
+          final eventsBeforeCancellation = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          );
+
+          host.release.complete();
+          await worker.timeout(const Duration(seconds: 10));
+
+          final jobAfterCancellation = (await ConversationJob.db.findById(
+            fixture.database,
+            job.id!,
+          ))!;
+          final turnAfterCancellation = (await ConversationTurn.db.findById(
+            fixture.database,
+            turn.id!,
+          ))!;
+          final userAfterCancellation = (await ConversationMessage.db.findById(
+            fixture.database,
+            userMessage.id!,
+          ))!;
+          final assistantAfterCancellation = (await ConversationMessage.db
+              .findById(
+                fixture.database,
+                assistantMessage.id!,
+              ))!;
+          final eventsAfterCancellation = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          );
+
+          expect(jobAfterCancellation.status, jobBeforeCancellation.status);
+          expect(turnAfterCancellation.status, turnBeforeCancellation.status);
+          expect(userAfterCancellation.status, userBeforeCancellation.status);
+          expect(
+            assistantAfterCancellation.status,
+            assistantBeforeCancellation.status,
+          );
+          expect(
+            assistantAfterCancellation.content,
+            assistantBeforeCancellation.content,
+          );
+          expect(
+            eventsAfterCancellation,
+            hasLength(eventsBeforeCancellation.length),
+          );
+        } finally {
+          if (!host.release.isCompleted) host.release.complete();
+          await worker.timeout(const Duration(seconds: 10));
+        }
+      },
+    );
+
     test(
       'erasure waits for compaction dispatch and compaction cannot commit later',
       () async {
@@ -3188,19 +3890,16 @@ void main() {
         );
         releasePause.complete();
 
-        await Future.wait([running, decision]).timeout(
+        final decisionResult = await decision.timeout(
           const Duration(seconds: 2),
         );
+        await running.timeout(const Duration(seconds: 2));
         expect(
           decisionWaitObserved,
           isTrue,
           reason: 'The decision should wait on the worker-held AuthUser lock.',
         );
-        final turn = (await ConversationTurn.db.findById(
-          fixture.database,
-          staged.turn.id!,
-        ))!;
-        expect(turn.status, ConversationStatuses.queued);
+        expect(decisionResult.status, ConversationStatuses.queued);
 
         await runConversationWorker(
           fixture.session.build(),
@@ -3598,6 +4297,32 @@ class _CheckpointAfterReleaseHost extends _CountingCompletingHost {
       outputTokens: 0,
       totalTokens: 0,
     );
+  }
+}
+
+class _FailingAfterReleaseHost extends _CountingCompletingHost {
+  _FailingAfterReleaseHost([
+    this.failure = const ConversationEngineConfigurationException(
+      'synthetic_failure',
+    ),
+  ]);
+
+  final Object failure;
+  final release = Completer<void>();
+
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    if (!started.isCompleted) started.complete();
+    await release.future;
+    throw failure;
   }
 }
 

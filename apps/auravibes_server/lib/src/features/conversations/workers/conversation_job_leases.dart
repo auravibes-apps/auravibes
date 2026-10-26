@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../domain/conversation_values.dart';
 
 final class const ConversationJobLeaseLostException(final int jobId)
@@ -15,84 +16,142 @@ class const ConversationJobLeases() {
     required String leaseToken,
     required DateTime now,
     Duration leaseDuration = const Duration(seconds: 30),
-  }) => session.db.transaction((transaction) async {
+  }) async {
     Expression eligible(ConversationJobTable table) =>
         (table.status.equals(ConversationJobStatuses.queued) &
             (table.availableAt <= now)) |
         (table.status.equals(ConversationJobStatuses.leased) &
             (table.leaseExpiresAt < now));
     const batchSize = 100;
-    var offset = 0;
+
+    var exhaustionCursor = 0;
     while (true) {
       final candidates = await ConversationJob.db.find(
         session,
-        where: eligible,
-        orderBy: (table) => table.availableAt,
-        offset: offset,
-        limit: batchSize,
-        transaction: transaction,
-      );
-      if (candidates.isEmpty) return null;
-      final workspaces = await CloudWorkspace.db.find(
-        session,
-        where: (table) =>
-            table.id.inSet(candidates.map((job) => job.workspaceId).toSet()) &
-            table.deletedAt.equals(null) &
-            table.erasureRequestedAt.equals(null),
+        where: (table) => eligible(table) & (table.id > exhaustionCursor),
         orderBy: (table) => table.id,
-        transaction: transaction,
-        lockMode: LockMode.forUpdate,
+        limit: batchSize,
       );
-      final activeWorkspaceIds = workspaces.map((row) => row.id).toSet();
-      for (final candidate in candidates) {
-        if (!activeWorkspaceIds.contains(candidate.workspaceId)) continue;
-        final lockedCandidates = await ConversationJob.db.find(
+      if (candidates.isEmpty) break;
+      for (final candidate in candidates.where(
+        (job) => job.attempt >= job.maxAttempts,
+      )) {
+        final failed = await session.db.transaction(
+          (transaction) => _failExhaustedJobIfActive(
+            session,
+            candidate,
+            eligible: eligible,
+            now: now,
+            transaction: transaction,
+          ),
+        );
+        if (failed != null) return failed;
+      }
+      exhaustionCursor = candidates.last.id!;
+    }
+
+    return session.db.transaction((transaction) async {
+      var offset = 0;
+      while (true) {
+        final candidates = await ConversationJob.db.find(
           session,
-          where: (table) => table.id.equals(candidate.id) & eligible(table),
-          limit: 1,
+          where: eligible,
+          orderBy: (table) => table.availableAt,
+          offset: offset,
+          limit: batchSize,
+          transaction: transaction,
+        );
+        if (candidates.isEmpty) return null;
+
+        final workspaces = await CloudWorkspace.db.find(
+          session,
+          where: (table) =>
+              table.id.inSet(candidates.map((job) => job.workspaceId).toSet()) &
+              table.deletedAt.equals(null) &
+              table.erasureRequestedAt.equals(null),
+          orderBy: (table) => table.id,
           transaction: transaction,
           lockMode: LockMode.forUpdate,
-          lockBehavior: LockBehavior.skipLocked,
         );
-        if (lockedCandidates.isEmpty) continue;
-        final job = lockedCandidates.single;
-        if (job.attempt >= job.maxAttempts) {
-          final failed = await ConversationJob.db.updateRow(
+        final activeWorkspaceIds = workspaces.map((row) => row.id).toSet();
+        for (final candidate in candidates) {
+          if (!activeWorkspaceIds.contains(candidate.workspaceId)) continue;
+          final lockedCandidates = await ConversationJob.db.find(
+            session,
+            where: (table) => table.id.equals(candidate.id) & eligible(table),
+            limit: 1,
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+            lockBehavior: LockBehavior.skipLocked,
+          );
+          if (lockedCandidates.isEmpty) continue;
+          final job = lockedCandidates.single;
+          if (job.attempt >= job.maxAttempts) {
+            continue;
+          }
+          return ConversationJob.db.updateRow(
             session,
             job.copyWith(
-              status: ConversationJobStatuses.failed,
-              leaseOwner: null,
-              leaseToken: null,
-              leaseExpiresAt: null,
+              status: ConversationJobStatuses.leased,
+              attempt: job.attempt + 1,
+              leaseOwner: workerId,
+              leaseToken: leaseToken,
+              leaseExpiresAt: now.add(leaseDuration),
               updatedAt: now,
             ),
             transaction: transaction,
           );
-          await _failTurn(
-            session,
-            job,
-            errorCode: job.lastErrorCode ?? 'retry_exhausted',
-            now: now,
-            transaction: transaction,
-          );
-          return failed;
         }
-        return ConversationJob.db.updateRow(
-          session,
-          job.copyWith(
-            status: ConversationJobStatuses.leased,
-            attempt: job.attempt + 1,
-            leaseOwner: workerId,
-            leaseToken: leaseToken,
-            leaseExpiresAt: now.add(leaseDuration),
-            updatedAt: now,
-          ),
-          transaction: transaction,
-        );
+        offset += candidates.length;
       }
-      offset += candidates.length;
+    });
+  }
+
+  Future<ConversationJob?> _failExhaustedJobIfActive(
+    Session session,
+    ConversationJob candidate, {
+    required Expression Function(ConversationJobTable) eligible,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    if (!await _lockActiveJobActor(
+      session,
+      candidate,
+      transaction: transaction,
+    )) {
+      return null;
     }
-  });
+    final lockedCandidates = await ConversationJob.db.find(
+      session,
+      where: (table) => table.id.equals(candidate.id) & eligible(table),
+      limit: 1,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+      lockBehavior: LockBehavior.skipLocked,
+    );
+    if (lockedCandidates.isEmpty) return null;
+    final job = lockedCandidates.single;
+    if (job.attempt < job.maxAttempts) return null;
+    final failed = await ConversationJob.db.updateRow(
+      session,
+      job.copyWith(
+        status: ConversationJobStatuses.failed,
+        leaseOwner: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await _failTurn(
+      session,
+      job,
+      errorCode: job.lastErrorCode ?? 'retry_exhausted',
+      now: now,
+      transaction: transaction,
+    );
+    return failed;
+  }
 
   Future<ConversationJob> renew(
     Session session, {
@@ -154,6 +213,19 @@ class const ConversationJobLeases() {
     required String leaseToken,
     required DateTime now,
   }) => session.db.transaction((transaction) async {
+    final candidate = await ConversationJob.db.findById(
+      session,
+      jobId,
+      transaction: transaction,
+    );
+    if (candidate == null ||
+        !await _lockActiveJobActor(
+          session,
+          candidate,
+          transaction: transaction,
+        )) {
+      throw ConversationJobLeaseLostException(jobId);
+    }
     final job = await _requireLease(
       session,
       jobId: jobId,
@@ -185,6 +257,19 @@ class const ConversationJobLeases() {
     String? errorDetails,
     Duration retryDelay = const Duration(seconds: 10),
   }) => session.db.transaction((transaction) async {
+    final candidate = await ConversationJob.db.findById(
+      session,
+      jobId,
+      transaction: transaction,
+    );
+    if (candidate == null ||
+        !await _lockActiveJobActor(
+          session,
+          candidate,
+          transaction: transaction,
+        )) {
+      throw ConversationJobLeaseLostException(jobId);
+    }
     final job = await _requireLease(
       session,
       jobId: jobId,
@@ -302,6 +387,70 @@ class const ConversationJobLeases() {
       ),
       transaction: transaction,
     );
+  }
+
+  Future<bool> _lockActiveJobActor(
+    Session session,
+    ConversationJob job, {
+    required Transaction transaction,
+  }) async {
+    final actorUserId = await _actorUserIdForJob(
+      session,
+      job,
+      transaction: transaction,
+    );
+    if (actorUserId == null) return false;
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: actorUserId,
+      transaction: transaction,
+    );
+    if (authUser == null) return false;
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      job.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null ||
+        workspace.deletedAt != null ||
+        workspace.erasureRequestedAt != null) {
+      return false;
+    }
+    return await WorkspaceMember.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.userId.equals(actorUserId) &
+              table.removedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        ) !=
+        null;
+  }
+
+  Future<String?> _actorUserIdForJob(
+    Session session,
+    ConversationJob job, {
+    required Transaction transaction,
+  }) async {
+    final payload = job.payloadJson;
+    if (payload != null) {
+      try {
+        final decoded = jsonDecode(payload);
+        final actorUserId = decoded is Map ? decoded['actorUserId'] : null;
+        if (actorUserId is String) return actorUserId;
+      } on FormatException {
+        // Fall back to the durable turn identity for historical job payloads.
+      }
+    }
+    final turnId = job.turnId;
+    if (turnId == null) return null;
+    return (await ConversationTurn.db.findById(
+      session,
+      turnId,
+      transaction: transaction,
+    ))?.initiatorUserId;
   }
 
   String _safeErrorCode(String value) => switch (value) {

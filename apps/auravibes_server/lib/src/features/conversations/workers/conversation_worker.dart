@@ -638,15 +638,30 @@ class const ConversationWorker({
   }) async {
     final turnId = job.turnId;
     if (turnId == null) return;
+    final actorUserId = await _actorUserIdForJob(session, job);
+    if (actorUserId == null) return;
     final conversationStableId = await session.db.transaction(
       (transaction) async {
+        if (!await _lockActiveWorkspaceMember(
+          session,
+          workspaceId: job.workspaceId,
+          userId: actorUserId,
+          transaction: transaction,
+        )) {
+          return null;
+        }
         final turn = await ConversationTurn.db.findById(
           session,
           turnId,
           transaction: transaction,
+          lockMode: LockMode.forUpdate,
         );
         final userMessageId = turn?.userMessageId;
-        if (turn == null || userMessageId == null) return null;
+        if (turn == null ||
+            turn.initiatorUserId != actorUserId ||
+            userMessageId == null) {
+          return null;
+        }
         final message = await ConversationMessage.db.findById(
           session,
           userMessageId,
@@ -919,8 +934,18 @@ class const ConversationWorker({
     Session session,
     ConversationJob job,
   ) async {
+    final actorUserId = await _actorUserIdForJob(session, job);
+    if (actorUserId == null) return null;
     final startedAt = DateTime.now().toUtc();
     final resumed = await session.db.transaction((transaction) async {
+      if (!await _lockActiveWorkspaceMember(
+        session,
+        workspaceId: job.workspaceId,
+        userId: actorUserId,
+        transaction: transaction,
+      )) {
+        return null;
+      }
       final now = DateTime.now().toUtc();
       final lockedJob = await ConversationJob.db.findFirstRow(
         session,
@@ -942,6 +967,7 @@ class const ConversationWorker({
       if (turn == null) {
         throw const ConversationEngineConfigurationException('turn');
       }
+      if (turn.initiatorUserId != actorUserId) return null;
       final calls = await ConversationToolCall.db.find(
         session,
         where: (table) =>
@@ -1717,8 +1743,65 @@ class const ConversationWorker({
               table.userId.equals(userId) &
               table.removedAt.equals(null),
           transaction: transaction,
+          lockMode: LockMode.forUpdate,
         ) !=
         null;
+  }
+
+  Future<bool> _lockWorkspaceMemberForCancellation(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) return false;
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null ||
+        workspace.deletedAt != null ||
+        workspace.erasureRequestedAt != null) {
+      return false;
+    }
+    return await WorkspaceMember.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.userId.equals(userId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        ) !=
+        null;
+  }
+
+  Future<String?> _actorUserIdForJob(
+    Session session,
+    ConversationJob job,
+  ) async {
+    final payload = job.payloadJson;
+    if (payload != null) {
+      try {
+        final decoded = jsonDecode(payload);
+        final actorUserId = decoded is Map ? decoded['actorUserId'] : null;
+        if (actorUserId is String) return actorUserId;
+      } on FormatException {
+        // Use the durable turn identity for historical child-job payloads.
+      }
+    }
+    final turnId = job.turnId;
+    if (turnId == null) return null;
+    return (await ConversationTurn.db.findById(
+      session,
+      turnId,
+    ))?.initiatorUserId;
   }
 
   Future<void> _pauseForApproval(
@@ -2027,7 +2110,18 @@ class const ConversationWorker({
     ConversationJob job,
     String leaseToken,
   ) async {
+    final actorUserId = await _actorUserIdForJob(session, job);
+    if (actorUserId == null) return;
+    var cancelled = false;
     await session.db.transaction((transaction) async {
+      if (!await _lockWorkspaceMemberForCancellation(
+        session,
+        workspaceId: job.workspaceId,
+        userId: actorUserId,
+        transaction: transaction,
+      )) {
+        return;
+      }
       final now = DateTime.now().toUtc();
       final conversation = await Conversation.db.findFirstRow(
         session,
@@ -2049,6 +2143,7 @@ class const ConversationWorker({
       if (lockedTurn == null) {
         return;
       }
+      if (lockedTurn.initiatorUserId != actorUserId) return;
       await _cancelLocked(
         session,
         job,
@@ -2057,15 +2152,36 @@ class const ConversationWorker({
         now,
         transaction,
       );
+      cancelled = true;
     });
-    await _reconcileParentAfterChild(session, job);
+    if (cancelled) await _reconcileParentAfterChild(session, job);
   }
 
   Future<void> _recordExecutionFailure(
     Session session,
     ConversationJob job,
   ) async {
+    final actorUserId = await _actorUserIdForJob(session, job);
+    if (actorUserId == null) return;
+    var recorded = false;
     await session.db.transaction((transaction) async {
+      if (!await _lockActiveWorkspaceMember(
+        session,
+        workspaceId: job.workspaceId,
+        userId: actorUserId,
+        transaction: transaction,
+      )) {
+        return;
+      }
+      final turn = job.turnId == null
+          ? null
+          : await ConversationTurn.db.findById(
+              session,
+              job.turnId!,
+              transaction: transaction,
+              lockMode: LockMode.forUpdate,
+            );
+      if (turn == null || turn.initiatorUserId != actorUserId) return;
       await _recordExecutionTransition(
         session,
         job: job,
@@ -2075,7 +2191,9 @@ class const ConversationWorker({
         transaction: transaction,
         now: DateTime.now().toUtc(),
       );
+      recorded = true;
     });
+    if (!recorded) return;
     final conversation = await Conversation.db.findById(
       session,
       job.conversationId,

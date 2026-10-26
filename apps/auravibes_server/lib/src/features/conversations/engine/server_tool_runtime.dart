@@ -5,6 +5,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
@@ -1184,11 +1185,42 @@ class ServerToolRuntime({
     required String? result,
     String? languageCode,
     String? errorCode,
+    String? actorUserId,
   }) async {
     var backgroundCompleted = false;
     var backgroundSubAgentStarted = false;
     final detached = await session.db.transaction((transaction) async {
-      final workspace = await CloudWorkspace.db.findFirstRow(
+      CloudWorkspace? workspace;
+      if (actorUserId != null) {
+        final authUser = await const AuthUserLock().lock(
+          session,
+          userId: actorUserId,
+          transaction: transaction,
+        );
+        if (authUser == null) return false;
+        workspace = await CloudWorkspace.db.findById(
+          session,
+          call.workspaceId,
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (workspace == null ||
+            workspace.deletedAt != null ||
+            workspace.erasureRequestedAt != null) {
+          return false;
+        }
+        final member = await WorkspaceMember.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(call.workspaceId) &
+              table.userId.equals(actorUserId) &
+              table.removedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (member == null) return false;
+      }
+      workspace ??= await CloudWorkspace.db.findFirstRow(
         session,
         where: (table) => table.id.equals(call.workspaceId),
         transaction: transaction,
@@ -1590,6 +1622,9 @@ class ServerToolRuntime({
     required Map<String, Object?> result,
   }) async {
     if (call.backgroundWorkStableId == null) return;
+    final turn = await ConversationTurn.db.findById(session, call.turnId);
+    final actorUserId = turn?.initiatorUserId;
+    if (actorUserId == null) return;
     final status = switch (result['status']) {
       'success' => 'success',
       'cancelled' => 'cancelled',
@@ -1605,6 +1640,7 @@ class ServerToolRuntime({
         'cancelled' => 'cancelled',
         _ => 'sub_agent_failed',
       },
+      actorUserId: actorUserId,
     );
   }
 
@@ -1898,40 +1934,96 @@ class ServerToolRuntime({
     ConversationToolCall call,
     String status,
     String? result,
-  ) => session.db.transaction((transaction) async {
+  ) async {
     final projection = result == null ? null : projectToolOutput(result);
-    final current = await ConversationToolCall.db.findById(
+    final sourceTurn = await ConversationTurn.db.findById(
       session,
-      call.id!,
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
+      call.turnId,
     );
-    if (current == null ||
-        !serverToolCallCanTransition(
-          currentStatus: current.status,
-          currentRevision: current.revision,
-          expectedStatus: call.status,
-          expectedRevision: call.revision,
-        )) {
-      return;
-    }
-    final turn = await ConversationTurn.db.findById(
-      session,
-      current.turnId,
-      transaction: transaction,
-    );
-    if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
-    await ConversationToolCall.db.updateRow(
-      session,
-      current.copyWith(
-        status: status,
-        resultJson: projection?.persistedText,
-        revision: current.revision + 1,
-        updatedAt: DateTime.now().toUtc(),
-      ),
-      transaction: transaction,
-    );
-  });
+    final actorUserId = sourceTurn?.initiatorUserId;
+    if (actorUserId == null) return;
+
+    await session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: actorUserId,
+        transaction: transaction,
+      );
+      if (authUser == null) return;
+      final workspace = await CloudWorkspace.db.findById(
+        session,
+        call.workspaceId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null ||
+          workspace.deletedAt != null ||
+          workspace.erasureRequestedAt != null) {
+        return;
+      }
+      final member = await WorkspaceMember.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(call.workspaceId) &
+            table.userId.equals(actorUserId) &
+            table.removedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (member == null) return;
+      final conversation = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(call.conversationId) &
+            table.workspaceId.equals(call.workspaceId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (conversation == null) return;
+      final turn = await ConversationTurn.db.findById(
+        session,
+        call.turnId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (turn == null ||
+          turn.initiatorUserId != actorUserId ||
+          turn.workspaceId != call.workspaceId ||
+          turn.conversationId != conversation.id ||
+          ConversationStatuses.isTerminal(turn.status)) {
+        return;
+      }
+      final current = await ConversationToolCall.db.findById(
+        session,
+        call.id!,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (current == null ||
+          current.workspaceId != call.workspaceId ||
+          current.conversationId != conversation.id ||
+          current.turnId != turn.id ||
+          !serverToolCallCanTransition(
+            currentStatus: current.status,
+            currentRevision: current.revision,
+            expectedStatus: call.status,
+            expectedRevision: call.revision,
+          )) {
+        return;
+      }
+      await ConversationToolCall.db.updateRow(
+        session,
+        current.copyWith(
+          status: status,
+          resultJson: projection?.persistedText,
+          revision: current.revision + 1,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+        transaction: transaction,
+      );
+    });
+  }
 
   String _writeOperationId(ConversationToolCall call) =>
       switch (_jsonMap(call.argumentsJson)['operationId']) {

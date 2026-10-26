@@ -614,6 +614,15 @@ void main() {
         where: (row) => row.requestId.equals('compact-request-race'),
       );
       expect(jobs.length, race.writeError == null ? 1 : 0);
+      if (jobs case [final job]) {
+        await ConversationJob.db.updateRow(
+          session,
+          job.copyWith(
+            status: 'completed',
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
     });
 
     test(
@@ -669,7 +678,6 @@ void main() {
             expectedConversationRevision: conversation.revision,
           ),
         );
-
         final eventsBeforeDeletion = await WorkspaceEvent.db.find(
           session,
           where: (row) => row.workspaceId.equals(workspace.id!),
@@ -845,9 +853,27 @@ void main() {
           session,
           where: (row) => row.requestId.equals('message-event-write-race'),
         );
-        expect(message != null, race.writeError == null);
-        expect(event != null, race.writeError == null);
-        expect(event?.actorUserId, race.writeError == null ? userId : isNull);
+        expect(
+          message != null,
+          event != null,
+          reason: 'Message and event commit together; a later snapshot may be denied.',
+        );
+        if (race.writeError == null) {
+          expect(message, isNotNull);
+          expect(event!.actorUserId, userId);
+        } else if (message != null) {
+          expect(
+            race.writeError,
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.permissionDenied,
+            ),
+          );
+          expect(event!.actorUserId, userId);
+        } else {
+          expect(event, isNull);
+        }
       },
     );
 
