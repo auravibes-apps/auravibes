@@ -15,7 +15,7 @@ class const WorkspaceCsvValues(final WorkspaceCsvRepository repository) {
         'false' => false,
         _ => throw const FormatException(),
       },
-      .money || .multiSelect => jsonDecode(value),
+      .money || .multiSelect || .attachment => jsonDecode(value),
       _ => value.startsWith('"') ? jsonDecode(value) : value,
     };
   }

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_access.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_value.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:drift/drift.dart';
@@ -16,13 +18,16 @@ class const LocalWorkspaceReferenceValidation(
   Future<void> columns(
     List<WorkspaceColumn> columns, {
     bool retained = false,
+    List<WorkspaceColumn> previous = const [],
   }) async {
-    for (final column in columns.where((column) => column.type == .reference)) {
+    for (final column in _referenceColumns(columns)) {
       await _table(_targetId(column), retained: retained);
       await _LocalDependencies(this)
           .column(columns, column, retained: retained);
       if (!retained) await _defaults(columns, column);
     }
+    await _LocalAttachmentDefaults(this)
+        .validate(columns, previous, retained: retained);
   }
 
   Future<void> values(
@@ -30,8 +35,26 @@ class const LocalWorkspaceReferenceValidation(
     Map<String, Object?> values, {
     Map<String, Object?> previous = const {},
   }) async {
-    for (final column in columns.where((column) => column.type == .reference)) {
+    await attachmentValues(columns, values, previous: previous);
+    for (final column in _referenceColumns(columns)) {
       await _LocalReferenceValues(this).column(column, values, previous);
+    }
+  }
+
+  Future<void> attachmentValues(
+    List<WorkspaceColumn> columns,
+    Map<String, Object?> values, {
+    Map<String, Object?> previous = const {},
+  }) async {
+    await LocalWorkspaceAssetValues(
+      database,
+      workspaceId,
+    ).preserve(columns, values, previous);
+    final attachments = _LocalAttachments(database, workspaceId);
+    for (final column in columns.where(
+      (column) => column.type == .attachment,
+    )) {
+      await attachments.column(column, values, previous);
     }
   }
 
@@ -264,3 +287,84 @@ class const _LocalReferenceValues(
     }
   }
 }
+
+class const _LocalAttachments(
+  final AppDatabase database,
+  final String workspaceId,
+) {
+  Future<void> column(
+    WorkspaceColumn column,
+    Map<String, Object?> values,
+    Map<String, Object?> previous,
+  ) async {
+    for (final id in _newIds(column.id, values, previous)) {
+      await _require(id);
+    }
+  }
+
+  Future<void> _require(String id) async {
+    if (!await _exists(id) ||
+        !await LocalWorkspaceAssetAccess(database, workspaceId).allows(id)) {
+      throw const WorkspaceTableException(denied: true);
+    }
+  }
+
+  Future<bool> _exists(String id) async {
+    final query = database.select(database.workspaceAssets)
+      ..where((row) => _matches(row, id));
+
+    return await query.getSingleOrNull() != null;
+  }
+
+  Expression<bool> _matches($WorkspaceAssetsTable row, String id) =>
+      row.workspaceId.equals(workspaceId) &
+      row.id.equals(id) &
+      row.status.equals('active');
+
+  static Iterable<String> _newIds(
+    String column,
+    Map<String, Object?> values,
+    Map<String, Object?> previous,
+  ) {
+    final ids = values[column];
+    if (ids is! List) return const [];
+    final old = previous[column];
+
+    return ids.cast<String>().where((id) => !_retained(old, id));
+  }
+
+  static bool _retained(Object? previous, String id) =>
+      previous is List && previous.contains(id);
+}
+
+class const _LocalAttachmentDefaults(
+  final LocalWorkspaceReferenceValidation references,
+) {
+  Future<void> validate(
+    List<WorkspaceColumn> columns,
+    List<WorkspaceColumn> previous, {
+    required bool retained,
+  }) async {
+    if (retained) return;
+    for (final column in columns.where(_hasDefault)) {
+      await _value(column, previous);
+    }
+  }
+
+  Future<void> _value(WorkspaceColumn column, List<WorkspaceColumn> previous) =>
+      references.attachmentValues(
+        [column],
+        {column.id: column.defaultValue},
+        previous: _previous(previous),
+      );
+
+  static bool _hasDefault(WorkspaceColumn column) =>
+      column.type == .attachment && column.defaultValue != null;
+  static Map<String, Object?> _previous(List<WorkspaceColumn> columns) =>
+      _defaultsMap(
+        columns.where((column) => column.type == .attachment).toList(),
+      );
+}
+
+Iterable<WorkspaceColumn> _referenceColumns(List<WorkspaceColumn> columns) =>
+    columns.where((column) => column.type == .reference);

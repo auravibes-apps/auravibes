@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_validation.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_column_validation.dart';
@@ -21,32 +22,69 @@ class const LocalWorkspaceSchemaRecovery(
     WorkspaceTrashTarget target,
     Map<String, dynamic> data,
   ) async {
-    final current = await _tables.table(target.id);
-    WorkspaceRecoveryValidation.revision(current.revision, target.revision);
-    final columns = _columns(data);
-    await _validate(current, columns);
+    final current = await _current(target);
+    final previous = await _storedColumns(current.id);
+    final columns = await _restoreDefaults(data, previous);
+    await _validate(current, columns, previous);
     await _write(current, columns);
     await _references.allDependencies();
   }
 
+  Future<WorkspaceTable> _current(WorkspaceTrashTarget target) async {
+    final table = await _tables.table(target.id);
+    WorkspaceRecoveryValidation.revision(table.revision, target.revision);
+
+    return table;
+  }
+
+  Future<List<WorkspaceColumn>> _restoreDefaults(
+    Map<String, dynamic> data,
+    List<WorkspaceColumn> previous,
+  ) => LocalWorkspaceAssetValues(
+    database,
+    workspaceId,
+  ).preserveDefaults(_columns(data), previous);
+
   Future<void> _validate(
     WorkspaceTable table,
     List<WorkspaceColumn> columns,
+    List<WorkspaceColumn> previous,
   ) async {
     WorkspaceColumnValidation.columns(columns, table.labelColumnId);
-    final records = await _tables.records(table.id);
+    final records = await _records(table.id);
     WorkspaceTableConstraints.records(columns, records);
-    await _references.columns(columns);
-    await _validateRecords(columns, records);
+    await _references.columns(columns, previous: previous);
+    await _validateRecords(columns, records, previous);
   }
 
   Future<void> _validateRecords(
     List<WorkspaceColumn> columns,
     List<WorkspaceRecord> records,
+    List<WorkspaceColumn> previous,
   ) async {
     for (final record in records) {
-      await _references.values(columns, record.values);
+      await _references.values(
+        columns,
+        record.values,
+        previous: LocalWorkspaceAssetValues.retained(previous, record.values),
+      );
     }
+  }
+
+  Future<List<WorkspaceColumn>> _storedColumns(String id) async {
+    final query = database.select(database.workspaceTables)
+      ..where((row) => row.workspaceId.equals(workspaceId) & row.id.equals(id));
+    final row = await query.getSingle();
+
+    return _columns({'columns': jsonDecode(row.columnsJson)});
+  }
+
+  Future<List<WorkspaceRecord>> _records(String tableId) async {
+    final query = database.select(database.workspaceTableRecords)
+      ..where((row) => _activeRecord(row, workspaceId, tableId));
+    final rows = await query.get();
+
+    return rows.map(_record).toList();
   }
 
   Future<void> _write(
@@ -86,3 +124,19 @@ Expression<bool> _matches(
   String workspaceId,
   String id,
 ) => row.workspaceId.equals(workspaceId) & row.id.equals(id);
+
+WorkspaceRecord _record(WorkspaceTableRecordRow row) => WorkspaceRecord(
+  id: row.id,
+  tableId: row.tableId,
+  values: jsonDecode(row.valuesJson) as Map<String, dynamic>,
+  revision: row.revision,
+);
+
+Expression<bool> _activeRecord(
+  $WorkspaceTableRecordsTable row,
+  String workspaceId,
+  String tableId,
+) =>
+    row.workspaceId.equals(workspaceId) &
+    row.tableId.equals(tableId) &
+    row.deletedAt.isNull();

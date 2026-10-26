@@ -71,12 +71,13 @@ class const WorkspaceTrashStore(
         session,
         where: (row) =>
             row.workspaceId.equals(workspaceId) &
-            row.resourceKind.inSet({.folder, .table, .tableRecord}),
+            row.resourceKind.inSet({.folder, .table, .tableRecord, .file}),
         transaction: transaction,
       );
   Future<void> _write(WorkspaceResource resource) async {
     if (resource.resourceKind == .view) {
       await _views.write(resource);
+
       return;
     }
     final previous = await WorkspaceResource.db.findById(
@@ -140,6 +141,7 @@ List<WorkspaceResource> trashDescendants(
 ) {
   final selected = _items(root, rows);
   _appendRecords(selected, rows);
+
   return selected;
 }
 
@@ -153,6 +155,7 @@ List<WorkspaceResource> _items(
   while (changed) {
     changed = _appendChildren(selected, folders, rows);
   }
+
   return selected;
 }
 
@@ -183,6 +186,7 @@ bool _appendChildren(
     if (row.resourceKind == .folder) folders.add(row.resourceId);
     added = true;
   }
+
   return added;
 }
 

@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_attachment_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -51,9 +52,20 @@ class const _RecordValue({
       draft.value = {...draft.value, column.id: value};
   void unset() => draft.value = Map.of(draft.value)..remove(column.id);
   @override
-  Widget build(BuildContext context) => column.type == .reference
-      ? _ReferenceRecordValue(this)
-      : _ScalarRecordValue(this);
+  Widget build(BuildContext context) => switch (column.type) {
+    .reference => _ReferenceRecordValue(this),
+    .attachment => WorkspaceAttachmentField(
+      workspaceId: workspaceId,
+      label: column.name,
+      value: _recordValue(this),
+      present: present,
+      disabled: disabled,
+      restricted: restricted,
+      onChanged: change,
+      onUnset: unset,
+    ),
+    _ => _ScalarRecordValue(this),
+  };
 }
 
 class const _RecordConstraintHints({required final WorkspaceColumn column})

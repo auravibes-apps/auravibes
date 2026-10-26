@@ -1,7 +1,7 @@
-import '../../generated/protocol.dart';
-import '../workspace_views/workspace_view_validation.dart';
-import 'domain/workspace_table_constraints.dart';
-import 'workspace_trash_access.dart';
+import 'package:auravibes_server/src/features/workspace_state/domain/workspace_table_constraints.dart';
+import 'package:auravibes_server/src/features/workspace_state/workspace_trash_access.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_view_validation.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
 
 class const WorkspaceTrashValidation(final List<WorkspaceResource> all) {
   void tables(Set<String> ids) {
@@ -45,6 +45,10 @@ class const WorkspaceTrashValidation(final List<WorkspaceResource> all) {
     _ => false,
   };
   bool _view(WorkspaceResource row) {
+    if (trashData(row)['tableId'] == '' &&
+        trashData(row)['connected'] != null) {
+      return false;
+    }
     final table = _activeTable(trashData(row)['tableId'] as String);
     if (table == null) return true;
     try {
@@ -52,6 +56,7 @@ class const WorkspaceTrashValidation(final List<WorkspaceResource> all) {
     } on CloudWorkspaceException {
       return true;
     }
+
     return false;
   }
 
@@ -65,6 +70,7 @@ class const WorkspaceTrashValidation(final List<WorkspaceResource> all) {
     final table = _activeTable(data['tableId'] as String);
     if (table == null) return true;
     final values = data['values'] as Map;
+
     return _references(table).any((column) => _missing(column, values));
   }
 

@@ -79,7 +79,8 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     if (kind == WorkspaceResourceKind.folder ||
-        kind == WorkspaceResourceKind.table) {
+        kind == WorkspaceResourceKind.table ||
+        kind == WorkspaceResourceKind.file) {
       final name = data['name'];
       final parentId = data['parentId'];
       if (name is! String ||
@@ -127,6 +128,9 @@ class WorkspaceResourceValidation {
     }
     if (kind == WorkspaceResourceKind.table) {
       WorkspaceTableValidation.schema(data);
+    }
+    if (kind == WorkspaceResourceKind.file) {
+      _FileValidation.validate(data);
     }
     if (kind == WorkspaceResourceKind.tableRecord) {
       final values = data['values'];
@@ -200,7 +204,9 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     final fields = switch (kind) {
-      WorkspaceResourceKind.folder || WorkspaceResourceKind.table => const {
+      WorkspaceResourceKind.folder ||
+      WorkspaceResourceKind.table ||
+      WorkspaceResourceKind.file => const {
         'parentId': WorkspaceResourceKind.folder,
       },
       WorkspaceResourceKind.tableRecord => const {
@@ -288,4 +294,26 @@ class WorkspaceResourceValidation {
       scope == WorkspaceSecretScope.user ? userId : 'workspace';
 
   static String receiptScopeKey(int workspaceId) => 'workspace:$workspaceId';
+}
+
+abstract final class _FileValidation {
+  static const _fields = {
+    'id',
+    'workspaceId',
+    'name',
+    'parentId',
+    'assetId',
+    'sharingApproved',
+  };
+
+  static void validate(Map<String, Object?> data) {
+    final id = data['assetId'];
+    if (id is! String ||
+        int.tryParse(id) == null ||
+        data.keys.any(_unknownField)) {
+      throw const FormatException();
+    }
+  }
+
+  static bool _unknownField(String key) => !_fields.contains(key);
 }

@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_csv_input.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_blocked_exception.dart';
@@ -13,6 +14,9 @@ class const WorkspaceItemFailure({required final Object error, super.key})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (error) {
+    final WorkspaceAssetException failure => TextLocale(
+      failure.localizationKey,
+    ),
     final WorkspaceHistoryBlockedException failure =>
       WorkspaceHistoryBlockedFailure(error: failure),
     WorkspaceHistoryPolicyException() => const TextLocale(

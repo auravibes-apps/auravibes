@@ -1,15 +1,15 @@
 import 'dart:convert';
 
+import 'package:auravibes_server/src/features/workspace_state/domain/workspace_resource_validation.dart';
+import 'package:auravibes_server/src/features/workspace_state/workspace_history_receipts.dart';
+import 'package:auravibes_server/src/features/workspace_state/workspace_revision_capture.dart';
+import 'package:auravibes_server/src/features/workspace_state/workspace_table_access.dart';
+import 'package:auravibes_server/src/features/workspace_state/workspace_table_duplication.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_connected_validation.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_view_validation.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
-
-import '../../generated/protocol.dart';
-import '../workspace_state/domain/workspace_resource_validation.dart';
-import '../workspace_state/workspace_history_receipts.dart';
-import '../workspace_state/workspace_revision_capture.dart';
-import '../workspace_state/workspace_table_access.dart';
-import '../workspace_state/workspace_table_duplication.dart';
-import 'workspace_view_validation.dart';
 
 class const WorkspaceViewStore(
   final Session session,
@@ -114,6 +114,17 @@ class const _ViewReader(final _ViewContext context) {
   }
 
   Future<bool> _visible(Map<String, Object?> data) async {
+    if (data['tableId'] == '') {
+      try {
+        return await WorkspaceConnectedValidation.visible(
+          context.session,
+          context.member,
+          data['connected'],
+        );
+      } on CloudWorkspaceException {
+        return false;
+      }
+    }
     final table = await context.resource(.table, data['tableId'] as String);
     if (table == null) return false;
 
@@ -160,6 +171,12 @@ class const _ViewWriter(final _ViewContext context) {
       request.viewId,
     );
     await _checkBindings(input);
+    await WorkspaceConnectedValidation.access(
+      context.session,
+      context.member,
+      input.data['connected'],
+    );
+
     return input;
   }
 
@@ -173,6 +190,15 @@ class const _ViewWriter(final _ViewContext context) {
   }
 
   Future<void> _checkBindings(WorkspaceViewInput input) async {
+    if (input.tableId.isEmpty) {
+      if (input.data['connected'] == null) _denied();
+      await _checkParent(input.parentId);
+      return;
+    }
+    await _checkOwnedBindings(input);
+  }
+
+  Future<void> _checkOwnedBindings(WorkspaceViewInput input) async {
     final table = await context.resource(.table, input.tableId);
     if (table == null) _denied();
     WorkspaceViewValidation.columns(
@@ -249,7 +275,15 @@ class const _ViewMover(final _ViewContext context) {
   }
 
   Future<void> _ancestry(Map<String, Object?> data, String? parent) async {
-    await _source(data['tableId'] as String);
+    if (data['tableId'] == '') {
+      await WorkspaceConnectedValidation.access(
+        context.session,
+        context.member,
+        data['connected'],
+      );
+    } else {
+      await _source(data['tableId'] as String);
+    }
     await _parent(data['parentId'] as String?);
     await _parent(parent);
   }
@@ -418,11 +452,13 @@ String _metadataName(WorkspaceView current, String? proposed) {
   if (name.isEmpty || name.length > _maximumMetadataNameLength) {
     throw CloudWorkspaceException(code: .validationFailed);
   }
+
   return name;
 }
 
 bool _sameMetadata(WorkspaceView current, WorkspaceViewMove move) {
   final data = _data(current.data);
+
   return data['parentId'] == move.parentId &&
       data['name'] == _metadataName(current, move.name);
 }
@@ -440,6 +476,7 @@ class const _ViewKey(
 
 WorkspaceView _movedRow(WorkspaceView current, WorkspaceViewMove move) {
   final data = _movedMetadata(current, move);
+
   return current.copyWith(
     data: jsonEncode(data),
     revision: current.revision + 1,

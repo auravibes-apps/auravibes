@@ -88,6 +88,7 @@ class HttpObjectStore({required final Uri endpoint, final String? bearerToken})
     required Duration expiresIn,
   }) => _sign('GET', key, expiresIn, {
     'response-content-disposition': contentDisposition,
+    'response-cache-control': 'no-store',
   });
 
   Future<SignedObjectRequest> _sign(

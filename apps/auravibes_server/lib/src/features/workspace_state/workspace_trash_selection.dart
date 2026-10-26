@@ -23,6 +23,7 @@ class const WorkspaceTrashSelection(
     final root = _root(rows, target);
     await context.require(root);
     _current(root, target);
+
     return .new(encoded, root, await _members(context, root, rows));
   }
 
@@ -30,6 +31,7 @@ class const WorkspaceTrashSelection(
     final rows = members.map((row) => jsonEncode(trashMember(row))).toList()
       ..sort();
     final hash = await Sha256().hash(utf8.encode(jsonEncode(rows)));
+
     return base64UrlEncode(hash.bytes);
   }
 
@@ -52,6 +54,7 @@ Map<String, dynamic> _target(String encoded) {
     if (decoded is! Map<String, dynamic> || !_validIdentity(decoded)) {
       trashInvalid();
     }
+
     return decoded;
   } on FormatException {
     trashInvalid();
@@ -68,6 +71,7 @@ WorkspaceResource _root(
   Map<String, dynamic> target,
 ) {
   final kind = _kind(target['kind']);
+
   return rows
           .where(
             (row) => row.resourceId == target['id'] && row.resourceKind == kind,
@@ -91,6 +95,7 @@ WorkspaceResourceKind _kind(Object? kind) => switch (kind) {
   'table' => .table,
   'record' => .tableRecord,
   'view' => .view,
+  'file' => .file,
   _ => trashInvalid(),
 };
 WorkspaceResource _deleted(WorkspaceResource row, DateTime now) =>
@@ -105,5 +110,6 @@ Future<List<WorkspaceResource>> _members(
   for (final row in members) {
     await context.require(row);
   }
+
   return members;
 }

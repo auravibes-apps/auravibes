@@ -58,10 +58,20 @@ const _sources = <_Source>[
   (table: 'workspace_table_records', kind: 'record', column: 'values_json'),
   (table: 'workspace_views', kind: 'view', column: 'data'),
   (table: 'workspace_folders', kind: 'folder', column: 'name'),
+  (table: 'workspace_files', kind: 'file', column: 'asset_id'),
 ];
 Map<String, dynamic> _data(QueryRow row, _Source source) {
   final raw = row.data;
   if (source.kind == 'folder') return {'parentId': raw['parent_id']};
+  if (source.kind == 'file') {
+    return {'parentId': raw['parent_id'], 'assetId': raw['asset_id']};
+  }
+
+  return _content(row, source);
+}
+
+Map<String, dynamic> _content(QueryRow row, _Source source) {
+  final raw = row.data;
   final value = jsonDecode(row.read<String>(source.column));
 
   return switch (source.kind) {
@@ -78,18 +88,26 @@ Iterable<LocalRetainedData> _viewHistory(QueryRow row) =>
 LocalRetainedData _viewSnapshot(QueryRow row, Map<String, dynamic> data) =>
     (data: data, view: true, kind: 'view', id: row.read<String>('id'));
 
-LocalRetainedData _snapshot(WorkspaceRevisionRow row) => (
-  data: jsonDecode(row.data) as Map<String, dynamic>,
-  view: false,
-  kind: row.kind,
-  id: row.resourceId,
-);
+LocalRetainedData _snapshot(WorkspaceRevisionRow row) =>
+    (data: _snapshotData(row), view: false, kind: row.kind, id: row.resourceId);
+
+Map<String, dynamic> _snapshotData(WorkspaceRevisionRow row) {
+  final data = jsonDecode(row.data) as Map<String, dynamic>;
+  if (row.kind == 'record' && data['historyAttachmentColumns'] is! List) {
+    data['historyAttachmentColumns'] = <String>[];
+  }
+
+  return data;
+}
 
 List<LocalRetainedData> _retainedSnapshots(
   List<WorkspaceRevisionRow> rows,
   Set<String> scope,
 ) => rows
-    .where((row) => !scope.contains('${row.kind}:${row.resourceId}'))
+    .where(
+      (row) =>
+          row.revision > 0 && !scope.contains('${row.kind}:${row.resourceId}'),
+    )
     .map(_snapshot)
     .toList();
 

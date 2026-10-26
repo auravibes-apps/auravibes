@@ -1741,6 +1741,25 @@ class Endpoints extends _is.EndpointDispatch {
                     params['request'],
                   ),
         ),
+        'describe': _is.MethodConnector(
+          name: 'describe',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_itlqxnii.GetDownloadRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['object'] as _ia0f4jqg.ObjectEndpoint).describe(
+                    session,
+                    params['request'],
+                  ),
+        ),
         'delete': _is.MethodConnector(
           name: 'delete',
           params: {
@@ -2545,6 +2564,33 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'workspaceView',
       endpoint: endpoints['workspaceView']!,
       methodConnectors: {
+        'readConnected': _is.MethodConnector(
+          name: 'readConnected',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['workspaceView']
+                          as _i1itox65.WorkspaceViewEndpoint)
+                      .readConnected(
+                        session,
+                        params['workspaceId'],
+                        params['id'],
+                      ),
+        ),
         'duplicate': _is.MethodConnector(
           name: 'duplicate',
           params: {

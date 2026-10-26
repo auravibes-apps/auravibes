@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_release.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_values.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_retention.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_permanent_delete.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_schema_recovery.dart';
@@ -33,7 +35,7 @@ class const LocalWorkspaceHistoryRepository(
     await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
     final rows = await _store.rows(target);
 
-    return rows.map((row) => _snapshot(row, target)).toList();
+    return await Future.wait(rows.map((row) => _visible(row, target)));
   }
 
   @override
@@ -43,21 +45,39 @@ class const LocalWorkspaceHistoryRepository(
   @override
   Future<void> permanentlyDelete(WorkspaceTrashTarget target) async {
     await _store.requireLocal();
-    await LocalWorkspacePermanentDelete(database, workspaceId)(target);
+    await LocalWorkspaceAssetRelease(database, workspaceId).mutate(
+      () => LocalWorkspacePermanentDelete(database, workspaceId)(target),
+    );
+  }
+
+  Future<WorkspaceRevision> _visible(
+    WorkspaceRevisionRow row,
+    WorkspaceTrashTarget target,
+  ) async {
+    final data = await LocalWorkspaceAssetValues(
+      database,
+      workspaceId,
+    ).history(jsonDecode(row.data) as Map<String, dynamic>);
+
+    return WorkspaceRevision(
+      target: _revisionTarget(target, row.revision),
+      data: data,
+    );
   }
 
   Future<void> _restore(WorkspaceTrashTarget target, int revision) async {
-    final snapshots = await history(target);
-    final selected = _selected(snapshots, revision);
+    await _store.authorize(target);
+    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
+    final selected = await _store.snapshot(target, revision);
     if (target.kind == .table) {
       await LocalWorkspaceSchemaRecovery(
         database,
         workspaceId,
-      ).restore(target, selected.data);
+      ).restore(target, selected);
 
       return;
     }
-    await _store.restoreRecord(target, selected.data);
+    await _store.restoreRecord(target, selected);
   }
 }
 
@@ -110,6 +130,15 @@ class const _HistoryStore(
       values: values,
     );
   }
+
+  Future<Map<String, dynamic>> snapshot(
+    WorkspaceTrashTarget target,
+    int revision,
+  ) async {
+    final snapshots = await rows(target);
+
+    return _snapshotData(snapshots, revision);
+  }
 }
 
 class const _RevisionKey(
@@ -122,13 +151,6 @@ class const _RevisionKey(
       row.resourceId.equals(target.id);
 }
 
-WorkspaceRevision _snapshot(
-  WorkspaceRevisionRow row,
-  WorkspaceTrashTarget target,
-) => WorkspaceRevision(
-  target: _revisionTarget(target, row.revision),
-  data: jsonDecode(row.data) as Map<String, dynamic>,
-);
 WorkspaceTrashTarget _revisionTarget(
   WorkspaceTrashTarget target,
   int revision,
@@ -141,8 +163,17 @@ WorkspaceTrashTarget _revisionTarget(
 String _tableId(WorkspaceTrashTarget target) =>
     target.tableId ?? (throw const WorkspaceTableException());
 
-WorkspaceRevision _selected(List<WorkspaceRevision> rows, int revision) =>
-    rows.where((row) => row.target.revision == revision).firstOrNull ??
-    (throw const WorkspaceTableException());
 Map<String, Object?> _values(Map<String, dynamic> data) =>
     (data['values'] as Map<String, dynamic>).cast<String, Object?>();
+
+Map<String, dynamic> _snapshotData(
+  List<WorkspaceRevisionRow> rows,
+  int revision,
+) {
+  final selected = rows
+      .where((row) => row.revision == revision && row.revision > 0)
+      .firstOrNull;
+  if (selected == null) throw const WorkspaceTableException();
+
+  return jsonDecode(selected.data) as Map<String, dynamic>;
+}

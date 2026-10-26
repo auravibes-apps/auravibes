@@ -67,7 +67,7 @@ final class WorkspaceViewUsecaseProvider
 }
 
 String _$workspaceViewUsecaseHash() =>
-    r'd3a3ce5b4d05732d40b8a7af514eebd90e9e649a';
+    r'fc25d076ee85011474901d78ed7e792f824c1331';
 
 final class WorkspaceViewUsecaseFamily extends $Family
     with
@@ -234,7 +234,7 @@ final class WorkspaceViewDataProvider
   }
 }
 
-String _$workspaceViewDataHash() => r'b8c8e3067f3326032a0cf95873594f6ef0d58454';
+String _$workspaceViewDataHash() => r'32dd90abfdb22fe37e333bce260fd6f3853e41a5';
 
 final class WorkspaceViewDataFamily extends $Family
     with

@@ -2622,6 +2622,35 @@ class _ObjectEndpoint {
     });
   }
 
+  _ida.Future<_ixfb6cdh.ObjectResult> describe(
+    _ist.TestSessionBuilder sessionBuilder,
+    _itlqxnii.GetDownloadRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'object',
+            method: 'describe',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'object',
+          methodName: 'describe',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_ixfb6cdh.ObjectResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<void> delete(
     _ist.TestSessionBuilder sessionBuilder,
     _ikvc6p78.DeleteObjectRequest request,
@@ -3707,6 +3736,39 @@ class _WorkspaceViewEndpoint {
   final _is.EndpointDispatch _endpointDispatch;
 
   final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> readConnected(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String id,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceView',
+            method: 'readConnected',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceView',
+          methodName: 'readConnected',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'id': id,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 
   _ida.Future<_i7rt6swg.WorkspaceView> duplicate(
     _ist.TestSessionBuilder sessionBuilder,

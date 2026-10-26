@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_connected_binding.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -12,10 +13,31 @@ class const WorkspaceView({
   required final A2uiSavedDefinition definition,
   required final int revision,
   final String? parentId,
+  final WorkspaceConnectedBinding? connected,
   final bool canManage = true,
   final WorkspaceRecordQuery query = const WorkspaceRecordQuery(),
   final List<String> summaryColumnIds = const [],
 }) {
+  factory connectedDraft({required String name, String? parentId}) => .new(
+    id: const UuidV7().generate(),
+    name: name,
+    tableId: '',
+    bindings: const {'source': ''},
+    columnTypes: const {},
+    definition: A2uiSavedDefinition.fromJson({
+      'version': 1,
+      'components': [
+        {
+          'id': 'root',
+          'component': 'Text',
+          'text': {'path': '/source'},
+        },
+      ],
+    }),
+    revision: 0,
+    parentId: parentId,
+  );
+
   factory create({
     required String name,
     required WorkspaceTable table,
@@ -31,6 +53,8 @@ class const WorkspaceView({
     revision: 0,
     parentId: parentId,
   );
+
+  bool get isConnectedOnly => tableId.isEmpty;
 
   WorkspaceView edited({
     required String name,
@@ -49,6 +73,21 @@ class const WorkspaceView({
     canManage: canManage,
     query: query,
     summaryColumnIds: summaryColumnIds,
+    connected: connected,
+  );
+  WorkspaceView withConnected(WorkspaceConnectedBinding? value) => .new(
+    id: id,
+    name: name,
+    tableId: tableId,
+    bindings: bindings,
+    columnTypes: columnTypes,
+    definition: definition,
+    revision: revision,
+    parentId: parentId,
+    canManage: canManage,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
+    connected: value,
   );
   WorkspaceView withSummaryColumns(List<String> ids) => .new(
     id: id,
@@ -62,6 +101,7 @@ class const WorkspaceView({
     canManage: canManage,
     query: query,
     summaryColumnIds: ids,
+    connected: connected,
   );
   WorkspaceView withQuery(WorkspaceRecordQuery value) => .new(
     id: id,
@@ -75,6 +115,7 @@ class const WorkspaceView({
     canManage: canManage,
     query: value,
     summaryColumnIds: summaryColumnIds,
+    connected: connected,
   );
   WorkspaceView withParent(String? value) => .new(
     id: id,
@@ -88,6 +129,7 @@ class const WorkspaceView({
     canManage: canManage,
     query: query,
     summaryColumnIds: summaryColumnIds,
+    connected: connected,
   );
 
   WorkspaceView withRevision(int value) => .new(
@@ -102,6 +144,7 @@ class const WorkspaceView({
     canManage: canManage,
     query: query,
     summaryColumnIds: summaryColumnIds,
+    connected: connected,
   );
   WorkspaceView withManagement({required bool value}) => .new(
     id: id,
@@ -115,6 +158,7 @@ class const WorkspaceView({
     canManage: value,
     query: query,
     summaryColumnIds: summaryColumnIds,
+    connected: connected,
   );
 }
 

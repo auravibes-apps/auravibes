@@ -10,8 +10,12 @@ import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usec
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_asset_chooser.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -385,6 +389,7 @@ Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {
 }
 
 typedef _ChatInputAttachmentCapabilities = ({
+  bool supportsExisting,
   bool supportsLocalAttachments,
   bool supportsAudio,
   bool supportsImage,
@@ -436,6 +441,14 @@ abstract final class _ChatInputCapabilitiesFactory {
   static _ChatInputAttachmentCapabilities _createAttachmentCapabilitiesFrom(
     _ChatInputAttachmentCapabilitiesRequest request,
   ) => (
+    supportsExisting:
+        request.supportsAttachments == true &&
+        MessageAttachmentModality.values.any(
+          (modality) => ChatAttachmentModality.supports(
+            modality,
+            request.modalitiesInput,
+          ),
+        ),
     supportsLocalAttachments: request.supportsLocalAttachments,
     supportsAudio: _supportsChatInputAudio(request),
     supportsImage: _supportsChatInputImage(request),
@@ -1200,6 +1213,7 @@ extension _ChatInputDraftActions on _ChatInputActions {
   }
 
   void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
+    if (attachment.assetId != null) return;
     unawaited(_attachmentUsecase.deleteAttachment(attachment.localPath));
   }
 
@@ -1273,15 +1287,29 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
 
   Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
     if (!ref.context.mounted) {
-      await _attachmentUsecase.deleteAttachment(attachment.localPath);
+      await _discardDetachedAttachment(attachment);
 
       return;
     }
 
     if (!_canAddAttachment(attachment)) return;
+    if (_alreadySelectedAsset(attachment)) return;
 
     _draft.attachments.value = [..._draft.attachments.value, attachment];
   }
+
+  Future<void> _discardDetachedAttachment(
+    MessageAttachmentToCreate attachment,
+  ) async {
+    if (attachment.assetId != null) return;
+    await _attachmentUsecase.deleteAttachment(attachment.localPath);
+  }
+
+  bool _alreadySelectedAsset(MessageAttachmentToCreate attachment) =>
+      attachment.assetId != null &&
+      _draft.attachments.value.any(
+        (value) => value.assetId == attachment.assetId,
+      );
 
   bool _canAddAttachment(MessageAttachmentToCreate attachment) {
     if (input.acceptDroppedFilesWhenDisabled ||
@@ -1388,6 +1416,41 @@ extension _ChatInputFileActions on _ChatInputActions {
       input.modalitiesInput,
       mimeType: attachment.mimeType,
     );
+  }
+}
+
+extension _ChatInputExistingAssets on _ChatInputActions {
+  void selectExistingAsset() => unawaited(_selectExistingAsset());
+
+  Future<void> _selectExistingAsset() async {
+    final context = ref.context;
+    try {
+      final asset = await _chooseExistingAsset(context);
+      if (asset == null || !context.mounted) return;
+      await _addExistingAsset(asset, context);
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Existing asset selection failed', error, stackTrace);
+      if (!context.mounted) return;
+      _showAttachmentError(_existingAssetError(error));
+    }
+  }
+
+  Future<WorkspaceAsset?> _chooseExistingAsset(BuildContext context) =>
+      showDialog<WorkspaceAsset>(
+        context: context,
+        builder: (_) => WorkspaceAssetChooser(workspaceId: input.workspaceId),
+      );
+
+  Future<void> _addExistingAsset(
+    WorkspaceAsset asset,
+    BuildContext context,
+  ) async {
+    final select = await ref.read(
+      selectWorkspaceAssetAttachmentProvider(input.workspaceId).future,
+    );
+    final attachment = await select(asset.id);
+    if (!context.mounted) return;
+    await _addAttachment(attachment);
   }
 }
 
@@ -1852,10 +1915,20 @@ List<AuraPopupMenuItem> _attachmentMenuItems(_ChatInputState state) => [
 ];
 
 List<AuraPopupMenuItem> _attachmentPickerItems(_ChatInputState state) => [
+  _existingAssetMenuItem(state),
   _fileMenuItem(state),
   ..._photoMenuItems(state),
   ..._cameraMenuItems(state),
 ];
+
+AuraPopupMenuItem _existingAssetMenuItem(_ChatInputState state) =>
+    _ChatInputAttachmentMenuFactory.item((
+      titleKey: LocaleKeys.workspace_assets_existing,
+      icon: Icons.folder_outlined,
+      enabled: state.capabilities.attachments.supportsExisting,
+      reasonKey: _modelAttachmentReasonKey(.file),
+      onTap: state.actions.selectExistingAsset,
+    ));
 
 AuraPopupMenuItem _fileMenuItem(_ChatInputState state) =>
     _ChatInputAttachmentMenuFactory.item((
@@ -2715,3 +2788,8 @@ String _findAvailableAttachmentName(
     index += 1;
   }
 }
+
+String _existingAssetError(Object error) => switch (error) {
+  final WorkspaceAssetException error => error.localizationKey,
+  _ => CloudAppErrors.localizationKey(error),
+};

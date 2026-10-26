@@ -2,6 +2,8 @@ import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_connected_workspace_view_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/read_connected_workspace_view_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 const _maximumName = 200;
@@ -12,9 +14,17 @@ final _bindingName = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,63}$');
 
 abstract final class WorkspaceViewValidation {
   static void check(WorkspaceView view, WorkspaceTable table) {
+    if (view.isConnectedOnly) {
+      _checkConnected(view);
+
+      return;
+    }
     if (!table.canManage) throw const WorkspaceTableException(denied: true);
     if (!_validConfiguration(view, table)) _invalid();
     _checkQuery(view, table);
+    if (view.connected case final connected?) {
+      final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
+    }
     final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
   }
 
@@ -22,6 +32,18 @@ abstract final class WorkspaceViewValidation {
       view.columnTypes.keys.any((id) => !_typeMatches(view, id, table)) ||
       !_dependencies(view).every(view.columnTypes.containsKey) ||
       !_queryCompatible(view, table);
+}
+
+void _checkConnected(WorkspaceView view) {
+  final connected = view.connected;
+  if (connected == null ||
+      !_validName(view.name) ||
+      !_validSourceBindings(view.bindings)) {
+    _invalid();
+  }
+  final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
+  ProjectConnectedWorkspaceViewUsecase.validate(view.bindings);
+  final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
 }
 
 bool _typeMatches(WorkspaceView view, String id, WorkspaceTable table) {
@@ -107,3 +129,8 @@ bool _queryCompatible(WorkspaceView view, WorkspaceTable table) {
     return false;
   }
 }
+
+bool _validSourceBindings(Map<String, String> bindings) =>
+    bindings.isNotEmpty &&
+    bindings.length <= _maximumBindings &&
+    bindings.keys.every(_bindingName.hasMatch);

@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.da
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/preview_workspace_column_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_attachment_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_violations.dart';
@@ -14,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_table_editor
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -169,12 +171,33 @@ class const _ColumnConstraintInputs({
   required final _ColumnDraft draft,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => WorkspaceColumnConstraints(
-    draft: draft.fields.constraints,
-    column: _ColumnActions._column(editor.column?.id ?? '', draft.fields),
-    disabled: draft.action.pending,
-    referenceDefault: _ColumnReferenceDefault(editor: editor, draft: draft),
+  Widget build(BuildContext context) => _ColumnConstraintSettings(
+    editor: editor,
+    draft: draft,
+    defaultEditor: switch (draft.fields.type.value) {
+      .attachment => _AttachmentDefault(editor: editor, draft: draft),
+      .reference => _ColumnReferenceDefault(editor: editor, draft: draft),
+      _ => null,
+    },
   );
+}
+
+class const _ColumnConstraintSettings({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+  required final Widget? defaultEditor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final fields = draft.fields;
+
+    return WorkspaceColumnConstraints(
+      draft: fields.constraints,
+      column: _ColumnActions._column(editor.column?.id ?? '', fields),
+      disabled: draft.action.pending,
+      defaultEditor: defaultEditor,
+    );
+  }
 }
 
 class const _ColumnPreviewResult({
@@ -472,3 +495,28 @@ class const _ReferenceDefaultChoice({
 
 Object? _defaultValue(_ColumnFields fields) =>
     fields.constraints.defaultValue.value;
+
+class const _AttachmentDefault({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  ValueNotifier<Object?> get _value => draft.fields.constraints.defaultValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = _value.value;
+
+    return WorkspaceAttachmentField(
+      workspaceId: editor.workspaceId,
+      label: LocaleKeys.workspace_items_default_value.tr(),
+      value: value,
+      present: value != null,
+      disabled: draft.action.pending,
+      restricted: false,
+      onChanged: (value) => _value.value = value,
+      onUnset: _unset,
+    );
+  }
+
+  void _unset() => _value.value = null;
+}

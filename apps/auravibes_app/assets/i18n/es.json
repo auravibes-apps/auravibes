@@ -1952,6 +1952,33 @@
       "open_error": "No se pudo abrir este enlace. La solicitud sigue pendiente."
     }
   },
+  "workspace_assets": {
+    "saved": "Copia guardada.",
+    "title": "Archivos",
+    "file": "Archivo",
+    "name": "Nombre del archivo",
+    "choose": "Elegir archivo",
+    "create": "Crear archivo",
+    "attachments": "Archivos adjuntos",
+    "add": "Agregar adjunto",
+    "existing": "Elegir del Directorio",
+    "upload": "Subir archivo",
+    "preview": "Vista previa",
+    "save": "Guardar una copia",
+    "unavailable": "Este archivo no está disponible. Revisa tu conexión o acceso y vuelve a intentarlo.",
+    "invalid": "Este archivo no es compatible, no es válido o supera el límite de carga.",
+    "referenced": "Este recurso todavía tiene usos conservados.",
+    "download_only": "Guarda una copia para abrir este archivo con otra aplicación.",
+    "text_truncated": "Vista previa abreviada. Guarda una copia para ver el archivo completo.",
+    "uploaded_retry": "Archivo subido. Vuelve a intentar crear su elemento en el Directorio.",
+    "share_title": "¿Compartir este archivo con el espacio de trabajo?",
+    "share_body": "Crear un Archivo permite que los miembros del espacio accedan a este recurso. Los permisos de la tabla no limitan ese Archivo.",
+    "share": "Compartir archivo",
+    "count": "{} archivos",
+    "remove": "Quitar adjunto",
+    "selected": "Archivo seleccionado",
+    "workspace_readable": "Los miembros del espacio pueden leer este Archivo."
+  },
   "workspace_items": {
     "history": {
       "blocked": "Hay datos conservados que aún hacen referencia a este elemento. Resuelve el origen indicado y su historial conservado, e inténtalo de nuevo.",
@@ -2168,6 +2195,29 @@
     "stale": "Actualizando datos. Los resultados anteriores pueden haber cambiado.",
     "loading": "Cargando los datos actuales…"
   },
+  "workspace_connected": {
+    "title": "Datos conectados",
+    "configure": "Configurar datos conectados",
+    "tool": "Herramienta de lectura",
+    "inputs": "Entradas (JSON)",
+    "connection": "Conexión",
+    "freshness": "Consultado a las {time}",
+    "disclosure": "Datos en vivo de la fuente. Verlos no envía estos datos a la IA.",
+    "failed": "Fuente no disponible, desconectada o acceso denegado. Actualiza o revisa la conexión y los permisos.",
+    "remove": "Quitar fuente conectada",
+    "denied": "Acceso denegado. Revisa los permisos actuales de la herramienta.",
+    "disconnected": "Conexión no disponible. Vuelve a conectarte o selecciona otra conexión.",
+    "repair": "El contrato de la herramienta cambió. Configura la fuente de nuevo.",
+    "empty": "No hay datos de la fuente.",
+    "changed": "La vista cambió mientras se cargaban los datos. Actualiza para usar su configuración actual.",
+    "no_reads": "No hay herramientas de lectura compatibles habilitadas. Habilita una en Conexiones.",
+    "options": "Más opciones",
+    "advanced_inputs": "Entradas avanzadas",
+    "yes": "Sí",
+    "no": "No",
+    "unset": "Sin definir",
+    "remove_extra_inputs": "Quitar entradas adicionales"
+  },
   "workspace_chat": {
     "reference_scope": "Los enlaces fuera del contexto compartido de este chat permanecen ocultos. Edita los enlaces en Directorio.",
     "inspect": "Ver el contexto compartido",
@@ -2180,5 +2230,5 @@
     "revoked": "Se dejó de compartir la selección. No leas ni edites la selección anterior.",
     "records": "Selecciona los registros que deseas compartir",
     "structure": "Solo la estructura del elemento"
-}
+  }
 }

@@ -81,6 +81,7 @@ class const LocalWorkspaceTrashValidation(
     final row = await _viewRow(id);
     try {
       final view = WorkspaceViewMapper.fromJson(_decode(row.data));
+      if (view.isConnectedOnly) return false;
       final table = await LocalWorkspaceTableRepository(
         database,
         workspaceId,

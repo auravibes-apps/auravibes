@@ -55,6 +55,7 @@ void main() {
           ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
         _createHistorySources(sqliteDb);
         sqliteDb
+          ..execute('INSERT INTO message_attachments VALUES (?)', ['legacy'])
           ..execute(
             'INSERT INTO workspace_tables VALUES (?,?,?,?,?,?,?,?,?,?,?)',
             [
@@ -79,6 +80,15 @@ void main() {
           connection: NativeDatabase.opened(sqliteDb),
         );
         addTearDown(database.close);
+        final legacyAttachment = await database
+            .customSelect(
+              'SELECT id, asset_id FROM message_attachments WHERE id = ?',
+              variables: [const Variable<String>('legacy')],
+            )
+            .getSingle();
+        expect(legacyAttachment.read<String>('id'), 'legacy');
+        expect(legacyAttachment.data['asset_id'], isNull);
+
         expect(
           await database.select(database.workspaceRevisions).get(),
           isEmpty,
@@ -1395,6 +1405,7 @@ final class _MigrationCaseHistory;
 
 void _createHistorySources(sqlite.Database database) {
   database
+    ..execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)')
     ..execute(
       'CREATE TABLE workspace_tables ( '
       'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, '

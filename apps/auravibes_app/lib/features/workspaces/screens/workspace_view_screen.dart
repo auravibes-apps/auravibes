@@ -1,9 +1,13 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_data.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_duplication_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_assets.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chart.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_detail.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_editor.dart';
@@ -27,7 +31,11 @@ class const WorkspaceViewScreen({
   required final VoidCallback onBack,
   super.key,
 }) extends StatelessWidget {
-  void refresh(WidgetRef ref) => ref.invalidate(workspaceViewDataProvider);
+  void refresh(WidgetRef ref) {
+    ref
+      ..invalidate(workspaceConnectedViewProvider(workspaceId, viewId))
+      ..invalidate(workspaceViewDataProvider);
+  }
 
   @override
   Widget build(BuildContext context) => _ViewSession(
@@ -143,9 +151,14 @@ class const _Popup(
 
   List<PopupMenuEntry<String>> _items(BuildContext _) => [
     const PopupMenuItem(
-      value: 'edit',
-      child: TextLocale(LocaleKeys.workspace_views_edit),
+      value: 'connected',
+      child: TextLocale(LocaleKeys.workspace_connected_configure),
     ),
+    if (!data.view.isConnectedOnly)
+      const PopupMenuItem(
+        value: 'edit',
+        child: TextLocale(LocaleKeys.workspace_views_edit),
+      ),
     const PopupMenuItem(
       value: 'duplicate',
       child: TextLocale(LocaleKeys.workspace_items_duplicate),
@@ -188,20 +201,53 @@ class const _LoadState(final WorkspaceViewScreen owner)
       ),
     );
 
-    return _PageState(state, offset);
+    return _LoadedContent(owner, state, offset);
   }
+}
+
+class const _LoadedContent(
+  final WorkspaceViewScreen owner,
+  final AsyncValue<WorkspaceViewData> state,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = state.value;
+
+    return Column(
+      children: [
+        if (data?.view.isConnectedOnly != true)
+          Expanded(child: _PageState(state, offset, owner.workspaceId)),
+        if (data?.view.connected != null) _ConnectedContent(owner, data),
+      ],
+    );
+  }
+}
+
+class _ConnectedContent extends Flexible {
+  new(WorkspaceViewScreen owner, WorkspaceViewData? data)
+    : super(
+        child: SingleChildScrollView(
+          child: WorkspaceConnectedData(
+            workspaceId: owner.workspaceId,
+            viewId: owner.viewId,
+            data: data,
+          ),
+        ),
+      );
 }
 
 class const _PageState(
   final AsyncValue<WorkspaceViewData> state,
   final ValueNotifier<int> offset,
+  final String workspaceId,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.isLoading) return _Waiting(stale: state.hasValue);
 
     return switch (state) {
-      AsyncData(:final value) => _Page(value, offset),
+      AsyncData(:final value) => _Page(value, offset, workspaceId),
       AsyncError(:final error) => Center(
         child: WorkspaceItemFailure(error: error),
       ),
@@ -227,12 +273,15 @@ class const _Waiting({required final bool stale}) extends StatelessWidget {
   );
 }
 
-class const _Page(final WorkspaceViewData data, final ValueNotifier<int> offset)
-    extends StatelessWidget {
+class const _Page(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+  final String workspaceId,
+) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Expanded(child: _Content(data)),
+      Expanded(child: _Content(data, workspaceId)),
       _Pages(data, offset),
     ],
   );
@@ -295,20 +344,47 @@ class const _Selected(
   final VoidCallback done,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => selection.mode == 'history'
-      ? WorkspaceViewHistory(
-          workspaceId: owner.workspaceId,
-          current: selection.data.view,
-          onDone: done,
-        )
-      : WorkspaceViewEditor(
-          workspaceId: owner.workspaceId,
-          data: selection.data,
-          onDone: done,
-        );
+  Widget build(BuildContext context) {
+    final data = selection.data;
+    if (selection.mode == 'history') {
+      return WorkspaceViewHistory(
+        workspaceId: owner.workspaceId,
+        current: data.view,
+        onDone: done,
+      );
+    }
+
+    return _SelectedEditor(owner, data, selection.mode, done);
+  }
 }
 
-class const _Content(final WorkspaceViewData data) extends HookWidget {
+class const _SelectedEditor(
+  final WorkspaceViewScreen owner,
+  final WorkspaceViewData data,
+  final String mode,
+  final VoidCallback done,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final view = data.view;
+    if (mode == 'connected' || view.isConnectedOnly) {
+      return WorkspaceConnectedEditor(
+        workspaceId: owner.workspaceId,
+        view: view,
+        onDone: done,
+      );
+    }
+
+    return WorkspaceViewEditor(
+      workspaceId: owner.workspaceId,
+      data: data,
+      onDone: done,
+    );
+  }
+}
+
+class const _Content(final WorkspaceViewData data, final String workspaceId)
+    extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final selected = useState<String?>(null);
@@ -320,6 +396,7 @@ class const _Content(final WorkspaceViewData data) extends HookWidget {
         const TextLocale(LocaleKeys.workspace_views_display_only),
         _DataSurface(data, selected),
         WorkspaceViewSummary(data: data),
+        WorkspaceViewAssets(workspaceId: workspaceId, data: data),
       ],
     );
   }

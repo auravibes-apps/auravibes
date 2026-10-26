@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
@@ -50,6 +51,20 @@ abstract final class WorkspaceTrashActions {
   }
 
   static void refresh(WidgetRef ref) {
+    _refreshAssets(ref);
+    _refreshTables(ref);
+    _refreshViews(ref);
+  }
+
+  static void _refreshAssets(WidgetRef ref) {
+    ref
+      ..invalidate(workspaceAssetRepositoryProvider)
+      ..invalidate(workspaceFilesProvider)
+      ..invalidate(workspaceFileProvider)
+      ..invalidate(workspaceAssetPreviewProvider);
+  }
+
+  static void _refreshTables(WidgetRef ref) {
     ref
       ..invalidate(workspaceFoldersProvider)
       ..invalidate(workspaceTablesProvider)
@@ -58,7 +73,11 @@ abstract final class WorkspaceTrashActions {
       ..invalidate(workspaceRecordQueryProvider)
       ..invalidate(workspaceReferencedRecordProvider)
       ..invalidate(workspaceTrashProvider)
-      ..invalidate(workspaceDeletedReferenceProvider)
+      ..invalidate(workspaceDeletedReferenceProvider);
+  }
+
+  static void _refreshViews(WidgetRef ref) {
+    ref
       ..invalidate(workspaceViewsProvider)
       ..invalidate(workspaceViewDataProvider)
       ..invalidate(workspaceViewChoicesProvider)

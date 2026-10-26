@@ -66,6 +66,7 @@ class const _DirectoryResources(final WorkspaceResourceRead readState) {
     for (final kind in [
       WorkspaceDirectoryItemKind.folder,
       WorkspaceDirectoryItemKind.table,
+      WorkspaceDirectoryItemKind.file,
     ]) {
       final ids = _ids(items, kind);
       if (ids.isNotEmpty) resources.addAll(await _kind(kind, ids));
@@ -94,7 +95,12 @@ class const _DirectoryResources(final WorkspaceResourceRead readState) {
     final response = await readState(
       pages: [
         WorkspaceResourcePageRequest(
-          resourceKind: kind == .folder ? .folder : .table,
+          resourceKind: switch (kind) {
+            .folder => .folder,
+            .table => .table,
+            .file => .file,
+            .view => throw const WorkspaceTableException(),
+          },
           afterResourceId: cursor,
           limit: 100,
         ),
@@ -139,9 +145,11 @@ Map<String, dynamic> _permittedData(
   WorkspaceResource resource,
 ) {
   final data = CloudResourceMapper.decode(resource);
-  final permission = item.key.kind == .folder
-      ? 'canManageFolder'
-      : 'canManageTable';
+  final permission = switch (item.key.kind) {
+    .folder => 'canManageFolder',
+    .file => 'canManageFile',
+    _ => 'canManageTable',
+  };
   if (data[permission] != true) {
     throw const WorkspaceTableException(denied: true);
   }
@@ -155,6 +163,8 @@ const _projectionFields = {
   'canManageFolder',
   'canManageTable',
   'canEditRecords',
+  'canManageFile',
+  'asset',
 };
 
 void _requireNewCursor(Set<String?> cursors, String? cursor) {

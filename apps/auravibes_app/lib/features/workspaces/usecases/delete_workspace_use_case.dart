@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -12,6 +13,7 @@ class DeleteWorkspaceUseCase {
     required this._prepareBackgroundWorkDeletion,
     required this._restoreBackgroundWorkAfterFailedDeletion,
     required this._clearWorkspaceDrafts,
+    required this._cleanupDeletedAssets,
   });
 
   final WorkspaceRepository _repository;
@@ -20,6 +22,7 @@ class DeleteWorkspaceUseCase {
   final void Function(String workspaceId)
   _restoreBackgroundWorkAfterFailedDeletion;
   final Future<void> Function(String workspaceId) _clearWorkspaceDrafts;
+  final Future<void> Function() _cleanupDeletedAssets;
 
   // Null active workspace ID means there is no active workspace to protect.
   // ignore: unnecessary-nullable
@@ -46,7 +49,10 @@ class DeleteWorkspaceUseCase {
     if (!deletedWorkspace) {
       _restoreBackgroundWorkAfterFailedDeletion(id);
     }
-    if (deletedWorkspace) await _clearWorkspaceDrafts(id);
+    if (deletedWorkspace) {
+      await _clearWorkspaceDrafts(id);
+      await _cleanupDeletedAssets();
+    }
     assert(deletedWorkspace, 'Workspace must be deleted.');
   }
 }
@@ -67,5 +73,6 @@ DeleteWorkspaceUseCase deleteWorkspaceUseCase(Ref ref) {
     clearWorkspaceDrafts: ref
         .watch(conversationDraftCleanupUsecaseProvider)
         .clearWorkspace,
+    cleanupDeletedAssets: ref.watch(workspaceAssetErasureProvider).flush,
   );
 }

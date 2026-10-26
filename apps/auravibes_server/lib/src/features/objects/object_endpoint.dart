@@ -68,6 +68,18 @@ class ObjectEndpoint extends Endpoint {
     );
   }
 
+  Future<ObjectResult> describe(
+    Session session,
+    GetDownloadRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.describe(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<void> delete(Session session, DeleteObjectRequest request) async {
     final account = await const AuthenticatedAccountResolver()(session);
     await _useCases.delete(session, userId: account.userId, request: request);

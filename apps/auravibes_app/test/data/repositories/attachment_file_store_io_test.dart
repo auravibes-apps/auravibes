@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:auravibes_app/data/repositories/attachment_file_store_io.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chat_attachment_bytes.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -41,6 +42,33 @@ void main() {
     if (supportDirectory.existsSync()) {
       final _ = await supportDirectory.delete(recursive: true);
     }
+  });
+
+  test('stable asset bytes survive adapter reopen and reject paths', () async {
+    const first = AttachmentFileStore(storageNamespace: 'asset-tests');
+    await first.writeAsset('asset-one', .fromList([1, 2, 255]));
+    const reopened = AttachmentFileStore(storageNamespace: 'asset-tests');
+    expect(await reopened.readAsset('asset-one'), [1, 2, 255]);
+    expect(
+      await ChatAttachmentBytes.read(
+        'workspace-asset://asset/asset-tests/local/asset-one',
+      ),
+      [1, 2, 255],
+    );
+    const other = AttachmentFileStore(storageNamespace: 'other-tests');
+    await expectLater(
+      other.readAsset('asset-one'),
+      throwsA(isA<FileSystemException>()),
+    );
+    await expectLater(
+      first.writeAsset('../escape', .new(1)),
+      throwsArgumentError,
+    );
+    await reopened.deleteAsset('asset-one');
+    await expectLater(
+      reopened.readAsset('asset-one'),
+      throwsA(isA<FileSystemException>()),
+    );
   });
 
   test('persistDraftFile copies draft file into support storage', () async {

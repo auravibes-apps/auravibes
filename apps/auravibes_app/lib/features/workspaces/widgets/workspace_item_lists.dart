@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
@@ -24,6 +26,7 @@ class const WorkspaceItemLists({
   required final ValueChanged<WorkspaceFolder> onOpenFolder,
   required final ValueChanged<String> onOpenTable,
   required final ValueChanged<String> onOpenView,
+  required final ValueChanged<String> onOpenFile,
   required final ValueChanged<Object> onEdit,
   final Set<WorkspaceDirectoryItemKey>? selection,
   final ValueChanged<WorkspaceDirectoryMoveItem>? onSelect,
@@ -36,7 +39,13 @@ class const WorkspaceItemLists({
 
     final views = ref.watch(workspaceViewsProvider(workspaceId, parentId));
 
-    return _State(this, folders, tables, views);
+    return _State(
+      this,
+      folders,
+      tables,
+      views,
+      ref.watch(workspaceFilesProvider(workspaceId, parentId)),
+    );
   }
 }
 
@@ -45,13 +54,20 @@ class const _State(
   final AsyncValue<List<WorkspaceFolder>> folders,
   final AsyncValue<List<WorkspaceTable>> tables,
   final AsyncValue<List<WorkspaceView>> views,
+  final AsyncValue<List<WorkspaceFile>> files,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final failure = folders.error ?? tables.error ?? views.error;
+    final failure = folders.error ?? tables.error ?? views.error ?? files.error;
     if (failure != null) return WorkspaceItemFailure(error: failure);
 
-    return _Loaded(owner, folders.value, tables.value, views.value);
+    return _Loaded(
+      owner,
+      folders.value,
+      tables.value,
+      views.value,
+      files.value,
+    );
   }
 }
 
@@ -60,16 +76,18 @@ class const _Loaded(
   final List<WorkspaceFolder>? folders,
   final List<WorkspaceTable>? tables,
   final List<WorkspaceView>? views,
+  final List<WorkspaceFile>? files,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      switch ((folders: folders, tables: tables, views: views)) {
+      switch ((folders: folders, tables: tables, views: views, files: files)) {
         (
           folders: final folderItems?,
           tables: final tableItems?,
           views: final viewItems?,
+          files: final fileItems?,
         ) =>
-          _Contents(owner, folderItems, tableItems, viewItems),
+          _Contents(owner, folderItems, tableItems, viewItems, fileItems),
         _ => const Center(child: CircularProgressIndicator()),
       };
 }
@@ -79,10 +97,11 @@ class const _Contents(
   final List<WorkspaceFolder> folders,
   final List<WorkspaceTable> tables,
   final List<WorkspaceView> views,
+  final List<WorkspaceFile> files,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (folders.isEmpty && tables.isEmpty && views.isEmpty) {
+    if (folders.isEmpty && tables.isEmpty && views.isEmpty && files.isEmpty) {
       return const TextLocale(LocaleKeys.workspace_items_empty);
     }
 
@@ -97,12 +116,14 @@ class const _Contents(
   List<WorkspaceFolder> _folders() =>
       folders.toList()..sort((a, b) => _compare(a.name, b.name));
   List<Object> _elements() =>
-      [...tables, ...views]
+      [...tables, ...views, ...files]
         ..sort((a, b) => _compare(_elementName(a), _elementName(b)));
 }
 
 String _elementName(Object element) => switch (element) {
-  WorkspaceTable(:final name) || WorkspaceView(:final name) => name,
+  WorkspaceTable(:final name) ||
+  WorkspaceView(:final name) ||
+  WorkspaceFile(:final name) => name,
   _ => '',
 };
 
@@ -112,8 +133,21 @@ class const _ElementRow(final WorkspaceItemLists owner, final Object element)
   Widget build(BuildContext context) => switch (element) {
     final WorkspaceTable table => _TableRow(owner, table),
     final WorkspaceView view => _ViewRow(owner, view),
+    final WorkspaceFile file => _FileRow(owner, file),
     _ => const SizedBox.shrink(),
   };
+}
+
+class const _FileRow(final WorkspaceItemLists owner, final WorkspaceFile file)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ItemRow(
+    owner,
+    item: .file(file),
+    icon: Icons.insert_drive_file_outlined,
+    onOpen: () => owner.onOpenFile(file.id),
+    onEdit: () => owner.onEdit(file),
+  );
 }
 
 class const _ViewRow(final WorkspaceItemLists owner, final WorkspaceView view)
@@ -264,6 +298,7 @@ WorkspaceTrashTarget _trashTarget(WorkspaceDirectoryMoveItem item) => .new(
     .folder => .folder,
     .table => .table,
     .view => .view,
+    .file => .file,
   },
   id: item.key.id,
   revision: item.revision,

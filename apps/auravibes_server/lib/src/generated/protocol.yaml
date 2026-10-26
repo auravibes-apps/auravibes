@@ -75,6 +75,7 @@ object:
   - beginUpload:
   - completeUpload:
   - getDownload:
+  - describe:
   - delete:
 skillResource:
   - list:
@@ -117,6 +118,7 @@ workspaceTrash:
   - list:
   - restore:
 workspaceView:
+  - readConnected:
   - duplicate:
   - list:
   - read:

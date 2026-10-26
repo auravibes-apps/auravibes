@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../objects/object_asset_release.dart';
 import 'workspace_history_blockers.dart';
 import 'workspace_history_purge_writer.dart';
 import 'workspace_history_receipts.dart';
@@ -34,6 +35,15 @@ class const _PurgeOperation(final WorkspaceTrashContext context) {
   Future<void> run(String targetJson) async {
     final selection = await _selection(targetJson);
     await context.requireBatch(selection.batch, selection.rows);
+    final store = context.store;
+    await ObjectAssetRelease(
+      store.session,
+      store.workspaceId,
+      store.transaction,
+    ).mutate(() => _commit(selection));
+  }
+
+  Future<void> _commit(_PurgeSelection selection) async {
     await _prune();
     await _validate(selection);
     await _erase(selection);

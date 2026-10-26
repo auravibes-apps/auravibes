@@ -2,19 +2,24 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_access_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/directory_navigation_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_file_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/move_workspace_directory_items_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_directory_move_button.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_file_creation.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_file_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_folder_metadata_editor.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_creation.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
@@ -111,7 +116,8 @@ class const _Navigation(
     ref
       ..invalidate(workspaceFoldersProvider(workspaceId, parent))
       ..invalidate(workspaceTablesProvider(workspaceId, parent))
-      ..invalidate(workspaceViewsProvider(workspaceId, parent));
+      ..invalidate(workspaceViewsProvider(workspaceId, parent))
+      ..invalidate(workspaceFilesProvider(workspaceId, parent));
   }
 }
 
@@ -119,13 +125,62 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       switch (navigation.state.selected) {
-        final WorkspaceFolder folder => _FolderEditor(navigation, folder),
-        final WorkspaceTable table => _TableEditor(navigation, table),
-        final WorkspaceView view => _ViewEditor(navigation, view),
+        WorkspaceFolder() ||
+        WorkspaceTable() ||
+        WorkspaceView() ||
+        WorkspaceFile() => _EditorSelection(navigation),
         final String id => _OpenedTable(navigation, id),
         DirectoryViewLocation(:final id) => _OpenedView(navigation, id),
+        DirectoryFileLocation(:final id) => _OpenedFile(navigation, id),
         _ => _Browser(navigation),
       };
+}
+
+class const _EditorSelection(final _Navigation navigation)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (navigation.state.selected) {
+    final WorkspaceFolder folder => _FolderEditor(navigation, folder),
+    final WorkspaceTable table => _TableEditor(navigation, table),
+    final WorkspaceView view => _ViewEditor(navigation, view),
+    final WorkspaceFile file => _FileEditor(navigation, file),
+    _ => _Browser(navigation),
+  };
+}
+
+class const _FileEditor(final _Navigation navigation, final WorkspaceFile file)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AppScreen(
+    child: WorkspaceFileMetadataEditor(
+      workspaceId: navigation.workspaceId,
+      file: file,
+      parentName: navigation._parentName,
+      onBack: () => _back(ref),
+    ),
+  );
+
+  void _back(WidgetRef ref) {
+    navigation.actions.open(null);
+    navigation._refresh(ref);
+  }
+}
+
+class const _OpenedFile(final _Navigation navigation, final String id)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AppScreen(
+    child: WorkspaceFileScreen(
+      workspaceId: navigation.workspaceId,
+      fileId: id,
+      onBack: () => _back(ref),
+    ),
+  );
+
+  void _back(WidgetRef ref) {
+    navigation.actions.open(null);
+    navigation._refresh(ref);
+  }
 }
 
 class const _OpenedTable(final _Navigation navigation, final String id)
@@ -293,17 +348,22 @@ class const _SelectionActions(final _Navigation navigation)
     ref
       ..invalidate(workspaceFoldersProvider(workspace, parent))
       ..invalidate(workspaceTablesProvider(workspace, parent))
-      ..invalidate(workspaceViewsProvider(workspace, parent));
+      ..invalidate(workspaceViewsProvider(workspace, parent))
+      ..invalidate(workspaceFilesProvider(workspace, parent));
   }
 
   void _refreshItem(WidgetRef ref, WorkspaceDirectoryMoveItem item) {
     final workspace = navigation.workspaceId;
     final id = item.key.id;
-    if (item.key.kind == .table) {
-      ref.invalidate(workspaceTableProvider(workspace, id));
-    }
-    if (item.key.kind == .view) {
-      ref.invalidate(workspaceViewDataProvider(workspace, id));
+    switch (item.key.kind) {
+      case .file:
+        ref.invalidate(workspaceFileProvider(workspace, id));
+      case .table:
+        ref.invalidate(workspaceTableProvider(workspace, id));
+      case .view:
+        ref.invalidate(workspaceViewDataProvider(workspace, id));
+      case .folder:
+        return;
     }
   }
 }
@@ -352,7 +412,10 @@ class const _DirectoryReady(
     final views = ref.watch(
       workspaceViewsProvider(navigation.workspaceId, navigation._parentId),
     );
-    if (loading || views.isLoading) {
+    final files = ref.watch(
+      workspaceFilesProvider(navigation.workspaceId, navigation._parentId),
+    );
+    if (loading || views.isLoading || files.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -492,6 +555,7 @@ class const _CreationChoices(
   );
 
   List<AuraPopupMenuItem> _items(BuildContext context) => [
+    _fileItem(context),
     AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.workspace_items_folder),
       onTap: () => _show(context, false),
@@ -501,12 +565,18 @@ class const _CreationChoices(
         title: const TextLocale(LocaleKeys.workspace_items_table),
         onTap: () => _show(context, true),
       ),
-    if (access.isOwner)
-      AuraPopupMenuItem(
-        title: const TextLocale(LocaleKeys.workspace_views_title),
-        onTap: () => _present(context, _ViewCreation(navigation)),
-      ),
+    if (access.isOwner) _viewItem(context),
   ];
+
+  AuraPopupMenuItem _fileItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_assets_file),
+    onTap: () => _present(context, _FileCreation(navigation)),
+  );
+
+  AuraPopupMenuItem _viewItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_views_title),
+    onTap: () => _present(context, _ViewCreation(navigation)),
+  );
 
   void _show(BuildContext context, bool table) =>
       _present(context, _Creation(navigation, table: table));
@@ -570,6 +640,19 @@ class const _Creation(final _Navigation navigation, {required final bool table})
   }
 }
 
+class const _FileCreation(final _Navigation navigation)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceFileCreation(
+    workspaceId: navigation.workspaceId,
+    parentId: navigation._parentId,
+    onOpenFile: (id) {
+      Navigator.of(context).pop();
+      navigation.actions.open(DirectoryFileLocation(id));
+    },
+  );
+}
+
 class const _ViewCreation(final _Navigation navigation)
     extends StatelessWidget {
   @override
@@ -591,10 +674,12 @@ class const _Items(final _Navigation navigation) extends StatelessWidget {
     onOpenFolder: navigation._folder,
     onOpenTable: navigation.actions.open,
     onOpenView: _view,
+    onOpenFile: _file,
     onEdit: navigation.actions.open,
     selection: navigation.selection.value?.keys.toSet(),
     onSelect: _select,
   );
+  void _file(String id) => navigation.actions.open(DirectoryFileLocation(id));
   void _view(String id) => navigation.actions.open(DirectoryViewLocation(id));
   void _select(WorkspaceDirectoryMoveItem item) {
     final selected = {...?navigation.selection.value};

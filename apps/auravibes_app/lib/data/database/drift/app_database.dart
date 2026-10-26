@@ -44,6 +44,7 @@ import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
@@ -119,6 +120,9 @@ part 'app_database.g.dart';
     WorkspaceRevisions,
     WorkspaceHistoryPolicies,
     WorkspaceRecordBatchReceipts,
+    WorkspaceAssets,
+    WorkspaceFiles,
+    WorkspaceAssetDeletions,
     WorkspaceCommandReceipts,
     WorkspaceContextSelections,
   ],
@@ -213,7 +217,10 @@ class AppDatabase extends _$AppDatabase {
       _workspaceTrashSchemaVersion + 1;
   static const int _workspaceHistorySchemaVersion =
       _workspaceRecordBatchSchemaVersion + 1;
-  static const int _workspaceCommandSchemaVersion = 42;
+  static const int _workspaceAssetsSchemaVersion =
+      _workspaceHistorySchemaVersion + 1;
+  static const int _workspaceCommandSchemaVersion =
+      _workspaceAssetsSchemaVersion + 1;
   static const int _currentSchemaVersion = _workspaceCommandSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -272,6 +279,7 @@ extension on AppDatabase {
     await _upgradeWorkspaceViewsSchema(m, from);
     await _upgradeWorkspaceTrashSchema(m, from);
     await _upgradeWorkspaceRevisionSchema(m, from);
+    await _upgradeWorkspaceAssetsSchema(m, from);
     await _upgradeWorkspaceCommandsSchema(m, from);
     await _upgradeConnectorWritesSchema(m, from);
   }
@@ -290,6 +298,22 @@ extension on AppDatabase {
     if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
       await m.createTable(workspaceRecordBatchReceipts);
     }
+  }
+
+  Future<void> _upgradeWorkspaceAssetsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceAssetsSchemaVersion) return;
+    await m.createTable(workspaceAssets);
+    await m.createTable(workspaceFiles);
+    await m.createTable(workspaceAssetDeletions);
+    await _upgradeMessageAssetReferences(m);
+  }
+
+  Future<void> _upgradeMessageAssetReferences(Migrator m) async {
+    if (!await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'asset_id')) {
+      return;
+    }
+    await m.addColumn(messageAttachments, messageAttachments.assetId);
   }
 
   Future<void> _upgradeWorkspaceCommandsSchema(Migrator m, int from) async {

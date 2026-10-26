@@ -21,6 +21,7 @@ import 'package:auravibes_app/features/workspaces/providers/last_workspace_selec
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/workspace_configuration_file_service.dart';
+import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_configuration_archive_usecase.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -379,6 +380,7 @@ void main() {
       WorkspaceConfigurationArchiveUsecase? archiveUsecase,
     }) {
       final useRepo = repo ?? repository;
+      final restoredWorkspaceIds = <String>[];
 
       return EasyLocalization(
         child: Builder(
@@ -410,6 +412,16 @@ void main() {
               cloudAccountsProvider.overrideWith((ref) async => accounts),
               routerProvider.overrideWithValue(navigationRouter ?? router),
               workspaceRepositoryProvider.overrideWithValue(useRepo),
+              deleteWorkspaceUseCaseProvider.overrideWithValue(
+                .new(
+                  repository: useRepo,
+                  prepareBackgroundWorkDeletion: (_) => Future<void>.value(),
+                  restoreBackgroundWorkAfterFailedDeletion:
+                      restoredWorkspaceIds.add,
+                  clearWorkspaceDrafts: (_) => Future<void>.value(),
+                  cleanupDeletedAssets: Future<void>.value,
+                ),
+              ),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
             ];
             if (archiveUsecase != null) {

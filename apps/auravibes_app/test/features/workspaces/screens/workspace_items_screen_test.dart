@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_table_repository
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
@@ -40,6 +41,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
           ],
@@ -77,6 +79,7 @@ void main() {
           ),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -111,6 +114,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith(
               (ref, arguments) async => [
@@ -146,6 +150,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceAccessProvider('one')
                 .overrideWith((ref) async => (role: 'member')),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
@@ -170,6 +175,7 @@ void main() {
             child: const WorkspaceItemsScreen(workspaceId: 'one'),
             overrides: [
               workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+              workspaceFilesProvider.overrideWith((ref, arguments) async => []),
               workspaceTablesProvider.overrideWith(
                 (ref, arguments) async => [],
               ),
@@ -210,6 +216,7 @@ void main() {
           ),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
           ],
           workspaceId: 'one',
@@ -276,6 +283,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             appDatabaseProvider.overrideWithValue(database),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => tables),
@@ -334,6 +342,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceTablesProvider.overrideWith(
               (ref, arguments) async => [
                 const WorkspaceTable(
@@ -393,6 +402,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -444,6 +454,7 @@ void main() {
           child: const WorkspaceItemsScreen(workspaceId: 'one'),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),

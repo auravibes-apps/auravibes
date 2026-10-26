@@ -1,6 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_release.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:drift/drift.dart';
 
 class const LocalWorkspaceHistoryRetention(
   final AppDatabase database,
@@ -27,7 +29,28 @@ class const LocalWorkspaceHistoryRetention(
         await prune();
       });
 
-  Future<void> prune() => database.customStatement(
+  Future<void> prune() async {
+    final days = (await _row())?.days;
+    if (days == null || !await _expired(days)) return;
+    await LocalWorkspaceAssetRelease(database, workspaceId).mutate(_prune);
+  }
+
+  Future<bool> _expired(int days) async {
+    final rows = await database
+        .customSelect(
+          '''
+SELECT 1 FROM workspace_revisions WHERE workspace_id = ? AND revision > 0
+AND (CAST(strftime('%s', 'now') AS INTEGER) - captured_at) / 86400 >= ?
+LIMIT 1
+''',
+          variables: [Variable(workspaceId), Variable(days)],
+        )
+        .get();
+
+    return rows.isNotEmpty;
+  }
+
+  Future<void> _prune() => database.customStatement(
     '''
 DELETE FROM workspace_revisions WHERE workspace_id = ? AND revision > 0
 AND (CAST(strftime('%s', 'now') AS INTEGER) - captured_at) / 86400 >=

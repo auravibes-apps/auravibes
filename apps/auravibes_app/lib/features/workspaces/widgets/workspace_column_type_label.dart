@@ -23,6 +23,7 @@ class const WorkspaceColumnTypeLabel({
     .dateOnly => LocaleKeys.workspace_items_type_date_only,
     .timestamp => LocaleKeys.workspace_items_type_timestamp,
     .money => LocaleKeys.workspace_items_type_money,
+    .attachment => LocaleKeys.workspace_assets_attachments,
     _ => LocaleKeys.workspace_items_type_text,
   };
 

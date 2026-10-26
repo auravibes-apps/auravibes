@@ -6,16 +6,22 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 abstract final class WorkspaceViewSurfaceData {
-  static Map<String, Object?> envelope(WorkspaceViewData data) => {
+  static Map<String, Object?> envelope(
+    WorkspaceViewData data, [
+    Map<String, Object?>? connectedModel,
+  ]) => {
     'protocolVersion': 'v1',
     'interactionMode': 'passive',
-    'initialSurface': _surface(data),
+    'initialSurface': _surface(data, connectedModel),
   };
-  static Map<String, Object?> _surface(WorkspaceViewData data) => {
+  static Map<String, Object?> _surface(
+    WorkspaceViewData data,
+    Map<String, Object?>? connectedModel,
+  ) => {
     'surfaceId': 'view',
     'catalogId': a2uiChatCatalogId,
     'components': data.view.definition.components,
-    'dataModel': _model(data),
+    'dataModel': connectedModel ?? _model(data),
   };
   static Map<String, Object?> _model(WorkspaceViewData data) => {
     'columns': _columns(data),
@@ -99,6 +105,9 @@ Object? _formatted(WorkspaceViewData data, WorkspaceRecord record, String id) {
 }
 
 Object? _columnValue(WorkspaceColumn? column, Object? value) {
+  if (column?.type == .attachment) {
+    return LocaleKeys.workspace_assets_attachments.tr();
+  }
   if (column?.type == .timestamp && value is String) {
     return WorkspaceTimeZones.display(value, column?.timeZone ?? 'UTC');
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../generated/protocol.dart';
+import '../objects/object_attachment_projection.dart';
 import 'repositories/workspace_state_repository.dart';
 import 'workspace_history_context.dart';
 import 'workspace_history_retention.dart';
@@ -50,6 +51,7 @@ class const _HistoryProjection(
     final data = _decode(snapshot.data);
     final values = data['values'] as Map<String, dynamic>;
     await _hideReferences(values, data);
+    await _hideAttachments(values, data);
 
     return {'tableId': data['tableId'], 'values': values};
   }
@@ -88,6 +90,29 @@ class const _HistoryProjection(
     return await WorkspaceTableAccess(transaction: context.transaction)
         .canReadTable(context.session, member, table, includeDeleted: true);
   }
+
+  Future<void> _hideAttachments(
+    Map<String, dynamic> values,
+    Map<String, dynamic> data,
+  ) async {
+    final columns = data['historyAttachmentColumns'];
+    if (columns is! List) return;
+    final projection = ObjectAttachmentProjection(
+      context.session,
+      member,
+      context.transaction,
+    );
+    final hidden = await projection.restricted(
+      _attachmentColumns(columns),
+      values,
+    );
+    for (final column in hidden) {
+      values.remove(column);
+    }
+  }
+
+  Iterable<Map<String, dynamic>> _attachmentColumns(List<dynamic> columns) =>
+      columns.whereType<String>().map((id) => {'id': id, 'type': 'attachment'});
 
   Future<WorkspaceResource?> _targetTable(String id) =>
       WorkspaceStateRepository().findResource(

@@ -20,6 +20,7 @@ abstract final class WorkspaceTableValidation {
     'timestamp',
     'money',
     'reference',
+    'attachment',
   };
 
   static void schema(Map<String, Object?> data) =>
@@ -205,5 +206,19 @@ bool _exact(Map<String, Object?> column, Object? value) =>
       'timestamp' => WorkspaceExactValueValidation.timestamp(value),
       'money' => WorkspaceExactValueValidation.money(value),
       'reference' => WorkspaceReferenceValue.valid(column, value),
+      'attachment' => _AttachmentValueValidation.valid(value),
       _ => false,
     };
+
+abstract final class _AttachmentValueValidation {
+  static const _maximumAttachments = 100;
+  static final _id = RegExp(r'^[0-9]{1,20}$');
+
+  static bool valid(Object? value) =>
+      value is List &&
+      value.length <= _maximumAttachments &&
+      value.toSet().length == value.length &&
+      value.every(_validId);
+
+  static bool _validId(Object? id) => id is String && _id.hasMatch(id);
+}
