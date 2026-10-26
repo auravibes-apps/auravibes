@@ -260,6 +260,16 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 			http.Error(w, "busy", 503)
 			return
 		}
+		readID := make([]byte, 24)
+		if _, err = rand.Read(readID); err != nil {
+			http.Error(w, "unavailable", 503)
+			return
+		}
+		reservation := hex.EncodeToString(readID)
+		if err = g.ledger.start(r.Context(), key, c.RegistrationID, reservation); err != nil {
+			fail(w, err)
+			return
+		}
 		obj, err := g.bucket.get(r.Context(), key)
 		if err != nil {
 			fail(w, err)
@@ -269,7 +279,15 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 		w.Header().Set("Content-Type", obj.contentType)
 		w.Header().Set("Content-Length", strconv.FormatInt(obj.size, 10))
 		w.Header().Set("Content-Disposition", c.Disposition)
-		_, _ = io.Copy(w, obj.body)
+		written, err := io.Copy(w, obj.body)
+		if err != nil || written != obj.size {
+			return
+		}
+		if err = http.NewResponseController(w).Flush(); err != nil {
+			return
+		}
+		// A failed finish leaves a durable pending reservation, blocking proof.
+		_ = g.ledger.finish(r.Context(), key, reservation)
 		return
 	}
 	select {

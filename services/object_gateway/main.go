@@ -36,11 +36,11 @@ func run(ctx context.Context) error {
 		return errors.New("invalid download capacity")
 	}
 	requestTimeoutSeconds, err := strconv.Atoi(os.Getenv("GATEWAY_REQUEST_TIMEOUT_SECONDS"))
-	if err != nil || requestTimeoutSeconds < 1 || int64(requestTimeoutSeconds) > int64((1<<63-1)/int64(time.Second)) {
+	if err != nil || requestTimeoutSeconds < 1 || requestTimeoutSeconds > 3600 {
 		return errors.New("invalid request timeout")
 	}
 	readTimeoutSeconds, err := strconv.Atoi(os.Getenv("GATEWAY_READ_TIMEOUT_SECONDS"))
-	if err != nil || readTimeoutSeconds < 1 || int64(readTimeoutSeconds) > int64((1<<63-1)/int64(time.Second)) {
+	if err != nil || readTimeoutSeconds < 1 || readTimeoutSeconds > 3600 {
 		return errors.New("invalid request read timeout")
 	}
 	db, bucketName, region := os.Getenv("GATEWAY_DATABASE_URL"), os.Getenv("S3_BUCKET"), os.Getenv("AWS_REGION")

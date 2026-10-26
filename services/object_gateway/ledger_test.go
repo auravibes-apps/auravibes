@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -62,4 +63,31 @@ func TestPostgresFencePersistsUnknownWrites(t *testing.T) {
 	if ok, err := restarted.close(ctx, key, id); err != nil || !ok {
 		t.Fatal("completed upload not drained")
 	}
+	// Separate pool transactions race admission against closure. Exactly one
+	// ordering must win: an admitted operation blocks proof, or closure rejects it.
+	for i := 0; i < 40; i++ {
+		raceKey := fmt.Sprintf("race-%d", i)
+		if err = l.register(ctx, raceKey, id); err != nil {
+			t.Fatal(err)
+		}
+		startGate := make(chan struct{})
+		admission := make(chan error, 1)
+		closed := make(chan bool, 1)
+		closeErr := make(chan error, 1)
+		go func() { <-startGate; admission <- l.start(ctx, raceKey, id, raceKey) }()
+		go func() { <-startGate; ok, e := l.close(ctx, raceKey, id); closed <- ok; closeErr <- e }()
+		close(startGate)
+		startErr := <-admission
+		ready := <-closed
+		if e := <-closeErr; e != nil {
+			t.Fatal(e)
+		}
+		if startErr == nil && ready {
+			t.Fatal("admitted operation was not drained")
+		}
+		if startErr != nil && (!errors.Is(startErr, errClosed) || !ready) {
+			t.Fatalf("unexpected linearization: %v %v", startErr, ready)
+		}
+	}
+
 }
