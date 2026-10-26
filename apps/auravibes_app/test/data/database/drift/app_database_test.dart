@@ -43,14 +43,40 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 42);
+      expect(fixture.database.schemaVersion, 43);
     });
 
-    test('schema41 assets survive protected-context42 migration', () async {
+    test('schema41 assets survive context and reporting migrations', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 41
         ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
         ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+        ..execute('''
+          CREATE TABLE workspace_revisions (
+            workspace_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            resource_id TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            captured_at INTEGER NOT NULL,
+            PRIMARY KEY (workspace_id, kind, resource_id, revision)
+          )
+        ''')
+        ..execute('INSERT INTO workspace_revisions VALUES (?,?,?,?,?,?)', [
+          'existing',
+          'table',
+          'older',
+          1,
+          '{"name":"Kept"}',
+          1,
+        ])
+        ..execute('''
+          CREATE TABLE workspace_history_policies (
+            workspace_id TEXT NOT NULL PRIMARY KEY,
+            days INTEGER,
+            revision INTEGER NOT NULL DEFAULT 1
+          )
+        ''')
         ..execute(
           'CREATE TABLE conversations '
           '(id TEXT PRIMARY KEY, workspace_id TEXT)',
@@ -97,7 +123,27 @@ void main() {
           .getSingle();
       expect(retained.read<String>('name'), 'Retained');
       expect(retained.read<String>('asset_id'), 'asset');
-      expect(sqliteDb.userVersion, 42);
+      expect(sqliteDb.userVersion, 43);
+      final revision = await database
+          .customSelect(
+            '''
+        SELECT data, actor_user_id, ai_involved, operation, conversation_id
+        FROM workspace_revisions
+        WHERE workspace_id = ? AND kind = ? AND resource_id = ? AND revision = ?
+      ''',
+            variables: [
+              const Variable<String>('existing'),
+              const Variable<String>('table'),
+              const Variable<String>('older'),
+              const Variable<int>(1),
+            ],
+          )
+          .getSingle();
+      expect(revision.read<String>('data'), '{"name":"Kept"}');
+      expect(revision.read<String?>('actor_user_id'), isNull);
+      expect(revision.read<bool?>('ai_involved'), isNull);
+      expect(revision.read<String?>('operation'), isNull);
+      expect(revision.read<String?>('conversation_id'), isNull);
       expect(
         (await database.select(database.workspaceAssetDeletions).get())
             .single

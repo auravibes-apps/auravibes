@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:drift/drift.dart';
 
 abstract final class WorkspaceRevisionCapture {
   /// Capture authoritative stored revisions in the writer's transaction.
@@ -74,6 +75,17 @@ END
   static Future<void> _installWorkspaceDeleteCleanup(
     AppDatabase database,
   ) async {
+    final workspaces = await database
+        .customSelect(
+          'SELECT 1 FROM sqlite_master WHERE type = ? AND name = ?',
+          variables: [
+            const Variable<String>('table'),
+            const Variable<String>('workspaces'),
+          ],
+        )
+        .get();
+    if (workspaces.isEmpty) return;
+
     await database.customStatement(
       'DROP TRIGGER IF EXISTS workspace_content_reports_workspace_delete',
     );

@@ -329,10 +329,12 @@ extension on AppDatabase {
 
   Future<void> _upgradeWorkspaceReportingSchema(Migrator m, int from) async {
     if (from >= AppDatabase._workspaceReportingSchemaVersion) return;
-    await m.addColumn(workspaceRevisions, workspaceRevisions.actorUserId);
-    await m.addColumn(workspaceRevisions, workspaceRevisions.aiInvolved);
-    await m.addColumn(workspaceRevisions, workspaceRevisions.operation);
-    await m.addColumn(workspaceRevisions, workspaceRevisions.conversationId);
+    if (from >= AppDatabase._workspaceHistorySchemaVersion) {
+      await m.addColumn(workspaceRevisions, workspaceRevisions.actorUserId);
+      await m.addColumn(workspaceRevisions, workspaceRevisions.aiInvolved);
+      await m.addColumn(workspaceRevisions, workspaceRevisions.operation);
+      await m.addColumn(workspaceRevisions, workspaceRevisions.conversationId);
+    }
     await m.createTable(workspaceContentReports);
   }
 
