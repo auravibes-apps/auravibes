@@ -2710,6 +2710,15 @@ class const ServerToolExecutorService({
       );
       await _requireWorkspaceConnectorCurrent(session, fence, transaction);
       response = start();
+      // The request can fail before the transaction is released. Attach the
+      // eventual caller's error observer now to avoid a transient unhandled
+      // asynchronous error while preserving the original Future for the caller.
+      unawaited(
+        response.then<void>(
+          (_) {},
+          onError: (Object _, StackTrace _) {},
+        ),
+      );
     });
     return response;
   }
