@@ -5,6 +5,7 @@ import 'package:auravibes_server/src/features/accounts/authenticated_account_res
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_connected_validation.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_view_store.dart';
+import 'package:auravibes_server/src/features/workspace_views/workspace_view_validation.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -22,6 +23,104 @@ class WorkspaceViewEndpoint extends Endpoint {
       return await _readConnected(session, workspaceId, id);
     } on AgentToolExecutionFailure catch (failure) {
       throw WorkspaceConnectedReadException(code: _failureCode(failure));
+    }
+  }
+
+  Future<String> submitAction(
+    Session session,
+    int workspaceId,
+    String id,
+    int expectedRevision,
+    String formValuesJson,
+    String operationId,
+  ) async {
+    WorkspaceViewValidation.requestId(operationId);
+    final account = await const AuthenticatedAccountResolver()(session);
+    final view = await read(session, workspaceId, id);
+    if (view.revision != expectedRevision) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.staleRevision,
+      );
+    }
+    if (utf8.encode(formValuesJson).length > 131072) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+    final data = jsonDecode(view.data) as Map<String, Object?>;
+    final _ = WorkspaceViewValidation.parse(view.data, id);
+    if (data['action'] is! Map || data['definition'] is! Map) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+    final action = WorkspaceViewValidation.action(data['action']);
+    if (action.type != A2uiSavedActionType.connectorWrite) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+    final decodedValues = _decodeFormValues(formValuesJson);
+    if (decodedValues == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
+    final definition = Map<String, Object?>.from(data['definition'] as Map);
+    final components = (definition['components'] as List)
+        .cast<Map<String, Object?>>();
+    final formValues = normalizeA2uiFormValues(
+      components: components,
+      values: decodedValues,
+    );
+    final validation = validateA2uiFormValues(
+      components: components,
+      values: formValues,
+    );
+    if (!validation.isValid) {
+      return jsonEncode({
+        'status': 'validationFailed',
+        'errorsByPath': validation.errorsByPath,
+      });
+    }
+    Map<String, Object?> arguments;
+    try {
+      arguments = a2uiSavedActionInputs(action, formValues);
+    } on FormatException {
+      return jsonEncode({
+        'status': 'validationFailed',
+        'errorsByPath': {
+          for (final path in action.inputs.values) path: 'required',
+        },
+      });
+    }
+    try {
+      final result = await _connectorExecutor.executeWorkspaceViewConnector(
+        session,
+        workspaceId: workspaceId,
+        userId: account.userId,
+        toolId: action.toolId!,
+        revision: action.revision!,
+        arguments: arguments,
+        connectionId: action.connectionId,
+        operationId: operationId,
+      );
+      var viewChangedDuringExecution = true;
+      try {
+        final current = await read(session, workspaceId, id);
+        viewChangedDuringExecution = current.revision != expectedRevision;
+      } on Object {
+        // The external write already completed. Preserve its known outcome
+        // instead of turning a failed follow-up read into a retryable error.
+      }
+
+      return jsonEncode({
+        'status': 'completed',
+        'result': result,
+        'viewChangedDuringExecution': viewChangedDuringExecution,
+      });
+    } on AgentToolExecutionFailure catch (failure) {
+      return jsonEncode(_actionFailure(failure));
     }
   }
 
@@ -97,6 +196,48 @@ class WorkspaceViewEndpoint extends Endpoint {
     Session session,
     WorkspaceViewSaveRequest request,
   ) => _access(session, request.workspaceId, (store) => store.save(request));
+}
+
+Map<String, Object?> _actionFailure(AgentToolExecutionFailure failure) {
+  final decoded = _decodeFailure(failure.responseRaw);
+  final error = decoded['error'];
+  final code = error is Map ? error['code'] : null;
+  final partial = decoded['statusCode'] == 207;
+  final status = code == 'tool_access_denied'
+      ? 'denied'
+      : partial
+      ? 'partial'
+      : failure.resultStatus == AgentToolResultStatus.uncertain
+      ? 'uncertain'
+      : 'failed';
+
+  return {
+    'status': status,
+    if (partial) 'retryBlocked': true,
+    if (code is String) 'code': code,
+    if (decoded['outcome'] is String) 'outcome': decoded['outcome'],
+  };
+}
+
+Map<String, Object?>? _decodeFormValues(String source) {
+  try {
+    final decoded = jsonDecode(source);
+    if (decoded is! Map || decoded.keys.any((key) => key is! String)) {
+      return null;
+    }
+
+    return Map<String, Object?>.from(decoded);
+  } on FormatException {
+    return null;
+  }
+}
+
+Map<String, Object?> _decodeFailure(String source) {
+  try {
+    return Map<String, Object?>.from(jsonDecode(source) as Map);
+  } on Object {
+    return const {};
+  }
 }
 
 typedef _ConnectedRead = ({

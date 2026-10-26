@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 class const WorkspaceViewDetail({
   required final WorkspaceViewData data,
   required final ValueNotifier<String?> selected,
+  required final String workspaceId,
   super.key,
 }) extends StatelessWidget {
   WorkspaceRecord? get _record =>
@@ -21,7 +22,7 @@ class const WorkspaceViewDetail({
       return const TextLocale(LocaleKeys.workspace_views_empty);
     }
 
-    return _DetailContent(data, record, selected);
+    return _DetailContent(data, record, selected, workspaceId);
   }
 }
 
@@ -29,13 +30,18 @@ class const _DetailContent(
   final WorkspaceViewData data,
   final WorkspaceRecord record,
   final ValueNotifier<String?> selected,
+  final String workspaceId,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
       _RecordSelector(data, record, selected),
-      WorkspaceViewSurface(data: _detailData(data, record)),
+      WorkspaceViewSurface(
+        data: _detailData(data, record),
+        workspaceId: workspaceId,
+        recordId: record.id,
+      ),
     ],
   );
 }

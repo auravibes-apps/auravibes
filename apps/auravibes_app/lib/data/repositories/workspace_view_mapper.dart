@@ -13,6 +13,7 @@ abstract final class WorkspaceViewMapper {
     'columnTypes': view.columnTypes,
     'definition': view.definition.toJson(),
     'revision': view.revision,
+    if (view.action case final action?) 'action': action.toJson(),
     'query': view.query.toJson(),
     'summaryColumnIds': view.summaryColumnIds,
     if (view.connected case final connected?) 'connected': connected.toJson(),
@@ -32,6 +33,7 @@ typedef _ViewContent = ({
   Map<String, String> bindings,
   Map<String, String> columnTypes,
   A2uiSavedDefinition definition,
+  A2uiSavedAction? action,
   WorkspaceRecordQuery query,
   List<String> summaryColumnIds,
   WorkspaceConnectedBinding? connected,
@@ -49,6 +51,7 @@ _ViewContent _content(Map<String, dynamic> data) => (
   bindings: _strings(data, 'bindings'),
   columnTypes: _strings(data, 'columnTypes'),
   definition: _definition(data),
+  action: _action(data['action']),
   summaryColumnIds: (data['summaryColumnIds'] as List? ?? const [])
       .cast<String>(),
   query: _query(data['query']),
@@ -66,7 +69,11 @@ Map<String, String> _strings(Map<String, dynamic> data, String key) =>
 A2uiSavedDefinition _definition(Map<String, dynamic> data) =>
     A2uiSavedDefinition.fromJson(
       Map<String, Object?>.from(data['definition'] as Map),
+      requiresUserAction: data['action'] != null,
     );
+A2uiSavedAction? _action(Object? value) => value == null
+    ? null
+    : A2uiSavedAction.fromJson(Map<String, Object?>.from(value as Map));
 WorkspaceView _view(_ViewIdentity identity, _ViewContent content) => .new(
   id: identity.id,
   name: identity.name,
@@ -74,6 +81,7 @@ WorkspaceView _view(_ViewIdentity identity, _ViewContent content) => .new(
   bindings: content.bindings,
   columnTypes: content.columnTypes,
   definition: content.definition,
+  action: content.action,
   query: content.query,
   summaryColumnIds: content.summaryColumnIds,
   connected: content.connected,

@@ -1426,6 +1426,24 @@ class EndpointWorkspaceView extends _isc.EndpointRef {
     },
   );
 
+  _ida.Future<String> submitAction(
+    int workspaceId,
+    String id,
+    int expectedRevision,
+    String formValuesJson,
+    String operationId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceView',
+    'submitAction',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+      'expectedRevision': expectedRevision,
+      'formValuesJson': formValuesJson,
+      'operationId': operationId,
+    },
+  );
+
   _ida.Future<_i3ruzhns.WorkspaceView> duplicate(
     _itjnussb.DuplicateWorkspaceItemRequest request,
   ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(

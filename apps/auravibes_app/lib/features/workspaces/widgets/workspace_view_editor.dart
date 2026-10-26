@@ -32,8 +32,9 @@ class const _EditState(
   final ValueNotifier<Set<String>> selected,
   final WorkspaceTableAction action,
   final ValueNotifier<WorkspaceRecordQuery> query,
-  final ValueNotifier<Set<String>> summary,
-) {
+  final ValueNotifier<Set<String>> summary, {
+  required final bool requiresUserAction,
+}) {
   factory use(BuildContext context, WorkspaceViewData data) => _EditState(
     useTextEditingController(text: data.view.name),
     useTextEditingController(
@@ -44,6 +45,7 @@ class const _EditState(
     WorkspaceTableActions.use(context),
     useState(data.view.query),
     useState(data.view.summaryColumnIds.toSet()),
+    requiresUserAction: data.view.action != null,
   );
 
   WorkspaceView edited(WorkspaceViewData data) => data.view
@@ -67,6 +69,7 @@ class const _EditState(
 
   A2uiSavedDefinition _definition() => A2uiSavedDefinition.fromJson(
     Map<String, Object?>.from(jsonDecode(layout.text) as Map),
+    requiresUserAction: requiresUserAction,
   );
   Map<String, String> _types(WorkspaceViewData data) => {
     for (final column in data.table.columns)

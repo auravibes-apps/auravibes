@@ -9,17 +9,26 @@ abstract final class WorkspaceViewSurfaceData {
   static Map<String, Object?> envelope(
     WorkspaceViewData data, [
     Map<String, Object?>? connectedModel,
-  ]) => {
-    'protocolVersion': 'v1',
-    'interactionMode': 'passive',
-    'initialSurface': _surface(data, connectedModel),
-  };
+  ]) {
+    final hasAction = data.view.action != null;
+    final mode = hasAction ? 'requiresUserAction' : 'passive';
+
+    return {
+      'protocolVersion': 'v1',
+      'interactionMode': mode,
+      'initialSurface': _surface(data, connectedModel, mode),
+    };
+  }
+
   static Map<String, Object?> _surface(
     WorkspaceViewData data,
     Map<String, Object?>? connectedModel,
+    String mode,
   ) => {
     'surfaceId': 'view',
-    'catalogId': a2uiChatCatalogId,
+    'catalogId': mode == 'requiresUserAction'
+        ? a2uiChatFormCatalogId
+        : a2uiChatCatalogId,
     'components': data.view.definition.components,
     'dataModel': connectedModel ?? _model(data),
   };
@@ -27,10 +36,48 @@ abstract final class WorkspaceViewSurfaceData {
     'columns': _columns(data),
     'rows': _rows(data),
     ..._fields(data),
+    ..._actionDefaults(data),
     'fieldLabels': _fieldLabels(data),
     'summary': data.summary,
     ..._chart(data),
   };
+
+  static Map<String, Object?> _actionDefaults(WorkspaceViewData data) {
+    final action = data.view.action;
+    final record = data.records.firstOrNull;
+    if (action == null ||
+        action.type != A2uiSavedActionType.updateSelectedRecord ||
+        record == null) {
+      return const {};
+    }
+    final values = <String, Object?>{};
+    for (final entry in action.inputs.entries) {
+      final value = record.values[entry.key];
+      if (value != null) _writePath(values, entry.value, value);
+    }
+
+    return values;
+  }
+
+  static void _writePath(
+    Map<String, Object?> values,
+    String path,
+    Object? value,
+  ) {
+    final segments = path
+        .split('/')
+        .skip(1)
+        .map((segment) => segment.replaceAll('~1', '/').replaceAll('~0', '~'))
+        .toList();
+    var current = values;
+    for (final segment in segments.take(segments.length - 1)) {
+      final child = current.putIfAbsent(segment, () => <String, Object?>{});
+      if (child is! Map<String, Object?>) return;
+      current = child;
+    }
+    current[segments.last] = value;
+  }
+
   static Map<String, String?> _fieldLabels(WorkspaceViewData data) => {
     for (final binding in data.view.bindings.entries)
       binding.key: data.table.columns

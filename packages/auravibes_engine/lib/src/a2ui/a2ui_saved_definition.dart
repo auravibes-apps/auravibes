@@ -6,10 +6,13 @@ import 'package:auravibes_engine/src/a2ui/a2ui_chat_contract.dart';
 class A2uiSavedDefinition {
   new _(this.components);
 
-  factory fromJson(Map<String, Object?> value) {
+  factory fromJson(
+    Map<String, Object?> value, {
+    bool requiresUserAction = false,
+  }) {
     _checkVersion(value);
     final components = _components(value['components']);
-    _checkCatalog(components);
+    _checkCatalog(components, requiresUserAction: requiresUserAction);
     _checkGraph(components);
 
     return A2uiSavedDefinition._(List.unmodifiable(components));
@@ -33,6 +36,7 @@ const _externalComponents = {
 const _forbiddenKeys = {
   'action',
   'actions',
+  'onSubmittedAction',
   'href',
   'url',
   'expression',
@@ -70,13 +74,17 @@ Map<String, Object?> _component(Object? value) {
   return _freezeMap(value);
 }
 
-void _checkCatalog(List<Map<String, Object?>> components) {
+void _checkCatalog(
+  List<Map<String, Object?>> components, {
+  required bool requiresUserAction,
+}) {
+  final interactionMode = requiresUserAction ? 'requiresUserAction' : 'passive';
   final issue = A2uiChatContract.validateInitialSurface({
     'surfaceId': 'view',
-    'catalogId': a2uiChatCatalogId,
+    'catalogId': requiresUserAction ? a2uiChatFormCatalogId : a2uiChatCatalogId,
     'components': components,
     'dataModel': <String, Object?>{},
-  }, interactionMode: 'passive');
+  }, interactionMode: interactionMode);
   if (issue != null) _invalid();
 }
 

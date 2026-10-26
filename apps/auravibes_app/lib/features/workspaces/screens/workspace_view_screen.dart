@@ -394,7 +394,7 @@ class const _Content(final WorkspaceViewData data, final String workspaceId)
       children: [
         Text(data.view.name),
         const TextLocale(LocaleKeys.workspace_views_display_only),
-        _DataSurface(data, selected),
+        _DataSurface(data, selected, workspaceId),
         WorkspaceViewSummary(data: data),
         WorkspaceViewAssets(workspaceId: workspaceId, data: data),
       ],
@@ -405,14 +405,20 @@ class const _Content(final WorkspaceViewData data, final String workspaceId)
 class const _DataSurface(
   final WorkspaceViewData data,
   final ValueNotifier<String?> selected,
+  final String workspaceId,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _isDetail(data) && !data.needsRepair
-      ? WorkspaceViewDetail(data: data, selected: selected)
-      : _Surface(data);
+      ? WorkspaceViewDetail(
+          data: data,
+          selected: selected,
+          workspaceId: workspaceId,
+        )
+      : _Surface(data, workspaceId);
 }
 
-class const _Surface(final WorkspaceViewData data) extends StatelessWidget {
+class const _Surface(final WorkspaceViewData data, final String workspaceId)
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.needsRepair) {
@@ -423,10 +429,10 @@ class const _Surface(final WorkspaceViewData data) extends StatelessWidget {
     }
 
     if (data.view.definition.components.any(_boundChart)) {
-      return WorkspaceViewChart(data: data);
+      return WorkspaceViewChart(data: data, workspaceId: workspaceId);
     }
 
-    return WorkspaceViewSurface(data: data);
+    return WorkspaceViewSurface(data: data, workspaceId: workspaceId);
   }
 }
 

@@ -28,7 +28,7 @@ class const WorkspaceConnectedData({
     if (state.isLoading) return _Waiting(stale: state.hasValue);
 
     return switch (state) {
-      AsyncData(:final value) => _Fetched(data, value),
+      AsyncData(:final value) => _Fetched(workspaceId, data, value),
       AsyncError(:final error) => TextLocale(_errorKey(error)),
       AsyncLoading() => const _Waiting(stale: false),
     };
@@ -53,6 +53,7 @@ class const _Waiting({required final bool stale}) extends StatelessWidget {
 }
 
 class const _Fetched(
+  final String workspaceId,
   final WorkspaceViewData? data,
   final WorkspaceConnectedResult result,
 ) extends StatelessWidget {
@@ -63,7 +64,7 @@ class const _Fetched(
       const TextLocale(LocaleKeys.workspace_connected_title),
       const TextLocale(LocaleKeys.workspace_connected_disclosure),
       _Freshness(result.fetchedAt),
-      _Projected(data, result.value),
+      _Projected(workspaceId, data, result.value),
     ],
   );
 }
@@ -118,22 +119,28 @@ String? _commandCode(AgentToolExecutionFailure error) {
   }
 }
 
-class const _Projected(final WorkspaceViewData? data, final Object? value)
-    extends StatelessWidget {
+class const _Projected(
+  final String workspaceId,
+  final WorkspaceViewData? data,
+  final Object? value,
+) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (_empty(value)) {
+    final source = data;
+    if (_empty(value) && source?.view.action == null) {
       return const TextLocale(LocaleKeys.workspace_connected_empty);
     }
-    final source = data;
     if (source == null || !source.view.isConnectedOnly) return _Result(value);
     try {
       return WorkspaceViewSurface(
         data: source,
-        connectedModel: ProjectConnectedWorkspaceViewUsecase.call(
-          value,
-          source.view.bindings,
-        ),
+        connectedModel: _empty(value)
+            ? const <String, Object?>{}
+            : ProjectConnectedWorkspaceViewUsecase.call(
+                value,
+                source.view.bindings,
+              ),
+        workspaceId: workspaceId,
       );
     } on Object {
       return const TextLocale(LocaleKeys.workspace_connected_repair);
