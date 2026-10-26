@@ -404,6 +404,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     Session session, {
     required int workspaceId,
     required Iterable<int> turnIds,
+    Transaction? transaction,
   }) {
     final ids = turnIds.toList();
     if (ids.isEmpty) return Future.value(const []);
@@ -411,6 +412,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) & table.id.inSet(ids.toSet()),
+      transaction: transaction,
     );
   }
 
@@ -826,12 +828,14 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   Future<List<ConversationMessage>> listMessages(
     Session session, {
     required ConversationTurn turn,
+    Transaction? transaction,
   }) => ConversationMessage.db.find(
     session,
     where: (table) =>
         table.workspaceId.equals(turn.workspaceId) &
         table.turnId.equals(turn.id),
     orderBy: (table) => table.id,
+    transaction: transaction,
   );
 
   Future<ConversationMessage?> findMessage(
@@ -862,6 +866,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required int workspaceId,
     required int conversationId,
     required int limit,
+    Transaction? transaction,
   }) => ConversationMessage.db.find(
     session,
     where: (table) =>
@@ -869,6 +874,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         table.conversationId.equals(conversationId),
     orderBy: (table) => table.id.desc(),
     limit: limit,
+    transaction: transaction,
   );
 
   Future<List<ConversationMessageSearchResult>> searchMessages(
@@ -877,6 +883,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
     required String query,
     required int limit,
     required int offset,
+    Transaction? transaction,
   }) async {
     final rows = await session.db.unsafeQuery(
       _searchMessagesSql,
@@ -886,6 +893,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         'limit': limit,
         'offset': offset,
       }),
+      transaction: transaction,
     );
     return [
       for (final row in rows)
@@ -1028,12 +1036,14 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   Future<List<ConversationToolCall>> listToolCalls(
     Session session, {
     required ConversationTurn turn,
+    Transaction? transaction,
   }) => ConversationToolCall.db.find(
     session,
     where: (table) =>
         table.workspaceId.equals(turn.workspaceId) &
         table.turnId.equals(turn.id),
     orderBy: (table) => table.id,
+    transaction: transaction,
   );
 
   Future<List<ConversationToolCall>> listToolCallsByTurnIds(

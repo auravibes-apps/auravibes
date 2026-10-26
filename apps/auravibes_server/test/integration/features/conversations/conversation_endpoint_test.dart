@@ -60,6 +60,160 @@ void main() {
     }
 
     test(
+      'all conversation reads reject erasure-pending and deleted workspaces',
+      () async {
+        for (final tombstone in ['erasure requested', 'soft deleted']) {
+          final fixture = await prepare();
+          final conversation = await endpoints.conversation.create(
+            fixture.session,
+            CreateConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'create-$tombstone',
+              conversationId: 'conversation-$tombstone',
+              title: 'Retained during erasure',
+              isPinned: false,
+            ),
+          );
+          expect(
+            (await endpoints.conversation.get(
+              fixture.session,
+              GetConversationRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            )).id,
+            conversation.id,
+          );
+
+          final workspace = (await CloudWorkspace.db.findById(
+            fixture.database,
+            fixture.workspaceId,
+          ))!;
+          final now = DateTime.now().toUtc();
+          await CloudWorkspace.db.updateRow(
+            fixture.database,
+            tombstone == 'erasure requested'
+                ? workspace.copyWith(erasureRequestedAt: now)
+                : workspace.copyWith(deletedAt: now),
+          );
+
+          final denied = throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              tombstone == 'erasure requested'
+                  ? ConversationErrorCode.permissionDenied
+                  : ConversationErrorCode.notFound,
+            ),
+          );
+          await expectLater(
+            endpoints.conversation.list(
+              fixture.session,
+              ListConversationsRequest(
+                workspaceId: fixture.workspaceId,
+                limit: 10,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.listPage(
+              fixture.session,
+              ListConversationsRequest(
+                workspaceId: fixture.workspaceId,
+                limit: 10,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.get(
+              fixture.session,
+              GetConversationRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.listMessages(
+              fixture.session,
+              ListConversationMessagesRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+                limit: 20,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.searchMessages(
+              fixture.session,
+              SearchConversationMessagesRequest(
+                workspaceId: fixture.workspaceId,
+                query: 'retained',
+                limit: 10,
+                offset: 0,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.getTurn(
+              fixture.session,
+              GetTurnRequest(
+                workspaceId: fixture.workspaceId,
+                turnId: 'missing-turn',
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.getConversationSnapshot(
+              fixture.session,
+              GetConversationRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.listBackgroundWorks(
+              fixture.session,
+              ListBackgroundWorksRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            ),
+            denied,
+          );
+
+          expect(
+            await Conversation.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.stableId.equals(conversation.id),
+            ),
+            isNotNull,
+          );
+          expect(
+            await WorkspaceMember.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.userId.equals(fixture.userId) &
+                  table.removedAt.equals(null),
+            ),
+            isNotNull,
+          );
+        }
+      },
+    );
+
+    test(
       'persists mode through create, update, projection and root/child forks',
       () async {
         final fixture = await prepare();

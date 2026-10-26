@@ -1983,6 +1983,74 @@ void main() {
       expect(followUpTurn!.status, ConversationStatuses.completed);
     });
 
+    test('worker does not dispatch compaction for a pending erasure', () async {
+      final fixture = await prepareExecution(continueConversation: false);
+      final now = DateTime.now().toUtc();
+      final source = await ConversationMessage.db.insertRow(
+        fixture.database,
+        ConversationMessage(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationDatabaseId,
+          stableId: 'erasure-source-message',
+          role: 'user',
+          kind: 'text',
+          status: 'sent',
+          content: 'Source',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await ConversationUseCases(
+        conversation_repo.ConversationRepository(),
+        publishConversationJob: (_, _) async {},
+      ).compact(
+        fixture.database,
+        userId: fixture.userId,
+        request: CompactConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'erasure-compact',
+          conversationId: fixture.conversationId,
+          expectedConversationRevision: 1,
+        ),
+      );
+      final workspace = (await CloudWorkspace.db.findById(
+        fixture.database,
+        fixture.workspaceId,
+      ))!;
+      await CloudWorkspace.db.updateRow(
+        fixture.database,
+        workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+      );
+
+      final host = _CountingCompletingHost(compactionMessageId: source.id!);
+      await runConversationWorker(
+        fixture.database,
+        isActive: () => true,
+        worker: ConversationWorker(host: host),
+      );
+
+      expect(host.compactionCalls, 0);
+      expect(
+        await ConversationMessage.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.stableId.equals('erasure-compact:compaction-summary'),
+        ),
+        isNull,
+      );
+      expect(
+        (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.requestId.equals('erasure-compact'),
+        ))!.status,
+        ConversationJobStatuses.queued,
+      );
+    });
+
     test(
       'approved tool decision wakes a live dispatcher after its durable commit',
       () async {
@@ -2813,6 +2881,134 @@ void main() {
     endpoints,
   ) {
     test(
+      'erasure waits for compaction dispatch and compaction cannot commit later',
+      () async {
+        final fixture = await _preparePromptlessExecution(sessionBuilder);
+        final now = DateTime.now().toUtc();
+        final source = await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            stableId: 'dispatch-fence-source-${fixture.userId}',
+            role: 'user',
+            kind: 'text',
+            status: 'sent',
+            content: 'Source',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+          publishConversationJob: (_, _) async {},
+        ).compact(
+          fixture.database,
+          userId: fixture.userId,
+          request: CompactConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'dispatch-fence-${fixture.userId}',
+            conversationId: fixture.conversationId,
+            expectedConversationRevision: 1,
+          ),
+        );
+        final workspaceBeforeDispatch = (await CloudWorkspace.db.findById(
+          fixture.database,
+          fixture.workspaceId,
+        ))!;
+        final conversationBeforeDispatch = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        final eventsBeforeDispatch = await WorkspaceEvent.db.find(
+          fixture.database,
+          where: (table) => table.workspaceId.equals(fixture.workspaceId),
+        );
+        final dispatchTransactionHeld = Completer<void>();
+        final releaseDispatchTransaction = Completer<void>();
+        final host = _CountingCompletingHost(
+          compactionMessageId: source.id!,
+          compactionBlock: Completer<void>(),
+        );
+        final workerSession = fixture.session.build();
+        int? workerBackendPid;
+        final worker = runConversationWorker(
+          workerSession,
+          isActive: () => true,
+          worker: ConversationWorker(
+            host: host,
+            afterCompactionDispatch: (session, transaction) async {
+              workerBackendPid =
+                  (await session.db.unsafeQuery(
+                        'SELECT pg_backend_pid() AS "pid"',
+                        transaction: transaction,
+                      )).single.toColumnMap()['pid']
+                      as int;
+              dispatchTransactionHeld.complete();
+              await releaseDispatchTransaction.future;
+            },
+          ),
+        );
+
+        await host.compactionStarted.future.timeout(const Duration(seconds: 2));
+        await dispatchTransactionHeld.future.timeout(
+          const Duration(seconds: 2),
+        );
+        final erasureSession = fixture.session.build();
+        final erasureUpdate = CloudWorkspace.db.updateRow(
+          erasureSession,
+          workspaceBeforeDispatch.copyWith(
+            erasureRequestedAt: DateTime.now().toUtc(),
+          ),
+        );
+        final erasureWaitObserved = await _waitForWorkspaceLockWait(
+          fixture.database,
+          workerBackendPid: workerBackendPid!,
+        );
+        releaseDispatchTransaction.complete();
+        await erasureUpdate;
+        host.compactionBlock!.complete();
+        await worker.timeout(const Duration(seconds: 5));
+
+        expect(
+          erasureWaitObserved,
+          isTrue,
+          reason: 'Erasure should wait on the worker-held workspace lock.',
+        );
+        expect(
+          await ConversationMessage.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.stableId.equals(
+                  'dispatch-fence-${fixture.userId}:compaction-summary',
+                ),
+          ),
+          isNull,
+        );
+        final conversationAfterWorker = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        final workspaceAfterWorker = (await CloudWorkspace.db.findById(
+          fixture.database,
+          fixture.workspaceId,
+        ))!;
+        final eventsAfterWorker = await WorkspaceEvent.db.find(
+          fixture.database,
+          where: (table) => table.workspaceId.equals(fixture.workspaceId),
+        );
+        expect(
+          conversationAfterWorker.revision,
+          conversationBeforeDispatch.revision,
+        );
+        expect(workspaceAfterWorker.sequence, workspaceBeforeDispatch.sequence);
+        expect(eventsAfterWorker, hasLength(eventsBeforeDispatch.length));
+      },
+    );
+
+    test(
       'approval pause and decision submission complete without lock inversion',
       () async {
         final fixture = await _preparePromptlessExecution(sessionBuilder);
@@ -3082,6 +3278,34 @@ Future<bool> _waitForConversationLockWait(
   return false;
 }
 
+Future<bool> _waitForWorkspaceLockWait(
+  Session session, {
+  required int workerBackendPid,
+}) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 2));
+  while (DateTime.now().isBefore(deadline)) {
+    final rows = await session.db.unsafeQuery(
+      '''
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND pid <> pg_backend_pid()
+          AND @workerBackendPid = ANY(pg_blocking_pids(pid))
+          AND wait_event_type = 'Lock'
+          AND state = 'active'
+          AND query ILIKE '%workspace%'
+      ) AS "waiting"
+    ''',
+      parameters: QueryParameters.named({'workerBackendPid': workerBackendPid}),
+    );
+    if (rows.single.toColumnMap()['waiting'] as bool) return true;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+
+  return false;
+}
+
 Future<({ConversationTurn turn, List<String> toolCallIds})>
 _stageAwaitingApproval(
   _ExecutionFixture fixture, {
@@ -3201,6 +3425,7 @@ class const _ExecutionFixture({
 
 class _CountingCompletingHost({
   final Completer<void>? block,
+  final Completer<void>? compactionBlock,
   final int? compactionMessageId,
 }) implements ConversationEngineHost {
   final started = Completer<void>();
@@ -3242,6 +3467,7 @@ class _CountingCompletingHost({
   }) async {
     compactionCalls++;
     if (!compactionStarted.isCompleted) compactionStarted.complete();
+    await compactionBlock?.future;
     final messageId = compactionMessageId;
     if (messageId == null) {
       throw StateError('No compaction message configured.');

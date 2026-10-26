@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
 import '../engine/conversation_engine_host.dart';
@@ -33,6 +34,10 @@ typedef ConversationApprovalTurnLockBarrier = Future<void> Function(
   Session session,
   Transaction transaction,
 );
+typedef ConversationCompactionDispatchBarrier = Future<void> Function(
+  Session session,
+  Transaction transaction,
+);
 
 const _subAgentFailedMessage = 'Sub-agent failed.';
 const _subAgentCancelledMessage = 'Sub-agent cancelled.';
@@ -48,6 +53,7 @@ class const ConversationWorker({
   final ConversationRenewalTimer renewalTimer = Timer.new,
   final ConversationApprovalPauseBarrier? beforePauseForApproval,
   final ConversationApprovalTurnLockBarrier? afterApprovalTurnLock,
+  final ConversationCompactionDispatchBarrier? afterCompactionDispatch,
 }) {
   Future<bool> runOnce(
     Session session, {
@@ -2085,34 +2091,92 @@ class const ConversationWorker({
     bool Function()? isActive,
   ) async {
     if (isActive != null && !isActive()) return;
-    final messages = await conversation_repo.ConversationRepository()
-        .listEffectiveMessages(
-          session,
-          workspaceId: job.workspaceId,
-          conversationId:
-              (await Conversation.db.findById(
-                session,
-                job.conversationId,
-              ))?.stableId ??
-              '',
-        );
-    if (isActive != null && !isActive()) return;
-    final result = await _withLeaseRenewal(
+    final actorUserId = _jsonMap(job.payloadJson)['actorUserId'];
+    if (actorUserId is! String) {
+      throw const ConversationEngineConfigurationException('actorUserId');
+    }
+    final result = await _withLeaseRenewal<ConversationCompactionResult?>(
       session,
       job.id!,
       leaseToken,
       leaseExpiresAt: job.leaseExpiresAt,
       isActive: isActive,
-      operation: (leaseLost) => host.compact(
+      operation: (leaseLost) => _dispatchCompaction(
+        session,
+        job,
+        actorUserId,
+        leaseLost,
+      ),
+    );
+    if (result == null) return;
+    if (isActive != null && !isActive()) return;
+    if (!await _commitCompaction(session, job, leaseToken, result)) return;
+    await _continueQueuedAfterCompaction(session, job);
+  }
+
+  Future<ConversationCompactionResult?> _dispatchCompaction(
+    Session session,
+    ConversationJob job,
+    String actorUserId,
+    Future<void> leaseLost,
+  ) async {
+    final dispatch = await session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: actorUserId,
+        transaction: transaction,
+      );
+      if (authUser == null) return null;
+      final workspace = await CloudWorkspace.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(job.workspaceId) &
+            table.deletedAt.equals(null) &
+            table.erasureRequestedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null) return null;
+      final member = await WorkspaceMember.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(job.workspaceId) &
+            table.userId.equals(actorUserId) &
+            table.removedAt.equals(null),
+        transaction: transaction,
+      );
+      if (member == null) return null;
+      final conversation = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(job.conversationId) &
+            table.workspaceId.equals(job.workspaceId),
+        transaction: transaction,
+      );
+      if (conversation == null) return null;
+      final messages = await conversation_repo.ConversationRepository()
+          .listEffectiveMessages(
+            session,
+            workspaceId: job.workspaceId,
+            conversationId: conversation.stableId,
+            transaction: transaction,
+          );
+      // Start provider work while the AuthUser and workspace locks still fence
+      // account deletion and workspace erasure. The Future stays in a record so
+      // this transaction releases its locks before provider latency is awaited.
+      final result = host.compact(
         session,
         job: job,
         messages: messages,
         leaseLost: leaseLost,
-      ),
-    );
-    if (isActive != null && !isActive()) return;
-    await _commitCompaction(session, job, leaseToken, result);
-    await _continueQueuedAfterCompaction(session, job);
+      );
+      await afterCompactionDispatch?.call(session, transaction);
+      return (
+        result: result,
+      );
+    });
+    if (dispatch == null) return null;
+    return dispatch.result;
   }
 
   Future<void> _continueQueuedAfterCompaction(
@@ -2140,12 +2204,22 @@ class const ConversationWorker({
     );
   }
 
-  Future<void> _commitCompaction(
+  Future<bool> _commitCompaction(
     Session session,
     ConversationJob job,
     String leaseToken,
     ConversationCompactionResult result,
   ) => session.db.transaction((transaction) async {
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(job.workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) return false;
     final conversation = await Conversation.db.findFirstRow(
       session,
       where: (table) =>
@@ -2154,18 +2228,7 @@ class const ConversationWorker({
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (conversation == null) {
-      throw const ConversationEngineConfigurationException('conversation');
-    }
-    final workspace = await CloudWorkspace.db.findById(
-      session,
-      job.workspaceId,
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
-    );
-    if (workspace == null) {
-      throw const ConversationEngineConfigurationException('workspace');
-    }
+    if (conversation == null) return false;
     final stableId = '${job.requestId}:compaction-summary';
     final existing = await ConversationMessage.db.findFirstRow(
       session,
@@ -2183,7 +2246,7 @@ class const ConversationWorker({
         DateTime.now().toUtc(),
         transaction,
       );
-      return;
+      return true;
     }
     final now = DateTime.now().toUtc();
     final payload = _jsonMap(job.payloadJson);
@@ -2277,6 +2340,7 @@ class const ConversationWorker({
       DateTime.now().toUtc(),
       transaction,
     );
+    return true;
   });
 
   Future<void> _completeLease(
