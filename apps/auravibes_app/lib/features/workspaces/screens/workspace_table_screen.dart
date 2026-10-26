@@ -612,14 +612,13 @@ abstract final class _TableHistoryMenu {
       );
 
   static Future<bool?> _open(BuildContext context, _TableBrowser browser) =>
-      WorkspaceHistoryPanel.open(
-        context,
-        browser.workspaceId,
-        .new(
+      WorkspaceHistoryPanel.open(context, (
+        workspaceId: browser.workspaceId,
+        target: .new(
           kind: .table,
           id: browser.table.id,
           revision: browser.table.revision,
         ),
         canRestore: browser.table.canManage,
-      );
+      ));
 }

@@ -21,8 +21,6 @@ class const LocalWorkspaceHistoryRepository(
   final AppDatabase database,
   final String workspaceId,
 ) implements WorkspaceHistoryRepository {
-  _HistoryStore get _store => .new(database, workspaceId);
-
   @override
   Future<WorkspaceHistoryPolicy> policy() =>
       LocalWorkspaceHistoryRetention(database, workspaceId).policy();
@@ -35,119 +33,43 @@ class const LocalWorkspaceHistoryRepository(
 
   @override
   Future<List<WorkspaceRevision>> history(WorkspaceTrashTarget target) async {
-    await _store.authorize(target);
+    final store = _HistoryStore(database, workspaceId);
+    await store.authorize(target);
     await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
-    final rows = await _store.rows(target);
+    final rows = await store.rows(target);
 
     return await Future.wait(rows.map((row) => _visible(row, target)));
   }
 
   @override
-  Future<String> submitReport(WorkspaceTrashTarget target) async {
-    final revisions = await history(target);
-    final reported = revisions
-        .where(
-          (revision) =>
-              revision.target.revision == target.revision &&
-              revision.aiInvolved == true,
-        )
-        .firstOrNull;
-    if (reported == null) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final reportId = const UuidV7().generate();
-    final _ = await database
-        .into(database.workspaceContentReports)
-        .insert(
-          WorkspaceContentReportsCompanion.insert(
-            workspaceId: workspaceId,
-            reportId: reportId,
-            kind: target.kind.name,
-            resourceId: target.id,
-            tableId: .new(target.tableId),
-            revision: target.revision,
-            conversationId: .new(reported.conversationId),
-          ),
-        );
-
-    return reportId;
-  }
+  Future<String> submitReport(WorkspaceTrashTarget target) =>
+      _LocalWorkspaceContentReports(
+        database,
+        workspaceId,
+      ).submit(target, history);
 
   @override
-  Future<List<WorkspaceContentReport>> reports() async {
-    await _store.requireLocal();
-    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
-    final rows =
-        await (database.select(database.workspaceContentReports)
-              ..where((row) => row.workspaceId.equals(workspaceId))
-              ..orderBy([(row) => OrderingTerm.desc(row.submittedAt)]))
-            .get();
-
-    return rows.map(_contentReport).toList();
-  }
+  Future<List<WorkspaceContentReport>> reports() =>
+      _LocalWorkspaceContentReports(database, workspaceId).list();
 
   @override
   Future<WorkspaceContentReport> resolveReport(
     String reportId,
     WorkspaceContentReportAction action,
-  ) async {
-    await _store.requireLocal();
-    final row =
-        await (database.select(database.workspaceContentReports)..where(
-              (report) =>
-                  report.workspaceId.equals(workspaceId) &
-                  report.reportId.equals(reportId),
-            ))
-            .getSingleOrNull();
-    if (row == null) throw const WorkspaceTableException(denied: true);
-    final status = switch (action) {
-      .dismiss => 'dismissed',
-      .remove => 'removed',
-    };
-    if (row.status != 'submitted') {
-      if (row.status == status) return _contentReport(row);
-      throw const WorkspaceTableException(conflict: true);
-    }
-    if (action == .remove) {
-      final trash = LocalWorkspaceTrashRepository(database, workspaceId);
-      final target = _reportTarget(row);
-      final plan = await trash.preview(target);
-      final _ = await trash.trash(target, planToken: plan.planToken);
-    }
-    final updatedCount =
-        await (database.update(database.workspaceContentReports)..where(
-              (report) =>
-                  report.workspaceId.equals(workspaceId) &
-                  report.reportId.equals(reportId),
-            ))
-            .write(
-              WorkspaceContentReportsCompanion(
-                status: .new(status),
-                reviewerId: const Value('local_user'),
-                reviewedAt: .new(DateTime.now().toUtc()),
-              ),
-            );
-    if (updatedCount != 1) {
-      throw const WorkspaceTableException(conflict: true);
-    }
-    final updated =
-        await (database.select(database.workspaceContentReports)..where(
-              (report) =>
-                  report.workspaceId.equals(workspaceId) &
-                  report.reportId.equals(reportId),
-            ))
-            .getSingle();
-
-    return _contentReport(updated);
-  }
+  ) => _LocalWorkspaceContentReports(
+    database,
+    workspaceId,
+  ).resolve(reportId, action);
 
   @override
   Future<void> restore(WorkspaceTrashTarget target, int revision) =>
-      database.transaction(() => _restore(target, revision));
+      database.transaction(
+        () => _HistoryStore(database, workspaceId).restore(target, revision),
+      );
 
   @override
   Future<void> permanentlyDelete(WorkspaceTrashTarget target) async {
-    await _store.requireLocal();
+    await _HistoryStore(database, workspaceId).requireLocal();
     await LocalWorkspaceAssetRelease(database, workspaceId).mutate(
       () => LocalWorkspacePermanentDelete(database, workspaceId)(target),
     );
@@ -157,37 +79,126 @@ class const LocalWorkspaceHistoryRepository(
     WorkspaceRevisionRow row,
     WorkspaceTrashTarget target,
   ) async {
-    final data = await LocalWorkspaceAssetValues(
-      database,
-      workspaceId,
-    ).history(jsonDecode(row.data) as Map<String, dynamic>);
+    final data = await _revisionData(database, workspaceId, row);
 
-    return WorkspaceRevision(
-      target: _revisionTarget(target, row.revision),
-      data: data,
-      actorUserId: row.actorUserId,
-      aiInvolved: row.aiInvolved,
-      operation: row.operation,
-      conversationId: row.conversationId,
-      capturedAt: row.capturedAt,
-    );
-  }
-
-  Future<void> _restore(WorkspaceTrashTarget target, int revision) async {
-    await _store.authorize(target);
-    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
-    final selected = await _store.snapshot(target, revision);
-    if (target.kind == .table) {
-      await LocalWorkspaceSchemaRecovery(
-        database,
-        workspaceId,
-      ).restore(target, selected);
-
-      return;
-    }
-    await _store.restoreRecord(target, selected);
+    return _revision(row, target, data);
   }
 }
+
+class const _LocalWorkspaceContentReports(
+  final AppDatabase database,
+  final String workspaceId,
+) {
+  Future<String> submit(
+    WorkspaceTrashTarget target,
+    Future<List<WorkspaceRevision>> Function(WorkspaceTrashTarget) history,
+  ) async {
+    final revision = _reportedRevision(await history(target), target.revision);
+    if (revision == null) throw const WorkspaceTableException(denied: true);
+    final reportId = const UuidV7().generate();
+    final _ = await database
+        .into(database.workspaceContentReports)
+        .insert(_newReport(workspaceId, target, reportId, revision));
+
+    return reportId;
+  }
+
+  Future<List<WorkspaceContentReport>> list() async {
+    await _requireLocal();
+    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
+    final rows = await _reports();
+
+    return rows.map(_contentReport).toList();
+  }
+
+  Future<WorkspaceContentReport> resolve(
+    String reportId,
+    WorkspaceContentReportAction action,
+  ) async {
+    await _requireLocal();
+    final row = await _report(reportId);
+    if (row == null) throw const WorkspaceTableException(denied: true);
+
+    return await _resolveRow(row, reportId, action);
+  }
+
+  Future<WorkspaceContentReport> _resolveRow(
+    WorkspaceContentReportRow row,
+    String reportId,
+    WorkspaceContentReportAction action,
+  ) async {
+    final status = _resolvedStatus(action);
+    if (row.status != 'submitted') return _existingResolution(row, status);
+    if (action == .remove) await _removeReportedContent(row);
+    await _updateStatus(reportId, status);
+
+    final updated = await _report(reportId);
+    if (updated == null) throw const WorkspaceTableException(conflict: true);
+
+    return _contentReport(updated);
+  }
+
+  WorkspaceContentReport _existingResolution(
+    WorkspaceContentReportRow row,
+    String status,
+  ) {
+    if (row.status == status) return _contentReport(row);
+    throw const WorkspaceTableException(conflict: true);
+  }
+
+  Future<void> _removeReportedContent(WorkspaceContentReportRow row) async {
+    final trash = LocalWorkspaceTrashRepository(database, workspaceId);
+    final target = _reportTarget(row);
+    final plan = await trash.preview(target);
+    final _ = await trash.trash(target, planToken: plan.planToken);
+  }
+
+  Future<void> _updateStatus(String reportId, String status) async {
+    final count =
+        await (database.update(database.workspaceContentReports)..where(
+              (report) => _reportIdentity(report, workspaceId, reportId),
+            ))
+            .write(_reviewMetadata(status));
+    if (count != 1) throw const WorkspaceTableException(conflict: true);
+  }
+
+  Future<void> _requireLocal() async {
+    final query = database.select(database.workspaces)
+      ..where((row) => row.id.equals(workspaceId));
+    final workspace = await query.getSingleOrNull();
+    if (workspace == null || workspace.type != .local) {
+      throw const WorkspaceTableException();
+    }
+  }
+
+  Future<List<WorkspaceContentReportRow>> _reports() async {
+    final query = database.select(database.workspaceContentReports)
+      ..where((row) => row.workspaceId.equals(workspaceId))
+      ..orderBy([(row) => OrderingTerm.desc(row.submittedAt)]);
+
+    return await query.get();
+  }
+
+  Future<WorkspaceContentReportRow?> _report(String reportId) {
+    final query = database.select(database.workspaceContentReports)
+      ..where((report) => _reportIdentity(report, workspaceId, reportId));
+
+    return query.getSingleOrNull();
+  }
+}
+
+WorkspaceContentReportsCompanion _reviewMetadata(String status) =>
+    WorkspaceContentReportsCompanion(
+      status: .new(status),
+      reviewerId: const Value('local_user'),
+      reviewedAt: .new(DateTime.now().toUtc()),
+    );
+
+Expression<bool> _reportIdentity(
+  $WorkspaceContentReportsTable report,
+  String workspaceId,
+  String reportId,
+) => report.workspaceId.equals(workspaceId) & report.reportId.equals(reportId);
 
 WorkspaceContentReport _contentReport(WorkspaceContentReportRow row) => .new(
   reportId: row.reportId,
@@ -204,6 +215,56 @@ WorkspaceTrashTarget _reportTarget(WorkspaceContentReportRow row) => .new(
   id: row.resourceId,
   revision: row.revision,
   tableId: row.tableId,
+);
+
+String _resolvedStatus(WorkspaceContentReportAction action) => switch (action) {
+  .dismiss => 'dismissed',
+  .remove => 'removed',
+};
+
+WorkspaceRevision? _reportedRevision(
+  List<WorkspaceRevision> revisions,
+  int revision,
+) => revisions
+    .where((row) => row.target.revision == revision && row.aiInvolved == true)
+    .firstOrNull;
+
+WorkspaceContentReportsCompanion _newReport(
+  String workspaceId,
+  WorkspaceTrashTarget target,
+  String reportId,
+  WorkspaceRevision revision,
+) => WorkspaceContentReportsCompanion.insert(
+  workspaceId: workspaceId,
+  reportId: reportId,
+  kind: target.kind.name,
+  resourceId: target.id,
+  tableId: .new(target.tableId),
+  revision: target.revision,
+  conversationId: .new(revision.conversationId),
+);
+
+Future<Map<String, dynamic>> _revisionData(
+  AppDatabase database,
+  String workspaceId,
+  WorkspaceRevisionRow row,
+) => LocalWorkspaceAssetValues(
+  database,
+  workspaceId,
+).history(jsonDecode(row.data) as Map<String, dynamic>);
+
+WorkspaceRevision _revision(
+  WorkspaceRevisionRow row,
+  WorkspaceTrashTarget target,
+  Map<String, dynamic> data,
+) => WorkspaceRevision(
+  target: _revisionTarget(target, row.revision),
+  data: data,
+  actorUserId: row.actorUserId,
+  aiInvolved: row.aiInvolved,
+  operation: row.operation,
+  conversationId: row.conversationId,
+  capturedAt: row.capturedAt,
 );
 
 class const _HistoryStore(
@@ -263,6 +324,28 @@ class const _HistoryStore(
     final snapshots = await rows(target);
 
     return _snapshotData(snapshots, revision);
+  }
+
+  Future<void> restore(WorkspaceTrashTarget target, int revision) async {
+    await authorize(target);
+    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
+    final selected = await snapshot(target, revision);
+    await _restoreSnapshot(target, selected);
+  }
+
+  Future<void> _restoreSnapshot(
+    WorkspaceTrashTarget target,
+    Map<String, dynamic> selected,
+  ) async {
+    if (target.kind == .table) {
+      await LocalWorkspaceSchemaRecovery(
+        database,
+        workspaceId,
+      ).restore(target, selected);
+
+      return;
+    }
+    await restoreRecord(target, selected);
   }
 }
 

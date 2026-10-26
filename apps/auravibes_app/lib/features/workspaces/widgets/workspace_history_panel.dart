@@ -17,6 +17,17 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+typedef WorkspaceHistoryPanelOptions = ({
+  String workspaceId,
+  WorkspaceTrashTarget target,
+  bool canRestore,
+});
+
+const _historyDialogWidth = 600.0;
+const _historyDialogHeightFactor = 0.85;
+const _compactHistoryHeaderWidth = 480.0;
+const _historyHeaderActionSpacing = 8.0;
+
 class const WorkspaceHistoryPanel({
   required final String workspaceId,
   required final WorkspaceTrashTarget target,
@@ -25,22 +36,10 @@ class const WorkspaceHistoryPanel({
 }) extends HookConsumerWidget {
   static Future<bool?> open(
     BuildContext context,
-    String workspaceId,
-    WorkspaceTrashTarget target, {
-    bool canRestore = true,
-  }) => showDialog<bool>(
+    WorkspaceHistoryPanelOptions options,
+  ) => showDialog<bool>(
     context: context,
-    builder: (context) => Dialog(
-      child: SizedBox(
-        width: 600,
-        height: MediaQuery.sizeOf(context).height * 0.85,
-        child: WorkspaceHistoryPanel(
-          workspaceId: workspaceId,
-          target: target,
-          canRestore: canRestore,
-        ),
-      ),
-    ),
+    builder: (context) => _HistoryPanelDialog(options: options),
   );
 
   @override
@@ -66,6 +65,23 @@ class const WorkspaceHistoryPanel({
       ),
     );
   }
+}
+
+class const _HistoryPanelDialog({
+  required final WorkspaceHistoryPanelOptions options,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Dialog(
+    child: SizedBox(
+      width: _historyDialogWidth,
+      height: MediaQuery.sizeOf(context).height * _historyDialogHeightFactor,
+      child: WorkspaceHistoryPanel(
+        workspaceId: options.workspaceId,
+        target: options.target,
+        canRestore: options.canRestore,
+      ),
+    ),
+  );
 }
 
 AsyncSnapshot<List<WorkspaceRevision>> _useHistory(
@@ -96,8 +112,72 @@ class const _HistoryHeader({required final String workspaceId})
         .value
         ?.canManage;
 
-    final actions = [
-      if (canManage == true)
+    return _HistoryHeaderLayout(
+      workspaceId: workspaceId,
+      canManage: canManage == true,
+    );
+  }
+}
+
+class const _HistoryHeaderLayout({
+  required final String workspaceId,
+  required final bool canManage,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) =>
+        constraints.maxWidth < _compactHistoryHeaderWidth
+        ? _CompactHistoryHeader(workspaceId: workspaceId, canManage: canManage)
+        : _WideHistoryHeader(workspaceId: workspaceId, canManage: canManage),
+  );
+}
+
+class const _CompactHistoryHeader({
+  required final String workspaceId,
+  required final bool canManage,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      const TextLocale(LocaleKeys.workspace_items_history_title),
+      Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: _HistoryHeaderActions(
+          workspaceId: workspaceId,
+          canManage: canManage,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _WideHistoryHeader({
+  required final String workspaceId,
+  required final bool canManage,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(
+        child: TextLocale(LocaleKeys.workspace_items_history_title),
+      ),
+      _HistoryHeaderActions(workspaceId: workspaceId, canManage: canManage),
+    ],
+  );
+}
+
+class const _HistoryHeaderActions({
+  required final String workspaceId,
+  required final bool canManage,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    alignment: .end,
+    spacing: _historyHeaderActionSpacing,
+    crossAxisAlignment: .center,
+    children: [
+      if (canManage)
         AuraButton(
           onPressed: () => unawaited(
             WorkspaceContentReportsPanel.open(context, workspaceId),
@@ -107,35 +187,8 @@ class const _HistoryHeader({required final String workspaceId})
           identifier: 'workspace_content_reports',
         ),
       WorkspaceHistoryPolicyButton(workspaceId: workspaceId),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth < 480
-          ? Column(
-              crossAxisAlignment: .stretch,
-              children: [
-                const TextLocale(LocaleKeys.workspace_items_history_title),
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: Wrap(
-                    alignment: .end,
-                    spacing: 8,
-                    crossAxisAlignment: .center,
-                    children: actions,
-                  ),
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                const Expanded(
-                  child: TextLocale(LocaleKeys.workspace_items_history_title),
-                ),
-                ...actions,
-              ],
-            ),
-    );
-  }
+    ],
+  );
 }
 
 class const _CloseHistory() extends StatelessWidget {
@@ -203,47 +256,15 @@ class const _RevisionRow({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = WorkspaceTableActions.use(context);
-    final receipt = useState<String?>(null);
 
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        _RevisionContent(
-          revision: revision,
-          action: action,
-          target: target,
-          canRestore: canRestore,
-          onPressed: () => unawaited(action.run(() => _restore(context, ref))),
-        ),
-        if (revision.aiInvolved == true)
-          AuraButton(
-            onPressed: () => unawaited(
-              action.run(() => _submitReport(context, ref, receipt)),
-            ),
-            child: const TextLocale(LocaleKeys.workspace_items_history_report),
-            variant: .ghost,
-            disabled: action.pending,
-            identifier: 'workspace_history_report_${revision.target.revision}',
-          ),
-        if (receipt.value case final String reportId)
-          TextLocale(
-            LocaleKeys.workspace_items_history_report_receipt,
-            args: [reportId],
-          ),
-      ],
+    return _RevisionRowContent(
+      workspaceId: workspaceId,
+      revision: revision,
+      action: action,
+      target: target,
+      canRestore: canRestore,
+      onRestore: () => unawaited(action.run(() => _restore(context, ref))),
     );
-  }
-
-  Future<void> _submitReport(
-    BuildContext context,
-    WidgetRef ref,
-    ValueNotifier<String?> receipt,
-  ) async {
-    final usecase = await ref.read(
-      workspaceHistoryUsecaseProvider(workspaceId).future,
-    );
-    final reportId = await usecase.submitReport(revision.target);
-    if (context.mounted) receipt.value = reportId;
   }
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
@@ -264,6 +285,112 @@ class const _RevisionRow({
     WorkspaceTrashActions.refresh(ref);
     Navigator.of(context).pop(true);
   }
+}
+
+class const _RevisionRowContent({
+  required final String workspaceId,
+  required final WorkspaceRevision revision,
+  required final WorkspaceTableAction action,
+  required final WorkspaceTrashTarget target,
+  required final bool canRestore,
+  required final VoidCallback onRestore,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _RevisionContent(
+        revision: revision,
+        action: action,
+        target: target,
+        canRestore: canRestore,
+        onPressed: onRestore,
+      ),
+      if (revision.aiInvolved == true)
+        _RevisionReportButton(workspaceId: workspaceId, revision: revision),
+    ],
+  );
+}
+
+class const _RevisionReportButton({
+  required final String workspaceId,
+  required final WorkspaceRevision revision,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final action = WorkspaceTableActions.use(context);
+    final receipt = useState<String?>(null);
+
+    return _RevisionReportButtonContent(
+      revision: revision,
+      action: action,
+      receipt: receipt.value,
+      onPressed: _revisionReportCallback((
+        action: action,
+        submit: () => _submit(context, ref, receipt),
+      )),
+    );
+  }
+
+  Future<void> _submit(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<String?> receipt,
+  ) async {
+    final usecase = await ref.read(
+      workspaceHistoryUsecaseProvider(workspaceId).future,
+    );
+    final reportId = await usecase.submitReport(revision.target);
+    if (context.mounted) receipt.value = reportId;
+  }
+}
+
+typedef _RevisionReportSubmission = ({
+  WorkspaceTableAction action,
+  Future<void> Function() submit,
+});
+
+VoidCallback _revisionReportCallback(_RevisionReportSubmission request) =>
+    () => unawaited(request.action.run(request.submit));
+
+class const _RevisionReportButtonContent({
+  required final WorkspaceRevision revision,
+  required final WorkspaceTableAction action,
+  required final String? receipt,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      AuraButton(
+        onPressed: onPressed,
+        child: const TextLocale(LocaleKeys.workspace_items_history_report),
+        variant: .ghost,
+        disabled: action.pending,
+        identifier: 'workspace_history_report_${revision.target.revision}',
+      ),
+      _RevisionReportState(receipt: receipt, error: action.error),
+    ],
+  );
+}
+
+class const _RevisionReportState({
+  required final String? receipt,
+  required final Object? error,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      if (receipt case final String reportId)
+        TextLocale(
+          LocaleKeys.workspace_items_history_report_receipt,
+          args: [reportId],
+        ),
+      if (error case final Object failure) WorkspaceItemFailure(error: failure),
+    ],
+  );
 }
 
 class const _RevisionContent({
@@ -319,6 +446,21 @@ class const _RevisionDetails({required final WorkspaceRevision revision})
     crossAxisAlignment: .stretch,
     children: [
       Text('${revision.target.revision}'),
+      _RevisionActorAndOperation(revision: revision),
+      _RevisionConversation(revision: revision),
+      _RevisionCaptureTime(revision: revision),
+      TextLocale(_summary(revision)),
+    ],
+  );
+}
+
+class const _RevisionActorAndOperation({
+  required final WorkspaceRevision revision,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
       if (revision.actorUserId case final String actor)
         TextLocale(LocaleKeys.workspace_items_history_actor, args: [actor]),
       if (revision.actorUserId == null)
@@ -328,6 +470,16 @@ class const _RevisionDetails({required final WorkspaceRevision revision})
           LocaleKeys.workspace_items_history_operation,
           args: [_operationLabel(operation)],
         ),
+    ],
+  );
+}
+
+class const _RevisionConversation({required final WorkspaceRevision revision})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
       if (revision.aiInvolved == true)
         const TextLocale(LocaleKeys.workspace_items_history_ai_involved),
       if (revision.conversationId case final String conversationId)
@@ -335,14 +487,20 @@ class const _RevisionDetails({required final WorkspaceRevision revision})
           LocaleKeys.workspace_items_history_conversation,
           args: [conversationId],
         ),
-      if (revision.capturedAt case final DateTime capturedAt)
-        TextLocale(
-          LocaleKeys.workspace_items_history_captured_at,
-          args: [capturedAt.toLocal().toString()],
-        ),
-      TextLocale(_summary(revision)),
     ],
   );
+}
+
+class const _RevisionCaptureTime({required final WorkspaceRevision revision})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (revision.capturedAt) {
+    final capturedAt? => TextLocale(
+      LocaleKeys.workspace_items_history_captured_at,
+      args: [capturedAt.toLocal().toString()],
+    ),
+    null => const SizedBox.shrink(),
+  };
 }
 
 String _operationLabel(String operation) => switch (operation) {

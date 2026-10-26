@@ -194,9 +194,7 @@ void main() {
           unawaited(
             WorkspaceHistoryPanel.open(
               tester.element(find.byType(WorkspaceRecordTrashMenu)),
-              'local',
-              target,
-              canRestore: false,
+              (workspaceId: 'local', target: target, canRestore: false),
             ),
           );
           await _settle(tester);
@@ -342,15 +340,15 @@ void main() {
                 child: Builder(
                   builder: (context) => AuraButton(
                     onPressed: () => unawaited(
-                      WorkspaceHistoryPanel.open(
-                        context,
-                        'local',
-                        .new(
+                      WorkspaceHistoryPanel.open(context, (
+                        workspaceId: 'local',
+                        target: .new(
                           kind: .table,
                           id: table.id,
                           revision: table.revision,
                         ),
-                      ),
+                        canRestore: true,
+                      )),
                     ),
                     child: const Text('History fixture'),
                     identifier: 'open_policy',
@@ -449,10 +447,12 @@ void main() {
         values: {table.labelColumnId: 'AI content'},
       );
       await LocalWorkspaceHistoryAttribution(database).aiRevision(
-        workspaceId: 'local',
-        kind: 'record',
-        resourceId: current.id,
-        revision: current.revision,
+        identity: (
+          workspaceId: 'local',
+          kind: 'record',
+          resourceId: current.id,
+          revision: current.revision,
+        ),
         conversationId: 'conversation-ui-test',
       );
       final history = ManageWorkspaceHistoryUsecase(
@@ -469,7 +469,11 @@ void main() {
           child: Builder(
             builder: (context) => AuraButton(
               onPressed: () => unawaited(
-                WorkspaceHistoryPanel.open(context, 'local', target),
+                WorkspaceHistoryPanel.open(context, (
+                  workspaceId: 'local',
+                  target: target,
+                  canRestore: true,
+                )),
               ),
               child: const Text('Open history'),
               identifier: 'open_history_for_report',

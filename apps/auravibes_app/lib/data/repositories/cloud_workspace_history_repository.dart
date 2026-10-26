@@ -55,18 +55,7 @@ class const CloudWorkspaceHistoryRepository(
   Future<String> submitReport(WorkspaceTrashTarget target) async {
     final connection = await _connection();
     final reportId = const UuidV7().generate();
-    final encoded = await CloudAppErrors.guardCall(
-      .state,
-      () => connection.client.workspaceContentReport.submit(
-        connection.workspaceId,
-        jsonEncode(target.toJson()),
-        reportId,
-      ),
-    );
-    final receipt = jsonDecode(encoded) as Map<String, dynamic>;
-    if (receipt['receiptId'] != reportId || receipt['status'] != 'submitted') {
-      throw const WorkspaceTableException();
-    }
+    await _submitReport(connection, target, reportId);
 
     return reportId;
   }
@@ -128,6 +117,29 @@ class const CloudWorkspaceHistoryRepository(
   }
 }
 
+Future<void> _submitReport(
+  _Connection connection,
+  WorkspaceTrashTarget target,
+  String reportId,
+) async {
+  final encoded = await CloudAppErrors.guardCall(
+    .state,
+    () => connection.client.workspaceContentReport.submit(
+      connection.workspaceId,
+      jsonEncode(target.toJson()),
+      reportId,
+    ),
+  );
+  _verifyReceipt(encoded, reportId);
+}
+
+void _verifyReceipt(String encoded, String reportId) {
+  final receipt = jsonDecode(encoded) as Map<String, dynamic>;
+  if (receipt['receiptId'] != reportId || receipt['status'] != 'submitted') {
+    throw const WorkspaceTableException();
+  }
+}
+
 Future<List<String>> _read(
   _Connection connection,
   WorkspaceTrashTarget target,
@@ -138,26 +150,29 @@ Future<List<String>> _read(
     jsonEncode(target.toJson()),
   ),
 );
-WorkspaceContentReport _contentReport(String encoded) {
-  final row = jsonDecode(encoded) as Map<String, dynamic>;
+WorkspaceContentReport _contentReport(String encoded) =>
+    _reportFromJson(jsonDecode(encoded) as Map<String, dynamic>);
 
-  return .new(
-    reportId: row['reportId'] as String,
-    target: .new(
-      kind: row['kind'] == 'record' ? .record : .table,
-      id: row['resourceId'] as String,
-      revision: row['revision'] as int,
-      tableId: row['tableId'] as String?,
-    ),
-    status: row['status'] as String,
-    submittedAt: DateTime.parse(row['submittedAt'] as String).toUtc(),
-    conversationId: row['conversationId'] as String?,
-    reviewerUserId: row['reviewerUserId'] as String?,
-    reviewedAt: row['reviewedAt'] == null
-        ? null
-        : DateTime.parse(row['reviewedAt'] as String).toUtc(),
-  );
-}
+WorkspaceContentReport _reportFromJson(Map<String, dynamic> row) => .new(
+  reportId: row['reportId'] as String,
+  target: _reportTarget(row),
+  status: row['status'] as String,
+  submittedAt: _requiredDate(row['submittedAt'] as String),
+  conversationId: row['conversationId'] as String?,
+  reviewerUserId: row['reviewerUserId'] as String?,
+  reviewedAt: _optionalDate(row['reviewedAt']),
+);
+
+WorkspaceTrashTarget _reportTarget(Map<String, dynamic> row) => .new(
+  kind: row['kind'] == 'record' ? .record : .table,
+  id: row['resourceId'] as String,
+  revision: row['revision'] as int,
+  tableId: row['tableId'] as String?,
+);
+
+DateTime _requiredDate(String value) => DateTime.parse(value).toUtc();
+DateTime? _optionalDate(Object? value) =>
+    value == null ? null : DateTime.parse(value as String).toUtc();
 
 Future<void> _restore(
   _Connection connection,
@@ -172,18 +187,41 @@ Future<void> _restore(
 WorkspaceRevision _snapshot(String encoded, WorkspaceTrashTarget target) {
   final row = jsonDecode(encoded) as Map<String, dynamic>;
 
+  return _revisionFromJson(row, target);
+}
+
+WorkspaceRevision _revisionFromJson(
+  Map<String, dynamic> row,
+  WorkspaceTrashTarget target,
+) {
+  final metadata = _revisionMetadata(row);
+
   return WorkspaceRevision(
     target: _target(target, row['revision'] as int),
     data: row['data'] as Map<String, dynamic>,
-    actorUserId: row['actorUserId'] as String?,
-    aiInvolved: row['aiInvolved'] as bool?,
-    operation: row['operation'] as String?,
-    conversationId: row['conversationId'] as String?,
-    capturedAt: row['capturedAt'] == null
-        ? null
-        : DateTime.parse(row['capturedAt'] as String).toUtc(),
+    actorUserId: metadata.actorUserId,
+    aiInvolved: metadata.aiInvolved,
+    operation: metadata.operation,
+    conversationId: metadata.conversationId,
+    capturedAt: metadata.capturedAt,
   );
 }
+
+typedef _RevisionMetadata = ({
+  String? actorUserId,
+  bool? aiInvolved,
+  String? operation,
+  String? conversationId,
+  DateTime? capturedAt,
+});
+
+_RevisionMetadata _revisionMetadata(Map<String, dynamic> row) => (
+  actorUserId: row['actorUserId'] as String?,
+  aiInvolved: row['aiInvolved'] as bool?,
+  operation: row['operation'] as String?,
+  conversationId: row['conversationId'] as String?,
+  capturedAt: _optionalDate(row['capturedAt']),
+);
 
 WorkspaceTrashTarget _target(WorkspaceTrashTarget target, int revision) => .new(
   kind: target.kind,
