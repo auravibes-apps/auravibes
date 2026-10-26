@@ -120,6 +120,7 @@ class const _ViewReader(final _ViewContext context) {
           context.session,
           context.member,
           data['connected'],
+          transaction: context.transaction,
         );
       } on CloudWorkspaceException {
         return false;
@@ -175,6 +176,7 @@ class const _ViewWriter(final _ViewContext context) {
       context.session,
       context.member,
       input.data['connected'],
+      transaction: context.transaction,
     );
 
     return input;
@@ -280,6 +282,7 @@ class const _ViewMover(final _ViewContext context) {
         context.session,
         context.member,
         data['connected'],
+        transaction: context.transaction,
       );
     } else {
       await _source(data['tableId'] as String);

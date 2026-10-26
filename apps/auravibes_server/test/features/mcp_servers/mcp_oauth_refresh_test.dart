@@ -119,15 +119,41 @@ void main() {
       expect(retained.refreshToken, credentials.refreshToken);
     },
   );
+
+  test('fences the token HTTP dispatch after address validation', () async {
+    final client = _Client(
+      200,
+      '{"access_token":"new-access","expires_in":3600}',
+      null,
+    );
+    var dispatches = 0;
+    final rotated = await HttpOverrides.runZoned(
+      () => refreshMcpOAuthToken(
+        credentials,
+        resolvedAddresses: [InternetAddress('8.8.8.8')],
+        dispatchFence: <T>(Future<T> Function() start) async {
+          dispatches++;
+          return start();
+        },
+      ),
+      createHttpClient: (_) => client,
+    );
+
+    expect(rotated.accessToken, 'new-access');
+    expect(dispatches, 1);
+    expect(client.postCalls, 1);
+  });
 }
 
 class _Client(this.status, this.body, this.error) implements HttpClient {
   final int status;
   final String body;
   final Exception? error;
+  var postCalls = 0;
 
   @override
   Future<HttpClientRequest> postUrl(Uri url) async {
+    postCalls++;
     if (error case final failure?) throw failure;
     return _Request(status, body);
   }

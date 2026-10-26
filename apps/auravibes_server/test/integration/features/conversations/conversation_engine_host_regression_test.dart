@@ -467,6 +467,103 @@ void main() {
       );
     }
 
+    test('provider dispatch is denied when workspace erasure wins', () async {
+      final fixture = await prepare();
+      await configureProvider(fixture);
+      var dispatches = 0;
+      final host = ServerConversationEngineHost(
+        admissionGate: _BeforeProviderAdmissionGate((session, job) async {
+          final workspace = await CloudWorkspace.db.findById(
+            session,
+            job.workspaceId,
+          );
+          await CloudWorkspace.db.updateRow(
+            session,
+            workspace!.copyWith(
+              erasureRequestedAt: DateTime.now().toUtc(),
+            ),
+          );
+        }),
+        lookup: (_) async => [InternetAddress('8.8.8.8')],
+        providerTransport: (_) async {
+          dispatches++;
+          return ProviderTransportResponse(
+            statusCode: HttpStatus.ok,
+            body: Stream.value(utf8.encode('data: [DONE]\n\n')),
+          );
+        },
+      );
+
+      await expectLater(
+        host.executeTurn(
+          fixture.database,
+          job: fixture.job,
+          turn: fixture.turn,
+          messages: fixture.messages,
+          liveTurns: const _NoopProgressPublisher(),
+        ),
+        throwsA(isA<ConversationCancelledException>()),
+      );
+      expect(dispatches, 0);
+    });
+
+    test(
+      'provider response latency does not hold the workspace fence',
+      () async {
+        final fixture = await prepare();
+        await configureProvider(fixture);
+        final dispatched = Completer<void>();
+        final providerResponse = Completer<ProviderTransportResponse>();
+        final host = ServerConversationEngineHost(
+          admissionGate: const _ImmediateAdmissionGate(),
+          lookup: (_) async => [InternetAddress('8.8.8.8')],
+          providerTransport: (_) {
+            if (!dispatched.isCompleted) dispatched.complete();
+            return providerResponse.future;
+          },
+        );
+        final run = host.executeTurn(
+          fixture.database,
+          job: fixture.job,
+          turn: fixture.turn,
+          messages: fixture.messages,
+          liveTurns: const _NoopProgressPublisher(),
+        );
+        await dispatched.future.timeout(const Duration(seconds: 5));
+        final workspace = (await CloudWorkspace.db.findById(
+          fixture.database,
+          fixture.workspaceId,
+        ))!;
+        var erasedBeforeResponse = false;
+        final erase = CloudWorkspace.db.updateRow(
+          fixture.database,
+          workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+        );
+        try {
+          await erase.timeout(const Duration(seconds: 2));
+          erasedBeforeResponse = true;
+        } on TimeoutException {
+          // Complete the provider response below so a regression cannot strand
+          // a database transaction while this test reports the held fence.
+        }
+        providerResponse.complete(
+          ProviderTransportResponse(
+            statusCode: HttpStatus.ok,
+            body: Stream.value(
+              utf8.encode(
+                'data: {"id":"response","choices":[{"delta":{"content":"private"},"finish_reason":"stop"}]}\n\n'
+                'data: [DONE]\n\n',
+              ),
+            ),
+          ),
+        );
+        await erase;
+
+        expect(erasedBeforeResponse, isTrue);
+        await expectLater(run, throwsA(isA<ConversationCancelledException>()));
+      },
+    );
+
     test(
       'claimed continuation clears the queued marker without losing the result',
       () async {
@@ -3234,6 +3331,23 @@ class const _ImmediateAdmissionGate() implements ConversationAdmissionGate {
     required String providerId,
     required Future<T> Function(Future<void> admissionLost) body,
   }) => body(Future<void>.value());
+}
+
+class _BeforeProviderAdmissionGate implements ConversationAdmissionGate {
+  const _BeforeProviderAdmissionGate(this._beforeBody);
+
+  final Future<void> Function(Session session, ConversationJob job) _beforeBody;
+
+  @override
+  Future<T> run<T>(
+    Session session, {
+    required ConversationJob job,
+    required String providerId,
+    required Future<T> Function(Future<void> admissionLost) body,
+  }) async {
+    await _beforeBody(session, job);
+    return body(Future<void>.value());
+  }
 }
 
 class const _NoopProgressPublisher() implements ConversationProgressPublisher {

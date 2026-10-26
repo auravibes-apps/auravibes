@@ -32,48 +32,66 @@ class McpServerUseCases(
     required VerifyMcpServerRequest request,
   }) async {
     if (request.requestId.isEmpty) _validation();
-    await session.db.transaction(
-      (transaction) => _authorize(
+    final url = request.url.trim();
+    late Map<String, String> headers;
+    await session.db.transaction((transaction) async {
+      await _authorize(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
         transaction: transaction,
-      ),
-    );
-    final url = request.url.trim();
-    final headers = _validatedHeaders(
-      request.httpHeadersJson,
-      request.bearerToken,
-    );
-    final oauth = request.oauthJson == null
-        ? null
-        : McpOAuthCredentials.parse(request.oauthJson!);
-    if (oauth != null &&
-        (request.bearerToken != oauth.accessToken || headers.isNotEmpty)) {
-      _validation();
-    }
+      );
+      headers = _validatedHeaders(
+        request.httpHeadersJson,
+        request.bearerToken,
+      );
+      final oauth = request.oauthJson == null
+          ? null
+          : McpOAuthCredentials.parse(request.oauthJson!);
+      if (oauth != null &&
+          (request.bearerToken != oauth.accessToken || headers.isNotEmpty)) {
+        _validation();
+      }
+    });
+    final uri = McpServerPolicy.validateUri(url);
+    final resolvedAddresses = await _probe.resolveAddresses(uri);
     final discovery = await _probe(
-      uri: McpServerPolicy.validateUri(url),
+      uri: uri,
       transport: request.transport,
       useHttp2: request.useHttp2,
       bearerToken: request.bearerToken,
       httpHeaders: headers,
+      resolvedAddresses: resolvedAddresses,
+      dispatchFence: <T>(start) => _dispatchProbeRequest<T>(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        start: start,
+      ),
     );
     if (discovery.health != McpServerHealth.healthy) _validation();
 
     final expiresAt = DateTime.now().toUtc().add(_verificationLifetime);
-    return VerifyMcpServerResult(
-      discovery: discovery,
-      verificationReceipt: await _createVerificationReceipt(
+    return session.db.transaction((transaction) async {
+      await _authorize(
         session,
+        workspaceId: request.workspaceId,
         userId: userId,
-        request: request,
-        url: url,
+        transaction: transaction,
+      );
+      return VerifyMcpServerResult(
         discovery: discovery,
+        verificationReceipt: await _createVerificationReceipt(
+          session,
+          userId: userId,
+          request: request,
+          url: url,
+          discovery: discovery,
+          expiresAt: expiresAt,
+        ),
         expiresAt: expiresAt,
-      ),
-      expiresAt: expiresAt,
-    );
+      );
+    });
   }
 
   Future<CreateMcpServerResult> create(
@@ -556,6 +574,12 @@ class McpServerUseCases(
         code: CloudWorkspaceErrorCode.authenticationRequired,
       );
     }
+    final workspace = await _repository.findWorkspace(
+      session,
+      workspaceId: workspaceId,
+      transaction: transaction,
+    );
+    if (workspace == null) _membershipRequired();
     final member = await _repository.findMember(
       session,
       workspaceId: workspaceId,
@@ -762,70 +786,174 @@ class McpServerUseCases(
     required DiscoverMcpServerRequest request,
   }) async {
     if (request.mcpServerId.isEmpty) _validation();
-    final member = await _repository.findMember(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
-    );
-    if (member == null) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.membershipRequired,
+    late WorkspaceResource resource;
+    late WorkspaceSecret? secret;
+    late _McpMetadata metadata;
+    await session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
       );
-    }
-    if (member.role != WorkspaceRoles.owner &&
-        member.role != WorkspaceRoles.admin) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.permissionDenied,
+      final current = await _repository.findServer(
+        session,
+        workspaceId: request.workspaceId,
+        resourceId: request.mcpServerId,
+        transaction: transaction,
       );
-    }
-    final resource = await _repository.findServer(
-      session,
-      workspaceId: request.workspaceId,
-      resourceId: request.mcpServerId,
-    );
-    if (resource == null) _validation();
-    final metadata = _metadata(resource.data);
-    final secret = await _repository.findSecret(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
-      resourceId: request.mcpServerId,
-    );
+      if (current == null) _validation();
+      resource = current;
+      metadata = _metadata(resource.data);
+      secret = await _repository.findSecret(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        resourceId: request.mcpServerId,
+        transaction: transaction,
+      );
+    });
+    DiscoverMcpServerResult result;
     try {
-      final decrypted = secret == null
+      final selectedSecret = secret;
+      final decrypted = selectedSecret == null
           ? null
           : metadata.authType == 'oauth'
           ? await McpOAuthTokenResolver().resolve(
               session,
-              secret,
+              selectedSecret,
               actorUserId: userId,
             )
-          : await const WorkspaceSecretCipher().decrypt(session, secret);
-      return await _probe(
-        uri: McpServerPolicy.validateUri(metadata.url),
+          : await const WorkspaceSecretCipher().decrypt(
+              session,
+              selectedSecret,
+            );
+      final uri = McpServerPolicy.validateUri(metadata.url);
+      final resolvedAddresses = await _probe.resolveAddresses(uri);
+      result = await _probe(
+        uri: uri,
         transport: metadata.transport,
         useHttp2: metadata.useHttp2,
         bearerToken: metadata.authType == 'httpHeaders' ? null : decrypted,
         httpHeaders: metadata.authType == 'httpHeaders'
             ? parseMcpHttpHeaders(decrypted)
             : const {},
+        resolvedAddresses: resolvedAddresses,
+        dispatchFence: <T>(start) => _dispatchProbeRequest<T>(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          start: start,
+          validateSnapshot: (transaction) => _requireCurrentServer(
+            session,
+            workspaceId: request.workspaceId,
+            userId: userId,
+            resourceId: request.mcpServerId,
+            metadata: metadata,
+            secret: secret,
+            allowSecretRevisionChange: metadata.authType == 'oauth',
+            transaction: transaction,
+          ),
+        ),
       );
     } on FormatException {
-      return _unhealthy('invalid_response');
+      result = _unhealthy('invalid_response');
     } on McpOAuthReauthRequired {
-      return _unhealthy('reauth_required');
+      result = _unhealthy('reauth_required');
     } on McpOAuthRefreshFailed catch (error) {
-      return _unhealthy(
+      result = _unhealthy(
         error.retryable ? 'oauth_refresh_retryable' : 'oauth_refresh_unknown',
       );
     } on TimeoutException {
-      return _unhealthy('timeout');
+      result = _unhealthy('timeout');
     } on SocketException {
-      return _unhealthy('unreachable');
+      result = _unhealthy('unreachable');
     } on HttpException {
-      return _unhealthy('http_error');
+      result = _unhealthy('http_error');
     } on HandshakeException {
-      return _unhealthy('tls_error');
+      result = _unhealthy('tls_error');
+    }
+    return session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      await _requireCurrentServer(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        resourceId: request.mcpServerId,
+        metadata: metadata,
+        secret: secret,
+        allowSecretRevisionChange: metadata.authType == 'oauth',
+        transaction: transaction,
+      );
+      return result;
+    });
+  }
+
+  Future<T> _dispatchProbeRequest<T>(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Future<T> Function() start,
+    Future<void> Function(Transaction transaction)? validateSnapshot,
+  }) async {
+    late Future<T> request;
+    await session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      final validate = validateSnapshot;
+      if (validate != null) await validate(transaction);
+      request = start();
+    });
+
+    return request;
+  }
+
+  Future<void> _requireCurrentServer(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required String resourceId,
+    required _McpMetadata metadata,
+    required WorkspaceSecret? secret,
+    bool allowSecretRevisionChange = false,
+    required Transaction transaction,
+  }) async {
+    final resource = await _repository.findServer(
+      session,
+      workspaceId: workspaceId,
+      resourceId: resourceId,
+      transaction: transaction,
+    );
+    if (resource == null) _validation();
+    final current = _metadata(resource.data);
+    if (current.url != metadata.url ||
+        current.transport != metadata.transport ||
+        current.useHttp2 != metadata.useHttp2 ||
+        current.authType != metadata.authType) {
+      _validation();
+    }
+    final currentSecret = await _repository.findSecret(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      resourceId: resourceId,
+      transaction: transaction,
+    );
+    if (secret == null && currentSecret != null ||
+        secret != null &&
+            (currentSecret?.id != secret.id ||
+                !allowSecretRevisionChange &&
+                    currentSecret?.revision != secret.revision)) {
+      _validation();
     }
   }
 
