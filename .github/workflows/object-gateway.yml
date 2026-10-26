@@ -1,0 +1,42 @@
+name: Object gateway
+on:
+  pull_request:
+    paths:
+      - 'services/object_gateway/**'
+      - '.github/workflows/object-gateway.yml'
+  push:
+    paths:
+      - 'services/object_gateway/**'
+      - '.github/workflows/object-gateway.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: gateway-test-only
+          POSTGRES_DB: gateway_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: services/object_gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/object_gateway/go.mod
+          cache-dependency-path: services/object_gateway/go.sum
+      - run: go mod verify
+      - run: go vet ./...
+      - run: go test -race ./...
+        env:
+          GATEWAY_TEST_DATABASE_URL: postgres://postgres:gateway-test-only@localhost:5432/gateway_test?sslmode=disable

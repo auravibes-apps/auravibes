@@ -1,0 +1,29 @@
+# Private object gateway
+
+This service proxies S3/R2 operations through a private bucket and a durable PostgreSQL fence. It does not issue direct S3 presigned URLs. Apply `schema.sql` once to a dedicated empty gateway database before starting it. It must share this same database across all gateway instances. The bucket must be private and writable only by gateway credentials; do not deploy or configure production credentials based on this document without a separate operational review.
+
+## Contract and provenance
+
+All control requests use `Authorization: Bearer <GATEWAY_CONTROL_TOKEN>` and the saved `X-Registration-Id`. A registration ID mismatch fails closed; signed tokens carry the same registration identity. A key has the form `<positive workspace ID>/<48 lowercase hex characters>`. Before requesting a signature, the application must persist a newly generated, never previously signed key and a cryptographically random 32-byte registration ID. Then call `POST /<key>?register=1` with `X-Registration-Id` set to the lowercase hex ID. The first registration and exact retry return 204; a different ID returns 409. Never register preexisting or legacy keys. Registration is a trusted assertion from the application; this service cannot establish a legacy key's prior history. Unknown keys return 409 for sign, quiesce, and delete.
+
+Existing `POST ?sign=PUT|GET` control requests return a signed gateway URL. Signed URLs bind the method, key, expiry, and upload headers; uploads are limited to 25 MiB. The gateway verifies SHA-256 and content type/length, and stores the checksum as S3 object metadata. `HEAD` returns `x-checksum-sha256`, content length, and content type. Upload tokens are single-use. The server must use `Cache-Control: no-store` for signed downloads.
+
+`POST /<key>?quiesce=1` atomically closes a registered key to signing and subsequent upload starts. It returns 409 while any write reservation is pending and 204 only when no reservations remain. Closed keys reject previously issued upload and download tokens. `DELETE /<key>` also closes the key and returns 409 until drained. Erasure is disabled by default. With explicitly configured AWS S3 erasure, the gateway lists and deletes every exact-key version and delete marker, then checks that no versions or current object remain. Unsupported listing, uncertain outcomes, access errors or retention locks return an error. R2 and generic S3-compatible endpoints remain blocked for erasure pending provider-specific evidence. An upload that has begun in S3 and has an uncertain result stays pending after errors, process crashes and restarts; expiry alone never proves quiescence. No automatic timeout clears it. A reviewed provider-specific reconciliation process is required before manually resolving such a reservation. Current application integration must remain fail-closed until it implements this registration and quiescence contract. Preserve a separate read route to the previous gateway for legacy objects; do not register them in this gateway or assert their erasure is complete.
+
+Retain key tombstones and reservations durably. A ledger restore from an older snapshot can roll back closures and provenance: take all gateway instances offline, rotate the signing key, and complete a reviewed recovery plan before restoring service. Do not infer that older gateway or direct-S3 URLs have been revoked. Backup/retention policy and recovery procedures require separate operational decisions.
+
+## Configuration
+
+- `GATEWAY_CONTROL_TOKEN`, `GATEWAY_SIGNING_KEY`: distinct high-entropy secrets, each at least 32 bytes. Supply through a secret manager; never log them or signed URLs.
+- `GATEWAY_DATABASE_URL`: PostgreSQL connection string for the dedicated database.
+- `GATEWAY_PUBLIC_BASE_URL`: externally reachable HTTPS URL, e.g. `https://gateway.example/objects`.
+- `GATEWAY_MAX_CONCURRENT_UPLOADS`: positive operator-selected concurrency bound. Each in-progress upload buffers up to 25 MiB.
+- `GATEWAY_ALLOWED_ORIGINS`: comma-separated exact HTTPS origins allowed by CORS.
+- `GATEWAY_READ_TIMEOUT_SECONDS`: required positive timeout for reading the full HTTP request, including a slow upload body.
+- `GATEWAY_LISTEN_ADDR`: optional internal listen address (default `:8080`); terminate TLS at a trusted proxy.
+- `GATEWAY_ERASURE_PROVIDER`: optional `aws-s3` enables version-aware erasure only for an AWS endpoint. Leave unset for all other providers. The gateway must be the sole bucket writer and administrators must prevent concurrent versioning, lifecycle, retention, replication or bucket policy changes while erasure is performed.
+- `S3_BUCKET`, `AWS_REGION`: private bucket and region (`auto` for R2); optionally `S3_ENDPOINT` is the HTTPS S3-compatible endpoint. The AWS SDK default credential chain supplies credentials server-side.
+
+For local development, use synthetic AWS credentials and a disposable compatible storage endpoint; never point tests at a real bucket. `go test ./...` runs HTTP tests without a provider. Set `GATEWAY_TEST_DATABASE_URL` to a **new disposable empty PostgreSQL database** to run the ledger integration test, which creates its schema. `go mod verify` and `go vet ./...` check dependencies and static analysis. The module's `go.mod` pins the minimum Go toolchain.
+
+The TLS proxy must disable access logs containing query strings or signed URLs. Restrict bucket writes to the gateway, and prevent unauthorized changes to versioning, retention and lifecycle configuration. Provider support and retention safety need separate verification; unsupported versioning or object-lock APIs are not proof of safety.
