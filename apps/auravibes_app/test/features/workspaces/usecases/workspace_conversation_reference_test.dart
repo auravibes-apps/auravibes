@@ -27,6 +27,26 @@ void main() {
         table: target,
         values: {target.labelColumnId: 'Unselected secret'},
       );
+      final _ = await fixture.database
+          .into(fixture.database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('two'),
+              name: 'Two',
+              type: .local,
+            ),
+          );
+      final otherTables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(fixture.database, 'two'),
+      );
+      final otherTarget = await otherTables.create(
+        name: 'Other target',
+        labelName: 'Title',
+      );
+      final otherRecord = await otherTables.createRecord(
+        table: otherTarget,
+        values: {otherTarget.labelColumnId: 'Other workspace secret'},
+      );
       var source = await fixture.tables.create(
         name: 'Source',
         labelName: 'Title',
@@ -69,6 +89,7 @@ void main() {
       expect(read.toString(), isNot(contains('Unselected secret')));
       expect(read.toString(), contains('restrictedReferenceColumns'));
       expect(read.toString(), contains(reference.id));
+      var failureIndex = 0;
       for (final input in [
         {
           'action': 'saveColumn',
@@ -77,6 +98,15 @@ void main() {
             'name': 'Guessed',
             'type': 'reference',
             'targetTableId': target.id,
+          },
+        },
+        {
+          'action': 'saveColumn',
+          'column': {
+            'id': '',
+            'name': 'Foreign workspace',
+            'type': 'reference',
+            'targetTableId': otherTarget.id,
           },
         },
         {
@@ -93,6 +123,13 @@ void main() {
           'values': {source.labelColumnId: 'Guessed', reference.id: guessed.id},
         },
         {
+          'action': 'createRecord',
+          'values': {
+            source.labelColumnId: 'Foreign workspace',
+            reference.id: otherRecord.id,
+          },
+        },
+        {
           'action': 'updateRecord',
           'id': row.id,
           'values': {source.labelColumnId: 'Guessed', reference.id: guessed.id},
@@ -101,7 +138,7 @@ void main() {
         await expectLater(
           fixture.tools.call(
             conversationId: fixture.chatId,
-            operationId: '${input['action']}-guessed',
+            operationId: '${input['action']}-reference-${failureIndex++}',
             arguments: {
               'tableId': source.id,
               'revision': row.revision,

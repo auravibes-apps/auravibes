@@ -928,6 +928,56 @@ void main() {
           recordIds: ['ref-selected'],
         ),
       );
+      final otherWorkspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            session,
+            name: 'Other workspace',
+            ownerUserId: userId,
+            now: now,
+          );
+      await endpoints.workspaceState.patch(
+        authenticated,
+        PatchWorkspaceStateRequest(
+          workspaceId: otherWorkspace.id!,
+          requestId: 'foreign-reference-table',
+          operations: [
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .table,
+              resourceId: 'foreign-target',
+              fieldMask: [],
+              data: jsonEncode({
+                'name': 'Foreign target',
+                'labelColumnId': 'foreign-title',
+                'schemaRevision': 1,
+                'columns': [
+                  {'id': 'foreign-title', 'name': 'Title', 'type': 'text'},
+                ],
+              }),
+            ),
+          ],
+        ),
+      );
+      await endpoints.workspaceState.patch(
+        authenticated,
+        PatchWorkspaceStateRequest(
+          workspaceId: otherWorkspace.id!,
+          requestId: 'foreign-reference-record',
+          operations: [
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: 'foreign-record',
+              fieldMask: [],
+              data: jsonEncode({
+                'tableId': 'foreign-target',
+                'schemaRevision': 1,
+                'values': {'foreign-title': 'Foreign workspace secret'},
+              }),
+            ),
+          ],
+        ),
+      );
 
       var referenceSequence = 0;
       for (final input in [
@@ -938,6 +988,15 @@ void main() {
             'name': 'Guessed',
             'type': 'reference',
             'targetTableId': 'ref-target',
+          },
+        },
+        {
+          'action': 'saveColumn',
+          'column': {
+            'id': '',
+            'name': 'Foreign workspace',
+            'type': 'reference',
+            'targetTableId': 'foreign-target',
           },
         },
         {
@@ -956,6 +1015,13 @@ void main() {
         {
           'action': 'createRecord',
           'values': {'source-title': 'Default guess'},
+        },
+        {
+          'action': 'createRecord',
+          'values': {
+            'source-title': 'Foreign workspace',
+            'link': 'foreign-record',
+          },
         },
         {
           'action': 'updateRecord',
