@@ -664,3 +664,37 @@ func TestQuiescenceDrainsAdmittedHead(t *testing.T) {
 		t.Fatalf("HEAD did not finish: %d", got)
 	}
 }
+
+type failingDeleteBucket struct {
+	*fakeBucket
+	err error
+}
+
+func (b *failingDeleteBucket) delete(context.Context, string) error { return b.err }
+func TestDeleteDistinguishesReplicaBlockerFromTransientFailure(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		err    error
+		status int
+		body   string
+	}{
+		{"replica provenance", errReplicaProvenanceUnavailable, 422, `{"code":"replica_provenance_unavailable"}`},
+		{"storage error", errors.New("private storage detail"), 502, "storage unavailable\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			l := newFakeLedger()
+			g := testGateway(l, newFakeBucket())
+			g.bucket = &failingDeleteBucket{fakeBucket: newFakeBucket(), err: tc.err}
+			w := control(g, "DELETE", "https://gateway.example/objects/"+testKey)
+			if w.Code != tc.status || w.Body.String() != tc.body {
+				t.Fatalf("status %d, body %q", w.Code, w.Body.String())
+			}
+			if tc.status == 422 && w.Header().Get("Content-Type") != "application/json" {
+				t.Fatal("missing JSON content type")
+			}
+			if !l.closed[testKey] {
+				t.Fatal("failed delete left key open")
+			}
+		})
+	}
+}
