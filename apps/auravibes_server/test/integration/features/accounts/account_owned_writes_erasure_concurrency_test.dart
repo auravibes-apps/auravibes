@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentCompactionRangeSelected;
+import 'package:auravibes_server/src/features/conversations/conversation_stream_service.dart';
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart'
@@ -844,8 +845,8 @@ void main() {
             stableId: 'account-erasure-unclaimed-assistant-message',
             role: 'assistant',
             kind: 'text',
-            status: 'queued',
-            content: '',
+            status: ConversationStatuses.running,
+            content: 'Partial assistant output must remain.',
             revision: 1,
             createdAt: now,
             updatedAt: now,
@@ -876,15 +877,57 @@ void main() {
           session,
           assistantMessage.copyWith(turnId: turn.id),
         );
+        final execution = await ConversationExecution.db.insertRow(
+          session,
+          ConversationExecution(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            stableId: turn.requestId,
+            status: ConversationStatuses.running,
+            settingsJson: '{}',
+            claimedMessageIdsJson: jsonEncode([userMessage.stableId]),
+            assistantMessageId: assistantMessage.id,
+            attempt: 1,
+            createdByUserId: userId,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            executionState: ConversationStatuses.running,
+            activeExecutionId: execution.id,
+            eventSequence: 1,
+            projectionRevision: 2,
+          ),
+        );
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            sequence: 1,
+            eventId: const Uuid().v7(),
+            actorUserId: userId,
+            requestId: turn.requestId,
+            kind: ConversationEventType.executionStarted,
+            payloadJson: jsonEncode({'executionId': execution.stableId}),
+            createdAt: now,
+          ),
+        );
         final job = await ConversationJob.db.insertRow(
           session,
           ConversationJob(
             workspaceId: workspace.id!,
             conversationId: conversation.id!,
             turnId: turn.id,
-            requestId: 'account-erasure-unclaimed-job',
+            requestId: turn.requestId,
             kind: 'turn',
-            payloadJson: jsonEncode({'actorUserId': userId}),
+            payloadJson: jsonEncode({
+              'actorUserId': userId,
+              'executionId': execution.stableId,
+            }),
             status: 'queued',
             attempt: 0,
             maxAttempts: 3,
@@ -895,11 +938,84 @@ void main() {
         );
         initializeTestAuthServices(session.serverpod);
 
+        final ownerId = workspace.ownerUserId;
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(ownerId),
+            email: '$ownerId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final ownerAuthenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            ownerId,
+            const {},
+          ),
+        );
+        final ownerSession = ownerAuthenticated.build();
+        final wakeups = StreamController<ConversationSubscribeRequest>();
+        final progress = StreamController<ConversationStreamEvent>();
+        final stream = StreamIterator(
+          ConversationStreamService(
+            wakeupStream: (_, _) => wakeups.stream,
+            progressStream: (_, _) => progress.stream,
+          ).subscribe(
+            ownerSession,
+            request: ConversationSubscribeRequest(
+              workspaceId: workspace.id!,
+              conversationId: conversation.stableId,
+              afterSequence: 1,
+            ),
+            userId: ownerId,
+          ),
+        );
+        final nextEvent = stream.moveNext();
+        addTearDown(() async {
+          await stream.cancel();
+          await wakeups.close();
+          await progress.close();
+        });
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
         await endpoints.account.deleteCurrentUser(authenticated);
         final host = _CountingWorkerHost();
-        final didWork = await ConversationWorker(host: host).runOnce(
+        var publishedCommittedCancellation = false;
+        final worker = ConversationWorker(
+          host: host,
+          publishConversation:
+              (session, {required workspaceId, required conversationId}) async {
+                final event = await ConversationEvent.db.findFirstRow(
+                  session,
+                  where: (table) =>
+                      table.workspaceId.equals(workspaceId) &
+                      table.conversationId.equals(conversation.id) &
+                      (table.sequence > 1),
+                );
+                publishedCommittedCancellation =
+                    event?.actorUserId ==
+                        ConversationSystemActorIds.accountErasure &&
+                    (await ConversationTurn.db.findById(
+                          session,
+                          turn.id!,
+                        ))?.status ==
+                        ConversationStatuses.cancelled;
+                wakeups.add(
+                  ConversationSubscribeRequest(
+                    workspaceId: workspaceId,
+                    conversationId: conversationId,
+                    afterSequence: 1,
+                  ),
+                );
+              },
+        );
+        var activeChecks = 0;
+        final didWork = await worker.runOnce(
           session,
           workerId: 'account-erasure-unclaimed-worker',
+          // The worker is stopping after claim; cleanup still publishes the
+          // committed cancellation before returning.
+          isActive: () => ++activeChecks == 1,
         );
 
         final workspaceAfter = await CloudWorkspace.db.findById(
@@ -922,6 +1038,20 @@ void main() {
           session,
           assistantMessage.id!,
         ))!;
+        final executionAfter = (await ConversationExecution.db.findById(
+          session,
+          execution.id!,
+        ))!;
+        final conversationAfter = (await Conversation.db.findById(
+          session,
+          conversation.id!,
+        ))!;
+        final cancellationEvent = await ConversationEvent.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.conversationId.equals(conversation.id) &
+              table.sequence.equals(2),
+        );
         final eligibleJob = await ConversationJob.db.findFirstRow(
           session,
           where: (table) =>
@@ -938,7 +1068,8 @@ void main() {
           await AuthUser.db.findById(session, UuidValue.fromString(userId)),
           isNull,
         );
-        expect(didWork, isFalse);
+        expect(didWork, isTrue);
+        expect(activeChecks, 1);
         expect(host.calls, 0);
         expect(jobAfter.status, 'cancelled');
         expect(jobAfter.attempt, 0);
@@ -946,12 +1077,50 @@ void main() {
         expect(jobAfter.leaseToken, isNull);
         expect(jobAfter.leaseExpiresAt, isNull);
         expect(eligibleJob, isNull);
-        expect(turnAfter.status, ConversationStatuses.queued);
-        expect(turnAfter.revision, 1);
+        expect(turnAfter.status, ConversationStatuses.cancelled);
+        expect(turnAfter.revision, 2);
+        expect(turnAfter.terminalAt, isNotNull);
         expect(userMessageAfter.status, 'queued');
         expect(userMessageAfter.content, 'Queued user content.');
-        expect(assistantMessageAfter.status, 'queued');
-        expect(assistantMessageAfter.content, isEmpty);
+        expect(assistantMessageAfter.status, ConversationStatuses.cancelled);
+        expect(
+          assistantMessageAfter.content,
+          'Partial assistant output must remain.',
+        );
+        expect(executionAfter.status, ConversationStatuses.cancelled);
+        expect(executionAfter.terminalAt, isNotNull);
+        expect(conversationAfter.executionState, 'idle');
+        expect(conversationAfter.activeExecutionId, isNull);
+        expect(conversationAfter.eventSequence, 2);
+        expect(conversationAfter.projectionRevision, 3);
+        expect(
+          cancellationEvent?.actorUserId,
+          ConversationSystemActorIds.accountErasure,
+        );
+        expect(cancellationEvent?.kind, ConversationEventType.executionStopped);
+        expect(publishedCommittedCancellation, isTrue);
+        expect(await nextEvent.timeout(const Duration(seconds: 3)), isTrue);
+        expect(stream.current.sequence, 2);
+        expect(
+          stream.current.actorUserId,
+          ConversationSystemActorIds.accountErasure,
+        );
+        expect(
+          jsonDecode(stream.current.payloadJson)['status'],
+          ConversationStatuses.cancelled,
+        );
+        await endpoints.conversation.queueConversationMessage(
+          ownerAuthenticated,
+          QueueConversationMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'owner-message-after-erased-turn',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: conversationAfter.projectionRevision,
+            clientMessageId: 'owner-message-after-erased-turn',
+            content: 'Continue shared conversation.',
+            attachmentIds: const [],
+          ),
+        );
       },
     );
 

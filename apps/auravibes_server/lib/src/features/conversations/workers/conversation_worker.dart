@@ -21,6 +21,11 @@ typedef ConversationJobPublisher = Future<void> Function(
   Session session,
   ConversationJob job,
 );
+typedef ConversationProjectionWakeupPublisher = Future<void> Function(
+  Session session, {
+  required int workspaceId,
+  required String conversationId,
+});
 typedef ConversationJobLeaseRenewer = Future<ConversationJob> Function(
   int jobId,
   String leaseToken,
@@ -56,6 +61,8 @@ class const ConversationWorker({
   final ConversationJobLeases leases = const ConversationJobLeases(),
   final ConversationJobPublisher publishConversationJob =
       SyncWakeups.publishConversationJob,
+  final ConversationProjectionWakeupPublisher publishConversation =
+      SyncWakeups.publishConversation,
   final ConversationJobLeaseRenewer? renewLease,
   final Duration renewalInterval = const Duration(seconds: 15),
   final Duration renewalRetryDelay = const Duration(seconds: 1),
@@ -81,6 +88,23 @@ class const ConversationWorker({
       now: now,
     );
     if (job == null) return false;
+    if (job.status == ConversationJobStatuses.cancelled) {
+      if (job.turnId != null) {
+        final conversation = await Conversation.db.findById(
+          session,
+          job.conversationId,
+        );
+        if (conversation != null) {
+          await publishConversation(
+            session,
+            workspaceId: job.workspaceId,
+            conversationId: conversation.stableId,
+          );
+        }
+      }
+      await _reconcileParentAfterChild(session, job);
+      return true;
+    }
     if (isActive != null && !isActive()) return true;
     if (job.status == ConversationJobStatuses.failed) {
       await _updateBackgroundContinuationPreview(
@@ -1109,11 +1133,20 @@ class const ConversationWorker({
     Session session,
     ConversationJob childJob,
   ) async {
-    final parentTurnId = conversation_repo.conversationParentTurnIdForJob(
-      childJob.payloadJson,
-    );
+    final parentTurnId =
+        conversation_repo.conversationParentTurnIdForJob(
+          childJob.payloadJson,
+        ) ??
+        (childJob.kind == ConversationJobKinds.subAgent
+            ? childJob.turnId
+            : null);
     final parentToolCallId = conversation_repo
         .conversationParentToolCallIdForJob(childJob.payloadJson);
+    final hasParentTurnLink =
+        conversation_repo.conversationParentTurnIdForJob(
+          childJob.payloadJson,
+        ) !=
+        null;
     if (parentToolCallId != null) {
       await _completeDetachedSubAgentWorkAfterChild(
         session,
@@ -1134,8 +1167,101 @@ class const ConversationWorker({
       final resumed = await _reconcileWaitingSubAgentJob(session, parentJob);
       if (resumed?.status == ConversationJobStatuses.queued) {
         await _publishRetryWake(session, resumed!);
+      } else if (resumed == null &&
+          (hasParentTurnLink ||
+              childJob.kind == ConversationJobKinds.subAgent)) {
+        final cleanupJob = await _queueRemovedMemberParentCleanup(
+          session,
+          childJob: childJob,
+          parentTurnId: parentTurnId,
+        );
+        if (cleanupJob != null) await _publishRetryWake(session, cleanupJob);
       }
     }
+  }
+
+  Future<ConversationJob?> _queueRemovedMemberParentCleanup(
+    Session session, {
+    required ConversationJob childJob,
+    required int parentTurnId,
+  }) async {
+    final actorUserId = await _actorUserIdForJob(session, childJob);
+    if (actorUserId == null) return null;
+    return session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: actorUserId,
+        transaction: transaction,
+      );
+      if (authUser == null) return null;
+      final workspace = await CloudWorkspace.db.findById(
+        session,
+        childJob.workspaceId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null ||
+          workspace.deletedAt != null ||
+          workspace.erasureRequestedAt != null) {
+        return null;
+      }
+      final member = await WorkspaceMember.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(childJob.workspaceId) &
+            table.userId.equals(actorUserId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (member == null || member.removedAt == null) return null;
+      final conversation = await Conversation.db.findById(
+        session,
+        childJob.conversationId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (conversation == null) return null;
+      final turn = await ConversationTurn.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(parentTurnId) &
+            table.workspaceId.equals(childJob.workspaceId) &
+            table.conversationId.equals(childJob.conversationId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (turn == null ||
+          turn.initiatorUserId != actorUserId ||
+          ConversationStatuses.isTerminal(turn.status)) {
+        return null;
+      }
+      final waitingJobs = await ConversationJob.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(childJob.workspaceId) &
+            table.turnId.equals(parentTurnId) &
+            table.kind.equals(ConversationJobKinds.turn) &
+            table.status.equals(ConversationJobStatuses.waitingForSubAgents),
+        orderBy: (table) => table.id,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (waitingJobs.isEmpty) return null;
+      final now = DateTime.now().toUtc();
+      return ConversationJob.db.updateRow(
+        session,
+        waitingJobs.first.copyWith(
+          status: ConversationJobStatuses.queued,
+          availableAt: now,
+          leaseOwner: null,
+          leaseToken: null,
+          leaseExpiresAt: null,
+          checkpointJson: jsonEncode({'phase': 'removed_member_cleanup'}),
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+    });
   }
 
   Future<void> _completeDetachedSubAgentWorkAfterChild(

@@ -1817,6 +1817,480 @@ void main() {
     });
 
     test(
+      'revoked member non-turn jobs cancel once and release waiting parent turn',
+      () async {
+        final fixture = await prepareExecution();
+        final turn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final parentJob = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.turnId.equals(turn.id),
+        ))!;
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          parentJob.copyWith(
+            status: ConversationJobStatuses.waitingForSubAgents,
+          ),
+        );
+        await ConversationTurn.db.updateRow(
+          fixture.database,
+          turn.copyWith(status: ConversationStatuses.running),
+        );
+        final now = DateTime.now().toUtc();
+        final nonTurnJobs = <ConversationJob>[];
+        for (final kind in [
+          ConversationJobKinds.compact,
+          ConversationJobKinds.title,
+          ConversationJobKinds.subAgent,
+        ]) {
+          nonTurnJobs.add(
+            await ConversationJob.db.insertRow(
+              fixture.database,
+              ConversationJob(
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationDatabaseId,
+                turnId: kind == ConversationJobKinds.compact ? null : turn.id,
+                requestId: 'revoked-$kind',
+                kind: kind,
+                status: ConversationJobStatuses.queued,
+                payloadJson: jsonEncode({
+                  'actorUserId': fixture.userId,
+                }),
+                attempt: 0,
+                maxAttempts: 3,
+                availableAt: DateTime.utc(2000),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ),
+          );
+        }
+        final member = (await WorkspaceMember.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.userId.equals(fixture.userId),
+        ))!;
+        await WorkspaceMember.db.updateRow(
+          fixture.database,
+          member.copyWith(removedAt: now),
+        );
+        final host = _CountingCompletingHost();
+        final worker = ConversationWorker(host: host);
+
+        for (final _ in nonTurnJobs) {
+          expect(
+            await worker.runOnce(
+              fixture.database,
+              workerId: 'revoked-non-turn-worker',
+            ),
+            isTrue,
+          );
+        }
+        expect(
+          await ConversationJob.db.findById(fixture.database, parentJob.id!),
+          isNotNull,
+        );
+        final requeuedParent = (await ConversationJob.db.findById(
+          fixture.database,
+          parentJob.id!,
+        ))!;
+        expect(requeuedParent.status, ConversationJobStatuses.cancelled);
+        expect(requeuedParent.attempt, parentJob.attempt);
+
+        expect(
+          await worker.runOnce(
+            fixture.database,
+            workerId: 'revoked-non-turn-worker',
+          ),
+          isTrue,
+        );
+        expect(
+          await worker.runOnce(
+            fixture.database,
+            workerId: 'revoked-non-turn-worker',
+          ),
+          isFalse,
+        );
+
+        for (final job in nonTurnJobs) {
+          final cancelled = (await ConversationJob.db.findById(
+            fixture.database,
+            job.id!,
+          ))!;
+          expect(cancelled.status, ConversationJobStatuses.cancelled);
+          expect(cancelled.attempt, 0);
+          expect(cancelled.leaseOwner, isNull);
+          expect(cancelled.leaseToken, isNull);
+          expect(cancelled.leaseExpiresAt, isNull);
+        }
+        final terminalParentJob = (await ConversationJob.db.findById(
+          fixture.database,
+          parentJob.id!,
+        ))!;
+        final terminalTurn = (await ConversationTurn.db.findById(
+          fixture.database,
+          turn.id!,
+        ))!;
+        expect(terminalParentJob.status, ConversationJobStatuses.cancelled);
+        expect(terminalParentJob.attempt, parentJob.attempt);
+        expect(terminalTurn.status, ConversationStatuses.cancelled);
+        expect(host.calls, 0);
+        expect(host.compactionCalls, 0);
+      },
+    );
+
+    test(
+      'revoked member waiting parent and child turns both reach cleanup',
+      () async {
+        final fixture = await prepareExecution();
+        final parentTurn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final parentJob = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.turnId.equals(parentTurn.id),
+        ))!;
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          parentJob.copyWith(
+            status: ConversationJobStatuses.waitingForSubAgents,
+          ),
+        );
+        await ConversationTurn.db.updateRow(
+          fixture.database,
+          parentTurn.copyWith(status: ConversationStatuses.running),
+        );
+        final now = DateTime.now().toUtc();
+        final existingJobs = await ConversationJob.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+        for (final existingJob in existingJobs) {
+          if (existingJob.id == parentJob.id) continue;
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            existingJob.copyWith(status: ConversationJobStatuses.completed),
+          );
+        }
+        final childUser = await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            stableId: 'revoked-child-user-${fixture.userId}',
+            role: 'user',
+            kind: 'text',
+            status: 'sent',
+            content: 'Synthetic child turn.',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final childAssistant = await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            stableId: 'revoked-child-assistant-${fixture.userId}',
+            role: 'assistant',
+            kind: 'text',
+            status: ConversationStatuses.running,
+            content: 'Existing partial answer.',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final childTurn = await ConversationTurn.db.insertRow(
+          fixture.database,
+          ConversationTurn(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            requestId: 'revoked-child-request-${fixture.userId}',
+            requestHash: '{}',
+            initiatorUserId: fixture.userId,
+            userMessageId: childUser.id,
+            assistantMessageId: childAssistant.id,
+            status: ConversationStatuses.running,
+            revision: 1,
+            acceptedSequence: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          childUser.copyWith(turnId: childTurn.id),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          childAssistant.copyWith(turnId: childTurn.id),
+        );
+        final childJob = await ConversationJob.db.insertRow(
+          fixture.database,
+          ConversationJob(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: childTurn.id,
+            requestId: childTurn.requestId,
+            kind: ConversationJobKinds.turn,
+            status: ConversationJobStatuses.queued,
+            payloadJson: jsonEncode({
+              'actorUserId': fixture.userId,
+              'parentTurnId': parentTurn.id,
+            }),
+            attempt: 0,
+            maxAttempts: 3,
+            availableAt: now,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final member = (await WorkspaceMember.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.userId.equals(fixture.userId),
+        ))!;
+        await WorkspaceMember.db.updateRow(
+          fixture.database,
+          member.copyWith(removedAt: now),
+        );
+
+        final host = _CountingCompletingHost();
+        final worker = ConversationWorker(host: host);
+        expect(
+          await worker.runOnce(
+            fixture.database,
+            workerId: 'revoked-child-turn-${fixture.userId}',
+          ),
+          isTrue,
+        );
+        final cleanedParent = (await ConversationJob.db.findById(
+          fixture.database,
+          parentJob.id!,
+        ))!;
+        expect(cleanedParent.status, ConversationJobStatuses.cancelled);
+        expect(
+          (await ConversationTurn.db.findById(
+            fixture.database,
+            parentTurn.id!,
+          ))!.status,
+          ConversationStatuses.cancelled,
+        );
+        expect(host.calls, 0);
+
+        expect(
+          await worker.runOnce(
+            fixture.database,
+            workerId: 'revoked-child-turn-${fixture.userId}',
+          ),
+          isTrue,
+        );
+        final cleanedChildJob = (await ConversationJob.db.findById(
+          fixture.database,
+          childJob.id!,
+        ))!;
+        final cleanedChildTurn = (await ConversationTurn.db.findById(
+          fixture.database,
+          childTurn.id!,
+        ))!;
+        expect(cleanedChildJob.status, ConversationJobStatuses.completed);
+        expect(cleanedChildJob.attempt, 0);
+        expect(cleanedChildTurn.status, ConversationStatuses.cancelled);
+        expect(
+          (await ConversationTurn.db.findById(
+            fixture.database,
+            parentTurn.id!,
+          ))!.status,
+          ConversationStatuses.cancelled,
+        );
+        expect(
+          await worker.runOnce(
+            fixture.database,
+            workerId: 'revoked-child-turn-${fixture.userId}',
+          ),
+          isFalse,
+        );
+        expect(host.calls, 0);
+      },
+    );
+
+    test(
+      'deleted account child turn is cleaned before its waiting parent',
+      () async {
+        final fixture = await prepareExecution();
+        final parentTurn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final parentJob = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.turnId.equals(parentTurn.id),
+        ))!;
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          parentJob.copyWith(
+            status: ConversationJobStatuses.waitingForSubAgents,
+          ),
+        );
+        await ConversationTurn.db.updateRow(
+          fixture.database,
+          parentTurn.copyWith(status: ConversationStatuses.running),
+        );
+        final now = DateTime.now().toUtc();
+        final existingJobs = await ConversationJob.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+        for (final existingJob in existingJobs) {
+          if (existingJob.id == parentJob.id) continue;
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            existingJob.copyWith(status: ConversationJobStatuses.completed),
+          );
+        }
+        final childUserId = const Uuid().v4().toString();
+        await AuthUser.db.insertRow(
+          fixture.database,
+          AuthUser(id: UuidValue.fromString(childUserId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          fixture.database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(childUserId),
+            email: '$childUserId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        await WorkspaceMember.db.insertRow(
+          fixture.database,
+          WorkspaceMember(
+            workspaceId: fixture.workspaceId,
+            userId: childUserId,
+            role: WorkspaceRoles.member,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final childAssistant = await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            stableId: 'erased-child-assistant-${fixture.userId}',
+            role: 'assistant',
+            kind: 'text',
+            status: ConversationStatuses.running,
+            content: 'Preserved child response.',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final childTurn = await ConversationTurn.db.insertRow(
+          fixture.database,
+          ConversationTurn(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            requestId: 'erased-child-request-${fixture.userId}',
+            requestHash: '{}',
+            initiatorUserId: childUserId,
+            assistantMessageId: childAssistant.id,
+            status: ConversationStatuses.running,
+            revision: 1,
+            acceptedSequence: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          childAssistant.copyWith(turnId: childTurn.id),
+        );
+        final childJob = await ConversationJob.db.insertRow(
+          fixture.database,
+          ConversationJob(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: childTurn.id,
+            requestId: childTurn.requestId,
+            kind: ConversationJobKinds.turn,
+            status: ConversationJobStatuses.queued,
+            payloadJson: jsonEncode({
+              'actorUserId': childUserId,
+              'parentTurnId': parentTurn.id,
+            }),
+            attempt: 0,
+            maxAttempts: 3,
+            availableAt: now,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        initializeTestAuthServices(fixture.database.serverpod);
+        final childSession = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            childUserId,
+            const {},
+          ),
+        );
+        await endpoints.account.deleteCurrentUser(childSession);
+
+        final host = _CountingCompletingHost();
+        final worker = ConversationWorker(host: host);
+        expect(
+          await worker.runOnce(
+            fixture.database,
+            workerId: 'erased-child-turn-${fixture.userId}',
+          ),
+          isTrue,
+        );
+        final cancelledChildJob = (await ConversationJob.db.findById(
+          fixture.database,
+          childJob.id!,
+        ))!;
+        final cancelledChildTurn = (await ConversationTurn.db.findById(
+          fixture.database,
+          childTurn.id!,
+        ))!;
+        final preservedChildAssistant = (await ConversationMessage.db.findById(
+          fixture.database,
+          childAssistant.id!,
+        ))!;
+        expect(cancelledChildJob.status, ConversationJobStatuses.cancelled);
+        expect(cancelledChildJob.attempt, 0);
+        expect(cancelledChildTurn.status, ConversationStatuses.cancelled);
+        expect(preservedChildAssistant.status, ConversationStatuses.cancelled);
+        expect(preservedChildAssistant.content, childAssistant.content);
+        expect(
+          (await ConversationJob.db.findById(
+            fixture.database,
+            parentJob.id!,
+          ))!.status,
+          ConversationJobStatuses.queued,
+        );
+        expect(host.calls, 0);
+      },
+    );
+
+    test(
       'queued Continue retains claims while running and approval states reject',
       () async {
         final fixture = await prepareExecution(continueConversation: false);
@@ -2081,7 +2555,7 @@ void main() {
     });
 
     test(
-      'account deletion cancels exhausted job without failing turn content',
+      'account deletion terminalizes exhausted turn without changing content',
       () async {
         final fixture = await prepareExecution();
         final job = (await ConversationJob.db.findFirstRow(
@@ -2142,7 +2616,7 @@ void main() {
               table.conversationId.equals(fixture.conversationDatabaseId),
         );
 
-        expect(didWork, isFalse);
+        expect(didWork, isTrue);
         expect(host.calls, 0);
         expect(jobAfterClaim.status, ConversationJobStatuses.cancelled);
         expect(jobAfterClaim.attempt, job.maxAttempts);
@@ -2150,13 +2624,182 @@ void main() {
         expect(jobAfterClaim.leaseToken, isNull);
         expect(jobAfterClaim.leaseExpiresAt, isNull);
         expect(jobAfterClaim.lastErrorCode, isNull);
-        expect(turnAfterClaim.status, turn.status);
+        expect(turnAfterClaim.status, ConversationStatuses.cancelled);
+        expect(turnAfterClaim.terminalAt, isNotNull);
         expect(userAfterClaim.status, userMessage.status);
-        expect(assistantAfterClaim.status, assistantMessage.status);
+        expect(userAfterClaim.content, userMessage.content);
+        expect(assistantAfterClaim.status, ConversationStatuses.cancelled);
         expect(assistantAfterClaim.content, assistantMessage.content);
-        expect(eventsAfterClaim, hasLength(eventsBeforeClaim.length));
+        expect(eventsAfterClaim, hasLength(eventsBeforeClaim.length + 1));
+        expect(
+          eventsAfterClaim.last.actorUserId,
+          ConversationSystemActorIds.accountErasure,
+        );
       },
     );
+
+    test(
+      'unavailable actors terminalize completed approval turns and preserve metadata',
+      () async {
+        for (final deleteAccount in [true, false]) {
+          final fixture = await prepareExecution();
+          final staged = await _stageAwaitingApproval(fixture, calls: 1);
+          final assistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            staged.turn.assistantMessageId!,
+          ))!;
+          const existingMetadata = {
+            'a2uiMessages': [
+              {'surfaceId': 'surface-1', 'component': 'Text'},
+            ],
+            'modelMetadata': {'modelId': 'model-1'},
+          };
+          await ConversationMessage.db.updateRow(
+            fixture.database,
+            assistant.copyWith(metadataJson: jsonEncode(existingMetadata)),
+          );
+          if (deleteAccount) {
+            await deleteFixtureAccount(fixture);
+          } else {
+            final member = (await WorkspaceMember.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.userId.equals(fixture.userId),
+            ))!;
+            await WorkspaceMember.db.updateRow(
+              fixture.database,
+              member.copyWith(removedAt: DateTime.now().toUtc()),
+            );
+          }
+
+          final host = _CountingCompletingHost();
+          final worker = ConversationWorker(host: host);
+          expect(
+            await worker.runOnce(
+              fixture.database,
+              workerId: 'paused-approval-cleanup-${fixture.userId}',
+            ),
+            isTrue,
+          );
+
+          final cleanedJob = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          final cleanedTurn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          final cleanedAssistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            staged.turn.assistantMessageId!,
+          ))!;
+          final cleanedApprovalCall = (await ConversationToolCall.db
+              .findFirstRow(
+                fixture.database,
+                where: (table) =>
+                    table.workspaceId.equals(fixture.workspaceId) &
+                    table.stableId.equals('tool-call-1'),
+              ))!;
+          final metadata = jsonDecode(cleanedAssistant.metadataJson!) as Map;
+          expect(cleanedJob.status, ConversationJobStatuses.cancelled);
+          expect(cleanedJob.attempt, 0);
+          expect(cleanedTurn.status, ConversationStatuses.cancelled);
+          expect(cleanedAssistant.status, ConversationStatuses.cancelled);
+          expect(cleanedAssistant.content, assistant.content);
+          expect(metadata['errorCode'], 'cancelled');
+          expect(metadata['a2uiMessages'], existingMetadata['a2uiMessages']);
+          expect(metadata['modelMetadata'], existingMetadata['modelMetadata']);
+          expect(cleanedApprovalCall.status, 'cancelled');
+          expect(cleanedApprovalCall.decision, 'deny');
+          expect(cleanedApprovalCall.decisionByUserId, isNull);
+          expect(cleanedApprovalCall.decisionAt, isNotNull);
+          expect(host.calls, 0);
+          expect(
+            (await ConversationEvent.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.conversationId.equals(fixture.conversationDatabaseId) &
+                  table.requestId.equals(staged.turn.requestId) &
+                  table.kind.equals(ConversationEventType.executionStopped),
+            ))!.actorUserId,
+            deleteAccount
+                ? ConversationSystemActorIds.accountErasure
+                : ConversationSystemActorIds.unavailableMembershipCleanup,
+          );
+          expect(
+            await worker.runOnce(
+              fixture.database,
+              workerId: 'paused-approval-cleanup-${fixture.userId}',
+            ),
+            isFalse,
+          );
+        }
+      },
+    );
+
+    test('unavailable actor cleanup finds waiting parent turns', () async {
+      final fixture = await prepareExecution();
+      final job = (await ConversationJob.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.conversationId.equals(fixture.conversationDatabaseId),
+      ))!;
+      final turn = (await ConversationTurn.db.findById(
+        fixture.database,
+        job.turnId!,
+      ))!;
+      await ConversationJob.db.updateRow(
+        fixture.database,
+        job.copyWith(status: ConversationJobStatuses.waitingForSubAgents),
+      );
+      await ConversationTurn.db.updateRow(
+        fixture.database,
+        turn.copyWith(status: ConversationStatuses.running),
+      );
+      final member = (await WorkspaceMember.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.userId.equals(fixture.userId),
+      ))!;
+      await WorkspaceMember.db.updateRow(
+        fixture.database,
+        member.copyWith(removedAt: DateTime.now().toUtc()),
+      );
+
+      final host = _CountingCompletingHost();
+      final worker = ConversationWorker(host: host);
+      expect(
+        await worker.runOnce(
+          fixture.database,
+          workerId: 'paused-parent-cleanup-${fixture.userId}',
+        ),
+        isTrue,
+      );
+      expect(
+        (await ConversationJob.db.findById(fixture.database, job.id!))!.status,
+        ConversationJobStatuses.cancelled,
+      );
+      expect(
+        (await ConversationTurn.db.findById(
+          fixture.database,
+          turn.id!,
+        ))!.status,
+        ConversationStatuses.cancelled,
+      );
+      expect(host.calls, 0);
+      expect(
+        await worker.runOnce(
+          fixture.database,
+          workerId: 'paused-parent-cleanup-${fixture.userId}',
+        ),
+        isFalse,
+      );
+    });
 
     test('claim exhausts all jobs across a changing candidate page', () async {
       final fixture = await prepareExecution();
