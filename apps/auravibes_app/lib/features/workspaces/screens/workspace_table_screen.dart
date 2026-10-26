@@ -30,41 +30,55 @@ class const WorkspaceTableScreen({
   required final String tableId,
   required final VoidCallback onBack,
   super.key,
-}) extends StatelessWidget {
+}) extends HookWidget {
   @override
-  Widget build(BuildContext context) => AppScreen(
-    child: _TableState(screen: this),
-    appBar: _TableToolbar(screen: this),
-  );
+  Widget build(BuildContext context) {
+    final draftOpen = useState(false);
+
+    return PopScope(
+      child: AppScreen(
+        child: _TableState(screen: this, draftOpen: draftOpen),
+        appBar: _TableToolbar(screen: this, draftOpen: draftOpen),
+      ),
+      canPop: !draftOpen.value,
+    );
+  }
 }
 
-class const _TableToolbar({required final WorkspaceTableScreen screen})
-    extends StatelessWidget
-    implements PreferredSizeWidget {
+class const _TableToolbar({
+  required final WorkspaceTableScreen screen,
+  required final ValueNotifier<bool> draftOpen,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: const TextLocale(LocaleKeys.workspace_items_table),
-    actions: [_RefreshTableButton(screen: screen)],
+    actions: [_RefreshTableButton(screen: screen, draftOpen: draftOpen)],
   );
 }
 
-class const _RefreshTableButton({required final WorkspaceTableScreen screen})
-    extends ConsumerWidget {
+class const _RefreshTableButton({
+  required final WorkspaceTableScreen screen,
+  required final ValueNotifier<bool> draftOpen,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
     icon: Icons.refresh,
-    onPressed: () => _TableNavigationActions.refresh(
-      ref,
-      screen.workspaceId,
-      screen.tableId,
-    ),
+    onPressed: draftOpen.value
+        ? null
+        : () => _TableNavigationActions.refresh(
+            ref,
+            screen.workspaceId,
+            screen.tableId,
+          ),
   );
 }
 
-class const _TableState({required final WorkspaceTableScreen screen})
-    extends ConsumerWidget {
+class const _TableState({
+  required final WorkspaceTableScreen screen,
+  required final ValueNotifier<bool> draftOpen,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final table = ref.watch(
@@ -75,19 +89,26 @@ class const _TableState({required final WorkspaceTableScreen screen})
       return _TableFailure(onBack: screen.onBack, error: error);
     }
     final current = table.value;
-    if (current != null) return _LoadedTable(screen: screen, table: current);
+    if (current != null) {
+      return _LoadedTable(screen: screen, table: current, draftOpen: draftOpen);
+    }
 
-    return _PendingTable(screen, table);
+    return _PendingTable(screen, table, draftOpen);
   }
 }
 
 class const _PendingTable(
   final WorkspaceTableScreen screen,
   final AsyncValue<WorkspaceTable> table,
+  final ValueNotifier<bool> draftOpen,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (table) {
-    AsyncData(:final value) => _LoadedTable(screen: screen, table: value),
+    AsyncData(:final value) => _LoadedTable(
+      screen: screen,
+      table: value,
+      draftOpen: draftOpen,
+    ),
     AsyncError(:final error) => _TableFailure(
       onBack: screen.onBack,
       error: error,
@@ -117,6 +138,7 @@ class const _TableContents({
   required final String workspaceId,
   required final WorkspaceTable table,
   required final VoidCallback onBack,
+  required final ValueNotifier<bool> draftOpen,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -241,13 +263,65 @@ class const _BrowsingPage({
     table: owner.table,
     onBack: owner.onBack,
     onChanged: navigation.refresh,
-    onRecord: _record,
-    onColumn: _column,
+    onRecord: (record) => _record(context, record),
+    onColumn: (column) => _column(context, column),
+    draftOpen: owner.draftOpen,
   );
-  void _record(WorkspaceRecord? record) =>
+  void _record(BuildContext context, WorkspaceRecord? record) {
+    if (record != null) {
       navigation.selected.value = _RecordSelection(record);
-  void _column(WorkspaceColumn? column) =>
+
+      return;
+    }
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog(
+          child: SizedBox(
+            width: 600,
+            height: 600,
+            child: WorkspaceRecordEditor(
+              workspaceId: owner.workspaceId,
+              table: owner.table,
+              record: null,
+              onBack: () {
+                Navigator.of(dialogContext).pop();
+                navigation.refresh();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _column(BuildContext context, WorkspaceColumn? column) {
+    if (column != null) {
       navigation.selected.value = _ColumnSelection(column);
+
+      return;
+    }
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog(
+          child: SizedBox(
+            width: 600,
+            height: 600,
+            child: WorkspaceColumnEditor(
+              workspaceId: owner.workspaceId,
+              table: owner.table,
+              column: null,
+              onBack: () {
+                Navigator.of(dialogContext).pop();
+                navigation.refresh();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class const _TableBrowser({
@@ -257,6 +331,7 @@ class const _TableBrowser({
   required final VoidCallback onChanged,
   required final ValueChanged<WorkspaceRecord?> onRecord,
   required final ValueChanged<WorkspaceColumn?> onColumn,
+  required final ValueNotifier<bool> draftOpen,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
@@ -265,7 +340,10 @@ class const _TableBrowser({
 
     return Column(
       children: [
-        _BrowserToolbar(this, settings, selectionMode),
+        IgnorePointer(
+          ignoring: draftOpen.value,
+          child: _BrowserToolbar(this, settings, selectionMode),
+        ),
         Expanded(child: _BrowserContent(this, settings, selectionMode)),
       ],
     );
@@ -306,6 +384,9 @@ class const _BrowserRecords(
     table: browser.table,
     onRecord: browser.onRecord,
     selectionMode: selectionMode,
+    draftOpen: browser.draftOpen,
+    onAddRow: () => browser.onRecord(null),
+    onAddColumn: () => browser.onColumn(null),
   );
 }
 
@@ -593,12 +674,14 @@ class const _ColumnList({
 class const _LoadedTable({
   required final WorkspaceTableScreen screen,
   required final WorkspaceTable table,
+  required final ValueNotifier<bool> draftOpen,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _TableContents(
     workspaceId: screen.workspaceId,
     table: table,
     onBack: screen.onBack,
+    draftOpen: draftOpen,
     key: ValueKey(table.id),
   );
 }

@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_browser.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_fields.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -108,6 +109,8 @@ void main() {
     expect(button('workspace_record_create'), findsNothing);
     await tester.tap(find.text('Readable'));
     final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Show more').last);
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Readable'), findsOneWidget);
     expect(button('workspace_record_save'), findsNothing);
     final recordMenu = find.byWidgetPredicate(
@@ -120,6 +123,56 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.text('Revision history'), findsOneWidget);
     expect(find.text('Move to Trash'), findsNothing);
+  });
+  testWidgets('selecting a cell does not open the record editor', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'source',
+      name: 'Source',
+      labelColumnId: 'label',
+      columns: [WorkspaceColumn(id: 'label', name: 'Title')],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    const record = WorkspaceRecord(
+      id: 'row',
+      tableId: 'source',
+      values: {'label': 'Value'},
+      revision: 1,
+    );
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => fail('Selection must stay in the table'),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final cell = find.byKey(const ValueKey('workspace_cell_row_label'));
+    expect(cell, findsOneWidget);
+    await tester.tap(cell);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('workspace_cell_row_label')),
+      findsOneWidget,
+    );
+    await tester.tap(cell);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(cell);
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkspaceRecordFields), findsOneWidget);
   });
   testWidgets('restricted reference cells hide stored IDs at both widths', (
     tester,
@@ -334,6 +387,8 @@ void main() {
       });
       await _settleDatabase(tester);
       await tester.tap(find.text('Old target').first);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('Old target').first);
       await _settleDatabase(tester);
       await tester.enterText(
         find.byWidgetPredicate(
@@ -344,15 +399,26 @@ void main() {
         'Updated target',
       );
       await tester.runAsync(
-        () => tester.tap(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is AuraButton &&
-                widget.identifier == 'workspace_record_save',
-          ),
-        ),
+        () => tester.tap(find.byTooltip('Save record').last),
       );
       await _settleDatabase(tester);
+      for (
+        var attempt = 0;
+        attempt < 20 &&
+            find
+                .descendant(
+                  of: find.byKey(const ValueKey('stable_reference')),
+                  matching: find.text('Updated target'),
+                )
+                .evaluate()
+                .isEmpty;
+        attempt++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await _settleDatabase(tester);
+      }
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('stable_reference')),
@@ -493,23 +559,51 @@ void main() {
       find.byWidgetPredicate(
         (widget) =>
             widget is AuraIconButton &&
-            widget.identifier == 'workspace_record_create',
+            widget.identifier == 'workspace_table_back',
       ),
     );
     await flush();
-    expect(find.text('Book'), findsOneWidget);
-    await tester.tap(find.text('Book'));
+    await tester.tap(find.byTooltip('Add record').last);
+    await flush();
+    await tester.tap(find.text('Book').last);
     await flush();
     await tester.enterText(input('workspace_record_value'), 'First book');
-    await tester.runAsync(() => tester.tap(button('workspace_record_save')));
+    await flush();
+    expect(tester.widget<PopScope>(find.byType(PopScope).last).canPop, isFalse);
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'workspace_table_back',
+      ),
+      warnIfMissed: false,
+    );
+    await tester.tap(find.byIcon(Icons.refresh), warnIfMissed: false);
+    await flush();
+    expect(input('workspace_record_value'), findsOneWidget);
+    expect(find.text('First book'), findsOneWidget);
+    await tester.runAsync(() => tester.tap(find.byTooltip('Save record').last));
     await flush();
 
-    await tester.tap(find.text('First book'));
+    final first = find.text('First book');
+    await tester.tap(first);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(first);
     await flush();
     await tester.enterText(input('workspace_record_value'), 'Updated book');
-    await tester.runAsync(() => tester.tap(button('workspace_record_save')));
+    await tester.runAsync(() => tester.tap(find.byTooltip('Save record').last));
     await flush();
-
+    for (
+      var attempt = 0;
+      attempt < 20 && find.byType(WorkspaceRecordFields).evaluate().isNotEmpty;
+      attempt++
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await flush();
+    }
+    expect(find.byType(WorkspaceRecordFields), findsNothing);
     expect(find.text('Updated book'), findsOneWidget);
     expect(find.text('First book'), findsNothing);
     final current = (await tables.list()).single;
@@ -524,19 +618,24 @@ void main() {
     await tester.enterText(input('workspace_record_search'), 'Updated');
     await tester.testTextInput.receiveAction(.done);
     await flush();
+    for (
+      var attempt = 0;
+      attempt < 20 && find.text('Updated book').evaluate().isEmpty;
+      attempt++
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await flush();
+    }
     expect(find.text('Updated book'), findsOneWidget);
-    expect(find.text('Other book'), findsNothing);
-    await tester.tap(find.text('Updated book'));
-    await flush();
-    await tester.tap(find.text('Reading'));
-    await flush();
     expect(find.text('Other book'), findsNothing);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetDevicePixelRatio);
     tester.view.physicalSize = const Size(400, 800);
     addTearDown(tester.view.resetPhysicalSize);
     await flush();
-    expect(find.byType(DataTable), findsNothing);
+    expect(find.byType(DataTable), findsOneWidget);
     expect(find.text('Updated book'), findsOneWidget);
   });
 }

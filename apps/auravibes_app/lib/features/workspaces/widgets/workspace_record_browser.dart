@@ -4,17 +4,23 @@ import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_
 import 'package:auravibes_app/features/workspaces/models/workspace_record_change.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_bulk_record_dialog.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_minimum_viewport.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_query_filter.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_record_fields.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -24,12 +30,20 @@ class const WorkspaceRecordBrowser({
   required final WorkspaceTable table,
   required final ValueChanged<WorkspaceRecord> onRecord,
   final ValueNotifier<bool>? selectionMode,
+  final ValueNotifier<bool>? draftOpen,
+  final VoidCallback? onAddRow,
+  final VoidCallback? onAddColumn,
   super.key,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localSelection = useState(false);
-    final draft = _Draft(table, selectionMode ?? localSelection);
+    final localDraft = useState(false);
+    final draft = _Draft(
+      table,
+      selectionMode ?? localSelection,
+      draftOpen ?? localDraft,
+    );
     final records = ref.watch(
       workspaceRecordQueryProvider(workspaceId, table.id, draft.query.value),
     );
@@ -39,17 +53,26 @@ class const WorkspaceRecordBrowser({
 }
 
 class _Draft {
-  new(WorkspaceTable table, this.selecting)
+  new(WorkspaceTable table, this.selecting, this.draftOpen)
     : query = useState(const WorkspaceRecordQuery()),
       controls = useState(false),
       selected = useState<Map<String, WorkspaceRecord>>({}),
-      columns = useState(table.columns.map((column) => column.id).toSet());
+      columns = useState(table.columns.map((column) => column.id).toSet()),
+      active = useState<({String record, String column})?>(null),
+      editing = useState(false),
+      creating = useState(false),
+      values = useState<Map<String, Object?>>({});
 
   final ValueNotifier<WorkspaceRecordQuery> query;
   final ValueNotifier<bool> controls;
   final ValueNotifier<bool> selecting;
+  final ValueNotifier<bool> draftOpen;
   final ValueNotifier<Map<String, WorkspaceRecord>> selected;
   final ValueNotifier<Set<String>> columns;
+  final ValueNotifier<({String record, String column})?> active;
+  final ValueNotifier<bool> editing;
+  final ValueNotifier<bool> creating;
+  final ValueNotifier<Map<String, Object?>> values;
   bool canSelect(WorkspaceRecord record) =>
       selected.value.containsKey(record.id) ||
       selected.value.length < WorkspaceRecordChange.maxOperations;
@@ -88,11 +111,21 @@ class const _FrameContent(
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      _Search(draft),
-      if (owner.table.canEditRecords) _BulkToolbar(owner, draft),
-      if (draft.controls.value) _Controls(owner, draft),
+      IgnorePointer(
+        ignoring: draft.draftOpen.value,
+        child: Column(
+          children: [
+            _Search(draft),
+            if (owner.table.canEditRecords) _BulkToolbar(owner, draft),
+            if (draft.controls.value) _Controls(owner, draft),
+          ],
+        ),
+      ),
       Expanded(child: _RecordState(owner, draft, records)),
-      _Pages(draft.query, more: records.value?.hasMore ?? false),
+      IgnorePointer(
+        ignoring: draft.draftOpen.value,
+        child: _Pages(draft.query, more: records.value?.hasMore ?? false),
+      ),
     ],
   );
 }
@@ -305,70 +338,7 @@ class const _Rows(
 
   bool isSelecting() => table.canEditRecords && draft.selecting.value;
   @override
-  Widget build(BuildContext context) {
-    if (records.isEmpty) {
-      return const Center(
-        child: TextLocale(LocaleKeys.workspace_items_no_records),
-      );
-    }
-
-    return LayoutBuilder(builder: _layout);
-  }
-
-  Widget _layout(BuildContext _, BoxConstraints constraints) =>
-      constraints.maxWidth < 600
-      ? ListView(
-          children: [for (final record in records) _RecordRow(this, record)],
-        )
-      : _Grid(this);
-}
-
-class const _RecordRow(final _Rows owner, final WorkspaceRecord record)
-    extends StatelessWidget {
-  bool get _selecting => owner.isSelecting();
-  @override
-  Widget build(BuildContext context) => ListTile(
-    key: ValueKey('workspace_record_${record.id}'),
-    leading: _selecting ? _RecordCheckbox(owner, record) : null,
-    title: Text(_value(record, owner.table.labelColumnId)),
-    subtitle: _RecordDetails(owner, record),
-    onTap: _tap,
-    onLongPress: owner.table.canEditRecords ? _select : null,
-  );
-  void _select() => owner.draft.toggle(record);
-  void _tap() {
-    if (_selecting) {
-      _select();
-    } else {
-      owner.onRecord(record);
-    }
-  }
-}
-
-class const _RecordCheckbox(final _Rows owner, final WorkspaceRecord record)
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Checkbox(
-    value: owner.draft.selected.value.containsKey(record.id),
-    onChanged: owner.draft.canSelect(record)
-        ? (checked) =>
-              owner.draft.setSelected(record, checked: checked ?? false)
-        : null,
-  );
-}
-
-class const _RecordDetails(final _Rows owner, final WorkspaceRecord record)
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: .start,
-    children: [
-      for (final column in owner.visible.where(
-        (column) => column.id != owner.table.labelColumnId,
-      ))
-        _RecordDetail(owner, record, column),
-    ],
-  );
+  Widget build(BuildContext context) => _Grid(this);
 }
 
 class const _Grid(final _Rows owner) extends StatelessWidget {
@@ -378,15 +348,126 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
       scrollDirection: .horizontal,
       child: DataTable(
         columns: [
+          const DataColumn(label: SizedBox.shrink()),
           for (final column in owner.visible)
             DataColumn(label: Text(column.name)),
+          if (owner.table.canManage && owner.browser.onAddColumn != null)
+            DataColumn(
+              label: IconButton(
+                onPressed: owner.draft.draftOpen.value
+                    ? null
+                    : owner.browser.onAddColumn,
+                tooltip: LocaleKeys.workspace_items_create_column.tr(),
+                icon: const Icon(Icons.add),
+              ),
+            ),
         ],
         dataRowMaxHeight: .infinity,
-        rows: [for (final record in owner.records) _row(record)],
+        rows: [
+          for (final record in owner.records)
+            _GridRecord(owner, record).create(),
+          if (owner.table.canEditRecords && owner.draft.creating.value)
+            _NewGridRecord(owner).create()
+          else if (owner.table.canEditRecords && owner.browser.onAddRow != null)
+            DataRow(
+              cells: [
+                DataCell.empty,
+                DataCell(
+                  IconButton(
+                    onPressed: _create,
+                    tooltip: LocaleKeys.workspace_items_create_record.tr(),
+                    icon: const Icon(Icons.add),
+                  ),
+                ),
+                for (var i = 1; i < owner.visible.length; i++) DataCell.empty,
+                if (owner.table.canManage && owner.browser.onAddColumn != null)
+                  DataCell.empty,
+              ],
+            ),
+        ],
       ),
     ),
   );
-  DataRow _row(WorkspaceRecord record) => _GridRecord(owner, record).create();
+  void _create() {
+    if (owner.draft.editing.value) return;
+    owner.draft.values.value = WorkspaceTableConstraints.defaults(
+      owner.table.columns,
+      const {},
+    );
+    owner.draft.creating.value = true;
+    owner.draft.draftOpen.value = true;
+  }
+}
+
+class const _NewGridRecord(final _Rows owner) {
+  DataRow create() => DataRow(
+    cells: [
+      DataCell(_NewRecordActions(owner)),
+      for (final column in owner.visible)
+        DataCell(
+          SizedBox(
+            width: 200,
+            child: WorkspaceRecordFields(
+              table: owner.table,
+              workspaceId: owner.browser.workspaceId,
+              restricted: const [],
+              draft: owner.draft.values,
+              disabled: false,
+              columnId: column.id,
+            ),
+          ),
+        ),
+      if (owner.table.canManage && owner.browser.onAddColumn != null)
+        DataCell.empty,
+    ],
+  );
+}
+
+class const _NewRecordActions(final _Rows owner) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final action = WorkspaceTableActions.use(context);
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        IconButton(
+          onPressed: action.pending ? null : () => _submit(ref, action),
+          tooltip: LocaleKeys.workspace_items_save_record.tr(),
+          icon: const Icon(Icons.check),
+        ),
+        IconButton(
+          onPressed: action.pending ? null : _cancel,
+          tooltip: LocaleKeys.common_cancel.tr(),
+          icon: const Icon(Icons.close),
+        ),
+        if (action.error case final error?) WorkspaceItemFailure(error: error),
+      ],
+    );
+  }
+
+  void _cancel() {
+    owner.draft.creating.value = false;
+    owner.draft.draftOpen.value = false;
+  }
+
+  void _submit(WidgetRef ref, WorkspaceTableAction action) =>
+      unawaited(action.run(() => _save(ref)));
+  Future<void> _save(WidgetRef ref) async {
+    final usecase = await ref.read(
+      workspaceTableUsecaseProvider(owner.browser.workspaceId).future,
+    );
+    final _ = await usecase.createRecord(
+      table: owner.table,
+      values: owner.draft.values.value,
+    );
+    if (!ref.context.mounted) return;
+    owner.draft.creating.value = false;
+    owner.draft.draftOpen.value = false;
+    ref.invalidate(
+      workspaceRecordQueryUsecaseProvider(owner.browser.workspaceId),
+    );
+  }
 }
 
 class const _GridRecord(final _Rows owner, final WorkspaceRecord record) {
@@ -396,38 +477,183 @@ class const _GridRecord(final _Rows owner, final WorkspaceRecord record) {
   DataRow create() => DataRow(
     selected: _selected,
     onSelectChanged: _canSelect ? _changed : null,
-    onLongPress: owner.table.canEditRecords ? _select : null,
-    cells: [for (final column in owner.visible) _cell(column)],
+    cells: [
+      DataCell(
+        IconButton(
+          onPressed: owner.draft.draftOpen.value
+              ? null
+              : () => owner.onRecord(record),
+          tooltip: LocaleKeys.common_show_more.tr(),
+          icon: const Icon(Icons.more_horiz),
+        ),
+      ),
+      for (final column in owner.visible) _cell(column),
+      if (owner.table.canManage && owner.browser.onAddColumn != null)
+        DataCell.empty,
+    ],
   );
   void _changed(bool? checked) =>
       owner.draft.setSelected(record, checked: checked ?? false);
-  void _select() => owner.draft.toggle(record);
-  void _tap() {
-    if (_selecting) {
-      _select();
-    } else {
-      owner.onRecord(record);
-    }
-  }
-
-  DataCell _cell(WorkspaceColumn column) => DataCell(
-    _Cell(owner, record, column),
-    onTap: _tap,
-    onLongPress: owner.table.canEditRecords ? _select : null,
-  );
+  DataCell _cell(WorkspaceColumn column) =>
+      DataCell(_SpreadsheetCell(owner, record, column));
 }
 
-class const _RecordDetail(
+class const _SpreadsheetCell(
   final _Rows owner,
   final WorkspaceRecord record,
   final WorkspaceColumn column,
+) extends HookConsumerWidget {
+  bool get _canEdit =>
+      owner.table.canEditRecords &&
+      !record.restrictedReferenceColumns.contains(column.id);
+  bool get _selected =>
+      owner.draft.active.value == (record: record.id, column: column.id);
+  bool get _editing => _selected && owner.draft.editing.value;
+  bool get _guide {
+    final active = owner.draft.active.value;
+
+    return active != null &&
+        (active.record == record.id || active.column == column.id);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final action = WorkspaceTableActions.use(context);
+    final colors = Theme.of(context).colorScheme;
+
+    return Focus(
+      child: GestureDetector(
+        child: Container(
+          key: ValueKey('workspace_cell_${record.id}_${column.id}'),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _color(colors),
+            border: _border(colors),
+          ),
+          width: 200,
+          child: _editing
+              ? _SpreadsheetEditor(this, action, ref)
+              : _Cell(owner, record, column),
+        ),
+        onTap: _select,
+        onDoubleTap: _canEdit ? _edit : null,
+        onLongPress: owner.table.canEditRecords ? _selectRow : null,
+        behavior: .opaque,
+      ),
+      onKeyEvent: _key,
+    );
+  }
+
+  Color? _color(ColorScheme colors) {
+    if (_selected) return colors.primaryContainer;
+    if (_guide) return colors.surfaceContainerHighest;
+
+    return null;
+  }
+
+  Border? _border(ColorScheme colors) {
+    if (!_selected) return null;
+
+    return Border.all(color: colors.primary, width: _editing ? 3 : 1);
+  }
+
+  void _selectRow() {
+    if (owner.draft.draftOpen.value) return;
+    owner.draft.toggle(record);
+  }
+
+  void _select() {
+    if (owner.draft.editing.value || owner.draft.creating.value) return;
+    if (owner.isSelecting()) {
+      _selectRow();
+
+      return;
+    }
+    owner.draft.active.value = (record: record.id, column: column.id);
+  }
+
+  void _edit() {
+    if (owner.draft.editing.value || owner.draft.creating.value) return;
+    owner.draft.active.value = (record: record.id, column: column.id);
+    owner.draft.values.value = {...record.values};
+    owner.draft.editing.value = true;
+    owner.draft.draftOpen.value = true;
+  }
+
+  KeyEventResult _key(FocusNode _, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.enter &&
+        _canEdit) {
+      _edit();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _cancel() {
+    owner.draft.editing.value = false;
+    owner.draft.draftOpen.value = false;
+  }
+
+  void _submit(WidgetRef ref, WorkspaceTableAction action) =>
+      unawaited(action.run(() => _save(ref)));
+  Future<void> _save(WidgetRef ref) async {
+    final usecase = await ref.read(
+      workspaceTableUsecaseProvider(owner.browser.workspaceId).future,
+    );
+    final _ = await usecase.updateRecord(
+      table: owner.table,
+      record: record,
+      values: owner.draft.values.value,
+    );
+    if (!ref.context.mounted) return;
+    owner.draft.editing.value = false;
+    owner.draft.draftOpen.value = false;
+    ref
+      ..invalidate(
+        workspaceRecordQueryUsecaseProvider(owner.browser.workspaceId),
+      )
+      ..invalidate(workspaceReferencedRecordProvider)
+      ..invalidate(
+        workspaceReferencesUsecaseProvider(owner.browser.workspaceId),
+      );
+  }
+}
+
+class const _SpreadsheetEditor(
+  final _SpreadsheetCell cell,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: .start,
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
     children: [
-      Expanded(child: Text('${column.name}: ')),
-      Expanded(flex: 2, child: _Cell(owner, record, column)),
+      WorkspaceRecordFields(
+        table: cell.owner.table,
+        workspaceId: cell.owner.browser.workspaceId,
+        restricted: cell.record.restrictedReferenceColumns,
+        draft: cell.owner.draft.values,
+        disabled: action.pending,
+        columnId: cell.column.id,
+      ),
+      if (action.error case final error?) WorkspaceItemFailure(error: error),
+      Row(
+        children: [
+          IconButton(
+            onPressed: action.pending ? null : () => cell._submit(ref, action),
+            tooltip: LocaleKeys.workspace_items_save_record.tr(),
+            icon: const Icon(Icons.check),
+          ),
+          IconButton(
+            onPressed: action.pending ? null : cell._cancel,
+            tooltip: LocaleKeys.common_cancel.tr(),
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ),
     ],
   );
 }

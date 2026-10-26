@@ -12,12 +12,15 @@ class const WorkspaceRecordFields({
   required final List<String> restricted,
   required final ValueNotifier<Map<String, Object?>> draft,
   required final bool disabled,
+  final String? columnId,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      for (final column in table.columns)
+      for (final column in table.columns.where(
+        (column) => columnId == null || column.id == columnId,
+      ))
         Column(
           crossAxisAlignment: .stretch,
           children: [
