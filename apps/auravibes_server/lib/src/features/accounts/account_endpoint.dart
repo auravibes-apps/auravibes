@@ -56,6 +56,11 @@ class AccountEndpoint extends Endpoint {
         where: (table) => table.userId.equals(userId),
         transaction: transaction,
       );
+      final _ = await MessageBookmark.db.deleteWhere(
+        session,
+        where: (table) => table.userId.equals(userId),
+        transaction: transaction,
+      );
       final _ = await WorkspaceSecret.db.deleteWhere(
         session,
         where: (table) => table.ownerUserId.equals(userId),

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import 'workspace_history_context.dart';
 import 'workspace_history_retention.dart';
 import 'workspace_trash_access.dart';
@@ -19,6 +20,7 @@ class const WorkspaceContentReportService(
     _reportId(reportId);
 
     return await session.db.transaction((transaction) async {
+      await _requireActor(transaction);
       final history = WorkspaceHistoryContext(
         session,
         workspaceId,
@@ -88,6 +90,7 @@ class const WorkspaceContentReportService(
     if (action != _dismiss && action != _remove) trashInvalid();
 
     return await session.db.transaction((transaction) async {
+      await _requireActor(transaction);
       await _requireReviewer(transaction);
       await WorkspaceHistoryRetention(
         session,
@@ -145,6 +148,15 @@ class const WorkspaceContentReportService(
       transaction,
     ).lock();
     if (!const {'owner', 'admin'}.contains(locked.member.role)) trashDenied();
+  }
+
+  Future<void> _requireActor(Transaction transaction) async {
+    final actor = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (actor == null) trashDenied();
   }
 
   Future<WorkspaceContentReport?> _report(

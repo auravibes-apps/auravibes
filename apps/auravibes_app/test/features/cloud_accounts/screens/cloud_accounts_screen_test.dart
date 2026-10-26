@@ -68,11 +68,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        'Shared workspace audit and event history may still contain your '
-        'account identifier after account deletion. The retention treatment '
-        'for those shared records has not been configured.',
-      ),
+      find.textContaining('Shared workspace revisions, content reports'),
       findsOneWidget,
     );
     expect(find.text('Delete cloud account'), findsNWidgets(2));
@@ -151,7 +147,13 @@ void main() {
       await tester.tap(find.text('Delete cloud account'));
       final _ = await tester.pumpAndSettle();
       expect(
-        find.textContaining('Shared workspace audit and event history'),
+        find.textContaining('Shared workspace revisions, content reports'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'expiring the link does not remove its upload record',
+        ),
         findsOneWidget,
       );
       expect(
@@ -182,7 +184,10 @@ void main() {
       ).called(1);
       expect(find.text('Account access removed'), findsOneWidget);
       expect(
-        find.textContaining('account deletion does not erase those records'),
+        find.textContaining(
+          'reports, conversations, contexts, invitations, uploads, and '
+          'audit/event history may still contain your account identifier',
+        ),
         findsOneWidget,
       );
       expect(
@@ -265,6 +270,13 @@ void main() {
         'posees. '
         'Esta '
         'acci${_spanishChar(0xF3)}n no se puede deshacer.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        'Las revisiones compartidas, los reportes de contenido, los turnos y '
+        'eventos de conversaci${_spanishChar(0xF3)}n',
       ),
       findsOneWidget,
     );

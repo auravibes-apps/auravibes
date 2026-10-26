@@ -40,7 +40,7 @@ class ModelConnectionUseCases {
     required CreateModelConnectionRequest request,
   }) => session.db.transaction((transaction) async {
     _requireManager(
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -113,7 +113,7 @@ class ModelConnectionUseCases {
     required UpdateModelConnectionRequest request,
   }) => session.db.transaction((transaction) async {
     _requireManager(
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -178,7 +178,7 @@ class ModelConnectionUseCases {
     required DeleteModelConnectionRequest request,
   }) => session.db.transaction((transaction) async {
     _requireManager(
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -313,7 +313,7 @@ class ModelConnectionUseCases {
       _invalid();
     }
     await session.db.transaction((transaction) async {
-      final member = await _requireMember(
+      final member = await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -609,6 +609,38 @@ class ModelConnectionUseCases {
     );
     if (member == null) _permissionDenied();
     return member;
+  }
+
+  Future<WorkspaceMember> _lockActorWorkspaceMember(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _permissionDenied();
+    return _requireMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
   }
 
   Future<String> _createDraftVerificationReceipt(

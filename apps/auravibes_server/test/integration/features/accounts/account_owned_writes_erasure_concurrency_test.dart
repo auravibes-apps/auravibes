@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_server/src/features/model_connections/domain/virtual_workspace_model_selection.dart';
+import 'package:auravibes_server/src/features/objects/object_scanner.dart';
+import 'package:auravibes_server/src/features/objects/object_store.dart';
+import 'package:auravibes_server/src/features/objects/object_use_cases.dart';
+import 'package:auravibes_server/src/features/objects/testing/in_memory_object_store.dart';
 import 'package:auravibes_server/src/features/workspace_state/repositories/workspace_state_repository.dart';
 import 'package:auravibes_server/src/features/workspace_state/usecases/workspace_state_usecases.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
@@ -164,6 +168,196 @@ void main() {
       );
     });
 
+    test('account deletion fences model connection creation', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      initializeTestAuthServices(session.serverpod);
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await endpoints.modelConnection.create(
+            authenticated,
+            CreateModelConnectionRequest(
+              workspaceId: workspace.id!,
+              requestId: 'create-model-race',
+              connectionId: 'race-connection',
+              name: 'Race connection',
+              providerId: 'openai',
+            ),
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final connection = await WorkspaceModelConnection.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.connectionId.equals('race-connection'),
+      );
+      expect(connection != null, race.writeError == null);
+    });
+
+    test('account deletion fences object upload creation', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      initializeTestAuthServices(session.serverpod);
+      final store = InMemoryObjectStore();
+      final objects = ObjectUseCases(
+        store: store,
+        scanner: const UnconfiguredObjectScanner(),
+      );
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await objects.beginUpload(
+            session,
+            userId: userId,
+            request: _beginUploadRequest(workspace.id!, 'begin-race'),
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final uploadsBeforeRetry = await ObjectUpload.db.find(
+        session,
+        where: (row) => row.actorUserId.equals(userId),
+      );
+      await expectLater(
+        objects.beginUpload(
+          session,
+          userId: userId,
+          request: _beginUploadRequest(workspace.id!, 'begin-after-delete'),
+        ),
+        throwsA(
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.authenticationRequired,
+          ),
+        ),
+      );
+      expect(
+        await ObjectUpload.db.find(
+          session,
+          where: (row) =>
+              row.actorUserId.equals(userId) &
+              row.requestId.equals('begin-after-delete'),
+        ),
+        isEmpty,
+      );
+      expect(uploadsBeforeRetry.length, lessThanOrEqualTo(1));
+    });
+
+    test(
+      'account deletion fences in-flight object upload completion',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        final workspace = await _createSharedWorkspace(
+          session,
+          userId: userId,
+          memberRole: 'admin',
+        );
+        final store = InMemoryObjectStore();
+        final scanner = _BlockingObjectScanner();
+        final objects = ObjectUseCases(store: store, scanner: scanner);
+        final upload = await objects.beginUpload(
+          session,
+          userId: userId,
+          request: _beginUploadRequest(workspace.id!, 'complete-race'),
+        );
+        final object = await WorkspaceObject.db.findById(
+          session,
+          upload.objectId,
+        );
+        expect(object, isNotNull);
+        store.objects[object!.objectKey] = ObjectMetadata(
+          sizeBytes: object.sizeBytes,
+          mimeType: object.mimeType,
+          checksumSha256: object.checksumSha256,
+        );
+        initializeTestAuthServices(session.serverpod);
+
+        Object? completionError;
+        final completing = objects
+            .completeUpload(
+              session,
+              userId: userId,
+              request: CompleteUploadRequest(
+                workspaceId: workspace.id!,
+                objectId: object.id!,
+              ),
+            )
+            .then<void>(
+              (_) {},
+              onError: (Object error, StackTrace _) => completionError = error,
+            );
+        await scanner.started.future.timeout(const Duration(seconds: 5));
+        await endpoints.account.deleteCurrentUser(authenticated);
+        scanner.result.complete(ObjectScanResult.clean);
+        await completing.timeout(const Duration(seconds: 10));
+
+        expect(
+          completionError,
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.authenticationRequired,
+          ),
+        );
+        expect(
+          (await WorkspaceObject.db.findById(session, object.id!))?.status,
+          'pending',
+        );
+        expect(
+          await WorkspaceEvent.db.find(
+            session,
+            where: (row) =>
+                row.actorUserId.equals(userId) &
+                row.resourceId.equals('${object.id}'),
+          ),
+          isEmpty,
+        );
+      },
+    );
+
     test(
       'account deletion fences invite acceptance and membership writes',
       () async {
@@ -285,6 +479,248 @@ void main() {
         expect(retainedContext, hasLength(race.writeError == null ? 1 : 0));
       },
     );
+
+    test('account deletion fences conversation compaction writes', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      final now = DateTime.now().toUtc();
+      await Conversation.db.insertRow(
+        session,
+        Conversation(
+          workspaceId: workspace.id!,
+          stableId: 'compact-erasure-race',
+          isPinned: false,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      initializeTestAuthServices(session.serverpod);
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await endpoints.conversation.compact(
+            authenticated,
+            CompactConversationRequest(
+              workspaceId: workspace.id!,
+              requestId: 'compact-request-race',
+              conversationId: 'compact-erasure-race',
+              expectedConversationRevision: 1,
+            ),
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final jobs = await ConversationJob.db.find(
+        session,
+        where: (row) => row.requestId.equals('compact-request-race'),
+      );
+      expect(jobs.length, race.writeError == null ? 1 : 0);
+    });
+
+    test('account deletion fences conversation cancellation writes', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      final now = DateTime.now().toUtc();
+      final conversation = await Conversation.db.insertRow(
+        session,
+        Conversation(
+          workspaceId: workspace.id!,
+          stableId: 'cancel-erasure-race',
+          isPinned: false,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await ConversationTurn.db.insertRow(
+        session,
+        ConversationTurn(
+          workspaceId: workspace.id!,
+          conversationId: conversation.id!,
+          requestId: 'turn-erasure-race',
+          requestHash: 'hash',
+          initiatorUserId: userId,
+          status: 'queued',
+          revision: 1,
+          acceptedSequence: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      initializeTestAuthServices(session.serverpod);
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await endpoints.conversation.cancelTurn(
+            authenticated,
+            CancelTurnRequest(
+              workspaceId: workspace.id!,
+              requestId: 'cancel-request-race',
+              turnId: 'turn-erasure-race',
+              expectedTurnRevision: 1,
+            ),
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final turn = await ConversationTurn.db.findFirstRow(
+        session,
+        where: (row) => row.requestId.equals('turn-erasure-race'),
+      );
+      expect(
+        turn!.status,
+        race.writeError == null ? 'cancelled' : 'queued',
+      );
+    });
+
+    test('account deletion fences content report submissions', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      final target = await _createAiReportTarget(
+        session,
+        workspaceId: workspace.id!,
+        actorUserId: userId,
+      );
+      initializeTestAuthServices(session.serverpod);
+      const reportId = '523e4567-e89b-12d3-a456-426614174000';
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await endpoints.workspaceContentReport.submit(
+            authenticated,
+            workspace.id!,
+            target,
+            reportId,
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final report = await WorkspaceContentReport.db.findFirstRow(
+        session,
+        where: (row) => row.reportId.equals(reportId),
+      );
+      if (race.writeError == null) {
+        expect(report?.reporterUserId, userId);
+      } else {
+        expect(report, isNull);
+      }
+    });
+
+    test('account deletion fences content report review writes', () async {
+      final userId = const Uuid().v4().toString();
+      final authenticated = builder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final session = authenticated.build();
+      final workspace = await _createSharedWorkspace(
+        session,
+        userId: userId,
+        memberRole: 'admin',
+      );
+      await _createAiReportTarget(
+        session,
+        workspaceId: workspace.id!,
+        actorUserId: userId,
+      );
+      const reportId = '623e4567-e89b-12d3-a456-426614174000';
+      await WorkspaceContentReport.db.insertRow(
+        session,
+        WorkspaceContentReport(
+          workspaceId: workspace.id!,
+          reportId: reportId,
+          resourceKind: WorkspaceResourceKind.table,
+          resourceId: 'report-race-table',
+          revision: 1,
+          reporterUserId: const Uuid().v4().toString(),
+          status: 'submitted',
+          submittedAt: DateTime.now().toUtc(),
+        ),
+      );
+      initializeTestAuthServices(session.serverpod);
+
+      final race = await _raceWithAccountDeletion(
+        builder: builder,
+        session: session,
+        userId: userId,
+        delete: () => endpoints.account.deleteCurrentUser(authenticated),
+        write: () async {
+          await endpoints.workspaceContentReport.resolve(
+            authenticated,
+            workspace.id!,
+            reportId,
+            'dismiss',
+          );
+        },
+      );
+
+      _expectSerializedDeletion(race);
+      final report = await WorkspaceContentReport.db.findFirstRow(
+        session,
+        where: (row) => row.reportId.equals(reportId),
+      );
+      expect(report, isNotNull);
+      if (race.writeError == null) {
+        expect(report!.reviewerUserId, userId);
+      } else {
+        expect(report!.reviewerUserId, isNull);
+      }
+      expect(
+        report.status,
+        race.writeError == null ? 'dismissed' : 'submitted',
+      );
+    });
 
     test(
       'account deletion fences workspace-view receipt writes',
@@ -428,6 +864,62 @@ Future<void> _insertAccount(
   );
 }
 
+BeginUploadRequest _beginUploadRequest(int workspaceId, String requestId) =>
+    BeginUploadRequest(
+      workspaceId: workspaceId,
+      requestId: requestId,
+      purpose: 'chatAttachment',
+      displayName: 'test.png',
+      mimeType: 'image/png',
+      sizeBytes: 4,
+      checksumSha256: 'a' * 64,
+    );
+
+Future<String> _createAiReportTarget(
+  Session session, {
+  required int workspaceId,
+  required String actorUserId,
+}) async {
+  final now = DateTime.now().toUtc();
+  const resourceId = 'report-race-table';
+  final data = jsonEncode({
+    'name': 'Items',
+    'labelColumnId': 'label',
+    'schemaRevision': 1,
+    'memberAccess': {actorUserId: 'read'},
+    'columns': [
+      {'id': 'label', 'name': 'Name', 'type': 'text'},
+    ],
+  });
+  await WorkspaceResource.db.insertRow(
+    session,
+    WorkspaceResource(
+      workspaceId: workspaceId,
+      resourceKind: WorkspaceResourceKind.table,
+      resourceId: resourceId,
+      data: data,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    ),
+  );
+  await WorkspaceRevision.db.insertRow(
+    session,
+    WorkspaceRevision(
+      workspaceId: workspaceId,
+      resourceKind: WorkspaceResourceKind.table,
+      resourceId: resourceId,
+      revision: 1,
+      data: data,
+      capturedAt: now,
+      actorUserId: actorUserId,
+      aiInvolved: true,
+      operation: 'create',
+    ),
+  );
+  return jsonEncode({'kind': 'table', 'id': resourceId, 'revision': 1});
+}
+
 Future<_AccountDeletionRace> _raceWithAccountDeletion({
   required TestSessionBuilder builder,
   required Session session,
@@ -515,6 +1007,11 @@ void _expectSerializedDeletion(_AccountDeletionRace race) {
         'code',
         CloudWorkspaceErrorCode.permissionDenied,
       ),
+      isA<ConversationException>().having(
+        (error) => error.code,
+        'code',
+        ConversationErrorCode.permissionDenied,
+      ),
     ),
   );
 }
@@ -533,4 +1030,18 @@ class _AccountDeletionRace {
   final Object? writeError;
   final Object? deletionError;
   final AuthUser? authUserAfterDeletion;
+}
+
+class _BlockingObjectScanner implements ObjectScanner {
+  final started = Completer<void>();
+  final result = Completer<ObjectScanResult>();
+
+  @override
+  Future<ObjectScanResult> scan({
+    required String objectKey,
+    required String checksumSha256,
+  }) {
+    started.complete();
+    return result.future;
+  }
 }

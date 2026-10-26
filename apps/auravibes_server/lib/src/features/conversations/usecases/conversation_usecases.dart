@@ -1462,21 +1462,12 @@ class ConversationUseCases {
     _requireId(request.conversationId);
     _requireId(request.toolCallId);
     return session.db.transaction((transaction) async {
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
         transaction: transaction,
       );
-      final workspace = await CloudWorkspace.db.findFirstRow(
-        session,
-        where: (table) => table.id.equals(request.workspaceId),
-        transaction: transaction,
-        lockMode: LockMode.forUpdate,
-      );
-      if (workspace == null || workspace.deletedAt != null) {
-        _fail(ConversationErrorCode.notFound);
-      }
       final conversation = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,
@@ -1898,7 +1889,7 @@ class ConversationUseCases {
     _requireId(request.conversationId);
     _requireId(request.workId);
     final view = await session.db.transaction((transaction) async {
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -3546,7 +3537,7 @@ class ConversationUseCases {
     String? cancelledConversationId;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -4182,7 +4173,7 @@ class ConversationUseCases {
     late ConversationJob job;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -4341,6 +4332,34 @@ class ConversationUseCases {
     );
     if (member == null) _fail(ConversationErrorCode.permissionDenied);
     return member;
+  }
+
+  Future<WorkspaceMember> _lockActorWorkspaceMember(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) _fail(ConversationErrorCode.permissionDenied);
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _fail(ConversationErrorCode.permissionDenied);
+    return _requireMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
   }
 
   Future<ConversationJob> _insertJob(

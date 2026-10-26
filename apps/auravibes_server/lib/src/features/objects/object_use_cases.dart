@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'object_policy.dart';
@@ -62,7 +63,6 @@ class ObjectUseCases {
     required String userId,
     required BeginUploadRequest request,
   }) async {
-    await authorize(session, workspaceId: request.workspaceId, userId: userId);
     try {
       validateObjectInput(
         requestId: request.requestId,
@@ -91,32 +91,40 @@ class ObjectUseCases {
         ].join('\n'),
       ),
     );
-    final existing = await repository.findUploadByRequest(
-      session,
-      workspaceId: request.workspaceId,
-      actorUserId: userId,
-      requestId: request.requestId,
-    );
-    if (existing != null) {
-      if (existing.requestHash != hash ||
-          existing.expiresAt.isBefore(DateTime.now().toUtc())) {
-        throw ObjectException(code: ObjectErrorCode.idempotencyConflict);
-      }
-      final object = await repository.findObject(
-        session,
-        workspaceId: request.workspaceId,
-        objectId: existing.objectId,
-      );
-      if (object == null) {
-        throw ObjectException(code: ObjectErrorCode.objectNotFound);
-      }
-      return _signedUpload(object, existing.expiresAt);
-    }
-
     final now = DateTime.now().toUtc();
     final expiresAt = now.add(const Duration(minutes: 10));
     final key = '${request.workspaceId}/${_opaqueKey()}';
-    final object = await session.db.transaction((transaction) async {
+    final upload = await session.db.transaction((transaction) async {
+      await _lockActorWorkspaceMember(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        transaction: transaction,
+      );
+      final existing = await repository.findUploadByRequest(
+        session,
+        workspaceId: request.workspaceId,
+        actorUserId: userId,
+        requestId: request.requestId,
+        transaction: transaction,
+      );
+      if (existing != null) {
+        if (existing.requestHash != hash ||
+            existing.expiresAt.isBefore(DateTime.now().toUtc())) {
+          throw ObjectException(code: ObjectErrorCode.idempotencyConflict);
+        }
+        final object = await repository.findObject(
+          session,
+          workspaceId: request.workspaceId,
+          objectId: existing.objectId,
+          transaction: transaction,
+        );
+        if (object == null) {
+          throw ObjectException(code: ObjectErrorCode.objectNotFound);
+        }
+        return (object: object, expiresAt: existing.expiresAt);
+      }
+
       final created = await WorkspaceObject.db.insertRow(
         session,
         WorkspaceObject(
@@ -147,9 +155,9 @@ class ObjectUseCases {
         ),
         transaction: transaction,
       );
-      return created;
+      return (object: created, expiresAt: expiresAt);
     });
-    return _signedUpload(object, expiresAt);
+    return _signedUpload(upload.object, upload.expiresAt);
   }
 
   Future<BeginUploadResult> _signedUpload(
@@ -177,33 +185,42 @@ class ObjectUseCases {
     required String userId,
     required CompleteUploadRequest request,
   }) async {
-    await authorize(session, workspaceId: request.workspaceId, userId: userId);
-    final object = await repository.findObject(
-      session,
-      workspaceId: request.workspaceId,
-      objectId: request.objectId,
-    );
-    final upload = await repository.findUpload(
-      session,
-      workspaceId: request.workspaceId,
-      objectId: request.objectId,
-    );
-    if (object == null || upload == null || object.deletedAt != null) {
-      throw ObjectException(code: ObjectErrorCode.objectNotFound);
-    }
-    if (upload.actorUserId != userId) {
-      throw ObjectException(code: ObjectErrorCode.objectNotFound);
-    }
-    if (object.status == 'active') return _ObjectResults.from(object);
-    if (object.status == 'infected') {
-      throw ObjectException(code: ObjectErrorCode.scanInfected);
-    }
-    if (object.status == 'scan_error') {
-      throw ObjectException(code: ObjectErrorCode.scanFailed);
-    }
-    if (upload.expiresAt.isBefore(DateTime.now().toUtc())) {
-      throw ObjectException(code: ObjectErrorCode.uploadExpired);
-    }
+    final initial = await session.db.transaction((transaction) async {
+      await _lockActorWorkspaceMember(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        transaction: transaction,
+      );
+      final object = await repository.findObject(
+        session,
+        workspaceId: request.workspaceId,
+        objectId: request.objectId,
+        transaction: transaction,
+      );
+      final upload = await repository.findUpload(
+        session,
+        workspaceId: request.workspaceId,
+        objectId: request.objectId,
+        transaction: transaction,
+      );
+      final resolved = _requireUploadOwner(object, upload, userId);
+      if (resolved.object.status == 'active') {
+        return (
+          object: resolved.object,
+          upload: resolved.upload,
+          scan: false,
+        );
+      }
+      _requireScannableUpload(resolved.object, resolved.upload);
+      return (
+        object: resolved.object,
+        upload: resolved.upload,
+        scan: true,
+      );
+    });
+    final object = initial.object;
+    if (!initial.scan) return _ObjectResults.from(object);
     final metadata = await store.head(object.objectKey);
     if (metadata == null ||
         metadata.sizeBytes != object.sizeBytes ||
@@ -220,6 +237,7 @@ class ObjectUseCases {
     } catch (_) {
       await _recordScanFailure(
         session,
+        userId: userId,
         object: object,
         status: 'scan_error',
       );
@@ -229,6 +247,7 @@ class ObjectUseCases {
     if (completedStatus != 'active') {
       await _recordScanFailure(
         session,
+        userId: userId,
         object: object,
         status: completedStatus,
       );
@@ -236,6 +255,12 @@ class ObjectUseCases {
     }
     final now = DateTime.now().toUtc();
     final active = await session.db.transaction((transaction) async {
+      final authorization = await _lockActorWorkspaceMember(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        transaction: transaction,
+      );
       final locked = await repository.findObject(
         session,
         workspaceId: request.workspaceId,
@@ -246,6 +271,13 @@ class ObjectUseCases {
       if (locked == null) {
         throw ObjectException(code: ObjectErrorCode.objectNotFound);
       }
+      final currentUpload = await repository.findUpload(
+        session,
+        workspaceId: request.workspaceId,
+        objectId: request.objectId,
+        transaction: transaction,
+      );
+      final resolved = _requireUploadOwner(locked, currentUpload, userId);
       if (locked.status == 'active') return locked;
       if (locked.status == 'infected') {
         throw ObjectException(code: ObjectErrorCode.scanInfected);
@@ -253,17 +285,8 @@ class ObjectUseCases {
       if (locked.status == 'scan_error') {
         throw ObjectException(code: ObjectErrorCode.scanFailed);
       }
-      final workspace = await workspaceRepository.findActiveWorkspace(
-        session,
-        request.workspaceId,
-        transaction: transaction,
-        lock: true,
-      );
-      if (workspace == null) {
-        throw CloudWorkspaceException(
-          code: CloudWorkspaceErrorCode.membershipRequired,
-        );
-      }
+      _requireScannableUpload(resolved.object, resolved.upload);
+      final workspace = authorization.workspace;
       final updated = locked.copyWith(
         status: 'active',
         revision: locked.revision + 1,
@@ -276,7 +299,7 @@ class ObjectUseCases {
       );
       await ObjectUpload.db.updateRow(
         session,
-        upload.copyWith(completedAt: now),
+        resolved.upload.copyWith(completedAt: now),
         transaction: transaction,
       );
       final committedWorkspace = await CloudWorkspace.db.updateRow(
@@ -305,10 +328,33 @@ class ObjectUseCases {
 
   Future<void> _recordScanFailure(
     Session session, {
+    required String userId,
     required WorkspaceObject object,
     required String status,
   }) async {
     await session.db.transaction((transaction) async {
+      final actor = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (actor == null) return;
+      final workspace = await workspaceRepository.findActiveWorkspace(
+        session,
+        object.workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (workspace == null ||
+          await workspaceRepository.findActiveMember(
+                session,
+                workspaceId: object.workspaceId,
+                userId: userId,
+                transaction: transaction,
+              ) ==
+              null) {
+        return;
+      }
       final locked = await repository.findObject(
         session,
         workspaceId: object.workspaceId,
@@ -351,13 +397,14 @@ class ObjectUseCases {
     required String userId,
     required DeleteObjectRequest request,
   }) async {
-    await authorize(session, workspaceId: request.workspaceId, userId: userId);
     await session.db.transaction((transaction) async {
-      final member = await _ObjectReader(this, session).member(
-        request.workspaceId,
-        userId,
+      final authorization = await _lockActorWorkspaceMember(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
         transaction: transaction,
       );
+      final member = authorization.member;
       await ObjectMutationAccess(
         session,
         member,
@@ -403,17 +450,7 @@ class ObjectUseCases {
           ).retained(request.objectId)) {
         throw ObjectException(code: ObjectErrorCode.objectReferenced);
       }
-      final workspace = await workspaceRepository.findActiveWorkspace(
-        session,
-        request.workspaceId,
-        transaction: transaction,
-        lock: true,
-      );
-      if (workspace == null) {
-        throw CloudWorkspaceException(
-          code: CloudWorkspaceErrorCode.membershipRequired,
-        );
-      }
+      final workspace = authorization.workspace;
       final now = DateTime.now().toUtc();
       await WorkspaceObject.db.updateRow(
         session,
@@ -467,6 +504,73 @@ class ObjectUseCases {
       24,
       (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
     ).join();
+  }
+
+  Future<({CloudWorkspace workspace, WorkspaceMember member})>
+  _lockActorWorkspaceMember(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required Transaction transaction,
+  }) async {
+    final actor = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (actor == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await workspaceRepository.findActiveWorkspace(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lock: true,
+    );
+    final member = await workspaceRepository.findActiveMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (workspace == null || member == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.membershipRequired,
+      );
+    }
+    return (workspace: workspace, member: member);
+  }
+
+  ({WorkspaceObject object, ObjectUpload upload}) _requireUploadOwner(
+    WorkspaceObject? object,
+    ObjectUpload? upload,
+    String userId,
+  ) {
+    if (object == null || upload == null || object.deletedAt != null) {
+      throw ObjectException(code: ObjectErrorCode.objectNotFound);
+    }
+    if (upload.actorUserId != userId) {
+      throw ObjectException(code: ObjectErrorCode.objectNotFound);
+    }
+    return (object: object, upload: upload);
+  }
+
+  void _requireScannableUpload(
+    WorkspaceObject object,
+    ObjectUpload upload,
+  ) {
+    if (object.status == 'infected') {
+      throw ObjectException(code: ObjectErrorCode.scanInfected);
+    }
+    if (object.status == 'scan_error') {
+      throw ObjectException(code: ObjectErrorCode.scanFailed);
+    }
+    if (upload.expiresAt.isBefore(DateTime.now().toUtc())) {
+      throw ObjectException(code: ObjectErrorCode.uploadExpired);
+    }
   }
 }
 

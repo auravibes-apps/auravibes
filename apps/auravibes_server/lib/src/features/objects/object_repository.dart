@@ -34,12 +34,14 @@ class ObjectRepository {
     required int workspaceId,
     required String actorUserId,
     required String requestId,
+    Transaction? transaction,
   }) => ObjectUpload.db.findFirstRow(
     session,
     where: (t) =>
         t.workspaceId.equals(workspaceId) &
         t.actorUserId.equals(actorUserId) &
         t.requestId.equals(requestId),
+    transaction: transaction,
   );
 
   Future<bool> hasLiveReference(

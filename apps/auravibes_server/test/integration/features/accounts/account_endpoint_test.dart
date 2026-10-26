@@ -186,6 +186,88 @@ void main() {
             createdAt: now,
           ),
         );
+        final conversation = await Conversation.db.insertRow(
+          session,
+          Conversation(
+            workspaceId: workspace.id!,
+            stableId: 'shared-conversation',
+            isPinned: false,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final message = await ConversationMessage.db.insertRow(
+          session,
+          ConversationMessage(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            stableId: 'shared-message',
+            role: 'assistant',
+            kind: 'message',
+            status: 'completed',
+            content: 'Shared message content',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await MessageBookmark.db.insertRow(
+          session,
+          MessageBookmark(
+            workspaceId: workspace.id!,
+            userId: userId,
+            conversationId: conversation.id!,
+            messageId: message.id!,
+            messageStableId: message.stableId,
+            contentSnapshot: message.content,
+            roleSnapshot: message.role,
+            messageCreatedAt: message.createdAt,
+            createdAt: now,
+          ),
+        );
+        await WorkspaceContentReport.db.insertRow(
+          session,
+          WorkspaceContentReport(
+            workspaceId: workspace.id!,
+            reportId: const Uuid().v4().toString(),
+            resourceKind: WorkspaceResourceKind.table,
+            resourceId: 'shared-table',
+            revision: 1,
+            reporterUserId: userId,
+            status: 'submitted',
+            submittedAt: now,
+          ),
+        );
+        final sharedObject = await WorkspaceObject.db.insertRow(
+          session,
+          WorkspaceObject(
+            workspaceId: workspace.id!,
+            objectKey: '${workspace.id}/shared-object',
+            purpose: 'chatAttachment',
+            displayName: 'shared.png',
+            mimeType: 'image/png',
+            sizeBytes: 4,
+            checksumSha256: 'a' * 64,
+            status: 'active',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ObjectUpload.db.insertRow(
+          session,
+          ObjectUpload(
+            workspaceId: workspace.id!,
+            objectId: sharedObject.id!,
+            actorUserId: userId,
+            requestId: 'shared-object-upload',
+            requestHash: 'hash',
+            expiresAt: now.add(const Duration(minutes: 10)),
+            completedAt: now,
+            createdAt: now,
+          ),
+        );
 
         initializeTestAuthServices(session.serverpod);
         await endpoints.account.deleteCurrentUser(authenticatedSession);
@@ -219,6 +301,34 @@ void main() {
             where: (row) => row.actorUserId.equals(userId),
           ),
           isNull,
+        );
+        expect(
+          await MessageBookmark.db.findFirstRow(
+            session,
+            where: (row) => row.userId.equals(userId),
+          ),
+          isNull,
+        );
+        expect(
+          await WorkspaceContentReport.db.findFirstRow(
+            session,
+            where: (row) => row.reporterUserId.equals(userId),
+          ),
+          isNotNull,
+        );
+        expect(
+          (await WorkspaceObject.db.findById(
+            session,
+            sharedObject.id!,
+          ))?.status,
+          'active',
+        );
+        expect(
+          await ObjectUpload.db.findFirstRow(
+            session,
+            where: (row) => row.actorUserId.equals(userId),
+          ),
+          isNotNull,
         );
         expect(
           await WorkspaceAuditRecord.db.findFirstRow(
