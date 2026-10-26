@@ -108,7 +108,7 @@ abstract final class _WorkspaceViewFormDefaults {
   static void _writePath(
     Map<String, Object?> values,
     String path,
-    Object? value,
+    Object value,
   ) => _writeSegments(values, _pathSegments(path), value);
 
   static List<String> _pathSegments(String path) => [
@@ -119,7 +119,7 @@ abstract final class _WorkspaceViewFormDefaults {
   static void _writeSegments(
     Map<String, Object?> values,
     List<String> segments,
-    Object? value,
+    Object value,
   ) {
     final parent = _writeParents(values, segments);
     if (parent == null) return;

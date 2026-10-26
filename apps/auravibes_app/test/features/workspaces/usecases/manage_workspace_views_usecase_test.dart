@@ -48,35 +48,35 @@ Future<void> _persistence() async {
     columnIds: [table.labelColumnId],
   );
   final savedForm = await views.save(
-    form
-        .edited(
-          name: form.name,
-          bindings: form.bindings,
-          columnTypes: form.columnTypes,
-          definition: .fromJson({
-            'version': 1,
-            'components': [
-              {
-                'id': 'root',
-                'component': 'Column',
-                'children': ['title'],
-              },
-              {
-                'id': 'title',
-                'component': 'TextField',
-                'label': 'Title',
-                'value': {'path': '/answers/title'},
-              },
-            ],
-          }),
-        )
-        .withAction(
-          .fromJson({
-            'version': 1,
-            'type': 'updateSelectedRecord',
-            'inputs': {table.labelColumnId: '/answers/title'},
-          }),
-        ),
+    .new(
+      id: form.id,
+      name: form.name,
+      tableId: form.tableId,
+      bindings: form.bindings,
+      columnTypes: form.columnTypes,
+      definition: .fromJson({
+        'version': 1,
+        'components': [
+          {
+            'id': 'root',
+            'component': 'Column',
+            'children': ['title'],
+          },
+          {
+            'id': 'title',
+            'component': 'TextField',
+            'label': 'Title',
+            'value': {'path': '/answers/title'},
+          },
+        ],
+      }),
+      revision: form.revision,
+      action: .fromJson({
+        'version': 1,
+        'type': 'updateSelectedRecord',
+        'inputs': {table.labelColumnId: '/answers/title'},
+      }),
+    ),
   );
   final persistedForm = await LocalWorkspaceViewRepository(
     database,
