@@ -20,6 +20,38 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _partialHttpStatusCode = 207;
+const _submissionStatusMessages = <String, Widget>{
+  LocaleKeys.workspace_views_action_completed: TextLocale(
+    LocaleKeys.workspace_views_action_completed,
+  ),
+  LocaleKeys.workspace_views_action_completed_changed: TextLocale(
+    LocaleKeys.workspace_views_action_completed_changed,
+  ),
+  LocaleKeys.workspace_views_action_partial: TextLocale(
+    LocaleKeys.workspace_views_action_partial,
+  ),
+  LocaleKeys.workspace_views_action_invalid: TextLocale(
+    LocaleKeys.workspace_views_action_invalid,
+  ),
+  LocaleKeys.workspace_views_action_changed: TextLocale(
+    LocaleKeys.workspace_views_action_changed,
+  ),
+  LocaleKeys.workspace_views_action_uncertain: TextLocale(
+    LocaleKeys.workspace_views_action_uncertain,
+  ),
+  LocaleKeys.workspace_connected_denied: TextLocale(
+    LocaleKeys.workspace_connected_denied,
+  ),
+  LocaleKeys.workspace_connected_repair: TextLocale(
+    LocaleKeys.workspace_connected_repair,
+  ),
+  LocaleKeys.workspace_connected_disconnected: TextLocale(
+    LocaleKeys.workspace_connected_disconnected,
+  ),
+  LocaleKeys.workspace_connected_failed: TextLocale(
+    LocaleKeys.workspace_connected_failed,
+  ),
+};
 
 /// Renders a saved surface. Only a view with an explicit saved action is
 /// interactive, and its action still goes through the host authorization path.
@@ -597,7 +629,9 @@ class const _SubmissionMessages({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .start,
     children: [
-      if (statusKey case final status?) TextLocale(status),
+      if (statusKey case final status?)
+        _submissionStatusMessages[status] ??
+            const TextLocale(LocaleKeys.workspace_connected_failed),
       for (final error in formErrors.entries)
         Text('${error.key}: ${error.value}'),
     ],
