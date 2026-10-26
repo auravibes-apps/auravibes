@@ -1801,10 +1801,15 @@ void main() {
         fixture.database,
         where: (table) => table.turnId.equals(turn.id),
       ))!;
+      final assistant = (await ConversationMessage.db.findById(
+        fixture.database,
+        turn.assistantMessageId!,
+      ))!;
       expect(host.calls, 0);
-      expect(turn.status, ConversationStatuses.queued);
-      expect(turn.revision, 1);
-      expect(job.status, ConversationJobStatuses.cancelled);
+      expect(turn.status, ConversationStatuses.cancelled);
+      expect(turn.revision, 2);
+      expect(assistant.status, ConversationStatuses.cancelled);
+      expect(job.status, ConversationJobStatuses.completed);
       expect(job.attempt, 0);
       expect(job.leaseOwner, isNull);
       expect(job.leaseToken, isNull);

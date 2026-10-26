@@ -128,7 +128,7 @@ class const ConversationJobLeases() {
     );
     if (lockedCandidates.isEmpty) return null;
     final job = lockedCandidates.single;
-    if (authUser == null || member == null || member.removedAt != null) {
+    if (authUser == null || member == null) {
       await ConversationJob.db.updateRow(
         session,
         job.copyWith(
@@ -141,6 +141,24 @@ class const ConversationJobLeases() {
         transaction: transaction,
       );
       return null;
+    }
+
+    // Keep shared content intact when the account is gone. If the account
+    // still exists but its membership was revoked, allow the worker's existing
+    // cancellation path to terminalize this turn without charging an attempt
+    // or dispatching it to a provider.
+    if (member.removedAt != null) {
+      return ConversationJob.db.updateRow(
+        session,
+        job.copyWith(
+          status: ConversationJobStatuses.leased,
+          leaseOwner: workerId,
+          leaseToken: leaseToken,
+          leaseExpiresAt: now.add(leaseDuration),
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
     }
 
     if (job.attempt >= job.maxAttempts) {
