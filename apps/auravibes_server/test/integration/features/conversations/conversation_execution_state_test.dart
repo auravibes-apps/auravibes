@@ -9,6 +9,7 @@ import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
+import 'package:auravibes_server/src/features/conversations/conversation_stream_service.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
@@ -1773,24 +1774,6 @@ void main() {
 
     test('worker cancels queued work after membership is revoked', () async {
       final fixture = await prepareExecution();
-      final member = (await WorkspaceMember.db.findFirstRow(
-        fixture.database,
-        where: (table) =>
-            table.workspaceId.equals(fixture.workspaceId) &
-            table.userId.equals(fixture.userId),
-      ))!;
-      await WorkspaceMember.db.updateRow(
-        fixture.database,
-        member.copyWith(removedAt: DateTime.now().toUtc()),
-      );
-      final host = _CountingCompletingHost();
-
-      await runConversationWorker(
-        fixture.database,
-        isActive: () => true,
-        worker: ConversationWorker(host: host),
-      );
-
       final turn = (await ConversationTurn.db.findFirstRow(
         fixture.database,
         where: (table) =>
@@ -1805,15 +1788,125 @@ void main() {
         fixture.database,
         turn.assistantMessageId!,
       ))!;
+      const a2uiMessages = [
+        {'surfaceId': 'surviving-surface', 'component': 'Text'},
+      ];
+      const modelMetadata = {'modelId': 'surviving-model'};
+      final preparedAssistant = await ConversationMessage.db.updateRow(
+        fixture.database,
+        assistant.copyWith(
+          content: 'Preserve this partial response.',
+          metadataJson: jsonEncode({
+            'a2uiMessages': a2uiMessages,
+            'modelMetadata': modelMetadata,
+          }),
+        ),
+      );
+      final approvalCall = await ConversationToolCall.db.insertRow(
+        fixture.database,
+        ConversationToolCall(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationDatabaseId,
+          turnId: turn.id!,
+          messageId: assistant.id!,
+          stableId: 'revoked-member-pending-tool-${fixture.userId}',
+          name: 'pending-approval',
+          argumentsJson: '{}',
+          argumentsDigest: 'revoked-member-pending-digest-${fixture.userId}',
+          status: 'pending',
+          revision: 1,
+          createdAt: DateTime.now().toUtc(),
+          updatedAt: DateTime.now().toUtc(),
+        ),
+      );
+      final member = (await WorkspaceMember.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.userId.equals(fixture.userId),
+      ))!;
+      await WorkspaceMember.db.updateRow(
+        fixture.database,
+        member.copyWith(removedAt: DateTime.now().toUtc()),
+      );
+      final host = _CountingCompletingHost();
+      var wakeupPublishedAfterCommit = false;
+
+      await runConversationWorker(
+        fixture.database,
+        isActive: () => true,
+        worker: ConversationWorker(
+          host: host,
+          publishConversation:
+              (session, {required workspaceId, required conversationId}) async {
+                final committedJob = await ConversationJob.db.findById(
+                  session,
+                  job.id!,
+                );
+                final committedTurn = await ConversationTurn.db.findById(
+                  session,
+                  turn.id!,
+                );
+                expect(
+                  committedJob!.status,
+                  ConversationJobStatuses.cancelled,
+                );
+                expect(
+                  committedTurn!.status,
+                  ConversationStatuses.cancelled,
+                );
+                wakeupPublishedAfterCommit = true;
+              },
+        ),
+      );
+
+      final event = await ConversationEvent.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.conversationId.equals(fixture.conversationDatabaseId) &
+            table.requestId.equals(turn.requestId) &
+            table.kind.equals(ConversationEventType.executionStopped),
+      );
+      final cleanedTurn = (await ConversationTurn.db.findById(
+        fixture.database,
+        turn.id!,
+      ))!;
+      final cleanedAssistant = (await ConversationMessage.db.findById(
+        fixture.database,
+        assistant.id!,
+      ))!;
+      final cleanedJob = (await ConversationJob.db.findById(
+        fixture.database,
+        job.id!,
+      ))!;
+      final cleanedCall = (await ConversationToolCall.db.findById(
+        fixture.database,
+        approvalCall.id!,
+      ))!;
+      final metadata = jsonDecode(cleanedAssistant.metadataJson!) as Map;
       expect(host.calls, 0);
-      expect(turn.status, ConversationStatuses.cancelled);
-      expect(turn.revision, 2);
-      expect(assistant.status, ConversationStatuses.cancelled);
-      expect(job.status, ConversationJobStatuses.completed);
-      expect(job.attempt, 0);
-      expect(job.leaseOwner, isNull);
-      expect(job.leaseToken, isNull);
-      expect(job.leaseExpiresAt, isNull);
+      expect(wakeupPublishedAfterCommit, isTrue);
+      expect(event, isNotNull);
+      expect(
+        event!.actorUserId,
+        ConversationSystemActorIds.unavailableMembershipCleanup,
+      );
+      expect(cleanedTurn.status, ConversationStatuses.cancelled);
+      expect(cleanedTurn.revision, 2);
+      expect(cleanedAssistant.status, ConversationStatuses.cancelled);
+      expect(cleanedAssistant.content, preparedAssistant.content);
+      expect(metadata['errorCode'], 'cancelled');
+      expect(metadata['a2uiMessages'], a2uiMessages);
+      expect(metadata['modelMetadata'], modelMetadata);
+      expect(cleanedJob.status, ConversationJobStatuses.cancelled);
+      expect(cleanedJob.attempt, 0);
+      expect(cleanedJob.leaseOwner, isNull);
+      expect(cleanedJob.leaseToken, isNull);
+      expect(cleanedJob.leaseExpiresAt, isNull);
+      expect(cleanedCall.status, 'cancelled');
+      expect(cleanedCall.decision, 'deny');
+      expect(cleanedCall.decisionByUserId, isNull);
     });
 
     test(
@@ -2106,7 +2199,7 @@ void main() {
           fixture.database,
           childTurn.id!,
         ))!;
-        expect(cleanedChildJob.status, ConversationJobStatuses.completed);
+        expect(cleanedChildJob.status, ConversationJobStatuses.cancelled);
         expect(cleanedChildJob.attempt, 0);
         expect(cleanedChildTurn.status, ConversationStatuses.cancelled);
         expect(
@@ -4238,6 +4331,357 @@ void main() {
         } finally {
           if (!host.release.isCompleted) host.release.complete();
           await worker.timeout(const Duration(seconds: 10));
+        }
+      },
+    );
+
+    test(
+      'claim rolls back unavailable actor cleanup when the job row is held',
+      () async {
+        final fixture = await prepareQueuedExecution();
+        final job = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          job.turnId!,
+        ))!;
+        final assistantBefore = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        final conversationBefore = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        final eventsBefore = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        );
+        final member = (await WorkspaceMember.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.userId.equals(fixture.userId),
+        ))!;
+        await WorkspaceMember.db.updateRow(
+          fixture.database,
+          member.copyWith(removedAt: DateTime.now().toUtc()),
+        );
+
+        final lockSession = fixture.session.build();
+        final claimSession = fixture.session.build();
+        final jobLocked = Completer<void>();
+        final releaseJobLock = Completer<void>();
+        final lockTransaction = lockSession.db.transaction((transaction) async {
+          await ConversationJob.db.findFirstRow(
+            lockSession,
+            where: (table) => table.id.equals(job.id),
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+          jobLocked.complete();
+          await releaseJobLock.future;
+        });
+        var wakeups = 0;
+        final worker = ConversationWorker(
+          host: _CountingCompletingHost(),
+          publishConversation:
+              (_, {required workspaceId, required conversationId}) async {
+                wakeups++;
+              },
+        );
+
+        try {
+          await jobLocked.future.timeout(const Duration(seconds: 10));
+          expect(
+            await worker.runOnce(
+              claimSession,
+              workerId: 'held-unavailable-job-${fixture.userId}',
+            ),
+            isFalse,
+          );
+
+          final unchangedJob = (await ConversationJob.db.findById(
+            fixture.database,
+            job.id!,
+          ))!;
+          final unchangedTurn = (await ConversationTurn.db.findById(
+            fixture.database,
+            turn.id!,
+          ))!;
+          final unchangedAssistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            turn.assistantMessageId!,
+          ))!;
+          final unchangedConversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final events = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          );
+          expect(unchangedJob.status, job.status);
+          expect(unchangedJob.attempt, job.attempt);
+          expect(unchangedTurn.status, turn.status);
+          expect(unchangedAssistant.status, assistantBefore.status);
+          expect(unchangedAssistant.content, assistantBefore.content);
+          expect(
+            unchangedAssistant.metadataJson,
+            assistantBefore.metadataJson,
+          );
+          expect(
+            unchangedConversation.eventSequence,
+            conversationBefore.eventSequence,
+          );
+          expect(events, hasLength(eventsBefore.length));
+          expect(wakeups, 0);
+        } finally {
+          if (!releaseJobLock.isCompleted) releaseJobLock.complete();
+          await lockTransaction.timeout(const Duration(seconds: 10));
+        }
+
+        expect(
+          await worker.runOnce(
+            claimSession,
+            workerId: 'held-unavailable-job-${fixture.userId}',
+          ),
+          isTrue,
+        );
+        final cleanedJob = (await ConversationJob.db.findById(
+          fixture.database,
+          job.id!,
+        ))!;
+        final cleanedTurn = (await ConversationTurn.db.findById(
+          fixture.database,
+          turn.id!,
+        ))!;
+        expect(cleanedJob.status, ConversationJobStatuses.cancelled);
+        expect(cleanedTurn.status, ConversationStatuses.cancelled);
+        expect(wakeups, 1);
+      },
+    );
+
+    test(
+      'membership removal after claim preserves content and wakes a subscriber',
+      () async {
+        final fixture = await prepareQueuedExecution();
+        final job = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          job.turnId!,
+        ))!;
+        final assistant = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        const preservedA2ui = [
+          {'surfaceId': 'race-surface', 'component': 'Text'},
+        ];
+        const preservedModel = {'modelId': 'race-model'};
+        final preparedAssistant = await ConversationMessage.db.updateRow(
+          fixture.database,
+          assistant.copyWith(
+            content: 'Partial text before membership removal.',
+            metadataJson: jsonEncode({
+              'a2uiMessages': preservedA2ui,
+              'modelMetadata': preservedModel,
+            }),
+          ),
+        );
+        final approvalCall = await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationDatabaseId,
+            turnId: turn.id!,
+            messageId: assistant.id!,
+            stableId: 'race-pending-tool-${fixture.userId}',
+            name: 'pending-approval',
+            argumentsJson: '{}',
+            argumentsDigest: 'race-pending-digest-${fixture.userId}',
+            status: 'pending',
+            revision: 1,
+            createdAt: DateTime.now().toUtc(),
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+
+        final subscriberId = const Uuid().v4().toString();
+        final now = DateTime.now().toUtc();
+        await AuthUser.db.insertRow(
+          fixture.database,
+          AuthUser(
+            id: UuidValue.fromString(subscriberId),
+            scopeNames: const {},
+          ),
+        );
+        await EmailAccount.db.insertRow(
+          fixture.database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(subscriberId),
+            email: '$subscriberId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        await WorkspaceMember.db.insertRow(
+          fixture.database,
+          WorkspaceMember(
+            workspaceId: fixture.workspaceId,
+            userId: subscriberId,
+            role: WorkspaceRoles.member,
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final subscriberSession = sessionBuilder
+            .copyWith(
+              authentication: AuthenticationOverride.authenticationInfo(
+                subscriberId,
+                const {},
+              ),
+            )
+            .build();
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        final wakeups = StreamController<ConversationSubscribeRequest>();
+        final iterator = StreamIterator(
+          ConversationStreamService(
+            wakeupStream: (_, _) => wakeups.stream,
+            progressStream: (_, _) =>
+                const Stream<ConversationStreamEvent>.empty(),
+          ).subscribe(
+            subscriberSession,
+            request: ConversationSubscribeRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              afterSequence: conversation.eventSequence,
+            ),
+            userId: subscriberId,
+          ),
+        );
+        final nextEvent = iterator.moveNext();
+        final host = _FailingAfterReleaseHost(
+          const ConversationCancelledException(),
+        );
+        final worker =
+            ConversationWorker(
+              host: host,
+              publishConversation:
+                  (
+                    session, {
+                    required workspaceId,
+                    required conversationId,
+                  }) async {
+                    final committedJob = await ConversationJob.db.findById(
+                      session,
+                      job.id!,
+                    );
+                    final committedTurn = await ConversationTurn.db.findById(
+                      session,
+                      turn.id!,
+                    );
+                    final committedEvent = await ConversationEvent.db
+                        .findFirstRow(
+                          session,
+                          where: (table) =>
+                              table.workspaceId.equals(workspaceId) &
+                              table.conversationId.equals(
+                                fixture.conversationDatabaseId,
+                              ) &
+                              table.requestId.equals(turn.requestId) &
+                              table.kind.equals(
+                                ConversationEventType.executionStopped,
+                              ),
+                        );
+                    expect(
+                      committedJob!.status,
+                      ConversationJobStatuses.cancelled,
+                    );
+                    expect(
+                      committedTurn!.status,
+                      ConversationStatuses.cancelled,
+                    );
+                    expect(committedEvent, isNotNull);
+                    wakeups.add(
+                      ConversationSubscribeRequest(
+                        workspaceId: workspaceId,
+                        conversationId: conversationId,
+                        afterSequence: conversation.eventSequence,
+                      ),
+                    );
+                  },
+            ).runOnce(
+              fixture.database,
+              workerId: 'revoked-member-race-${fixture.userId}',
+            );
+
+        try {
+          await host.started.future.timeout(const Duration(seconds: 10));
+          final member = (await WorkspaceMember.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.userId.equals(fixture.userId),
+          ))!;
+          await WorkspaceMember.db.updateRow(
+            fixture.database,
+            member.copyWith(removedAt: DateTime.now().toUtc()),
+          );
+          host.release.complete();
+          await worker.timeout(const Duration(seconds: 10));
+          expect(await nextEvent.timeout(const Duration(seconds: 3)), isTrue);
+
+          final event = iterator.current;
+          final cleanedAssistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            assistant.id!,
+          ))!;
+          final cleanedJob = (await ConversationJob.db.findById(
+            fixture.database,
+            job.id!,
+          ))!;
+          final cleanedCall = (await ConversationToolCall.db.findById(
+            fixture.database,
+            approvalCall.id!,
+          ))!;
+          final metadata = jsonDecode(cleanedAssistant.metadataJson!) as Map;
+          expect(cleanedJob.status, ConversationJobStatuses.cancelled);
+          expect(cleanedJob.attempt, job.attempt + 1);
+          expect(cleanedAssistant.status, ConversationStatuses.cancelled);
+          expect(cleanedAssistant.content, preparedAssistant.content);
+          expect(metadata['errorCode'], 'cancelled');
+          expect(metadata['a2uiMessages'], preservedA2ui);
+          expect(metadata['modelMetadata'], preservedModel);
+          expect(cleanedCall.status, 'cancelled');
+          expect(cleanedCall.decision, 'deny');
+          expect(cleanedCall.decisionByUserId, isNull);
+          expect(event.kind, ConversationEventType.executionStopped);
+          expect(
+            event.actorUserId,
+            ConversationSystemActorIds.unavailableMembershipCleanup,
+          );
+        } finally {
+          if (!host.release.isCompleted) host.release.complete();
+          await worker.timeout(const Duration(seconds: 10));
+          await iterator.cancel();
+          await wakeups.close();
         }
       },
     );

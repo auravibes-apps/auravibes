@@ -1,4 +1,5 @@
 import 'package:auravibes_server/src/features/conversations/conversation_event_writer.dart';
+import 'package:auravibes_server/src/features/accounts/auth_user_lock.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -49,6 +50,13 @@ void main() {
           requestId: 'request-1',
           kind: ConversationEventType.executionStarted,
           payloadJson: '{"executionId":"execution-1"}',
+          authorizeBeforeConversationLock: (transaction) =>
+              _authorizeBeforeConversationLock(
+                session,
+                userId: userId,
+                workspaceId: workspace.id!,
+                transaction: transaction,
+              ),
           updateProjection: (conversation) =>
               conversation.copyWith(executionState: 'running'),
         );
@@ -86,6 +94,13 @@ void main() {
             requestId: 'request-1',
             kind: ConversationEventType.executionStarted,
             payloadJson: '{}',
+            authorizeBeforeConversationLock: (transaction) =>
+                _authorizeBeforeConversationLock(
+                  session,
+                  userId: userId,
+                  workspaceId: workspace.id!,
+                  transaction: transaction,
+                ),
             updateProjection: (_) => throw StateError('projection failure'),
           ),
           throwsStateError,
@@ -106,6 +121,43 @@ void main() {
       },
     );
   });
+}
+
+Future<void> _authorizeBeforeConversationLock(
+  Session session, {
+  required String userId,
+  required int workspaceId,
+  required Transaction transaction,
+}) async {
+  final authUser = await const AuthUserLock().lock(
+    session,
+    userId: userId,
+    transaction: transaction,
+  );
+  if (authUser == null) throw StateError('Account was deleted.');
+
+  final workspace = await CloudWorkspace.db.findById(
+    session,
+    workspaceId,
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+  if (workspace == null ||
+      workspace.deletedAt != null ||
+      workspace.erasureRequestedAt != null) {
+    throw StateError('Workspace is not active.');
+  }
+
+  final member = await WorkspaceMember.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) & table.userId.equals(userId),
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+  if (member == null || member.removedAt != null) {
+    throw StateError('Membership is not active.');
+  }
 }
 
 Future<void> _insertUser(Session session, String userId) async {

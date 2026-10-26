@@ -1874,7 +1874,7 @@ class const ConversationWorker({
         null;
   }
 
-  Future<bool> _lockWorkspaceMemberForCancellation(
+  Future<WorkspaceMember?> _lockWorkspaceMemberForCancellation(
     Session session, {
     required int workspaceId,
     required String userId,
@@ -1885,7 +1885,7 @@ class const ConversationWorker({
       userId: userId,
       transaction: transaction,
     );
-    if (authUser == null) return false;
+    if (authUser == null) return null;
     final workspace = await CloudWorkspace.db.findById(
       session,
       workspaceId,
@@ -1895,17 +1895,15 @@ class const ConversationWorker({
     if (workspace == null ||
         workspace.deletedAt != null ||
         workspace.erasureRequestedAt != null) {
-      return false;
+      return null;
     }
-    return await WorkspaceMember.db.findFirstRow(
-          session,
-          where: (table) =>
-              table.workspaceId.equals(workspaceId) &
-              table.userId.equals(userId),
-          transaction: transaction,
-          lockMode: LockMode.forUpdate,
-        ) !=
-        null;
+    return WorkspaceMember.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) & table.userId.equals(userId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
   }
 
   Future<String?> _actorUserIdForJob(
@@ -2239,15 +2237,15 @@ class const ConversationWorker({
     final actorUserId = await _actorUserIdForJob(session, job);
     if (actorUserId == null) return;
     var cancelled = false;
+    var revokedMemberCleanup = false;
     await session.db.transaction((transaction) async {
-      if (!await _lockWorkspaceMemberForCancellation(
+      final member = await _lockWorkspaceMemberForCancellation(
         session,
         workspaceId: job.workspaceId,
         userId: actorUserId,
         transaction: transaction,
-      )) {
-        return;
-      }
+      );
+      if (member == null) return;
       final now = DateTime.now().toUtc();
       final conversation = await Conversation.db.findFirstRow(
         session,
@@ -2270,16 +2268,41 @@ class const ConversationWorker({
         return;
       }
       if (lockedTurn.initiatorUserId != actorUserId) return;
-      await _cancelLocked(
-        session,
-        job,
-        lockedTurn,
-        leaseToken,
-        now,
-        transaction,
-      );
+      if (member.removedAt != null) {
+        await leases.cancelUnavailableActorTurn(
+          session,
+          jobId: job.id!,
+          leaseToken: leaseToken,
+          actorUserId: actorUserId,
+          now: now,
+          transaction: transaction,
+        );
+        revokedMemberCleanup = true;
+      } else {
+        await _cancelLocked(
+          session,
+          job,
+          lockedTurn,
+          leaseToken,
+          now,
+          transaction,
+        );
+      }
       cancelled = true;
     });
+    if (revokedMemberCleanup) {
+      final conversation = await Conversation.db.findById(
+        session,
+        job.conversationId,
+      );
+      if (conversation != null) {
+        await publishConversation(
+          session,
+          workspaceId: job.workspaceId,
+          conversationId: conversation.stableId,
+        );
+      }
+    }
     if (cancelled) await _reconcileParentAfterChild(session, job);
   }
 

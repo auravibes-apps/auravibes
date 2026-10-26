@@ -202,7 +202,7 @@ class const ConversationJobLeases() {
         lockMode: LockMode.forUpdate,
       );
       if (pausedJob == null) return null;
-      await _terminalizeUnavailableActorTurn(
+      final job = await _terminalizeUnavailableActorTurn(
         session,
         pausedJob,
         actorUserId: turn.initiatorUserId,
@@ -211,10 +211,12 @@ class const ConversationJobLeases() {
             : ConversationSystemActorIds.unavailableMembershipCleanup,
         now: now,
         transaction: transaction,
+        lockCandidateJob: () async => pausedJob,
       );
+      if (job == null) return null;
       return _cancelJob(
         session,
-        pausedJob,
+        job,
         now: now,
         transaction: transaction,
       );
@@ -292,7 +294,7 @@ class const ConversationJobLeases() {
     }
 
     if (authUser == null || member == null) {
-      await _terminalizeUnavailableActorTurn(
+      final job = await _terminalizeUnavailableActorTurn(
         session,
         current,
         actorUserId: actorUserId,
@@ -301,33 +303,30 @@ class const ConversationJobLeases() {
             : ConversationSystemActorIds.unavailableMembershipCleanup,
         now: now,
         transaction: transaction,
+        lockCandidateJob: lockEligibleJob,
       );
-      final job = await lockEligibleJob();
       if (job == null) return null;
       return _cancelJob(session, job, now: now, transaction: transaction);
     }
 
     if (member.removedAt != null) {
-      final job = await lockEligibleJob();
-      if (job == null) return null;
       if (current.kind != ConversationJobKinds.turn) {
+        final job = await lockEligibleJob();
+        if (job == null) return null;
         return _cancelJob(session, job, now: now, transaction: transaction);
       }
-
-      // A removed member's turn receives an attempt-neutral cleanup lease so
-      // the worker can run its existing cancellation path without provider
-      // dispatch. Other job kinds are cancelled below and reconciled by worker.
-      return ConversationJob.db.updateRow(
+      final job = await _terminalizeUnavailableActorTurn(
         session,
-        job.copyWith(
-          status: ConversationJobStatuses.leased,
-          leaseOwner: workerId,
-          leaseToken: leaseToken,
-          leaseExpiresAt: now.add(leaseDuration),
-          updatedAt: now,
-        ),
+        current,
+        actorUserId: actorUserId,
+        systemActorUserId:
+            ConversationSystemActorIds.unavailableMembershipCleanup,
+        now: now,
         transaction: transaction,
+        lockCandidateJob: lockEligibleJob,
       );
+      if (job == null) return null;
+      return _cancelJob(session, job, now: now, transaction: transaction);
     }
 
     final job = await lockEligibleJob();
@@ -387,16 +386,17 @@ class const ConversationJobLeases() {
     transaction: transaction,
   );
 
-  Future<void> _terminalizeUnavailableActorTurn(
+  Future<ConversationJob?> _terminalizeUnavailableActorTurn(
     Session session,
     ConversationJob job, {
     required String? actorUserId,
     required String systemActorUserId,
     required DateTime now,
     required Transaction transaction,
+    required Future<ConversationJob?> Function() lockCandidateJob,
   }) async {
     final turnId = job.turnId;
-    if (actorUserId == null || turnId == null) return;
+    if (actorUserId == null || turnId == null) return lockCandidateJob();
     final conversation = await Conversation.db.findFirstRow(
       session,
       where: (table) =>
@@ -405,7 +405,7 @@ class const ConversationJobLeases() {
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (conversation == null) return;
+    if (conversation == null) return lockCandidateJob();
     final turn = await ConversationTurn.db.findFirstRow(
       session,
       where: (table) =>
@@ -418,8 +418,10 @@ class const ConversationJobLeases() {
     if (turn == null ||
         turn.initiatorUserId != actorUserId ||
         ConversationStatuses.isTerminal(turn.status)) {
-      return;
+      return lockCandidateJob();
     }
+    final lockedJob = await lockCandidateJob();
+    if (lockedJob == null) return null;
 
     final assistantId = turn.assistantMessageId;
     if (assistantId != null) {
@@ -556,6 +558,7 @@ class const ConversationJobLeases() {
     for (final parentJob in waitingParentJobs) {
       await _cancelJob(session, parentJob, now: now, transaction: transaction);
     }
+    return lockedJob;
   }
 
   Future<ConversationJob> renew(
@@ -713,6 +716,43 @@ class const ConversationJobLeases() {
     }
     return updated;
   });
+
+  Future<ConversationJob> cancelUnavailableActorTurn(
+    Session session, {
+    required int jobId,
+    required String leaseToken,
+    required String actorUserId,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final candidate = await ConversationJob.db.findById(
+      session,
+      jobId,
+      transaction: transaction,
+    );
+    if (candidate == null) throw ConversationJobLeaseLostException(jobId);
+    final job = await _terminalizeUnavailableActorTurn(
+      session,
+      candidate,
+      actorUserId: actorUserId,
+      systemActorUserId:
+          ConversationSystemActorIds.unavailableMembershipCleanup,
+      now: now,
+      transaction: transaction,
+      lockCandidateJob: () => ConversationJob.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(jobId) &
+            table.status.equals(ConversationJobStatuses.leased) &
+            table.leaseToken.equals(leaseToken) &
+            (table.leaseExpiresAt > now),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      ),
+    );
+    if (job == null) throw ConversationJobLeaseLostException(jobId);
+    return _cancelJob(session, job, now: now, transaction: transaction);
+  }
 
   Future<void> _failTurn(
     Session session,
