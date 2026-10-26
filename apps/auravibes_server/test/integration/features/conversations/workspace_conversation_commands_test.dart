@@ -198,6 +198,18 @@ void main() {
       };
       await run('edit', edit);
       await run('edit', edit);
+      final aiRevision = (await WorkspaceRevision.db.find(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.resourceKind.equals(.tableRecord) &
+            row.resourceId.equals('selected') &
+            row.revision.equals(2),
+      )).single;
+      expect(aiRevision.actorUserId, userId);
+      expect(aiRevision.aiInvolved, isTrue);
+      expect(aiRevision.operation, 'update');
+      expect(aiRevision.conversationId, 'chat-one');
       final records = await endpoints.workspaceState.read(
         authenticated,
         ReadWorkspaceStateRequest(

@@ -33,6 +33,11 @@ class const WorkspaceHistoryReader(final WorkspaceHistoryContext context) {
       result.add(
         jsonEncode({
           'revision': snapshot.revision,
+          'actorUserId': snapshot.actorUserId,
+          'aiInvolved': snapshot.aiInvolved,
+          'operation': snapshot.operation,
+          'conversationId': snapshot.conversationId,
+          'capturedAt': snapshot.capturedAt.toUtc().toIso8601String(),
           'data': await projection.data(snapshot),
         }),
       );

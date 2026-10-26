@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_attribution.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
@@ -155,14 +156,17 @@ void main() {
           await _settle(tester);
           await tester.tap(find.text('Revision history'));
           await _settle(tester);
-          expect(find.text('Current value'), findsOneWidget);
+          expect(find.text('Record data revision'), findsWidgets);
+          expect(find.text('Current value'), findsNothing);
           await _capture(tester, 'history-$width-$scale');
           await tester.scrollUntilVisible(
             button('workspace_history_restore_1'),
             200,
           );
-          expect(find.text('Original value'), findsOneWidget);
+          expect(find.text('Record data revision'), findsWidgets);
+          expect(find.text('Original value'), findsNothing);
           await tester.ensureVisible(button('workspace_history_restore_1'));
+          final _ = await tester.pumpAndSettle();
           await tester.tap(button('workspace_history_restore_1'));
           final _ = await tester.pump();
           final _ = await tester.pump(const Duration(milliseconds: 400));
@@ -207,7 +211,7 @@ void main() {
             ),
             findsNothing,
           );
-          expect(find.text('Original value'), findsWidgets);
+          expect(find.text('Original value'), findsNothing);
           expect(tester.takeException(), isNull);
         },
       );
@@ -412,6 +416,101 @@ void main() {
       });
     }
   }
+
+  testWidgets(
+    'AI revision reports show receipts and appear in the review queue',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(400, 800);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('local'),
+              name: 'Local',
+              type: .local,
+            ),
+          );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'local'),
+      );
+      final table = await tables.create(name: 'Data', labelName: 'Name');
+      final first = await tables.createRecord(
+        table: table,
+        values: {table.labelColumnId: 'Sensitive value'},
+      );
+      final current = await tables.updateRecord(
+        table: table,
+        record: first,
+        values: {table.labelColumnId: 'AI content'},
+      );
+      await LocalWorkspaceHistoryAttribution(database).aiRevision(
+        workspaceId: 'local',
+        kind: 'record',
+        resourceId: current.id,
+        revision: current.revision,
+        conversationId: 'conversation-ui-test',
+      );
+      final history = ManageWorkspaceHistoryUsecase(
+        LocalWorkspaceHistoryRepository(database, 'local'),
+      );
+      final target = WorkspaceTrashTarget(
+        kind: .record,
+        id: current.id,
+        revision: current.revision,
+        tableId: table.id,
+      );
+      await tester.pumpWidget(
+        TestableApp(
+          child: Builder(
+            builder: (context) => AuraButton(
+              onPressed: () => unawaited(
+                WorkspaceHistoryPanel.open(context, 'local', target),
+              ),
+              child: const Text('Open history'),
+              identifier: 'open_history_for_report',
+            ),
+          ),
+          overrides: [
+            workspaceHistoryUsecaseProvider('local')
+                .overrideWith((ref) async => history),
+          ],
+          workspaceId: 'local',
+        ),
+      );
+      Finder button(String id) => find.byWidgetPredicate(
+        (widget) => widget is AuraButton && widget.identifier == id,
+      );
+      await _settle(tester);
+      await tester.tap(button('open_history_for_report'));
+      await _settle(tester);
+      expect(find.text('AI content'), findsNothing);
+      final reportButton = button('workspace_history_report_2');
+      await tester.ensureVisible(reportButton);
+      await tester.tap(reportButton);
+      await _settle(tester);
+      expect(find.textContaining('Report submitted. Receipt:'), findsOneWidget);
+
+      final reportId = (await history.reports()).single.reportId;
+      final queueButton = button('workspace_content_reports');
+      await tester.ensureVisible(queueButton);
+      await tester.tap(queueButton);
+      await _settle(tester);
+      expect(find.textContaining('revision 2'), findsOneWidget);
+      expect(find.text('AI content'), findsNothing);
+      expect(find.text('Sensitive value'), findsNothing);
+      final dismissButton = button('workspace_report_dismiss_$reportId');
+      await tester.ensureVisible(dismissButton);
+      await tester.tap(dismissButton);
+      await _settle(tester);
+      expect((await history.reports()).single.status, 'dismissed');
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 Future<void> _settle(WidgetTester tester) async {

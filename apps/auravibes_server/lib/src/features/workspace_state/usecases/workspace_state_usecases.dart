@@ -26,6 +26,8 @@ typedef _OperationCommitMetadata = ({
   String endpoint,
   String requestId,
   String hash,
+  bool aiInvolved,
+  String? conversationId,
 });
 
 class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
@@ -105,7 +107,18 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required PatchWorkspaceStateRequest request,
     Future<void> Function(Transaction transaction)? guard,
     bool previewOnly = false,
+    bool aiInvolved = false,
+    String? conversationId,
   }) async {
+    if (aiInvolved &&
+            (conversationId == null ||
+                conversationId.isEmpty ||
+                conversationId.length > 200) ||
+        !aiInvolved && conversationId != null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.validationFailed,
+      );
+    }
     final moves = WorkspaceDirectoryMoveBatch(request)..validate();
     try {
       for (final operation in request.operations) {
@@ -197,6 +210,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             endpoint: _endpointPatch,
             requestId: request.requestId,
             hash: hash,
+            aiInvolved: aiInvolved,
+            conversationId: conversationId,
           ),
           operations: request.operations,
           transaction: transaction,
@@ -287,6 +302,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           endpoint: _endpointDuplicateAgent,
           requestId: request.requestId,
           hash: hash,
+          aiInvolved: false,
+          conversationId: null,
         ),
         operations: operations,
         transaction: transaction,
@@ -362,6 +379,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     context.now,
     context.transaction,
     userId: context.metadata.userId,
+    aiInvolved: context.metadata.aiInvolved,
+    conversationId: context.metadata.conversationId,
     deferRecordState: true,
     applyRecordDefaults: context.metadata.endpoint != _tableCopyEndpoint,
   );
@@ -1376,6 +1395,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     DateTime now,
     Transaction transaction, {
     required String userId,
+    bool aiInvolved = false,
+    String? conversationId,
     ({String? value})? credentialSecret,
     bool deferRecordState = false,
     bool applyRecordDefaults = true,
@@ -1483,7 +1504,13 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         ),
         transaction: transaction,
       );
-      await WorkspaceRevisionCapture(session, transaction).save(created);
+      await WorkspaceRevisionCapture(session, transaction).save(
+        created,
+        actorUserId: userId,
+        aiInvolved: aiInvolved,
+        operation: operation.operation.name,
+        conversationId: conversationId,
+      );
       return created;
     }
     if (existing == null || existing.deletedAt != null) {
@@ -1529,7 +1556,13 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       updated,
       transaction: transaction,
     );
-    await WorkspaceRevisionCapture(session, transaction).save(written);
+    await WorkspaceRevisionCapture(session, transaction).save(
+      written,
+      actorUserId: userId,
+      aiInvolved: aiInvolved,
+      operation: operation.operation.name,
+      conversationId: conversationId,
+    );
     return written;
   }
 
@@ -1783,4 +1816,6 @@ _OperationCommitMetadata _tableCopyMetadata(_TableCopyInput input) => (
   endpoint: _tableCopyEndpoint,
   requestId: input.request.requestId,
   hash: input.hash,
+  aiInvolved: false,
+  conversationId: null,
 );

@@ -1152,6 +1152,49 @@ class EndpointWorkspaceContext extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointWorkspaceContentReport extends _isc.EndpointRef {
+  EndpointWorkspaceContentReport(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceContentReport';
+
+  _ida.Future<String> submit(
+    int workspaceId,
+    String targetJson,
+    String reportId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContentReport',
+    'submit',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+      'reportId': reportId,
+    },
+  );
+
+  _ida.Future<List<String>> list(int workspaceId) =>
+      caller.callServerEndpoint<List<String>>(
+        'workspaceContentReport',
+        'list',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<String> resolve(
+    int workspaceId,
+    String reportId,
+    String action,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContentReport',
+    'resolve',
+    {
+      'workspaceId': workspaceId,
+      'reportId': reportId,
+      'action': action,
+    },
+  );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceCsv extends _isc.EndpointRef {
   EndpointWorkspaceCsv(_isc.EndpointCaller caller) : super(caller);
 
@@ -1670,6 +1713,7 @@ class Client extends _isc.ServerpodClientShared {
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
     workspaceContext = EndpointWorkspaceContext(this);
+    workspaceContentReport = EndpointWorkspaceContentReport(this);
     workspaceCsv = EndpointWorkspaceCsv(this);
     workspaceHistory = EndpointWorkspaceHistory(this);
     workspaceReference = EndpointWorkspaceReference(this);
@@ -1707,6 +1751,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceContext workspaceContext;
 
+  late final EndpointWorkspaceContentReport workspaceContentReport;
+
   late final EndpointWorkspaceCsv workspaceCsv;
 
   late final EndpointWorkspaceHistory workspaceHistory;
@@ -1740,6 +1786,7 @@ class Client extends _isc.ServerpodClientShared {
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
     'workspaceContext': workspaceContext,
+    'workspaceContentReport': workspaceContentReport,
     'workspaceCsv': workspaceCsv,
     'workspaceHistory': workspaceHistory,
     'workspaceReference': workspaceReference,

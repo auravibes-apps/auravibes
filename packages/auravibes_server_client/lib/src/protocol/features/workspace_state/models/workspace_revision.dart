@@ -25,6 +25,10 @@ abstract class WorkspaceRevision
     required this.revision,
     required this.data,
     required this.capturedAt,
+    this.actorUserId,
+    this.aiInvolved,
+    this.operation,
+    this.conversationId,
   });
 
   factory WorkspaceRevision({
@@ -35,6 +39,10 @@ abstract class WorkspaceRevision
     required int revision,
     required String data,
     required DateTime capturedAt,
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
   }) = _WorkspaceRevisionImpl;
 
   factory WorkspaceRevision.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -50,6 +58,12 @@ abstract class WorkspaceRevision
       capturedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['capturedAt'],
       ),
+      actorUserId: jsonSerialization['actorUserId'] as String?,
+      aiInvolved: jsonSerialization['aiInvolved'] == null
+          ? null
+          : _isc.BoolJsonExtension.fromJson(jsonSerialization['aiInvolved']),
+      operation: jsonSerialization['operation'] as String?,
+      conversationId: jsonSerialization['conversationId'] as String?,
     );
   }
 
@@ -70,6 +84,14 @@ abstract class WorkspaceRevision
 
   DateTime capturedAt;
 
+  String? actorUserId;
+
+  bool? aiInvolved;
+
+  String? operation;
+
+  String? conversationId;
+
   /// Returns a shallow copy of this [WorkspaceRevision]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -81,6 +103,10 @@ abstract class WorkspaceRevision
     int? revision,
     String? data,
     DateTime? capturedAt,
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -93,6 +119,10 @@ abstract class WorkspaceRevision
       'revision': revision,
       'data': data,
       'capturedAt': capturedAt.toJson(),
+      if (actorUserId != null) 'actorUserId': actorUserId,
+      if (aiInvolved != null) 'aiInvolved': aiInvolved,
+      if (operation != null) 'operation': operation,
+      if (conversationId != null) 'conversationId': conversationId,
     };
   }
 
@@ -107,6 +137,10 @@ abstract class WorkspaceRevision
       'revision': revision,
       'data': data,
       'capturedAt': capturedAt.toJson(),
+      if (actorUserId != null) 'actorUserId': actorUserId,
+      if (aiInvolved != null) 'aiInvolved': aiInvolved,
+      if (operation != null) 'operation': operation,
+      if (conversationId != null) 'conversationId': conversationId,
     };
   }
 
@@ -127,6 +161,10 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
     required int revision,
     required String data,
     required DateTime capturedAt,
+    String? actorUserId,
+    bool? aiInvolved,
+    String? operation,
+    String? conversationId,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
@@ -135,6 +173,10 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
          revision: revision,
          data: data,
          capturedAt: capturedAt,
+         actorUserId: actorUserId,
+         aiInvolved: aiInvolved,
+         operation: operation,
+         conversationId: conversationId,
        );
 
   /// Returns a shallow copy of this [WorkspaceRevision]
@@ -149,6 +191,10 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
     int? revision,
     String? data,
     DateTime? capturedAt,
+    Object? actorUserId = _Undefined,
+    Object? aiInvolved = _Undefined,
+    Object? operation = _Undefined,
+    Object? conversationId = _Undefined,
   }) {
     return WorkspaceRevision(
       id: id is int? ? id : this.id,
@@ -158,6 +204,12 @@ class _WorkspaceRevisionImpl extends WorkspaceRevision {
       revision: revision ?? this.revision,
       data: data ?? this.data,
       capturedAt: capturedAt ?? this.capturedAt,
+      actorUserId: actorUserId is String? ? actorUserId : this.actorUserId,
+      aiInvolved: aiInvolved is bool? ? aiInvolved : this.aiInvolved,
+      operation: operation is String? ? operation : this.operation,
+      conversationId: conversationId is String?
+          ? conversationId
+          : this.conversationId,
     );
   }
 }

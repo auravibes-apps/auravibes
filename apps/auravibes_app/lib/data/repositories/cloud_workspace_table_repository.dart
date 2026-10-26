@@ -35,7 +35,9 @@ class const CloudWorkspaceTableRepository(
     required String name,
     required String labelName,
     String? parentId,
+    String? aiConversationId,
   }) async {
+    _rejectAiAttribution(aiConversationId);
     final id = const UuidV7().generate();
     final columnId = const UuidV7().generate();
     await _store.create(
@@ -60,7 +62,9 @@ class const CloudWorkspaceTableRepository(
     required WorkspaceTable table,
     required String name,
     required String? parentId,
+    String? aiConversationId,
   }) async {
+    _rejectAiAttribution(aiConversationId);
     await _store.update(
       kind: .table,
       id: table.id,
@@ -90,7 +94,9 @@ class const CloudWorkspaceTableRepository(
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
     required WorkspaceColumn column,
+    String? aiConversationId,
   }) async {
+    _rejectAiAttribution(aiConversationId);
     final columns = table.withColumn(column);
     final current = await _currentData(_store, table.id);
     await _store.update(
@@ -132,7 +138,9 @@ class const CloudWorkspaceTableRepository(
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
+    String? aiConversationId,
   }) async {
+    _rejectAiAttribution(aiConversationId);
     final id = const UuidV7().generate();
     await _store.create(
       kind: .tableRecord,
@@ -152,7 +160,9 @@ class const CloudWorkspaceTableRepository(
     required WorkspaceTable table,
     required WorkspaceRecord record,
     required Map<String, Object?> values,
+    String? aiConversationId,
   }) async {
+    _rejectAiAttribution(aiConversationId);
     await _store.update(
       kind: .tableRecord,
       id: record.id,
@@ -165,6 +175,12 @@ class const CloudWorkspaceTableRepository(
     );
 
     return await this.record(table.id, record.id);
+  }
+}
+
+void _rejectAiAttribution(String? conversationId) {
+  if (conversationId != null) {
+    throw const WorkspaceTableException(denied: true);
   }
 }
 

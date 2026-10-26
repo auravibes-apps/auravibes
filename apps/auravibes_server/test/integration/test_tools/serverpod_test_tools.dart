@@ -438,6 +438,8 @@ class TestEndpoints {
 
   late final _WorkspaceContextEndpoint workspaceContext;
 
+  late final _WorkspaceContentReportEndpoint workspaceContentReport;
+
   late final _WorkspaceCsvEndpoint workspaceCsv;
 
   late final _WorkspaceHistoryEndpoint workspaceHistory;
@@ -511,6 +513,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     workspaceContext = _WorkspaceContextEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceContentReport = _WorkspaceContentReportEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2951,6 +2957,116 @@ class _WorkspaceContextEndpoint {
             'conversationId': conversationId,
             'requestId': requestId,
             'selectionJson': selectionJson,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WorkspaceContentReportEndpoint {
+  _WorkspaceContentReportEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> submit(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String targetJson,
+    String reportId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceContentReport',
+            method: 'submit',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceContentReport',
+          methodName: 'submit',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'targetJson': targetJson,
+            'reportId': reportId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<String>> list(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceContentReport',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceContentReport',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({'workspaceId': workspaceId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<String>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<String> resolve(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String reportId,
+    String action,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceContentReport',
+            method: 'resolve',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceContentReport',
+          methodName: 'resolve',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'reportId': reportId,
+            'action': action,
           }),
           serializationManager: _serializationManager,
         );

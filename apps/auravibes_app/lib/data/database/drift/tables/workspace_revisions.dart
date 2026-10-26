@@ -13,6 +13,10 @@ class WorkspaceRevisions extends Table {
   IntColumn get revision => integer()();
   TextColumn get data => text()();
   DateTimeColumn get capturedAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get actorUserId => text().nullable()();
+  BoolColumn get aiInvolved => boolean().nullable()();
+  TextColumn get operation => text().nullable()();
+  TextColumn get conversationId => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {

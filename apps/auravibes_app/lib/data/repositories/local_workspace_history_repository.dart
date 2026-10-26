@@ -7,11 +7,15 @@ import 'package:auravibes_app/data/repositories/local_workspace_history_retentio
 import 'package:auravibes_app/data/repositories/local_workspace_permanent_delete.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_schema_recovery.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_content_report.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_content_report_action.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/v7.dart';
 
 class const LocalWorkspaceHistoryRepository(
   final AppDatabase database,
@@ -39,6 +43,105 @@ class const LocalWorkspaceHistoryRepository(
   }
 
   @override
+  Future<String> submitReport(WorkspaceTrashTarget target) async {
+    final revisions = await history(target);
+    final reported = revisions
+        .where(
+          (revision) =>
+              revision.target.revision == target.revision &&
+              revision.aiInvolved == true,
+        )
+        .firstOrNull;
+    if (reported == null) {
+      throw const WorkspaceTableException(denied: true);
+    }
+    final reportId = const UuidV7().generate();
+    final _ = await database
+        .into(database.workspaceContentReports)
+        .insert(
+          WorkspaceContentReportsCompanion.insert(
+            workspaceId: workspaceId,
+            reportId: reportId,
+            kind: target.kind.name,
+            resourceId: target.id,
+            tableId: .new(target.tableId),
+            revision: target.revision,
+            conversationId: .new(reported.conversationId),
+          ),
+        );
+
+    return reportId;
+  }
+
+  @override
+  Future<List<WorkspaceContentReport>> reports() async {
+    await _store.requireLocal();
+    await LocalWorkspaceHistoryRetention(database, workspaceId).prune();
+    final rows =
+        await (database.select(database.workspaceContentReports)
+              ..where((row) => row.workspaceId.equals(workspaceId))
+              ..orderBy([(row) => OrderingTerm.desc(row.submittedAt)]))
+            .get();
+
+    return rows.map(_contentReport).toList();
+  }
+
+  @override
+  Future<WorkspaceContentReport> resolveReport(
+    String reportId,
+    WorkspaceContentReportAction action,
+  ) async {
+    await _store.requireLocal();
+    final row =
+        await (database.select(database.workspaceContentReports)..where(
+              (report) =>
+                  report.workspaceId.equals(workspaceId) &
+                  report.reportId.equals(reportId),
+            ))
+            .getSingleOrNull();
+    if (row == null) throw const WorkspaceTableException(denied: true);
+    final status = switch (action) {
+      .dismiss => 'dismissed',
+      .remove => 'removed',
+    };
+    if (row.status != 'submitted') {
+      if (row.status == status) return _contentReport(row);
+      throw const WorkspaceTableException(conflict: true);
+    }
+    if (action == .remove) {
+      final trash = LocalWorkspaceTrashRepository(database, workspaceId);
+      final target = _reportTarget(row);
+      final plan = await trash.preview(target);
+      final _ = await trash.trash(target, planToken: plan.planToken);
+    }
+    final updatedCount =
+        await (database.update(database.workspaceContentReports)..where(
+              (report) =>
+                  report.workspaceId.equals(workspaceId) &
+                  report.reportId.equals(reportId),
+            ))
+            .write(
+              WorkspaceContentReportsCompanion(
+                status: .new(status),
+                reviewerId: const Value('local_user'),
+                reviewedAt: .new(DateTime.now().toUtc()),
+              ),
+            );
+    if (updatedCount != 1) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+    final updated =
+        await (database.select(database.workspaceContentReports)..where(
+              (report) =>
+                  report.workspaceId.equals(workspaceId) &
+                  report.reportId.equals(reportId),
+            ))
+            .getSingle();
+
+    return _contentReport(updated);
+  }
+
+  @override
   Future<void> restore(WorkspaceTrashTarget target, int revision) =>
       database.transaction(() => _restore(target, revision));
 
@@ -62,6 +165,11 @@ class const LocalWorkspaceHistoryRepository(
     return WorkspaceRevision(
       target: _revisionTarget(target, row.revision),
       data: data,
+      actorUserId: row.actorUserId,
+      aiInvolved: row.aiInvolved,
+      operation: row.operation,
+      conversationId: row.conversationId,
+      capturedAt: row.capturedAt,
     );
   }
 
@@ -80,6 +188,23 @@ class const LocalWorkspaceHistoryRepository(
     await _store.restoreRecord(target, selected);
   }
 }
+
+WorkspaceContentReport _contentReport(WorkspaceContentReportRow row) => .new(
+  reportId: row.reportId,
+  target: _reportTarget(row),
+  status: row.status,
+  submittedAt: row.submittedAt,
+  conversationId: row.conversationId,
+  reviewerUserId: row.reviewerId,
+  reviewedAt: row.reviewedAt,
+);
+
+WorkspaceTrashTarget _reportTarget(WorkspaceContentReportRow row) => .new(
+  kind: row.kind == 'record' ? .record : .table,
+  id: row.resourceId,
+  revision: row.revision,
+  tableId: row.tableId,
+);
 
 class const _HistoryStore(
   final AppDatabase database,

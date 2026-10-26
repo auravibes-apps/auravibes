@@ -150,5 +150,6 @@ class const _SelectedCommand(
         selection: prepared.selection,
         arguments: request.arguments,
         references: prepared.references,
+        conversationId: target.conversationId,
       );
 }

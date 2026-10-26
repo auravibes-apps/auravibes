@@ -522,6 +522,8 @@ class _WorkspaceConversationItemCommands {
     command.session,
     userId: command.turn.initiatorUserId,
     guard: command.authority.guard,
+    aiInvolved: true,
+    conversationId: command.selection.conversationId,
     request: PatchWorkspaceStateRequest(
       workspaceId: command.turn.workspaceId,
       requestId: _requestId(command.turn, command.operationId),
@@ -555,6 +557,8 @@ class _WorkspaceItemCreator {
         command.session,
         userId: command.turn.initiatorUserId,
         guard: command.authority.guard,
+        aiInvolved: true,
+        conversationId: command.selection.conversationId,
         request: PatchWorkspaceStateRequest(
           workspaceId: command.turn.workspaceId,
           requestId: _requestId(command.turn, command.operationId),
@@ -963,6 +967,8 @@ class _WorkspaceConversationTableRouter {
     command.session,
     userId: command.turn.initiatorUserId,
     guard: command.authority.guard,
+    aiInvolved: true,
+    conversationId: command.selection.conversationId,
     request: PatchWorkspaceStateRequest(
       workspaceId: command.turn.workspaceId,
       requestId: _requestId(command.turn, command.operationId),

@@ -2597,6 +2597,53 @@ abstract class LocaleKeys {
       'workspace_items.history.policy_notice';
   static const workspace_items_history_policy_invalid =
       'workspace_items.history.policy_invalid';
+  static const workspace_items_history_actor = 'workspace_items.history.actor';
+  static const workspace_items_history_actor_unknown =
+      'workspace_items.history.actor_unknown';
+  static const workspace_items_history_operation =
+      'workspace_items.history.operation';
+  static const workspace_items_history_ai_involved =
+      'workspace_items.history.ai_involved';
+  static const workspace_items_history_conversation =
+      'workspace_items.history.conversation';
+  static const workspace_items_history_captured_at =
+      'workspace_items.history.captured_at';
+  static const workspace_items_history_record_revision =
+      'workspace_items.history.record_revision';
+  static const workspace_items_history_table_revision =
+      'workspace_items.history.table_revision';
+  static const workspace_items_history_report =
+      'workspace_items.history.report';
+  static const workspace_items_history_report_receipt =
+      'workspace_items.history.report_receipt';
+  static const workspace_items_history_reports =
+      'workspace_items.history.reports';
+  static const workspace_items_history_reports_title =
+      'workspace_items.history.reports_title';
+  static const workspace_items_history_reports_empty =
+      'workspace_items.history.reports_empty';
+  static const workspace_items_history_report_target =
+      'workspace_items.history.report_target';
+  static const workspace_items_history_report_submitted =
+      'workspace_items.history.report_submitted';
+  static const workspace_items_history_report_dismissed =
+      'workspace_items.history.report_dismissed';
+  static const workspace_items_history_report_removed =
+      'workspace_items.history.report_removed';
+  static const workspace_items_history_report_dismiss =
+      'workspace_items.history.report_dismiss';
+  static const workspace_items_history_report_remove =
+      'workspace_items.history.report_remove';
+  static const workspace_items_history_report_remove_notice =
+      'workspace_items.history.report_remove_notice';
+  static const workspace_items_history_report_action_created =
+      'workspace_items.history.report_action_created';
+  static const workspace_items_history_report_action_updated =
+      'workspace_items.history.report_action_updated';
+  static const workspace_items_history_report_action_deleted =
+      'workspace_items.history.report_action_deleted';
+  static const workspace_items_history_report_action_unknown =
+      'workspace_items.history.report_action_unknown';
   static const workspace_items_edit_item = 'workspace_items.edit_item';
   static const workspace_items_item_name = 'workspace_items.item_name';
   static const workspace_items_destination = 'workspace_items.destination';

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_content_report.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_content_report_action.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_blocked_exception.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_history_policy.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
@@ -50,6 +52,56 @@ class const CloudWorkspaceHistoryRepository(
   }
 
   @override
+  Future<String> submitReport(WorkspaceTrashTarget target) async {
+    final connection = await _connection();
+    final reportId = const UuidV7().generate();
+    final encoded = await CloudAppErrors.guardCall(
+      .state,
+      () => connection.client.workspaceContentReport.submit(
+        connection.workspaceId,
+        jsonEncode(target.toJson()),
+        reportId,
+      ),
+    );
+    final receipt = jsonDecode(encoded) as Map<String, dynamic>;
+    if (receipt['receiptId'] != reportId || receipt['status'] != 'submitted') {
+      throw const WorkspaceTableException();
+    }
+
+    return reportId;
+  }
+
+  @override
+  Future<List<WorkspaceContentReport>> reports() async {
+    final connection = await _connection();
+    final rows = await CloudAppErrors.guardCall(
+      .state,
+      () =>
+          connection.client.workspaceContentReport.list(connection.workspaceId),
+    );
+
+    return rows.map(_contentReport).toList();
+  }
+
+  @override
+  Future<WorkspaceContentReport> resolveReport(
+    String reportId,
+    WorkspaceContentReportAction action,
+  ) async {
+    final connection = await _connection();
+    final encoded = await CloudAppErrors.guardCall(
+      .state,
+      () => connection.client.workspaceContentReport.resolve(
+        connection.workspaceId,
+        reportId,
+        action.name,
+      ),
+    );
+
+    return _contentReport(encoded);
+  }
+
+  @override
   Future<void> restore(WorkspaceTrashTarget target, int revision) async {
     final connection = await _connection();
     await _restore(connection, target, revision);
@@ -86,6 +138,27 @@ Future<List<String>> _read(
     jsonEncode(target.toJson()),
   ),
 );
+WorkspaceContentReport _contentReport(String encoded) {
+  final row = jsonDecode(encoded) as Map<String, dynamic>;
+
+  return .new(
+    reportId: row['reportId'] as String,
+    target: .new(
+      kind: row['kind'] == 'record' ? .record : .table,
+      id: row['resourceId'] as String,
+      revision: row['revision'] as int,
+      tableId: row['tableId'] as String?,
+    ),
+    status: row['status'] as String,
+    submittedAt: DateTime.parse(row['submittedAt'] as String).toUtc(),
+    conversationId: row['conversationId'] as String?,
+    reviewerUserId: row['reviewerUserId'] as String?,
+    reviewedAt: row['reviewedAt'] == null
+        ? null
+        : DateTime.parse(row['reviewedAt'] as String).toUtc(),
+  );
+}
+
 Future<void> _restore(
   _Connection connection,
   WorkspaceTrashTarget target,
@@ -102,6 +175,13 @@ WorkspaceRevision _snapshot(String encoded, WorkspaceTrashTarget target) {
   return WorkspaceRevision(
     target: _target(target, row['revision'] as int),
     data: row['data'] as Map<String, dynamic>,
+    actorUserId: row['actorUserId'] as String?,
+    aiInvolved: row['aiInvolved'] as bool?,
+    operation: row['operation'] as String?,
+    conversationId: row['conversationId'] as String?,
+    capturedAt: row['capturedAt'] == null
+        ? null
+        : DateTime.parse(row['capturedAt'] as String).toUtc(),
   );
 }
 

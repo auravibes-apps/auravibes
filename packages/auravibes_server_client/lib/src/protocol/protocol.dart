@@ -275,6 +275,8 @@ import 'features/workspace_state/models/read_workspace_state_request.dart'
     as _iz7boq8w;
 import 'features/workspace_state/models/read_workspace_state_response.dart'
     as _iqk6zto1;
+import 'features/workspace_state/models/workspace_content_report.dart'
+    as _i0456l9b;
 import 'features/workspace_state/models/workspace_history_policy_request.dart'
     as _i6ina439;
 import 'features/workspace_state/models/workspace_history_restore_request.dart'
@@ -511,6 +513,7 @@ export 'features/workspace_state/models/put_workspace_secret_request.dart';
 export 'features/workspace_state/models/put_workspace_secret_response.dart';
 export 'features/workspace_state/models/read_workspace_state_request.dart';
 export 'features/workspace_state/models/read_workspace_state_response.dart';
+export 'features/workspace_state/models/workspace_content_report.dart';
 export 'features/workspace_state/models/workspace_history_policy_request.dart';
 export 'features/workspace_state/models/workspace_history_restore_request.dart';
 export 'features/workspace_state/models/workspace_patch_operation.dart';
@@ -1038,6 +1041,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _iqk6zto1.ReadWorkspaceStateResponse) {
       return _iqk6zto1.ReadWorkspaceStateResponse.fromJson(data) as T;
+    }
+    if (t == _i0456l9b.WorkspaceContentReport) {
+      return _i0456l9b.WorkspaceContentReport.fromJson(data) as T;
     }
     if (t == _i6ina439.WorkspaceHistoryPolicyRequest) {
       return _i6ina439.WorkspaceHistoryPolicyRequest.fromJson(data) as T;
@@ -1989,6 +1995,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_i0456l9b.WorkspaceContentReport?>()) {
+      return (data != null
+              ? _i0456l9b.WorkspaceContentReport.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i6ina439.WorkspaceHistoryPolicyRequest?>()) {
       return (data != null
               ? _i6ina439.WorkspaceHistoryPolicyRequest.fromJson(data)
@@ -2679,6 +2691,7 @@ class Protocol extends _isc.SerializationManager {
       _iavc361v.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
       _iz7boq8w.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
       _iqk6zto1.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
+      _i0456l9b.WorkspaceContentReport => 'WorkspaceContentReport',
       _i6ina439.WorkspaceHistoryPolicyRequest =>
         'WorkspaceHistoryPolicyRequest',
       _iveci0ok.WorkspaceHistoryRestoreRequest =>
@@ -3048,6 +3061,8 @@ class Protocol extends _isc.SerializationManager {
         return 'ReadWorkspaceStateRequest';
       case _iqk6zto1.ReadWorkspaceStateResponse():
         return 'ReadWorkspaceStateResponse';
+      case _i0456l9b.WorkspaceContentReport():
+        return 'WorkspaceContentReport';
       case _i6ina439.WorkspaceHistoryPolicyRequest():
         return 'WorkspaceHistoryPolicyRequest';
       case _iveci0ok.WorkspaceHistoryRestoreRequest():
@@ -3646,6 +3661,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'ReadWorkspaceStateResponse') {
       return deserialize<_iqk6zto1.ReadWorkspaceStateResponse>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceContentReport') {
+      return deserialize<_i0456l9b.WorkspaceContentReport>(data['data']);
     }
     if (dataClassName == 'WorkspaceHistoryPolicyRequest') {
       return deserialize<_i6ina439.WorkspaceHistoryPolicyRequest>(data['data']);

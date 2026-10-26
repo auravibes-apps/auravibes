@@ -16,15 +16,18 @@ class const OrganizeWorkspaceTablesUsecase(
     required String name,
     required String labelName,
     String? parentId,
+    String? aiConversationId,
   }) => _repository.create(
     name: _name(name),
     labelName: _name(labelName),
     parentId: parentId,
+    aiConversationId: aiConversationId,
   );
   Future<WorkspaceTable> updateMetadata({
     required WorkspaceTable table,
     required String name,
     required String? parentId,
+    String? aiConversationId,
   }) {
     _requireManage(table);
 
@@ -32,6 +35,7 @@ class const OrganizeWorkspaceTablesUsecase(
       table: table,
       name: _name(name),
       parentId: parentId,
+      aiConversationId: aiConversationId,
     );
   }
 
@@ -47,6 +51,7 @@ class const OrganizeWorkspaceTablesUsecase(
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
+    String? aiConversationId,
   }) {
     _requireEdit(table);
     final normalized = WorkspaceTableConstraints.defaults(
@@ -55,13 +60,18 @@ class const OrganizeWorkspaceTablesUsecase(
     );
     WorkspaceColumnValidation.values(table.columns, normalized);
 
-    return _repository.createRecord(table: table, values: normalized);
+    return _repository.createRecord(
+      table: table,
+      values: normalized,
+      aiConversationId: aiConversationId,
+    );
   }
 
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
     required Map<String, Object?> values,
+    String? aiConversationId,
   }) {
     _requireEdit(table);
     WorkspaceColumnValidation.values(_editableColumns(table, record), values);
@@ -73,12 +83,14 @@ class const OrganizeWorkspaceTablesUsecase(
       table: table,
       record: record,
       values: values,
+      aiConversationId: aiConversationId,
     );
   }
 
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
     required WorkspaceColumn column,
+    String? aiConversationId,
   }) {
     _requireManage(table);
     final normalized = WorkspaceColumnValidation.normalized(column);
@@ -88,7 +100,11 @@ class const OrganizeWorkspaceTablesUsecase(
       table.labelColumnId,
     );
 
-    return _repository.saveColumn(table: table, column: normalized);
+    return _repository.saveColumn(
+      table: table,
+      column: normalized,
+      aiConversationId: aiConversationId,
+    );
   }
 }
 

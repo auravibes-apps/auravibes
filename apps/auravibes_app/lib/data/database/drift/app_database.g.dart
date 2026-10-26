@@ -19371,6 +19371,53 @@ class $WorkspaceRevisionsTable extends WorkspaceRevisions
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _actorUserIdMeta = const VerificationMeta(
+    'actorUserId',
+  );
+  @override
+  late final GeneratedColumn<String> actorUserId = GeneratedColumn<String>(
+    'actor_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _aiInvolvedMeta = const VerificationMeta(
+    'aiInvolved',
+  );
+  @override
+  late final GeneratedColumn<bool> aiInvolved = GeneratedColumn<bool>(
+    'ai_involved',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("ai_involved" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _operationMeta = const VerificationMeta(
+    'operation',
+  );
+  @override
+  late final GeneratedColumn<String> operation = GeneratedColumn<String>(
+    'operation',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     workspaceId,
@@ -19379,6 +19426,10 @@ class $WorkspaceRevisionsTable extends WorkspaceRevisions
     revision,
     data,
     capturedAt,
+    actorUserId,
+    aiInvolved,
+    operation,
+    conversationId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -19441,6 +19492,36 @@ class $WorkspaceRevisionsTable extends WorkspaceRevisions
         capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
       );
     }
+    if (data.containsKey('actor_user_id')) {
+      context.handle(
+        _actorUserIdMeta,
+        actorUserId.isAcceptableOrUnknown(
+          data['actor_user_id']!,
+          _actorUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ai_involved')) {
+      context.handle(
+        _aiInvolvedMeta,
+        aiInvolved.isAcceptableOrUnknown(data['ai_involved']!, _aiInvolvedMeta),
+      );
+    }
+    if (data.containsKey('operation')) {
+      context.handle(
+        _operationMeta,
+        operation.isAcceptableOrUnknown(data['operation']!, _operationMeta),
+      );
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -19479,6 +19560,22 @@ class $WorkspaceRevisionsTable extends WorkspaceRevisions
         DriftSqlType.dateTime,
         data['${effectivePrefix}captured_at'],
       )!,
+      actorUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_user_id'],
+      ),
+      aiInvolved: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}ai_involved'],
+      ),
+      operation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation'],
+      ),
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      ),
     );
   }
 
@@ -19496,6 +19593,10 @@ class WorkspaceRevisionRow extends DataClass
   final int revision;
   final String data;
   final DateTime capturedAt;
+  final String? actorUserId;
+  final bool? aiInvolved;
+  final String? operation;
+  final String? conversationId;
   const WorkspaceRevisionRow({
     required this.workspaceId,
     required this.kind,
@@ -19503,6 +19604,10 @@ class WorkspaceRevisionRow extends DataClass
     required this.revision,
     required this.data,
     required this.capturedAt,
+    this.actorUserId,
+    this.aiInvolved,
+    this.operation,
+    this.conversationId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -19513,6 +19618,18 @@ class WorkspaceRevisionRow extends DataClass
     map['revision'] = Variable<int>(revision);
     map['data'] = Variable<String>(data);
     map['captured_at'] = Variable<DateTime>(capturedAt);
+    if (!nullToAbsent || actorUserId != null) {
+      map['actor_user_id'] = Variable<String>(actorUserId);
+    }
+    if (!nullToAbsent || aiInvolved != null) {
+      map['ai_involved'] = Variable<bool>(aiInvolved);
+    }
+    if (!nullToAbsent || operation != null) {
+      map['operation'] = Variable<String>(operation);
+    }
+    if (!nullToAbsent || conversationId != null) {
+      map['conversation_id'] = Variable<String>(conversationId);
+    }
     return map;
   }
 
@@ -19524,6 +19641,18 @@ class WorkspaceRevisionRow extends DataClass
       revision: Value(revision),
       data: Value(data),
       capturedAt: Value(capturedAt),
+      actorUserId: actorUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actorUserId),
+      aiInvolved: aiInvolved == null && nullToAbsent
+          ? const Value.absent()
+          : Value(aiInvolved),
+      operation: operation == null && nullToAbsent
+          ? const Value.absent()
+          : Value(operation),
+      conversationId: conversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conversationId),
     );
   }
 
@@ -19539,6 +19668,10 @@ class WorkspaceRevisionRow extends DataClass
       revision: serializer.fromJson<int>(json['revision']),
       data: serializer.fromJson<String>(json['data']),
       capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
+      actorUserId: serializer.fromJson<String?>(json['actorUserId']),
+      aiInvolved: serializer.fromJson<bool?>(json['aiInvolved']),
+      operation: serializer.fromJson<String?>(json['operation']),
+      conversationId: serializer.fromJson<String?>(json['conversationId']),
     );
   }
   @override
@@ -19551,6 +19684,10 @@ class WorkspaceRevisionRow extends DataClass
       'revision': serializer.toJson<int>(revision),
       'data': serializer.toJson<String>(data),
       'capturedAt': serializer.toJson<DateTime>(capturedAt),
+      'actorUserId': serializer.toJson<String?>(actorUserId),
+      'aiInvolved': serializer.toJson<bool?>(aiInvolved),
+      'operation': serializer.toJson<String?>(operation),
+      'conversationId': serializer.toJson<String?>(conversationId),
     };
   }
 
@@ -19561,6 +19698,10 @@ class WorkspaceRevisionRow extends DataClass
     int? revision,
     String? data,
     DateTime? capturedAt,
+    Value<String?> actorUserId = const Value.absent(),
+    Value<bool?> aiInvolved = const Value.absent(),
+    Value<String?> operation = const Value.absent(),
+    Value<String?> conversationId = const Value.absent(),
   }) => WorkspaceRevisionRow(
     workspaceId: workspaceId ?? this.workspaceId,
     kind: kind ?? this.kind,
@@ -19568,6 +19709,12 @@ class WorkspaceRevisionRow extends DataClass
     revision: revision ?? this.revision,
     data: data ?? this.data,
     capturedAt: capturedAt ?? this.capturedAt,
+    actorUserId: actorUserId.present ? actorUserId.value : this.actorUserId,
+    aiInvolved: aiInvolved.present ? aiInvolved.value : this.aiInvolved,
+    operation: operation.present ? operation.value : this.operation,
+    conversationId: conversationId.present
+        ? conversationId.value
+        : this.conversationId,
   );
   WorkspaceRevisionRow copyWithCompanion(WorkspaceRevisionsCompanion data) {
     return WorkspaceRevisionRow(
@@ -19583,6 +19730,16 @@ class WorkspaceRevisionRow extends DataClass
       capturedAt: data.capturedAt.present
           ? data.capturedAt.value
           : this.capturedAt,
+      actorUserId: data.actorUserId.present
+          ? data.actorUserId.value
+          : this.actorUserId,
+      aiInvolved: data.aiInvolved.present
+          ? data.aiInvolved.value
+          : this.aiInvolved,
+      operation: data.operation.present ? data.operation.value : this.operation,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
     );
   }
 
@@ -19594,14 +19751,28 @@ class WorkspaceRevisionRow extends DataClass
           ..write('resourceId: $resourceId, ')
           ..write('revision: $revision, ')
           ..write('data: $data, ')
-          ..write('capturedAt: $capturedAt')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('actorUserId: $actorUserId, ')
+          ..write('aiInvolved: $aiInvolved, ')
+          ..write('operation: $operation, ')
+          ..write('conversationId: $conversationId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(workspaceId, kind, resourceId, revision, data, capturedAt);
+  int get hashCode => Object.hash(
+    workspaceId,
+    kind,
+    resourceId,
+    revision,
+    data,
+    capturedAt,
+    actorUserId,
+    aiInvolved,
+    operation,
+    conversationId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -19611,7 +19782,11 @@ class WorkspaceRevisionRow extends DataClass
           other.resourceId == this.resourceId &&
           other.revision == this.revision &&
           other.data == this.data &&
-          other.capturedAt == this.capturedAt);
+          other.capturedAt == this.capturedAt &&
+          other.actorUserId == this.actorUserId &&
+          other.aiInvolved == this.aiInvolved &&
+          other.operation == this.operation &&
+          other.conversationId == this.conversationId);
 }
 
 class WorkspaceRevisionsCompanion
@@ -19622,6 +19797,10 @@ class WorkspaceRevisionsCompanion
   final Value<int> revision;
   final Value<String> data;
   final Value<DateTime> capturedAt;
+  final Value<String?> actorUserId;
+  final Value<bool?> aiInvolved;
+  final Value<String?> operation;
+  final Value<String?> conversationId;
   final Value<int> rowid;
   const WorkspaceRevisionsCompanion({
     this.workspaceId = const Value.absent(),
@@ -19630,6 +19809,10 @@ class WorkspaceRevisionsCompanion
     this.revision = const Value.absent(),
     this.data = const Value.absent(),
     this.capturedAt = const Value.absent(),
+    this.actorUserId = const Value.absent(),
+    this.aiInvolved = const Value.absent(),
+    this.operation = const Value.absent(),
+    this.conversationId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceRevisionsCompanion.insert({
@@ -19639,6 +19822,10 @@ class WorkspaceRevisionsCompanion
     required int revision,
     required String data,
     this.capturedAt = const Value.absent(),
+    this.actorUserId = const Value.absent(),
+    this.aiInvolved = const Value.absent(),
+    this.operation = const Value.absent(),
+    this.conversationId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        kind = Value(kind),
@@ -19652,6 +19839,10 @@ class WorkspaceRevisionsCompanion
     Expression<int>? revision,
     Expression<String>? data,
     Expression<DateTime>? capturedAt,
+    Expression<String>? actorUserId,
+    Expression<bool>? aiInvolved,
+    Expression<String>? operation,
+    Expression<String>? conversationId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -19661,6 +19852,10 @@ class WorkspaceRevisionsCompanion
       if (revision != null) 'revision': revision,
       if (data != null) 'data': data,
       if (capturedAt != null) 'captured_at': capturedAt,
+      if (actorUserId != null) 'actor_user_id': actorUserId,
+      if (aiInvolved != null) 'ai_involved': aiInvolved,
+      if (operation != null) 'operation': operation,
+      if (conversationId != null) 'conversation_id': conversationId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -19672,6 +19867,10 @@ class WorkspaceRevisionsCompanion
     Value<int>? revision,
     Value<String>? data,
     Value<DateTime>? capturedAt,
+    Value<String?>? actorUserId,
+    Value<bool?>? aiInvolved,
+    Value<String?>? operation,
+    Value<String?>? conversationId,
     Value<int>? rowid,
   }) {
     return WorkspaceRevisionsCompanion(
@@ -19681,6 +19880,10 @@ class WorkspaceRevisionsCompanion
       revision: revision ?? this.revision,
       data: data ?? this.data,
       capturedAt: capturedAt ?? this.capturedAt,
+      actorUserId: actorUserId ?? this.actorUserId,
+      aiInvolved: aiInvolved ?? this.aiInvolved,
+      operation: operation ?? this.operation,
+      conversationId: conversationId ?? this.conversationId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -19706,6 +19909,18 @@ class WorkspaceRevisionsCompanion
     if (capturedAt.present) {
       map['captured_at'] = Variable<DateTime>(capturedAt.value);
     }
+    if (actorUserId.present) {
+      map['actor_user_id'] = Variable<String>(actorUserId.value);
+    }
+    if (aiInvolved.present) {
+      map['ai_involved'] = Variable<bool>(aiInvolved.value);
+    }
+    if (operation.present) {
+      map['operation'] = Variable<String>(operation.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -19721,6 +19936,10 @@ class WorkspaceRevisionsCompanion
           ..write('revision: $revision, ')
           ..write('data: $data, ')
           ..write('capturedAt: $capturedAt, ')
+          ..write('actorUserId: $actorUserId, ')
+          ..write('aiInvolved: $aiInvolved, ')
+          ..write('operation: $operation, ')
+          ..write('conversationId: $conversationId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -21934,6 +22153,741 @@ class WorkspaceCommandReceiptsCompanion
   }
 }
 
+class $WorkspaceContentReportsTable extends WorkspaceContentReports
+    with TableInfo<$WorkspaceContentReportsTable, WorkspaceContentReportRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceContentReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reportIdMeta = const VerificationMeta(
+    'reportId',
+  );
+  @override
+  late final GeneratedColumn<String> reportId = GeneratedColumn<String>(
+    'report_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resourceIdMeta = const VerificationMeta(
+    'resourceId',
+  );
+  @override
+  late final GeneratedColumn<String> resourceId = GeneratedColumn<String>(
+    'resource_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tableIdMeta = const VerificationMeta(
+    'tableId',
+  );
+  @override
+  late final GeneratedColumn<String> tableId = GeneratedColumn<String>(
+    'table_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('submitted'),
+  );
+  static const VerificationMeta _reporterIdMeta = const VerificationMeta(
+    'reporterId',
+  );
+  @override
+  late final GeneratedColumn<String> reporterId = GeneratedColumn<String>(
+    'reporter_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('local_user'),
+  );
+  static const VerificationMeta _reviewerIdMeta = const VerificationMeta(
+    'reviewerId',
+  );
+  @override
+  late final GeneratedColumn<String> reviewerId = GeneratedColumn<String>(
+    'reviewer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _submittedAtMeta = const VerificationMeta(
+    'submittedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> submittedAt = GeneratedColumn<DateTime>(
+    'submitted_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _reviewedAtMeta = const VerificationMeta(
+    'reviewedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reviewedAt = GeneratedColumn<DateTime>(
+    'reviewed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workspaceId,
+    reportId,
+    kind,
+    resourceId,
+    tableId,
+    revision,
+    conversationId,
+    status,
+    reporterId,
+    reviewerId,
+    submittedAt,
+    reviewedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_content_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceContentReportRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('report_id')) {
+      context.handle(
+        _reportIdMeta,
+        reportId.isAcceptableOrUnknown(data['report_id']!, _reportIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reportIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('resource_id')) {
+      context.handle(
+        _resourceIdMeta,
+        resourceId.isAcceptableOrUnknown(data['resource_id']!, _resourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_resourceIdMeta);
+    }
+    if (data.containsKey('table_id')) {
+      context.handle(
+        _tableIdMeta,
+        tableId.isAcceptableOrUnknown(data['table_id']!, _tableIdMeta),
+      );
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('reporter_id')) {
+      context.handle(
+        _reporterIdMeta,
+        reporterId.isAcceptableOrUnknown(data['reporter_id']!, _reporterIdMeta),
+      );
+    }
+    if (data.containsKey('reviewer_id')) {
+      context.handle(
+        _reviewerIdMeta,
+        reviewerId.isAcceptableOrUnknown(data['reviewer_id']!, _reviewerIdMeta),
+      );
+    }
+    if (data.containsKey('submitted_at')) {
+      context.handle(
+        _submittedAtMeta,
+        submittedAt.isAcceptableOrUnknown(
+          data['submitted_at']!,
+          _submittedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reviewed_at')) {
+      context.handle(
+        _reviewedAtMeta,
+        reviewedAt.isAcceptableOrUnknown(data['reviewed_at']!, _reviewedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, reportId};
+  @override
+  WorkspaceContentReportRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceContentReportRow(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      reportId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}report_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      resourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}resource_id'],
+      )!,
+      tableId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}table_id'],
+      ),
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      reporterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reporter_id'],
+      )!,
+      reviewerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reviewer_id'],
+      ),
+      submittedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}submitted_at'],
+      )!,
+      reviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reviewed_at'],
+      ),
+    );
+  }
+
+  @override
+  $WorkspaceContentReportsTable createAlias(String alias) {
+    return $WorkspaceContentReportsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceContentReportRow extends DataClass
+    implements Insertable<WorkspaceContentReportRow> {
+  final String workspaceId;
+  final String reportId;
+  final String kind;
+  final String resourceId;
+  final String? tableId;
+  final int revision;
+  final String? conversationId;
+  final String status;
+  final String reporterId;
+  final String? reviewerId;
+  final DateTime submittedAt;
+  final DateTime? reviewedAt;
+  const WorkspaceContentReportRow({
+    required this.workspaceId,
+    required this.reportId,
+    required this.kind,
+    required this.resourceId,
+    this.tableId,
+    required this.revision,
+    this.conversationId,
+    required this.status,
+    required this.reporterId,
+    this.reviewerId,
+    required this.submittedAt,
+    this.reviewedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['report_id'] = Variable<String>(reportId);
+    map['kind'] = Variable<String>(kind);
+    map['resource_id'] = Variable<String>(resourceId);
+    if (!nullToAbsent || tableId != null) {
+      map['table_id'] = Variable<String>(tableId);
+    }
+    map['revision'] = Variable<int>(revision);
+    if (!nullToAbsent || conversationId != null) {
+      map['conversation_id'] = Variable<String>(conversationId);
+    }
+    map['status'] = Variable<String>(status);
+    map['reporter_id'] = Variable<String>(reporterId);
+    if (!nullToAbsent || reviewerId != null) {
+      map['reviewer_id'] = Variable<String>(reviewerId);
+    }
+    map['submitted_at'] = Variable<DateTime>(submittedAt);
+    if (!nullToAbsent || reviewedAt != null) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt);
+    }
+    return map;
+  }
+
+  WorkspaceContentReportsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceContentReportsCompanion(
+      workspaceId: Value(workspaceId),
+      reportId: Value(reportId),
+      kind: Value(kind),
+      resourceId: Value(resourceId),
+      tableId: tableId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tableId),
+      revision: Value(revision),
+      conversationId: conversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conversationId),
+      status: Value(status),
+      reporterId: Value(reporterId),
+      reviewerId: reviewerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewerId),
+      submittedAt: Value(submittedAt),
+      reviewedAt: reviewedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewedAt),
+    );
+  }
+
+  factory WorkspaceContentReportRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceContentReportRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      reportId: serializer.fromJson<String>(json['reportId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      resourceId: serializer.fromJson<String>(json['resourceId']),
+      tableId: serializer.fromJson<String?>(json['tableId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      conversationId: serializer.fromJson<String?>(json['conversationId']),
+      status: serializer.fromJson<String>(json['status']),
+      reporterId: serializer.fromJson<String>(json['reporterId']),
+      reviewerId: serializer.fromJson<String?>(json['reviewerId']),
+      submittedAt: serializer.fromJson<DateTime>(json['submittedAt']),
+      reviewedAt: serializer.fromJson<DateTime?>(json['reviewedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'reportId': serializer.toJson<String>(reportId),
+      'kind': serializer.toJson<String>(kind),
+      'resourceId': serializer.toJson<String>(resourceId),
+      'tableId': serializer.toJson<String?>(tableId),
+      'revision': serializer.toJson<int>(revision),
+      'conversationId': serializer.toJson<String?>(conversationId),
+      'status': serializer.toJson<String>(status),
+      'reporterId': serializer.toJson<String>(reporterId),
+      'reviewerId': serializer.toJson<String?>(reviewerId),
+      'submittedAt': serializer.toJson<DateTime>(submittedAt),
+      'reviewedAt': serializer.toJson<DateTime?>(reviewedAt),
+    };
+  }
+
+  WorkspaceContentReportRow copyWith({
+    String? workspaceId,
+    String? reportId,
+    String? kind,
+    String? resourceId,
+    Value<String?> tableId = const Value.absent(),
+    int? revision,
+    Value<String?> conversationId = const Value.absent(),
+    String? status,
+    String? reporterId,
+    Value<String?> reviewerId = const Value.absent(),
+    DateTime? submittedAt,
+    Value<DateTime?> reviewedAt = const Value.absent(),
+  }) => WorkspaceContentReportRow(
+    workspaceId: workspaceId ?? this.workspaceId,
+    reportId: reportId ?? this.reportId,
+    kind: kind ?? this.kind,
+    resourceId: resourceId ?? this.resourceId,
+    tableId: tableId.present ? tableId.value : this.tableId,
+    revision: revision ?? this.revision,
+    conversationId: conversationId.present
+        ? conversationId.value
+        : this.conversationId,
+    status: status ?? this.status,
+    reporterId: reporterId ?? this.reporterId,
+    reviewerId: reviewerId.present ? reviewerId.value : this.reviewerId,
+    submittedAt: submittedAt ?? this.submittedAt,
+    reviewedAt: reviewedAt.present ? reviewedAt.value : this.reviewedAt,
+  );
+  WorkspaceContentReportRow copyWithCompanion(
+    WorkspaceContentReportsCompanion data,
+  ) {
+    return WorkspaceContentReportRow(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      reportId: data.reportId.present ? data.reportId.value : this.reportId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      resourceId: data.resourceId.present
+          ? data.resourceId.value
+          : this.resourceId,
+      tableId: data.tableId.present ? data.tableId.value : this.tableId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      status: data.status.present ? data.status.value : this.status,
+      reporterId: data.reporterId.present
+          ? data.reporterId.value
+          : this.reporterId,
+      reviewerId: data.reviewerId.present
+          ? data.reviewerId.value
+          : this.reviewerId,
+      submittedAt: data.submittedAt.present
+          ? data.submittedAt.value
+          : this.submittedAt,
+      reviewedAt: data.reviewedAt.present
+          ? data.reviewedAt.value
+          : this.reviewedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceContentReportRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('reportId: $reportId, ')
+          ..write('kind: $kind, ')
+          ..write('resourceId: $resourceId, ')
+          ..write('tableId: $tableId, ')
+          ..write('revision: $revision, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('status: $status, ')
+          ..write('reporterId: $reporterId, ')
+          ..write('reviewerId: $reviewerId, ')
+          ..write('submittedAt: $submittedAt, ')
+          ..write('reviewedAt: $reviewedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    workspaceId,
+    reportId,
+    kind,
+    resourceId,
+    tableId,
+    revision,
+    conversationId,
+    status,
+    reporterId,
+    reviewerId,
+    submittedAt,
+    reviewedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceContentReportRow &&
+          other.workspaceId == this.workspaceId &&
+          other.reportId == this.reportId &&
+          other.kind == this.kind &&
+          other.resourceId == this.resourceId &&
+          other.tableId == this.tableId &&
+          other.revision == this.revision &&
+          other.conversationId == this.conversationId &&
+          other.status == this.status &&
+          other.reporterId == this.reporterId &&
+          other.reviewerId == this.reviewerId &&
+          other.submittedAt == this.submittedAt &&
+          other.reviewedAt == this.reviewedAt);
+}
+
+class WorkspaceContentReportsCompanion
+    extends UpdateCompanion<WorkspaceContentReportRow> {
+  final Value<String> workspaceId;
+  final Value<String> reportId;
+  final Value<String> kind;
+  final Value<String> resourceId;
+  final Value<String?> tableId;
+  final Value<int> revision;
+  final Value<String?> conversationId;
+  final Value<String> status;
+  final Value<String> reporterId;
+  final Value<String?> reviewerId;
+  final Value<DateTime> submittedAt;
+  final Value<DateTime?> reviewedAt;
+  final Value<int> rowid;
+  const WorkspaceContentReportsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.reportId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.resourceId = const Value.absent(),
+    this.tableId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.reporterId = const Value.absent(),
+    this.reviewerId = const Value.absent(),
+    this.submittedAt = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceContentReportsCompanion.insert({
+    required String workspaceId,
+    required String reportId,
+    required String kind,
+    required String resourceId,
+    this.tableId = const Value.absent(),
+    required int revision,
+    this.conversationId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.reporterId = const Value.absent(),
+    this.reviewerId = const Value.absent(),
+    this.submittedAt = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       reportId = Value(reportId),
+       kind = Value(kind),
+       resourceId = Value(resourceId),
+       revision = Value(revision);
+  static Insertable<WorkspaceContentReportRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? reportId,
+    Expression<String>? kind,
+    Expression<String>? resourceId,
+    Expression<String>? tableId,
+    Expression<int>? revision,
+    Expression<String>? conversationId,
+    Expression<String>? status,
+    Expression<String>? reporterId,
+    Expression<String>? reviewerId,
+    Expression<DateTime>? submittedAt,
+    Expression<DateTime>? reviewedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (reportId != null) 'report_id': reportId,
+      if (kind != null) 'kind': kind,
+      if (resourceId != null) 'resource_id': resourceId,
+      if (tableId != null) 'table_id': tableId,
+      if (revision != null) 'revision': revision,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (status != null) 'status': status,
+      if (reporterId != null) 'reporter_id': reporterId,
+      if (reviewerId != null) 'reviewer_id': reviewerId,
+      if (submittedAt != null) 'submitted_at': submittedAt,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceContentReportsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? reportId,
+    Value<String>? kind,
+    Value<String>? resourceId,
+    Value<String?>? tableId,
+    Value<int>? revision,
+    Value<String?>? conversationId,
+    Value<String>? status,
+    Value<String>? reporterId,
+    Value<String?>? reviewerId,
+    Value<DateTime>? submittedAt,
+    Value<DateTime?>? reviewedAt,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceContentReportsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      reportId: reportId ?? this.reportId,
+      kind: kind ?? this.kind,
+      resourceId: resourceId ?? this.resourceId,
+      tableId: tableId ?? this.tableId,
+      revision: revision ?? this.revision,
+      conversationId: conversationId ?? this.conversationId,
+      status: status ?? this.status,
+      reporterId: reporterId ?? this.reporterId,
+      reviewerId: reviewerId ?? this.reviewerId,
+      submittedAt: submittedAt ?? this.submittedAt,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (reportId.present) {
+      map['report_id'] = Variable<String>(reportId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (resourceId.present) {
+      map['resource_id'] = Variable<String>(resourceId.value);
+    }
+    if (tableId.present) {
+      map['table_id'] = Variable<String>(tableId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (reporterId.present) {
+      map['reporter_id'] = Variable<String>(reporterId.value);
+    }
+    if (reviewerId.present) {
+      map['reviewer_id'] = Variable<String>(reviewerId.value);
+    }
+    if (submittedAt.present) {
+      map['submitted_at'] = Variable<DateTime>(submittedAt.value);
+    }
+    if (reviewedAt.present) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceContentReportsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('reportId: $reportId, ')
+          ..write('kind: $kind, ')
+          ..write('resourceId: $resourceId, ')
+          ..write('tableId: $tableId, ')
+          ..write('revision: $revision, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('status: $status, ')
+          ..write('reporterId: $reporterId, ')
+          ..write('reviewerId: $reviewerId, ')
+          ..write('submittedAt: $submittedAt, ')
+          ..write('reviewedAt: $reviewedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -22005,6 +22959,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceContextSelectionsTable(this);
   late final $WorkspaceCommandReceiptsTable workspaceCommandReceipts =
       $WorkspaceCommandReceiptsTable(this);
+  late final $WorkspaceContentReportsTable workspaceContentReports =
+      $WorkspaceContentReportsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -22152,6 +23108,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceAssetDeletions,
     workspaceContextSelections,
     workspaceCommandReceipts,
+    workspaceContentReports,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -41625,6 +42582,10 @@ typedef $$WorkspaceRevisionsTableCreateCompanionBuilder =
       required int revision,
       required String data,
       Value<DateTime> capturedAt,
+      Value<String?> actorUserId,
+      Value<bool?> aiInvolved,
+      Value<String?> operation,
+      Value<String?> conversationId,
       Value<int> rowid,
     });
 typedef $$WorkspaceRevisionsTableUpdateCompanionBuilder =
@@ -41635,6 +42596,10 @@ typedef $$WorkspaceRevisionsTableUpdateCompanionBuilder =
       Value<int> revision,
       Value<String> data,
       Value<DateTime> capturedAt,
+      Value<String?> actorUserId,
+      Value<bool?> aiInvolved,
+      Value<String?> operation,
+      Value<String?> conversationId,
       Value<int> rowid,
     });
 
@@ -41703,6 +42668,26 @@ class $$WorkspaceRevisionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get actorUserId => $composableBuilder(
+    column: $table.actorUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get aiInvolved => $composableBuilder(
+    column: $table.aiInvolved,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operation => $composableBuilder(
+    column: $table.operation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkspacesTableFilterComposer get workspaceId {
     final $$WorkspacesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -41761,6 +42746,26 @@ class $$WorkspaceRevisionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get actorUserId => $composableBuilder(
+    column: $table.actorUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get aiInvolved => $composableBuilder(
+    column: $table.aiInvolved,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operation => $composableBuilder(
+    column: $table.operation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkspacesTableOrderingComposer get workspaceId {
     final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -41810,6 +42815,24 @@ class $$WorkspaceRevisionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
     column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get actorUserId => $composableBuilder(
+    column: $table.actorUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get aiInvolved => $composableBuilder(
+    column: $table.aiInvolved,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get operation =>
+      $composableBuilder(column: $table.operation, builder: (column) => column);
+
+  GeneratedColumn<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
     builder: (column) => column,
   );
 
@@ -41876,6 +42899,10 @@ class $$WorkspaceRevisionsTableTableManager
                 Value<int> revision = const Value.absent(),
                 Value<String> data = const Value.absent(),
                 Value<DateTime> capturedAt = const Value.absent(),
+                Value<String?> actorUserId = const Value.absent(),
+                Value<bool?> aiInvolved = const Value.absent(),
+                Value<String?> operation = const Value.absent(),
+                Value<String?> conversationId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceRevisionsCompanion(
                 workspaceId: workspaceId,
@@ -41884,6 +42911,10 @@ class $$WorkspaceRevisionsTableTableManager
                 revision: revision,
                 data: data,
                 capturedAt: capturedAt,
+                actorUserId: actorUserId,
+                aiInvolved: aiInvolved,
+                operation: operation,
+                conversationId: conversationId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -41894,6 +42925,10 @@ class $$WorkspaceRevisionsTableTableManager
                 required int revision,
                 required String data,
                 Value<DateTime> capturedAt = const Value.absent(),
+                Value<String?> actorUserId = const Value.absent(),
+                Value<bool?> aiInvolved = const Value.absent(),
+                Value<String?> operation = const Value.absent(),
+                Value<String?> conversationId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceRevisionsCompanion.insert(
                 workspaceId: workspaceId,
@@ -41902,6 +42937,10 @@ class $$WorkspaceRevisionsTableTableManager
                 revision: revision,
                 data: data,
                 capturedAt: capturedAt,
+                actorUserId: actorUserId,
+                aiInvolved: aiInvolved,
+                operation: operation,
+                conversationId: conversationId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -44353,6 +45392,384 @@ typedef $$WorkspaceCommandReceiptsTableProcessedTableManager =
         bool selectionId,
       })
     >;
+typedef $$WorkspaceContentReportsTableCreateCompanionBuilder =
+    WorkspaceContentReportsCompanion Function({
+      required String workspaceId,
+      required String reportId,
+      required String kind,
+      required String resourceId,
+      Value<String?> tableId,
+      required int revision,
+      Value<String?> conversationId,
+      Value<String> status,
+      Value<String> reporterId,
+      Value<String?> reviewerId,
+      Value<DateTime> submittedAt,
+      Value<DateTime?> reviewedAt,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceContentReportsTableUpdateCompanionBuilder =
+    WorkspaceContentReportsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> reportId,
+      Value<String> kind,
+      Value<String> resourceId,
+      Value<String?> tableId,
+      Value<int> revision,
+      Value<String?> conversationId,
+      Value<String> status,
+      Value<String> reporterId,
+      Value<String?> reviewerId,
+      Value<DateTime> submittedAt,
+      Value<DateTime?> reviewedAt,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceContentReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceContentReportsTable> {
+  $$WorkspaceContentReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reportId => $composableBuilder(
+    column: $table.reportId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get resourceId => $composableBuilder(
+    column: $table.resourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tableId => $composableBuilder(
+    column: $table.tableId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reporterId => $composableBuilder(
+    column: $table.reporterId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewerId => $composableBuilder(
+    column: $table.reviewerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get submittedAt => $composableBuilder(
+    column: $table.submittedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceContentReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceContentReportsTable> {
+  $$WorkspaceContentReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reportId => $composableBuilder(
+    column: $table.reportId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get resourceId => $composableBuilder(
+    column: $table.resourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tableId => $composableBuilder(
+    column: $table.tableId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reporterId => $composableBuilder(
+    column: $table.reporterId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewerId => $composableBuilder(
+    column: $table.reviewerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get submittedAt => $composableBuilder(
+    column: $table.submittedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceContentReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceContentReportsTable> {
+  $$WorkspaceContentReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reportId =>
+      $composableBuilder(column: $table.reportId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get resourceId => $composableBuilder(
+    column: $table.resourceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tableId =>
+      $composableBuilder(column: $table.tableId, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get reporterId => $composableBuilder(
+    column: $table.reporterId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reviewerId => $composableBuilder(
+    column: $table.reviewerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get submittedAt => $composableBuilder(
+    column: $table.submittedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkspaceContentReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceContentReportsTable,
+          WorkspaceContentReportRow,
+          $$WorkspaceContentReportsTableFilterComposer,
+          $$WorkspaceContentReportsTableOrderingComposer,
+          $$WorkspaceContentReportsTableAnnotationComposer,
+          $$WorkspaceContentReportsTableCreateCompanionBuilder,
+          $$WorkspaceContentReportsTableUpdateCompanionBuilder,
+          (
+            WorkspaceContentReportRow,
+            BaseReferences<
+              _$AppDatabase,
+              $WorkspaceContentReportsTable,
+              WorkspaceContentReportRow
+            >,
+          ),
+          WorkspaceContentReportRow,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceContentReportsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceContentReportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceContentReportsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceContentReportsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceContentReportsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> reportId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> resourceId = const Value.absent(),
+                Value<String?> tableId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String?> conversationId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> reporterId = const Value.absent(),
+                Value<String?> reviewerId = const Value.absent(),
+                Value<DateTime> submittedAt = const Value.absent(),
+                Value<DateTime?> reviewedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceContentReportsCompanion(
+                workspaceId: workspaceId,
+                reportId: reportId,
+                kind: kind,
+                resourceId: resourceId,
+                tableId: tableId,
+                revision: revision,
+                conversationId: conversationId,
+                status: status,
+                reporterId: reporterId,
+                reviewerId: reviewerId,
+                submittedAt: submittedAt,
+                reviewedAt: reviewedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String reportId,
+                required String kind,
+                required String resourceId,
+                Value<String?> tableId = const Value.absent(),
+                required int revision,
+                Value<String?> conversationId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> reporterId = const Value.absent(),
+                Value<String?> reviewerId = const Value.absent(),
+                Value<DateTime> submittedAt = const Value.absent(),
+                Value<DateTime?> reviewedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceContentReportsCompanion.insert(
+                workspaceId: workspaceId,
+                reportId: reportId,
+                kind: kind,
+                resourceId: resourceId,
+                tableId: tableId,
+                revision: revision,
+                conversationId: conversationId,
+                status: status,
+                reporterId: reporterId,
+                reviewerId: reviewerId,
+                submittedAt: submittedAt,
+                reviewedAt: reviewedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceContentReportsTable,
+                    WorkspaceContentReportRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $WorkspaceContentReportsTable,
+                    WorkspaceContentReportRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceContentReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceContentReportsTable,
+      WorkspaceContentReportRow,
+      $$WorkspaceContentReportsTableFilterComposer,
+      $$WorkspaceContentReportsTableOrderingComposer,
+      $$WorkspaceContentReportsTableAnnotationComposer,
+      $$WorkspaceContentReportsTableCreateCompanionBuilder,
+      $$WorkspaceContentReportsTableUpdateCompanionBuilder,
+      (
+        WorkspaceContentReportRow,
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceContentReportsTable,
+          WorkspaceContentReportRow
+        >,
+      ),
+      WorkspaceContentReportRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -44459,5 +45876,10 @@ class $AppDatabaseManager {
       $$WorkspaceCommandReceiptsTableTableManager(
         _db,
         _db.workspaceCommandReceipts,
+      );
+  $$WorkspaceContentReportsTableTableManager get workspaceContentReports =>
+      $$WorkspaceContentReportsTableTableManager(
+        _db,
+        _db.workspaceContentReports,
       );
 }

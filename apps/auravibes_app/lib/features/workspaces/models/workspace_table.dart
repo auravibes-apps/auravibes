@@ -136,11 +136,13 @@ abstract interface class WorkspaceTableRepository {
     required String name,
     required String labelName,
     String? parentId,
+    String? aiConversationId,
   });
   Future<WorkspaceTable> updateMetadata({
     required WorkspaceTable table,
     required String name,
     required String? parentId,
+    String? aiConversationId,
   });
   Future<WorkspaceTable> renameLabel({
     required WorkspaceTable table,
@@ -149,17 +151,20 @@ abstract interface class WorkspaceTableRepository {
   Future<WorkspaceTable> saveColumn({
     required WorkspaceTable table,
     required WorkspaceColumn column,
+    String? aiConversationId,
   });
   Future<List<WorkspaceRecord>> records(String tableId);
   Future<WorkspaceRecord> record(String tableId, String id);
   Future<WorkspaceRecord> createRecord({
     required WorkspaceTable table,
     required Map<String, Object?> values,
+    String? aiConversationId,
   });
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
     required Map<String, Object?> values,
+    String? aiConversationId,
   });
 }
 

@@ -276,6 +276,8 @@ import 'features/workspace_state/models/read_workspace_state_request.dart'
     as _iz7boq8w;
 import 'features/workspace_state/models/read_workspace_state_response.dart'
     as _iqk6zto1;
+import 'features/workspace_state/models/workspace_content_report.dart'
+    as _i0456l9b;
 import 'features/workspace_state/models/workspace_history_policy_request.dart'
     as _i6ina439;
 import 'features/workspace_state/models/workspace_history_restore_request.dart'
@@ -512,6 +514,7 @@ export 'features/workspace_state/models/put_workspace_secret_request.dart';
 export 'features/workspace_state/models/put_workspace_secret_response.dart';
 export 'features/workspace_state/models/read_workspace_state_request.dart';
 export 'features/workspace_state/models/read_workspace_state_response.dart';
+export 'features/workspace_state/models/workspace_content_report.dart';
 export 'features/workspace_state/models/workspace_history_policy_request.dart';
 export 'features/workspace_state/models/workspace_history_restore_request.dart';
 export 'features/workspace_state/models/workspace_patch_operation.dart';
@@ -4073,6 +4076,146 @@ class Protocol extends _is.DatabaseSerializationManager {
       managed: true,
     ),
     _isp.TableDefinition(
+      name: 'workspace_content_report',
+      dartName: 'WorkspaceContentReport',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'reportId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'resourceKind',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'protocol:WorkspaceResourceKind',
+        ),
+        _isp.ColumnDefinition(
+          name: 'resourceId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'tableId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'revision',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'conversationId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'reporterUserId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'status',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'submittedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _isp.ColumnDefinition(
+          name: 'reviewerUserId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'reviewedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'workspace_content_report_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'workspace_content_report_identity_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'reportId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'workspace_content_report_status_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'status',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'submittedAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
       name: 'workspace_conversation_context',
       dartName: 'WorkspaceConversationContext',
       schema: 'public',
@@ -5198,6 +5341,30 @@ class Protocol extends _is.DatabaseSerializationManager {
           isNullable: false,
           dartType: 'DateTime',
         ),
+        _isp.ColumnDefinition(
+          name: 'actorUserId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'aiInvolved',
+          columnType: _isp.ColumnType.boolean,
+          isNullable: true,
+          dartType: 'bool?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'operation',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'conversationId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
       ],
       foreignKeys: [],
       indexes: [
@@ -6005,6 +6172,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _iqk6zto1.ReadWorkspaceStateResponse) {
       return _iqk6zto1.ReadWorkspaceStateResponse.fromJson(data) as T;
+    }
+    if (t == _i0456l9b.WorkspaceContentReport) {
+      return _i0456l9b.WorkspaceContentReport.fromJson(data) as T;
     }
     if (t == _i6ina439.WorkspaceHistoryPolicyRequest) {
       return _i6ina439.WorkspaceHistoryPolicyRequest.fromJson(data) as T;
@@ -6956,6 +7126,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_i0456l9b.WorkspaceContentReport?>()) {
+      return (data != null
+              ? _i0456l9b.WorkspaceContentReport.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_i6ina439.WorkspaceHistoryPolicyRequest?>()) {
       return (data != null
               ? _i6ina439.WorkspaceHistoryPolicyRequest.fromJson(data)
@@ -7648,6 +7824,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iavc361v.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
       _iz7boq8w.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
       _iqk6zto1.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
+      _i0456l9b.WorkspaceContentReport => 'WorkspaceContentReport',
       _i6ina439.WorkspaceHistoryPolicyRequest =>
         'WorkspaceHistoryPolicyRequest',
       _iveci0ok.WorkspaceHistoryRestoreRequest =>
@@ -8017,6 +8194,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'ReadWorkspaceStateRequest';
       case _iqk6zto1.ReadWorkspaceStateResponse():
         return 'ReadWorkspaceStateResponse';
+      case _i0456l9b.WorkspaceContentReport():
+        return 'WorkspaceContentReport';
       case _i6ina439.WorkspaceHistoryPolicyRequest():
         return 'WorkspaceHistoryPolicyRequest';
       case _iveci0ok.WorkspaceHistoryRestoreRequest():
@@ -8620,6 +8799,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ReadWorkspaceStateResponse') {
       return deserialize<_iqk6zto1.ReadWorkspaceStateResponse>(data['data']);
     }
+    if (dataClassName == 'WorkspaceContentReport') {
+      return deserialize<_i0456l9b.WorkspaceContentReport>(data['data']);
+    }
     if (dataClassName == 'WorkspaceHistoryPolicyRequest') {
       return deserialize<_i6ina439.WorkspaceHistoryPolicyRequest>(data['data']);
     }
@@ -8893,6 +9075,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _ifhsy8zv.WorkerCoordinatorLease.t;
       case _ic7cyfzr.WorkspaceConversationContext:
         return _ic7cyfzr.WorkspaceConversationContext.t;
+      case _i0456l9b.WorkspaceContentReport:
+        return _i0456l9b.WorkspaceContentReport.t;
       case _iqzfyfs9.WorkspaceResource:
         return _iqzfyfs9.WorkspaceResource.t;
       case _ihvrwgom.WorkspaceRevision:

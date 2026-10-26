@@ -1,0 +1,1 @@
+enum WorkspaceContentReportAction { dismiss, remove }

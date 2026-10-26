@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_csv_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_history_attribution.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_history_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_record_query_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
@@ -73,6 +74,101 @@ void main() {
       final restored = await tables.record(table.id, first.id);
       expect(restored.revision, 3);
       expect(restored.values[table.labelColumnId], 'First');
+    },
+  );
+
+  test(
+    'reports reference attributed revisions and stay metadata-only',
+    () async {
+      final fixture = await _fixture();
+      final table = await fixture.tables.create(
+        name: 'Data',
+        labelName: 'Name',
+      );
+      final first = await fixture.tables.createRecord(
+        table: table,
+        values: {table.labelColumnId: 'Private record text'},
+      );
+      final current = await fixture.tables.updateRecord(
+        table: table,
+        record: first,
+        values: {table.labelColumnId: 'AI edited text'},
+      );
+      final target = WorkspaceTrashTarget(
+        kind: .record,
+        id: current.id,
+        revision: current.revision,
+        tableId: table.id,
+      );
+      final attribution = LocalWorkspaceHistoryAttribution(fixture.database);
+      await attribution.aiRevision(
+        workspaceId: 'local',
+        kind: 'record',
+        resourceId: current.id,
+        revision: current.revision,
+        conversationId: 'conversation-local-1',
+      );
+
+      final revisions = await fixture.history.history(target);
+      expect(revisions.firstOrNull?.actorUserId, 'local_user');
+      expect(revisions.firstOrNull?.aiInvolved, isTrue);
+      expect(revisions.firstOrNull?.operation, 'updated');
+      expect(revisions.firstOrNull?.conversationId, 'conversation-local-1');
+      expect(revisions.lastOrNull?.aiInvolved, isFalse);
+      await expectLater(
+        fixture.history.submitReport(
+          .new(
+            kind: .record,
+            id: first.id,
+            revision: first.revision,
+            tableId: table.id,
+          ),
+        ),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+
+      final dismissedId = await fixture.history.submitReport(target);
+      final submitted = (await fixture.history.reports()).single;
+      expect(submitted.reportId, dismissedId);
+      expect(submitted.status, 'submitted');
+      expect(submitted.target.id, target.id);
+      expect(submitted.target.revision, target.revision);
+      expect(submitted.conversationId, 'conversation-local-1');
+      final stored = await fixture.database
+          .select(fixture.database.workspaceContentReports)
+          .getSingle();
+      expect(stored.toJson().keys, isNot(contains('data')));
+      expect(stored.toJson().keys, isNot(contains('values')));
+
+      final dismissed = await fixture.history.resolveReport(
+        dismissedId,
+        .dismiss,
+      );
+      expect(dismissed.status, 'dismissed');
+      expect(dismissed.reviewerUserId, 'local_user');
+      expect(dismissed.reviewedAt, isNotNull);
+
+      final removedId = await fixture.history.submitReport(target);
+      final removed = await fixture.history.resolveReport(removedId, .remove);
+      expect(removed.status, 'removed');
+      expect(
+        (await LocalWorkspaceTrashRepository(
+          fixture.database,
+          'local',
+        ).list()).single.target.id,
+        current.id,
+      );
+
+      await fixture.database.customStatement(
+        'DELETE FROM workspaces WHERE id = ?',
+        ['local'],
+      );
+      expect(
+        await fixture.database
+            .select(fixture.database.workspaceContentReports)
+            .get(),
+        isEmpty,
+      );
     },
   );
 

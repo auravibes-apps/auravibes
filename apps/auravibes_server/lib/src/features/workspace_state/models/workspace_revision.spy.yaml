@@ -7,6 +7,10 @@ fields:
   revision: int
   data: String
   capturedAt: DateTime
+  actorUserId: String?
+  aiInvolved: bool?
+  operation: String?
+  conversationId: String?
 indexes:
   workspace_revision_identity_idx:
     fields: workspaceId, resourceKind, resourceId, revision
