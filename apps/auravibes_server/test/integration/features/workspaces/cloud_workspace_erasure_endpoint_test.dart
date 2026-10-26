@@ -18,6 +18,80 @@ import '../../test_tools/serverpod_test_tools.dart';
 void main() {
   withServerpod('Cloud workspace erasure', (builder, endpoints) {
     test(
+      'lists unresolved erasures beyond recent completed statuses',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        final pendingRequestId = 'old-pending-$userId';
+        final attentionRequestId = 'old-attention-$userId';
+        final requests = [
+          WorkspaceErasureRequest(
+            workspaceId: 1,
+            workspaceName: 'Older pending workspace',
+            ownerUserId: userId,
+            requestId: pendingRequestId,
+            requestHash: 'synthetic-pending-hash',
+            state: 'pending',
+            requestedAt: now.subtract(const Duration(days: 1)),
+          ),
+          WorkspaceErasureRequest(
+            workspaceId: 2,
+            workspaceName: 'Older attention workspace',
+            ownerUserId: userId,
+            requestId: attentionRequestId,
+            requestHash: 'synthetic-attention-hash',
+            state: 'needsAttention',
+            requestedAt: now.subtract(const Duration(days: 2)),
+            failureReason: 'synthetic retry needed',
+          ),
+          for (final index in List.generate(101, (index) => index))
+            WorkspaceErasureRequest(
+              workspaceId: 1000 + index,
+              workspaceName: 'Completed workspace $index',
+              ownerUserId: userId,
+              requestId: 'completed-$index-$userId',
+              requestHash: 'synthetic-completed-hash-$index',
+              state: 'complete',
+              requestedAt: now.add(Duration(seconds: index + 1)),
+              completedAt: now.add(Duration(seconds: index + 2)),
+            ),
+        ];
+        await WorkspaceErasureRequest.db.insert(session, requests);
+
+        final statuses = await endpoints.cloudWorkspace.listWorkspaceErasures(
+          authenticated,
+        );
+        final requestIds = statuses.map((status) => status.requestId).toSet();
+
+        expect(
+          requestIds,
+          containsAll({pendingRequestId, attentionRequestId}),
+        );
+        expect(requestIds, contains('completed-100-$userId'));
+        expect(statuses.length, greaterThanOrEqualTo(102));
+      },
+    );
+
+    test(
       'keeps a tombstone until retries erase assets and workspace data',
       () async {
         final userId = const Uuid().v4().toString();
@@ -57,6 +131,8 @@ void main() {
             );
         final oauthTransactionId = 'oauth-target-$userId';
         final retainedOauthTransactionId = 'oauth-retained-$userId';
+        final samplingConnectionId = 'sampling-target-$userId';
+        final retainedSamplingConnectionId = 'sampling-retained-$userId';
         await _insertOAuthTransaction(
           session,
           workspaceId: workspace.id!,
@@ -70,6 +146,16 @@ void main() {
           userId: userId,
           transactionId: retainedOauthTransactionId,
           now: now,
+        );
+        await _insertToolSamplingPolicy(
+          session,
+          workspaceId: workspace.id!,
+          connectionId: samplingConnectionId,
+        );
+        await _insertToolSamplingPolicy(
+          session,
+          workspaceId: legacyWorkspace.id!,
+          connectionId: retainedSamplingConnectionId,
         );
         await session.db.transaction((transaction) async {
           await workspace_repo.CloudWorkspaceRepository().softDeleteWorkspace(
@@ -276,6 +362,26 @@ void main() {
         );
         expect(await WorkspaceObject.db.findById(session, object.id!), isNull);
         expect(
+          await WorkspaceModelSelectionToolSamplingPolicy.db.find(
+            session,
+            where: (row) => row.workspaceId.equals(workspace.id!),
+          ),
+          isEmpty,
+        );
+        final retainedSamplingPolicy =
+            await WorkspaceModelSelectionToolSamplingPolicy.db.find(
+              session,
+              where: (row) =>
+                  row.workspaceId.equals(legacyWorkspace.id!) &
+                  row.connectionId.equals(retainedSamplingConnectionId),
+            );
+        expect(retainedSamplingPolicy, hasLength(1));
+        expect(retainedSamplingPolicy.single.modelId, 'model-synthetic');
+        expect(
+          retainedSamplingPolicy.single.toolSamplingPolicy,
+          '{"mode":"synthetic"}',
+        );
+        expect(
           await CodexOAuthTransaction.db.find(
             session,
             where: (row) => row.transactionId.equals(oauthTransactionId),
@@ -341,6 +447,13 @@ void main() {
           ),
           isEmpty,
         );
+        expect(
+          await WorkspaceModelSelectionToolSamplingPolicy.db.find(
+            session,
+            where: (row) => row.workspaceId.equals(legacyWorkspace.id!),
+          ),
+          isEmpty,
+        );
 
         initializeTestAuthServices(session.serverpod);
         await endpoints.account.deleteCurrentUser(authenticated);
@@ -382,6 +495,22 @@ Future<void> _insertOAuthTransaction(
 }
 
 ByteData _syntheticBytes(int length) => ByteData(length)..setUint8(0, 1);
+
+Future<void> _insertToolSamplingPolicy(
+  Session session, {
+  required int workspaceId,
+  required String connectionId,
+}) async {
+  final _ = await WorkspaceModelSelectionToolSamplingPolicy.db.insertRow(
+    session,
+    WorkspaceModelSelectionToolSamplingPolicy(
+      workspaceId: workspaceId,
+      connectionId: connectionId,
+      modelId: 'model-synthetic',
+      toolSamplingPolicy: '{"mode":"synthetic"}',
+    ),
+  );
+}
 
 class _RetryingObjectStore extends InMemoryObjectStore {
   bool failDeletes = true;

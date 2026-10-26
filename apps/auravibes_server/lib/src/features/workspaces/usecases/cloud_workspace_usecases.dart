@@ -871,13 +871,20 @@ class CloudWorkspaceUseCases(
     Session session, {
     required String userId,
   }) async {
-    final rows = await WorkspaceErasureRequest.db.find(
+    final unresolved = await WorkspaceErasureRequest.db.find(
       session,
-      where: (row) => row.ownerUserId.equals(userId),
+      where: (row) =>
+          row.ownerUserId.equals(userId) & row.state.notEquals('complete'),
+      orderBy: (row) => row.requestedAt.desc(),
+    );
+    final completed = await WorkspaceErasureRequest.db.find(
+      session,
+      where: (row) =>
+          row.ownerUserId.equals(userId) & row.state.equals('complete'),
       orderBy: (row) => row.requestedAt.desc(),
       limit: 100,
     );
-    return rows.map(_status).toList();
+    return [...unresolved, ...completed].map(_status).toList();
   }
 
   Future<CloudWorkspaceErasureStatus> retryWorkspaceErasure(

@@ -1690,8 +1690,9 @@ void main() {
       );
       expect(
         find.textContaining(
-          'Workspace revision history follows its configurable '
-          'workspace policy.',
+          'Workspace history follows its configurable policy during ordinary '
+          'use. Explicit workspace erasure deletes all remaining workspace '
+          'revisions regardless of that policy.',
         ),
         findsNWidgets(2),
       );

@@ -152,6 +152,11 @@ class const WorkspaceErasureCleanup(final Session session) {
       where: (row) => row.workspaceId.equals(id),
       transaction: transaction,
     );
+    await WorkspaceModelSelectionToolSamplingPolicy.db.deleteWhere(
+      session,
+      where: (row) => row.workspaceId.equals(id),
+      transaction: transaction,
+    );
     await ConversationToolCall.db.deleteWhere(
       session,
       where: (row) => row.workspaceId.equals(id),
