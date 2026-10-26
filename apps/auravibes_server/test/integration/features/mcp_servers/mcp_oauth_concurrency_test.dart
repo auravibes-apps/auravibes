@@ -9,6 +9,7 @@ import 'package:auravibes_server/src/features/workspaces/repositories/cloud_work
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
@@ -54,6 +55,63 @@ void main() {
       expect((await f.stored()).revision, 2);
       expect(await f.events(), hasLength(1));
     });
+
+    test(
+      'account deletion before refresh dispatch prevents exchange',
+      () async {
+        final f = await _Fixture.create(sessions.build());
+        final authUser = await AuthUser.db.findById(
+          f.session,
+          UuidValue.fromString(f.userId),
+        );
+        await AuthUser.db.deleteRow(f.session, authUser!);
+        var exchanges = 0;
+
+        await expectLater(
+          f.resolve(f.session, (credentials) async {
+            exchanges++;
+            return f.rotated(credentials, 'unexpected');
+          }),
+          throwsA(isA<McpOAuthReauthRequired>()),
+        );
+        expect(exchanges, 0);
+        expect((await f.stored()).revision, 1);
+      },
+    );
+
+    test(
+      'member removal during refresh prevents credential persistence',
+      () async {
+        final f = await _Fixture.create(sessions.build());
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final before = (await f.stored()).toJson();
+        final pending = f.resolve(f.session, (credentials) async {
+          entered.complete();
+          await release.future;
+          return f.rotated(credentials, 'stale');
+        });
+        final rejected = expectLater(
+          pending,
+          throwsA(isA<McpOAuthReauthRequired>()),
+        );
+        await entered.future;
+        final membership = await WorkspaceMember.db.findFirstRow(
+          f.session,
+          where: (row) =>
+              row.workspaceId.equals(f.secret.workspaceId) &
+              row.userId.equals(f.userId),
+        );
+        await WorkspaceMember.db.updateRow(
+          f.session,
+          membership!.copyWith(removedAt: f.now),
+        );
+        release.complete();
+        await rejected;
+        expect((await f.stored()).toJson(), before);
+        expect(await f.events(), isEmpty);
+      },
+    );
 
     for (final staleRejection in [false, true]) {
       test(
@@ -286,6 +344,10 @@ class _Fixture(this.session, this.userId, this.secret, this.credentials) {
     session.passwords['workspaceSecretKey'] =
         'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
     final userId = const Uuid().v4().toString();
+    await AuthUser.db.insertRow(
+      session,
+      AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+    );
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(
           session,

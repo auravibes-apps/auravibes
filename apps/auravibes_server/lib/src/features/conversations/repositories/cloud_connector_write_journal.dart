@@ -2,11 +2,13 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 
 class const CloudConnectorWriteJournal(
   final Session _session,
-  final int _workspaceId,
-) implements ConnectorWriteJournal {
+  final int _workspaceId, {
+  required final String actorUserId,
+}) implements ConnectorWriteJournal {
   @override
   Future<ConnectorWriteReceipt?> claim(
     String operationId,
@@ -37,6 +39,12 @@ class const CloudConnectorWriteJournal(
   }
 
   Future<void> _lock(Transaction transaction) async {
+    final authUser = await const AuthUserLock().lock(
+      _session,
+      userId: actorUserId,
+      transaction: transaction,
+    );
+    if (authUser == null) _denied();
     final workspace = await CloudWorkspace.db.findFirstRow(
       _session,
       where: (row) =>
@@ -46,8 +54,22 @@ class const CloudConnectorWriteJournal(
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (workspace == null) throw StateError('Workspace is unavailable.');
+    if (workspace == null) _denied();
+    final member = await WorkspaceMember.db.findFirstRow(
+      _session,
+      where: (row) =>
+          row.workspaceId.equals(_workspaceId) &
+          row.userId.equals(actorUserId) &
+          row.removedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (member == null) _denied();
   }
+
+  Never _denied() => throw CloudWorkspaceException(
+    code: CloudWorkspaceErrorCode.permissionDenied,
+  );
 
   Future<ConnectorWrite?> _byId(String id, Transaction transaction) =>
       ConnectorWrite.db.findFirstRow(

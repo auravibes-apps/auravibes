@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
+import 'package:auravibes_server/src/features/conversations/repositories/cloud_connector_write_journal.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_view_endpoint.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as repository;
@@ -313,6 +314,7 @@ void main() {
           var revoke = false;
           var changeRevision = false;
           var changeWriteViewRevision = false;
+          var eraseWorkspace = false;
           var responseStatusCode = 200;
           final writeViewDefinition = {
             'id': 'write-view',
@@ -408,6 +410,19 @@ void main() {
                             ...jsonDecode(target.data) as Map<String, dynamic>,
                             'isEnabled': false,
                           }),
+                        ),
+                      );
+                    }
+                    if (eraseWorkspace) {
+                      eraseWorkspace = false;
+                      final current = (await CloudWorkspace.db.findById(
+                        session,
+                        workspace.id!,
+                      ))!;
+                      await CloudWorkspace.db.updateRow(
+                        session,
+                        current.copyWith(
+                          erasureRequestedAt: DateTime.now().toUtc(),
                         ),
                       );
                     }
@@ -551,17 +566,19 @@ void main() {
           expect(changedDuringAction['status'], 'completed');
           expect(changedDuringAction['viewChangedDuringExecution'], isTrue);
           expect(calls, 6);
-          final syntheticResource = await WorkspaceResource.db.findFirstRow(
-            session,
-            where: (row) =>
-                row.workspaceId.equals(workspace.id!) &
-                row.resourceId.equals('connector/synthetic/search'),
-          );
+          final readOnlySyntheticResource = await WorkspaceResource.db
+              .findFirstRow(
+                session,
+                where: (row) =>
+                    row.workspaceId.equals(workspace.id!) &
+                    row.resourceId.equals('connector/synthetic/search'),
+              );
           await WorkspaceResource.db.updateRow(
             session,
-            syntheticResource!.copyWith(
+            readOnlySyntheticResource!.copyWith(
               data: jsonEncode({
-                ...jsonDecode(syntheticResource.data) as Map<String, dynamic>,
+                ...jsonDecode(readOnlySyntheticResource.data)
+                    as Map<String, dynamic>,
                 'config': jsonEncode({'memberAccess': 'read'}),
               }),
             ),
@@ -587,6 +604,67 @@ void main() {
           );
           expect(saved.data, isNot(contains('"live":true')));
           expect(saved.data, isNot(contains('synthetic-key')));
+
+          final syntheticResource = await WorkspaceResource.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.resourceId.equals('connector/synthetic/search'),
+          );
+          await WorkspaceResource.db.updateRow(
+            session,
+            syntheticResource!.copyWith(
+              data: jsonEncode({
+                ...jsonDecode(syntheticResource.data) as Map<String, dynamic>,
+                'config': jsonEncode({'memberAccess': 'readWrite'}),
+              }),
+            ),
+          );
+          eraseWorkspace = true;
+          final erasedAction = jsonDecode(
+            await endpoint.submitAction(
+              memberSession,
+              workspace.id!,
+              'write-view',
+              2,
+              jsonEncode({
+                'answers': {'query': 'erase race'},
+              }),
+              'erased-form',
+            ),
+          );
+          expect(erasedAction['status'], 'completed');
+          expect(erasedAction.containsKey('result'), isFalse);
+          expect(calls, 7);
+          final uncertainWrite = await ConnectorWrite.db.findFirstRow(
+            session,
+            where: (row) =>
+                row.workspaceId.equals(workspace.id!) &
+                row.operationId.equals('erased-form'),
+          );
+          expect(uncertainWrite?.outcome, 'uncertain');
+          await expectLater(
+            CloudConnectorWriteJournal(
+              session,
+              workspace.id!,
+              actorUserId: memberId,
+            ).claim('pre-erased', 'digest'),
+            throwsA(isA<CloudWorkspaceException>()),
+          );
+          expect(
+            await ConnectorWrite.db.findFirstRow(
+              session,
+              where: (row) =>
+                  row.workspaceId.equals(workspace.id!) &
+                  row.operationId.equals('pre-erased'),
+            ),
+            isNull,
+          );
+          await expectLater(
+            endpoint.readConnected(memberSession, workspace.id!, 'view'),
+            throwsA(isA<CloudWorkspaceException>()),
+          );
+          expect(calls, 7);
         },
       );
     }

@@ -35,19 +35,23 @@ class ModelConnectionRepository {
   Future<List<WorkspaceModelConnection>> listConnections(
     Session session, {
     required int workspaceId,
+    Transaction? transaction,
   }) => WorkspaceModelConnection.db.find(
     session,
     where: (table) =>
         table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+    transaction: transaction,
   );
 
   Future<List<WorkspaceModelSelectionToolSamplingPolicy>>
   listToolSamplingPolicies(
     Session session, {
     required int workspaceId,
+    Transaction? transaction,
   }) => WorkspaceModelSelectionToolSamplingPolicy.db.find(
     session,
     where: (table) => table.workspaceId.equals(workspaceId),
+    transaction: transaction,
   );
 
   Future<WorkspaceModelSelectionToolSamplingPolicy?> findToolSamplingPolicy(
@@ -182,10 +186,12 @@ class ModelConnectionRepository {
   Future<List<ApiModel>> listCatalogModels(
     Session session, {
     required String providerId,
+    Transaction? transaction,
   }) => ApiModel.db.find(
     session,
     where: (table) => table.providerId.equals(providerId),
     orderByList: (table) => [table.name, table.modelId],
+    transaction: transaction,
   );
 
   Future<WorkspaceSecret?> findSecret(

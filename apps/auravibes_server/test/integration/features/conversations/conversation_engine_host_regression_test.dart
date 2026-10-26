@@ -467,6 +467,313 @@ void main() {
       );
     }
 
+    Future<
+      ({
+        WorkspaceResource server,
+        WorkspaceSecret secret,
+        WorkspaceResource tool,
+        WorkspaceResource group,
+        Map<String, dynamic> serverData,
+        Map<String, dynamic> toolData,
+        Map<String, dynamic> groupData,
+      })
+    >
+    configureMcpServer(_Fixture fixture) async {
+      fixture.database.passwords['workspaceSecretKey'] =
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      const serverId = 'server-1';
+      const groupId = 'server-1-group';
+      const descriptorName = 'mcp_server-1_server_read';
+      final now = DateTime.now().toUtc();
+      final groupData = <String, dynamic>{
+        'id': groupId,
+        'name': 'Server tools',
+        'mcpServerId': serverId,
+        'isEnabled': true,
+        'permissionMode': 'alwaysAllow',
+      };
+      final group = await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .toolGroup,
+          resourceId: groupId,
+          data: jsonEncode(groupData),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final toolData = <String, dynamic>{
+        'name': descriptorName,
+        'toolId': 'read',
+        'mcpServerId': serverId,
+        'toolGroupId': groupId,
+        'isEnabled': true,
+        'permissionMode': 'alwaysAllow',
+      };
+      final tool = await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .tool,
+          resourceId: serverId,
+          data: jsonEncode(toolData),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final serverData = <String, dynamic>{
+        'url': 'https://mcp.example.test/mcp',
+        'transport': {'type': 'streamableHttp'},
+        'authType': 'bearer',
+        'hasSecret': true,
+        'secretRevision': 1,
+        'authStatus': 'active',
+      };
+      final server = await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .mcpServer,
+          resourceId: serverId,
+          data: jsonEncode(serverData),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final encrypted = await const WorkspaceSecretCipher().encrypt(
+        fixture.database,
+        'initial-mcp-secret',
+        workspaceId: fixture.workspaceId,
+        resourceId: serverId,
+      );
+      final secret = await WorkspaceSecret.db.insertRow(
+        fixture.database,
+        WorkspaceSecret(
+          workspaceId: fixture.workspaceId,
+          secretKind: WorkspaceSecretKind.mcp,
+          scope: WorkspaceSecretScope.user,
+          ownerUserId: WorkspaceResourceValidation.secretOwnerKey(
+            WorkspaceSecretScope.user,
+            fixture.userId,
+          ),
+          resourceId: serverId,
+          ciphertext: encrypted.ciphertext,
+          nonce: encrypted.nonce,
+          authenticationTag: encrypted.authenticationTag,
+          algorithm: 'AES-256-GCM',
+          keyVersion: 1,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      return (
+        server: server,
+        secret: secret,
+        tool: tool,
+        group: group,
+        serverData: serverData,
+        toolData: toolData,
+        groupData: groupData,
+      );
+    }
+
+    test(
+      'MCP dispatch rejects changed server, tool, group, and credential snapshots',
+      () async {
+        for (final mutation in [
+          'server',
+          'secret',
+          'toolServer',
+          'remoteTool',
+          'group',
+        ]) {
+          final fixture = await prepare();
+          final configured = await configureMcpServer(fixture);
+          final fence = await McpToolDispatchFence.capture(
+            session: fixture.database,
+            workspaceId: fixture.workspaceId,
+            userId: fixture.userId,
+            toolId: configured.server.resourceId,
+            serverId: configured.server.resourceId,
+            expectedDescriptorName: 'mcp_server-1_server_read',
+            expectedRemoteToolId: 'read',
+            serverData: configured.serverData,
+            initialSecret: configured.secret,
+          );
+          if (mutation == 'server') {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.server.copyWith(
+                data: jsonEncode({
+                  ...configured.serverData,
+                  'url': 'https://changed.example.test/mcp',
+                }),
+                revision: configured.server.revision + 1,
+              ),
+            );
+          } else if (mutation == 'secret') {
+            final encrypted = await const WorkspaceSecretCipher().encrypt(
+              fixture.database,
+              'rotated-mcp-secret',
+              workspaceId: fixture.workspaceId,
+              resourceId: configured.server.resourceId,
+            );
+            await WorkspaceSecret.db.updateRow(
+              fixture.database,
+              configured.secret.copyWith(
+                ciphertext: encrypted.ciphertext,
+                nonce: encrypted.nonce,
+                authenticationTag: encrypted.authenticationTag,
+                revision: configured.secret.revision + 1,
+              ),
+            );
+          } else if (mutation == 'toolServer') {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.tool.copyWith(
+                data: jsonEncode({
+                  ...configured.toolData,
+                  'mcpServerId': 'server-2',
+                }),
+                revision: configured.tool.revision + 1,
+              ),
+            );
+          } else if (mutation == 'remoteTool') {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.tool.copyWith(
+                data: jsonEncode({...configured.toolData, 'toolId': 'write'}),
+                revision: configured.tool.revision + 1,
+              ),
+            );
+          } else {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.group.copyWith(
+                data: jsonEncode({
+                  ...configured.groupData,
+                  'mcpServerId': 'server-2',
+                }),
+                revision: configured.group.revision + 1,
+              ),
+            );
+          }
+
+          var outboundSends = 0;
+          await expectLater(
+            fence.dispatch(() async {
+              outboundSends++;
+              return true;
+            }),
+            throwsA(isA<ServerToolNotConfiguredException>()),
+          );
+          expect(outboundSends, 0, reason: 'MCP $mutation changed before send');
+        }
+      },
+    );
+
+    test('provider dispatch is denied when workspace erasure wins', () async {
+      final fixture = await prepare();
+      await configureProvider(fixture);
+      var dispatches = 0;
+      final host = ServerConversationEngineHost(
+        admissionGate: _BeforeProviderAdmissionGate((session, job) async {
+          final workspace = await CloudWorkspace.db.findById(
+            session,
+            job.workspaceId,
+          );
+          await CloudWorkspace.db.updateRow(
+            session,
+            workspace!.copyWith(
+              erasureRequestedAt: DateTime.now().toUtc(),
+            ),
+          );
+        }),
+        lookup: (_) async => [InternetAddress('8.8.8.8')],
+        providerTransport: (_) async {
+          dispatches++;
+          return ProviderTransportResponse(
+            statusCode: HttpStatus.ok,
+            body: Stream.value(utf8.encode('data: [DONE]\n\n')),
+          );
+        },
+      );
+
+      await expectLater(
+        host.executeTurn(
+          fixture.database,
+          job: fixture.job,
+          turn: fixture.turn,
+          messages: fixture.messages,
+          liveTurns: const _NoopProgressPublisher(),
+        ),
+        throwsA(isA<ConversationCancelledException>()),
+      );
+      expect(dispatches, 0);
+    });
+
+    test(
+      'provider response latency does not hold the workspace fence',
+      () async {
+        final fixture = await prepare();
+        await configureProvider(fixture);
+        final dispatched = Completer<void>();
+        final providerResponse = Completer<ProviderTransportResponse>();
+        final host = ServerConversationEngineHost(
+          admissionGate: const _ImmediateAdmissionGate(),
+          lookup: (_) async => [InternetAddress('8.8.8.8')],
+          providerTransport: (_) {
+            if (!dispatched.isCompleted) dispatched.complete();
+            return providerResponse.future;
+          },
+        );
+        final run = host.executeTurn(
+          fixture.database,
+          job: fixture.job,
+          turn: fixture.turn,
+          messages: fixture.messages,
+          liveTurns: const _NoopProgressPublisher(),
+        );
+        await dispatched.future.timeout(const Duration(seconds: 5));
+        final workspace = (await CloudWorkspace.db.findById(
+          fixture.database,
+          fixture.workspaceId,
+        ))!;
+        var erasedBeforeResponse = false;
+        final erase = CloudWorkspace.db.updateRow(
+          fixture.database,
+          workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+        );
+        try {
+          await erase.timeout(const Duration(seconds: 2));
+          erasedBeforeResponse = true;
+        } on TimeoutException {
+          // Complete the provider response below so a regression cannot strand
+          // a database transaction while this test reports the held fence.
+        }
+        providerResponse.complete(
+          ProviderTransportResponse(
+            statusCode: HttpStatus.ok,
+            body: Stream.value(
+              utf8.encode(
+                'data: {"id":"response","choices":[{"delta":{"content":"private"},"finish_reason":"stop"}]}\n\n'
+                'data: [DONE]\n\n',
+              ),
+            ),
+          ),
+        );
+        await erase;
+
+        expect(erasedBeforeResponse, isTrue);
+        await expectLater(run, throwsA(isA<ConversationCancelledException>()));
+      },
+    );
+
     test(
       'claimed continuation clears the queued marker without losing the result',
       () async {
@@ -3322,6 +3629,23 @@ class const _ImmediateAdmissionGate() implements ConversationAdmissionGate {
     required String providerId,
     required Future<T> Function(Future<void> admissionLost) body,
   }) => body(Future<void>.value());
+}
+
+class _BeforeProviderAdmissionGate implements ConversationAdmissionGate {
+  const _BeforeProviderAdmissionGate(this._beforeBody);
+
+  final Future<void> Function(Session session, ConversationJob job) _beforeBody;
+
+  @override
+  Future<T> run<T>(
+    Session session, {
+    required ConversationJob job,
+    required String providerId,
+    required Future<T> Function(Future<void> admissionLost) body,
+  }) async {
+    await _beforeBody(session, job);
+    return body(Future<void>.value());
+  }
 }
 
 class const _NoopProgressPublisher() implements ConversationProgressPublisher {

@@ -11,8 +11,9 @@ abstract final class WorkspaceConnectedValidation {
   static Future<bool> visible(
     Session session,
     WorkspaceMember member,
-    Object? value,
-  ) async {
+    Object? value, {
+    Transaction? transaction,
+  }) async {
     if (value is! Map) return false;
     if (member.role == 'owner') return true;
     for (final connector in connectorDefinitions) {
@@ -24,6 +25,7 @@ abstract final class WorkspaceConnectedValidation {
           userId: member.userId,
           toolId: value['toolId'] as String,
           tool: tool,
+          transaction: transaction,
         );
 
         return true;
@@ -36,8 +38,9 @@ abstract final class WorkspaceConnectedValidation {
   static Future<void> access(
     Session session,
     WorkspaceMember member,
-    Object? value,
-  ) async {
+    Object? value, {
+    Transaction? transaction,
+  }) async {
     if (value == null) return;
     final input = arguments(value);
     try {
@@ -46,6 +49,7 @@ abstract final class WorkspaceConnectedValidation {
         workspaceId: member.workspaceId,
         userId: member.userId,
         arguments: input,
+        transaction: transaction,
       );
     } on AgentToolExecutionFailure {
       _invalid();

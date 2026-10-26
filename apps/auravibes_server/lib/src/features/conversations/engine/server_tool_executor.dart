@@ -9,7 +9,9 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../mcp_servers/mcp_oauth_token_resolver.dart';
+import '../../mcp_servers/mcp_oauth_credentials.dart';
 import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../mcp_servers/mcp_sse_session.dart';
@@ -40,6 +42,344 @@ typedef _ConnectorConnections = ({
   List<Map<String, dynamic>> services,
   List<Map<String, dynamic>> models,
 });
+typedef _PreparedWorkspaceConnector = ({
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
+  Map<String, dynamic> arguments,
+  String? connectionId,
+  Map<String, String> credentials,
+  int? connectionRevision,
+  int? resourceRevision,
+  WorkspaceSecret? secret,
+});
+typedef _WorkspaceConnectorFence = ({
+  int workspaceId,
+  String userId,
+  String toolId,
+  ConnectorDefinition connector,
+  ConnectorToolDefinition tool,
+  String? connectionId,
+  int? connectionRevision,
+  int? resourceRevision,
+  WorkspaceSecret? secret,
+});
+
+/// Fences each MCP tool request against the server and credential snapshot.
+/// The callback Future is nested so the transaction releases before HTTP waits.
+final class McpToolDispatchFence {
+  const McpToolDispatchFence._({
+    required this.session,
+    required this.workspaceId,
+    required this.userId,
+    required this.toolId,
+    required this.serverId,
+    required this.expectedDescriptorName,
+    required this.expectedRemoteToolId,
+    required this.serverData,
+    required this.toolData,
+    required this.toolGroupId,
+    required this.toolGroupData,
+    required this.secret,
+  });
+
+  final Session session;
+  final int workspaceId;
+  final String userId;
+  final String toolId;
+  final String serverId;
+  final String expectedDescriptorName;
+  final String expectedRemoteToolId;
+  final Map<String, dynamic> serverData;
+  final Map<String, dynamic> toolData;
+  final String? toolGroupId;
+  final Map<String, dynamic>? toolGroupData;
+  final WorkspaceSecret? secret;
+
+  static Future<McpToolDispatchFence> capture({
+    required Session session,
+    required int workspaceId,
+    required String userId,
+    required String toolId,
+    required String serverId,
+    required String expectedDescriptorName,
+    required String expectedRemoteToolId,
+    required Map<String, dynamic> serverData,
+    required WorkspaceSecret? initialSecret,
+    bool allowSecretRotation = false,
+    String? oauthAccessToken,
+  }) async {
+    late WorkspaceSecret? secret;
+    final fence = McpToolDispatchFence._(
+      session: session,
+      workspaceId: workspaceId,
+      userId: userId,
+      toolId: toolId,
+      serverId: serverId,
+      expectedDescriptorName: expectedDescriptorName,
+      expectedRemoteToolId: expectedRemoteToolId,
+      serverData: Map.unmodifiable(serverData),
+      toolData: const {},
+      toolGroupId: null,
+      toolGroupData: null,
+      secret: null,
+    );
+    late Map<String, dynamic> toolData;
+    late String? toolGroupId;
+    late Map<String, dynamic>? toolGroupData;
+    await session.db.transaction((transaction) async {
+      await fence._requireServerAccess(transaction);
+      final currentTool = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.tool) &
+            table.resourceId.equals(toolId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (currentTool == null) {
+        throw const ServerToolNotConfiguredException();
+      }
+      toolData = _decodeMcpServerData(currentTool.data);
+      if (!fence._matchesToolDescriptor(toolData)) {
+        throw const ServerToolNotConfiguredException();
+      }
+      final rawToolGroupId = toolData['toolGroupId'];
+      if (rawToolGroupId != null && rawToolGroupId is! String) {
+        throw const ServerToolNotConfiguredException();
+      }
+      toolGroupId = rawToolGroupId as String?;
+      if (toolGroupId case final groupId?) {
+        final currentToolGroup = await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.resourceKind.equals(WorkspaceResourceKind.toolGroup) &
+              table.resourceId.equals(groupId) &
+              table.deletedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (currentToolGroup == null) {
+          throw const ServerToolNotConfiguredException();
+        }
+        final currentGroupData = _decodeMcpServerData(currentToolGroup.data);
+        toolGroupData = currentGroupData;
+        if (!_matchesMcpToolGroup(currentGroupData, serverId)) {
+          throw const ServerToolNotConfiguredException();
+        }
+      } else {
+        toolGroupData = null;
+      }
+      final currentSecret = await const WorkspaceSecretResolver()
+          .findForInitiator(
+            session,
+            workspaceId: workspaceId,
+            kind: WorkspaceSecretKind.mcp,
+            initiatorUserId: userId,
+            resourceId: serverId,
+            allowWorkspaceFallback: true,
+            transaction: transaction,
+          );
+      if (initialSecret == null
+          ? currentSecret != null
+          : currentSecret?.id != initialSecret.id ||
+                !allowSecretRotation &&
+                    currentSecret?.revision != initialSecret.revision) {
+        throw const ServerToolNotConfiguredException();
+      }
+      if (allowSecretRotation && currentSecret != null) {
+        final currentCredentials = McpOAuthCredentials.parse(
+          await const WorkspaceSecretCipher().decrypt(session, currentSecret),
+        );
+        if (oauthAccessToken == null ||
+            currentCredentials.accessToken != oauthAccessToken) {
+          throw const ServerToolNotConfiguredException();
+        }
+      }
+      secret = currentSecret;
+    });
+    return McpToolDispatchFence._(
+      session: session,
+      workspaceId: workspaceId,
+      userId: userId,
+      toolId: toolId,
+      serverId: serverId,
+      expectedDescriptorName: expectedDescriptorName,
+      expectedRemoteToolId: expectedRemoteToolId,
+      serverData: Map.unmodifiable(serverData),
+      toolData: Map.unmodifiable(toolData),
+      toolGroupId: toolGroupId,
+      toolGroupData: toolGroupData == null
+          ? null
+          : Map.unmodifiable(toolGroupData!),
+      secret: secret,
+    );
+  }
+
+  Future<T> dispatch<T>(Future<T> Function() start) async {
+    final dispatch = await session.db.transaction((transaction) async {
+      await _requireCurrent(transaction);
+      return (
+        response: start(),
+      );
+    });
+    return dispatch.response;
+  }
+
+  Future<void> requireCurrent() => session.db.transaction(
+    (transaction) => _requireCurrent(transaction),
+  );
+
+  Future<void> _requireCurrent(Transaction transaction) async {
+    await _requireServerAccess(transaction);
+    final currentTool = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.tool) &
+          table.resourceId.equals(toolId) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (currentTool == null) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final currentToolData = _decodeMcpServerData(currentTool.data);
+    final rawToolGroupId = currentToolData['toolGroupId'];
+    if (!_sameJsonDefinition(toolData, currentToolData) ||
+        !_matchesToolDescriptor(currentToolData) ||
+        rawToolGroupId != toolGroupId) {
+      throw const ServerToolNotConfiguredException();
+    }
+    if (toolGroupId case final groupId?) {
+      final currentToolGroup = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.toolGroup) &
+            table.resourceId.equals(groupId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (currentToolGroup == null || toolGroupData == null) {
+        throw const ServerToolNotConfiguredException();
+      }
+      final currentGroupData = _decodeMcpServerData(currentToolGroup.data);
+      if (!_sameJsonDefinition(toolGroupData!, currentGroupData) ||
+          !_matchesMcpToolGroup(currentGroupData, serverId)) {
+        throw const ServerToolNotConfiguredException();
+      }
+    }
+    final currentSecret = await const WorkspaceSecretResolver()
+        .findForInitiator(
+          session,
+          workspaceId: workspaceId,
+          kind: WorkspaceSecretKind.mcp,
+          initiatorUserId: userId,
+          resourceId: serverId,
+          allowWorkspaceFallback: true,
+          transaction: transaction,
+        );
+    if (secret == null
+        ? currentSecret != null
+        : currentSecret?.id != secret!.id ||
+              currentSecret?.revision != secret!.revision) {
+      throw const ServerToolNotConfiguredException();
+    }
+  }
+
+  Future<void> _requireServerAccess(Transaction transaction) async {
+    await const WorkspaceConnectorAccessUsecases().requireMcp(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      resourceId: toolId,
+      transaction: transaction,
+    );
+    final currentServer = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.mcpServer) &
+          table.resourceId.equals(serverId) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (currentServer == null ||
+        !_sameMcpServerDefinition(
+          serverData,
+          _decodeMcpServerData(currentServer.data),
+        )) {
+      throw const ServerToolNotConfiguredException();
+    }
+  }
+
+  bool _matchesToolDescriptor(Map<String, dynamic> data) {
+    if ((data['name'] ?? data['fullName']) != expectedDescriptorName) {
+      return false;
+    }
+    final configuredServerId = data['mcpServerId'];
+    if (configuredServerId != null && configuredServerId != serverId) {
+      return false;
+    }
+    final configuredToolId = data['toolId'];
+    return configuredToolId == null || configuredToolId == expectedRemoteToolId;
+  }
+}
+
+Map<String, dynamic> _decodeMcpServerData(String data) {
+  final decoded = jsonDecode(data);
+  if (decoded is! Map<String, dynamic>) throw const FormatException();
+  return decoded;
+}
+
+bool _sameMcpServerDefinition(
+  Map<String, dynamic> before,
+  Map<String, dynamic> after,
+) {
+  Map<String, dynamic> comparable(Map<String, dynamic> data) {
+    final definition = Map<String, dynamic>.from(data)
+      ..remove('authStatus')
+      ..remove('secretRevision')
+      ..remove('hasSecret');
+    return _canonicalJsonMap(definition);
+  }
+
+  return _sameJsonDefinition(comparable(before), comparable(after));
+}
+
+bool _sameJsonDefinition(
+  Map<String, dynamic> before,
+  Map<String, dynamic> after,
+) =>
+    jsonEncode(_canonicalJsonMap(before)) ==
+    jsonEncode(_canonicalJsonMap(after));
+
+bool _matchesMcpToolGroup(Map<String, dynamic> data, String serverId) {
+  final configuredServerId = data['mcpServerId'];
+  return configuredServerId == null || configuredServerId == serverId;
+}
+
+Map<String, dynamic> _canonicalJsonMap(Map<String, dynamic> data) {
+  final entries = data.entries.toList()
+    ..sort((left, right) => left.key.compareTo(right.key));
+  return Map.fromEntries(
+    entries.map(
+      (entry) => MapEntry(entry.key, _canonicalJsonValue(entry.value)),
+    ),
+  );
+}
+
+Object? _canonicalJsonValue(Object? value) => switch (value) {
+  Map<String, dynamic> map => _canonicalJsonMap(map),
+  List<dynamic> list => list.map(_canonicalJsonValue).toList(),
+  _ => value,
+};
 
 String cloudServiceConnectionId(String connectionId) =>
     connectionId.startsWith('service:')
@@ -461,23 +801,37 @@ class const ServerToolExecutorService({
     required int workspaceId,
     required String userId,
     required Map<String, dynamic> arguments,
-  }) => _checkReadAccess(session, (
-    workspaceId: workspaceId,
-    userId: userId,
-  ), arguments);
+    Transaction? transaction,
+  }) => transaction == null
+      ? session.db.transaction(
+          (transaction) => _checkReadAccess(
+            session,
+            (workspaceId: workspaceId, userId: userId),
+            arguments,
+            transaction,
+          ),
+        )
+      : _checkReadAccess(
+          session,
+          (workspaceId: workspaceId, userId: userId),
+          arguments,
+          transaction,
+        );
 
   Future<void> _checkReadAccess(
     Session session,
     _ConnectorReader actor,
     Map<String, dynamic> arguments,
+    Transaction transaction,
   ) async {
     final target = _readContract(arguments);
-    await _authorizeRead(session, actor, target);
+    await _authorizeRead(session, actor, target, transaction);
     await _requireReadConnection(
       session,
       actor.workspaceId,
       target,
       arguments['connectionId'] as String?,
+      transaction,
     );
   }
 
@@ -485,12 +839,14 @@ class const ServerToolExecutorService({
     Session session,
     _ConnectorReader actor,
     _ConnectorReadTarget target,
+    Transaction transaction,
   ) => const WorkspaceConnectorAccessUsecases().requireEnabled(
     session,
     workspaceId: actor.workspaceId,
     userId: actor.userId,
     toolId: connectorToolId(target.connector, target.tool),
     tool: target.tool,
+    transaction: transaction,
   );
 
   Future<void> _requireReadConnection(
@@ -498,8 +854,13 @@ class const ServerToolExecutorService({
     int workspaceId,
     _ConnectorReadTarget target,
     String? id,
+    Transaction transaction,
   ) async {
-    final connections = await _readConnections(session, workspaceId);
+    final connections = await _readConnections(
+      session,
+      workspaceId,
+      transaction: transaction,
+    );
     final options = cloudConnectorConnectionOptions(
       connector: target.connector,
       serviceConnections: connections.services,
@@ -544,8 +905,6 @@ class const ServerToolExecutorService({
       'connectionId': ?connectionId,
       'operationId': operationId,
     };
-    final connections = await _readConnections(session, workspaceId);
-
     try {
       return await _executeConnectorTool(
         session,
@@ -555,8 +914,6 @@ class const ServerToolExecutorService({
           name: executeConnectorToolName,
           arguments: requestArguments,
         ),
-        connections.services,
-        connections.models,
       );
     } on CloudWorkspaceException catch (_, stackTrace) {
       _throwCloudConnectorCommandFailure(
@@ -592,31 +949,307 @@ class const ServerToolExecutorService({
     Map<String, dynamic> arguments,
   ) async {
     final _ = _readContract(arguments);
-    final connections = await _readConnections(session, actor.workspaceId);
-
-    return await _executeRead(session, actor, arguments, connections);
+    return await _executeConnectorTool(
+      session,
+      (workspaceId: actor.workspaceId, userId: actor.userId, turn: null),
+      _readRequest(arguments),
+    );
   }
 
-  Future<Object?> _executeRead(
+  Future<Object?> _executeWorkspaceConnectorTool(
     Session session,
     _ConnectorReader actor,
-    Map<String, dynamic> arguments,
-    _ConnectorConnections connections,
-  ) => _executeConnectorTool(
-    session,
-    (workspaceId: actor.workspaceId, userId: actor.userId, turn: null),
-    _readRequest(arguments),
-    connections.services,
-    connections.models,
-  );
+    ServerToolRequest request, {
+    ConversationTurn? turn,
+  }) async {
+    final toolId = request.arguments['toolId'];
+    final rawArguments = request.arguments['args'];
+    if (toolId is! String || toolId.trim().isEmpty || rawArguments is! Map) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'Connector arguments are invalid.',
+      );
+    }
+    final arguments = <String, dynamic>{};
+    for (final entry in rawArguments.entries) {
+      if (entry.key is! String) {
+        throw const _CloudConnectorCommandException(
+          code: 'invalid_arguments',
+          message: 'args keys must be strings.',
+        );
+      }
+      arguments[entry.key! as String] = entry.value;
+    }
+    final rawRevision = request.arguments['revision'];
+    final rawConnectionId = request.arguments['connectionId'];
+    if (rawRevision != null && rawRevision is! String ||
+        rawConnectionId != null && rawConnectionId is! String) {
+      throw const _CloudConnectorCommandException(
+        code: 'invalid_arguments',
+        message: 'revision and connectionId must be strings.',
+      );
+    }
+    final resolved = resolveCloudConnectorTool(
+      toolId: toolId.trim(),
+      arguments: arguments,
+      revision: rawRevision as String?,
+    );
+
+    try {
+      late _PreparedWorkspaceConnector prepared;
+      await session.db.transaction((transaction) async {
+        await const WorkspaceConnectorAccessUsecases().requireEnabled(
+          session,
+          workspaceId: actor.workspaceId,
+          userId: actor.userId,
+          toolId: toolId.trim(),
+          tool: resolved.tool,
+          transaction: transaction,
+        );
+        final connections = await _readConnections(
+          session,
+          actor.workspaceId,
+          transaction: transaction,
+        );
+        final options = resolved.tool.requiresConnection
+            ? cloudConnectorConnectionOptions(
+                connector: resolved.connector,
+                serviceConnections: connections.services,
+                modelConnections: connections.models,
+              )
+            : const <Map<String, String>>[];
+        final connectionId = resolveCloudConnectorConnectionId(
+          connections: options,
+          requiresConnection: resolved.tool.requiresConnection,
+          requestedConnectionId: rawConnectionId as String?,
+        );
+        var credentials = const <String, String>{};
+        int? connectionRevision;
+        int? resourceRevision;
+        WorkspaceSecret? secret;
+        if (connectionId != null && connectionId.startsWith('model:')) {
+          final resourceId = connectionId.substring('model:'.length);
+          final model = await WorkspaceModelConnection.db.findFirstRow(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(actor.workspaceId) &
+                table.connectionId.equals(resourceId) &
+                table.deletedAt.equals(null),
+            transaction: transaction,
+          );
+          secret = await _secret(
+            session,
+            actor.workspaceId,
+            actor.userId,
+            WorkspaceSecretKind.provider,
+            resourceId,
+            transaction: transaction,
+          );
+          if (model == null ||
+              !model.hasSecret ||
+              !resolved.connector.compatibleModelProviderIds.contains(
+                model.providerId,
+              ) ||
+              secret == null) {
+            _connectionUnavailable();
+          }
+          connectionRevision = model.revision;
+          credentials = cloudModelConnectorCredentialAttributes(
+            model.providerId,
+            await const WorkspaceSecretCipher().decrypt(session, secret),
+          );
+        } else if (connectionId != null) {
+          final resourceId = cloudServiceConnectionId(connectionId);
+          final resource = await _resource(
+            session,
+            actor.workspaceId,
+            WorkspaceResourceKind.serviceConnection,
+            resourceId,
+            transaction: transaction,
+          );
+          if (!_isCloudConnectorConnection(
+            _jsonMap(resource.data),
+            resolved.connector.identifier,
+          )) {
+            _connectionUnavailable();
+          }
+          secret = await const WorkspaceSecretResolver().find(
+            session,
+            workspaceId: actor.workspaceId,
+            kind: WorkspaceSecretKind.provider,
+            scope: WorkspaceSecretScope.workspace,
+            ownerUserId: actor.userId,
+            resourceId: resourceId,
+            transaction: transaction,
+          );
+          if (secret == null) _connectionUnavailable();
+          resourceRevision = resource.revision;
+          credentials = {
+            'apiKey': await const WorkspaceSecretCipher().decrypt(
+              session,
+              secret,
+            ),
+          };
+        }
+        prepared = (
+          connector: resolved.connector,
+          tool: resolved.tool,
+          arguments: arguments,
+          connectionId: connectionId,
+          credentials: credentials,
+          connectionRevision: connectionRevision,
+          resourceRevision: resourceRevision,
+          secret: secret,
+        );
+      });
+
+      final fence = (
+        workspaceId: actor.workspaceId,
+        userId: actor.userId,
+        toolId: toolId.trim(),
+        connector: prepared.connector,
+        tool: prepared.tool,
+        connectionId: prepared.connectionId,
+        connectionRevision: prepared.connectionRevision,
+        resourceRevision: prepared.resourceRevision,
+        secret: prepared.secret,
+      );
+      final result = await ConnectorRequestExecution(
+        executor: ConnectorToolTemplateExecutor(
+          const ResolveConnectorRequestTemplate(),
+          _connectorHttpClient(
+            session,
+            turn,
+            requireHttps: prepared.credentials.isNotEmpty,
+            isCancelled: request.isCancelled,
+            fence: fence,
+          ),
+        ),
+        connector: prepared.connector,
+        tool: prepared.tool,
+        inputs: prepared.arguments,
+        credentials: prepared.credentials,
+        connectionId: prepared.connectionId ?? '',
+        operationId: _connectorOperationId(request),
+        journal: CloudConnectorWriteJournal(
+          session,
+          actor.workspaceId,
+          actorUserId: actor.userId,
+        ),
+      ).call();
+      if (turn != null) {
+        await session.db.transaction((transaction) async {
+          await const WorkspaceConnectorAccessUsecases().requireEnabled(
+            session,
+            workspaceId: actor.workspaceId,
+            userId: actor.userId,
+            toolId: toolId.trim(),
+            tool: prepared.tool,
+            transaction: transaction,
+          );
+          await _requireWorkspaceConnectorCurrent(
+            session,
+            fence,
+            transaction,
+          );
+        });
+      }
+
+      return result;
+    } on CloudWorkspaceException catch (_, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        'tool_access_denied',
+        'This tool is disabled or unavailable for your role. Ask a workspace owner or admin.',
+        stackTrace,
+      );
+    } on _CloudConnectorCommandException catch (error, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        error.code,
+        error.message,
+        stackTrace,
+      );
+    } on AgentToolExecutionFailure catch (failure, stackTrace) {
+      if (_trustedConnectorFailure(failure)) rethrow;
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    } on Object catch (_, stackTrace) {
+      _throwCloudConnectorCommandFailure(
+        'execution_failed',
+        'Connector command failed. Check the Connection and retry.',
+        stackTrace,
+      );
+    }
+  }
 
   Future<_ConnectorConnections> _readConnections(
     Session session,
-    int workspaceId,
-  ) async => (
-    services: await _connectorServiceConnections(session, workspaceId),
-    models: await _connectorModelConnections(session, workspaceId),
+    int workspaceId, {
+    Transaction? transaction,
+  }) async => (
+    services: await _connectorServiceConnections(
+      session,
+      workspaceId,
+      transaction: transaction,
+    ),
+    models: await _connectorModelConnections(
+      session,
+      workspaceId,
+      transaction: transaction,
+    ),
   );
+
+  Future<_ConnectorConnections> _readAuthorizedConnections(
+    Session session,
+    ConversationTurn turn,
+  ) => session.db.transaction((transaction) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: turn.initiatorUserId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (row) =>
+          row.id.equals(turn.workspaceId) &
+          row.deletedAt.equals(null) &
+          row.erasureRequestedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.permissionDenied,
+      );
+    }
+    final member = await WorkspaceMember.db.findFirstRow(
+      session,
+      where: (row) =>
+          row.workspaceId.equals(turn.workspaceId) &
+          row.userId.equals(turn.initiatorUserId) &
+          row.removedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (member == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.permissionDenied,
+      );
+    }
+
+    return _readConnections(
+      session,
+      turn.workspaceId,
+      transaction: transaction,
+    );
+  });
 
   Future<Object?> call(
     Session session,
@@ -680,29 +1313,9 @@ class const ServerToolExecutorService({
   ) async {
     try {
       validateToolArguments(tool.spec.inputJsonSchema, request.arguments);
-      final serviceConnections = await _connectorServiceConnections(
-        session,
-        turn.workspaceId,
-      );
-      final modelConnections = await _connectorModelConnections(
-        session,
-        turn.workspaceId,
-      );
-
-      return switch (tool.descriptor.toolIdentifier) {
-        listConnectorConnectionsToolName => cloudConnectorConnectionRecords(
-          connectors: connectorDefinitions,
-          serviceConnections: serviceConnections,
-          modelConnections: modelConnections,
-        ),
-        listConnectorToolsToolName => {
-          'tools': cloudConnectorToolRecords(
-            connectors: connectorDefinitions,
-            serviceConnections: serviceConnections,
-            modelConnections: modelConnections,
-          ),
-        },
-        executeConnectorToolName => await _executeConnectorTool(
+      final identifier = tool.descriptor.toolIdentifier;
+      if (identifier == executeConnectorToolName) {
+        return await _executeConnectorTool(
           session,
           (
             workspaceId: turn.workspaceId,
@@ -710,12 +1323,29 @@ class const ServerToolExecutorService({
             turn: turn,
           ),
           request,
-          serviceConnections,
-          modelConnections,
-        ),
-        _ => throw const _CloudConnectorCommandException(
+        );
+      }
+      if (identifier != listConnectorConnectionsToolName &&
+          identifier != listConnectorToolsToolName) {
+        throw const _CloudConnectorCommandException(
           code: 'unknown_command',
           message: 'Unknown Connector command.',
+        );
+      }
+      final connections = await _readAuthorizedConnections(session, turn);
+      if (identifier == listConnectorConnectionsToolName) {
+        return cloudConnectorConnectionRecords(
+          connectors: connectorDefinitions,
+          serviceConnections: connections.services,
+          modelConnections: connections.models,
+        );
+      }
+
+      return {
+        'tools': cloudConnectorToolRecords(
+          connectors: connectorDefinitions,
+          serviceConnections: connections.services,
+          modelConnections: connections.models,
         ),
       };
     } on CloudWorkspaceException catch (_, stackTrace) {
@@ -752,14 +1382,16 @@ class const ServerToolExecutorService({
 
   Future<List<Map<String, dynamic>>> _connectorServiceConnections(
     Session session,
-    int workspaceId,
-  ) async {
+    int workspaceId, {
+    Transaction? transaction,
+  }) async {
     final resources = await WorkspaceResource.db.find(
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) &
           table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
           table.deletedAt.equals(null),
+      transaction: transaction,
     );
 
     return [
@@ -770,12 +1402,14 @@ class const ServerToolExecutorService({
 
   Future<List<Map<String, dynamic>>> _connectorModelConnections(
     Session session,
-    int workspaceId,
-  ) async {
+    int workspaceId, {
+    Transaction? transaction,
+  }) async {
     final connections = await WorkspaceModelConnection.db.find(
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+      transaction: transaction,
     );
 
     return [
@@ -793,174 +1427,12 @@ class const ServerToolExecutorService({
     Session session,
     ({int workspaceId, String userId, ConversationTurn? turn}) actor,
     ServerToolRequest request,
-    List<Map<String, dynamic>> serviceConnections,
-    List<Map<String, dynamic>> modelConnections,
-  ) async {
-    final toolId = request.arguments['toolId'];
-    if (toolId is! String || toolId.trim().isEmpty) {
-      throw const _CloudConnectorCommandException(
-        code: 'invalid_arguments',
-        message: 'toolId must be a non-empty string.',
-      );
-    }
-    final rawArguments = request.arguments['args'];
-    if (rawArguments is! Map) {
-      throw const _CloudConnectorCommandException(
-        code: 'invalid_arguments',
-        message: 'args must be an object.',
-      );
-    }
-    final arguments = <String, dynamic>{};
-    for (final entry in rawArguments.entries) {
-      if (entry.key is! String) {
-        throw const _CloudConnectorCommandException(
-          code: 'invalid_arguments',
-          message: 'args keys must be strings.',
-        );
-      }
-      arguments[entry.key! as String] = entry.value;
-    }
-    final requestedRevision = request.arguments['revision'];
-    final requestedConnectionId = request.arguments['connectionId'];
-    if (requestedRevision != null && requestedRevision is! String ||
-        requestedConnectionId != null && requestedConnectionId is! String) {
-      throw const _CloudConnectorCommandException(
-        code: 'invalid_arguments',
-        message: 'revision and connectionId must be strings.',
-      );
-    }
-
-    final resolved = resolveCloudConnectorTool(
-      toolId: toolId.trim(),
-      arguments: arguments,
-      revision: requestedRevision as String?,
-    );
-
-    await const WorkspaceConnectorAccessUsecases().requireEnabled(
-      session,
-      workspaceId: actor.workspaceId,
-      userId: actor.userId,
-      toolId: toolId.trim(),
-      tool: resolved.tool,
-    );
-
-    final connectionOptions = resolved.tool.requiresConnection
-        ? cloudConnectorConnectionOptions(
-            connector: resolved.connector,
-            serviceConnections: serviceConnections,
-            modelConnections: modelConnections,
-          )
-        : const <Map<String, String>>[];
-    final connectionId = resolveCloudConnectorConnectionId(
-      connections: connectionOptions,
-      requiresConnection: resolved.tool.requiresConnection,
-      requestedConnectionId: requestedConnectionId as String?,
-    );
-    var credentials = const <String, String>{};
-    if (connectionId != null) {
-      if (connectionId.startsWith('model:')) {
-        final resourceId = connectionId.substring('model:'.length);
-        final modelConnection = await WorkspaceModelConnection.db.findFirstRow(
-          session,
-          where: (table) =>
-              table.workspaceId.equals(actor.workspaceId) &
-              table.connectionId.equals(resourceId) &
-              table.deletedAt.equals(null),
-        );
-        if (modelConnection == null ||
-            !modelConnection.hasSecret ||
-            !resolved.connector.compatibleModelProviderIds.contains(
-              modelConnection.providerId,
-            )) {
-          _throwCloudConnectorCommandFailure(
-            'connection_unavailable',
-            'Connection is not available for this Connector tool.',
-            StackTrace.current,
-          );
-        }
-        final secret = await _secret(
-          session,
-          actor.workspaceId,
-          actor.userId,
-          WorkspaceSecretKind.provider,
-          resourceId,
-        );
-        if (secret == null) {
-          _throwCloudConnectorCommandFailure(
-            'connection_unavailable',
-            'Connection is not available for this Connector tool.',
-            StackTrace.current,
-          );
-        }
-        credentials = cloudModelConnectorCredentialAttributes(
-          modelConnection.providerId,
-          await const WorkspaceSecretCipher().decrypt(session, secret),
-        );
-      } else {
-        final resourceId = cloudServiceConnectionId(connectionId);
-        final resource = await _resource(
-          session,
-          actor.workspaceId,
-          WorkspaceResourceKind.serviceConnection,
-          resourceId,
-        );
-        if (!_isCloudConnectorConnection(
-          _jsonMap(resource.data),
-          resolved.connector.identifier,
-        )) {
-          _throwCloudConnectorCommandFailure(
-            'connection_unavailable',
-            'Connection is not available for this Connector tool.',
-            StackTrace.current,
-          );
-        }
-        final secret = await const WorkspaceSecretResolver().find(
-          session,
-          workspaceId: actor.workspaceId,
-          kind: WorkspaceSecretKind.provider,
-          scope: WorkspaceSecretScope.workspace,
-          ownerUserId: actor.userId,
-          resourceId: resourceId,
-        );
-        if (secret == null) {
-          _throwCloudConnectorCommandFailure(
-            'connection_unavailable',
-            'Connection is not available for this Connector tool.',
-            StackTrace.current,
-          );
-        }
-        credentials = {
-          'apiKey': await const WorkspaceSecretCipher().decrypt(
-            session,
-            secret,
-          ),
-        };
-      }
-    }
-    final executionArguments = Map<String, dynamic>.from(arguments);
-    if (connectionId != null) {
-      executionArguments.remove('connectionId');
-    }
-
-    return await ConnectorRequestExecution(
-      executor: ConnectorToolTemplateExecutor(
-        const ResolveConnectorRequestTemplate(),
-        _connectorHttpClient(
-          session,
-          actor.turn,
-          requireHttps: credentials.isNotEmpty,
-          isCancelled: request.isCancelled,
-        ),
-      ),
-      connector: resolved.connector,
-      tool: resolved.tool,
-      inputs: executionArguments,
-      connectionId: connectionId ?? '',
-      operationId: _connectorOperationId(request),
-      journal: CloudConnectorWriteJournal(session, actor.workspaceId),
-      credentials: credentials,
-    ).call();
-  }
+  ) => _executeWorkspaceConnectorTool(
+    session,
+    (workspaceId: actor.workspaceId, userId: actor.userId),
+    request,
+    turn: actor.turn,
+  );
 
   Future<Map<String, Object?>> _readBackgroundWorkResult(
     Session session,
@@ -2007,6 +2479,21 @@ class const ServerToolExecutorService({
     final httpHeaders = data['authType'] == 'httpHeaders'
         ? parseMcpHttpHeaders(decrypted)
         : const <String, String>{};
+    final mcpDispatchFence = await McpToolDispatchFence.capture(
+      session: session,
+      workspaceId: turn.workspaceId,
+      userId: turn.initiatorUserId,
+      toolId: tool.descriptor.tableId,
+      serverId: serverId,
+      expectedDescriptorName: tool.descriptor.fullName,
+      expectedRemoteToolId: tool.descriptor.toolIdentifier,
+      serverData: data,
+      initialSecret: secret,
+      allowSecretRotation: data['authType'] == 'oauth',
+      oauthAccessToken: data['authType'] == 'oauth' ? decrypted : null,
+    );
+    Future<T> dispatchFence<T>(Future<T> Function() start) =>
+        mcpDispatchFence.dispatch<T>(start);
     final result = transport['type'] == 'sse'
         ? await _callSse(
             session,
@@ -2017,6 +2504,7 @@ class const ServerToolExecutorService({
             arguments,
             bearerToken: bearerToken,
             httpHeaders: httpHeaders,
+            dispatchFence: dispatchFence,
           )
         : await _postJson(
             session,
@@ -2034,7 +2522,9 @@ class const ServerToolExecutorService({
             },
             bearerToken: bearerToken,
             httpHeaders: httpHeaders,
+            dispatchFence: dispatchFence,
           );
+    await mcpDispatchFence.requireCurrent();
 
     return McpToolResult(
       content: switch (result['content']) {
@@ -2063,12 +2553,14 @@ class const ServerToolExecutorService({
     Map<String, dynamic> arguments, {
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
+    required McpOutboundRequestFence dispatchFence,
   }) async {
     final sse = await McpSseSession.connect(
       uri,
       address,
       bearerToken: bearerToken,
       httpHeaders: httpHeaders,
+      dispatchFence: dispatchFence,
     );
     final done = Completer<void>();
     unawaited(
@@ -2100,6 +2592,7 @@ class const ServerToolExecutorService({
     Map<String, Object?> body, {
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
+    required McpOutboundRequestFence dispatchFence,
   }) async {
     final client = _client(uri, addresses);
     final requestDone = Completer<void>();
@@ -2115,9 +2608,12 @@ class const ServerToolExecutorService({
       }
       httpHeaders.forEach(request.headers.set);
       request.write(jsonEncode(body));
-      final response = await request.close().timeout(
-        const Duration(seconds: 30),
-      );
+      final response =
+          await dispatchFence(
+            request.close,
+          ).timeout(
+            const Duration(seconds: 30),
+          );
       if (response.statusCode != HttpStatus.ok || response.isRedirect) {
         throw const HttpException('Tool request failed.');
       }
@@ -2142,30 +2638,149 @@ class const ServerToolExecutorService({
     ConversationTurn? turn, {
     required bool requireHttps,
     Future<bool> Function()? isCancelled,
-  }) =>
-      connectorHttpClient ??
-      ((input) => CancelableOperation<UrlResponse>.fromFuture(
-        runBoundedServerSkillHttpRequest(
-          timeout: input.timeout,
-          run: (registerClient) async {
-            final target = await validateServerSkillRequestTarget(
-              input,
-              requireHttps: requireHttps,
-            );
-            await _throwIfCancelled(session, turn);
-
-            return _request(
-              session,
-              turn,
-              target.uri,
-              target.addresses,
-              input,
-              onClient: registerClient,
-              isCancelled: isCancelled,
-            );
+    _WorkspaceConnectorFence? fence,
+  }) {
+    final injectedClient = connectorHttpClient;
+    if (injectedClient != null) {
+      return (input) {
+        if (fence == null) return injectedClient(input);
+        CancelableOperation<UrlResponse>? operation;
+        final response = _dispatchWorkspaceConnector(
+          session,
+          fence,
+          () {
+            operation = injectedClient(input);
+            return operation!.value;
           },
-        ),
-      ));
+        );
+        return CancelableOperation<UrlResponse>.fromFuture(
+          response,
+          onCancel: () => operation?.cancel(),
+        );
+      };
+    }
+    return (input) => CancelableOperation<UrlResponse>.fromFuture(
+      runBoundedServerSkillHttpRequest(
+        timeout: input.timeout,
+        run: (registerClient) async {
+          final target = await validateServerSkillRequestTarget(
+            input,
+            requireHttps: requireHttps,
+          );
+          await _throwIfCancelled(session, turn, isCancelled: isCancelled);
+          Future<UrlResponse> start() => _request(
+            session,
+            turn,
+            target.uri,
+            target.addresses,
+            input,
+            onClient: registerClient,
+            isCancelled: isCancelled,
+            fence: fence,
+          );
+
+          return fence == null
+              ? start()
+              : _dispatchWorkspaceConnector(session, fence, start);
+        },
+      ),
+    );
+  }
+
+  Future<UrlResponse> _dispatchWorkspaceConnector(
+    Session session,
+    _WorkspaceConnectorFence fence,
+    Future<UrlResponse> Function() start,
+  ) => _dispatchWorkspaceConnectorCall(session, fence, start);
+
+  Future<T> _dispatchWorkspaceConnectorCall<T>(
+    Session session,
+    _WorkspaceConnectorFence fence,
+    Future<T> Function() start,
+  ) async {
+    late Future<T> response;
+    await session.db.transaction((transaction) async {
+      await const WorkspaceConnectorAccessUsecases().requireEnabled(
+        session,
+        workspaceId: fence.workspaceId,
+        userId: fence.userId,
+        toolId: fence.toolId,
+        tool: fence.tool,
+        transaction: transaction,
+      );
+      await _requireWorkspaceConnectorCurrent(session, fence, transaction);
+      response = start();
+    });
+    return response;
+  }
+
+  Future<void> _requireWorkspaceConnectorCurrent(
+    Session session,
+    _WorkspaceConnectorFence fence,
+    Transaction transaction,
+  ) async {
+    final connectionId = fence.connectionId;
+    if (connectionId == null) return;
+    if (connectionId.startsWith('model:')) {
+      final resourceId = connectionId.substring('model:'.length);
+      final model = await WorkspaceModelConnection.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(fence.workspaceId) &
+            table.connectionId.equals(resourceId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+      );
+      final secret = await _secret(
+        session,
+        fence.workspaceId,
+        fence.userId,
+        WorkspaceSecretKind.provider,
+        resourceId,
+        transaction: transaction,
+      );
+      if (model == null ||
+          !model.hasSecret ||
+          !fence.connector.compatibleModelProviderIds.contains(
+            model.providerId,
+          ) ||
+          model.revision != fence.connectionRevision ||
+          secret?.id != fence.secret?.id ||
+          secret?.revision != fence.secret?.revision) {
+        _connectionUnavailable();
+      }
+      return;
+    }
+    final resourceId = cloudServiceConnectionId(connectionId);
+    final resource = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(fence.workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
+          table.resourceId.equals(resourceId) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+    );
+    final secret = await const WorkspaceSecretResolver().find(
+      session,
+      workspaceId: fence.workspaceId,
+      kind: WorkspaceSecretKind.provider,
+      scope: WorkspaceSecretScope.workspace,
+      ownerUserId: fence.userId,
+      resourceId: resourceId,
+      transaction: transaction,
+    );
+    if (resource == null ||
+        resource.revision != fence.resourceRevision ||
+        !_isCloudConnectorConnection(
+          _jsonMap(resource.data),
+          fence.connector.identifier,
+        ) ||
+        secret?.id != fence.secret?.id ||
+        secret?.revision != fence.secret?.revision) {
+      _connectionUnavailable();
+    }
+  }
 
   Future<UrlResponse> _request(
     Session session,
@@ -2175,6 +2790,7 @@ class const ServerToolExecutorService({
     UrlRequest input, {
     void Function(HttpClient client)? onClient,
     Future<bool> Function()? isCancelled,
+    _WorkspaceConnectorFence? fence,
   }) async {
     final client = _client(uri, addresses);
     onClient?.call(client);
@@ -2194,7 +2810,14 @@ class const ServerToolExecutorService({
       request.followRedirects = false;
       input.headers.forEach(request.headers.set);
       if (input.body != null) request.write(input.body);
-      final response = await request.close().timeout(input.timeout);
+      final responseFuture = fence == null
+          ? request.close()
+          : _dispatchWorkspaceConnectorCall(
+              session,
+              fence,
+              request.close,
+            );
+      final response = await responseFuture.timeout(input.timeout);
       rejectServerSkillRedirect(response.isRedirect);
       final headers = <String, List<String>>{};
       response.headers.forEach((name, values) => headers[name] = values);
@@ -2290,8 +2913,9 @@ class const ServerToolExecutorService({
     Session session,
     int workspaceId,
     WorkspaceResourceKind kind,
-    String id,
-  ) async {
+    String id, {
+    Transaction? transaction,
+  }) async {
     final resource = await WorkspaceResource.db.findFirstRow(
       session,
       where: (table) =>
@@ -2299,6 +2923,7 @@ class const ServerToolExecutorService({
           table.resourceKind.equals(kind) &
           table.resourceId.equals(id) &
           table.deletedAt.equals(null),
+      transaction: transaction,
     );
     if (resource == null) throw const ServerToolNotConfiguredException();
 
@@ -2310,14 +2935,22 @@ class const ServerToolExecutorService({
     int workspaceId,
     String userId,
     WorkspaceSecretKind kind,
-    String resourceId,
-  ) => const WorkspaceSecretResolver().findForInitiator(
+    String resourceId, {
+    Transaction? transaction,
+  }) => const WorkspaceSecretResolver().findForInitiator(
     session,
     workspaceId: workspaceId,
     kind: kind,
     initiatorUserId: userId,
     resourceId: resourceId,
     allowWorkspaceFallback: true,
+    transaction: transaction,
+  );
+
+  Never _connectionUnavailable() => _throwCloudConnectorCommandFailure(
+    'connection_unavailable',
+    'Connection is not available for this Connector tool.',
+    StackTrace.current,
   );
 
   Map<String, dynamic> _jsonMap(String value) {

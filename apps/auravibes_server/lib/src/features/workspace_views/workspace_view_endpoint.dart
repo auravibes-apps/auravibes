@@ -7,6 +7,7 @@ import 'package:auravibes_server/src/features/conversations/engine/server_tool_e
 import 'package:auravibes_server/src/features/workspace_views/workspace_connected_validation.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_view_store.dart';
 import 'package:auravibes_server/src/features/workspace_views/workspace_view_validation.dart';
+import 'package:auravibes_server/src/features/workspace_state/usecases/workspace_connector_access_usecases.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -106,20 +107,40 @@ class WorkspaceViewEndpoint extends Endpoint {
         connectionId: action.connectionId,
         operationId: operationId,
       );
-      var viewChangedDuringExecution = true;
       try {
-        final current = await read(session, workspaceId, id);
-        viewChangedDuringExecution = current.revision != expectedRevision;
+        final current = await _access(
+          session,
+          workspaceId,
+          (store) async {
+            final current = await store.read(id);
+            final resolved = resolveCloudConnectorTool(
+              toolId: action.toolId!,
+              revision: action.revision!,
+              arguments: arguments,
+            );
+            await const WorkspaceConnectorAccessUsecases().requireEnabled(
+              session,
+              workspaceId: workspaceId,
+              userId: account.userId,
+              toolId: action.toolId!,
+              tool: resolved.tool,
+              transaction: store.transaction,
+            );
+            return current;
+          },
+        );
+        return jsonEncode({
+          'status': 'completed',
+          'result': result,
+          'viewChangedDuringExecution': current.revision != expectedRevision,
+        });
       } on Object {
-        // The external write already completed. Preserve its known outcome
-        // instead of turning a failed follow-up read into a retryable error.
+        // Preserve the completed action without exposing its provider response.
+        return jsonEncode({
+          'status': 'completed',
+          'viewChangedDuringExecution': true,
+        });
       }
-
-      return jsonEncode({
-        'status': 'completed',
-        'result': result,
-        'viewChangedDuringExecution': viewChangedDuringExecution,
-      });
     } on AgentToolExecutionFailure catch (failure) {
       return jsonEncode(_actionFailure(failure));
     }
@@ -159,17 +180,20 @@ class WorkspaceViewEndpoint extends Endpoint {
   }
 
   Future<void> _checkSource(Session session, _ConnectedRead source) async {
-    final current = await read(
+    await _access(
       session,
       source.workspaceId,
-      source.view.stableId,
-    );
-    _requireRevision(source.view, current);
-    await _connectorExecutor.readConnectorAccess(
-      session,
-      workspaceId: source.workspaceId,
-      userId: source.userId,
-      arguments: source.arguments,
+      (store) async {
+        final current = await store.read(source.view.stableId);
+        _requireRevision(source.view, current);
+        await _connectorExecutor.readConnectorAccess(
+          session,
+          workspaceId: source.workspaceId,
+          userId: source.userId,
+          arguments: source.arguments,
+          transaction: store.transaction,
+        );
+      },
     );
   }
 
@@ -180,7 +204,6 @@ class WorkspaceViewEndpoint extends Endpoint {
     session,
     request.workspaceId,
     (store) => store.duplicate(request),
-    lockUser: true,
   );
   Future<List<WorkspaceView>> list(
     Session session,
@@ -201,7 +224,6 @@ class WorkspaceViewEndpoint extends Endpoint {
     session,
     request.workspaceId,
     (store) => store.save(request),
-    lockUser: true,
   );
 }
 
@@ -281,20 +303,17 @@ String _failureCode(AgentToolExecutionFailure failure) {
 Future<T> _access<T>(
   Session session,
   int workspaceId,
-  Future<T> Function(WorkspaceViewStore) operation, {
-  bool lockUser = false,
-}) async {
+  Future<T> Function(WorkspaceViewStore) operation,
+) async {
   final account = await const AuthenticatedAccountResolver()(session);
 
   return session.db.transaction((transaction) async {
-    if (lockUser) {
-      final authUser = await const AuthUserLock().lock(
-        session,
-        userId: account.userId,
-        transaction: transaction,
-      );
-      if (authUser == null) _denied();
-    }
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: account.userId,
+      transaction: transaction,
+    );
+    if (authUser == null) _denied();
     final store = await _locked(
       session,
       workspaceId,
@@ -317,6 +336,7 @@ Future<WorkspaceViewStore> _locked(
     session,
     where: (row) => _memberMatches(row, workspaceId, userId),
     transaction: transaction,
+    lockMode: LockMode.forUpdate,
   );
   if (member == null) _denied();
 

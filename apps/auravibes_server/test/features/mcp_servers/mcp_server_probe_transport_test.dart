@@ -61,6 +61,41 @@ void main() {
     });
   }
 
+  test('fences every Streamable HTTP and SSE request dispatch', () async {
+    final fixture = await _ProbeFixture.start(streamableStatus: 405);
+    addTearDown(fixture.close);
+    var lookups = 0;
+    var dispatches = 0;
+    final probe = McpServerProbe(
+      lookup: (_) async {
+        lookups++;
+        return [InternetAddress('8.8.8.8')];
+      },
+      httpClientFactory: fixture.createClient,
+    );
+    final addresses = await probe.resolveAddresses(fixture.endpoint);
+    final result = await probe(
+      uri: fixture.endpoint,
+      transport: 'streamableHttp',
+      useHttp2: false,
+      resolvedAddresses: addresses,
+      dispatchFence: <T>(Future<T> Function() start) async {
+        dispatches++;
+        return start();
+      },
+    );
+
+    expect(result.health, McpServerHealth.healthy);
+    expect(lookups, 1);
+    expect(dispatches, 5);
+    expect(fixture.methods, [
+      'initialize',
+      'initialize',
+      'notifications/initialized',
+      'tools/list',
+    ]);
+  });
+
   test('does not fall back for a recognized JSON-RPC error', () async {
     final fixture = await _ProbeFixture.start(
       streamableStatus: 400,

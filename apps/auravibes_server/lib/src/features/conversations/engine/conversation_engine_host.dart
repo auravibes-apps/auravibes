@@ -7,6 +7,7 @@ import 'package:genkit/plugin.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../model_connections/domain/virtual_workspace_model_selection.dart';
 import '../../model_connections/usecases/model_connection_usecases.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
@@ -488,6 +489,9 @@ final class const ServerConversationEngineHost({
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
       throw const ConversationCancelledException();
     }
+    if (_actorUserId(job) != turn.initiatorUserId) {
+      throw const ConversationCancelledException();
+    }
     final config = await _loadConfig(session, job, messages);
     final conversation = await Conversation.db.findById(
       session,
@@ -731,15 +735,23 @@ final class const ServerConversationEngineHost({
             job: job,
             providerId: config.providerId,
             body: (admissionLost) async => codec.stream(
-              (body) =>
-                  providerTransport?.call(body) ??
-                  _transport(
-                    config,
-                    body,
-                    session: session,
-                    turnId: turn.id!,
-                    leaseLost: _first(leaseLost, admissionLost),
-                  ),
+              (body) => _startFencedProviderTransport(
+                session,
+                workspaceId: job.workspaceId,
+                userId: turn.initiatorUserId,
+                turnId: turn.id!,
+                start: () =>
+                    providerTransport?.call(body) ??
+                    _transport(
+                      config,
+                      body,
+                      session: session,
+                      workspaceId: job.workspaceId,
+                      userId: turn.initiatorUserId,
+                      turnId: turn.id!,
+                      leaseLost: _first(leaseLost, admissionLost),
+                    ),
+              ),
               {
                 'model': config.modelId,
                 'messages': await const WorkspacePromptProjection().call(
@@ -809,6 +821,11 @@ final class const ServerConversationEngineHost({
             });
             Error.throwWithStackTrace(error, stackTrace);
           });
+      await _requireProviderDispatchAccess(
+        session,
+        workspaceId: job.workspaceId,
+        userId: turn.initiatorUserId,
+      );
       a2uiDecoder.close(
         onText: response.addText,
         onInvalid: (result) {
@@ -886,6 +903,11 @@ final class const ServerConversationEngineHost({
             entry.request.id,
       ];
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
+        await _requireProviderDispatchAccess(
+          session,
+          workspaceId: job.workspaceId,
+          userId: turn.initiatorUserId,
+        );
         await response.close();
 
         return ConversationEngineResult(
@@ -903,6 +925,11 @@ final class const ServerConversationEngineHost({
         );
       }
       if (paused) {
+        await _requireProviderDispatchAccess(
+          session,
+          workspaceId: job.workspaceId,
+          userId: turn.initiatorUserId,
+        );
         await response.close();
 
         return ConversationEngineResult(
@@ -958,6 +985,11 @@ final class const ServerConversationEngineHost({
       'messageIssues': response.a2uiMessageIssues,
       'textCharacters': response.content.length,
     });
+    await _requireProviderDispatchAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: turn.initiatorUserId,
+    );
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
       throw const ConversationCancelledException();
     }
@@ -1338,6 +1370,7 @@ final class const ServerConversationEngineHost({
     required List<ConversationMessage> messages,
     Future<void>? leaseLost,
   }) async {
+    final actorUserId = _actorUserId(job);
     final config = await _loadConfig(session, job, messages);
     final toolCalls = await ConversationToolCall.db.find(
       session,
@@ -1385,7 +1418,20 @@ final class const ServerConversationEngineHost({
       customize: (modelName, _) => (model: modelName, extraBody: const {}),
     );
     final response = await codec.complete(
-      (body) => _transport(config, body, leaseLost: leaseLost),
+      (body) => _startFencedProviderTransport(
+        session,
+        workspaceId: job.workspaceId,
+        userId: actorUserId,
+        turnId: null,
+        start: () => _transport(
+          config,
+          body,
+          session: session,
+          workspaceId: job.workspaceId,
+          userId: actorUserId,
+          leaseLost: leaseLost,
+        ),
+      ),
       {
         'model': config.modelId,
         'messages': [
@@ -1399,6 +1445,11 @@ final class const ServerConversationEngineHost({
         ],
         'stream': false,
       },
+    );
+    await _requireProviderDispatchAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: actorUserId,
     );
     final summaryText =
         response.message?.content
@@ -1662,13 +1713,15 @@ final class const ServerConversationEngineHost({
   Future<ProviderTransportResponse> _transport(
     _ProviderConfig config,
     Map<String, dynamic> body, {
-    Session? session,
+    required Session session,
+    required int workspaceId,
+    required String userId,
     int? turnId,
     Future<void>? leaseLost,
   }) async {
     final client = pinnedHttpClient(config.address);
     final transportDone = Completer<void>();
-    if (session != null && turnId != null) {
+    if (turnId != null) {
       unawaited(
         _closeOnAbort(client, session, turnId, leaseLost, transportDone),
       );
@@ -1678,11 +1731,24 @@ final class const ServerConversationEngineHost({
       config.headers.forEach(request.headers.set);
       request.headers.contentType = ContentType.json;
       request.write(jsonEncode(body));
-      final response = await request.close().timeout(
+      final dispatch = await session.db.transaction((transaction) async {
+        await _lockProviderDispatchAccess(
+          session,
+          workspaceId: workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        // Keep the Future nested in a record. Awaiting request.close here would
+        // hold the account/workspace locks for the provider response latency.
+        return (
+          response: request.close(),
+        );
+      });
+      final response = await dispatch.response.timeout(
         const Duration(seconds: 90),
       );
       final responseBody = response.timeout(const Duration(seconds: 90));
-      final providerStream = session == null || turnId == null
+      final providerStream = turnId == null
           ? _closeClientAfter(responseBody, client, transportDone)
           : cancellationCheckedStream(
               _closeClientAfter(responseBody, client, transportDone),
@@ -1714,6 +1780,124 @@ final class const ServerConversationEngineHost({
       rethrow;
     }
   }
+
+  Future<ProviderTransportResponse> _startFencedProviderTransport(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required int? turnId,
+    required Future<ProviderTransportResponse> Function() start,
+  }) async {
+    final dispatch = await session.db.transaction((transaction) async {
+      await _lockProviderDispatchAccess(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      // Start the callback under the fence but keep its Future nested so the
+      // transaction releases before provider or injected transport latency.
+      return (
+        response: start(),
+      );
+    });
+    final response = await dispatch.response;
+    return ProviderTransportResponse(
+      statusCode: response.statusCode,
+      contentLength: response.contentLength,
+      retryAfter: response.retryAfter,
+      body: cancellationCheckedStream(
+        response.body,
+        () => _providerDispatchIsCancelled(
+          session,
+          workspaceId: workspaceId,
+          userId: userId,
+          turnId: turnId,
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _providerDispatchIsCancelled(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required int? turnId,
+  }) async {
+    if (turnId != null &&
+        await cancellationProbe.isCancelled(session, turnId)) {
+      return true;
+    }
+    try {
+      await _requireProviderDispatchAccess(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+      );
+      return false;
+    } on ConversationCancelledException {
+      return true;
+    }
+  }
+
+  Future<void> _requireProviderDispatchAccess(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+  }) => session.db.transaction((transaction) async {
+    await _lockProviderDispatchAccess(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+  });
+
+  Future<void> _lockProviderDispatchAccess(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) throw const ConversationCancelledException();
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) throw const ConversationCancelledException();
+    final member = await WorkspaceMember.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.userId.equals(userId) &
+          table.removedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (member == null) throw const ConversationCancelledException();
+  }
+}
+
+String _actorUserId(ConversationJob job) {
+  final payload = job.payloadJson;
+  if (payload == null) {
+    throw const ConversationEngineConfigurationException('initiator');
+  }
+  final actorUserId = _jsonObject(payload)['actorUserId'];
+  if (actorUserId is! String) {
+    throw const ConversationEngineConfigurationException('initiator');
+  }
+  return actorUserId;
 }
 
 Stream<List<int>> _classifyProviderTransportStream(
