@@ -25,20 +25,11 @@ void main() {
   ) async {
     final calls = <Map<String, Object?>>[];
     final usecase = _usecase(
-      executeConnector:
-          ({
-            required workspaceId,
-            required viewId,
-            required expectedRevision,
-            required action,
-            required formValues,
-            required arguments,
-            required operationId,
-          }) async {
-            calls.add(arguments);
+      executeConnector: (request) async {
+        calls.add(request.arguments);
 
-            return {'status': 'partial', 'retryBlocked': true};
-          },
+        return {'status': 'partial', 'retryBlocked': true};
+      },
     );
     await _pump(tester, usecase);
 
@@ -85,20 +76,11 @@ void main() {
     await _pump(
       tester,
       _usecase(
-        executeConnector:
-            ({
-              required workspaceId,
-              required viewId,
-              required expectedRevision,
-              required action,
-              required formValues,
-              required arguments,
-              required operationId,
-            }) async {
-              calls++;
+        executeConnector: (_) async {
+          calls++;
 
-              return {'status': 'completed'};
-            },
+          return {'status': 'completed'};
+        },
       ),
     );
 

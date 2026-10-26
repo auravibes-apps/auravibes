@@ -50,32 +50,8 @@ abstract final class WorkspaceViewSurfaceData {
         record == null) {
       return const {};
     }
-    final values = <String, Object?>{};
-    for (final entry in action.inputs.entries) {
-      final value = record.values[entry.key];
-      if (value != null) _writePath(values, entry.value, value);
-    }
 
-    return values;
-  }
-
-  static void _writePath(
-    Map<String, Object?> values,
-    String path,
-    Object? value,
-  ) {
-    final segments = path
-        .split('/')
-        .skip(1)
-        .map((segment) => segment.replaceAll('~1', '/').replaceAll('~0', '~'))
-        .toList();
-    var current = values;
-    for (final segment in segments.take(segments.length - 1)) {
-      final child = current.putIfAbsent(segment, () => <String, Object?>{});
-      if (child is! Map<String, Object?>) return;
-      current = child;
-    }
-    current[segments.last] = value;
+    return _WorkspaceViewFormDefaults.values(action, record);
   }
 
   static Map<String, String?> _fieldLabels(WorkspaceViewData data) => {
@@ -113,6 +89,65 @@ abstract final class WorkspaceViewSurfaceData {
                 )?.toString() ??
                 '-',
         };
+}
+
+abstract final class _WorkspaceViewFormDefaults {
+  static Map<String, Object?> values(
+    A2uiSavedAction action,
+    WorkspaceRecord record,
+  ) {
+    final values = <String, Object?>{};
+    for (final entry in action.inputs.entries) {
+      final value = record.values[entry.key];
+      if (value != null) _writePath(values, entry.value, value);
+    }
+
+    return values;
+  }
+
+  static void _writePath(
+    Map<String, Object?> values,
+    String path,
+    Object? value,
+  ) => _writeSegments(values, _pathSegments(path), value);
+
+  static List<String> _pathSegments(String path) => [
+    for (final segment in path.split('/').skip(1))
+      segment.replaceAll('~1', '/').replaceAll('~0', '~'),
+  ];
+
+  static void _writeSegments(
+    Map<String, Object?> values,
+    List<String> segments,
+    Object? value,
+  ) {
+    final parent = _writeParents(values, segments);
+    if (parent == null) return;
+    parent[segments.last] = value;
+  }
+
+  static Map<String, Object?>? _writeParents(
+    Map<String, Object?> values,
+    List<String> segments,
+  ) {
+    var current = values;
+    for (final segment in segments.take(segments.length - 1)) {
+      final child = _childMap(current, segment);
+      if (child == null) return null;
+      current = child;
+    }
+
+    return current;
+  }
+
+  static Map<String, Object?>? _childMap(
+    Map<String, Object?> values,
+    String key,
+  ) {
+    final child = values.putIfAbsent(key, () => <String, Object?>{});
+
+    return child is Map<String, Object?> ? child : null;
+  }
 }
 
 Object? _displayValue(

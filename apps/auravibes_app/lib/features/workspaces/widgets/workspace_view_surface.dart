@@ -19,6 +19,8 @@ import 'package:genui/genui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+const _partialHttpStatusCode = 207;
+
 /// Renders a saved surface. Only a view with an explicit saved action is
 /// interactive, and its action still goes through the host authorization path.
 class WorkspaceViewSurface extends ConsumerStatefulWidget {
@@ -63,7 +65,7 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
 
   @override
   void dispose() {
-    _disposeController();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -80,34 +82,20 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   Widget build(BuildContext context) {
     if (_failed) return const TextLocale(LocaleKeys.workspace_views_repair);
 
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        _SurfaceUpdates(
-          _controller,
-          interactive: _canSubmit,
-          submitting: _submitting,
-        ),
-        if (_canSubmit) ...[
-          AuraButton(
-            onPressed: _pressSubmit,
-            child: _submitting
-                ? const TextLocale(LocaleKeys.workspace_views_action_submitting)
-                : const TextLocale(LocaleKeys.workspace_views_action_submit),
-            key: const ValueKey('workspace_view_action_submit'),
-            isFullWidth: true,
-            disabled: _submitting,
-          ),
-          if (_statusKey case final status?) TextLocale(status),
-          for (final error in _formErrors.entries)
-            Text('${error.key}: ${error.value}'),
-        ],
-      ],
+    return _SurfaceContent(
+      controller: _controller,
+      canSubmit: _canSubmit,
+      submitting: _submitting,
+      statusKey: _statusKey,
+      formErrors: _formErrors,
+      onSubmit: () => unawaited(_submit()),
     );
   }
 
   void _load() {
-    _reset();
+    _controller.dispose();
+    _controller = .new(catalogs: auraChatCatalogs());
+    _failed = false;
     try {
       _render();
     } on Object {
@@ -115,114 +103,222 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
     }
   }
 
-  void _reset() {
-    _disposeController();
-    _controller = .new(catalogs: auraChatCatalogs());
-    _failed = false;
-  }
-
-  void _disposeController() => _controller.dispose();
-
-  void _pressSubmit() => unawaited(_submit());
-
   void _render() {
-    activeA2uiWireCodec
-        .decodeAll(
-          WorkspaceViewSurfaceData.envelope(widget.data, widget.connectedModel),
-        )
-        .forEach(_handle);
-  }
+    final decoded = activeA2uiWireCodec.decodeAll(
+      WorkspaceViewSurfaceData.envelope(widget.data, widget.connectedModel),
+    );
+    for (final result in decoded) {
+      final operation = result.envelope?.operation;
+      if (operation == null) {
+        _failed = true;
 
-  void _handle(A2uiDecodeResult decoded) {
-    final operation = decoded.envelope?.operation;
-    if (operation == null) {
-      _failed = true;
-
-      return;
+        return;
+      }
+      _controller.handleMessage(.fromJson(operation.json));
     }
-    _controller.handleMessage(.fromJson(operation.json));
   }
 
-  Future<void> _submit() async {
-    final workspaceId = widget.workspaceId;
-    final view = widget.data.view;
-    final action = view.action;
-    if (workspaceId == null || action == null || _submitting) return;
-    setState(() {
-      _submitting = true;
-      _statusKey = null;
-      _formErrors = const {};
-    });
-    try {
-      final root = _controller
-          .contextFor('view')
-          .dataModel
-          .getValue<Object?>(.root);
-      if (root is! Map) throw const WorkspaceTableException();
-      final values = Map<String, Object?>.from(root);
-      final usecase = await ref.read(
-        workspaceViewActionUsecaseProvider(workspaceId).future,
-      );
-      final result = await usecase.call(
-        workspaceId: workspaceId,
-        viewId: view.id,
-        expectedRevision: view.revision,
-        formValues: values,
-        recordId: widget.recordId,
-        approve: _approve,
-      );
-      if (!mounted) return;
-      final resultStatus = _resultStatus(result);
-      if (resultStatus == 'cancelled') return;
+  Future<void> _submit() => _WorkspaceViewSubmissionController(this).submit();
+
+  void _setSubmitting({required bool value, bool clearFeedback = false}) =>
       setState(() {
-        _statusKey = _statusKeyFor(resultStatus);
-        if (result is Map && result['errorsByPath'] is Map) {
-          _formErrors = Map<String, String>.from(
-            result['errorsByPath']! as Map,
-          );
+        _submitting = value;
+        if (clearFeedback) {
+          _statusKey = null;
+          _formErrors = const {};
         }
       });
-      if (resultStatus == 'completed') {
-        ref
-          ..invalidate(workspaceViewDataProvider(workspaceId, view.id))
-          ..invalidate(workspaceConnectedViewProvider(workspaceId, view.id));
-      }
-    } on WorkspaceViewFormValidationException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _statusKey = LocaleKeys.workspace_views_action_invalid;
-        _formErrors = error.errorsByPath;
-      });
-    } on WorkspaceTableException catch (error) {
-      if (!mounted) return;
-      setState(() => _statusKey = _tableErrorKey(error));
-    } on CloudWorkspaceException catch (error) {
-      if (!mounted) return;
-      setState(() => _statusKey = _cloudErrorKey(error));
-    } on AgentToolExecutionFailure catch (error) {
-      if (!mounted) return;
-      setState(() => _statusKey = _connectorErrorKey(error));
-    } on Object {
-      if (!mounted) return;
-      setState(() => _statusKey = LocaleKeys.workspace_connected_failed);
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+
+  void _applySubmissionFeedback(
+    _SubmissionFeedback feedback,
+    String workspaceId,
+    String viewId,
+  ) {
+    if (feedback.cancelled) return;
+    setState(() {
+      _statusKey = feedback.statusKey;
+      _formErrors = feedback.errorsByPath;
+    });
+    if (feedback.refresh) {
+      ref
+        ..invalidate(workspaceViewDataProvider(workspaceId, viewId))
+        ..invalidate(workspaceConnectedViewProvider(workspaceId, viewId));
     }
   }
+}
+
+class const _WorkspaceViewSubmissionController(
+  final _WorkspaceViewSurfaceState state,
+) {
+  Future<void> submit() async {
+    final submission = _submission();
+    if (submission == null || state._submitting) return;
+    _begin();
+    try {
+      await _run(submission);
+    } on Object catch (error) {
+      if (state.mounted) {
+        _showError(error, submission.workspaceId, submission.view.id);
+      }
+    } finally {
+      if (state.mounted) _finish();
+    }
+  }
+
+  ({String workspaceId, WorkspaceView view, String? recordId})? _submission() {
+    final workspaceId = state.widget.workspaceId;
+    final view = state.widget.data.view;
+    if (workspaceId == null || view.action == null) return null;
+
+    return (
+      workspaceId: workspaceId,
+      view: view,
+      recordId: state.widget.recordId,
+    );
+  }
+
+  void _begin() => state._setSubmitting(value: true, clearFeedback: true);
+
+  void _finish() => state._setSubmitting(value: false);
+
+  Future<void> _run(
+    ({String workspaceId, WorkspaceView view, String? recordId}) submission,
+  ) async {
+    final result = await _formSubmission(submission);
+    if (state.mounted) _showResult(result, submission);
+  }
+
+  Future<Object?> _formSubmission(
+    ({String workspaceId, WorkspaceView view, String? recordId}) submission,
+  ) => _WorkspaceViewFormSubmission(
+    ref: state.ref,
+    controller: state._controller,
+    view: submission.view,
+    workspaceId: submission.workspaceId,
+    recordId: submission.recordId,
+    approve: _approve,
+  ).call();
+
+  void _showResult(
+    Object? result,
+    ({String workspaceId, WorkspaceView view, String? recordId}) submission,
+  ) {
+    _SubmissionFeedback.fromResult(result)
+        .apply(state, submission.workspaceId, submission.view.id);
+  }
+
+  void _showError(Object error, String workspaceId, String viewId) =>
+      _SubmissionFeedback.fromError(error).apply(state, workspaceId, viewId);
 
   Future<bool> _approve({
     required WorkspaceView view,
     required A2uiSavedAction action,
     required Map<String, Object?> values,
   }) async {
-    final details = _approvalValues(action, values, widget.data.table.columns);
+    final details = _approvalValues(
+      action,
+      values,
+      state.widget.data.table.columns,
+    );
 
     return await showDialog<bool>(
-          context: context,
+          context: state.context,
           builder: (_) =>
               _ActionApprovalDialog(viewName: view.name, details: details),
         ) ??
         false;
+  }
+}
+
+class const _WorkspaceViewFormSubmission({
+  required final WidgetRef ref,
+  required final SurfaceController controller,
+  required final WorkspaceView view,
+  required final String workspaceId,
+  required final String? recordId,
+  required final WorkspaceViewActionApproval approve,
+}) {
+  Future<Object?> call() async {
+    final formValues = _formValues();
+    final usecase = await ref.read(
+      workspaceViewActionUsecaseProvider(workspaceId).future,
+    );
+
+    return await usecase.call(
+      request: .new(
+        workspaceId: workspaceId,
+        viewId: view.id,
+        expectedRevision: view.revision,
+        formValues: formValues,
+        recordId: recordId,
+      ),
+      approve: approve,
+    );
+  }
+
+  Map<String, Object?> _formValues() {
+    final root = controller
+        .contextFor('view')
+        .dataModel
+        .getValue<Object?>(.root);
+    if (root is! Map) throw const WorkspaceTableException();
+
+    return Map<String, Object?>.from(root);
+  }
+}
+
+class const _SubmissionFeedback({
+  required final String? statusKey,
+  required final Map<String, String> errorsByPath,
+  final bool cancelled = false,
+  final bool refresh = false,
+}) {
+  factory fromResult(Object? result) {
+    final status = _resultStatus(result);
+
+    return .new(
+      statusKey: status == 'cancelled' ? null : _statusKeyFor(status),
+      errorsByPath: _readErrors(result),
+      cancelled: status == 'cancelled',
+      refresh: status == 'completed',
+    );
+  }
+
+  factory fromError(Object error) => switch (error) {
+    WorkspaceViewFormValidationException(:final errorsByPath) => .new(
+      statusKey: LocaleKeys.workspace_views_action_invalid,
+      errorsByPath: errorsByPath,
+    ),
+    final WorkspaceTableException failure => .new(
+      statusKey: _tableErrorKey(failure),
+      errorsByPath: const {},
+    ),
+    final CloudWorkspaceException failure => .new(
+      statusKey: _cloudErrorKey(failure),
+      errorsByPath: const {},
+    ),
+    final AgentToolExecutionFailure failure => .new(
+      statusKey: _connectorErrorKey(failure),
+      errorsByPath: const {},
+    ),
+    _ => const .new(
+      statusKey: LocaleKeys.workspace_connected_failed,
+      errorsByPath: {},
+    ),
+  };
+
+  void apply(
+    _WorkspaceViewSurfaceState state,
+    String workspaceId,
+    String viewId,
+  ) => state._applySubmissionFeedback(this, workspaceId, viewId);
+
+  static Map<String, String> _readErrors(Object? result) {
+    if (result is Map && result['errorsByPath'] is Map) {
+      return Map<String, String>.from(result['errorsByPath']! as Map);
+    }
+
+    return const {};
   }
 }
 
@@ -242,43 +338,53 @@ Map<String, Object?> _approvalValues(
 String _resultStatus(Object? result) {
   if (result == false) return 'cancelled';
   if (result == true) return 'completed';
-  if (result is Map && result['status'] is String) {
-    final status = result['status']! as String;
-    final code = result['code'];
 
-    return switch (status) {
-      'completed' when result['viewChangedDuringExecution'] == true =>
-        'completedChanged',
-      'completed' => 'completed',
-      'partial' => 'partial',
-      'validationFailed' => 'invalid',
-      'denied' => 'denied',
-      'uncertain' => 'uncertain',
-      'failed'
-          when code == 'stale_contract' ||
-              code == 'invalid_tool_arguments' ||
-              code == 'unknown_tool' =>
-        'repair',
-      'failed'
-          when code == 'connection_unavailable' ||
-              code == 'connection_required' ||
-              code == 'connection_selection_required' =>
-        'disconnected',
-      'failed' => 'failed',
-      _ => 'failed',
-    };
-  }
-  if (result is Map && result['outcome'] is String) {
-    return switch (result['outcome']) {
-      'completed' => 'completed',
-      'uncertain' when result['statusCode'] == 207 => 'partial',
-      'uncertain' => 'uncertain',
-      'failed' => 'failed',
-      _ => 'failed',
-    };
-  }
+  return switch (result) {
+    {'status': final String status} => _WorkspaceViewResultStatus.action(
+      status,
+      result as Map<dynamic, dynamic>,
+    ),
+    {'outcome': final String outcome} => _WorkspaceViewResultStatus.external(
+      outcome,
+      result as Map<dynamic, dynamic>,
+    ),
+    _ => 'failed',
+  };
+}
 
-  return 'failed';
+abstract final class _WorkspaceViewResultStatus {
+  static String action(String status, Map<dynamic, dynamic> result) =>
+      switch (status) {
+        'completed' when result['viewChangedDuringExecution'] == true =>
+          'completedChanged',
+        'completed' => 'completed',
+        'partial' => 'partial',
+        'validationFailed' => 'invalid',
+        'denied' => 'denied',
+        'uncertain' => 'uncertain',
+        'failed' when _repairCode(result['code']) => 'repair',
+        'failed' when _connectionCode(result['code']) => 'disconnected',
+        _ => 'failed',
+      };
+
+  static String external(String outcome, Map<dynamic, dynamic> result) =>
+      switch (outcome) {
+        'completed' => 'completed',
+        'uncertain' when result['statusCode'] == _partialHttpStatusCode =>
+          'partial',
+        'uncertain' => 'uncertain',
+        _ => 'failed',
+      };
+
+  static bool _repairCode(Object? code) =>
+      code == 'stale_contract' ||
+      code == 'invalid_tool_arguments' ||
+      code == 'unknown_tool';
+
+  static bool _connectionCode(Object? code) =>
+      code == 'connection_unavailable' ||
+      code == 'connection_required' ||
+      code == 'connection_selection_required';
 }
 
 String _statusKeyFor(String status) => switch (status) {
@@ -310,29 +416,36 @@ String _cloudErrorKey(CloudWorkspaceException error) => switch (error.code) {
 };
 
 String _connectorErrorKey(AgentToolExecutionFailure error) {
-  try {
-    final decoded = jsonDecode(error.responseRaw);
-    if (decoded is Map && decoded['error'] is Map) {
-      final code = (decoded['error'] as Map)['code'];
-      if (code == 'tool_access_denied' || code == 'denied') {
-        return LocaleKeys.workspace_connected_denied;
-      }
-      if (code == 'stale_contract' || code == 'invalid_tool_arguments') {
-        return LocaleKeys.workspace_connected_repair;
-      }
-    }
-    if (decoded is Map && decoded['statusCode'] == 207) {
-      return LocaleKeys.workspace_views_action_partial;
-    }
-  } on FormatException {
-    return error.resultStatus == AgentToolResultStatus.uncertain
-        ? LocaleKeys.workspace_views_action_uncertain
-        : LocaleKeys.workspace_connected_failed;
+  return _ConnectorErrorStatus.key(error);
+}
+
+abstract final class _ConnectorErrorStatus {
+  static String key(AgentToolExecutionFailure error) {
+    final response = _decode(error.responseRaw);
+
+    return switch (response) {
+      {'error': {'code': 'tool_access_denied' || 'denied'}} =>
+        LocaleKeys.workspace_connected_denied,
+      {'error': {'code': 'stale_contract' || 'invalid_tool_arguments'}} =>
+        LocaleKeys.workspace_connected_repair,
+      {'statusCode': _partialHttpStatusCode} =>
+        LocaleKeys.workspace_views_action_partial,
+      _ =>
+        error.resultStatus == AgentToolResultStatus.uncertain
+            ? LocaleKeys.workspace_views_action_uncertain
+            : LocaleKeys.workspace_connected_failed,
+    };
   }
 
-  return error.resultStatus == AgentToolResultStatus.uncertain
-      ? LocaleKeys.workspace_views_action_uncertain
-      : LocaleKeys.workspace_connected_failed;
+  static Map<dynamic, dynamic>? _decode(String response) {
+    try {
+      final decoded = jsonDecode(response);
+
+      return decoded is Map ? decoded : null;
+    } on FormatException {
+      return null;
+    }
+  }
 }
 
 class const _ActionApprovalDialog({
@@ -343,41 +456,151 @@ class const _ActionApprovalDialog({
   Widget build(BuildContext context) => Dialog(
     child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 480),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .stretch,
-          children: [
-            const TextLocale(LocaleKeys.workspace_views_action_review),
-            const SizedBox(height: 8),
-            Text(viewName),
-            const SizedBox(height: 8),
-            const TextLocale(LocaleKeys.workspace_views_action_approval),
-            const SizedBox(height: 8),
-            SelectableText(const JsonEncoder.withIndent('  ').convert(details)),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: .end,
-              children: [
-                AuraButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const TextLocale(LocaleKeys.common_cancel),
-                  variant: .ghost,
-                ),
-                const SizedBox(width: 8),
-                AuraButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const TextLocale(
-                    LocaleKeys.workspace_views_action_submit,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      child: _ActionApprovalContent(viewName: viewName, details: details),
     ),
+  );
+}
+
+class const _ActionApprovalContent({
+  required final String viewName,
+  required final Map<String, Object?> details,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
+      children: [
+        _ActionApprovalHeader(viewName),
+        _ActionApprovalDetails(details),
+        const SizedBox(height: 12),
+        const _ActionApprovalButtons(),
+      ],
+    ),
+  );
+}
+
+class const _ActionApprovalHeader(final String viewName)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      const TextLocale(LocaleKeys.workspace_views_action_review),
+      const SizedBox(height: 8),
+      Text(viewName),
+      const SizedBox(height: 8),
+      const TextLocale(LocaleKeys.workspace_views_action_approval),
+    ],
+  );
+}
+
+class const _ActionApprovalDetails(final Map<String, Object?> details)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      SelectableText(const JsonEncoder.withIndent('  ').convert(details));
+}
+
+class const _ActionApprovalButtons() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Row(
+    mainAxisAlignment: .end,
+    children: [
+      _ActionApprovalButton(approve: false),
+      SizedBox(width: 8),
+      _ActionApprovalButton(approve: true),
+    ],
+  );
+}
+
+class const _ActionApprovalButton({required final bool approve})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => Navigator.of(context).pop(approve),
+    child: TextLocale(
+      approve
+          ? LocaleKeys.workspace_views_action_submit
+          : LocaleKeys.common_cancel,
+    ),
+    variant: approve ? .primary : .ghost,
+  );
+}
+
+class const _SurfaceContent({
+  required final SurfaceController controller,
+  required final bool canSubmit,
+  required final bool submitting,
+  required final String? statusKey,
+  required final Map<String, String> formErrors,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _SurfaceUpdates(
+        controller,
+        interactive: canSubmit,
+        submitting: submitting,
+      ),
+      if (canSubmit)
+        _SubmissionControls(
+          submitting: submitting,
+          statusKey: statusKey,
+          formErrors: formErrors,
+          onSubmit: onSubmit,
+        ),
+    ],
+  );
+}
+
+class const _SubmissionControls({
+  required final bool submitting,
+  required final String? statusKey,
+  required final Map<String, String> formErrors,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _SubmissionButton(submitting: submitting, onPressed: onSubmit),
+      _SubmissionMessages(statusKey: statusKey, formErrors: formErrors),
+    ],
+  );
+}
+
+class const _SubmissionButton({
+  required final bool submitting,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: submitting
+        ? const TextLocale(LocaleKeys.workspace_views_action_submitting)
+        : const TextLocale(LocaleKeys.workspace_views_action_submit),
+    key: const ValueKey('workspace_view_action_submit'),
+    isFullWidth: true,
+    disabled: submitting,
+  );
+}
+
+class const _SubmissionMessages({
+  required final String? statusKey,
+  required final Map<String, String> formErrors,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      if (statusKey case final status?) TextLocale(status),
+      for (final error in formErrors.entries)
+        Text('${error.key}: ${error.value}'),
+    ],
   );
 }
 

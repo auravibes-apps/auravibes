@@ -126,11 +126,27 @@ class const _Projected(
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final source = data;
-    if (_empty(value) && source?.view.action == null) {
+    if (_empty(value) && data?.view.action == null) {
       return const TextLocale(LocaleKeys.workspace_connected_empty);
     }
+    final source = data;
     if (source == null || !source.view.isConnectedOnly) return _Result(value);
+
+    return _ConnectedView(
+      workspaceId: workspaceId,
+      source: source,
+      value: value,
+    );
+  }
+}
+
+class const _ConnectedView({
+  required final String workspaceId,
+  required final WorkspaceViewData source,
+  required final Object? value,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     try {
       return WorkspaceViewSurface(
         data: source,
