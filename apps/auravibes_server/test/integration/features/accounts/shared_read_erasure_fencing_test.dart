@@ -21,7 +21,7 @@ void main() {
       test(
         'shared workspace readers wait for account deletion',
         () async {
-          final fixture = await _createFixture(builder);
+          final fixture = await _createFixture(builder, ownerIsActor: false);
           initializeTestAuthServices(fixture.session.serverpod);
           final lockSession = builder.build();
           final acquired = Completer<void>();
@@ -167,7 +167,7 @@ void main() {
       test(
         'download signing releases its transaction before remote completion',
         () async {
-          final fixture = await _createFixture(builder);
+          final fixture = await _createFixture(builder, ownerIsActor: false);
           initializeTestAuthServices(fixture.session.serverpod);
           final store = _BlockingSigner();
           final objects = ObjectUseCases(
@@ -326,6 +326,7 @@ Map<String, Future<void> Function()> _readers(
 Future<_Fixture> _createFixture(
   TestSessionBuilder builder, {
   bool includeObject = true,
+  bool ownerIsActor = true,
 }) async {
   final userId = const Uuid().v4().toString();
   final email = '$userId@example.invalid';
@@ -349,16 +350,29 @@ Future<_Fixture> _createFixture(
       .createWorkspace(
         session,
         name: 'Read fencing',
-        ownerUserId: userId,
+        ownerUserId: ownerIsActor ? userId : const Uuid().v4().toString(),
         now: DateTime.now().toUtc(),
       );
   final now = DateTime.now().toUtc();
+  if (!ownerIsActor) {
+    await WorkspaceMember.db.insertRow(
+      session,
+      WorkspaceMember(
+        workspaceId: workspace.id!,
+        userId: userId,
+        role: 'member',
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
   final object = includeObject
       ? await WorkspaceObject.db.insertRow(
           session,
           WorkspaceObject(
             workspaceId: workspace.id!,
-            objectKey: 'private/read-fence',
+            objectKey: 'private/read-fence/$userId',
             purpose: 'workspace_asset',
             displayName: 'read.txt',
             mimeType: 'text/plain',
