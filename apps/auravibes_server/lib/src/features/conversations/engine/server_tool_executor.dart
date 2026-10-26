@@ -11,6 +11,7 @@ import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
 import '../../accounts/auth_user_lock.dart';
 import '../../mcp_servers/mcp_oauth_token_resolver.dart';
+import '../../mcp_servers/mcp_oauth_credentials.dart';
 import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../mcp_servers/mcp_sse_session.dart';
@@ -62,6 +63,188 @@ typedef _WorkspaceConnectorFence = ({
   int? resourceRevision,
   WorkspaceSecret? secret,
 });
+
+/// Fences each MCP tool request against the server and credential snapshot.
+/// The callback Future is nested so the transaction releases before HTTP waits.
+final class McpToolDispatchFence {
+  const McpToolDispatchFence._({
+    required this.session,
+    required this.workspaceId,
+    required this.userId,
+    required this.toolId,
+    required this.serverId,
+    required this.serverData,
+    required this.secret,
+  });
+
+  final Session session;
+  final int workspaceId;
+  final String userId;
+  final String toolId;
+  final String serverId;
+  final Map<String, dynamic> serverData;
+  final WorkspaceSecret? secret;
+
+  static Future<McpToolDispatchFence> capture({
+    required Session session,
+    required int workspaceId,
+    required String userId,
+    required String toolId,
+    required String serverId,
+    required Map<String, dynamic> serverData,
+    required WorkspaceSecret? initialSecret,
+    bool allowSecretRotation = false,
+    String? oauthAccessToken,
+  }) async {
+    late WorkspaceSecret? secret;
+    final fence = McpToolDispatchFence._(
+      session: session,
+      workspaceId: workspaceId,
+      userId: userId,
+      toolId: toolId,
+      serverId: serverId,
+      serverData: Map.unmodifiable(serverData),
+      secret: null,
+    );
+    await session.db.transaction((transaction) async {
+      await fence._requireServerAccess(transaction);
+      final currentSecret = await const WorkspaceSecretResolver()
+          .findForInitiator(
+            session,
+            workspaceId: workspaceId,
+            kind: WorkspaceSecretKind.mcp,
+            initiatorUserId: userId,
+            resourceId: serverId,
+            allowWorkspaceFallback: true,
+            transaction: transaction,
+          );
+      if (initialSecret == null
+          ? currentSecret != null
+          : currentSecret?.id != initialSecret.id ||
+                !allowSecretRotation &&
+                    currentSecret?.revision != initialSecret.revision) {
+        throw const ServerToolNotConfiguredException();
+      }
+      if (allowSecretRotation && currentSecret != null) {
+        final currentCredentials = McpOAuthCredentials.parse(
+          await const WorkspaceSecretCipher().decrypt(session, currentSecret),
+        );
+        if (oauthAccessToken == null ||
+            currentCredentials.accessToken != oauthAccessToken) {
+          throw const ServerToolNotConfiguredException();
+        }
+      }
+      secret = currentSecret;
+    });
+    return McpToolDispatchFence._(
+      session: session,
+      workspaceId: workspaceId,
+      userId: userId,
+      toolId: toolId,
+      serverId: serverId,
+      serverData: Map.unmodifiable(serverData),
+      secret: secret,
+    );
+  }
+
+  Future<T> dispatch<T>(Future<T> Function() start) async {
+    final dispatch = await session.db.transaction((transaction) async {
+      await _requireCurrent(transaction);
+      return (
+        response: start(),
+      );
+    });
+    return dispatch.response;
+  }
+
+  Future<void> requireCurrent() => session.db.transaction(
+    (transaction) => _requireCurrent(transaction),
+  );
+
+  Future<void> _requireCurrent(Transaction transaction) async {
+    await _requireServerAccess(transaction);
+    final currentSecret = await const WorkspaceSecretResolver()
+        .findForInitiator(
+          session,
+          workspaceId: workspaceId,
+          kind: WorkspaceSecretKind.mcp,
+          initiatorUserId: userId,
+          resourceId: serverId,
+          allowWorkspaceFallback: true,
+          transaction: transaction,
+        );
+    if (secret == null
+        ? currentSecret != null
+        : currentSecret?.id != secret!.id ||
+              currentSecret?.revision != secret!.revision) {
+      throw const ServerToolNotConfiguredException();
+    }
+  }
+
+  Future<void> _requireServerAccess(Transaction transaction) async {
+    await const WorkspaceConnectorAccessUsecases().requireMcp(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      resourceId: toolId,
+      transaction: transaction,
+    );
+    final currentServer = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.mcpServer) &
+          table.resourceId.equals(serverId) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (currentServer == null ||
+        !_sameMcpServerDefinition(
+          serverData,
+          _decodeMcpServerData(currentServer.data),
+        )) {
+      throw const ServerToolNotConfiguredException();
+    }
+  }
+}
+
+Map<String, dynamic> _decodeMcpServerData(String data) {
+  final decoded = jsonDecode(data);
+  if (decoded is! Map<String, dynamic>) throw const FormatException();
+  return decoded;
+}
+
+bool _sameMcpServerDefinition(
+  Map<String, dynamic> before,
+  Map<String, dynamic> after,
+) {
+  Map<String, dynamic> comparable(Map<String, dynamic> data) {
+    final definition = Map<String, dynamic>.from(data)
+      ..remove('authStatus')
+      ..remove('secretRevision')
+      ..remove('hasSecret');
+    return _canonicalJsonMap(definition);
+  }
+
+  return jsonEncode(comparable(before)) == jsonEncode(comparable(after));
+}
+
+Map<String, dynamic> _canonicalJsonMap(Map<String, dynamic> data) {
+  final entries = data.entries.toList()
+    ..sort((left, right) => left.key.compareTo(right.key));
+  return Map.fromEntries(
+    entries.map(
+      (entry) => MapEntry(entry.key, _canonicalJsonValue(entry.value)),
+    ),
+  );
+}
+
+Object? _canonicalJsonValue(Object? value) => switch (value) {
+  Map<String, dynamic> map => _canonicalJsonMap(map),
+  List<dynamic> list => list.map(_canonicalJsonValue).toList(),
+  _ => value,
+};
 
 String cloudServiceConnectionId(String connectionId) =>
     connectionId.startsWith('service:')
@@ -2161,13 +2344,19 @@ class const ServerToolExecutorService({
     final httpHeaders = data['authType'] == 'httpHeaders'
         ? parseMcpHttpHeaders(decrypted)
         : const <String, String>{};
+    final mcpDispatchFence = await McpToolDispatchFence.capture(
+      session: session,
+      workspaceId: turn.workspaceId,
+      userId: turn.initiatorUserId,
+      toolId: tool.descriptor.tableId,
+      serverId: serverId,
+      serverData: data,
+      initialSecret: secret,
+      allowSecretRotation: data['authType'] == 'oauth',
+      oauthAccessToken: data['authType'] == 'oauth' ? decrypted : null,
+    );
     Future<T> dispatchFence<T>(Future<T> Function() start) =>
-        _dispatchMcpRequest<T>(
-          session,
-          turn,
-          tool.descriptor.tableId,
-          start,
-        );
+        mcpDispatchFence.dispatch<T>(start);
     final result = transport['type'] == 'sse'
         ? await _callSse(
             session,
@@ -2198,7 +2387,7 @@ class const ServerToolExecutorService({
             httpHeaders: httpHeaders,
             dispatchFence: dispatchFence,
           );
-    await _requireMcpActorAccess(session, turn, tool.descriptor.tableId);
+    await mcpDispatchFence.requireCurrent();
 
     return McpToolResult(
       content: switch (result['content']) {
@@ -2366,41 +2555,6 @@ class const ServerToolExecutorService({
     _WorkspaceConnectorFence fence,
     Future<UrlResponse> Function() start,
   ) => _dispatchWorkspaceConnectorCall(session, fence, start);
-
-  Future<T> _dispatchMcpRequest<T>(
-    Session session,
-    ConversationTurn turn,
-    String toolId,
-    Future<T> Function() start,
-  ) async {
-    final dispatch = await session.db.transaction((transaction) async {
-      await const WorkspaceConnectorAccessUsecases().requireMcp(
-        session,
-        workspaceId: turn.workspaceId,
-        userId: turn.initiatorUserId,
-        resourceId: toolId,
-        transaction: transaction,
-      );
-      return (
-        response: start(),
-      );
-    });
-    return dispatch.response;
-  }
-
-  Future<void> _requireMcpActorAccess(
-    Session session,
-    ConversationTurn turn,
-    String toolId,
-  ) => session.db.transaction(
-    (transaction) => const WorkspaceConnectorAccessUsecases().requireMcp(
-      session,
-      workspaceId: turn.workspaceId,
-      userId: turn.initiatorUserId,
-      resourceId: toolId,
-      transaction: transaction,
-    ),
-  );
 
   Future<T> _dispatchWorkspaceConnectorCall<T>(
     Session session,

@@ -467,6 +467,143 @@ void main() {
       );
     }
 
+    Future<
+      ({
+        String toolId,
+        WorkspaceResource server,
+        WorkspaceSecret secret,
+        Map<String, dynamic> data,
+      })
+    >
+    configureMcpServer(_Fixture fixture) async {
+      fixture.database.passwords['workspaceSecretKey'] =
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      const toolId = 'mcp/server-1/read';
+      const serverId = 'server-1';
+      final now = DateTime.now().toUtc();
+      await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .tool,
+          resourceId: toolId,
+          data: jsonEncode({
+            'toolId': toolId,
+            'isEnabled': true,
+            'permissionMode': 'alwaysAllow',
+          }),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final data = <String, dynamic>{
+        'url': 'https://mcp.example.test/mcp',
+        'transport': {'type': 'streamableHttp'},
+        'authType': 'bearer',
+        'hasSecret': true,
+        'secretRevision': 1,
+        'authStatus': 'active',
+      };
+      final server = await WorkspaceResource.db.insertRow(
+        fixture.database,
+        WorkspaceResource(
+          workspaceId: fixture.workspaceId,
+          resourceKind: .mcpServer,
+          resourceId: serverId,
+          data: jsonEncode(data),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final encrypted = await const WorkspaceSecretCipher().encrypt(
+        fixture.database,
+        'initial-mcp-secret',
+        workspaceId: fixture.workspaceId,
+        resourceId: serverId,
+      );
+      final secret = await WorkspaceSecret.db.insertRow(
+        fixture.database,
+        WorkspaceSecret(
+          workspaceId: fixture.workspaceId,
+          secretKind: WorkspaceSecretKind.mcp,
+          scope: WorkspaceSecretScope.user,
+          ownerUserId: WorkspaceResourceValidation.secretOwnerKey(
+            WorkspaceSecretScope.user,
+            fixture.userId,
+          ),
+          resourceId: serverId,
+          ciphertext: encrypted.ciphertext,
+          nonce: encrypted.nonce,
+          authenticationTag: encrypted.authenticationTag,
+          algorithm: 'AES-256-GCM',
+          keyVersion: 1,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      return (toolId: toolId, server: server, secret: secret, data: data);
+    }
+
+    test(
+      'MCP request dispatch rejects edited server and rotated credentials',
+      () async {
+        for (final mutation in ['server', 'secret']) {
+          final fixture = await prepare();
+          final configured = await configureMcpServer(fixture);
+          final fence = await McpToolDispatchFence.capture(
+            session: fixture.database,
+            workspaceId: fixture.workspaceId,
+            userId: fixture.userId,
+            toolId: configured.toolId,
+            serverId: configured.server.resourceId,
+            serverData: configured.data,
+            initialSecret: configured.secret,
+          );
+          if (mutation == 'server') {
+            await WorkspaceResource.db.updateRow(
+              fixture.database,
+              configured.server.copyWith(
+                data: jsonEncode({
+                  ...configured.data,
+                  'url': 'https://changed.example.test/mcp',
+                }),
+                revision: configured.server.revision + 1,
+              ),
+            );
+          } else {
+            final encrypted = await const WorkspaceSecretCipher().encrypt(
+              fixture.database,
+              'rotated-mcp-secret',
+              workspaceId: fixture.workspaceId,
+              resourceId: configured.server.resourceId,
+            );
+            await WorkspaceSecret.db.updateRow(
+              fixture.database,
+              configured.secret.copyWith(
+                ciphertext: encrypted.ciphertext,
+                nonce: encrypted.nonce,
+                authenticationTag: encrypted.authenticationTag,
+                revision: configured.secret.revision + 1,
+              ),
+            );
+          }
+
+          var outboundSends = 0;
+          await expectLater(
+            fence.dispatch(() async {
+              outboundSends++;
+              return true;
+            }),
+            throwsA(isA<ServerToolNotConfiguredException>()),
+          );
+          expect(outboundSends, 0, reason: 'MCP $mutation changed before send');
+        }
+      },
+    );
+
     test('provider dispatch is denied when workspace erasure wins', () async {
       final fixture = await prepare();
       await configureProvider(fixture);
