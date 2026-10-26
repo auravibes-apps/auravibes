@@ -58,4 +58,92 @@ final class WorkspaceConversationToolsProvider
 }
 
 String _$workspaceConversationToolsHash() =>
-    r'6a5fad32215797b64f7339f1054366d1f6d50b4b';
+    r'2fb28a708491102852ec40ee64a683fc68ca28e7';
+
+@ProviderFor(workspaceConversationCommandUsecase)
+final workspaceConversationCommandUsecaseProvider =
+    WorkspaceConversationCommandUsecaseFamily._();
+
+final class WorkspaceConversationCommandUsecaseProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<WorkspaceConversationCommandUsecase>,
+          WorkspaceConversationCommandUsecase,
+          FutureOr<WorkspaceConversationCommandUsecase>
+        >
+    with
+        $FutureModifier<WorkspaceConversationCommandUsecase>,
+        $FutureProvider<WorkspaceConversationCommandUsecase> {
+  WorkspaceConversationCommandUsecaseProvider._({
+    required WorkspaceConversationCommandUsecaseFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceConversationCommandUsecaseProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$workspaceConversationCommandUsecaseHash();
+
+  @override
+  String toString() {
+    return r'workspaceConversationCommandUsecaseProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<WorkspaceConversationCommandUsecase> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WorkspaceConversationCommandUsecase> create(Ref ref) {
+    final argument = this.argument as String;
+    return workspaceConversationCommandUsecase(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceConversationCommandUsecaseProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceConversationCommandUsecaseHash() =>
+    r'b810e0120c8b9e60d3b99af02b62639aadb6506d';
+
+final class WorkspaceConversationCommandUsecaseFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<WorkspaceConversationCommandUsecase>,
+          String
+        > {
+  WorkspaceConversationCommandUsecaseFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceConversationCommandUsecaseProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceConversationCommandUsecaseProvider call(String workspaceId) =>
+      WorkspaceConversationCommandUsecaseProvider._(
+        argument: workspaceId,
+        from: this,
+      );
+
+  @override
+  String toString() => r'workspaceConversationCommandUsecaseProvider';
+}

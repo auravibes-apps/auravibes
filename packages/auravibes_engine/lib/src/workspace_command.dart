@@ -1,4 +1,8 @@
 import 'package:auravibes_engine/src/tool_spec.dart';
+import 'package:auravibes_engine/src/workspace_context_selection.dart';
+import 'package:auravibes_engine/src/workspace_created_context.dart';
+
+export 'package:auravibes_engine/src/workspace_context_selection.dart';
 
 const workspaceCommandToolName = 'workspace_item';
 const workspaceCommandTableId = 'host.workspace.item';
@@ -58,100 +62,13 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
 bool workspaceCommandNeedsApproval(Map<String, dynamic> arguments) =>
     !{'read', 'createRecord', 'updateRecord'}.contains(arguments['action']);
 
-/// A user selection event never grants data in a copied/forked Conversation.
-class WorkspaceContextSelection {
-  new({
-    required this.workspaceId,
-    required this.conversationId,
-    required this.itemId,
-    required this.kind,
-    this.parentId,
-    List<String> recordIds = const [],
-  }) : recordIds = List.unmodifiable(recordIds);
-  final String workspaceId;
-  final String conversationId;
-  final String itemId;
-  final String kind;
-  final String? parentId;
-  final List<String> recordIds;
-
-  Map<String, Object?> toJson() => {
-    'workspaceId': workspaceId,
-    'conversationId': conversationId,
-    'itemId': itemId,
-    'kind': kind,
-    'parentId': parentId,
-    'recordIds': recordIds,
-  };
-  static WorkspaceContextSelection? decode(
-    Object? value,
-    String workspaceId,
-    String conversationId,
-  ) {
-    if (value is! Map<String, dynamic> ||
-        value['workspaceId'] != workspaceId ||
-        value['conversationId'] != conversationId ||
-        value['itemId'] is! String ||
-        value['kind'] is! String ||
-        value['recordIds'] is! List<Object?>) {
-      return null;
-    }
-    if (value['parentId'] != null && value['parentId'] is! String) return null;
-    if (value['kind'] != 'directory' && (value['itemId'] as String).isEmpty) {
-      return null;
-    }
-    final records = value['recordIds'] as List<Object?>;
-    if (records.length > 50 ||
-        records.any((id) => id is! String || id.isEmpty) ||
-        records.toSet().length != records.length ||
-        !{'directory', 'folder', 'table', 'view'}.contains(value['kind'])) {
-      return null;
-    }
-    if (value['kind'] == 'directory' &&
-        ((value['itemId'] as String).isNotEmpty || records.isNotEmpty)) {
-      return null;
-    }
-    if (value['kind'] == 'folder' && records.isNotEmpty) return null;
-
-    return WorkspaceContextSelection(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      itemId: value['itemId'] as String,
-      kind: value['kind'] as String,
-      parentId: value['parentId'] as String?,
-      recordIds: records.cast<String>(),
-    );
-  }
-}
-
 /// Hosts supply only verified creations from the active selection epoch.
 WorkspaceContextSelection workspaceCreatedContext(
   WorkspaceContextSelection selection,
   List<Map<String, Object?>> created,
   Map<String, dynamic> arguments,
 ) {
-  final target =
-      arguments['tableId'] ?? arguments['parentId'] ?? arguments['id'];
-  final owned = created
-      .where((resource) => resource['id'] == target)
-      .firstOrNull;
-  final id = owned?['id'] as String? ?? selection.itemId;
-  final kind = owned?['kind'] as String? ?? selection.kind;
-  final records = <String>{
-    if (owned == null) ...selection.recordIds,
-    for (final resource in created)
-      if (resource['kind'] == 'record' && resource['tableId'] == id)
-        if (resource['id'] case final String recordId) recordId,
-  };
-
-  return WorkspaceContextSelection(
-    workspaceId: selection.workspaceId,
-    conversationId: selection.conversationId,
-    itemId: id,
-    kind: kind,
-    parentId: owned?['parentId'] as String? ?? selection.parentId,
-    recordIds: records.toList(),
-  );
+  return WorkspaceCreatedContext(selection, created).resolve(arguments);
 }
 
 const workspaceContextUnavailable =

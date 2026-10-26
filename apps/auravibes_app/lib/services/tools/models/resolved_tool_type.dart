@@ -73,7 +73,7 @@ class ResolvedTool._({
   final bool isConnectorCommand = type == .connectorCommand;
   final bool isSkillNative = type == .skillNative;
 
-  bool get isWorkspaceCommand =>
+  final bool isWorkspaceCommand =
       tableId == workspaceCommandTableId &&
       toolIdentifier == workspaceCommandToolName &&
       type == .builtIn;

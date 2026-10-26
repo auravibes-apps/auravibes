@@ -39,6 +39,16 @@ class const ManageWorkspaceChatContextUsecase({
     WorkspaceContextSelection? selection,
   ) async {
     await _authorize(conversationId);
+    await _validateSelection(conversationId, selection);
+    await _authorize(conversationId);
+
+    return await repository.save(conversationId, requestId, selection);
+  }
+
+  Future<void> _validateSelection(
+    String conversationId,
+    WorkspaceContextSelection? selection,
+  ) async {
     if (selection != null) {
       if (selection.conversationId != conversationId ||
           selection.workspaceId != workspaceId) {
@@ -55,9 +65,6 @@ class const ManageWorkspaceChatContextUsecase({
         );
       }
     }
-    await _authorize(conversationId);
-
-    return await repository.save(conversationId, requestId, selection);
   }
 
   Future<void> _authorize(String conversationId) async {

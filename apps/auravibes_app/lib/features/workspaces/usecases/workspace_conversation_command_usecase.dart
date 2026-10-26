@@ -1,10 +1,18 @@
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+
+typedef _CommandInput = ({
+  WorkspaceContextSelection selection,
+  Map<String, dynamic> arguments,
+  WorkspaceReferenceScope references,
+});
 
 /// Executes selected content through the same validated boundaries as editors.
 class const WorkspaceConversationCommandUsecase({
@@ -16,376 +24,534 @@ class const WorkspaceConversationCommandUsecase({
     required WorkspaceContextSelection selection,
     required Map<String, dynamic> arguments,
     WorkspaceReferenceScope? references,
-  }) async {
-    references ??= WorkspaceReferenceScope(selection, const []);
-    final action = arguments['action'];
-    if (selection.kind == 'folder' &&
-        action != 'createFolder' &&
-        action != 'createTable') {
-      return await _folder(selection, arguments);
-    }
-    if (selection.kind == 'view') return await _view(selection, arguments);
-    if (action == 'createTable' || action == 'createFolder') {
-      return await _createItem(selection, arguments);
-    }
-    final tableId = arguments['tableId'];
-    if (selection.kind != 'table' || tableId != selection.itemId) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final table = await tables.table(selection.itemId);
+  }) => _ItemCommand(this, (
+    selection: selection,
+    arguments: arguments,
+    references: references ?? WorkspaceReferenceScope(selection, const []),
+  )).call();
 
-    return await switch (arguments['action']) {
-      'read' => _read(table, selection, references),
-      'updateRecord' => _update(table, selection, arguments, references),
-      'createRecord' => _createRecord(table, arguments, references),
-      'renameTable' => _renameTable(table, arguments),
-      'saveColumn' => _saveColumn(table, arguments, references),
-      'createView' => _createView(table, arguments),
-      _ => throw const WorkspaceTableException(),
-    };
-  }
+  Future<void> authorizeReceipt(Map<String, Object?> result) =>
+      _ReceiptAuthorization(this, result).call();
+}
 
-  Future<void> authorizeReceipt(Map<String, Object?> result) async {
+class const _ItemCommand(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  bool get creating =>
+      input.arguments['action'] == 'createFolder' ||
+      input.arguments['action'] == 'createTable';
+
+  Future<Map<String, Object?>> call() =>
+      creating && input.selection.kind != 'view'
+      ? _ItemCreation(owner, input).call()
+      : _existing();
+
+  Future<Map<String, Object?>> _existing() => switch (input.selection.kind) {
+    'folder' => _FolderCommand(owner, input).call(),
+    'view' => _ViewCommand(owner, input).call(),
+    _ => _TableCommand(owner, input).call(),
+  };
+}
+
+class const _ReceiptAuthorization(
+  final WorkspaceConversationCommandUsecase owner,
+  final Map<String, Object?> result,
+) {
+  String get id {
     final id = result['id'];
-    if (id is! String) throw const WorkspaceTableException(denied: true);
-    switch (result['kind']) {
-      case 'record':
-        final tableId = result['tableId'];
-        if (tableId is! String) {
-          throw const WorkspaceTableException(denied: true);
-        }
-        final table = await tables.table(tableId);
-        if (!table.canEditRecords) {
-          throw const WorkspaceTableException(denied: true);
-        }
-        final _ = await tables.record(table.id, id);
-      case 'table':
-        final table = await tables.table(id);
-        if (!table.canManage) throw const WorkspaceTableException(denied: true);
-      case 'folder':
-        final organizer = folders;
-        if (organizer == null) {
-          throw const WorkspaceTableException(denied: true);
-        }
-        final candidates = await organizer.list(
-          parentId: result['parentId'] as String?,
-        );
-        if (!candidates.any((folder) => folder.id == id && folder.canManage)) {
-          throw const WorkspaceTableException(denied: true);
-        }
-      case 'view':
-        final manager = views;
-        if (manager == null) throw const WorkspaceTableException(denied: true);
-        final data = await manager.open(id);
-        if (!data.view.canManage) {
-          throw const WorkspaceTableException(denied: true);
-        }
-      default:
-        throw const WorkspaceTableException(denied: true);
+    if (id is! String) _Arguments.denied();
+
+    return id;
+  }
+
+  Future<void> call() => switch (result['kind']) {
+    'record' => _record(),
+    'table' => _table(),
+    'folder' => _folder(),
+    'view' => _view(),
+    _ => _Arguments.denied(),
+  };
+
+  Future<void> _record() async {
+    final table = await owner.tables.table(
+      _Arguments.string(result, 'tableId'),
+    );
+    if (!table.canEditRecords) _Arguments.denied();
+    final _ = await owner.tables.record(table.id, id);
+  }
+
+  Future<void> _table() async {
+    final table = await owner.tables.table(id);
+    if (!table.canManage) _Arguments.denied();
+  }
+
+  Future<void> _folder() async {
+    final manager = owner.folders;
+    if (manager == null) _Arguments.denied();
+    final folders = await manager.list(parentId: result['parentId'] as String?);
+    _requireFolder(folders);
+  }
+
+  void _requireFolder(List<WorkspaceFolder> folders) {
+    final target = id;
+    if (!folders.any((folder) => folder.id == target && folder.canManage)) {
+      _Arguments.denied();
     }
   }
 
-  Future<Map<String, Object?>> _folder(
-    WorkspaceContextSelection selection,
-    Map<String, dynamic> arguments,
-  ) async {
-    final usecase = folders;
-    if (usecase == null) throw const WorkspaceTableException();
-    final candidates = await usecase.list(parentId: selection.parentId);
-    final folder = candidates
-        .where((candidate) => candidate.id == selection.itemId)
-        .firstOrNull;
-    if (folder == null || arguments['id'] != folder.id) {
-      throw const WorkspaceTableException(denied: true);
+  Future<void> _view() async {
+    final manager = owner.views;
+    if (manager == null) _Arguments.denied();
+    final data = await manager.open(id);
+    if (!data.view.canManage) _Arguments.denied();
+  }
+}
+
+class const _FolderCommand(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  OrganizeWorkspaceFoldersUsecase get manager =>
+      owner.folders ?? (throw const WorkspaceTableException());
+
+  Future<Map<String, Object?>> call() async {
+    final folder = await _selected();
+    if (input.arguments['action'] == 'read') {
+      return _Snapshots.folderContent(folder);
     }
-    if (arguments['action'] == 'read') {
-      return {
-        'id': folder.id,
-        'name': folder.name,
-        'revision': folder.revision,
-      };
+
+    return await _rename(folder);
+  }
+
+  Future<WorkspaceFolder> _selected() async {
+    final folder = await _find();
+    if (folder == null || input.arguments['id'] != folder.id) {
+      _Arguments.denied();
     }
-    if (arguments['action'] != 'renameFolder') {
-      throw const WorkspaceTableException();
-    }
-    if (arguments['revision'] != folder.revision) {
-      throw const WorkspaceTableException(conflict: true);
-    }
-    final updated = await usecase.updateMetadata(
+
+    return folder;
+  }
+
+  Future<WorkspaceFolder?> _find() async {
+    final selection = input.selection;
+    final folders = await manager.list(parentId: selection.parentId);
+
+    return folders.where((value) => value.id == selection.itemId).firstOrNull;
+  }
+
+  Future<Map<String, Object?>> _rename(WorkspaceFolder folder) async {
+    _Arguments.action(input.arguments, 'renameFolder');
+    if (input.arguments['revision'] != folder.revision) _Arguments.conflict();
+    final updated = await manager.updateMetadata(
       folder: folder,
-      name: _string(arguments, 'name'),
+      name: _Arguments.string(input.arguments, 'name'),
       parentId: folder.parentId,
     );
 
-    return {
-      'id': updated.id,
-      'kind': 'folder',
-      'parentId': updated.parentId,
-      'revision': updated.revision,
-    };
+    return _Snapshots.folder(updated);
   }
+}
 
-  Future<Map<String, Object?>> _view(
-    WorkspaceContextSelection selection,
-    Map<String, dynamic> arguments,
-  ) async {
-    final usecase = views;
-    if (usecase == null || arguments['id'] != selection.itemId) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final data = await usecase.open(selection.itemId);
+class const _ViewCommand(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  ManageWorkspaceViewsUsecase get manager =>
+      owner.views ?? (throw const WorkspaceTableException(denied: true));
+
+  Future<Map<String, Object?>> call() async {
+    final selected = input.selection.itemId;
+    final arguments = input.arguments;
+    if (arguments['id'] != selected) _Arguments.denied();
+    final data = await manager.open(selected);
     if (arguments['action'] == 'read') {
       return WorkspaceViewMapper.toJson(data.view);
     }
-    if (arguments['action'] != 'saveView') {
-      throw const WorkspaceTableException();
-    }
-    if (arguments['revision'] != data.view.revision ||
-        arguments['schemaRevision'] != data.table.schemaRevision) {
-      throw const WorkspaceTableException(conflict: true);
-    }
-    final bindings = _map(arguments, 'bindings').cast<String, String>();
-    final types = {
-      for (final column in data.table.columns)
-        if (bindings.values.contains(column.id)) column.id: column.type.name,
-    };
-    final saved = await usecase.save(
-      data.view.edited(
-        name: _string(arguments, 'name'),
-        definition: .fromJson(_map(arguments, 'definition')),
-        bindings: bindings,
-        columnTypes: types,
-      ),
-    );
 
-    return {'id': saved.id, 'kind': 'view', 'revision': saved.revision};
+    return await _ViewEdit(manager, data, arguments).save();
+  }
+}
+
+class const _ViewEdit(
+  final ManageWorkspaceViewsUsecase manager,
+  final WorkspaceViewData data,
+  final Map<String, dynamic> arguments,
+) {
+  Future<Map<String, Object?>> save() async {
+    _current();
+    final saved = await manager.save(_edited());
+
+    return _Snapshots.view(saved);
   }
 
-  Future<Map<String, Object?>> _createItem(
-    WorkspaceContextSelection selection,
-    Map<String, dynamic> arguments,
-  ) async {
-    if (selection.kind != 'directory' && selection.kind != 'folder') {
-      throw const WorkspaceTableException(denied: true);
+  void _current() {
+    _Arguments.action(arguments, 'saveView');
+    if (arguments['revision'] != data.view.revision ||
+        arguments['schemaRevision'] != data.table.schemaRevision) {
+      _Arguments.conflict();
     }
-    final parent = selection.kind == 'directory' ? null : selection.itemId;
-    if (arguments['parentId'] != parent) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final name = _string(arguments, 'name');
-    if (arguments['action'] == 'createFolder') {
-      final usecase = folders;
-      if (usecase == null) throw const WorkspaceTableException();
-      final folder = await usecase.create(name: name, parentId: parent);
+  }
 
-      return {
-        'id': folder.id,
-        'kind': 'folder',
-        'revision': folder.revision,
-        'parentId': folder.parentId,
-      };
+  WorkspaceView _edited() {
+    final bindings = _Arguments.map(
+      arguments,
+      'bindings',
+    ).cast<String, String>();
+
+    return data.view.edited(
+      name: _Arguments.string(arguments, 'name'),
+      definition: .fromJson(_Arguments.map(arguments, 'definition')),
+      bindings: bindings,
+      columnTypes: _types(bindings),
+    );
+  }
+
+  Map<String, String> _types(Map<String, String> bindings) => {
+    for (final column in data.table.columns)
+      if (bindings.values.contains(column.id)) column.id: column.type.name,
+  };
+}
+
+class const _ItemCreation(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  String? get parent =>
+      input.selection.kind == 'directory' ? null : input.selection.itemId;
+
+  Future<Map<String, Object?>> call() {
+    _destination();
+
+    return input.arguments['action'] == 'createFolder' ? _folder() : _table();
+  }
+
+  void _destination() {
+    if (!['directory', 'folder'].contains(input.selection.kind) ||
+        input.arguments['parentId'] != parent) {
+      _Arguments.denied();
     }
-    final table = await tables.create(
-      name: name,
-      labelName: _string(arguments, 'labelName'),
+  }
+
+  Future<Map<String, Object?>> _folder() async {
+    final manager = owner.folders;
+    if (manager == null) throw const WorkspaceTableException();
+    final folder = await manager.create(
+      name: _Arguments.string(input.arguments, 'name'),
       parentId: parent,
     );
 
-    return _tableResult(table);
+    return _Snapshots.folder(folder);
   }
 
-  Future<Map<String, Object?>> _createRecord(
-    WorkspaceTable table,
-    Map<String, dynamic> arguments,
-    WorkspaceReferenceScope references,
-  ) async {
-    _currentTable(table, arguments);
-    final values = WorkspaceTableConstraints.defaults(
-      table.columns,
-      _map(arguments, 'values'),
+  Future<Map<String, Object?>> _table() async {
+    final table = await owner.tables.create(
+      name: _Arguments.string(input.arguments, 'name'),
+      labelName: _Arguments.string(input.arguments, 'labelName'),
+      parentId: parent,
     );
-    if (!references.valuesAllowed(_referenceColumns(table), values, const {})) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final record = await tables.createRecord(table: table, values: values);
 
-    return {
-      'id': record.id,
-      'kind': 'record',
-      'tableId': table.id,
-      'revision': record.revision,
-    };
+    return _Snapshots.table(table);
+  }
+}
+
+class const _TableCommand(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  Future<Map<String, Object?>> call() async =>
+      await _dispatch(await _selected());
+
+  Future<WorkspaceTable> _selected() async {
+    final selection = input.selection;
+    if (selection.kind != 'table' ||
+        input.arguments['tableId'] != selection.itemId) {
+      _Arguments.denied();
+    }
+
+    return await owner.tables.table(selection.itemId);
   }
 
-  Future<Map<String, Object?>> _renameTable(
-    WorkspaceTable table,
-    Map<String, dynamic> arguments,
-  ) async {
-    _currentTable(table, arguments);
+  Future<Map<String, Object?>> _dispatch(WorkspaceTable table) =>
+      switch (input.arguments['action']) {
+        'read' => _TableRead(this, table).call(),
+        'updateRecord' => _RecordUpdate(this, table).call(),
+        'createRecord' => _RecordCreation(this, table).call(),
+        'renameTable' => _rename(table),
+        'saveColumn' => _ColumnSave(this, table).call(),
+        'createView' => _ViewCreation(this, table).call(),
+        _ => throw const WorkspaceTableException(),
+      };
 
-    return _tableResult(
-      await tables.updateMetadata(
+  Future<Map<String, Object?>> _rename(WorkspaceTable table) async {
+    _Arguments.current(table, input.arguments);
+
+    return _Snapshots.table(
+      await owner.tables.updateMetadata(
         table: table,
-        name: _string(arguments, 'name'),
+        name: _Arguments.string(input.arguments, 'name'),
         parentId: table.parentId,
       ),
     );
   }
+}
 
-  Future<Map<String, Object?>> _saveColumn(
-    WorkspaceTable table,
-    Map<String, dynamic> arguments,
-    WorkspaceReferenceScope references,
-  ) async {
-    _currentTable(table, arguments);
-    final input = _map(arguments, 'column');
-    final previous =
-        table.columns
-            .where((column) => column.id == input['id'])
-            .firstOrNull
-            ?.toJson() ??
-        <String, Object?>{};
-    final merged = {...previous, ...input};
-    if (!references.columnAllowed(merged, previous)) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final column = WorkspaceColumn.fromJson(merged);
-
-    return _tableResult(await tables.saveColumn(table: table, column: column));
-  }
-
-  Future<Map<String, Object?>> _createView(
-    WorkspaceTable table,
-    Map<String, dynamic> arguments,
-  ) async {
-    _currentTable(table, arguments);
-    final usecase = views;
-    final ids = arguments['columnIds'];
-    if (usecase == null ||
-        ids is! List<Object?> ||
-        ids.any((id) => id is! String)) {
-      throw const WorkspaceTableException();
-    }
-    final view = await usecase.create(
-      name: _string(arguments, 'name'),
+class const _RecordCreation(
+  final _TableCommand command,
+  final WorkspaceTable table,
+) {
+  Future<Map<String, Object?>> call() async {
+    _Arguments.current(table, command.input.arguments);
+    final created = await command.owner.tables.createRecord(
       table: table,
-      columnIds: ids.cast<String>(),
-      parentId: table.parentId,
+      values: _values(),
     );
 
-    return {'id': view.id, 'kind': 'view', 'revision': view.revision};
+    return _Snapshots.record(table.id, created);
   }
 
-  Future<Map<String, Object?>> _read(
-    WorkspaceTable table,
-    WorkspaceContextSelection selection,
-    WorkspaceReferenceScope references,
-  ) async => {
+  Map<String, Object?> _values() {
+    final values = WorkspaceTableConstraints.defaults(
+      table.columns,
+      _Arguments.map(command.input.arguments, 'values'),
+    );
+    if (!command.input.references.valuesAllowed(
+      _Snapshots.columns(table),
+      values,
+      const {},
+    )) {
+      _Arguments.denied();
+    }
+
+    return values;
+  }
+}
+
+class const _RecordUpdate(
+  final _TableCommand command,
+  final WorkspaceTable table,
+) {
+  Future<Map<String, Object?>> call() async {
+    final current = await _selected();
+    final updated = await command.owner.tables.updateRecord(
+      table: table,
+      record: current,
+      values: _values(current),
+    );
+
+    return _Snapshots.record(table.id, updated);
+  }
+
+  Future<WorkspaceRecord> _selected() async {
+    final id = _Arguments.string(command.input.arguments, 'id');
+    if (!command.input.selection.recordIds.contains(id)) _Arguments.denied();
+    final current = await command.owner.tables.record(table.id, id);
+    _current(current);
+
+    return current;
+  }
+
+  void _current(WorkspaceRecord current) {
+    final arguments = command.input.arguments;
+    if (arguments['revision'] != current.revision ||
+        arguments['schemaRevision'] != table.schemaRevision) {
+      _Arguments.conflict();
+    }
+  }
+
+  Map<String, Object?> _values(WorkspaceRecord current) {
+    final values = _Arguments.map(command.input.arguments, 'values');
+    if (!command.input.references.valuesAllowed(
+      _Snapshots.columns(table),
+      values,
+      current.values,
+    )) {
+      _Arguments.denied();
+    }
+
+    return {...current.values, ...values};
+  }
+}
+
+class const _ColumnSave(
+  final _TableCommand command,
+  final WorkspaceTable table,
+) {
+  Future<Map<String, Object?>> call() async {
+    _Arguments.current(table, command.input.arguments);
+    final updated = await command.owner.tables.saveColumn(
+      table: table,
+      column: _column(),
+    );
+
+    return _Snapshots.table(updated);
+  }
+
+  WorkspaceColumn _column() {
+    final input = _Arguments.map(command.input.arguments, 'column');
+    final previous = _previous(input['id']);
+    final merged = {...previous, ...input};
+    if (!command.input.references.columnAllowed(merged, previous)) {
+      _Arguments.denied();
+    }
+
+    return .fromJson(merged);
+  }
+
+  Map<String, Object?> _previous(Object? id) =>
+      table.columns.where((column) => column.id == id).firstOrNull?.toJson() ??
+      const {};
+}
+
+class const _ViewCreation(
+  final _TableCommand command,
+  final WorkspaceTable table,
+) {
+  ManageWorkspaceViewsUsecase get manager =>
+      command.owner.views ?? (throw const WorkspaceTableException());
+
+  Future<Map<String, Object?>> call() async {
+    _Arguments.current(table, command.input.arguments);
+
+    return _Snapshots.view(await _create());
+  }
+
+  Future<WorkspaceView> _create() => manager.create(
+    name: _Arguments.string(command.input.arguments, 'name'),
+    table: table,
+    columnIds: _ids(),
+    parentId: table.parentId,
+  );
+
+  List<String> _ids() {
+    final ids = command.input.arguments['columnIds'];
+    if (ids is! List<Object?> || ids.any((id) => id is! String)) {
+      throw const WorkspaceTableException();
+    }
+
+    return ids.cast<String>();
+  }
+}
+
+class const _TableRead(
+  final _TableCommand command,
+  final WorkspaceTable table,
+) {
+  Future<Map<String, Object?>> call() async => {
+    ..._Snapshots.tableContent(table),
+    'columns': [
+      for (final column in table.columns)
+        command.input.references.readableColumn(column.toJson()),
+    ],
+    'records': await _rows(),
+  };
+
+  Future<List<Map<String, Object?>>> _rows() async => [
+    for (final id in command.input.selection.recordIds)
+      _RecordProjection(
+        table,
+        command.input.references,
+      ).read(await command.owner.tables.record(table.id, id)),
+  ];
+}
+
+class const _RecordProjection(
+  final WorkspaceTable table,
+  final WorkspaceReferenceScope references,
+) {
+  Map<String, Object?> read(WorkspaceRecord record) {
+    final projected = references.projectValues(
+      _Snapshots.columns(table),
+      _visible(record),
+    );
+
+    return {
+      'id': record.id,
+      'revision': record.revision,
+      'values': projected.values,
+      'restrictedReferenceColumns': {
+        ...record.restrictedReferenceColumns,
+        ...projected.restricted,
+      }.toList(),
+    };
+  }
+
+  Map<String, Object?> _visible(WorkspaceRecord record) => {
+    for (final entry in record.values.entries)
+      if (!record.restrictedReferenceColumns.contains(entry.key))
+        entry.key: entry.value,
+  };
+}
+
+abstract final class _Snapshots {
+  static List<Map<String, Object?>> columns(WorkspaceTable table) => [
+    for (final column in table.columns) column.toJson(),
+  ];
+  static Map<String, Object?> table(WorkspaceTable table) => {
+    'id': table.id,
+    'kind': 'table',
+    'revision': table.revision,
+    'schemaRevision': table.schemaRevision,
+  };
+  static Map<String, Object?> tableContent(WorkspaceTable table) => {
     'id': table.id,
     'name': table.name,
     'revision': table.revision,
     'schemaRevision': table.schemaRevision,
     'labelColumnId': table.labelColumnId,
-    'columns': [
-      for (final column in table.columns)
-        references.readableColumn(column.toJson()),
-    ],
-    'records': [
-      for (final id in selection.recordIds)
-        _record(await tables.record(table.id, id), table, references),
-    ],
   };
+  static Map<String, Object?> folder(WorkspaceFolder folder) => {
+    'id': folder.id,
+    'kind': 'folder',
+    'revision': folder.revision,
+    'parentId': folder.parentId,
+  };
+  static Map<String, Object?> folderContent(WorkspaceFolder folder) => {
+    'id': folder.id,
+    'name': folder.name,
+    'revision': folder.revision,
+  };
+  static Map<String, Object?> view(WorkspaceView view) => {
+    'id': view.id,
+    'kind': 'view',
+    'revision': view.revision,
+  };
+  static Map<String, Object?> record(String tableId, WorkspaceRecord record) =>
+      {
+        'id': record.id,
+        'kind': 'record',
+        'tableId': tableId,
+        'revision': record.revision,
+      };
+}
 
-  Future<Map<String, Object?>> _update(
-    WorkspaceTable table,
-    WorkspaceContextSelection selection,
-    Map<String, dynamic> arguments,
-    WorkspaceReferenceScope references,
-  ) async {
-    final id = arguments['id'];
-    if (id is! String || !selection.recordIds.contains(id)) {
-      throw const WorkspaceTableException(denied: true);
+abstract final class _Arguments {
+  static String string(Map<String, Object?> arguments, String key) {
+    final value = arguments[key];
+    if (value is! String) throw const WorkspaceTableException();
+
+    return value;
+  }
+
+  static Map<String, Object?> map(Map<String, Object?> arguments, String key) {
+    final value = arguments[key];
+    if (value is! Map<String, Object?>) throw const WorkspaceTableException();
+
+    return value;
+  }
+
+  static void current(WorkspaceTable table, Map<String, dynamic> arguments) {
+    if (table.revision != arguments['revision'] ||
+        table.schemaRevision != arguments['schemaRevision']) {
+      conflict();
     }
-    final current = await tables.record(table.id, id);
-    if (arguments['revision'] != current.revision ||
-        arguments['schemaRevision'] != table.schemaRevision) {
+  }
+
+  static void action(Map<String, Object?> arguments, String action) {
+    if (arguments['action'] != action) throw const WorkspaceTableException();
+  }
+
+  static Never denied() => throw const WorkspaceTableException(denied: true);
+  static Never conflict() =>
       throw const WorkspaceTableException(conflict: true);
-    }
-    final values = arguments['values'];
-    if (values is! Map<String, Object?>) {
-      throw const WorkspaceTableException();
-    }
-    if (!references.valuesAllowed(
-      _referenceColumns(table),
-      values,
-      current.values,
-    )) {
-      throw const WorkspaceTableException(denied: true);
-    }
-    final updated = await tables.updateRecord(
-      table: table,
-      record: current,
-      values: {...current.values, ...values},
-    );
-
-    return {
-      'id': updated.id,
-      'kind': 'record',
-      'tableId': table.id,
-      'revision': updated.revision,
-    };
-  }
-}
-
-List<Map<String, Object?>> _referenceColumns(WorkspaceTable table) => [
-  for (final column in table.columns) column.toJson(),
-];
-
-Map<String, Object?> _record(
-  WorkspaceRecord record,
-  WorkspaceTable table,
-  WorkspaceReferenceScope references,
-) {
-  final projected = references.projectValues(_referenceColumns(table), {
-    for (final entry in record.values.entries)
-      if (!record.restrictedReferenceColumns.contains(entry.key))
-        entry.key: entry.value,
-  });
-
-  return {
-    'id': record.id,
-    'revision': record.revision,
-    'values': projected.values,
-    'restrictedReferenceColumns': {
-      ...record.restrictedReferenceColumns,
-      ...projected.restricted,
-    }.toList(),
-  };
-}
-
-void _currentTable(WorkspaceTable table, Map<String, dynamic> arguments) {
-  if (table.revision != arguments['revision'] ||
-      table.schemaRevision != arguments['schemaRevision']) {
-    throw const WorkspaceTableException(conflict: true);
-  }
-}
-
-Map<String, Object?> _tableResult(WorkspaceTable table) => {
-  'id': table.id,
-  'kind': 'table',
-  'revision': table.revision,
-  'schemaRevision': table.schemaRevision,
-};
-String _string(Map<String, dynamic> arguments, String key) {
-  final value = arguments[key];
-  if (value is! String) throw const WorkspaceTableException();
-
-  return value;
-}
-
-Map<String, Object?> _map(Map<String, dynamic> arguments, String key) {
-  final value = arguments[key];
-  if (value is! Map<String, Object?>) throw const WorkspaceTableException();
-
-  return value;
 }

@@ -8,51 +8,69 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 class const ProjectWorkspaceChatContextUsecase(
   final WorkspaceConversationToolsUsecase tools,
 ) {
-  Future<List<MessageEntity>> call(List<MessageEntity> messages) async {
-    final result = <MessageEntity>[];
-    for (final message in messages) {
-      final metadata = message.metadata;
-      if (metadata == null) {
-        result.add(message);
-        continue;
-      }
-      final calls = <MessageToolCallEntity>[];
-      for (final call in metadata.toolCalls) {
-        calls.add(
-          call.name == workspaceCommandToolName
-              ? await _project(message.conversationId, call)
-              : call,
-        );
-      }
-      result.add(
-        message.copyWith(metadata: metadata.copyWith(toolCalls: calls)),
-      );
-    }
-
-    return result;
-  }
+  Future<List<MessageEntity>> call(List<MessageEntity> messages) async => [
+    for (final message in messages)
+      await _ProjectedMessage(this, message).read(),
+  ];
 
   Future<MessageToolCallEntity> _project(
     String conversationId,
     MessageToolCallEntity call,
   ) async {
     if (call.isPending) {
-      return call.copyWith(argumentsRaw: '{"action":"read"}', appData: null);
+      return workspaceToolCallForContext(call, workspaceContextUnavailable);
     }
-    var response = workspaceContextUnavailable;
-    try {
-      final input = jsonDecode(call.argumentsRaw) as Map<String, dynamic>;
-      final output = jsonDecode(call.responseRaw ?? '{}');
-      final read = workspaceContextReadArguments(input, output);
-      response = jsonEncode(
-        await tools.call(conversationId: conversationId, arguments: read),
-      );
-    } on Object {
-      response = workspaceContextUnavailable;
-    }
+    final response = await _read(conversationId, call);
 
     return workspaceToolCallForContext(call, projectToolOutput(response).text);
   }
+
+  Future<String> _read(
+    String conversationId,
+    MessageToolCallEntity call,
+  ) async {
+    try {
+      final result = await tools.call(
+        conversationId: conversationId,
+        arguments: _WorkspaceToolContext.arguments(call),
+      );
+
+      return jsonEncode(result);
+    } on Object {
+      return workspaceContextUnavailable;
+    }
+  }
+}
+
+class const _ProjectedMessage(
+  final ProjectWorkspaceChatContextUsecase projector,
+  final MessageEntity message,
+) {
+  Future<MessageEntity> read() async {
+    final metadata = message.metadata;
+    if (metadata == null) return message;
+    final calls = await _calls(metadata.toolCalls);
+
+    return message.copyWith(metadata: metadata.copyWith(toolCalls: calls));
+  }
+
+  Future<List<MessageToolCallEntity>> _calls(
+    List<MessageToolCallEntity> calls,
+  ) async => [
+    for (final call in calls)
+      if (call.name == workspaceCommandToolName)
+        await projector._project(message.conversationId, call)
+      else
+        call,
+  ];
+}
+
+abstract final class _WorkspaceToolContext {
+  static Map<String, dynamic> arguments(MessageToolCallEntity call) =>
+      workspaceContextReadArguments(
+        jsonDecode(call.argumentsRaw) as Map<String, dynamic>,
+        jsonDecode(call.responseRaw ?? '{}'),
+      );
 }
 
 MessageToolCallEntity workspaceToolCallForContext(
@@ -67,26 +85,30 @@ MessageToolCallEntity workspaceToolCallForContext(
         appData: null,
       );
 
-List<MessageEntity> redactWorkspaceToolHistory(List<MessageEntity> messages) {
-  final result = <MessageEntity>[];
-  for (final message in messages) {
+List<MessageEntity> redactWorkspaceToolHistory(List<MessageEntity> messages) =>
+    _WorkspaceHistoryRedaction.all(messages);
+
+abstract final class _WorkspaceHistoryRedaction {
+  static List<MessageEntity> all(List<MessageEntity> messages) => [
+    for (final message in messages) _message(message),
+  ];
+
+  static MessageEntity _message(MessageEntity message) {
     final metadata = message.metadata;
-    if (metadata == null) {
-      result.add(message);
-      continue;
-    }
-    final calls = <MessageToolCallEntity>[];
-    for (final call in metadata.toolCalls) {
-      if (call.name == workspaceCommandToolName) {
-        calls.add(
-          workspaceToolCallForContext(call, workspaceContextUnavailable),
-        );
-      } else {
-        calls.add(call);
-      }
-    }
-    result.add(message.copyWith(metadata: metadata.copyWith(toolCalls: calls)));
+    if (metadata == null) return message;
+
+    return message.copyWith(
+      metadata: metadata.copyWith(toolCalls: _calls(metadata.toolCalls)),
+    );
   }
 
-  return result;
+  static List<MessageToolCallEntity> _calls(
+    List<MessageToolCallEntity> calls,
+  ) => [
+    for (final call in calls)
+      if (call.name == workspaceCommandToolName)
+        workspaceToolCallForContext(call, workspaceContextUnavailable)
+      else
+        call,
+  ];
 }

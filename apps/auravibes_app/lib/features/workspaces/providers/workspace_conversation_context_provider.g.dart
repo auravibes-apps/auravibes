@@ -70,7 +70,7 @@ final class WorkspaceConversationContextUsecaseProvider
 }
 
 String _$workspaceConversationContextUsecaseHash() =>
-    r'1cd3911f87ace4a4c0a8f7ced9040ff194ede402';
+    r'3fa5425c1126dbf3f7cd62fd025e5a4d6681fe7f';
 
 final class WorkspaceConversationContextUsecaseFamily extends $Family
     with

@@ -45,20 +45,30 @@ class const _ViewPicker(final String workspaceId) extends StatelessWidget {
     content: SizedBox(
       width: _pickerExtent,
       height: _pickerExtent,
-      child: ListView(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.folder_outlined),
-            title: const TextLocale(LocaleKeys.workspace_items_title),
-            onTap: () =>
-                Navigator.of(context)
-                    .pop(const WorkspaceChatItem(id: '', kind: 'directory')),
-          ),
-          _TableChoices(workspaceId),
-          SizedBox(height: _pickerExtent / 2, child: _Choices(workspaceId)),
-        ],
-      ),
+      child: _PickerItems(workspaceId),
     ),
+  );
+}
+
+class const _PickerItems(final String workspaceId) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    children: [
+      const _DirectoryChoice(),
+      _TableChoices(workspaceId),
+      SizedBox(height: _pickerExtent / 2, child: _Choices(workspaceId)),
+    ],
+  );
+}
+
+class const _DirectoryChoice() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.folder_outlined),
+    title: const TextLocale(LocaleKeys.workspace_items_title),
+    onTap: () =>
+        Navigator.of(context)
+            .pop(const WorkspaceChatItem(id: '', kind: 'directory')),
   );
 }
 

@@ -1,6 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
+import 'package:auravibes_app/data/repositories/cloud_workspace_context_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
@@ -36,6 +38,8 @@ import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.da
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
@@ -160,6 +164,8 @@ void main() {
         toolsGroupsRepositoryProvider(cloud)
             .overrideWithValue(CloudToolsRepository(.value(gateway))),
         workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
+        workspaceAccessProvider('mirror-a')
+            .overrideWith((_) async => (role: 'owner')),
         appDatabaseProvider.overrideWith((_) => _local('Drift database')),
         conversationRepositoryProvider.overrideWith(
           (_) => _local('conversation repository'),
@@ -202,6 +208,15 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+
+    final contextProvider = workspaceConversationContextUsecaseProvider(
+      'mirror-a',
+    );
+    final contextSubscription = container.listen(contextProvider, (_, _) => 0);
+    addTearDown(contextSubscription.close);
+    final contextManager = await container.read(contextProvider.future);
+    expect(contextManager.workspaceId, '11');
+    expect(contextManager.repository, isA<CloudWorkspaceContextRepository>());
 
     final conversations = conversationsStreamProvider(workspaceId: 'mirror-a');
     final messages = chatMessagesByConversationProvider(
@@ -309,6 +324,15 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+
+    final contextProvider = workspaceConversationContextUsecaseProvider(
+      'local-a',
+    );
+    final contextSubscription = container.listen(contextProvider, (_, _) => 0);
+    addTearDown(contextSubscription.close);
+    final contextManager = await container.read(contextProvider.future);
+    expect(contextManager.workspaceId, 'local-a');
+    expect(contextManager.repository, isA<LocalWorkspaceContextRepository>());
 
     final conversations = conversationsStreamProvider(workspaceId: 'local-a');
     final messages = chatMessagesByConversationProvider(

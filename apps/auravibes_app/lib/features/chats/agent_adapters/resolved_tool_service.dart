@@ -150,16 +150,7 @@ class ResolvedToolService {
     }
 
     if (tool.isWorkspaceCommand) {
-      final commands = workspaceConversationTools;
-      if (commands == null) {
-        throw StateError('Workspace commands are not configured.');
-      }
-
-      return await commands.call(
-        conversationId: conversationId,
-        arguments: arguments,
-        operationId: toolCallId,
-      );
+      return await _workspaceCommand(conversationId, arguments, toolCallId);
     }
     final result = await delegate.call(
       conversationId: conversationId,
@@ -173,6 +164,23 @@ class ResolvedToolService {
       conversationId,
       toolCallId,
       _mcpAppResultData,
+    );
+  }
+
+  Future<Object?> _workspaceCommand(
+    String conversationId,
+    Map<String, dynamic> arguments,
+    String toolCallId,
+  ) async {
+    final commands = workspaceConversationTools;
+    if (commands == null) {
+      throw StateError('Workspace commands are not configured.');
+    }
+
+    return await commands.call(
+      conversationId: conversationId,
+      arguments: arguments,
+      operationId: toolCallId,
     );
   }
 }
