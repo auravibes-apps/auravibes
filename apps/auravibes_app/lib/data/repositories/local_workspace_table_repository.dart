@@ -40,20 +40,24 @@ class const LocalWorkspaceTableRepository(
     required String labelName,
     String? parentId,
     String? aiConversationId,
-  }) => _TableWriter(
-    _database,
-    _workspaceId,
-  ).create(name, labelName, parentId, aiConversationId: aiConversationId);
+  }) => _TableWriter(_database, _workspaceId).create((
+    name: name,
+    labelName: labelName,
+    parentId: parentId,
+    aiConversationId: aiConversationId,
+  ));
   @override
   Future<WorkspaceTable> updateMetadata({
     required WorkspaceTable table,
     required String name,
     required String? parentId,
     String? aiConversationId,
-  }) => _TableWriter(
-    _database,
-    _workspaceId,
-  ).updateMetadata(table, name, parentId, aiConversationId: aiConversationId);
+  }) => _TableWriter(_database, _workspaceId).updateMetadata((
+    table: table,
+    name: name,
+    parentId: parentId,
+    aiConversationId: aiConversationId,
+  ));
 
   @override
   Future<WorkspaceTable> renameLabel({
@@ -99,20 +103,24 @@ class const LocalWorkspaceTableRepository(
     required WorkspaceTable table,
     required Map<String, Object?> values,
     String? aiConversationId,
-  }) => _RecordWriter(
-    _database,
-    _workspaceId,
-  ).create(table, values, aiConversationId: aiConversationId);
+  }) => _RecordWriter(_database, _workspaceId).create((
+    table: table,
+    values: values,
+    applyDefaults: true,
+    aiConversationId: aiConversationId,
+  ));
   @override
   Future<WorkspaceRecord> updateRecord({
     required WorkspaceTable table,
     required WorkspaceRecord record,
     required Map<String, Object?> values,
     String? aiConversationId,
-  }) => _RecordWriter(
-    _database,
-    _workspaceId,
-  ).update(table, record, values, aiConversationId: aiConversationId);
+  }) => _RecordWriter(_database, _workspaceId).update((
+    table: table,
+    record: record,
+    values: values,
+    aiConversationId: aiConversationId,
+  ));
 }
 
 class const _TableProjection(final LocalWorkspaceTableRepository owner) {
@@ -445,66 +453,25 @@ class const _TableWriter(
 ) {
   LocalWorkspaceReferenceValidation get _references =>
       LocalWorkspaceReferenceValidation(_database, _workspaceId);
-  Future<WorkspaceTable> create(
-    String name,
-    String labelName,
-    String? parentId, {
-    String? aiConversationId,
-  }) => _database.transaction(() async {
-    await _checkLocalWorkspace(_database, _workspaceId);
-    await _checkParent(_database, _workspaceId, parentId);
+  Future<WorkspaceTable> create(_TableCreateRequest request) =>
+      _database.transaction(() => _createTableWithAttribution(this, request));
 
-    final created = await _insert((
-      name: name,
-      labelName: labelName,
-      parentId: parentId,
-    ));
-    await _attribute('table', created.id, created.revision, aiConversationId);
-
-    return created;
-  });
-
-  Future<WorkspaceTable> updateMetadata(
-    WorkspaceTable table,
-    String name,
-    String? parentId, {
-    String? aiConversationId,
-  }) => _database.transaction(() async {
-    final row = await _metadataTarget(table, parentId);
-    await _writeMetadata(_database, row, (name: name, parentId: parentId));
-
-    final updated = await _read(table.id);
-    await _attribute('table', updated.id, updated.revision, aiConversationId);
-
-    return updated;
-  });
+  Future<WorkspaceTable> updateMetadata(_TableMetadataRequest request) =>
+      _database.transaction(
+        () => _updateTableMetadataWithAttribution(this, request),
+      );
 
   Future<WorkspaceTable> saveColumn(
     WorkspaceTable table,
     WorkspaceColumn column, {
     String? aiConversationId,
-  }) => _database.transaction(() async {
-    final updated = await _saveColumn(table, column);
-    await _attribute('table', updated.id, updated.revision, aiConversationId);
-
-    return updated;
-  });
-
-  Future<void> _attribute(
-    String kind,
-    String resourceId,
-    int revision,
-    String? conversationId,
-  ) async {
-    if (conversationId == null) return;
-    await LocalWorkspaceHistoryAttribution(_database).aiRevision(
-      workspaceId: _workspaceId,
-      kind: kind,
-      resourceId: resourceId,
-      revision: revision,
-      conversationId: conversationId,
-    );
-  }
+  }) => _database.transaction(
+    () => _saveColumnWithAttribution(this, (
+      table: table,
+      column: column,
+      aiConversationId: aiConversationId,
+    )),
+  );
 
   Future<WorkspaceTableRow> _metadataTarget(
     WorkspaceTable table,
@@ -580,6 +547,127 @@ class const _TableWriter(
   }
 }
 
+typedef _TableCreateRequest = ({
+  String name,
+  String labelName,
+  String? parentId,
+  String? aiConversationId,
+});
+
+typedef _TableMetadataRequest = ({
+  WorkspaceTable table,
+  String name,
+  String? parentId,
+  String? aiConversationId,
+});
+
+Future<WorkspaceTable> _createTableWithAttribution(
+  _TableWriter writer,
+  _TableCreateRequest request,
+) async {
+  await _checkTableCreation(writer, request.parentId);
+
+  return await _insertAttributedTable(writer, request);
+}
+
+Future<void> _checkTableCreation(_TableWriter writer, String? parentId) async {
+  await _checkLocalWorkspace(writer._database, writer._workspaceId);
+  await _checkParent(writer._database, writer._workspaceId, parentId);
+}
+
+Future<WorkspaceTable> _insertAttributedTable(
+  _TableWriter writer,
+  _TableCreateRequest request,
+) async {
+  final created = await writer._insert((
+    name: request.name,
+    labelName: request.labelName,
+    parentId: request.parentId,
+  ));
+  await _attributeRevision((
+    database: writer._database,
+    identity: (
+      workspaceId: writer._workspaceId,
+      kind: 'table',
+      resourceId: created.id,
+      revision: created.revision,
+    ),
+    conversationId: request.aiConversationId,
+  ));
+
+  return created;
+}
+
+Future<WorkspaceTable> _updateTableMetadataWithAttribution(
+  _TableWriter writer,
+  _TableMetadataRequest request,
+) async {
+  final row = await writer._metadataTarget(request.table, request.parentId);
+  await _writeMetadata(writer._database, row, (
+    name: request.name,
+    parentId: request.parentId,
+  ));
+
+  return await _readAttributedTable(writer, request);
+}
+
+Future<WorkspaceTable> _readAttributedTable(
+  _TableWriter writer,
+  _TableMetadataRequest request,
+) async {
+  final updated = await writer._read(request.table.id);
+  await _attributeRevision((
+    database: writer._database,
+    identity: (
+      workspaceId: writer._workspaceId,
+      kind: 'table',
+      resourceId: updated.id,
+      revision: updated.revision,
+    ),
+    conversationId: request.aiConversationId,
+  ));
+
+  return updated;
+}
+
+typedef _RevisionAttributionRequest = ({
+  AppDatabase database,
+  WorkspaceRevisionIdentity identity,
+  String? conversationId,
+});
+
+Future<void> _attributeRevision(_RevisionAttributionRequest request) async {
+  final conversationId = request.conversationId;
+  if (conversationId == null) return;
+  await LocalWorkspaceHistoryAttribution(request.database)
+      .aiRevision(identity: request.identity, conversationId: conversationId);
+}
+
+typedef _SaveColumnRequest = ({
+  WorkspaceTable table,
+  WorkspaceColumn column,
+  String? aiConversationId,
+});
+
+Future<WorkspaceTable> _saveColumnWithAttribution(
+  _TableWriter writer,
+  _SaveColumnRequest request,
+) async {
+  final updated = await writer._saveColumn(request.table, request.column);
+  await _attributeRevision((
+    database: writer._database,
+    identity: (
+      workspaceId: writer._workspaceId,
+      kind: 'table',
+      resourceId: updated.id,
+      revision: updated.revision,
+    ),
+    conversationId: request.aiConversationId,
+  ));
+
+  return updated;
+}
+
 Future<List<WorkspaceColumn>> _updatedColumnDefaults(
   AppDatabase database,
   String workspaceId,
@@ -593,46 +681,11 @@ class const _RecordWriter(
   final AppDatabase _database,
   final String _workspaceId,
 ) {
-  Future<WorkspaceRecord> create(
-    WorkspaceTable table,
-    Map<String, Object?> values, {
-    bool applyDefaults = true,
-    String? aiConversationId,
-  }) => _database.transaction(() async {
-    final created = await _insert(
-      table.id,
-      await _prepare(table, values, applyDefaults: applyDefaults),
-    );
-    await _attribute(created, aiConversationId);
+  Future<WorkspaceRecord> create(_RecordCreateRequest request) =>
+      _database.transaction(() => _createAttributedRecord(this, request));
 
-    return created;
-  });
-
-  Future<WorkspaceRecord> update(
-    WorkspaceTable table,
-    WorkspaceRecord record,
-    Map<String, Object?> values, {
-    String? aiConversationId,
-  }) => _database.transaction(() async {
-    final updated = await _update(table, record, values);
-    await _attribute(updated, aiConversationId);
-
-    return updated;
-  });
-
-  Future<void> _attribute(
-    WorkspaceRecord record,
-    String? conversationId,
-  ) async {
-    if (conversationId == null) return;
-    await LocalWorkspaceHistoryAttribution(_database).aiRevision(
-      workspaceId: _workspaceId,
-      kind: 'record',
-      resourceId: record.id,
-      revision: record.revision,
-      conversationId: conversationId,
-    );
-  }
+  Future<WorkspaceRecord> update(_RecordUpdateRequest request) =>
+      _database.transaction(() => _updateAttributedRecord(this, request));
 
   Future<Map<String, Object?>> _prepare(
     WorkspaceTable table,
@@ -731,6 +784,72 @@ class const _RecordWriter(
     return _record(row);
   }
 }
+
+typedef _RecordCreateRequest = ({
+  WorkspaceTable table,
+  Map<String, Object?> values,
+  bool applyDefaults,
+  String? aiConversationId,
+});
+
+typedef _RecordUpdateRequest = ({
+  WorkspaceTable table,
+  WorkspaceRecord record,
+  Map<String, Object?> values,
+  String? aiConversationId,
+});
+
+Future<WorkspaceRecord> _createAttributedRecord(
+  _RecordWriter writer,
+  _RecordCreateRequest request,
+) async {
+  final created = await _createRecordFromRequest(writer, request);
+  await _attributeRecordRevision(writer, created, request.aiConversationId);
+
+  return created;
+}
+
+Future<WorkspaceRecord> _createRecordFromRequest(
+  _RecordWriter writer,
+  _RecordCreateRequest request,
+) async {
+  final values = await writer._prepare(
+    request.table,
+    request.values,
+    applyDefaults: request.applyDefaults,
+  );
+
+  return await writer._insert(request.table.id, values);
+}
+
+Future<WorkspaceRecord> _updateAttributedRecord(
+  _RecordWriter writer,
+  _RecordUpdateRequest request,
+) async {
+  final updated = await writer._update(
+    request.table,
+    request.record,
+    request.values,
+  );
+  await _attributeRecordRevision(writer, updated, request.aiConversationId);
+
+  return updated;
+}
+
+Future<void> _attributeRecordRevision(
+  _RecordWriter writer,
+  WorkspaceRecord record,
+  String? conversationId,
+) => _attributeRevision((
+  database: writer._database,
+  identity: (
+    workspaceId: writer._workspaceId,
+    kind: 'record',
+    resourceId: record.id,
+    revision: record.revision,
+  ),
+  conversationId: conversationId,
+));
 
 Future<void> _writeMetadata(
   AppDatabase database,
@@ -1008,12 +1127,33 @@ class const _TableDuplicator(final AppDatabase db, final String workspaceId) {
     ).records(source.id);
     _checkCopyRecordCount(originals.length);
     final ids = _copyColumnIds(source, target.id);
-    for (final record in originals) {
-      final _ = await _RecordWriter(
-        db,
-        workspaceId,
-      ).create(target, _copyValues(record.values, ids), applyDefaults: false);
-    }
+    await _insertCopiedRecords((
+      database: db,
+      workspaceId: workspaceId,
+      target: target,
+      records: originals,
+      columnIds: ids,
+    ));
+  }
+}
+
+typedef _CopiedRecordBatch = ({
+  AppDatabase database,
+  String workspaceId,
+  WorkspaceTable target,
+  List<WorkspaceRecord> records,
+  Map<String, String> columnIds,
+});
+
+Future<void> _insertCopiedRecords(_CopiedRecordBatch batch) async {
+  final writer = _RecordWriter(batch.database, batch.workspaceId);
+  for (final record in batch.records) {
+    final _ = await writer.create((
+      table: batch.target,
+      values: _copyValues(record.values, batch.columnIds),
+      applyDefaults: false,
+      aiConversationId: null,
+    ));
   }
 }
 

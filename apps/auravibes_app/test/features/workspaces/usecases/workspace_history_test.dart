@@ -102,10 +102,12 @@ void main() {
       );
       final attribution = LocalWorkspaceHistoryAttribution(fixture.database);
       await attribution.aiRevision(
-        workspaceId: 'local',
-        kind: 'record',
-        resourceId: current.id,
-        revision: current.revision,
+        identity: (
+          workspaceId: 'local',
+          kind: 'record',
+          resourceId: current.id,
+          revision: current.revision,
+        ),
         conversationId: 'conversation-local-1',
       );
 

@@ -40,12 +40,11 @@ class const WorkspaceRecordTrashMenu({
   );
 
   Future<void> _openHistory(BuildContext context) async {
-    final restored = await WorkspaceHistoryPanel.open(
-      context,
-      workspaceId,
-      _target,
+    final restored = await WorkspaceHistoryPanel.open(context, (
+      workspaceId: workspaceId,
+      target: _target,
       canRestore: canTrash,
-    );
+    ));
     if (context.mounted && restored == true) onRestored?.call();
   }
 
