@@ -505,3 +505,72 @@ func TestQuiescenceDrainsAdmittedDownload(t *testing.T) {
 		})
 	}
 }
+
+type finishCheckingLedger struct {
+	*fakeLedger
+	fail  bool
+	valid bool
+}
+
+func (l *finishCheckingLedger) finish(ctx context.Context, key, id string) error {
+	_, bounded := ctx.Deadline()
+	l.valid = bounded && ctx.Err() == nil
+	if !l.valid || l.fail {
+		return errors.New("finish failed")
+	}
+	return l.fakeLedger.finish(ctx, key, id)
+}
+
+type failingBeforeStreamBucket struct {
+	*fakeBucket
+	cancel context.CancelFunc
+}
+
+func (b *failingBeforeStreamBucket) get(context.Context, string) (storedObject, error) {
+	b.cancel()
+	return storedObject{}, errNotFound
+}
+
+type cancelOnFlush struct {
+	*httptest.ResponseRecorder
+	cancel context.CancelFunc
+}
+
+func (w *cancelOnFlush) Flush() { w.ResponseRecorder.Flush(); w.cancel() }
+func TestReadReservationCleanupDetachedFromRequest(t *testing.T) {
+	for _, scenario := range []string{"pre-stream failure", "successful flush", "failed finish"} {
+		t.Run(scenario, func(t *testing.T) {
+			l := &finishCheckingLedger{fakeLedger: newFakeLedger(), fail: scenario == "failed finish"}
+			base := newFakeBucket()
+			g := testGateway(l.fakeLedger, base)
+			g.ledger = l
+			q := url.Values{"sign": {"GET"}, "expires": {strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)}, "response-content-disposition": {"attachment"}, "response-cache-control": {"no-store"}}
+			signed := control(g, "POST", "https://gateway.example/objects/"+testKey+"?"+q.Encode())
+			if signed.Code != 200 {
+				t.Fatal(signed.Code)
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			req := httptest.NewRequest("GET", signed.Body.String(), nil).WithContext(ctx)
+			if scenario == "pre-stream failure" {
+				g.bucket = &failingBeforeStreamBucket{fakeBucket: base, cancel: cancel}
+				g.ServeHTTP(httptest.NewRecorder(), req)
+			} else {
+				base.objects[testKey] = storedObject{body: io.NopCloser(strings.NewReader("data")), size: 4, contentType: "text/plain"}
+				w := &cancelOnFlush{ResponseRecorder: httptest.NewRecorder(), cancel: cancel}
+				g.ServeHTTP(w, req)
+			}
+			if !l.valid {
+				t.Fatal("finish did not use a live bounded context")
+			}
+			got := control(g, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code
+			want := 204
+			if l.fail {
+				want = 409
+			}
+			if got != want {
+				t.Fatalf("quiescence = %d, want %d", got, want)
+			}
+		})
+	}
+}

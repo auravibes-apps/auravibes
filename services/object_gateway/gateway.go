@@ -272,6 +272,7 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 		}
 		obj, err := g.bucket.get(r.Context(), key)
 		if err != nil {
+			g.finishRead(r.Context(), key, reservation)
 			fail(w, err)
 			return
 		}
@@ -286,8 +287,7 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 		if err = http.NewResponseController(w).Flush(); err != nil {
 			return
 		}
-		// A failed finish leaves a durable pending reservation, blocking proof.
-		_ = g.ledger.finish(r.Context(), key, reservation)
+		g.finishRead(r.Context(), key, reservation)
 		return
 	}
 	select {
@@ -320,4 +320,12 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 		return
 	}
 	w.WriteHeader(204)
+}
+
+// The request may be canceled after a pre-stream failure or a successful flush.
+// Use a bounded independent context; a failed finish remains safely pending.
+func (g *gateway) finishRead(ctx context.Context, key, reservation string) {
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), g.requestTimeout)
+	defer cancel()
+	_ = g.ledger.finish(cleanup, key, reservation)
 }
