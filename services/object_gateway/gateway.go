@@ -45,6 +45,7 @@ var keyPattern = regexp.MustCompile(`^[1-9][0-9]*/[a-f0-9]{48}$`)
 var checksumPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 const maxSize = 25 * 1024 * 1024
+const readCleanupTimeout = 2 * time.Second
 
 type gateway struct {
 	ledger         ledger
@@ -325,7 +326,7 @@ func (g *gateway) serveSigned(w http.ResponseWriter, r *http.Request, key, token
 // The request may be canceled after a pre-stream failure or a successful flush.
 // Use a bounded independent context; a failed finish remains safely pending.
 func (g *gateway) finishRead(ctx context.Context, key, reservation string) {
-	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), g.requestTimeout)
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), readCleanupTimeout)
 	defer cancel()
 	_ = g.ledger.finish(cleanup, key, reservation)
 }

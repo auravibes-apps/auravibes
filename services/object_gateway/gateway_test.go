@@ -574,3 +574,39 @@ func TestReadReservationCleanupDetachedFromRequest(t *testing.T) {
 		})
 	}
 }
+
+type stalledFinishLedger struct{ *fakeLedger }
+
+func (l *stalledFinishLedger) finish(ctx context.Context, _, _ string) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+func TestReadCleanupTimeoutReleasesDownloadSlot(t *testing.T) {
+	l := &stalledFinishLedger{newFakeLedger()}
+	base := newFakeBucket()
+	g := testGateway(l.fakeLedger, base)
+	g.ledger = l
+	g.requestTimeout = time.Hour
+	g.downloadSlots = make(chan struct{}, 1)
+	q := url.Values{"sign": {"GET"}, "expires": {strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)}, "response-content-disposition": {"attachment"}, "response-cache-control": {"no-store"}}
+	signed := control(g, "POST", "https://gateway.example/objects/"+testKey+"?"+q.Encode())
+	if signed.Code != 200 {
+		t.Fatal(signed.Code)
+	}
+	done := make(chan struct{})
+	go func() {
+		g.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", signed.Body.String(), nil))
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(readCleanupTimeout + 2*time.Second):
+		t.Fatal("stalled cleanup held download slot")
+	}
+	if len(g.downloadSlots) != 0 {
+		t.Fatal("download slot not released")
+	}
+	if got := control(g, "POST", "https://gateway.example/objects/"+testKey+"?quiesce=1").Code; got != 409 {
+		t.Fatalf("uncertain cleanup attested: %d", got)
+	}
+}
