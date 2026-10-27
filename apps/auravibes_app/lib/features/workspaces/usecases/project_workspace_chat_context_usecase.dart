@@ -32,20 +32,36 @@ class const ProjectWorkspaceChatContextUsecase(
     if (currentTurn && !(call.resultStatus?.isSuccess() ?? false)) {
       return _currentCall(call, jsonEncode({'outcome': 'failed'}));
     }
+    Map<String, Object?>? receipt;
     if (currentTurn && workspaceContextAction(call.arguments) != 'read') {
       try {
-        if (!await tools.verifiedMutation(
+        receipt = await tools.verifiedMutation(
           conversationId: conversationId,
           operationId: call.id,
           arguments: call.arguments,
-        )) {
+        );
+        if (receipt == null) {
           return workspaceToolCallForContext(call, workspaceContextUnavailable);
         }
       } on Object {
         return workspaceToolCallForContext(call, workspaceContextUnavailable);
       }
     }
-    final response = await _read(conversationId, call);
+    final response = await _read(conversationId, call, receipt);
+    if (receipt != null) {
+      try {
+        if (await tools.verifiedMutation(
+              conversationId: conversationId,
+              operationId: call.id,
+              arguments: call.arguments,
+            ) ==
+            null) {
+          return workspaceToolCallForContext(call, workspaceContextUnavailable);
+        }
+      } on Object {
+        return workspaceToolCallForContext(call, workspaceContextUnavailable);
+      }
+    }
 
     if (currentTurn) {
       return _currentCall(
@@ -65,11 +81,12 @@ class const ProjectWorkspaceChatContextUsecase(
   Future<String> _read(
     String conversationId,
     MessageToolCallEntity call,
+    Map<String, Object?>? receipt,
   ) async {
     try {
       final result = await tools.call(
         conversationId: conversationId,
-        arguments: _WorkspaceToolContext.arguments(call),
+        arguments: _WorkspaceToolContext.arguments(call, receipt),
       );
 
       return jsonEncode(result);
@@ -117,11 +134,13 @@ class const _ProjectedMessage(
 }
 
 abstract final class _WorkspaceToolContext {
-  static Map<String, dynamic> arguments(MessageToolCallEntity call) =>
-      workspaceContextReadArguments(
-        jsonDecode(call.argumentsRaw) as Map<String, dynamic>,
-        jsonDecode(call.responseRaw ?? '{}'),
-      );
+  static Map<String, dynamic> arguments(
+    MessageToolCallEntity call,
+    Map<String, Object?>? receipt,
+  ) => workspaceContextReadArguments(
+    jsonDecode(call.argumentsRaw) as Map<String, dynamic>,
+    receipt ?? jsonDecode(call.responseRaw ?? '{}'),
+  );
 }
 
 MessageToolCallEntity workspaceToolCallForContext(

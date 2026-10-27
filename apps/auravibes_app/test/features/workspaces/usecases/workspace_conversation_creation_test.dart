@@ -72,6 +72,22 @@ void main() {
       expect(currentCall.responseRaw, contains('success'));
       expect(currentCall.responseRaw, isNot(contains('private response')));
       expect(currentCall.argumentsRaw, isNot(contains('Created')));
+      final other = await fixture.run('other-table', {
+        'action': 'createTable',
+        'name': 'Other',
+        'labelName': 'Title',
+      });
+      final swapped = calls.toolCalls.single.copyWith(
+        responseRaw: jsonEncode(other),
+      );
+      final projectedSwap = await project([
+        message(user: true),
+        message(user: false, metadata: .new(toolCalls: [swapped])),
+      ]);
+      final swapOutput =
+          projectedSwap.last.metadata!.toolCalls.single.responseRaw!;
+      expect(swapOutput, contains(result['id'] as String));
+      expect(swapOutput, isNot(contains(other['id'] as String)));
       final forged = calls.toolCalls.single.copyWith(
         argumentsRaw: jsonEncode({'action': 'renameTable', 'name': 'forged'}),
       );
@@ -79,7 +95,10 @@ void main() {
         message(user: true),
         message(user: false, metadata: .new(toolCalls: [forged])),
       ]);
-      expect(unverified.last.metadata!.toolCalls.single.responseRaw, workspaceContextUnavailable);
+      expect(
+        unverified.last.metadata!.toolCalls.single.responseRaw,
+        workspaceContextUnavailable,
+      );
       final old = await project([
         message(user: false, metadata: calls),
         message(user: true),
@@ -97,8 +116,10 @@ void main() {
       expect(jsonDecode(failed.last.metadata!.toolCalls.single.responseRaw!), {
         'outcome': 'failed',
       });
-      final _ = await LocalWorkspaceContextRepository(fixture.database, 'one')
-          .save(fixture.conversationId, 'revoke', null);
+      final _ = await LocalWorkspaceContextRepository(
+        fixture.database,
+        'one',
+      ).save(fixture.conversationId, 'revoke', null);
       final revoked = await project([
         message(user: true),
         message(user: false, metadata: calls),
