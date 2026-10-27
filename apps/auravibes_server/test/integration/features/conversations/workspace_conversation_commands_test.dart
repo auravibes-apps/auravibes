@@ -791,6 +791,21 @@ void main() {
       expect(jsonDecode(fresh[2]['content'] as String)['outcome'], 'success');
       expect(jsonEncode(fresh), isNot(contains('Archived unselected value')));
       expect(jsonEncode(fresh), isNot(contains('Raw argument secret')));
+      await ConversationToolCall.db.updateRow(
+        session,
+        rowCall.copyWith(
+          status: 'executionError',
+          resultJson: jsonEncode({'code': 'conflict', 'error': 'secret'}),
+        ),
+      );
+      final failedProjection = await const WorkspacePromptProjection().call(
+        session,
+        turn,
+        history,
+      );
+      expect(failedProjection[2]['content'], contains('Read it again'));
+      expect(failedProjection[2]['content'], isNot(contains('secret')));
+      await ConversationToolCall.db.updateRow(session, rowCall);
       final old = await const WorkspacePromptProjection().call(
         session,
         turn,

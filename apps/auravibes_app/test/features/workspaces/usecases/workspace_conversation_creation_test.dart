@@ -122,6 +122,30 @@ void main() {
         jsonDecode(failed.last.metadata?.toolCalls.single.responseRaw ?? '{}'),
         {'outcome': 'failed'},
       );
+      final safeFailure = failedCall.copyWith(
+        responseRaw: jsonEncode({'code': 'conflict', 'error': 'secret'}),
+      );
+      final projectedFailure = await project([
+        message(user: true),
+        message(user: false, metadata: .new(toolCalls: [safeFailure])),
+      ]);
+      final failureResponse =
+          projectedFailure.last.metadata?.toolCalls.single.responseRaw ?? '';
+      expect(failureResponse, contains('Read it again'));
+      expect(failureResponse, isNot(contains('secret')));
+      final forgedFailure = safeFailure.copyWith(
+        responseRaw: '{"code":"secret"}',
+      );
+      final projectedForged = await project([
+        message(user: true),
+        message(user: false, metadata: .new(toolCalls: [forgedFailure])),
+      ]);
+      expect(
+        jsonDecode(
+          projectedForged.last.metadata?.toolCalls.single.responseRaw ?? '{}',
+        ),
+        {'outcome': 'failed'},
+      );
       final _ = await LocalWorkspaceContextRepository(
         fixture.database,
         'one',

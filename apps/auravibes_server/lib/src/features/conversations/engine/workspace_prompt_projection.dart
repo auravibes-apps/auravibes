@@ -60,7 +60,10 @@ class const WorkspacePromptProjection({
       final inCurrentTurn = current && call.turnId == turn.id;
       final action = inCurrentTurn ? workspaceContextAction(input) : 'read';
       if (inCurrentTurn && call.status != 'success') {
-        return (content: jsonEncode({'outcome': 'failed'}), action: action);
+        return (
+          content: jsonEncode(workspaceFailureContext(call.resultJson)),
+          action: action,
+        );
       }
       final fresh = await _freshFromCall(session, turn, call, input);
       return (

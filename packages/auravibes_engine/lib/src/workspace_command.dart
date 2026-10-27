@@ -6,6 +6,25 @@ import 'package:auravibes_engine/src/workspace_created_context.dart';
 
 export 'package:auravibes_engine/src/workspace_context_selection.dart';
 
+/// Projects only known failure categories from stored tool output.
+Map<String, Object?> workspaceFailureContext(String? raw) {
+  Object? code;
+  try {
+    final decoded = jsonDecode(raw ?? '');
+    if (decoded is Map) code = decoded['code'];
+  } on FormatException {
+    // Malformed stored output has no trusted category.
+  }
+  final message = switch (code) {
+    'unavailable' => 'Workspace item is unavailable. Check the shared context and permissions.',
+    'conflict' => 'Workspace item changed. Read it again before retrying.',
+    'invalid' =>
+      'Workspace request is invalid. Check the arguments and try again.',
+    _ => null,
+  };
+  return {'outcome': 'failed', if (message != null) 'error': message};
+}
+
 /// Limits the serialized result, so provider output remains valid JSON.
 Map<String, Object?> workspaceFileToolResult({
   required String id,

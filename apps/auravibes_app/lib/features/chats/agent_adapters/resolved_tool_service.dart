@@ -186,13 +186,16 @@ class ResolvedToolService {
         operationId: toolCallId,
       );
     } on WorkspaceTableException catch (error, stackTrace) {
-      final message = error.denied
-          ? 'Workspace item is unavailable. Check the shared context and permissions.'
+      final code = error.denied
+          ? 'unavailable'
           : error.conflict
-          ? 'Workspace item changed. Read it again before retrying.'
-          : 'Workspace request is invalid. Check the arguments and try again.';
+          ? 'conflict'
+          : 'invalid';
+      final response = agent.workspaceFailureContext(
+        jsonEncode({'code': code}),
+      );
       throw agent.AgentToolExecutionFailure(
-        responseRaw: jsonEncode({'error': message}),
+        responseRaw: jsonEncode({'code': code, ...response}),
         error: error,
         stackTrace: stackTrace,
         failurePhase: 'workspace.command',

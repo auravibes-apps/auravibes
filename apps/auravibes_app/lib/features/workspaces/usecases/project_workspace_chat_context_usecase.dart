@@ -31,7 +31,10 @@ class const ProjectWorkspaceChatContextUsecase(
       return workspaceToolCallForContext(call, workspaceContextUnavailable);
     }
     if (currentTurn && !(call.resultStatus?.isSuccess() ?? false)) {
-      return _currentCall(call, jsonEncode({'outcome': 'failed'}));
+      return _currentCall(
+        call,
+        jsonEncode(workspaceFailureContext(call.responseRaw)),
+      );
     }
     final action = workspaceContextAction(call.arguments);
     Map<String, Object?>? receipt;

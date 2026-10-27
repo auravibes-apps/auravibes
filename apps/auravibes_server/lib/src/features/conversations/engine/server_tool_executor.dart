@@ -1272,32 +1272,18 @@ class const ServerToolExecutorService({
           request.arguments,
         );
       } on FormatException catch (error, stackTrace) {
-        throw AgentToolExecutionFailure(
-          responseRaw: jsonEncode({
-            'error': 'Workspace request is invalid. Check the arguments and try again.',
-          }),
-          error: error,
-          stackTrace: stackTrace,
-          failurePhase: 'workspace.command',
-        );
+        throw _workspaceFailure('invalid', error, stackTrace);
       } on CloudWorkspaceException catch (error, stackTrace) {
-        final message = switch (error.code) {
-          .conflict || .staleRevision =>
-            'Workspace item changed. Read it again before retrying.',
-          .validationFailed || .invalidCursor =>
-            'Workspace request is invalid. Check the arguments and try again.',
+        final code = switch (error.code) {
+          .conflict || .staleRevision => 'conflict',
+          .validationFailed || .invalidCursor => 'invalid',
           .permissionDenied ||
           .membershipRequired ||
           .workspaceNotFound ||
-          .authenticationRequired => 'Workspace item is unavailable. Check the shared context and permissions.',
-          _ => 'Workspace request failed. Try again or check the workspace.',
+          .authenticationRequired => 'unavailable',
+          _ => '',
         };
-        throw AgentToolExecutionFailure(
-          responseRaw: jsonEncode({'error': message}),
-          error: error,
-          stackTrace: stackTrace,
-          failurePhase: 'workspace.command',
-        );
+        throw _workspaceFailure(code, error, stackTrace);
       }
     }
 
@@ -3042,4 +3028,18 @@ ServerToolRequest _readRequest(Map<String, dynamic> arguments) => .new(
   id: '',
   name: executeConnectorToolName,
   arguments: arguments,
+);
+
+AgentToolExecutionFailure _workspaceFailure(
+  String code,
+  Object error,
+  StackTrace stackTrace,
+) => AgentToolExecutionFailure(
+  responseRaw: jsonEncode({
+    'code': code,
+    ...workspaceFailureContext(jsonEncode({'code': code})),
+  }),
+  error: error,
+  stackTrace: stackTrace,
+  failurePhase: 'workspace.command',
 );
