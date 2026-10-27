@@ -77,6 +77,7 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   SurfaceController _controller = .new(catalogs: auraChatCatalogs());
   var _failed = false;
   var _conflicted = false;
+  var _hideStaleContent = false;
   var _submitting = false;
   String? _statusKey;
   Map<String, String> _formErrors = const {};
@@ -122,16 +123,19 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
       final actionChanged =
           jsonEncode(oldWidget.data.view.action?.toJson()) !=
           jsonEncode(widget.data.view.action?.toJson());
-      if (jsonEncode(previous) != jsonEncode(current) || actionChanged) {
+      final envelopeChanged = jsonEncode(previous) != jsonEncode(current);
+      if (envelopeChanged || actionChanged) {
         if (oldWidget.data.view.action != null ||
             widget.data.view.action != null) {
           _conflicted = true;
+          _hideStaleContent = _hideStaleContent || envelopeChanged;
         } else {
           _load();
         }
       }
     } on Object {
       _conflicted = true;
+      _hideStaleContent = true;
     }
   }
 
@@ -158,7 +162,7 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
             onPressed: () => unawaited(_confirmRefresh()),
             child: const TextLocale(LocaleKeys.skills_selector_refresh),
           ),
-        content,
+        Offstage(offstage: _hideStaleContent, child: content),
       ],
     );
   }
@@ -184,6 +188,7 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
     if (confirmed != true || !mounted) return;
     setState(() {
       _conflicted = false;
+      _hideStaleContent = false;
       _load();
     });
   }

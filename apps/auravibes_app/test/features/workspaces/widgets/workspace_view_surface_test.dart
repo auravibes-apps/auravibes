@@ -135,6 +135,44 @@ void main() {
     data.dispose();
   });
 
+  testWidgets('redacted data hides stale surface from interaction', (
+    tester,
+  ) async {
+    final model = ValueNotifier<Map<String, Object?>>({
+      'answers': {'query': 'previously visible secret'},
+    });
+    final data = _data();
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'workspace',
+          child: ValueListenableBuilder<Map<String, Object?>>(
+            valueListenable: model,
+            builder: (context, value, child) => WorkspaceViewSurface(
+              data: data,
+              workspaceId: 'workspace',
+              connectedModel: value,
+            ),
+          ),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('previously visible secret'), findsOneWidget);
+    model.value = {'answers': <String, Object?>{}};
+    await tester.pumpAndSettle();
+    expect(find.text('previously visible secret'), findsNothing);
+    expect(find.byType(EditableText), findsNothing);
+    expect(find.byType(EditableText, skipOffstage: false), findsOneWidget);
+    expect(
+      find.text('This view changed. Refresh it before submitting again.'),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    model.dispose();
+  });
+
   testWidgets('invalid form values show an actionable message', (tester) async {
     var calls = 0;
     await _pump(

@@ -125,39 +125,48 @@ class const _BrowserSessionView({
         tabs.items.value.length +
         (tabs.directoryOpen.value ? 1 : 0) +
         (tabs.selected.value == 'chooser' ? 1 : 0);
-    useEffect(() {
-      var mounted = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) count.value = tabCount;
-      });
-
-      return () => mounted = false;
-    }, [count, tabCount]);
-    final resultKeys = [request.selectedToolResultTabId];
-    useEffect(() {
-      if (request.selectedToolResultTabId != null) {
+    useEffect(
+      () {
+        var mounted = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) tabs.selected.value = null;
+          if (mounted) count.value = tabCount;
         });
-      }
 
-      return null;
-    }, [...resultKeys]);
+        return () => mounted = false;
+      },
+      [count, tabCount], // Update the badge when tabs change.
+    );
+    final resultKeys = [request.selectedToolResultTabId];
+    useEffect(
+      () {
+        if (request.selectedToolResultTabId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) tabs.selected.value = null;
+          });
+        }
+
+        return null;
+      },
+      resultKeys, // Follow the selected tool result.
+    );
     final requested = ref.watch(
       workspaceOpenViewProvider(request.workspaceId, request.conversationId),
     );
     final requestedKeys = [requested];
-    useEffect(() {
-      if (requested != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted) return;
-          request.onSelectToolResultTab(null);
-          tabs.open(requested);
-        });
-      }
+    useEffect(
+      () {
+        if (requested != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            request.onSelectToolResultTab(null);
+            tabs.open(requested);
+          });
+        }
 
-      return null;
-    }, [...requestedKeys]);
+        return null;
+      },
+      requestedKeys, // Open workspace requests in their own tab.
+    );
     ref.listen(
       workspaceOpenViewProvider(request.workspaceId, request.conversationId),
       (previous, next) {
