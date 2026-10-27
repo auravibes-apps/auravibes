@@ -100,12 +100,14 @@ class _WorkspaceViewToolObserverState
   }
 
   Future<void> _open(String id, int sequence) async {
+    if (!mounted || sequence != _sequence) return;
     final workspaceId = widget.workspaceId;
     final conversationId = widget.conversationId;
     try {
       final views = await ref.read(
         workspaceViewUsecaseProvider(workspaceId).future,
       );
+      if (!_isCurrent(workspaceId, conversationId, sequence)) return;
       final _ = await views.open(id);
       if (!_isCurrent(workspaceId, conversationId, sequence)) return;
       ref.invalidate(workspaceViewDataProvider(workspaceId, id));

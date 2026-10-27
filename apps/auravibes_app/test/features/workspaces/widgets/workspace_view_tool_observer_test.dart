@@ -56,7 +56,10 @@ void main() {
     (tester) async {
       final stream = StreamController<List<MessageEntity>>();
       addTearDown(stream.close);
+      final workspace = ValueNotifier('ws');
+      addTearDown(workspace.dispose);
       final views = _Views();
+      when(() => views.open('stale')).thenThrow(StateError('transient'));
       when(() => views.open('allowed')).thenAnswer((_) async => _ViewData());
       when(() => views.open('denied'))
           .thenThrow(const WorkspaceTableException(denied: true));
@@ -73,35 +76,42 @@ void main() {
             'ws',
             'chat',
           ).overrideWith((ref) => stream.stream),
+          chatMessagesProvider(
+            'other',
+            'chat',
+          ).overrideWith((ref) => const Stream.empty()),
           workspaceViewUsecaseProvider('ws').overrideWith((ref) async => views),
         ],
       );
       addTearDown(container.dispose);
       await tester.runAsync(() async {
         await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: EasyLocalization(
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            startLocale: const Locale('en'),
-            child: Builder(
-              builder: (context) => MaterialApp(
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-                home: const Scaffold(
-                  body: WorkspaceViewToolObserver(
-                    workspaceId: 'ws',
-                    conversationId: 'chat',
-                    child: SizedBox(),
+          UncontrolledProviderScope(
+            container: container,
+            child: EasyLocalization(
+              supportedLocales: const [Locale('en')],
+              path: 'assets/i18n',
+              startLocale: const Locale('en'),
+              child: Builder(
+                builder: (context) => MaterialApp(
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                  home: Scaffold(
+                    body: ValueListenableBuilder<String>(
+                      valueListenable: workspace,
+                      builder: (_, id, _) => WorkspaceViewToolObserver(
+                        workspaceId: id,
+                        conversationId: 'chat',
+                        child: const SizedBox(),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
       });
       await tester.pumpAndSettle();
       final provider = workspaceOpenViewProvider('ws', 'chat');
@@ -150,6 +160,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(container.read(provider)?.id, 'retry');
       expect(retryCount, 2);
+      stream.add([
+        _message([_call('stale-call', 'stale')]),
+      ]);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(SnackBarAction), findsOneWidget);
+      workspace.value = 'other';
+      await tester.pump();
+      await tester.tap(find.byType(SnackBarAction));
+      await tester.pump();
+      verify(() => views.open('stale')).called(1);
     },
   );
 }
