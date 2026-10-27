@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -8,19 +9,55 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 class const ProjectWorkspaceChatContextUsecase(
   final WorkspaceConversationToolsUsecase tools,
 ) {
-  Future<List<MessageEntity>> call(List<MessageEntity> messages) async => [
-    for (final message in messages)
-      await _ProjectedMessage(this, message).read(),
-  ];
+  Future<List<MessageEntity>> call(List<MessageEntity> messages) async {
+    final lastUser = messages.lastIndexWhere((message) => message.isUser);
+    return [
+      for (var i = 0; i < messages.length; i++)
+        await _ProjectedMessage(
+          this,
+          messages[i],
+          lastUser >= 0 && i > lastUser,
+        ).read(),
+    ];
+  }
 
   Future<MessageToolCallEntity> _project(
     String conversationId,
     MessageToolCallEntity call,
+    bool currentTurn,
   ) async {
     if (call.isPending) {
       return workspaceToolCallForContext(call, workspaceContextUnavailable);
     }
+    if (currentTurn && !(call.resultStatus?.isSuccess() ?? false)) {
+      return _currentCall(call, jsonEncode({'outcome': 'failed'}));
+    }
+    if (currentTurn && workspaceContextAction(call.arguments) != 'read') {
+      try {
+        if (!await tools.verifiedMutation(
+          conversationId: conversationId,
+          operationId: call.id,
+          arguments: call.arguments,
+        )) {
+          return workspaceToolCallForContext(call, workspaceContextUnavailable);
+        }
+      } on Object {
+        return workspaceToolCallForContext(call, workspaceContextUnavailable);
+      }
+    }
     final response = await _read(conversationId, call);
+
+    if (currentTurn) {
+      return _currentCall(
+        call,
+        response == workspaceContextUnavailable
+            ? response
+            : jsonEncode({
+                'outcome': 'success',
+                'current': jsonDecode(response),
+              }),
+      );
+    }
 
     return workspaceToolCallForContext(call, projectToolOutput(response).text);
   }
@@ -42,9 +79,23 @@ class const ProjectWorkspaceChatContextUsecase(
   }
 }
 
+MessageToolCallEntity _currentCall(
+  MessageToolCallEntity call,
+  String response,
+) {
+  final action = workspaceContextAction(call.arguments);
+  return call.copyWith(
+    argumentsRaw: jsonEncode({'action': action}),
+    responseRaw: projectToolOutput(response).text,
+    responseContextRaw: projectToolOutput(response).text,
+    appData: null,
+  );
+}
+
 class const _ProjectedMessage(
   final ProjectWorkspaceChatContextUsecase projector,
   final MessageEntity message,
+  final bool currentTurn,
 ) {
   Future<MessageEntity> read() async {
     final metadata = message.metadata;
@@ -59,7 +110,7 @@ class const _ProjectedMessage(
   ) async => [
     for (final call in calls)
       if (call.name == workspaceCommandToolName)
-        await projector._project(message.conversationId, call)
+        await projector._project(message.conversationId, call, currentTurn)
       else
         call,
   ];

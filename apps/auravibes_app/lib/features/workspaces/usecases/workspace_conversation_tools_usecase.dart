@@ -25,6 +25,24 @@ class const WorkspaceConversationToolsUsecase({
   commands,
   final LocalWorkspaceCommandRepository? receipts,
 }) {
+  Future<bool> verifiedMutation({
+    required String conversationId,
+    required String operationId,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final store = receipts;
+    if (store == null || operationId.isEmpty) return false;
+    final target = await _target(conversationId);
+    final shared = await _selection(target);
+    return await store.matches(
+      workspaceId: target.workspaceId,
+      conversationId: target.conversationId,
+      selectionId: shared.epoch,
+      requestId: operationId,
+      arguments: arguments,
+    );
+  }
+
   Future<Object?> call({
     required String conversationId,
     required Map<String, dynamic> arguments,

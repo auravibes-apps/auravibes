@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
@@ -6,16 +8,107 @@ import 'package:auravibes_app/data/repositories/local_workspace_record_query_rep
 import 'package:auravibes_app/data/repositories/local_workspace_reference_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:drift/native.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'current action outcome stays visible without replaying raw data',
+    () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.database.close);
+      final result = await fixture.run('new-table', {
+        'action': 'createTable',
+        'name': 'Created',
+        'labelName': 'Title',
+      });
+      MessageEntity message({
+        required bool user,
+        MessageMetadataEntity? metadata,
+      }) => MessageEntity(
+        id: user ? 'prompt' : 'answer',
+        conversationId: fixture.conversationId,
+        content: '',
+        messageType: user ? .text : .toolCall,
+        isUser: user,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: metadata,
+      );
+      final calls = MessageMetadataEntity(
+        toolCalls: [
+          MessageToolCallEntity(
+            id: 'new-table',
+            name: workspaceCommandToolName,
+            argumentsRaw: jsonEncode({
+              'action': 'createTable',
+              'name': 'Created',
+              'labelName': 'Title',
+            }),
+            responseRaw: jsonEncode({...result, 'secret': 'private response'}),
+            resultStatus: .success,
+          ),
+        ],
+      );
+      final project = ProjectWorkspaceChatContextUsecase(
+        fixture.service(fixture.tables),
+      );
+      final current = await project([
+        message(user: true),
+        message(user: false, metadata: calls),
+      ]);
+      final currentCall = current.last.metadata!.toolCalls.single;
+      expect(jsonDecode(currentCall.argumentsRaw), {'action': 'createTable'});
+      expect(currentCall.responseRaw, contains('success'));
+      expect(currentCall.responseRaw, isNot(contains('private response')));
+      expect(currentCall.argumentsRaw, isNot(contains('Created')));
+      final forged = calls.toolCalls.single.copyWith(
+        argumentsRaw: jsonEncode({'action': 'renameTable', 'name': 'forged'}),
+      );
+      final unverified = await project([
+        message(user: true),
+        message(user: false, metadata: .new(toolCalls: [forged])),
+      ]);
+      expect(unverified.last.metadata!.toolCalls.single.responseRaw, workspaceContextUnavailable);
+      final old = await project([
+        message(user: false, metadata: calls),
+        message(user: true),
+      ]);
+      expect(jsonDecode(old.first.metadata!.toolCalls.single.argumentsRaw), {
+        'action': 'read',
+      });
+      final failedCall = calls.toolCalls.single.copyWith(
+        resultStatus: .executionError,
+      );
+      final failed = await project([
+        message(user: true),
+        message(user: false, metadata: .new(toolCalls: [failedCall])),
+      ]);
+      expect(jsonDecode(failed.last.metadata!.toolCalls.single.responseRaw!), {
+        'outcome': 'failed',
+      });
+      final _ = await LocalWorkspaceContextRepository(fixture.database, 'one')
+          .save(fixture.conversationId, 'revoke', null);
+      final revoked = await project([
+        message(user: true),
+        message(user: false, metadata: calls),
+      ]);
+      expect(
+        revoked.last.metadata!.toolCalls.single.responseRaw,
+        workspaceContextUnavailable,
+      );
+    },
+  );
   test(
     'shared Directory root can be read without disclosing children',
     () async {

@@ -463,6 +463,7 @@ void main() {
         'name': 'Updated group',
       });
       final history = <Map<String, dynamic>>[
+        {'role': 'user', 'content': 'Create a record'},
         {
           'role': 'assistant',
           'tool_calls': [
@@ -488,8 +489,27 @@ void main() {
         history,
       );
       expect(jsonEncode(fresh), contains('Current selected value'));
+      final projectedCall = (fresh[1]['tool_calls'] as List).single as Map;
+      expect(
+        jsonDecode((projectedCall['function'] as Map)['arguments'] as String),
+        {'action': 'createRecord'},
+      );
+      expect(jsonDecode(fresh[2]['content'] as String)['outcome'], 'success');
       expect(jsonEncode(fresh), isNot(contains('Archived unselected value')));
       expect(jsonEncode(fresh), isNot(contains('Raw argument secret')));
+      final old = await const WorkspacePromptProjection().call(
+        session,
+        turn,
+        [
+          ...history,
+          {'role': 'user', 'content': 'Later'},
+        ],
+      );
+      final oldCall = (old[1]['tool_calls'] as List).single as Map;
+      expect(
+        jsonDecode((oldCall['function'] as Map)['arguments'] as String),
+        {'action': 'read'},
+      );
       await select(null);
       final revoked = await const WorkspacePromptProjection().call(
         session,

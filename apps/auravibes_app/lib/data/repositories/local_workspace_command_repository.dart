@@ -27,6 +27,20 @@ class const LocalWorkspaceCommandRepository(final AppDatabase database) {
     String conversationId,
     String selectionId,
   ) => _ReceiptRows(database, workspaceId, conversationId).created(selectionId);
+
+  Future<bool> matches({
+    required String workspaceId,
+    required String conversationId,
+    required String selectionId,
+    required String requestId,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final row = await _ReceiptRows(database, workspaceId, conversationId)
+        .find(requestId);
+    return row != null &&
+        row.selectionId == selectionId &&
+        row.digest == _ReceiptCodec.digest(arguments);
+  }
 }
 
 class _ReceiptTransaction(

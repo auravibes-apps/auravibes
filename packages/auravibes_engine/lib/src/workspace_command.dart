@@ -6,6 +6,26 @@ export 'package:auravibes_engine/src/workspace_context_selection.dart';
 
 const workspaceCommandToolName = 'workspace_item';
 const workspaceCommandTableId = 'host.workspace.item';
+const workspaceCommandActions = <String>[
+  'read',
+  'createFolder',
+  'renameFolder',
+  'createTable',
+  'renameTable',
+  'createRecord',
+  'updateRecord',
+  'saveColumn',
+  'createView',
+  'saveView',
+];
+
+/// Only fixed action names may survive prompt redaction.
+String workspaceContextAction(Object? input) {
+  final action = input is Map ? input['action'] : null;
+  return action is String && workspaceCommandActions.contains(action)
+      ? action
+      : 'read';
+}
 
 /// Commands carry IDs and expected revisions; hosts own grants and execution.
 ToolSpec workspaceCommandToolSpec() => ToolSpec(
@@ -36,21 +56,7 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
   inputJsonSchema: const {
     'type': 'object',
     'properties': {
-      'action': {
-        'type': 'string',
-        'enum': [
-          'read',
-          'createFolder',
-          'renameFolder',
-          'createTable',
-          'renameTable',
-          'createRecord',
-          'updateRecord',
-          'saveColumn',
-          'createView',
-          'saveView',
-        ],
-      },
+      'action': {'type': 'string', 'enum': workspaceCommandActions},
       'id': {
         'type': 'string',
         'description': 'Selected folder, view, or record ID.',
