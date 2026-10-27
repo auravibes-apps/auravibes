@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -39,7 +38,7 @@ void main() {
         workspaceSessionForRouteProvider.overrideWith((_, _) => session.future),
         workspaceConversationCommandUsecaseProvider.overrideWith(
           (_, _) async => WorkspaceConversationCommandUsecase(
-            tables: OrganizeWorkspaceTablesUsecase(
+            tables: .new(
               LocalWorkspaceTableRepository(database, 'one'),
             ),
           ),
