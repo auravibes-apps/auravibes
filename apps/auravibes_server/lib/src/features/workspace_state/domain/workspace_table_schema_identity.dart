@@ -19,7 +19,7 @@ abstract final class WorkspaceTableSchemaIdentity {
   static Map<String, Object?> _defaults(Map column) {
     final values = Map<String, Object?>.from(column);
     values['options'] ??= const [];
-    values['required'] ??= false;
+    values['required'] = false;
     values['unique'] ??= false;
     values['timeZone'] ??= 'UTC';
     if (values['defaultValue'] == null) values.remove('defaultValue');

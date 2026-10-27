@@ -11,6 +11,136 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Workspace constraints', (sessionBuilder, endpoints) {
+    test(
+      'explicit nulls create empty rows without applying defaults',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              session,
+              name: 'Nullable',
+              ownerUserId: userId,
+              now: DateTime.now().toUtc(),
+            );
+        Future<PatchWorkspaceStateResponse> patch(
+          WorkspacePatchOperation operation,
+        ) => endpoints.workspaceState.patch(
+          authenticated,
+          PatchWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            requestId: const Uuid().v4().toString(),
+            operations: [operation],
+          ),
+        );
+        final targetId = const Uuid().v4().toString();
+        await patch(
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: targetId,
+            fieldMask: const [],
+            data: jsonEncode({
+              'name': 'Target',
+              'labelColumnId': 'label',
+              'schemaRevision': 1,
+              'columns': [
+                {'id': 'label', 'name': 'Title', 'type': 'text'},
+              ],
+            }),
+          ),
+        );
+        final tableId = const Uuid().v4().toString();
+        final table = await patch(
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: tableId,
+            fieldMask: const [],
+            data: jsonEncode({
+              'name': 'Items',
+              'labelColumnId': 'label',
+              'schemaRevision': 1,
+              'columns': [
+                {
+                  'id': 'label',
+                  'name': 'Title',
+                  'type': 'text',
+                  'required': true,
+                  'defaultValue': 'name',
+                },
+                {
+                  'id': 'value',
+                  'name': 'Value',
+                  'type': 'number',
+                  'required': true,
+                  'unique': true,
+                  'defaultValue': 5,
+                },
+                {
+                  'id': 'checked',
+                  'name': 'Checked',
+                  'type': 'checkbox',
+                  'defaultValue': true,
+                },
+                {
+                  'id': 'link',
+                  'name': 'Link',
+                  'type': 'reference',
+                  'targetTableId': targetId,
+                },
+              ],
+            }),
+          ),
+        );
+        final columns =
+            (jsonDecode(table.resources.single.data) as Map)['columns'] as List;
+        expect(columns.every((c) => (c as Map)['required'] != true), isTrue);
+        for (var i = 0; i < 2; i++) {
+          final response = await patch(
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: const Uuid().v4().toString(),
+              fieldMask: const [],
+              data: jsonEncode({
+                'tableId': tableId,
+                'schemaRevision': 1,
+                'values': {
+                  'label': null,
+                  'value': null,
+                  'checked': null,
+                  'link': null,
+                },
+              }),
+            ),
+          );
+          expect(
+            (jsonDecode(response.resources.single.data) as Map)['values'],
+            {'label': null, 'value': null, 'checked': null, 'link': null},
+          );
+        }
+      },
+    );
+
     test('concurrent unique defaults persist once and rejected schema preserves data', () async {
       final userId = const Uuid().v4().toString();
       final authenticated = sessionBuilder.copyWith(
@@ -148,22 +278,37 @@ void main() {
         successful.single,
       );
       final record = replay.resources.single;
-      await expectLater(
-        patch(
-          WorkspacePatchOperation(
-            operation: .update,
-            resourceKind: .tableRecord,
-            resourceId: record.resourceId,
-            expectedRevision: 1,
-            data: jsonEncode({
-              'tableId': tableId,
-              'schemaRevision': 1,
-              'values': <String, Object?>{},
-            }),
-            fieldMask: const [],
-          ),
+      final cleared = await patch(
+        WorkspacePatchOperation(
+          operation: .update,
+          resourceKind: .tableRecord,
+          resourceId: record.resourceId,
+          expectedRevision: 1,
+          data: jsonEncode({
+            'tableId': tableId,
+            'schemaRevision': 1,
+            'values': <String, Object?>{},
+          }),
+          fieldMask: const [],
         ),
-        throwsA(isA<CloudWorkspaceException>()),
+      );
+      expect(
+        (jsonDecode(cleared.resources.single.data) as Map)['values'],
+        isEmpty,
+      );
+      await patch(
+        WorkspacePatchOperation(
+          operation: .update,
+          resourceKind: .tableRecord,
+          resourceId: record.resourceId,
+          expectedRevision: 2,
+          data: jsonEncode({
+            'tableId': tableId,
+            'schemaRevision': 1,
+            'values': {'value': 5, 'contact': 'person@example.com'},
+          }),
+          fieldMask: const [],
+        ),
       );
 
       final safe = {

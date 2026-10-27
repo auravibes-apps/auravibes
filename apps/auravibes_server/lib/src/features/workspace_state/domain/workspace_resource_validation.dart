@@ -67,6 +67,12 @@ class WorkspaceResourceValidation {
       throw const FormatException();
     }
     _validateKind(kind, decoded);
+    if (kind == .table) {
+      for (final column
+          in (decoded['columns'] as List).cast<Map<String, dynamic>>()) {
+        column['required'] = false;
+      }
+    }
     if (kind == .workspaceSetting && resourceId == 'history-retention') {
       WorkspaceHistoryRetentionValidation.data(decoded);
     }

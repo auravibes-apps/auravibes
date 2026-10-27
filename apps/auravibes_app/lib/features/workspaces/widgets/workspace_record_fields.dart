@@ -47,7 +47,7 @@ class const _RecordValue({
   required final ValueNotifier<Map<String, Object?>> draft,
   required final bool disabled,
 }) extends StatelessWidget {
-  bool get present => draft.value.containsKey(column.id);
+  bool get present => draft.value[column.id] != null;
   String get identifier => column.id == table.labelColumnId
       ? 'workspace_record_value'
       : 'workspace_record_value_${column.id}';
@@ -77,8 +77,6 @@ class const _RecordConstraintHints({required final WorkspaceColumn column})
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .start,
     children: [
-      if (column.isRequired)
-        const TextLocale(LocaleKeys.workspace_items_required),
       if (column.isUnique) const TextLocale(LocaleKeys.workspace_items_unique),
     ],
   );

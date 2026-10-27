@@ -192,13 +192,8 @@ void main() {
       await flush();
       await tester.tap(find.text('Number').last);
       await flush();
-      await tester.tap(find.text('Required'));
-      await tester.tap(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is AuraCheckboxListTile && widget.semanticLabel == 'Count',
-        ),
-      );
+      expect(find.text('Required'), findsNothing);
+      await tester.tap(find.byType(AuraCheckboxListTile).last);
       await flush();
       await tester.enterText(input('workspace_column_default'), '2.5');
       await tester.runAsync(() => tester.tap(button('workspace_column_save')));
@@ -227,7 +222,7 @@ void main() {
       await flush();
       await tester.runAsync(() async {
         final table = (await tables.list()).single;
-        expect(table.columns.last.isRequired, true);
+        expect(table.columns.last.isRequired, false);
         expect(table.columns.last.defaultValue, 2.5);
         final record = (await tables.records(table.id)).single;
         expect(record.values[table.columns.last.id], 0);

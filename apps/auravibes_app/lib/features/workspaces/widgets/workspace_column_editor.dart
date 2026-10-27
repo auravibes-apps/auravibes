@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -7,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_attachment_f
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_constraints.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_violations.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_dependency.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_target.dart';
@@ -25,17 +28,19 @@ class const WorkspaceColumnEditor({
   required final WorkspaceTable table,
   required final WorkspaceColumn? column,
   required final VoidCallback onBack,
+  final WorkspaceColumnType initialType = .text,
+  final bool compact = false,
   super.key,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final draft = _ColumnActions.use(context, column);
+    final draft = _ColumnActions.use(context, column, initialType);
 
-    return _ColumnForm(
-      editor: this,
-      draft: draft,
-      onSave: () => _ColumnActions.save(ref, this, draft),
-    );
+    final save = () => _ColumnActions.save(ref, this, draft);
+    if (compact)
+      return _CompactColumnForm(editor: this, draft: draft, onSave: save);
+
+    return _ColumnForm(editor: this, draft: draft, onSave: save);
   }
 }
 
@@ -55,8 +60,12 @@ typedef _ColumnDraft = ({
 });
 
 abstract final class _ColumnActions {
-  static _ColumnDraft use(BuildContext context, WorkspaceColumn? column) => (
-    fields: _fields(column),
+  static _ColumnDraft use(
+    BuildContext context,
+    WorkspaceColumn? column,
+    WorkspaceColumnType initialType,
+  ) => (
+    fields: _fields(column, initialType),
     action: WorkspaceTableActions.use(context),
     violations: useState<List<WorkspaceRecord>>([]),
     replacement: useState(false),
@@ -114,11 +123,14 @@ abstract final class _ColumnActions {
     return violations.isEmpty;
   }
 
-  static _ColumnFields _fields(WorkspaceColumn? column) => (
+  static _ColumnFields _fields(
+    WorkspaceColumn? column,
+    WorkspaceColumnType initialType,
+  ) => (
     constraints: WorkspaceColumnConstraints.use(column),
     name: useTextEditingController(text: column?.name ?? ''),
     options: useTextEditingController(text: column?.options.join('\n') ?? ''),
-    type: useState(column?.type ?? WorkspaceColumnType.text),
+    type: useState(column?.type ?? initialType),
     timeZone: useState(column?.timeZone ?? 'UTC'),
     reference: _referenceDraft(column),
   );
@@ -132,6 +144,42 @@ abstract final class _ColumnActions {
             .where((option) => option.trim().isNotEmpty)
             .toList()
       : const [];
+}
+
+class const _CompactColumnForm({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+  required final Future<void> Function() onSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    shrinkWrap: true,
+    padding: const EdgeInsets.all(16),
+    children: [
+      _ColumnBasicInputs(editor: editor, draft: draft),
+      _ColumnDraftReference(editor: editor, draft: draft),
+      _ColumnTimeZone(draft: draft),
+      _ColumnPreviewResult(editor: editor, draft: draft),
+      if (draft.action.error case final error?)
+        WorkspaceItemFailure(error: error),
+      Row(
+        mainAxisAlignment: .end,
+        children: [
+          AuraButton(
+            onPressed: editor.onBack,
+            disabled: draft.action.pending,
+            child: const TextLocale(LocaleKeys.common_cancel),
+          ),
+          AuraButton(
+            onPressed: () => unawaited(draft.action.run(onSave)),
+            disabled: draft.action.pending,
+            child: const TextLocale(LocaleKeys.workspace_items_create_column),
+            identifier: 'workspace_column_create_confirm',
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
 class const _ColumnForm({

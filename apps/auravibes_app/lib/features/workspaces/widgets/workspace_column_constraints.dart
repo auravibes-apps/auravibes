@@ -28,24 +28,10 @@ class const WorkspaceColumnConstraints({
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      _ConstraintRequired(draft: draft, disabled: disabled),
       _ConstraintUnique(draft: draft, disabled: disabled),
       const TextLocale(LocaleKeys.workspace_items_default_value),
       _ConstraintDefault(view: this),
     ],
-  );
-}
-
-class const _ConstraintRequired({
-  required final WorkspaceColumnConstraintDraft draft,
-  required final bool disabled,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraCheckboxListTile(
-    value: draft.required.value,
-    onChanged: (value) => draft.required.value = value,
-    title: const TextLocale(LocaleKeys.workspace_items_required),
-    disabled: disabled,
   );
 }
 

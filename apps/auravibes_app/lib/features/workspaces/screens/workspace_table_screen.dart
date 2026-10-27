@@ -265,6 +265,8 @@ class const _BrowsingPage({
     onChanged: navigation.refresh,
     onRecord: (record) => _record(context, record),
     onColumn: (column) => _column(context, column),
+    onAddColumn: (type) =>
+        _column(context, null, initialType: type, compact: true),
     draftOpen: owner.draftOpen,
   );
   void _record(BuildContext context, WorkspaceRecord? record) {
@@ -295,8 +297,13 @@ class const _BrowsingPage({
     );
   }
 
-  void _column(BuildContext context, WorkspaceColumn? column) {
-    if (column != null) {
+  void _column(
+    BuildContext context,
+    WorkspaceColumn? column, {
+    WorkspaceColumnType initialType = .text,
+    bool compact = false,
+  }) {
+    if (!compact) {
       navigation.selected.value = _ColumnSelection(column);
 
       return;
@@ -304,14 +311,16 @@ class const _BrowsingPage({
     unawaited(
       showDialog<void>(
         context: context,
+        barrierDismissible: false,
         builder: (dialogContext) => Dialog(
-          child: SizedBox(
-            width: 600,
-            height: 600,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480, maxHeight: 550),
             child: WorkspaceColumnEditor(
               workspaceId: owner.workspaceId,
               table: owner.table,
               column: null,
+              initialType: initialType,
+              compact: true,
               onBack: () {
                 Navigator.of(dialogContext).pop();
                 navigation.refresh();
@@ -331,6 +340,7 @@ class const _TableBrowser({
   required final VoidCallback onChanged,
   required final ValueChanged<WorkspaceRecord?> onRecord,
   required final ValueChanged<WorkspaceColumn?> onColumn,
+  required final ValueChanged<WorkspaceColumnType> onAddColumn,
   required final ValueNotifier<bool> draftOpen,
 }) extends HookWidget {
   @override
@@ -386,7 +396,7 @@ class const _BrowserRecords(
     selectionMode: selectionMode,
     draftOpen: browser.draftOpen,
     onAddRow: () => browser.onRecord(null),
-    onAddColumn: () => browser.onColumn(null),
+    onAddColumn: browser.onAddColumn,
   );
 }
 

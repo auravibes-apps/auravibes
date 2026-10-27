@@ -53,14 +53,9 @@ void main() {
         isRequired: true,
       );
       expect(
-        (await PreviewWorkspaceColumnUsecase(
-          tables,
-        ).call(table: table, column: requiredColumn)).length,
-        2,
-      );
-      await expectLater(
-        tables.saveColumn(table: table, column: requiredColumn),
-        throwsA(isA<WorkspaceTableException>()),
+        (await PreviewWorkspaceColumnUsecase(tables)
+            .call(table: table, column: requiredColumn)),
+        isEmpty,
       );
       final unchanged = await tables.saveColumn(
         table: table,
@@ -108,7 +103,12 @@ void main() {
       final stale = table;
       table = await tables.saveColumn(
         table: table,
-        column: .new(id: id, name: 'Value', isRequired: true, isUnique: true),
+        column: .new(
+          id: id,
+          name: 'Renamed value',
+          isRequired: true,
+          isUnique: true,
+        ),
       );
       await expectLater(
         Future.sync(
@@ -190,7 +190,7 @@ void main() {
       final first = await tables.createRecord(table: table, values: const {});
       expect(first.values[checkboxId], false);
       expect(first.values[textId], '');
-      expect((await tables.table(table.id)).columns.last.isRequired, true);
+      expect((await tables.table(table.id)).columns.last.isRequired, false);
       expect(first.values[id], 5);
       final zero = await tables.createRecord(table: table, values: {id: 0});
       expect(zero.values[id], 0);
@@ -199,16 +199,12 @@ void main() {
         throwsA(isA<WorkspaceTableException>()),
       );
       expect((await tables.records(table.id)).length, 2);
-      await expectLater(
-        Future.sync(
-          () => tables.updateRecord(
-            table: table,
-            record: first,
-            values: const {},
-          ),
-        ),
-        throwsA(isA<WorkspaceTableException>()),
+      final cleared = await tables.updateRecord(
+        table: table,
+        record: first,
+        values: const {},
       );
+      expect(cleared.values, isEmpty);
     },
   );
   test(
@@ -437,15 +433,11 @@ void main() {
         );
       }
       expect((await tables.record(table.id, record.id)).values, values);
-      await expectLater(
-        Future.sync(
-          () => tables.createRecord(
-            table: table,
-            values: {table.labelColumnId: null},
-          ),
-        ),
-        throwsA(isA<WorkspaceTableException>()),
+      final empty = await tables.createRecord(
+        table: table,
+        values: {table.labelColumnId: null},
       );
+      expect(empty.values[table.labelColumnId], isNull);
     },
   );
   test('selection cardinality and configured choices survive edits', () async {

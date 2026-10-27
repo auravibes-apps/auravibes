@@ -34,7 +34,7 @@ abstract final class WorkspaceTableConstraints {
   ) {
     for (final column in columns) {
       final id = column['id'] as String;
-      if (!values.containsKey(id)) continue;
+      if (values[id] == null) continue;
       final key = jsonEncode(_comparison(column, values[id]));
       if (!seen.putIfAbsent(id, () => {}).add(key)) {
         throw const FormatException();

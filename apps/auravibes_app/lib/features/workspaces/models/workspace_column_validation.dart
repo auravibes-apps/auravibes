@@ -38,11 +38,7 @@ abstract final class WorkspaceColumnValidation {
   static bool accepts(
     List<WorkspaceColumn> columns,
     Map<String, Object?> values,
-  ) =>
-      columns.every(
-        (column) => !column.isRequired || values.containsKey(column.id),
-      ) &&
-      values.entries.every((entry) => _entryValid(columns, entry));
+  ) => values.entries.every((entry) => _entryValid(columns, entry));
 
   static bool _entryValid(
     List<WorkspaceColumn> columns,
@@ -52,7 +48,8 @@ abstract final class WorkspaceColumnValidation {
         .where((column) => column.id == entry.key)
         .firstOrNull;
 
-    return column != null && _ValueValidation.valid(column, entry.value);
+    return column != null &&
+        (entry.value == null || _ValueValidation.valid(column, entry.value));
   }
 
   static bool _uniqueIds(List<WorkspaceColumn> columns) =>

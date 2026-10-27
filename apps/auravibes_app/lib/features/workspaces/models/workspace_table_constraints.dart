@@ -52,7 +52,7 @@ abstract final class WorkspaceTableConstraints {
     Map<String, List<Object?>> seen,
   ) {
     for (final column in columns) {
-      if (!record.containsKey(column.id)) continue;
+      if (record[column.id] == null) continue;
       final values = seen.putIfAbsent(column.id, () => []);
       final value = record[column.id];
       if (values.any((existing) => _same(column, existing, value))) {
@@ -83,7 +83,7 @@ abstract final class WorkspaceTableConstraints {
     List<WorkspaceRecord> records,
   ) {
     final id = column.id;
-    if (!record.values.containsKey(id)) return false;
+    if (record.values[id] == null) return false;
 
     return records.any(
       (other) =>

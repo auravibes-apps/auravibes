@@ -29,7 +29,6 @@ abstract final class WorkspaceTableValidation {
   static void values(Map<String, Object?> schema, Map<String, Object?> values) {
     final columns = (schema['columns'] as List<dynamic>)
         .cast<Map<String, dynamic>>();
-    _required(columns, values);
     for (final entry in values.entries) {
       if (!_entryValid(columns, entry)) throw const FormatException();
     }
@@ -43,18 +42,8 @@ abstract final class WorkspaceTableValidation {
         .where((column) => column['id'] == entry.key)
         .firstOrNull;
 
-    return column != null && _valid(column, entry.value);
-  }
-
-  static void _required(
-    List<Map<String, dynamic>> columns,
-    Map<String, Object?> values,
-  ) {
-    for (final column in columns) {
-      if (column['required'] == true && !values.containsKey(column['id'])) {
-        throw const FormatException();
-      }
-    }
+    return column != null &&
+        (entry.value == null || _valid(column, entry.value));
   }
 
   static bool _valid(Map<String, Object?> column, Object? value) =>
