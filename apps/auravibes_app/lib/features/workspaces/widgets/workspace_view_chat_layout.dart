@@ -18,7 +18,7 @@ class const WorkspaceViewChatLayout({
       workspaceId,
       conversationId,
     ]);
-    useValueListenable(forcedOpen);
+    final _ = useValueListenable(forcedOpen);
     useEffect(() => forcedOpen.dispose, [forcedOpen]);
     ref.listen(provider, (previous, next) {
       forcedOpen.value = next != null;

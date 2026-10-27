@@ -130,6 +130,7 @@ class const _BrowserSessionView({
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) count.value = tabCount;
       });
+
       return () => mounted = false;
     }, [count, tabCount]);
     final resultKeys = [request.selectedToolResultTabId];
@@ -141,7 +142,7 @@ class const _BrowserSessionView({
       }
 
       return null;
-    }, resultKeys);
+    }, [...resultKeys]);
     final requested = ref.watch(
       workspaceOpenViewProvider(request.workspaceId, request.conversationId),
     );
@@ -156,7 +157,7 @@ class const _BrowserSessionView({
       }
 
       return null;
-    }, requestedKeys);
+    }, [...requestedKeys]);
     ref.listen(
       workspaceOpenViewProvider(request.workspaceId, request.conversationId),
       (previous, next) {
@@ -1092,7 +1093,6 @@ class const _WorkspaceChip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SidebarTabChip(
-    key: data.workspaceTabs.selected.value == id ? data.activeTabKey : null,
     data: (
       identifiers: (
         tile: 'sidebar_workspace_$id',
@@ -1107,6 +1107,7 @@ class const _WorkspaceChip({
       },
       onClose: () => data.workspaceTabs.close(id),
     ),
+    key: data.workspaceTabs.selected.value == id ? data.activeTabKey : null,
   );
 }
 

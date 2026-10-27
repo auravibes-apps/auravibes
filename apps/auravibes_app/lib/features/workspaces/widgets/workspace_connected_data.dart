@@ -23,7 +23,7 @@ class const WorkspaceConnectedData({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = TickerMode.of(context);
+    final active = TickerMode.valuesOf(context).enabled;
     final cached = useRef<AsyncValue<WorkspaceConnectedResult>?>(null);
     final state = active
         ? ref.watch(workspaceConnectedViewProvider(workspaceId, viewId))
@@ -33,17 +33,27 @@ class const WorkspaceConnectedData({
     if (state is AsyncData<WorkspaceConnectedResult>) cached.value = state;
     final retained = cached.value;
     final waiting = active && state.isLoading && retained != null;
-    final display = waiting ? retained! : state;
+    final display = waiting ? retained : state;
 
     return Stack(
       children: [
-        Offstage(offstage: waiting, child: _state(display)),
+        Offstage(
+          offstage: waiting,
+          child: _ConnectedState(workspaceId, data, display),
+        ),
         if (waiting) const _Waiting(stale: true),
       ],
     );
   }
+}
 
-  Widget _state(AsyncValue<WorkspaceConnectedResult> state) {
+class const _ConnectedState(
+  final String workspaceId,
+  final WorkspaceViewData? data,
+  final AsyncValue<WorkspaceConnectedResult> state,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     if (state.isLoading) return _Waiting(stale: state.hasValue);
 
     return switch (state) {

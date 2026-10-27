@@ -65,7 +65,7 @@ class const SidebarDirectory({
       children: [
         if (path.value.isNotEmpty)
           Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
+            crossAxisAlignment: .center,
             children: [
               IconButton(
                 onPressed: () =>

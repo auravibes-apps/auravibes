@@ -52,13 +52,13 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = useState<_Selection?>(null);
     final offset = useState(0);
-    final active = TickerMode.of(context);
+    final active = TickerMode.valuesOf(context).enabled;
     _useRefresh(ref, selected, offset, active);
 
     return Column(
       children: [
         if (active) _Toolbar(owner, selected, offset),
-        Expanded(child: _Contents(owner, selected, offset, active)),
+        Expanded(child: _Contents(owner, selected, offset, active: active)),
       ],
     );
   }
@@ -189,15 +189,15 @@ class const _Popup(
 class const _Contents(
   final WorkspaceViewScreen owner,
   final ValueNotifier<_Selection?> selected,
-  final ValueNotifier<int> offset,
-  final bool active,
-) extends ConsumerWidget {
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selection = selected.value;
     if (selection != null) return _Selected(owner, selection, () => _done(ref));
 
-    return _LoadState(owner, offset, active);
+    return _LoadState(owner, offset, active: active);
   }
 
   void _done(WidgetRef ref) {
@@ -208,9 +208,9 @@ class const _Contents(
 
 class const _LoadState(
   final WorkspaceViewScreen owner,
-  final ValueNotifier<int> offset,
-  final bool active,
-) extends HookConsumerWidget {
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cached = useRef<AsyncValue<WorkspaceViewData>?>(null);
@@ -228,7 +228,7 @@ class const _LoadState(
     if (state is AsyncData<WorkspaceViewData>) cached.value = state;
     final retained = cached.value;
     final waiting = active && state.isLoading && retained != null;
-    final display = waiting ? retained! : state;
+    final display = waiting ? retained : state;
 
     return Stack(
       children: [
