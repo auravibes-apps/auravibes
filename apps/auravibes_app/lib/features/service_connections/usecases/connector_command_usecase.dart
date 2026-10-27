@@ -428,7 +428,7 @@ class _ConnectorExecutionArgumentParser {
       arguments: _stringKeyedArguments(rawArguments),
       connectionId: _optionalString(arguments, 'connectionId'),
       revision: _optionalString(arguments, 'revision'),
-      operationId: _optionalString(arguments, 'operationId'),
+      operationId: _operationId(arguments),
     );
   }
 
@@ -449,6 +449,16 @@ class _ConnectorExecutionArgumentParser {
     throw _ConnectorCommandException(
       code: 'invalid_arguments',
       message: '$key must be a string.',
+    );
+  }
+
+  static String? _operationId(Map<String, dynamic> arguments) {
+    final value = arguments['operationId'];
+    if (value == null) return null;
+    if (value is String && value.isNotEmpty) return value;
+    throw const _ConnectorCommandException(
+      code: 'invalid_arguments',
+      message: 'operationId must be a non-empty string.',
     );
   }
 
