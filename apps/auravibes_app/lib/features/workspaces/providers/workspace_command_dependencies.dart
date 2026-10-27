@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
@@ -17,11 +18,19 @@ class const WorkspaceCommandDependencies(
       final table = _tables();
       final folder = _folders();
       final view = _views();
+      final files = ref.watch(
+        workspaceFilesUsecaseProvider(workspaceId).future,
+      );
+      final assets = ref.watch(
+        workspaceAssetsUsecaseProvider(workspaceId).future,
+      );
 
       return .new(
         tables: await table,
         folders: await folder,
         views: await view,
+        files: await files,
+        assets: await assets,
       );
     } finally {
       link.close();

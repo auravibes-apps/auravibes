@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_conversation_context.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -348,6 +349,9 @@ WorkspaceChatItem _selectedDirectoryItem(
   DirectoryNavigation directory,
 ) {
   final selected = directory.selected;
+  if (selected is WorkspaceFile) {
+    return WorkspaceChatItem(id: selected.id, kind: 'file');
+  }
   if (selected is WorkspaceTable) {
     return WorkspaceChatItem(id: selected.id, kind: 'table');
   }
@@ -425,6 +429,7 @@ class const _WorkspaceContextShareConfirmation(final String kind)
     content: TextLocale(switch (kind) {
       'directory' => LocaleKeys.workspace_chat_directory_scope,
       'folder' => LocaleKeys.workspace_chat_folder_scope,
+      'file' => LocaleKeys.workspace_chat_file_scope,
       _ => LocaleKeys.workspace_chat_scope,
     }),
     actions: const [

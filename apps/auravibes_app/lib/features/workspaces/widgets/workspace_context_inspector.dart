@@ -71,6 +71,7 @@ class const _WorkspaceContextScope({required final Map<String, Object?>? data})
         TextLocale(switch (data['kind']) {
           'directory' => LocaleKeys.workspace_chat_directory_shared_scope,
           'folder' => LocaleKeys.workspace_chat_folder_shared_scope,
+          'file' => LocaleKeys.workspace_chat_file_shared_scope,
           _ => LocaleKeys.workspace_chat_scope,
         }),
         if (_hasRestrictedReferences(data['records']))

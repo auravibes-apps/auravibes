@@ -1166,13 +1166,12 @@ class const _WorkspaceTabContent({
 
     return Column(
       children: [
-        if (item.kind != 'file')
-          WorkspaceChatContextToolbar(
-            workspaceId: data.request.workspaceId,
-            conversationId: data.request.conversationId,
-            item: item,
-            onClose: close,
-          ),
+        WorkspaceChatContextToolbar(
+          workspaceId: data.request.workspaceId,
+          conversationId: data.request.conversationId,
+          item: item,
+          onClose: close,
+        ),
         Expanded(
           child: switch (item.kind) {
             'view' => WorkspaceViewScreen(

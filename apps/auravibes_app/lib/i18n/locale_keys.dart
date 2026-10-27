@@ -3002,10 +3002,13 @@ abstract class LocaleKeys {
       'workspace_connected.remove_extra_inputs';
   static const workspace_chat_directory_shared_scope =
       'workspace_chat.directory_shared_scope';
+  static const workspace_chat_file_shared_scope =
+      'workspace_chat.file_shared_scope';
   static const workspace_chat_folder_shared_scope =
       'workspace_chat.folder_shared_scope';
   static const workspace_chat_directory_scope =
       'workspace_chat.directory_scope';
+  static const workspace_chat_file_scope = 'workspace_chat.file_scope';
   static const workspace_chat_folder_scope = 'workspace_chat.folder_scope';
   static const workspace_chat_reference_scope =
       'workspace_chat.reference_scope';

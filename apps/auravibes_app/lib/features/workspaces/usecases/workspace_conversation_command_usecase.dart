@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_assets_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -20,6 +24,8 @@ class const WorkspaceConversationCommandUsecase({
   required final OrganizeWorkspaceTablesUsecase tables,
   final OrganizeWorkspaceFoldersUsecase? folders,
   final ManageWorkspaceViewsUsecase? views,
+  final OrganizeWorkspaceFilesUsecase? files,
+  final ManageWorkspaceAssetsUsecase? assets,
 }) {
   Future<Map<String, Object?>> call({
     required WorkspaceContextSelection selection,
@@ -53,6 +59,7 @@ class const _ItemCommand(
   Future<Map<String, Object?>> _existing() => switch (input.selection.kind) {
     'directory' => _directory(),
     'folder' => _FolderCommand(owner, input).call(),
+    'file' => _FileCommand(owner, input).call(),
     'view' => _ViewCommand(owner, input).call(),
     _ => _TableCommand(owner, input).call(),
   };
@@ -120,6 +127,40 @@ class const _ReceiptAuthorization(
     if (manager == null) _Arguments.denied();
     final data = await manager.open(id);
     if (!data.view.canManage) _Arguments.denied();
+  }
+}
+
+class const _FileCommand(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  Future<Map<String, Object?>> call() async {
+    _Arguments.action(input.arguments, 'read');
+    if (input.arguments['id'] != input.selection.itemId) _Arguments.denied();
+    final files =
+        owner.files ?? (throw const WorkspaceTableException(denied: true));
+    final assets =
+        owner.assets ?? (throw const WorkspaceTableException(denied: true));
+    final file = await files.file(input.selection.itemId);
+    final asset = await assets.describe(file.assetId);
+    if (asset.sizeBytes > 65536 ||
+        !{'text/plain', 'application/json'}.contains(asset.mimeType)) {
+      throw const WorkspaceTableException();
+    }
+    final preview = await assets.preview(file.assetId);
+    if (preview.asset.id != asset.id ||
+        preview.asset.sizeBytes > 65536 ||
+        !{'text/plain', 'application/json'}.contains(preview.asset.mimeType)) {
+      throw const WorkspaceTableException();
+    }
+
+    return workspaceFileToolResult(
+      id: file.id,
+      name: file.name,
+      mimeType: preview.asset.mimeType,
+      revision: file.revision,
+      content: utf8.decode(preview.bytes),
+    );
   }
 }
 
