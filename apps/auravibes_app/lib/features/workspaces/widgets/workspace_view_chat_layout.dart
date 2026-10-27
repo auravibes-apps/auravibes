@@ -14,7 +14,12 @@ class const WorkspaceViewChatLayout({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = workspaceOpenViewProvider(workspaceId, conversationId);
-    final forcedOpen = useState(false);
+    final forcedOpen = useMemoized(() => ValueNotifier(false), [
+      workspaceId,
+      conversationId,
+    ]);
+    useValueListenable(forcedOpen);
+    useEffect(() => forcedOpen.dispose, [forcedOpen]);
     ref.listen(provider, (previous, next) {
       forcedOpen.value = next != null;
     });
