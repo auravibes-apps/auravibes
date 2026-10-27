@@ -4,10 +4,15 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Opens newly completed view commands, never previously loaded history.
@@ -97,37 +102,50 @@ class _WorkspaceViewToolObserverState
   Future<void> _open(String id, int sequence) async {
     final workspaceId = widget.workspaceId;
     final conversationId = widget.conversationId;
-    for (var attempt = 0; attempt < 3; attempt++) {
-      if (!mounted ||
-          sequence != _sequence ||
-          workspaceId != widget.workspaceId ||
-          conversationId != widget.conversationId) {
-        return;
-      }
-      try {
-        final views = await ref.read(
-          workspaceViewUsecaseProvider(workspaceId).future,
-        );
-        final _ = await views.open(id);
-        if (!mounted ||
-            sequence != _sequence ||
-            workspaceId != widget.workspaceId ||
-            conversationId != widget.conversationId) {
-          return;
-        }
-        ref.invalidate(workspaceViewDataProvider(workspaceId, id));
-        ref
-            .read(
-              workspaceOpenViewProvider(workspaceId, conversationId).notifier,
-            )
-            .openItem(id, 'view');
-
-        return;
-      } on Object {
-        // Retry transient failures without opening an unauthorized view.
-      }
+    try {
+      final views = await ref.read(
+        workspaceViewUsecaseProvider(workspaceId).future,
+      );
+      final _ = await views.open(id);
+      if (!_isCurrent(workspaceId, conversationId, sequence)) return;
+      ref.invalidate(workspaceViewDataProvider(workspaceId, id));
+      ref
+          .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
+          .openItem(id, 'view');
+    } on Object catch (error) {
+      if (!_isCurrent(workspaceId, conversationId, sequence)) return;
+      final denied =
+          (error is WorkspaceTableException &&
+              error.localizationKey ==
+                  LocaleKeys.cloud_errors_permission_denied) ||
+          (error is CloudAppException &&
+              error.localizationKey ==
+                  LocaleKeys.cloud_errors_permission_denied);
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger?.hideCurrentSnackBar();
+      messenger?.showSnackBar(
+        SnackBar(
+          content: TextLocale(
+            denied
+                ? LocaleKeys.cloud_errors_permission_denied
+                : LocaleKeys.common_error_message,
+          ),
+          action: denied
+              ? null
+              : SnackBarAction(
+                  label: LocaleKeys.route_state_retry.tr(),
+                  onPressed: () => unawaited(_open(id, sequence)),
+                ),
+        ),
+      );
     }
   }
+
+  bool _isCurrent(String workspaceId, String conversationId, int sequence) =>
+      mounted &&
+      sequence == _sequence &&
+      workspaceId == widget.workspaceId &&
+      conversationId == widget.conversationId;
 }
 
 String? _viewId(MessageToolCallEntity call) {
