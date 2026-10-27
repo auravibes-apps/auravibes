@@ -21,6 +21,8 @@ import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manife
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
@@ -37,6 +39,9 @@ import 'package:riverpod/riverpod.dart';
 
 import '../../../data/database/drift/database_test_utils.dart';
 import '../../../test_mocks.dart';
+
+class _MockWorkspaceConversationTools extends Mock
+    implements WorkspaceConversationToolsUsecase;
 
 class _MockLoadConversationSkillUsecase extends Mock
     implements LoadConversationSkillUsecase;
@@ -207,6 +212,48 @@ SubAgentRunner _subAgentRunner({
 }
 
 void main() {
+  test('workspace failures return safe actionable messages', () async {
+    final commands = _MockWorkspaceConversationTools();
+    final arguments = <String, dynamic>{};
+    final service = ResolvedToolService(
+      agentCancellationRuntime: .new(),
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+        onElicitation,
+      }) async => null,
+      workspaceConversationTools: commands,
+    );
+    for (final (error, message) in [
+      (const WorkspaceTableException(denied: true), 'unavailable'),
+      (const WorkspaceTableException(conflict: true), 'Read it again'),
+      (const WorkspaceTableException(), 'invalid'),
+    ]) {
+      when(
+        () => commands.call(
+          conversationId: 'chat',
+          arguments: arguments,
+          operationId: 'call',
+        ),
+      ).thenThrow(error);
+      await expectLater(
+        service(
+          conversationId: 'chat',
+          tool: ResolvedTool.workspaceCommand(),
+          arguments: arguments,
+          toolCallId: 'call',
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains(message),
+          ),
+        ),
+      );
+    }
+  });
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),

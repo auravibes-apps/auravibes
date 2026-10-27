@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
@@ -26,6 +27,7 @@ import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_u
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
@@ -177,11 +179,25 @@ class ResolvedToolService {
       throw StateError('Workspace commands are not configured.');
     }
 
-    return await commands.call(
-      conversationId: conversationId,
-      arguments: arguments,
-      operationId: toolCallId,
-    );
+    try {
+      return await commands.call(
+        conversationId: conversationId,
+        arguments: arguments,
+        operationId: toolCallId,
+      );
+    } on WorkspaceTableException catch (error, stackTrace) {
+      final message = error.denied
+          ? 'Workspace item is unavailable. Check the shared context and permissions.'
+          : error.conflict
+          ? 'Workspace item changed. Read it again before retrying.'
+          : 'Workspace request is invalid. Check the arguments and try again.';
+      throw agent.AgentToolExecutionFailure(
+        responseRaw: jsonEncode({'error': message}),
+        error: error,
+        stackTrace: stackTrace,
+        failurePhase: 'workspace.command',
+      );
+    }
   }
 }
 

@@ -300,12 +300,24 @@ void main() {
       await select(selection, role: 'assistant');
       await expectLater(
         run('read-denied', {'action': 'read', 'tableId': 'items'}),
-        throwsA(isA<CloudWorkspaceException>()),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
+          ),
+        ),
       );
       await select(selection, trusted: false);
       await expectLater(
         run('forged-user-denied', {'action': 'read', 'tableId': 'items'}),
-        throwsA(isA<CloudWorkspaceException>()),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
+          ),
+        ),
       );
       await select(selection);
       final read = await run('read', {'action': 'read', 'tableId': 'items'});
@@ -369,7 +381,13 @@ void main() {
       await select(null);
       await expectLater(
         run('edit', edit),
-        throwsA(isA<CloudWorkspaceException>()),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
+          ),
+        ),
       );
       await select(
         WorkspaceContextSelection(
@@ -383,7 +401,13 @@ void main() {
       );
       await expectLater(
         run('fork-denied', {'action': 'read', 'tableId': 'items'}),
-        throwsA(isA<CloudWorkspaceException>()),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
+          ),
+        ),
       );
 
       final assistant = await ConversationMessage.db.insertRow(
@@ -686,7 +710,13 @@ void main() {
           'action': 'listCreated',
           'cursor': '',
         }),
-        throwsFormatException,
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('invalid'),
+          ),
+        ),
       );
       final owner = (await WorkspaceMember.db.findFirstRow(
         session,
@@ -777,7 +807,7 @@ void main() {
       await select(null);
       await expectLater(
         run('list-created-revoked', {'action': 'listCreated'}),
-        throwsA(isA<CloudWorkspaceException>()),
+        throwsA(isA<AgentToolExecutionFailure>()),
       );
       final revoked = await const WorkspacePromptProjection().call(
         session,
@@ -1356,10 +1386,10 @@ void main() {
             ...input,
           }),
           throwsA(
-            isA<CloudWorkspaceException>().having(
-              (error) => error.code,
-              'code',
-              CloudWorkspaceErrorCode.permissionDenied,
+            isA<AgentToolExecutionFailure>().having(
+              (failure) => failure.responseRaw,
+              'safe message',
+              contains('unavailable'),
             ),
           ),
         );

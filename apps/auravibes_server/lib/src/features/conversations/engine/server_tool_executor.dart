@@ -1264,12 +1264,41 @@ class const ServerToolExecutorService({
     );
     if (tool.descriptor.tableId == workspaceCommandTableId &&
         tool.descriptor.toolIdentifier == workspaceCommandToolName) {
-      return const WorkspaceConversationCommands().call(
-        session,
-        turn,
-        request.id,
-        request.arguments,
-      );
+      try {
+        return await const WorkspaceConversationCommands().call(
+          session,
+          turn,
+          request.id,
+          request.arguments,
+        );
+      } on FormatException catch (error, stackTrace) {
+        throw AgentToolExecutionFailure(
+          responseRaw: jsonEncode({
+            'error': 'Workspace request is invalid. Check the arguments and try again.',
+          }),
+          error: error,
+          stackTrace: stackTrace,
+          failurePhase: 'workspace.command',
+        );
+      } on CloudWorkspaceException catch (error, stackTrace) {
+        final message = switch (error.code) {
+          .conflict || .staleRevision =>
+            'Workspace item changed. Read it again before retrying.',
+          .validationFailed || .invalidCursor =>
+            'Workspace request is invalid. Check the arguments and try again.',
+          .permissionDenied ||
+          .membershipRequired ||
+          .workspaceNotFound ||
+          .authenticationRequired => 'Workspace item is unavailable. Check the shared context and permissions.',
+          _ => 'Workspace request failed. Try again or check the workspace.',
+        };
+        throw AgentToolExecutionFailure(
+          responseRaw: jsonEncode({'error': message}),
+          error: error,
+          stackTrace: stackTrace,
+          failurePhase: 'workspace.command',
+        );
+      }
     }
 
     return switch (tool.descriptor.kind) {
