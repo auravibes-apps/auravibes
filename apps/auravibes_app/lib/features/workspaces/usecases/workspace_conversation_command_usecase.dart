@@ -51,10 +51,22 @@ class const _ItemCommand(
       : _existing();
 
   Future<Map<String, Object?>> _existing() => switch (input.selection.kind) {
+    'directory' => _directory(),
     'folder' => _FolderCommand(owner, input).call(),
     'view' => _ViewCommand(owner, input).call(),
     _ => _TableCommand(owner, input).call(),
   };
+
+  Future<Map<String, Object?>> _directory() async {
+    _Arguments.action(input.arguments, 'read');
+    if ((input.arguments['id'] ?? '') != '' ||
+        (input.arguments['tableId'] ?? '') != '' ||
+        input.arguments['parentId'] != null) {
+      _Arguments.denied();
+    }
+
+    return {'kind': 'directory', 'id': '', 'parentId': null};
+  }
 }
 
 class const _ReceiptAuthorization(

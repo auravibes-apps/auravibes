@@ -173,6 +173,14 @@ class const WorkspaceConversationCommands({
   Future<Object?> _execute(_CommandExecution command) async {
     final selection = command.selection;
     final action = command.arguments['action'];
+    if (selection.kind == 'directory' && action == 'read') {
+      if ((command.arguments['id'] ?? '') != '' ||
+          (command.arguments['tableId'] ?? '') != '' ||
+          command.arguments['parentId'] != null) {
+        _denied();
+      }
+      return {'kind': 'directory', 'id': '', 'parentId': null};
+    }
     if (selection.kind == 'view') return _items.view(command);
     if (selection.kind == 'folder' && !_createsItem(action)) {
       return _items.folder(command);

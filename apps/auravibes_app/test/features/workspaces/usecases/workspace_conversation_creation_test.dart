@@ -16,6 +16,20 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'shared Directory root can be read without disclosing children',
+    () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.database.close);
+      final result = await fixture.run('read-root', {'action': 'read'});
+      expect(result, {'kind': 'directory', 'id': '', 'parentId': null});
+      await expectLater(
+        fixture.run('read-unshared', {'action': 'read', 'tableId': 'unknown'}),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+    },
+  );
+
   test('revoked selection cannot commit after command preparation', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);

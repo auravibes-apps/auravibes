@@ -15,8 +15,24 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'Never infer access from another Conversation. '
       'Read only selected records. '
       'Use current revisions; refresh after conflicts. '
-      'Structural edits require '
-      'approval in default mode. Opening an item does not share its data.',
+      'Structural edits require approval in default mode. '
+      'Opening an item does not share its data. '
+      'For the shared Directory root, read needs only action; it returns '
+      'root metadata, not a list of children. '
+      'For a folder or view read, provide id. For a table read, provide '
+      'tableId. Use IDs and revisions from shared context or tool results. '
+      'createFolder requires name and the shared folder parentId '
+      '(null or omitted for root). '
+      'createTable additionally requires labelName. '
+      'renameFolder requires id, revision and name. '
+      'renameTable requires tableId, revision, schemaRevision and name. '
+      'createRecord requires tableId, revision, schemaRevision and values. '
+      'updateRecord requires tableId, record id, record revision, '
+      'schemaRevision and values. '
+      'saveColumn requires tableId, revision, schemaRevision and column. '
+      'createView requires tableId, revision, schemaRevision, name and '
+      'columnIds. saveView requires id, revision, schemaRevision, name, '
+      'definition and bindings.',
   inputJsonSchema: const {
     'type': 'object',
     'properties': {
@@ -35,23 +51,56 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
           'saveView',
         ],
       },
-      'id': {'type': 'string'},
-      'tableId': {'type': 'string'},
+      'id': {
+        'type': 'string',
+        'description': 'Selected folder, view, or record ID.',
+      },
+      'tableId': {
+        'type': 'string',
+        'description': 'Selected or previously created table ID.',
+      },
       'parentId': {
         'type': ['string', 'null'],
+        'description': 'Destination folder ID; null or omitted for root.',
       },
-      'revision': {'type': 'integer', 'minimum': 1},
-      'schemaRevision': {'type': 'integer', 'minimum': 1},
-      'name': {'type': 'string'},
-      'labelName': {'type': 'string'},
-      'values': {'type': 'object'},
-      'column': {'type': 'object'},
+      'revision': {
+        'type': 'integer',
+        'minimum': 1,
+        'description': 'Current revision of the table, record, folder or view.',
+      },
+      'schemaRevision': {
+        'type': 'integer',
+        'minimum': 1,
+        'description': 'Current table schema revision.',
+      },
+      'name': {'type': 'string', 'description': 'Name of the item or column.'},
+      'labelName': {
+        'type': 'string',
+        'description': 'Name of the new table’s first text column.',
+      },
+      'values': {
+        'type': 'object',
+        'description': 'Map column IDs to values; use null for empty cells.',
+      },
+      'column': {
+        'type': 'object',
+        'description':
+            'Column with id (empty for new), name and type. '
+            'For select types include options; for references include '
+            'targetTableId. Use only explicitly shared targets.',
+      },
       'columnIds': {
         'type': 'array',
         'items': {'type': 'string'},
       },
-      'definition': {'type': 'object'},
-      'bindings': {'type': 'object'},
+      'definition': {
+        'type': 'object',
+        'description': 'A2UI view definition with version and components.',
+      },
+      'bindings': {
+        'type': 'object',
+        'description': 'Map view binding names to selected table column IDs.',
+      },
     },
     'required': ['action'],
     'additionalProperties': false,

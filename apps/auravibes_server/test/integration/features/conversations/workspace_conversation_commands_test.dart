@@ -274,6 +274,22 @@ void main() {
           kind: 'directory',
         ),
       );
+      final root = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'read-directory-root',
+        {'action': 'read'},
+      );
+      expect(root, {'kind': 'directory', 'id': '', 'parentId': null});
+      await expectLater(
+        const WorkspaceConversationCommands().call(
+          session,
+          turn,
+          'read-unshared-table',
+          {'action': 'read', 'tableId': 'items'},
+        ),
+        throwsA(isA<Object>()),
+      );
       final pending = await runtime.handle(
         session,
         turn: turn,
