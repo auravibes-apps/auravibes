@@ -4,7 +4,10 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 /// Stored tool history is not an enduring grant to workspace data.
 MessageToolCallEntity sanitizeWorkspaceToolResult(MessageToolCallEntity call) {
   if (call.name != workspaceCommandToolName ||
-      workspaceContextAction(call.arguments) != 'read') {
+      workspaceContextAction(call.arguments) != 'read' ||
+      (call.responseRaw == null &&
+          call.responseContextRaw == null &&
+          call.appData == null)) {
     return call;
   }
 
@@ -17,3 +20,11 @@ MessageToolCallEntity sanitizeWorkspaceToolResult(MessageToolCallEntity call) {
     fullOutputForContext: false,
   );
 }
+
+MessageMetadataEntity sanitizeWorkspaceToolMetadata(
+  MessageMetadataEntity metadata,
+) => metadata.copyWith(
+  toolCalls: [
+    for (final call in metadata.toolCalls) sanitizeWorkspaceToolResult(call),
+  ],
+);

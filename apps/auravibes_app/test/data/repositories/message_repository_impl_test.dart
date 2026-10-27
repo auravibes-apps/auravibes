@@ -661,6 +661,44 @@ void main() {
       }
     });
 
+    test('message create and patch redact workspace read results', () async {
+      final metadata = MessageMetadataEntity(
+        toolCalls: [
+          const MessageToolCallEntity(
+            id: 'read',
+            name: 'workspace_item',
+            argumentsRaw: '{"action":"read","id":"file"}',
+            responseRaw: '{"content":"private bytes"}',
+          ),
+        ],
+      );
+      final created = await repository.createMessage(
+        .new(
+          conversationId: 'conv-1',
+          content: 'tool result',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          metadata: jsonEncode(metadata.toJson()),
+        ),
+      );
+      final first = await repository.getMessageById(created.id);
+      expect(
+        jsonEncode(first?.metadata?.toJson()),
+        isNot(contains('private bytes')),
+      );
+      final _ = await repository.patchMessage(
+        created.id,
+        .new(metadata: metadata),
+        conversationId: 'conv-1',
+      );
+      final second = await repository.getMessageById(created.id);
+      expect(
+        jsonEncode(second?.metadata?.toJson()),
+        isNot(contains('private bytes')),
+      );
+    });
+
     test('claimToolCallBatch is idempotent for repeated submissions', () async {
       const toolCall = MessageToolCallEntity(
         id: 'tool-1',

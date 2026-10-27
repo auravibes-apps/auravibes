@@ -10,6 +10,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.d
 import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -1865,7 +1866,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
       messageType: .new(_messageTypeToTableType(message.messageType)),
       isUser: .new(message.isUser),
       status: .absentIfNull(_messageStatusToTableStatus(message.status)),
-      metadata: .new(message.metadata),
+      metadata: .new(_sanitizeMetadataJson(message.metadata)),
     );
   }
 
@@ -1890,7 +1891,9 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
     return MessagesCompanion(
       content: .absentIfNull(message.content),
       status: .absentIfNull(_messageStatusToTableStatus(message.status)),
-      metadata: .absentIfNull(JsonCodec.encode(message.metadata?.toJson())),
+      metadata: .absentIfNull(
+        JsonCodec.encode(_sanitizeMetadata(message.metadata)?.toJson()),
+      ),
     );
   }
 }
@@ -2052,3 +2055,20 @@ int _searchExcerptStart(
       ? matchCharacterIndex - _conversationMessageSearchContextBefore
       : 0;
 }
+
+String? _sanitizeMetadataJson(String? raw) {
+  if (raw == null) return null;
+  final metadata = MessageMetadataEntity.fromJsonString(raw);
+  if (metadata == null) return raw;
+  final sanitized = sanitizeWorkspaceToolMetadata(metadata);
+  if (const ListEquality<MessageToolCallEntity>().equals(
+    sanitized.toolCalls,
+    metadata.toolCalls,
+  ))
+    return raw;
+
+  return JsonCodec.encode(sanitized.toJson());
+}
+
+MessageMetadataEntity? _sanitizeMetadata(MessageMetadataEntity? metadata) =>
+    metadata == null ? null : sanitizeWorkspaceToolMetadata(metadata);
