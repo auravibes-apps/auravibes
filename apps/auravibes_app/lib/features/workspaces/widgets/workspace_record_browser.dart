@@ -341,9 +341,9 @@ class const _Rows(
   bool isSelecting() => table.canEditRecords && draft.selecting.value;
   @override
   Widget build(BuildContext context) => GestureDetector(
+    child: _Grid(this),
     onTap: _clearSelection,
     behavior: .opaque,
-    child: _Grid(this),
   );
   void _clearSelection() {
     if (!draft.draftOpen.value) draft.active.value = null;

@@ -175,16 +175,17 @@ void main() {
     await tester.tap(cell);
     await tester.pump(const Duration(milliseconds: 400));
     final _ = await tester.pumpAndSettle();
-    final selected = tester.widget<Container>(cell).decoration as BoxDecoration;
-    expect(selected.border, isNotNull);
+    final selected =
+        tester.widget<Container>(cell).decoration as BoxDecoration?;
+    expect(selected?.border, isNotNull);
     final textStyle = tester.widget<DefaultTextStyle>(
       find.descendant(of: cell, matching: find.byType(DefaultTextStyle)).first,
     );
     expect(textStyle.style.color, isNotNull);
     await tester.tap(find.text('Search records'));
     final _ = await tester.pumpAndSettle();
-    final cleared = tester.widget<Container>(cell).decoration as BoxDecoration;
-    expect(cleared.border, isNull);
+    final cleared = tester.widget<Container>(cell).decoration as BoxDecoration?;
+    expect(cleared?.border, isNull);
     await tester.tap(cell);
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(cell);
