@@ -462,6 +462,34 @@ void main() {
         'revision': 1,
         'name': 'Updated group',
       });
+      final createdItems = await run('list-created', {
+        'action': 'listCreated',
+      }) as Map;
+      final listed = (createdItems['items'] as List).cast<Map>();
+      expect(
+        listed.map((item) => item['id']),
+        containsAll([tableId, view['id'], folder['id']]),
+      );
+      expect(
+        listed.singleWhere((item) => item['id'] == folder['id'])['name'],
+        'Updated group',
+      );
+      expect(listed.map((item) => item['id']), isNot(contains('items')));
+      expect(listed.every((item) => !item.containsKey('parentId')), isTrue);
+      expect(createdItems['nextOffset'], isNull);
+      final beyondEnd = await run('list-created-offset', {
+        'action': 'listCreated',
+        'offset': 1000,
+      }) as Map;
+      expect(beyondEnd['items'], isEmpty);
+      expect(beyondEnd['nextOffset'], isNull);
+      await expectLater(
+        run('list-created-invalid-offset', {
+          'action': 'listCreated',
+          'offset': -1,
+        }),
+        throwsFormatException,
+      );
       final history = <Map<String, dynamic>>[
         {'role': 'user', 'content': 'Create a record'},
         {
@@ -511,6 +539,10 @@ void main() {
         {'action': 'read'},
       );
       await select(null);
+      await expectLater(
+        run('list-created-revoked', {'action': 'listCreated'}),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
       final revoked = await const WorkspacePromptProjection().call(
         session,
         turn,

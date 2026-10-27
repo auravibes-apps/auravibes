@@ -123,9 +123,13 @@ class const WorkspaceConversationCommands({
       operationId: operationId,
       arguments: arguments,
     ));
-    if (arguments['action'] != 'read') await beforeMutation?.call();
-    final result = await _execute(command);
-    if (arguments['action'] == 'read') {
+    final isRead =
+        arguments['action'] == 'read' || arguments['action'] == 'listCreated';
+    if (!isRead) await beforeMutation?.call();
+    final result = arguments['action'] == 'listCreated'
+        ? await _listCreated(command)
+        : await _execute(command);
+    if (isRead) {
       await _verifyReadSelection(session, turn, command);
     }
 
@@ -168,6 +172,72 @@ class const WorkspaceConversationCommands({
     return [
       for (final call in calls) ?_creationForSelection(call, epoch),
     ];
+  }
+
+  Future<Map<String, Object?>> _listCreated(_CommandExecution command) async {
+    final offset = command.arguments['offset'] ?? 0;
+    if (offset is! int || offset < 0) {
+      throw const FormatException('Invalid offset.');
+    }
+    final calls = await _CommandCallHistory(command.turn).find(
+      command.session,
+      offset: offset,
+      limit: 101,
+    );
+    final created = [
+      for (final call in calls.take(100))
+        ?_creationForSelection(call, command.contextSelectionId),
+    ];
+    final items = <Map<String, Object?>>[];
+    for (final entry in created) {
+      await _verifyReadSelection(command.session, command.turn, command);
+      final kind = entry['kind'];
+      final id = entry['id'];
+      if (id is! String || !{'folder', 'table', 'view'}.contains(kind)) {
+        continue;
+      }
+      final item = await _createdItem(command, created, kind! as String, id);
+      if (item == null) continue;
+      items.add(item);
+    }
+    return {
+      'items': items,
+      'nextOffset': calls.length > 100 ? offset + 100 : null,
+    };
+  }
+
+  Future<Map<String, Object?>?> _createdItem(
+    _CommandExecution command,
+    List<Map<String, Object?>> created,
+    String kind,
+    String id,
+  ) async {
+    final arguments = <String, dynamic>{
+      'action': 'read',
+      if (kind == 'table') 'tableId': id else 'id': id,
+    };
+    final read = (
+      session: command.session,
+      turn: command.turn,
+      operationId: command.operationId,
+      contextSelectionId: command.contextSelectionId,
+      arguments: arguments,
+      member: command.member,
+      selection: workspaceCreatedContext(command.selection, created, arguments),
+      authority: command.authority,
+    );
+    try {
+      final data = await _execute(read) as Map<String, dynamic>;
+      return {
+        'id': id,
+        'kind': kind,
+        for (final key in ['name', 'revision', 'schemaRevision'])
+          if (data.containsKey(key)) key: data[key],
+      };
+    } on CloudWorkspaceException catch (error) {
+      if (error.code == .permissionDenied) return null;
+      rethrow;
+    }
   }
 
   Future<Object?> _execute(_CommandExecution command) async {
@@ -252,11 +322,13 @@ class _WorkspaceCommandPreparation {
 
   Future<_CommandExecution> build() async {
     final resolved = await _resolve();
-    final created = await commands._created(
-      request.session,
-      request.turn,
-      resolved.contextSelectionId,
-    );
+    final created = request.arguments['action'] == 'listCreated'
+        ? <Map<String, Object?>>[]
+        : await commands._created(
+            request.session,
+            request.turn,
+            resolved.contextSelectionId,
+          );
 
     return _execution((resolved: resolved, created: created));
   }
@@ -1001,8 +1073,17 @@ class _CommandCallHistory {
 
   final ConversationTurn turn;
 
-  Future<List<ConversationToolCall>> find(Session session) =>
-      ConversationToolCall.db.find(session, where: _matches);
+  Future<List<ConversationToolCall>> find(
+    Session session, {
+    int? offset,
+    int? limit,
+  }) => ConversationToolCall.db.find(
+    session,
+    where: _matches,
+    orderBy: (row) => row.id,
+    offset: offset,
+    limit: limit,
+  );
 
   Expression _matches(ConversationToolCallTable row) =>
       _workspace(row) &
