@@ -145,6 +145,12 @@ Map<String, dynamic> workspaceContextReadArguments(
   Map<String, dynamic> input,
   Object? output,
 ) {
+  if (input['action'] == 'listCreated') {
+    return {
+      'action': 'listCreated',
+      if (input.containsKey('offset')) 'offset': input['offset'],
+    };
+  }
   final result = output is Map<String, dynamic>
       ? output
       : const <String, dynamic>{};

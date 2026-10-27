@@ -90,7 +90,9 @@ class const _SelectedCommand(
   final _CommandRequest request,
 ) {
   Future<Map<String, Object?>> call() async =>
-      await _dispatch(await _prepare());
+      request.arguments['action'] == 'listCreated'
+      ? await _listCreated()
+      : await _dispatch(await _prepare());
 
   Future<_PreparedCommand> _prepare() async {
     final created = await _created();
@@ -113,22 +115,28 @@ class const _SelectedCommand(
   );
 
   Future<Map<String, Object?>> _dispatch(_PreparedCommand prepared) {
-    if (request.arguments['action'] == 'listCreated') return _listCreated();
-
     return request.arguments['action'] == 'read'
         ? _read(prepared)
         : _write(prepared);
   }
 
   Future<Map<String, Object?>> _listCreated() async {
-    final created = await _created();
     final offset = request.arguments['offset'] ?? 0;
-    if (offset is! int || offset < 0 || offset > created.length) {
+    if (offset is! int || offset < 0) {
       throw const WorkspaceTableException();
     }
+    final created =
+        await owner.receipts?.createdPage(
+          target.workspaceId,
+          target.conversationId,
+          shared.epoch,
+          offset,
+        ) ??
+        [];
+    final command = await owner.commands(target.workspaceId);
     final items = <Map<String, Object?>>[];
-    int? nextOffset;
-    for (var index = offset; index < created.length; index++) {
+    final nextOffset = created.length > 100 ? offset + 100 : null;
+    for (var index = 0; index < created.length && index < 100; index++) {
       final item = created[index];
       final kind = item['kind'];
       final id = item['id'];
@@ -137,22 +145,25 @@ class const _SelectedCommand(
           !{'folder', 'table', 'view'}.contains(kind)) {
         continue;
       }
+      await _authorize();
       try {
-        final data = await _SelectedCommand(owner, target, shared, (
-          arguments: <String, dynamic>{
-            'action': 'read',
-            if (kind == 'table') 'tableId': id else 'id': id,
-          },
-          operationId: null,
-        )).call();
-        if (items.length == 100) {
-          nextOffset = index;
-          break;
-        }
+        final arguments = <String, dynamic>{
+          'action': 'read',
+          if (kind == 'table') 'tableId': id else 'id': id,
+        };
+        final selection = workspaceCreatedContext(shared.selection, [
+          item,
+        ], arguments);
+        final data = await command.call(
+          selection: selection,
+          arguments: arguments,
+          references: .new(shared.selection, [item]),
+          conversationId: target.conversationId,
+        );
         items.add({
           'id': id,
           'kind': kind,
-          for (final key in ['name', 'revision', 'schemaRevision', 'parentId'])
+          for (final key in ['name', 'revision', 'schemaRevision'])
             if (data.containsKey(key)) key: data[key],
         });
       } on WorkspaceTableException {

@@ -28,6 +28,17 @@ class const LocalWorkspaceCommandRepository(final AppDatabase database) {
     String selectionId,
   ) => _ReceiptRows(database, workspaceId, conversationId).created(selectionId);
 
+  Future<List<Map<String, Object?>>> createdPage(
+    String workspaceId,
+    String conversationId,
+    String selectionId,
+    int offset,
+  ) => _ReceiptRows(
+    database,
+    workspaceId,
+    conversationId,
+  ).createdPage(selectionId, offset);
+
   Future<Map<String, Object?>?> matchedResult({
     required String workspaceId,
     required String conversationId,
@@ -125,6 +136,19 @@ class const _ReceiptRows(
     final query = database.select(database.workspaceCommandReceipts)
       ..where((row) => _created(row, selectionId))
       ..orderBy([(row) => OrderingTerm.asc(row.requestId)]);
+    final rows = await query.get();
+
+    return [for (final row in rows) _ReceiptCodec.decode(row.result)];
+  }
+
+  Future<List<Map<String, Object?>>> createdPage(
+    String selectionId,
+    int offset,
+  ) async {
+    final query = database.select(database.workspaceCommandReceipts)
+      ..where((row) => _created(row, selectionId))
+      ..orderBy([(row) => OrderingTerm.asc(row.requestId)])
+      ..limit(101, offset: offset);
     final rows = await query.get();
 
     return [for (final row in rows) _ReceiptCodec.decode(row.result)];

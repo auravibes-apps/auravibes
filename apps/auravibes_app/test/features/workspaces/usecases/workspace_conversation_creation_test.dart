@@ -220,6 +220,48 @@ void main() {
         ),
       );
       expect(discovery['nextOffset'], isNull);
+      expect(
+        items.every((item) => item is Map && !item.containsKey('parentId')),
+        isTrue,
+      );
+      final discoverCall = MessageToolCallEntity(
+        id: 'discovery-call',
+        name: workspaceCommandToolName,
+        argumentsRaw: jsonEncode({'action': 'listCreated', 'offset': 0}),
+        responseRaw: jsonEncode({'secret': 'stale private data'}),
+        resultStatus: .success,
+      );
+      MessageEntity transcript({
+        required bool user,
+        MessageMetadataEntity? metadata,
+      }) => MessageEntity(
+        id: user ? 'question' : 'tool',
+        conversationId: fixture.conversationId,
+        content: '',
+        messageType: user ? .text : .toolCall,
+        isUser: user,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: metadata,
+      );
+      final projection = ProjectWorkspaceChatContextUsecase(
+        fixture.service(fixture.tables),
+      );
+      final projected = await projection([
+        transcript(user: true),
+        transcript(user: false, metadata: .new(toolCalls: [discoverCall])),
+      ]);
+      final output =
+          projected.last.metadata?.toolCalls.single.responseRaw ?? '';
+      expect(output, contains('Earlier'));
+      expect(output, isNot(contains('stale private data')));
+      final readInput = {'action': 'listCreated', 'offset': 7};
+      expect(workspaceContextReadArguments(readInput, {}), {
+        'action': 'listCreated',
+        'offset': 7,
+      });
+
       final renamed = await fixture.run('later-rename', {
         'action': 'renameFolder',
         'id': read['id'],
