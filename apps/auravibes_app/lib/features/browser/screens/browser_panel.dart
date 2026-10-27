@@ -1044,6 +1044,7 @@ class const _WorkspaceTabChipRow({required final _BrowserPanelData data})
   String _title(String kind) => switch (kind) {
     'table' => LocaleKeys.workspace_items_table.tr(),
     'file' => LocaleKeys.workspace_assets_file.tr(),
+    'view' => LocaleKeys.workspace_views_title.tr(),
     _ => LocaleKeys.workspace_items_title.tr(),
   };
 }
