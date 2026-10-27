@@ -151,9 +151,12 @@ class const _SelectedCommand(
           'action': 'read',
           if (kind == 'table') 'tableId': id else 'id': id,
         };
-        final selection = workspaceCreatedContext(shared.selection, [
-          item,
-        ], arguments);
+        final itemsInScope = [item];
+        final selection = workspaceCreatedContext(
+          shared.selection,
+          itemsInScope,
+          arguments,
+        );
         final data = await command.call(
           selection: selection,
           arguments: arguments,
