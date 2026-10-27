@@ -59,6 +59,7 @@ class _Draft {
       selected = useState<Map<String, WorkspaceRecord>>({}),
       columns = useState(table.columns.map((column) => column.id).toSet()),
       active = useState<({String record, String column})?>(null),
+      hovered = useState<String?>(null),
       editing = useState(false),
       creating = useState(false),
       values = useState<Map<String, Object?>>({});
@@ -70,6 +71,7 @@ class _Draft {
   final ValueNotifier<Map<String, WorkspaceRecord>> selected;
   final ValueNotifier<Set<String>> columns;
   final ValueNotifier<({String record, String column})?> active;
+  final ValueNotifier<String?> hovered;
   final ValueNotifier<bool> editing;
   final ValueNotifier<bool> creating;
   final ValueNotifier<Map<String, Object?>> values;
@@ -338,56 +340,80 @@ class const _Rows(
 
   bool isSelecting() => table.canEditRecords && draft.selecting.value;
   @override
-  Widget build(BuildContext context) => _Grid(this);
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: _clearSelection,
+    behavior: .opaque,
+    child: _Grid(this),
+  );
+  void _clearSelection() {
+    if (!draft.draftOpen.value) draft.active.value = null;
+  }
 }
 
 class const _Grid(final _Rows owner) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    child: SingleChildScrollView(
-      scrollDirection: .horizontal,
-      child: DataTable(
-        columns: [
-          const DataColumn(label: SizedBox.shrink()),
-          for (final column in owner.visible)
-            DataColumn(label: Text(column.name)),
-          if (owner.table.canManage && owner.browser.onAddColumn != null)
-            DataColumn(
-              label: IconButton(
-                onPressed: owner.draft.draftOpen.value
-                    ? null
-                    : owner.browser.onAddColumn,
-                tooltip: LocaleKeys.workspace_items_create_column.tr(),
-                icon: const Icon(Icons.add),
-              ),
-            ),
-        ],
-        dataRowMaxHeight: .infinity,
-        rows: [
-          for (final record in owner.records)
-            _GridRecord(owner, record).create(),
-          if (owner.table.canEditRecords && owner.draft.creating.value)
-            _NewGridRecord(owner).create()
-          else if (owner.table.canEditRecords && owner.browser.onAddRow != null)
-            DataRow(
-              cells: [
-                DataCell.empty,
-                DataCell(
-                  IconButton(
-                    onPressed: _create,
-                    tooltip: LocaleKeys.workspace_items_create_record.tr(),
+  Widget build(BuildContext context) => TapRegion(
+    child: Align(
+      alignment: .topLeft,
+      child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          scrollDirection: .horizontal,
+          child: DataTable(
+            columns: [
+              const DataColumn(label: SizedBox.shrink()),
+              for (final column in owner.visible)
+                DataColumn(label: Text(column.name)),
+              if (owner.table.canManage && owner.browser.onAddColumn != null)
+                DataColumn(
+                  label: IconButton(
+                    onPressed: owner.draft.draftOpen.value
+                        ? null
+                        : owner.browser.onAddColumn,
+                    tooltip: LocaleKeys.workspace_items_create_column.tr(),
                     icon: const Icon(Icons.add),
                   ),
                 ),
-                for (var i = 1; i < owner.visible.length; i++) DataCell.empty,
-                if (owner.table.canManage && owner.browser.onAddColumn != null)
-                  DataCell.empty,
-              ],
-            ),
-        ],
+            ],
+            dataRowMaxHeight: .infinity,
+            rows: [
+              for (final record in owner.records)
+                _GridRecord(
+                  owner,
+                  record,
+                  Theme.of(context).colorScheme,
+                ).create(),
+              if (owner.table.canEditRecords && owner.draft.creating.value)
+                _NewGridRecord(owner).create()
+              else if (owner.table.canEditRecords &&
+                  owner.browser.onAddRow != null)
+                DataRow(
+                  cells: [
+                    DataCell.empty,
+                    DataCell(
+                      IconButton(
+                        onPressed: _create,
+                        tooltip: LocaleKeys.workspace_items_create_record.tr(),
+                        icon: const Icon(Icons.add),
+                      ),
+                    ),
+                    for (var i = 1; i < owner.visible.length; i++)
+                      DataCell.empty,
+                    if (owner.table.canManage &&
+                        owner.browser.onAddColumn != null)
+                      DataCell.empty,
+                  ],
+                ),
+            ],
+          ),
+        ),
       ),
     ),
+    onTapOutside: _clearSelection,
   );
+  void _clearSelection(PointerDownEvent _) {
+    if (!owner.draft.draftOpen.value) owner.draft.active.value = null;
+  }
+
   void _create() {
     if (owner.draft.editing.value) return;
     owner.draft.values.value = WorkspaceTableConstraints.defaults(
@@ -470,13 +496,20 @@ class const _NewRecordActions(final _Rows owner) extends HookConsumerWidget {
   }
 }
 
-class const _GridRecord(final _Rows owner, final WorkspaceRecord record) {
+class const _GridRecord(
+  final _Rows owner,
+  final WorkspaceRecord record,
+  final ColorScheme colors,
+) {
   bool get _selecting => owner.isSelecting();
   bool get _selected => owner.draft.selected.value.containsKey(record.id);
   bool get _canSelect => _selecting && owner.draft.canSelect(record);
   DataRow create() => DataRow(
     selected: _selected,
     onSelectChanged: _canSelect ? _changed : null,
+    color: owner.draft.hovered.value == record.id
+        ? WidgetStatePropertyAll(colors.onSurface.withValues(alpha: 0.08))
+        : null,
     cells: [
       DataCell(
         IconButton(
@@ -521,27 +554,43 @@ class const _SpreadsheetCell(
     final action = WorkspaceTableActions.use(context);
     final colors = Theme.of(context).colorScheme;
 
-    return Focus(
-      child: GestureDetector(
-        child: Container(
-          key: ValueKey('workspace_cell_${record.id}_${column.id}'),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _color(colors),
-            border: _border(colors),
+    return MouseRegion(
+      onEnter: _hover,
+      onExit: _leave,
+      child: Focus(
+        child: GestureDetector(
+          child: Container(
+            key: ValueKey('workspace_cell_${record.id}_${column.id}'),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _color(colors),
+              border: _border(colors),
+            ),
+            width: 200,
+            child: DefaultTextStyle.merge(
+              style: .new(
+                color: _selected ? colors.onPrimaryContainer : colors.onSurface,
+              ),
+              child: _editing
+                  ? _SpreadsheetEditor(this, action, ref)
+                  : _Cell(owner, record, column),
+            ),
           ),
-          width: 200,
-          child: _editing
-              ? _SpreadsheetEditor(this, action, ref)
-              : _Cell(owner, record, column),
+          onTap: _select,
+          onDoubleTap: _canEdit ? _edit : null,
+          onLongPress: owner.table.canEditRecords ? _selectRow : null,
+          behavior: .opaque,
         ),
-        onTap: _select,
-        onDoubleTap: _canEdit ? _edit : null,
-        onLongPress: owner.table.canEditRecords ? _selectRow : null,
-        behavior: .opaque,
+        onKeyEvent: _key,
       ),
-      onKeyEvent: _key,
     );
+  }
+
+  void _hover(PointerEnterEvent _) => owner.draft.hovered.value = record.id;
+  void _leave(PointerExitEvent _) {
+    if (owner.draft.hovered.value == record.id) {
+      owner.draft.hovered.value = null;
+    }
   }
 
   Color? _color(ColorScheme colors) {
@@ -628,34 +677,105 @@ class const _SpreadsheetEditor(
   final WidgetRef ref,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: .min,
-    children: [
-      WorkspaceRecordFields(
-        table: cell.owner.table,
-        workspaceId: cell.owner.browser.workspaceId,
-        restricted: cell.record.restrictedReferenceColumns,
-        draft: cell.owner.draft.values,
-        disabled: action.pending,
-        columnId: cell.column.id,
-      ),
-      if (action.error case final error?) WorkspaceItemFailure(error: error),
-      Row(
-        children: [
-          IconButton(
-            onPressed: action.pending ? null : () => cell._submit(ref, action),
-            tooltip: LocaleKeys.workspace_items_save_record.tr(),
-            icon: const Icon(Icons.check),
-          ),
-          IconButton(
-            onPressed: action.pending ? null : cell._cancel,
-            tooltip: LocaleKeys.common_cancel.tr(),
-            icon: const Icon(Icons.close),
-          ),
-        ],
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    if (switch (cell.column.type) {
+      .text || .number || .url || .email || .phone => true,
+      _ => false,
+    }) {
+      return _InlineScalarEditor(cell, action, ref);
+    }
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        WorkspaceRecordFields(
+          table: cell.owner.table,
+          workspaceId: cell.owner.browser.workspaceId,
+          restricted: cell.record.restrictedReferenceColumns,
+          draft: cell.owner.draft.values,
+          disabled: action.pending,
+          columnId: cell.column.id,
+        ),
+        if (action.error case final error?) WorkspaceItemFailure(error: error),
+        Row(
+          children: [
+            IconButton(
+              onPressed: action.pending
+                  ? null
+                  : () => cell._submit(ref, action),
+              tooltip: LocaleKeys.workspace_items_save_record.tr(),
+              icon: const Icon(Icons.check),
+            ),
+            IconButton(
+              onPressed: action.pending ? null : cell._cancel,
+              tooltip: LocaleKeys.common_cancel.tr(),
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class const _InlineScalarEditor(
+  final _SpreadsheetCell cell,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
+) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController(
+      text: cell.owner.draft.values.value[cell.column.id]?.toString() ?? '',
+    );
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                key: const ValueKey('workspace_inline_record_value'),
+                controller: controller,
+                decoration: const InputDecoration.collapsed(hintText: ''),
+                style: .new(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+                autofocus: true,
+                onChanged: _change,
+                onSubmitted: (_) => cell._submit(ref, action),
+                enabled: !action.pending,
+              ),
+            ),
+            IconButton(
+              onPressed: action.pending
+                  ? null
+                  : () => cell._submit(ref, action),
+              tooltip: LocaleKeys.workspace_items_save_record.tr(),
+              icon: const Icon(Icons.check, size: 16),
+            ),
+            IconButton(
+              onPressed: action.pending ? null : cell._cancel,
+              tooltip: LocaleKeys.common_cancel.tr(),
+              icon: const Icon(Icons.close, size: 16),
+            ),
+          ],
+        ),
+        if (action.error case final error?) WorkspaceItemFailure(error: error),
+      ],
+    );
+  }
+
+  void _change(String text) {
+    final value = cell.column.type == .number
+        ? num.tryParse(text) ?? text
+        : text;
+    cell.owner.draft.values.value = {
+      ...cell.owner.draft.values.value,
+      cell.column.id: value,
+    };
+  }
 }
 
 class const _Cell(
