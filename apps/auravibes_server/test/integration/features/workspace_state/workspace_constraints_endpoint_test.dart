@@ -114,6 +114,55 @@ void main() {
         final columns =
             (jsonDecode(table.resources.single.data) as Map)['columns'] as List;
         expect(columns.every((c) => (c as Map)['required'] != true), isTrue);
+        final stored = await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(workspace.id!) &
+              row.resourceKind.equals(.table) &
+              row.resourceId.equals(tableId),
+        );
+        final legacyData = jsonDecode(stored!.data) as Map<String, dynamic>;
+        (legacyData['columns'] as List).first['required'] = true;
+        await WorkspaceResource.db.updateRow(
+          session,
+          stored.copyWith(data: jsonEncode(legacyData)),
+        );
+        final request = ReadWorkspaceStateRequest(
+          workspaceId: workspace.id!,
+          eventLimit: 10,
+          pages: [
+            WorkspaceResourcePageRequest(resourceKind: .table, limit: 100),
+          ],
+        );
+        final read = await endpoints.workspaceState.read(
+          authenticated,
+          request,
+        );
+        final visible = read.pages.single.resources.firstWhere(
+          (row) => row.resourceId == tableId,
+        );
+        expect(
+          (jsonDecode(visible.data) as Map)['columns'].first['required'],
+          false,
+        );
+        final retained = await WorkspaceResource.db.findById(
+          session,
+          stored.id!,
+        );
+        expect(
+          (jsonDecode(retained!.data) as Map)['columns'].first['required'],
+          true,
+        );
+        final outsider = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            const Uuid().v4().toString(),
+            const {},
+          ),
+        );
+        await expectLater(
+          endpoints.workspaceState.read(outsider, request),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
         for (var i = 0; i < 2; i++) {
           final response = await patch(
             WorkspacePatchOperation(

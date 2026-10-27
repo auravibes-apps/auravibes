@@ -116,7 +116,8 @@ Map<String, dynamic> _visibleColumn(
   Map<String, dynamic> column,
   List<String> restricted,
 ) {
-  if (!restricted.contains(column['id'])) return column;
+  final visible = {...column, 'required': false};
+  if (restricted.contains(column['id'])) visible.remove('defaultValue');
 
-  return {...column}..remove('defaultValue');
+  return visible;
 }

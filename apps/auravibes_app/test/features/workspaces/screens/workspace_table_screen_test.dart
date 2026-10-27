@@ -134,6 +134,7 @@ void main() {
       columns: [
         WorkspaceColumn(id: 'label', name: 'Title'),
         WorkspaceColumn(id: 'flag', name: 'Flag', type: .checkbox),
+        WorkspaceColumn(id: 'third', name: 'Third'),
       ],
       revision: 1,
       schemaRevision: 1,
@@ -222,7 +223,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
     final _ = await tester.pumpAndSettle();
-    await tester.drag(find.byType(DataTable), const Offset(-220, 0));
+    await tester.dragFrom(const Offset(300, 140), const Offset(-220, 0));
     final _ = await tester.pumpAndSettle();
     await tester.tap(flag);
     await tester.pump(const Duration(milliseconds: 50));
@@ -234,6 +235,22 @@ void main() {
     expect(popup.left, greaterThanOrEqualTo(0));
     expect(popup.right, lessThanOrEqualTo(400));
     expect(popup.bottom, lessThanOrEqualTo(400));
+    await tester.tap(find.byTooltip('Cancel').last);
+    final _ = await tester.pumpAndSettle();
+    final left = tester.getTopLeft(flag).dx;
+    await tester.dragFrom(const Offset(300, 140), .new(-left - 60, 0));
+    final _ = await tester.pumpAndSettle();
+    expect(tester.getTopLeft(flag).dx, lessThan(0));
+    final partiallyVisible = Offset(10, tester.getCenter(flag).dy);
+    await tester.tapAt(partiallyVisible);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tapAt(partiallyVisible);
+    final _ = await tester.pumpAndSettle();
+    final clamped = tester.getRect(
+      find.byKey(const ValueKey('workspace_cell_type_popup')),
+    );
+    expect(clamped.left, greaterThanOrEqualTo(0));
+    expect(clamped.right, lessThanOrEqualTo(400));
     await tester.tap(find.byTooltip('Cancel').last);
     final _ = await tester.pumpAndSettle();
   });

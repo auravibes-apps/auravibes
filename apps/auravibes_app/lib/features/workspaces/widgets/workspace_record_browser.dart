@@ -701,7 +701,7 @@ class const _ComplexOverlayLayout({
     final viewport = MediaQuery.sizeOf(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final box = anchorContext.findRenderObject() as RenderBox?;
-    final origin = box?.localToGlobal(Offset.zero) ?? .zero;
+    final origin = box?.localToGlobal(.zero) ?? .zero;
     final anchorTop = origin.dy - 8;
     final anchorBottom = origin.dy + (box?.size.height ?? 32) + 8;
     final below = (viewport.height - keyboard - anchorBottom - 8).clamp(
@@ -712,17 +712,17 @@ class const _ComplexOverlayLayout({
     final flip = below < 300 && above > below;
     final maxHeight = (flip ? above : below).clamp(48.0, 300.0);
     final width = (viewport.width - 16).clamp(48.0, 320.0);
-    final rightOverflow = (origin.dx - 8 + width - viewport.width + 8).clamp(
-      0.0,
-      width,
-    );
+    final anchorLeft = origin.dx - 8;
+    final minOffset = 8 - anchorLeft;
+    final maxOffset = viewport.width - 8 - width - anchorLeft;
+    final horizontalOffset = 0.0.clamp(minOffset, maxOffset);
 
     return Align(
       alignment: .topLeft,
       child: CompositedTransformFollower(
         link: link,
         showWhenUnlinked: false,
-        offset: .new(-rightOverflow, 0),
+        offset: .new(horizontalOffset, 0),
         targetAnchor: flip ? .topLeft : .bottomLeft,
         followerAnchor: flip ? .bottomLeft : .topLeft,
         child: Material(
@@ -808,12 +808,12 @@ class const _InlineScalarEditor(
           ),
           if (action.error case final error?)
             Tooltip(
+              message: _errorText(error),
               child: Icon(
                 Icons.error_outline,
-                color: Theme.of(context).colorScheme.error,
                 size: 18,
+                color: Theme.of(context).colorScheme.error,
               ),
-              message: _errorText(error),
             ),
         ],
       ),
@@ -825,15 +825,12 @@ class const _InlineScalarEditor(
     _ => CloudAppErrors.localizationKey(error).tr(),
   };
 
-  Object? _parse(String text) {
-    if (text.isEmpty) return null;
-    if (cell.column.type == .number) return num.tryParse(text) ?? text;
-
-    return text;
-  }
-
   void _change(String text) {
-    final value = _parse(text);
+    final value = switch ((empty: text.isEmpty, type: cell.column.type)) {
+      (empty: true, type: _) => null,
+      (empty: false, type: .number) => num.tryParse(text) ?? text,
+      _ => text,
+    };
     cell.owner.draft.values.value = {
       ...cell.owner.draft.values.value,
       cell.column.id: value,
