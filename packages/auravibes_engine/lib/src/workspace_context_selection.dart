@@ -92,7 +92,7 @@ class const _SelectionDecoder(
 
     return switch (address.kind) {
       'directory' => emptyItem && emptyRecords,
-      'folder' => !emptyItem && emptyRecords,
+      'folder' || 'file' => !emptyItem && emptyRecords,
       'table' || 'view' => !emptyItem,
       _ => false,
     };

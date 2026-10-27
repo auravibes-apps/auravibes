@@ -42,7 +42,7 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'current share; it does not list other items. '
       'For the shared Directory root, read needs only action; it returns '
       'root metadata, not a list of children. '
-      'For a folder or view read, provide id. For a table read, provide '
+      'For a folder, file or view read, provide id. For a table read, provide '
       'tableId. Use IDs and revisions from shared context or tool results. '
       'createFolder requires name and the shared folder parentId '
       '(null or omitted for root). '
