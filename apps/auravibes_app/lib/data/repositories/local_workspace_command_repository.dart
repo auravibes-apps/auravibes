@@ -28,16 +28,11 @@ class const LocalWorkspaceCommandRepository(final AppDatabase database) {
     String selectionId,
   ) => _ReceiptRows(database, workspaceId, conversationId).created(selectionId);
 
-  Future<List<Map<String, Object?>>> createdPage(
+  Future<List<WorkspaceCommandReceiptRow>> receiptPage(
     String workspaceId,
     String conversationId,
-    String selectionId,
-    int offset,
-  ) => _ReceiptRows(
-    database,
-    workspaceId,
-    conversationId,
-  ).createdPage(selectionId, offset);
+    String? cursor,
+  ) => _ReceiptRows(database, workspaceId, conversationId).receiptPage(cursor);
 
   Future<Map<String, Object?>?> matchedResult({
     required String workspaceId,
@@ -141,17 +136,19 @@ class const _ReceiptRows(
     return [for (final row in rows) _ReceiptCodec.decode(row.result)];
   }
 
-  Future<List<Map<String, Object?>>> createdPage(
-    String selectionId,
-    int offset,
-  ) async {
+  Future<List<WorkspaceCommandReceiptRow>> receiptPage(String? cursor) {
     final query = database.select(database.workspaceCommandReceipts)
-      ..where((row) => _created(row, selectionId))
+      ..where(
+        (row) =>
+            _scope(row) &
+            (cursor == null
+                ? const Constant(true)
+                : row.requestId.isBiggerThanValue(cursor)),
+      )
       ..orderBy([(row) => OrderingTerm.asc(row.requestId)])
-      ..limit(101, offset: offset);
-    final rows = await query.get();
+      ..limit(101);
 
-    return [for (final row in rows) _ReceiptCodec.decode(row.result)];
+    return query.get();
   }
 
   Expression<bool> _scope(WorkspaceCommandReceipts row) =>

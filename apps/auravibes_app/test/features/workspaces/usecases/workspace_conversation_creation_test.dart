@@ -219,7 +219,7 @@ void main() {
           ),
         ),
       );
-      expect(discovery['nextOffset'], isNull);
+      expect(discovery['nextCursor'], isNull);
       expect(
         items.every((item) => item is Map && !item.containsKey('parentId')),
         isTrue,
@@ -227,7 +227,7 @@ void main() {
       final discoverCall = MessageToolCallEntity(
         id: 'discovery-call',
         name: workspaceCommandToolName,
-        argumentsRaw: jsonEncode({'action': 'listCreated', 'offset': 0}),
+        argumentsRaw: jsonEncode({'action': 'listCreated', 'cursor': 'aaa'}),
         responseRaw: jsonEncode({'secret': 'stale private data'}),
         resultStatus: .success,
       );
@@ -256,10 +256,10 @@ void main() {
           projected.last.metadata?.toolCalls.single.responseRaw ?? '';
       expect(output, contains('Earlier'));
       expect(output, isNot(contains('stale private data')));
-      final readInput = {'action': 'listCreated', 'offset': 7};
+      final readInput = {'action': 'listCreated', 'cursor': 'abc'};
       expect(workspaceContextReadArguments(readInput, {}), {
         'action': 'listCreated',
-        'offset': 7,
+        'cursor': 'abc',
       });
 
       final renamed = await fixture.run('later-rename', {
@@ -283,13 +283,13 @@ void main() {
     }
     final first = await fixture.run('first-page', {'action': 'listCreated'});
     expect((first['items'] as List<Object?>?)?.length, 100);
-    expect(first['nextOffset'], 100);
+    expect(first['nextCursor'], 'item-099');
     final second = await fixture.run('second-page', {
       'action': 'listCreated',
-      'offset': first['nextOffset'],
+      'cursor': first['nextCursor'],
     });
     expect((second['items'] as List<Object?>?)?.length, 1);
-    expect(second['nextOffset'], isNull);
+    expect(second['nextCursor'], isNull);
     final _ = await LocalWorkspaceContextRepository(
       fixture.database,
       'one',

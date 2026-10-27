@@ -68,10 +68,9 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
         'type': 'string',
         'description': 'Selected or previously created table ID.',
       },
-      'offset': {
-        'type': 'integer',
-        'minimum': 0,
-        'description': 'Pagination offset returned by listCreated.',
+      'cursor': {
+        'type': 'string',
+        'description': 'Pagination cursor returned by listCreated.',
       },
       'parentId': {
         'type': ['string', 'null'],
@@ -148,7 +147,7 @@ Map<String, dynamic> workspaceContextReadArguments(
   if (input['action'] == 'listCreated') {
     return {
       'action': 'listCreated',
-      if (input.containsKey('offset')) 'offset': input['offset'],
+      if (input.containsKey('cursor')) 'cursor': input['cursor'],
     };
   }
   final result = output is Map<String, dynamic>

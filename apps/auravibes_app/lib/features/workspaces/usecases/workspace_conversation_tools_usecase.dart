@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_command_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
@@ -121,23 +123,26 @@ class const _SelectedCommand(
   }
 
   Future<Map<String, Object?>> _listCreated() async {
-    final offset = request.arguments['offset'] ?? 0;
-    if (offset is! int || offset < 0) {
+    final cursor = request.arguments['cursor'];
+    if (cursor != null &&
+        (cursor is! String || cursor.isEmpty || cursor.length > 512)) {
       throw const WorkspaceTableException();
     }
     final created =
-        await owner.receipts?.createdPage(
+        await owner.receipts?.receiptPage(
           target.workspaceId,
           target.conversationId,
-          shared.epoch,
-          offset,
+          cursor as String?,
         ) ??
         [];
     final command = await owner.commands(target.workspaceId);
     final items = <Map<String, Object?>>[];
-    final nextOffset = created.length > 100 ? offset + 100 : null;
+    final nextCursor = created.length > 100 ? created[99].requestId : null;
     for (var index = 0; index < created.length && index < 100; index++) {
-      final item = created[index];
+      final row = created[index];
+      if (!row.created || row.selectionId != shared.epoch) continue;
+      final item = (jsonDecode(row.result) as Map<String, dynamic>)
+          .cast<String, Object?>();
       final kind = item['kind'];
       final id = item['id'];
       if (id is! String ||
@@ -175,7 +180,7 @@ class const _SelectedCommand(
     }
     await _authorize();
 
-    return {'items': items, 'nextOffset': nextOffset};
+    return {'items': items, 'nextCursor': nextCursor};
   }
 
   Future<List<Map<String, Object?>>> _created() async =>

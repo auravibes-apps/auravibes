@@ -92,8 +92,8 @@ class const ProjectWorkspaceChatContextUsecase(
           conversationId: conversationId,
           arguments: {
             'action': 'listCreated',
-            if (call.arguments['offset'] case final int offset)
-              'offset': offset,
+            if (call.arguments['cursor'] case final String cursor)
+              'cursor': cursor,
           },
         ),
       );
