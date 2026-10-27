@@ -94,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'Allow AI in this conversation to access the Directory? Opening it does not share it.',
+          'Allow AI to create folders and tables at the Directory root? Existing items and records are not shared. This replaces the current shared context.',
         ),
         findsOneWidget,
       );
@@ -118,7 +118,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'Allow AI in this conversation to access this folder? Opening it does not share it.',
+          'Allow AI to read or rename this folder and create folders and tables inside it? Existing items and records are not shared. This replaces the current shared context.',
         ),
         findsOneWidget,
       );

@@ -2285,8 +2285,8 @@
     "remove_extra_inputs": "Remove extra inputs"
   },
   "workspace_chat": {
-    "directory_scope": "Allow AI in this conversation to access the Directory? Opening it does not share it.",
-    "folder_scope": "Allow AI in this conversation to access this folder? Opening it does not share it.",
+    "directory_scope": "Allow AI to create folders and tables at the Directory root? Existing items and records are not shared. This replaces the current shared context.",
+    "folder_scope": "Allow AI to read or rename this folder and create folders and tables inside it? Existing items and records are not shared. This replaces the current shared context.",
     "reference_scope": "Links outside this chat’s shared context stay hidden. Edit links in Directory.",
     "inspect": "Inspect shared context",
     "none": "No workspace items are shared with AI in this Conversation.",
