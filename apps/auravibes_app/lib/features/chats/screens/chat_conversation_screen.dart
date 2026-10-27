@@ -64,6 +64,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_browser_toggle.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_button.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chat_layout.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_tool_observer.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -1586,7 +1587,14 @@ class const _LoadedChatConversationScreen({
 
     return ChatPrimaryScrollController(
       child: AppScreen(
-        child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
+        child: WorkspaceViewToolObserver(
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+          child: _LoadedChatConversationLayout(
+            data: data,
+            sidePanel: sidePanel,
+          ),
+        ),
         appBar: _ChatConversationAppBar(
           data: data,
           actions: _chatConversationAppBarActions(
