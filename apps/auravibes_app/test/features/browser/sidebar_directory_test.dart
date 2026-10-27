@@ -109,7 +109,12 @@ void main() {
         find.text('You do not have permission for this cloud action.'),
         findsNothing,
       );
-      expect(find.text('Directory'), findsWidgets);
+      expect(
+        find.text(
+          'AI can create folders and tables at the Directory root. Existing items and records are not shared.',
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Folder'));
@@ -134,6 +139,20 @@ void main() {
       expect(selection?.kind, 'folder');
       expect(selection?.itemId, folder.id);
       expect(selection?.parentId, isNull);
+      await tester.tap(find.byType(AuraPopupMenuButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Inspect shared context'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'AI can read or rename this folder and create folders and tables inside it. Existing items and records are not shared.',
+        ),
+        findsOneWidget,
+      );
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );

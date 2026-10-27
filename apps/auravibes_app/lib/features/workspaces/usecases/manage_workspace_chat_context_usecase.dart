@@ -23,7 +23,7 @@ class const ManageWorkspaceChatContextUsecase({
     if (selection == null) return null;
     if (selection.kind == 'directory') return {'kind': 'directory'};
 
-    return await commands.call(
+    final result = await commands.call(
       selection: selection,
       arguments: {
         'action': 'read',
@@ -31,6 +31,8 @@ class const ManageWorkspaceChatContextUsecase({
         'tableId': selection.itemId,
       },
     );
+
+    return {...result, 'kind': selection.kind};
   }
 
   Future<WorkspaceConversationContext> save(

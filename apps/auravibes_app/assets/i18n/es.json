@@ -2285,6 +2285,8 @@
     "remove_extra_inputs": "Quitar entradas adicionales"
   },
   "workspace_chat": {
+    "directory_shared_scope": "La IA puede crear carpetas y tablas en la raíz del directorio. Los elementos y registros existentes no se comparten.",
+    "folder_shared_scope": "La IA puede leer o renombrar esta carpeta y crear carpetas y tablas dentro de ella. Los elementos y registros existentes no se comparten.",
     "directory_scope": "¿Permitir que la IA cree carpetas y tablas en la raíz del directorio? Los elementos y registros existentes no se comparten. Esto reemplaza el contexto compartido actual.",
     "folder_scope": "¿Permitir que la IA lea o renombre esta carpeta y cree carpetas y tablas dentro de ella? Los elementos y registros existentes no se comparten. Esto reemplaza el contexto compartido actual.",
     "reference_scope": "Los enlaces fuera del contexto compartido de este chat permanecen ocultos. Edita los enlaces en Directorio.",

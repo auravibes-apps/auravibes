@@ -68,7 +68,11 @@ class const _WorkspaceContextScope({required final Map<String, Object?>? data})
       mainAxisSize: .min,
       children: [
         _WorkspaceContextScopeHeader(data: data),
-        const TextLocale(LocaleKeys.workspace_chat_scope),
+        TextLocale(switch (data['kind']) {
+          'directory' => LocaleKeys.workspace_chat_directory_shared_scope,
+          'folder' => LocaleKeys.workspace_chat_folder_shared_scope,
+          _ => LocaleKeys.workspace_chat_scope,
+        }),
         if (_hasRestrictedReferences(data['records']))
           const TextLocale(LocaleKeys.workspace_chat_reference_scope),
         _WorkspaceContextRecords(
