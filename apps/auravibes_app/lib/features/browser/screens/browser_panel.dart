@@ -145,12 +145,18 @@ class const _BrowserSessionView({
     );
 
     return _BrowserSessionColumn(
-      data: _createPanelData(ref, request, _usePanelTabState(request), tabs),
+      data: _createPanelData(
+        ref,
+        request,
+        _usePanelTabState(request, tabs.selected.value),
+        tabs,
+      ),
     );
   }
 
   static _BrowserPanelTabState _usePanelTabState(
     _BrowserSessionViewRequest request,
+    String? selectedWorkspace,
   ) {
     final activeTab = request.session.activeTab;
     final selectedToolResultTab = request.toolResultTabs
@@ -161,7 +167,11 @@ class const _BrowserSessionView({
       activeTab: activeTab,
       selectedToolResultTab: selectedToolResultTab,
       addressController: _useAddressController(activeTab),
-      activeTabKey: _useActiveTabKey(activeTab, selectedToolResultTab),
+      activeTabKey: _useActiveTabKey(
+        activeTab,
+        selectedToolResultTab,
+        selectedWorkspace,
+      ),
     );
   }
 
@@ -174,10 +184,11 @@ class const _BrowserSessionView({
   static GlobalKey _useActiveTabKey(
     BrowserTab? activeTab,
     SidebarToolResultTab? selectedToolResultTab,
+    String? selectedWorkspace,
   ) {
     final activeTabKey = useMemoized(GlobalKey.new, const []);
     useEffect(() => _scrollToActiveBrowserTab(activeTabKey), [
-      selectedToolResultTab?.id ?? activeTab?.id,
+      selectedWorkspace ?? selectedToolResultTab?.id ?? activeTab?.id,
     ]);
 
     return activeTabKey;
@@ -1058,6 +1069,7 @@ class const _WorkspaceChip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SidebarTabChip(
+    key: data.workspaceTabs.selected.value == id ? data.activeTabKey : null,
     data: (
       identifiers: (
         tile: 'sidebar_workspace_$id',
