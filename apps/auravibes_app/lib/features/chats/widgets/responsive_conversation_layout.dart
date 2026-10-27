@@ -233,9 +233,12 @@ class const _ConversationPaneVisibility({
   @override
   Widget build(BuildContext context) => ExcludeFocus(
     excluding: !visible,
-    child: ExcludeSemantics(
-      excluding: !visible,
-      child: Offstage(offstage: !visible, child: child),
+    child: TickerMode(
+      enabled: visible,
+      child: ExcludeSemantics(
+        excluding: !visible,
+        child: Offstage(offstage: !visible, child: child),
+      ),
     ),
   );
 }

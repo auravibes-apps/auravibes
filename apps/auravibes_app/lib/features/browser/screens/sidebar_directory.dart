@@ -64,11 +64,27 @@ class const SidebarDirectory({
     return ListView(
       children: [
         if (path.value.isNotEmpty)
-          ListTile(
-            leading: const Icon(Icons.arrow_back),
-            title: Text(path.value.last.name),
-            onTap: () =>
-                path.value = path.value.sublist(0, path.value.length - 1),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () =>
+                    path.value = path.value.sublist(0, path.value.length - 1),
+                icon: const Icon(Icons.arrow_back),
+              ),
+              TextButton(
+                onPressed: () => path.value = [],
+                child: const TextLocale(LocaleKeys.workspace_items_title),
+              ),
+              for (var index = 0; index < path.value.length; index++) ...[
+                const Text('/'),
+                TextButton(
+                  onPressed: () =>
+                      path.value = path.value.sublist(0, index + 1),
+                  child: Text(path.value[index].name),
+                ),
+              ],
+            ],
           ),
         if (folderItems.isEmpty && items.isEmpty)
           const TextLocale(LocaleKeys.workspace_items_empty),

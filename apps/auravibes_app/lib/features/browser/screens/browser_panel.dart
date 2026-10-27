@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/browser/models/browser_session_state.dart
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
+import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
 import 'package:auravibes_app/features/browser/screens/sidebar_directory.dart';
 import 'package:auravibes_app/features/browser/services/browser_web_view_service.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
@@ -109,6 +110,28 @@ class const _BrowserSessionView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tabs = _WorkspaceTabs.use();
+    final count = ref.watch(
+      sidebarWorkspaceTabCountProvider((
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      )),
+    );
+    useEffect(
+      () =>
+          () => count.value = 0,
+      [count],
+    );
+    final tabCount =
+        tabs.items.value.length +
+        (tabs.directoryOpen.value ? 1 : 0) +
+        (tabs.selected.value == 'chooser' ? 1 : 0);
+    useEffect(() {
+      var mounted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) count.value = tabCount;
+      });
+      return () => mounted = false;
+    }, [count, tabCount]);
     final resultKeys = [request.selectedToolResultTabId];
     useEffect(() {
       if (request.selectedToolResultTabId != null) {
@@ -1107,9 +1130,12 @@ class const _WorkspaceTabSlot({required final _BrowserPanelData data})
           Positioned.fill(
             child: Offstage(
               offstage: _WorkspaceTabs.key(item) != selected,
-              child: KeyedSubtree(
-                key: ValueKey(_WorkspaceTabs.key(item)),
-                child: _WorkspaceTabContent(data: data, item: item),
+              child: TickerMode(
+                enabled: _WorkspaceTabs.key(item) == selected,
+                child: KeyedSubtree(
+                  key: ValueKey(_WorkspaceTabs.key(item)),
+                  child: _WorkspaceTabContent(data: data, item: item),
+                ),
               ),
             ),
           ),

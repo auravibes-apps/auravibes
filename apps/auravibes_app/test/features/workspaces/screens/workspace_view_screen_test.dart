@@ -15,6 +15,52 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+  testWidgets('hidden views stop refresh and resume on activation', (
+    tester,
+  ) async {
+    final active = ValueNotifier(true);
+    addTearDown(active.dispose);
+    var reads = 0;
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'one',
+          child: ValueListenableBuilder<bool>(
+            valueListenable: active,
+            builder: (context, value, child) => TickerMode(
+              enabled: value,
+              child: WorkspaceViewScreen(
+                workspaceId: 'one',
+                viewId: 'view',
+                onBack: () {},
+              ),
+            ),
+          ),
+          overrides: [
+            workspaceViewDataProvider('one', 'view').overrideWith((ref) async {
+              reads++;
+              throw StateError('test');
+            }),
+          ],
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
+    expect(reads, 1);
+    active.value = false;
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 11));
+    expect(reads, 1);
+    active.value = true;
+    await tester.pump();
+    await tester.pump();
+    final readsBeforeRefresh = reads;
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pump();
+    expect(reads, readsBeforeRefresh + 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   for (final width in [400.0, 1200.0]) {
     testWidgets(
       'saved view displays approved surface and returns at width $width',
