@@ -500,6 +500,23 @@ void main() {
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Folder'));
     final _ = await tester.pumpAndSettle();
+    final cancel = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraButton &&
+          widget.identifier == 'workspace_item_create_cancel',
+    );
+    final create = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraButton && widget.identifier == 'workspace_folder_create',
+    );
+    expect(tester.getTopLeft(cancel).dx, lessThan(tester.getTopLeft(create).dx));
+    await tester.tap(cancel);
+    final _ = await tester.pumpAndSettle();
+    expect(create, findsNothing);
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Folder'));
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(
       find.byWidgetPredicate(
         (widget) =>

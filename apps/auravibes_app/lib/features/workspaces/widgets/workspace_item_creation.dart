@@ -100,7 +100,23 @@ class const _FormFields(
     mainAxisSize: .min,
     children: [
       _Input(creation, state, submit),
-      _Button(creation, state, submit),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisAlignment: .end,
+        children: [
+          Flexible(
+            child: AuraButton(
+              onPressed: () => unawaited(Navigator.of(context).maybePop()),
+              child: const TextLocale(LocaleKeys.common_cancel),
+              variant: .ghost,
+              disabled: state.pending.value,
+              identifier: 'workspace_item_create_cancel',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(child: _Button(creation, state, submit)),
+        ],
+      ),
       _Failure(state),
     ],
   );
