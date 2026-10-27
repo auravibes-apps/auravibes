@@ -97,23 +97,35 @@ class _WorkspaceViewToolObserverState
   Future<void> _open(String id, int sequence) async {
     final workspaceId = widget.workspaceId;
     final conversationId = widget.conversationId;
-    try {
-      final views = await ref.read(
-        workspaceViewUsecaseProvider(workspaceId).future,
-      );
-      final _ = await views.open(id);
+    for (var attempt = 0; attempt < 3; attempt++) {
       if (!mounted ||
           sequence != _sequence ||
           workspaceId != widget.workspaceId ||
           conversationId != widget.conversationId) {
         return;
       }
-      ref.invalidate(workspaceViewDataProvider(workspaceId, id));
-      ref
-          .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
-          .openItem(id, 'view');
-    } on Object {
-      // Unavailable or revoked views must not open from historical tool output.
+      try {
+        final views = await ref.read(
+          workspaceViewUsecaseProvider(workspaceId).future,
+        );
+        final _ = await views.open(id);
+        if (!mounted ||
+            sequence != _sequence ||
+            workspaceId != widget.workspaceId ||
+            conversationId != widget.conversationId) {
+          return;
+        }
+        ref.invalidate(workspaceViewDataProvider(workspaceId, id));
+        ref
+            .read(
+              workspaceOpenViewProvider(workspaceId, conversationId).notifier,
+            )
+            .openItem(id, 'view');
+
+        return;
+      } on Object {
+        // Retry transient failures without opening an unauthorized view.
+      }
     }
   }
 }

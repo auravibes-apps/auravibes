@@ -51,6 +51,13 @@ void main() {
       final views = _Views();
       when(() => views.open('allowed')).thenAnswer((_) async => _ViewData());
       when(() => views.open('denied')).thenThrow(StateError('denied'));
+      var retryCount = 0;
+      when(() => views.open('retry')).thenAnswer((_) async {
+        retryCount++;
+        if (retryCount == 1) throw StateError('transient');
+
+        return _ViewData();
+      });
       final container = ProviderContainer(
         overrides: [
           chatMessagesProvider(
@@ -101,8 +108,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(container.read(provider), isNull);
-      verify(() => views.open('denied')).called(1);
+      verify(() => views.open('denied')).called(3);
       final _ = verifyNever(() => views.open('allowed'));
+      stream.add([
+        _message([_call('retry-call', 'retry')]),
+      ]);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(container.read(provider)?.id, 'retry');
+      expect(retryCount, 2);
     },
   );
 }
