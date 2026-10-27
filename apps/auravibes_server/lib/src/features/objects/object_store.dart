@@ -271,26 +271,28 @@ class HttpObjectStore implements ObjectStore {
     );
     final client = HttpClient();
     try {
-      final request = await client.postUrl(
-        _uri(registrationId, key, {
-          'sign': method,
-          'expires': '$gatewayExpirySeconds',
-          ...values,
-        }),
-      );
-      _authorize(request, registrationId);
-      final response = await request.close();
-      final body = await response.transform(const Utf8Decoder()).join();
-      if (response.statusCode != HttpStatus.ok) {
-        throw StateError(
-          'Object signing gateway failed (${response.statusCode}).',
+      return await (() async {
+        final request = await client.postUrl(
+          _uri(registrationId, key, {
+            'sign': method,
+            'expires': '$gatewayExpirySeconds',
+            ...values,
+          }),
         );
-      }
-      return SignedObjectRequest(
-        url: Uri.parse(body.trim()),
-        headers: method == 'PUT' ? values : const {},
-        expiresAt: expiresAt,
-      );
+        _authorize(request, registrationId);
+        final response = await request.close();
+        final body = await response.transform(const Utf8Decoder()).join();
+        if (response.statusCode != HttpStatus.ok) {
+          throw StateError(
+            'Object signing gateway failed (${response.statusCode}).',
+          );
+        }
+        return SignedObjectRequest(
+          url: Uri.parse(body.trim()),
+          headers: method == 'PUT' ? values : const {},
+          expiresAt: expiresAt,
+        );
+      })().timeout(const Duration(seconds: 30));
     } finally {
       client.close(force: true);
     }

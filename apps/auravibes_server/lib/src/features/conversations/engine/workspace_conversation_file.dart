@@ -11,10 +11,15 @@ import '../../workspace_state/workspace_table_access.dart';
 
 /// Reads only the explicitly selected file, without exposing object credentials.
 class WorkspaceConversationFile {
-  const WorkspaceConversationFile({this.fetch, this.store});
+  const WorkspaceConversationFile({
+    this.fetch,
+    this.store,
+    this.deadline = const Duration(seconds: 30),
+  });
 
   final Future<List<int>> Function(SignedObjectRequest, int)? fetch;
   final ObjectStore? store;
+  final Duration deadline;
   static const maxBytes = 64 * 1024;
 
   Future<Map<String, Object?>> read(
@@ -48,13 +53,22 @@ class WorkspaceConversationFile {
     );
     final List<int> bytes;
     try {
-      final signed = await (store ?? HttpObjectStore.fromEnvironment()).signGet(
-        key: object.objectKey,
-        contentDisposition: 'attachment',
-        expiresIn: const Duration(minutes: 1),
-        registrationId: upload?.gatewayRegistrationId,
-      );
-      bytes = await (fetch ?? _fetch)(signed, maxBytes);
+      final watch = Stopwatch()..start();
+      bytes = await (() async {
+        final signed = await (store ?? HttpObjectStore.fromEnvironment())
+            .signGet(
+              key: object.objectKey,
+              contentDisposition: 'attachment',
+              expiresIn: const Duration(minutes: 1),
+              registrationId: upload?.gatewayRegistrationId,
+            );
+        final remaining = deadline - watch.elapsed;
+        if (remaining <= Duration.zero) {
+          throw const FormatException('File storage is unavailable.');
+        }
+        if (fetch != null) return fetch!(signed, maxBytes);
+        return fetchWorkspaceFile(signed, maxBytes, deadline: remaining);
+      })().timeout(deadline);
     } on Object {
       throw const FormatException('File storage is unavailable.');
     }
@@ -112,37 +126,49 @@ class WorkspaceConversationFile {
     }
     return row;
   }
+}
 
-  static Future<List<int>> _fetch(SignedObjectRequest signed, int limit) async {
-    final uri = signed.url;
-    if (uri.scheme != 'https' &&
-        !(uri.scheme == 'http' &&
-            (uri.host == 'localhost' ||
-                InternetAddress.tryParse(uri.host)?.isLoopback == true))) {
-      throw const FormatException('File storage is unavailable.');
-    }
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 10);
-    try {
-      final request = await client.getUrl(uri);
-      request.followRedirects = false;
-      signed.headers.forEach(request.headers.set);
-      final response = await request.close().timeout(
-        const Duration(seconds: 30),
-      );
-      if (response.statusCode != HttpStatus.ok) {
-        throw const FormatException('File storage is unavailable.');
-      }
-      final bytes = <int>[];
-      await for (final chunk in response.timeout(const Duration(seconds: 30))) {
-        if (bytes.length + chunk.length > limit) {
-          throw const FormatException('File is too large.');
-        }
-        bytes.addAll(chunk);
-      }
-      return bytes;
-    } finally {
-      client.close(force: true);
-    }
+/// Downloads a bounded object under one deadline, including the response body.
+Future<List<int>> fetchWorkspaceFile(
+  SignedObjectRequest signed,
+  int limit, {
+  Duration deadline = const Duration(seconds: 30),
+}) async {
+  final uri = signed.url;
+  if (uri.scheme != 'https' &&
+      !(uri.scheme == 'http' &&
+          (uri.host == 'localhost' ||
+              InternetAddress.tryParse(uri.host)?.isLoopback == true))) {
+    throw const FormatException('File storage is unavailable.');
   }
+  final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+  try {
+    return await _download(client, signed, limit).timeout(deadline);
+  } on Object {
+    throw const FormatException('File storage is unavailable.');
+  } finally {
+    client.close(force: true);
+  }
+}
+
+Future<List<int>> _download(
+  HttpClient client,
+  SignedObjectRequest signed,
+  int limit,
+) async {
+  final request = await client.getUrl(signed.url);
+  request.followRedirects = false;
+  signed.headers.forEach(request.headers.set);
+  final response = await request.close();
+  if (response.statusCode != HttpStatus.ok) {
+    throw const FormatException('File storage is unavailable.');
+  }
+  final bytes = <int>[];
+  await for (final chunk in response) {
+    if (bytes.length + chunk.length > limit) {
+      throw const FormatException('File is too large.');
+    }
+    bytes.addAll(chunk);
+  }
+  return bytes;
 }

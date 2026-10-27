@@ -198,6 +198,32 @@ void main() {
       expect(file['content'], 'hello');
       expect(file['truncated'], isFalse);
       expect(jsonEncode(file), isNot(contains('https://')));
+      var lateFetch = false;
+      final slowSigner = WorkspaceConversationCommands(
+        fileReader: WorkspaceConversationFile(
+          store: const _SlowFileStore(),
+          deadline: const Duration(milliseconds: 50),
+          fetch: (_, _) async {
+            lateFetch = true;
+            return utf8.encode('hello');
+          },
+        ),
+      );
+      await expectLater(
+        slowSigner.call(session, turn, 'slow-file-signing', {
+          'action': 'read',
+          'id': 'note',
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            'File storage is unavailable.',
+          ),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(lateFetch, isFalse);
       for (final invalid in [
         object.copyWith(sizeBytes: WorkspaceConversationFile.maxBytes + 1),
         object.copyWith(mimeType: 'image/png'),
@@ -1336,4 +1362,24 @@ class _FileStore extends UnconfiguredObjectStore {
     headers: const {},
     expiresAt: DateTime.now().toUtc().add(expiresIn),
   );
+}
+
+class _SlowFileStore extends _FileStore {
+  const _SlowFileStore();
+
+  @override
+  Future<SignedObjectRequest> signGet({
+    required String key,
+    required String contentDisposition,
+    required Duration expiresIn,
+    String? registrationId,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    return super.signGet(
+      key: key,
+      contentDisposition: contentDisposition,
+      expiresIn: expiresIn,
+      registrationId: registrationId,
+    );
+  }
 }
