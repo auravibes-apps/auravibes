@@ -186,19 +186,20 @@ class ResolvedToolService {
         operationId: toolCallId,
       );
     } on WorkspaceTableException catch (error, stackTrace) {
-      final code = error.denied
-          ? 'unavailable'
-          : error.conflict
-          ? 'conflict'
-          : 'invalid';
+      var code = 'invalid';
+      if (error.conflict) code = 'conflict';
+      if (error.denied) code = 'unavailable';
       final response = agent.workspaceFailureContext(
         jsonEncode({'code': code}),
       );
-      throw agent.AgentToolExecutionFailure(
-        responseRaw: jsonEncode({'code': code, ...response}),
-        error: error,
-        stackTrace: stackTrace,
-        failurePhase: 'workspace.command',
+      Error.throwWithStackTrace(
+        agent.AgentToolExecutionFailure(
+          responseRaw: jsonEncode({'code': code, ...response}),
+          error: error,
+          stackTrace: stackTrace,
+          failurePhase: 'workspace.command',
+        ),
+        stackTrace,
       );
     }
   }

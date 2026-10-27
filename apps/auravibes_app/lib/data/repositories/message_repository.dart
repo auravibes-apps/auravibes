@@ -2064,8 +2064,9 @@ String? _sanitizeMetadataJson(String? raw) {
   if (const ListEquality<MessageToolCallEntity>().equals(
     sanitized.toolCalls,
     metadata.toolCalls,
-  ))
+  )) {
     return raw;
+  }
 
   return JsonCodec.encode(sanitized.toJson());
 }
