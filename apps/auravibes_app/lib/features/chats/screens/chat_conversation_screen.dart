@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dar
 import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
+import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
 import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -1579,11 +1580,19 @@ class const _LoadedChatConversationScreen({
   required final _LoadedChatConversationData data,
   required final BrowserSessionState? browserSession,
   required final _LoadedConversationSidePanel sidePanel,
-}) extends StatelessWidget {
+}) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final sideValues = sidePanel.values;
     final actions = sidePanel.actions;
+    final workspaceTabs = useValueListenable(
+      ref.watch(
+        sidebarWorkspaceTabCountProvider((
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        )),
+      ),
+    );
 
     return ChatPrimaryScrollController(
       child: AppScreen(
@@ -1602,6 +1611,7 @@ class const _LoadedChatConversationScreen({
             sideValues,
             browserSession,
             actions,
+            workspaceTabs,
           ),
         ),
       ),
@@ -1614,20 +1624,26 @@ _ChatConversationAppBarActions _chatConversationAppBarActions(
   _LoadedSidePanelValues sideValues,
   BrowserSessionState? browserSession,
   _LoadedSidePanelActions actions,
+  int workspaceTabs,
 ) => .new(
   workspaceId: data.workspaceId,
   conversationId: data.conversation.id,
   sidePanelVisible: sideValues.isVisible,
-  tabCount: _browserTabCount(browserSession, sideValues.toolResultTabs),
+  tabCount: _browserTabCount(
+    browserSession,
+    sideValues.toolResultTabs,
+    workspaceTabs,
+  ),
   onSidebarToggle: actions.onToggle,
 );
 
 int? _browserTabCount(
   BrowserSessionState? browserSession,
   List<SidebarToolResultTab> resultTabs,
-) => browserSession == null
+  int workspaceTabs,
+) => browserSession == null && workspaceTabs == 0
     ? null
-    : browserSession.tabs.length + resultTabs.length;
+    : (browserSession?.tabs.length ?? 0) + resultTabs.length + workspaceTabs;
 
 class const _LoadedChatConversationLayout({
   required final _LoadedChatConversationData data,
