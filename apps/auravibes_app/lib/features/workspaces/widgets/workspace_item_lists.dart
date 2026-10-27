@@ -207,9 +207,9 @@ class const _ItemRow(
     onPressed: owner.selection == null ? onOpen : _select,
     onLongPress: _select,
     child: ListTile(
-      leading: _Leading(this),
+      leading: SizedBox(width: 48, child: Center(child: _Leading(this))),
       title: Text(item.name),
-      trailing: _Menu(this),
+      trailing: SizedBox(width: 48, child: _Menu(this)),
       mouseCursor: SystemMouseCursors.click,
     ),
   );

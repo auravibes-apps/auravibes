@@ -112,7 +112,10 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          child: const MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: WorkspaceItemsScreen(workspaceId: 'one'),
+          ),
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
@@ -123,6 +126,7 @@ void main() {
                   id: 'folder',
                   name: 'Documents',
                   revision: 1,
+                  canManage: false,
                 ),
               ],
             ),
@@ -136,6 +140,8 @@ void main() {
       of: find.text('Documents'),
       matching: find.byType(AuraPressable),
     );
+    final beforeRow = tester.getRect(row);
+    final beforeLabel = tester.getRect(find.text('Documents'));
     final mouse = await tester.createGesture(
       pointer: 42,
       kind: PointerDeviceKind.mouse,
@@ -149,6 +155,12 @@ void main() {
     await mouse.removePointer();
     await tester.longPress(find.text('Documents'));
     final _ = await tester.pumpAndSettle();
+    expect(tester.getRect(row), beforeRow);
+    expect(tester.getRect(find.text('Documents')), beforeLabel);
+    expect(
+      find.text('Move is unavailable for one or more selected items.'),
+      findsWidgets,
+    );
     expect(find.byType(Checkbox), findsOneWidget);
     expect(find.byKey(const ValueKey('directory_create')), findsNothing);
     final _ = await tester.binding.handlePopRoute();

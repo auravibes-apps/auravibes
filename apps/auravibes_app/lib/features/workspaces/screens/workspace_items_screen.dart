@@ -432,7 +432,12 @@ class const _DirectoryList(final _Navigation navigation) extends HookWidget {
     );
     _rememberScroll(scroll, navigation, parent);
 
-    return _DirectoryScroll(navigation, scroll);
+    return Column(
+      children: [
+        Expanded(child: _DirectoryScroll(navigation, scroll)),
+        _SelectionSpace(navigation.selection.value?.values.toList()),
+      ],
+    );
   }
 }
 
@@ -462,18 +467,54 @@ class const _DirectoryStatus(final _Navigation navigation)
         const TextLocale(LocaleKeys.workspace_items_location_recovered),
       if (navigation.state.failure case final failure?)
         WorkspaceItemFailure(error: failure),
-      if (navigation.selection.value case final selected?) ...[
-        _SelectionStatus(selected.values.toList()),
-        _SelectionCount(selected.length),
-      ],
+    ],
+  );
+}
+
+class const _SelectionSpace(final List<WorkspaceDirectoryMoveItem>? items)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Stack(
+        children: [
+          const ExcludeSemantics(
+            child: Opacity(
+              opacity: 0,
+              child: TextLocale(
+                LocaleKeys.workspace_items_selection_move_limit,
+              ),
+            ),
+          ),
+          const ExcludeSemantics(
+            child: Opacity(
+              opacity: 0,
+              child: TextLocale(
+                LocaleKeys.workspace_items_selection_move_denied,
+              ),
+            ),
+          ),
+          if (items case final selected?) _SelectionStatus(selected),
+        ],
+      ),
+      Visibility(
+        visible: items != null,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: _SelectionCount(items?.length ?? 0),
+      ),
     ],
   );
 }
 
 class const _SelectionCount(final int count) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      Text(LocaleKeys.workspace_items_selected.tr(args: [count.toString()]));
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.workspace_items_selected.tr(args: [count.toString()]),
+    maxLines: 1,
+    overflow: .ellipsis,
+  );
 }
 
 class const _SelectionStatus(final List<WorkspaceDirectoryMoveItem> items)
