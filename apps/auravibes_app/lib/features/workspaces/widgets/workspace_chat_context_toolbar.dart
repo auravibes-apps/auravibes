@@ -364,8 +364,9 @@ Future<List<String>?> _chooseContextRecords(
   _WorkspaceChatContextToolbarActions actions,
   WorkspaceChatItem item,
 ) {
-  if (item.kind != 'table')
+  if (item.kind != 'table') {
     return _confirmWholeItem(actions.context, item.kind);
+  }
 
   return _pickTableRecords(actions, item);
 }

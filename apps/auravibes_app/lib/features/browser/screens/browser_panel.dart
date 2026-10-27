@@ -1134,6 +1134,7 @@ class const _WorkspaceTabSlot({required final _BrowserPanelData data})
             child: SidebarDirectory(
               workspaceId: data.request.workspaceId,
               conversationId: data.request.conversationId,
+              onClose: () => data.workspaceTabs.close('directory'),
               onOpen: data.workspaceTabs.open,
             ),
           ),

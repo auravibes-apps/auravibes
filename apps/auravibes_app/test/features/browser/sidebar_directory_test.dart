@@ -69,6 +69,7 @@ void main() {
             child: SidebarDirectory(
               workspaceId: 'one',
               conversationId: chat.id,
+              onClose: () {},
               onOpen: (_, _) {},
             ),
             overrides: [
@@ -147,6 +148,7 @@ void main() {
             child: SidebarDirectory(
               workspaceId: 'one',
               conversationId: 'chat',
+              onClose: () {},
               onOpen: (item, name) => opened = item,
             ),
             overrides: [
