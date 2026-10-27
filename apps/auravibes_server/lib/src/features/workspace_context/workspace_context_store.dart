@@ -272,16 +272,18 @@ class _WorkspaceContextSelectionValidator {
     WorkspaceMember member,
     Transaction transaction,
   ) async {
-    final kind = selection.kind == 'folder'
-        ? WorkspaceResourceKind.folder
-        : WorkspaceResourceKind.table;
+    final kind = switch (selection.kind) {
+      'folder' => WorkspaceResourceKind.folder,
+      'file' => WorkspaceResourceKind.file,
+      _ => WorkspaceResourceKind.table,
+    };
     final item = await store._visible(
       kind,
       selection.itemId,
       member,
       transaction,
     );
-    if (kind == .folder && selection.recordIds.isNotEmpty) _invalid();
+    if (kind != .table && selection.recordIds.isNotEmpty) _invalid();
     if (kind == .table) {
       await store._records(
         selection.recordIds,

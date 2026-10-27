@@ -12,6 +12,7 @@ import '../../workspace_state/domain/workspace_table_constraints.dart';
 import '../../workspace_state/usecases/workspace_state_usecases.dart';
 import '../../workspace_state/workspace_table_access.dart';
 import '../../workspace_views/workspace_view_store.dart';
+import 'workspace_conversation_file.dart';
 
 typedef _CommandAuthority = ({
   Future<void> Function(Transaction) guard,
@@ -109,6 +110,7 @@ typedef _CommandGuardRequest = ({
 class const WorkspaceConversationCommands({
   final Future<void> Function()? beforeMutation,
   final Future<void> Function()? beforeReadVerification,
+  final WorkspaceConversationFile? fileReader,
 }) {
   static const _items = _WorkspaceConversationItemCommands();
 
@@ -251,6 +253,16 @@ class const WorkspaceConversationCommands({
   Future<Object?> _execute(_CommandExecution command) async {
     final selection = command.selection;
     final action = command.arguments['action'];
+    if (selection.kind == 'file') {
+      if (action != 'read' || command.arguments['id'] != selection.itemId) {
+        _denied();
+      }
+      return (fileReader ?? const WorkspaceConversationFile()).read(
+        command.session,
+        command.member,
+        selection.itemId,
+      );
+    }
     if (selection.kind == 'directory' && action == 'read') {
       if ((command.arguments['id'] ?? '') != '' ||
           (command.arguments['tableId'] ?? '') != '' ||

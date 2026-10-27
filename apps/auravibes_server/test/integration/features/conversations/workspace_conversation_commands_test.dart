@@ -5,6 +5,8 @@ import 'package:auravibes_server/src/features/conversations/engine/server_tool_e
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/features/conversations/engine/workspace_prompt_projection.dart';
 import 'package:auravibes_server/src/features/conversations/engine/workspace_conversation_commands.dart';
+import 'package:auravibes_server/src/features/conversations/engine/workspace_conversation_file.dart';
+import 'package:auravibes_server/src/features/objects/object_store.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -147,6 +149,101 @@ void main() {
           );
         }
       }
+
+      final object = await WorkspaceObject.db.insertRow(
+        session,
+        WorkspaceObject(
+          workspaceId: workspace.id!,
+          objectKey: 'synthetic',
+          purpose: 'file',
+          displayName: 'Note.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 5,
+          checksumSha256: '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+          status: 'active',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await WorkspaceResource.db.insertRow(
+        session,
+        WorkspaceResource(
+          workspaceId: workspace.id!,
+          resourceKind: .file,
+          resourceId: 'note',
+          data: jsonEncode({'name': 'Note', 'assetId': '${object.id}'}),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final fileSelection = WorkspaceContextSelection(
+        workspaceId: '${workspace.id}',
+        conversationId: conversation.stableId,
+        itemId: 'note',
+        kind: 'file',
+      );
+      await select(fileSelection);
+      final fileCommand = WorkspaceConversationCommands(
+        fileReader: WorkspaceConversationFile(
+          store: const _FileStore(),
+          fetch: (_, _) async => utf8.encode('hello'),
+        ),
+      );
+      final file = await fileCommand.call(session, turn, 'read-file', {
+        'action': 'read',
+        'id': 'note',
+      }) as Map;
+      expect(file['content'], 'hello');
+      expect(file['truncated'], isFalse);
+      expect(jsonEncode(file), isNot(contains('https://')));
+      for (final invalid in [
+        object.copyWith(sizeBytes: WorkspaceConversationFile.maxBytes + 1),
+        object.copyWith(mimeType: 'image/png'),
+        object.copyWith(checksumSha256: 'invalid'),
+      ]) {
+        await WorkspaceObject.db.updateRow(session, invalid);
+        await expectLater(
+          fileCommand.call(session, turn, 'invalid-file', {
+            'action': 'read',
+            'id': 'note',
+          }),
+          throwsFormatException,
+        );
+      }
+      await WorkspaceObject.db.updateRow(session, object);
+      await expectLater(
+        fileCommand.call(session, turn, 'read-unshared-file', {
+          'action': 'read',
+          'id': 'other',
+        }),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      final revokedDuringFetch = WorkspaceConversationCommands(
+        fileReader: WorkspaceConversationFile(
+          store: const _FileStore(),
+          fetch: (_, _) async {
+            await select(null);
+            return utf8.encode('hello');
+          },
+        ),
+      );
+      await expectLater(
+        revokedDuringFetch.call(session, turn, 'read-revoked-during-fetch', {
+          'action': 'read',
+          'id': 'note',
+        }),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      await select(null);
+      await expectLater(
+        fileCommand.call(session, turn, 'read-revoked-file', {
+          'action': 'read',
+          'id': 'note',
+        }),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
 
       final selection = WorkspaceContextSelection(
         workspaceId: '${workspace.id}',
@@ -1223,4 +1320,20 @@ void main() {
       });
     });
   });
+}
+
+class _FileStore extends UnconfiguredObjectStore {
+  const _FileStore();
+
+  @override
+  Future<SignedObjectRequest> signGet({
+    required String key,
+    required String contentDisposition,
+    required Duration expiresIn,
+    String? registrationId,
+  }) async => SignedObjectRequest(
+    url: Uri.parse('https://example.invalid/private'),
+    headers: const {},
+    expiresAt: DateTime.now().toUtc().add(expiresIn),
+  );
 }
