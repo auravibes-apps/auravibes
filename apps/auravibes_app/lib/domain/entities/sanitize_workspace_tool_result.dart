@@ -4,7 +4,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 /// Stored tool history is not an enduring grant to workspace data.
 MessageToolCallEntity sanitizeWorkspaceToolResult(MessageToolCallEntity call) {
   if (call.name != workspaceCommandToolName ||
-      call.arguments['action'] != 'read') {
+      workspaceContextAction(call.arguments) != 'read') {
     return call;
   }
 

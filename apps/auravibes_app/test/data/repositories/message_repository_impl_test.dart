@@ -608,6 +608,59 @@ void main() {
       },
     );
 
+    test('batch persistence redacts workspace read output with missing or malformed actions', () async {
+      for (final arguments in [
+        '{"action":"read","id":"file"}',
+        '{}',
+        'not-json',
+      ]) {
+        final created = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: .text,
+            isUser: false,
+            status: .unfinished,
+            metadata: jsonEncode(
+              MessageMetadataEntity(
+                toolCalls: [
+                  MessageToolCallEntity(
+                    id: 'file-read',
+                    name: 'workspace_item',
+                    argumentsRaw: arguments,
+                    resultStatus: .running,
+                  ),
+                ],
+              ).toJson(),
+            ),
+          ),
+        );
+        await repository.persistToolCallBatchResults([
+          ToolCallExecutionBatchUpdate(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'file-read',
+            resultStatus: .success,
+            responseRaw: '{"content":"private bytes"}',
+            responseContextRaw: '{"content":"private bytes"}',
+          ),
+        ]);
+        final saved = await repository.getMessageById(created.id);
+        expect(
+          saved?.metadata?.toolCalls.single.responseRaw,
+          '{"redacted":true}',
+        );
+        expect(
+          saved?.metadata?.toolCalls.single.responseContextRaw,
+          '{"redacted":true}',
+        );
+        expect(
+          jsonEncode(saved?.metadata?.toJson()),
+          isNot(contains('private bytes')),
+        );
+      }
+    });
+
     test('claimToolCallBatch is idempotent for repeated submissions', () async {
       const toolCall = MessageToolCallEntity(
         id: 'tool-1',
