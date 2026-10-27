@@ -667,13 +667,17 @@ class const _ComplexCellOverlay(
   @override
   Widget build(BuildContext context) {
     final portal = useMemoized(OverlayPortalController.new);
-    useEffect(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) portal.show();
-      });
+    void showPortal(Duration _) {
+      if (context.mounted) portal.show();
+    }
+
+    void Function()? effect() {
+      WidgetsBinding.instance.addPostFrameCallback(showPortal);
 
       return null;
-    }, const []);
+    }
+
+    useEffect(effect, const []);
 
     return OverlayPortal(
       controller: portal,
