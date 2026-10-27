@@ -30,6 +30,64 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+  testWidgets('compact table retries a failed load', (tester) async {
+    var attempts = 0;
+    const table = WorkspaceTable(
+      id: 'table',
+      name: 'Contacts',
+      labelColumnId: 'label',
+      columns: [WorkspaceColumn(id: 'label', name: 'Name')],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'one',
+          child: WorkspaceTableScreen(
+            workspaceId: 'one',
+            tableId: 'table',
+            onBack: () {},
+            compact: true,
+          ),
+          overrides: [
+            workspaceTableProvider('one', 'table').overrideWith((ref) async {
+              if (++attempts == 1) throw StateError('temporary failure');
+              return table;
+            }),
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async => const WorkspaceRecordPage(
+                records: [
+                  WorkspaceRecord(
+                    id: 'record',
+                    tableId: 'table',
+                    values: {'label': 'Alice'},
+                    revision: 1,
+                  ),
+                ],
+                hasMore: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+    await tester.pumpAndSettle();
+    expect(attempts, 1);
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton &&
+            widget.identifier == 'workspace_table_retry',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(find.text('Alice'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('compact table shows records without page navigation', (
     tester,
   ) async {

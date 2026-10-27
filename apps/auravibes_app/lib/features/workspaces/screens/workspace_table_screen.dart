@@ -89,11 +89,7 @@ class const _TableState({
     );
 
     if (table case AsyncError(:final error)) {
-      return _TableFailure(
-        onBack: screen.onBack,
-        error: error,
-        compact: screen.compact,
-      );
+      return _TableFailure(screen: screen, error: error);
     }
     final current = table.value;
     if (current != null) {
@@ -116,30 +112,35 @@ class const _PendingTable(
       table: value,
       draftOpen: draftOpen,
     ),
-    AsyncError(:final error) => _TableFailure(
-      onBack: screen.onBack,
-      error: error,
-      compact: screen.compact,
-    ),
+    AsyncError(:final error) => _TableFailure(screen: screen, error: error),
     AsyncLoading() => const Center(child: CircularProgressIndicator()),
   };
 }
 
 class const _TableFailure({
-  required final VoidCallback onBack,
+  required final WorkspaceTableScreen screen,
   required final Object error,
-  required final bool compact,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => ListView(
+  Widget build(BuildContext context, WidgetRef ref) => ListView(
     children: [
-      if (!compact)
+      if (!screen.compact)
         ListTile(
           leading: const Icon(Icons.arrow_back),
           title: const TextLocale(LocaleKeys.workspace_items_title),
-          onTap: onBack,
+          onTap: screen.onBack,
         ),
       WorkspaceItemFailure(error: error),
+      if (screen.compact)
+        AuraButton(
+          identifier: 'workspace_table_retry',
+          onPressed: () => _TableNavigationActions.refresh(
+            ref,
+            screen.workspaceId,
+            screen.tableId,
+          ),
+          child: const TextLocale(LocaleKeys.common_reload),
+        ),
     ],
   );
 }
