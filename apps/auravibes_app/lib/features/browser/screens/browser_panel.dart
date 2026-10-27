@@ -4,7 +4,14 @@ import 'package:auravibes_app/features/browser/models/browser_session_state.dart
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
+import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
+import 'package:auravibes_app/features/browser/screens/sidebar_directory.dart';
 import 'package:auravibes_app/features/browser/services/browser_web_view_service.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_file_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_chat_context_toolbar.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -31,6 +38,10 @@ class const BrowserPanel({
     return switch (sessionAsync) {
       AsyncData(:final value) => _BrowserSessionView(
         request: _request(ref, value),
+        key: ValueKey((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        )),
       ),
       AsyncError() => const Center(
         child: TextLocale(LocaleKeys.browser_load_error),
@@ -43,6 +54,7 @@ class const BrowserPanel({
     WidgetRef ref,
     BrowserSessionState session,
   ) => (
+    workspaceId: workspaceId,
     conversationId: conversationId,
     session: session,
     notifier: ref.read(
@@ -56,6 +68,7 @@ class const BrowserPanel({
 }
 
 typedef _BrowserSessionViewRequest = ({
+  String workspaceId,
   String conversationId,
   BrowserSessionState session,
   BrowserSessionNotifier notifier,
@@ -72,6 +85,7 @@ typedef _BrowserPanelData = ({
   SidebarToolResultTab? selectedToolResultTab,
   TextEditingController addressController,
   GlobalKey activeTabKey,
+  _WorkspaceTabs workspaceTabs,
 });
 
 typedef _BrowserPanelTabState = ({
@@ -91,14 +105,91 @@ typedef _BrowserPageStateUpdate = ({
 
 class const _BrowserSessionView({
   required final _BrowserSessionViewRequest request,
+  super.key,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _BrowserSessionColumn(
-    data: _createPanelData(ref, request, _usePanelTabState(request)),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tabs = _WorkspaceTabs.use();
+    final count = ref.watch(
+      sidebarWorkspaceTabCountProvider((
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      )),
+    );
+    useEffect(
+      () =>
+          () => count.value = 0,
+      [count],
+    );
+    final tabCount =
+        tabs.items.value.length +
+        (tabs.directoryOpen.value ? 1 : 0) +
+        (tabs.selected.value == 'chooser' ? 1 : 0);
+    useEffect(
+      () {
+        var mounted = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) count.value = tabCount;
+        });
+
+        return () => mounted = false;
+      },
+      [count, tabCount], // Update the badge when tabs change.
+    );
+    final resultKeys = [request.selectedToolResultTabId];
+    useEffect(
+      () {
+        if (request.selectedToolResultTabId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) tabs.selected.value = null;
+          });
+        }
+
+        return null;
+      },
+      resultKeys, // Follow the selected tool result.
+    );
+    final requested = ref.watch(
+      workspaceOpenViewProvider(request.workspaceId, request.conversationId),
+    );
+    final requestedKeys = [requested];
+    useEffect(
+      () {
+        if (requested != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            request.onSelectToolResultTab(null);
+            tabs.open(requested);
+          });
+        }
+
+        return null;
+      },
+      requestedKeys, // Open workspace requests in their own tab.
+    );
+    ref.listen(
+      workspaceOpenViewProvider(request.workspaceId, request.conversationId),
+      (previous, next) {
+        if (next != null) {
+          request.onSelectToolResultTab(null);
+          tabs.open(next);
+        }
+      },
+    );
+
+    return _BrowserSessionColumn(
+      data: _createPanelData(
+        ref,
+        request,
+        _usePanelTabState(request, tabs.selected.value),
+        tabs,
+      ),
+    );
+  }
 
   static _BrowserPanelTabState _usePanelTabState(
     _BrowserSessionViewRequest request,
+    String? selectedWorkspace,
   ) {
     final activeTab = request.session.activeTab;
     final selectedToolResultTab = request.toolResultTabs
@@ -109,7 +200,11 @@ class const _BrowserSessionView({
       activeTab: activeTab,
       selectedToolResultTab: selectedToolResultTab,
       addressController: _useAddressController(activeTab),
-      activeTabKey: _useActiveTabKey(activeTab, selectedToolResultTab),
+      activeTabKey: _useActiveTabKey(
+        activeTab,
+        selectedToolResultTab,
+        selectedWorkspace,
+      ),
     );
   }
 
@@ -122,10 +217,11 @@ class const _BrowserSessionView({
   static GlobalKey _useActiveTabKey(
     BrowserTab? activeTab,
     SidebarToolResultTab? selectedToolResultTab,
+    String? selectedWorkspace,
   ) {
     final activeTabKey = useMemoized(GlobalKey.new, const []);
     useEffect(() => _scrollToActiveBrowserTab(activeTabKey), [
-      selectedToolResultTab?.id ?? activeTab?.id,
+      selectedWorkspace ?? selectedToolResultTab?.id ?? activeTab?.id,
     ]);
 
     return activeTabKey;
@@ -135,6 +231,7 @@ class const _BrowserSessionView({
     WidgetRef ref,
     _BrowserSessionViewRequest request,
     _BrowserPanelTabState state,
+    _WorkspaceTabs tabs,
   ) => (
     request: request,
     webViewService: ref.read(browserWebViewServiceProvider),
@@ -142,6 +239,7 @@ class const _BrowserSessionView({
     selectedToolResultTab: state.selectedToolResultTab,
     addressController: state.addressController,
     activeTabKey: state.activeTabKey,
+    workspaceTabs: tabs,
   );
 }
 
@@ -179,6 +277,7 @@ class const _BrowserPanelBody({required final _BrowserPanelData data})
       _BrowserActiveTabSlot(data: data),
       _BrowserEmptyStateSlot(data: data),
       _BrowserToolResultSlot(data: data),
+      _WorkspaceTabSlot(data: data),
     ],
   );
 }
@@ -188,7 +287,10 @@ class const _BrowserSuspendedSessionSlot({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (!data.request.session.isSuspended) return const SizedBox.shrink();
+    if (!data.request.session.isSuspended ||
+        data.workspaceTabs.selected.value != null) {
+      return const SizedBox.shrink();
+    }
 
     return _BrowserSuspendedSession(notifier: data.request.notifier);
   }
@@ -203,7 +305,9 @@ class const _BrowserActiveTabSlot({required final _BrowserPanelData data})
     if (activeTab == null) return const SizedBox.shrink();
 
     return Offstage(
-      offstage: data.selectedToolResultTab != null,
+      offstage:
+          data.selectedToolResultTab != null ||
+          data.workspaceTabs.selected.value != null,
       child: _BrowserActiveTab(data: data, activeTab: activeTab),
     );
   }
@@ -212,14 +316,15 @@ class const _BrowserActiveTabSlot({required final _BrowserPanelData data})
 class const _BrowserEmptyStateSlot({required final _BrowserPanelData data})
     extends StatelessWidget {
   bool get _shouldShow =>
-      data.activeTab == null &&
+      (data.activeTab == null ||
+          data.workspaceTabs.selected.value == 'chooser') &&
       data.selectedToolResultTab == null &&
-      !data.request.session.isSuspended;
+      (!data.request.session.isSuspended ||
+          data.workspaceTabs.selected.value == 'chooser');
 
   @override
-  Widget build(BuildContext context) => _shouldShow
-      ? const Center(child: TextLocale(LocaleKeys.browser_empty_state))
-      : const SizedBox.shrink();
+  Widget build(BuildContext context) =>
+      _shouldShow ? _SidebarChooser(data: data) : const SizedBox.shrink();
 }
 
 class const _BrowserToolResultSlot({required final _BrowserPanelData data})
@@ -227,7 +332,9 @@ class const _BrowserToolResultSlot({required final _BrowserPanelData data})
   @override
   Widget build(BuildContext context) {
     final tab = data.selectedToolResultTab;
-    if (tab == null) return const SizedBox.shrink();
+    if (tab == null || data.workspaceTabs.selected.value != null) {
+      return const SizedBox.shrink();
+    }
 
     return Positioned.fill(child: _SidebarToolResultContent(tab: tab));
   }
@@ -549,6 +656,7 @@ class const _BrowserTabList({required final _BrowserPanelData data})
     children: [
       _BrowserTabChipRow(data: data),
       _ToolResultTabChipRow(data: data),
+      _WorkspaceTabChipRow(data: data),
     ],
   );
 }
@@ -592,7 +700,12 @@ class const _BrowserNewTabButton({required final _BrowserPanelData data})
     );
   }
 
-  void _openTab() => unawaited(data.request.notifier.openTab());
+  void _openTab() {
+    if (data.selectedToolResultTab != null) {
+      data.request.onSelectToolResultTab(null);
+    }
+    data.workspaceTabs.selected.value = 'chooser';
+  }
 }
 
 class const _SidebarTabChip({
@@ -665,6 +778,7 @@ class const _SidebarBrowserTabChip({
     final tabId = tab.id;
     final isSelected =
         data.selectedToolResultTab == null &&
+        data.workspaceTabs.selected.value == null &&
         tabId == data.request.session.activeTabId;
 
     return _SidebarTabChip(
@@ -696,6 +810,7 @@ class const _SidebarBrowserTabChip({
 
   void _selectTab(String tabId) {
     data.request.onSelectToolResultTab(null);
+    data.workspaceTabs.selected.value = null;
     unawaited(data.request.notifier.selectTab(tabId));
   }
 }
@@ -716,7 +831,9 @@ class const _SidebarToolResultTabChip({
   @override
   Widget build(BuildContext context) {
     final tabId = tab.id;
-    final isSelected = data.selectedToolResultTab?.id == tabId;
+    final isSelected =
+        data.workspaceTabs.selected.value == null &&
+        data.selectedToolResultTab?.id == tabId;
 
     return _SidebarTabChip(
       data: _tileData(tabId, isSelected),
@@ -731,7 +848,10 @@ class const _SidebarToolResultTabChip({
     title: tab.title,
     child: Text(tab.title, overflow: .ellipsis, maxLines: 1),
     selected: isSelected,
-    onSelect: () => data.request.onSelectToolResultTab(tabId),
+    onSelect: () {
+      data.workspaceTabs.selected.value = null;
+      data.request.onSelectToolResultTab(tabId);
+    },
     onClose: () => data.request.onCloseToolResultTab(tabId),
   );
 }
@@ -871,6 +991,207 @@ Future<void> _runBrowserCommand(
       context: context,
       content: const TextLocale(LocaleKeys.browser_action_error),
       variant: .error,
+    );
+  }
+}
+
+class _WorkspaceTabs {
+  const new(this.items, this.selected, this.directoryOpen, this.names);
+  factory use() =>
+      .new(useState([]), useState(null), useState(false), useState({}));
+
+  final ValueNotifier<List<WorkspaceChatItem>> items;
+  final ValueNotifier<String?> selected;
+  final ValueNotifier<bool> directoryOpen;
+  final ValueNotifier<Map<String, String>> names;
+  static String key(WorkspaceChatItem item) => '${item.kind}:${item.id}';
+  void open(WorkspaceChatItem item, [String? name]) {
+    if (item.kind == 'directory') {
+      directoryOpen.value = true;
+      selected.value = 'directory';
+
+      return;
+    }
+    final id = key(item);
+    if (name != null) names.value = {...names.value, id: name};
+    items.value = [
+      ...items.value.where((existing) => key(existing) != id),
+      item,
+    ];
+    selected.value = id;
+  }
+
+  void close(String id) {
+    items.value = items.value.where((item) => key(item) != id).toList();
+    if (id == 'directory') directoryOpen.value = false;
+    if (selected.value == id) {
+      selected.value = id == 'chooser' ? null : 'chooser';
+    }
+  }
+}
+
+class const _SidebarChooser({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        AuraButton(
+          onPressed: () {
+            data.workspaceTabs.directoryOpen.value = true;
+            data.workspaceTabs.selected.value = 'directory';
+          },
+          child: const TextLocale(LocaleKeys.workspace_items_title),
+          identifier: 'sidebar_open_directory',
+        ),
+        AuraButton(
+          onPressed: () {
+            data.workspaceTabs.selected.value = null;
+            unawaited(data.request.notifier.openTab());
+          },
+          child: const TextLocale(LocaleKeys.app_skills_browser_title),
+          identifier: 'sidebar_open_browser',
+        ),
+      ],
+    ),
+  );
+}
+
+class const _WorkspaceTabChipRow({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      if (data.workspaceTabs.selected.value == 'chooser')
+        _WorkspaceChip(
+          data: data,
+          id: 'chooser',
+          title: LocaleKeys.browser_new_tab.tr(),
+        ),
+      if (data.workspaceTabs.directoryOpen.value)
+        _WorkspaceChip(
+          data: data,
+          id: 'directory',
+          title: LocaleKeys.workspace_items_title.tr(),
+        ),
+      for (final item in data.workspaceTabs.items.value)
+        _WorkspaceChip(
+          data: data,
+          id: _WorkspaceTabs.key(item),
+          title:
+              data.workspaceTabs.names.value[_WorkspaceTabs.key(item)] ??
+              _title(item.kind),
+        ),
+    ],
+  );
+  String _title(String kind) => switch (kind) {
+    'table' => LocaleKeys.workspace_items_table.tr(),
+    'file' => LocaleKeys.workspace_assets_file.tr(),
+    'view' => LocaleKeys.workspace_views_title.tr(),
+    _ => LocaleKeys.workspace_items_title.tr(),
+  };
+}
+
+class const _WorkspaceChip({
+  required final _BrowserPanelData data,
+  required final String id,
+  required final String title,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SidebarTabChip(
+    data: (
+      identifiers: (
+        tile: 'sidebar_workspace_$id',
+        closeButton: 'sidebar_close_workspace_$id',
+      ),
+      title: title,
+      child: Text(title, overflow: .ellipsis, maxLines: 1),
+      selected: data.workspaceTabs.selected.value == id,
+      onSelect: () {
+        data.request.onSelectToolResultTab(null);
+        data.workspaceTabs.selected.value = id;
+      },
+      onClose: () => data.workspaceTabs.close(id),
+    ),
+    key: data.workspaceTabs.selected.value == id ? data.activeTabKey : null,
+  );
+}
+
+class const _WorkspaceTabSlot({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final selected = data.workspaceTabs.selected.value;
+
+    return Stack(
+      children: [
+        if (data.workspaceTabs.directoryOpen.value)
+          Offstage(
+            offstage: selected != 'directory',
+            child: SidebarDirectory(
+              workspaceId: data.request.workspaceId,
+              onOpen: data.workspaceTabs.open,
+            ),
+          ),
+        for (final item in data.workspaceTabs.items.value)
+          Positioned.fill(
+            child: Offstage(
+              offstage: _WorkspaceTabs.key(item) != selected,
+              child: TickerMode(
+                enabled: _WorkspaceTabs.key(item) == selected,
+                child: KeyedSubtree(
+                  key: ValueKey(_WorkspaceTabs.key(item)),
+                  child: _WorkspaceTabContent(data: data, item: item),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class const _WorkspaceTabContent({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    void close() => data.workspaceTabs.close(_WorkspaceTabs.key(item));
+
+    return Column(
+      children: [
+        if (item.kind != 'file')
+          WorkspaceChatContextToolbar(
+            workspaceId: data.request.workspaceId,
+            conversationId: data.request.conversationId,
+            item: item,
+            onClose: close,
+          ),
+        Expanded(
+          child: switch (item.kind) {
+            'view' => WorkspaceViewScreen(
+              workspaceId: data.request.workspaceId,
+              viewId: item.id,
+              onBack: close,
+            ),
+            'table' => WorkspaceTableScreen(
+              workspaceId: data.request.workspaceId,
+              tableId: item.id,
+              onBack: close,
+            ),
+            'file' => WorkspaceFileScreen(
+              workspaceId: data.request.workspaceId,
+              fileId: item.id,
+              onBack: close,
+            ),
+            _ => const SizedBox.shrink(),
+          },
+        ),
+      ],
     );
   }
 }

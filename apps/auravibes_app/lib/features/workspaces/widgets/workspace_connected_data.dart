@@ -11,6 +11,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart'
     show CloudWorkspaceException, WorkspaceConnectedReadException;
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -19,12 +20,40 @@ class const WorkspaceConnectedData({
   required final String viewId,
   final WorkspaceViewData? data,
   super.key,
-}) extends ConsumerWidget {
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(
-      workspaceConnectedViewProvider(workspaceId, viewId),
+    final active = TickerMode.valuesOf(context).enabled;
+    final cached = useRef<AsyncValue<WorkspaceConnectedResult>?>(null);
+    final state = active
+        ? ref.watch(workspaceConnectedViewProvider(workspaceId, viewId))
+        : cached.value;
+    if (state == null) return const SizedBox.shrink();
+    if (state is AsyncError<WorkspaceConnectedResult>) cached.value = null;
+    if (state is AsyncData<WorkspaceConnectedResult>) cached.value = state;
+    final retained = cached.value;
+    final waiting = active && state.isLoading && retained != null;
+    final display = waiting ? retained : state;
+
+    return Stack(
+      children: [
+        Offstage(
+          offstage: waiting,
+          child: _ConnectedState(workspaceId, data, display),
+        ),
+        if (waiting) const _Waiting(stale: true),
+      ],
     );
+  }
+}
+
+class const _ConnectedState(
+  final String workspaceId,
+  final WorkspaceViewData? data,
+  final AsyncValue<WorkspaceConnectedResult> state,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     if (state.isLoading) return _Waiting(stale: state.hasValue);
 
     return switch (state) {

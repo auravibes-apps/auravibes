@@ -71,6 +71,108 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('changed action preserves draft and blocks submission', (
+    tester,
+  ) async {
+    final data = ValueNotifier(_data());
+    var calls = 0;
+    final usecase = _usecase(
+      executeConnector: (_) async {
+        calls++;
+        return {'status': 'completed'};
+      },
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'workspace',
+          overrides: [
+            workspaceViewActionUsecaseProvider('workspace')
+                .overrideWith((ref) async => usecase),
+          ],
+          child: ValueListenableBuilder<WorkspaceViewData>(
+            valueListenable: data,
+            builder: (context, value, child) =>
+                WorkspaceViewSurface(data: value, workspaceId: 'workspace'),
+          ),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), 'keep my draft');
+    data.value = _data(connectionId: 'service:changed');
+    await tester.pumpAndSettle();
+    expect(find.text('keep my draft'), findsOneWidget);
+    expect(
+      find.text('This view changed. Refresh it before submitting again.'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('workspace_view_action_submit')),
+      findsNothing,
+    );
+    expect(calls, 0);
+    await tester.tap(find.text('Refresh'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('You have unsaved changes. Discard them?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('keep my draft'), findsOneWidget);
+    await tester.tap(find.text('Refresh'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard changes'));
+    await tester.pumpAndSettle();
+    expect(find.text('keep my draft'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('workspace_view_action_submit')),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    data.dispose();
+  });
+
+  testWidgets('redacted data hides stale surface from interaction', (
+    tester,
+  ) async {
+    final model = ValueNotifier<Map<String, Object?>>({
+      'answers': {'query': 'previously visible secret'},
+    });
+    final data = _data();
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'workspace',
+          child: ValueListenableBuilder<Map<String, Object?>>(
+            valueListenable: model,
+            builder: (context, value, child) => WorkspaceViewSurface(
+              data: data,
+              workspaceId: 'workspace',
+              connectedModel: value,
+            ),
+          ),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('previously visible secret'), findsOneWidget);
+    model.value = {'answers': <String, Object?>{}};
+    await tester.pumpAndSettle();
+    expect(find.text('previously visible secret'), findsNothing);
+    expect(find.byType(EditableText), findsNothing);
+    expect(find.byType(EditableText, skipOffstage: false), findsOneWidget);
+    expect(
+      find.text('This view changed. Refresh it before submitting again.'),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    model.dispose();
+  });
+
   testWidgets('invalid form values show an actionable message', (tester) async {
     var calls = 0;
     await _pump(
@@ -115,7 +217,7 @@ Future<void> _pump(
   final _ = await tester.pumpAndSettle();
 }
 
-WorkspaceViewData _data() {
+WorkspaceViewData _data({String connectionId = 'service:synthetic-submit'}) {
   final connector = connectorDefinitions.firstWhere(
     (candidate) => candidate.identifier == 'synthetic',
   );
@@ -135,7 +237,7 @@ WorkspaceViewData _data() {
       'type': 'connectorWrite',
       'toolId': connectorToolId(connector, tool),
       'revision': connectorToolRevision(connector, tool),
-      'connectionId': 'service:synthetic-submit',
+      'connectionId': connectionId,
       'inputs': {'query': '/answers/query'},
     }),
   );

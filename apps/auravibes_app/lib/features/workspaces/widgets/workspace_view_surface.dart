@@ -76,6 +76,8 @@ class WorkspaceViewSurface extends ConsumerStatefulWidget {
 class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   SurfaceController _controller = .new(catalogs: auraChatCatalogs());
   var _failed = false;
+  var _conflicted = false;
+  var _hideStaleContent = false;
   var _submitting = false;
   String? _statusKey;
   Map<String, String> _formErrors = const {};
@@ -83,7 +85,8 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   bool get _canSubmit {
     final action = widget.data.view.action;
 
-    return widget.workspaceId != null &&
+    return !_conflicted &&
+        widget.workspaceId != null &&
         action != null &&
         (action.type != A2uiSavedActionType.updateSelectedRecord ||
             widget.recordId != null);
@@ -104,9 +107,35 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   @override
   void didUpdateWidget(covariant WorkspaceViewSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.data, widget.data) ||
-        !identical(oldWidget.connectedModel, widget.connectedModel)) {
-      _load();
+    if (identical(oldWidget.data, widget.data) &&
+        identical(oldWidget.connectedModel, widget.connectedModel)) {
+      return;
+    }
+    try {
+      final previous = WorkspaceViewSurfaceData.envelope(
+        oldWidget.data,
+        oldWidget.connectedModel,
+      );
+      final current = WorkspaceViewSurfaceData.envelope(
+        widget.data,
+        widget.connectedModel,
+      );
+      final actionChanged =
+          jsonEncode(oldWidget.data.view.action?.toJson()) !=
+          jsonEncode(widget.data.view.action?.toJson());
+      final envelopeChanged = jsonEncode(previous) != jsonEncode(current);
+      if (envelopeChanged || actionChanged) {
+        if (oldWidget.data.view.action != null ||
+            widget.data.view.action != null) {
+          _conflicted = true;
+          _hideStaleContent = _hideStaleContent || envelopeChanged;
+        } else {
+          _load();
+        }
+      }
+    } on Object {
+      _conflicted = true;
+      _hideStaleContent = true;
     }
   }
 
@@ -114,7 +143,7 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   Widget build(BuildContext context) {
     if (_failed) return const TextLocale(LocaleKeys.workspace_views_repair);
 
-    return _SurfaceContent(
+    final content = _SurfaceContent(
       controller: _controller,
       canSubmit: _canSubmit,
       submitting: _submitting,
@@ -122,6 +151,46 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
       formErrors: _formErrors,
       onSubmit: () => unawaited(_submit()),
     );
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        if (_conflicted)
+          const TextLocale(LocaleKeys.workspace_views_action_changed),
+        if (_conflicted)
+          TextButton(
+            onPressed: () => unawaited(_confirmRefresh()),
+            child: const TextLocale(LocaleKeys.skills_selector_refresh),
+          ),
+        Offstage(offstage: _hideStaleContent, child: content),
+      ],
+    );
+  }
+
+  Future<void> _confirmRefresh() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
+        content: const TextLocale(LocaleKeys.common_unsaved_changes_message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const TextLocale(LocaleKeys.common_cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const TextLocale(LocaleKeys.common_discard_changes),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _conflicted = false;
+      _hideStaleContent = false;
+      _load();
+    });
   }
 
   void _load() {

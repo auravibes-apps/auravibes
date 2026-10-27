@@ -31,10 +31,12 @@ class const WorkspaceViewScreen({
   required final VoidCallback onBack,
   super.key,
 }) extends StatelessWidget {
-  void refresh(WidgetRef ref) {
+  void refresh(WidgetRef ref, int offset) {
     ref
       ..invalidate(workspaceConnectedViewProvider(workspaceId, viewId))
-      ..invalidate(workspaceViewDataProvider);
+      ..invalidate(
+        workspaceViewDataProvider(workspaceId, viewId, offset: offset),
+      );
   }
 
   @override
@@ -49,25 +51,36 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = useState<_Selection?>(null);
-    _useRefresh(ref, selected);
+    final offset = useState(0);
+    final active = TickerMode.valuesOf(context).enabled;
+    _useRefresh(ref, selected, offset, active);
 
     return Column(
       children: [
-        _Toolbar(owner, selected),
-        Expanded(child: _Contents(owner, selected)),
+        if (active) _Toolbar(owner, selected, offset),
+        Expanded(child: _Contents(owner, selected, offset, active: active)),
       ],
     );
   }
 
-  void _useRefresh(WidgetRef ref, ValueNotifier<_Selection?> selected) =>
-      useEffect(() => _subscribe(ref, selected), [
-        owner.workspaceId,
-        owner.viewId,
-      ]);
+  void _useRefresh(
+    WidgetRef ref,
+    ValueNotifier<_Selection?> selected,
+    ValueNotifier<int> offset,
+    bool active,
+  ) => useEffect(() => active ? _subscribe(ref, selected, offset) : null, [
+    owner.workspaceId,
+    owner.viewId,
+    active,
+  ]);
 
-  VoidCallback _subscribe(WidgetRef ref, ValueNotifier<_Selection?> selected) {
+  VoidCallback _subscribe(
+    WidgetRef ref,
+    ValueNotifier<_Selection?> selected,
+    ValueNotifier<int> offset,
+  ) {
     final timer = Timer.periodic(_refreshInterval, (_) {
-      if (selected.value == null) owner.refresh(ref);
+      if (selected.value == null) owner.refresh(ref, offset.value);
     });
 
     return timer.cancel;
@@ -77,13 +90,14 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
 class const _Toolbar(
   final WorkspaceViewScreen owner,
   final ValueNotifier<_Selection?> selected,
+  final ValueNotifier<int> offset,
 ) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Row(
     children: [
       _BackButton(owner),
       const Expanded(child: TextLocale(LocaleKeys.workspace_views_title)),
-      _RefreshButton(owner),
+      _RefreshButton(owner, offset),
       _Menu(owner, selected),
     ],
   );
@@ -100,12 +114,14 @@ class const _BackButton(final WorkspaceViewScreen owner)
   );
 }
 
-class const _RefreshButton(final WorkspaceViewScreen owner)
-    extends ConsumerWidget {
+class const _RefreshButton(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<int> offset,
+) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
     icon: Icons.refresh,
-    onPressed: () => owner.refresh(ref),
+    onPressed: () => owner.refresh(ref, offset.value),
     identifier: 'workspace_view_refresh',
     tooltip: LocaleKeys.common_reload.tr(),
   );
@@ -173,35 +189,56 @@ class const _Popup(
 class const _Contents(
   final WorkspaceViewScreen owner,
   final ValueNotifier<_Selection?> selected,
-) extends ConsumerWidget {
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selection = selected.value;
     if (selection != null) return _Selected(owner, selection, () => _done(ref));
 
-    return _LoadState(owner);
+    return _LoadState(owner, offset, active: active);
   }
 
   void _done(WidgetRef ref) {
     selected.value = null;
-    owner.refresh(ref);
+    owner.refresh(ref, offset.value);
   }
 }
 
-class const _LoadState(final WorkspaceViewScreen owner)
-    extends HookConsumerWidget {
+class const _LoadState(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final offset = useState(0);
-    final state = ref.watch(
-      workspaceViewDataProvider(
-        owner.workspaceId,
-        owner.viewId,
-        offset: offset.value,
-      ),
-    );
+    final cached = useRef<AsyncValue<WorkspaceViewData>?>(null);
+    final state = active
+        ? ref.watch(
+            workspaceViewDataProvider(
+              owner.workspaceId,
+              owner.viewId,
+              offset: offset.value,
+            ),
+          )
+        : cached.value;
+    if (state == null) return const SizedBox.shrink();
+    if (state is AsyncError<WorkspaceViewData>) cached.value = null;
+    if (state is AsyncData<WorkspaceViewData>) cached.value = state;
+    final retained = cached.value;
+    final waiting = active && state.isLoading && retained != null;
+    final display = waiting ? retained : state;
 
-    return _LoadedContent(owner, state, offset);
+    return Stack(
+      children: [
+        Offstage(
+          offstage: waiting,
+          child: _LoadedContent(owner, display, offset),
+        ),
+        if (waiting) const Center(child: CircularProgressIndicator()),
+      ],
+    );
   }
 }
 
