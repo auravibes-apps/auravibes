@@ -1,14 +1,14 @@
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_context_provider.dart';
-import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:drift/native.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:auravibes_app/features/browser/screens/sidebar_directory.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
@@ -52,16 +52,7 @@ void main() {
         LocalWorkspaceFolderRepository(database, 'one'),
       );
       final folder = await folders.create(name: 'Folder');
-      final tables = OrganizeWorkspaceTablesUsecase(
-        LocalWorkspaceTableRepository(database, 'one'),
-      );
       final repository = LocalWorkspaceContextRepository(database, 'one');
-      final consent = ManageWorkspaceChatContextUsecase(
-        workspaceId: 'one',
-        repository: repository,
-        commands: .new(tables: tables, folders: folders),
-        canAccess: (id) async => id == chat.id,
-      );
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
@@ -79,8 +70,7 @@ void main() {
               workspaceTablesProvider.overrideWith((ref, args) async => []),
               workspaceViewsProvider.overrideWith((ref, args) async => []),
               workspaceFilesProvider.overrideWith((ref, args) async => []),
-              workspaceConversationContextUsecaseProvider('one')
-                  .overrideWith((ref) async => consent),
+              appDatabaseProvider.overrideWithValue(database),
               sendMessageUsecaseProvider('one')
                   .overrideWithValue(SendMessageUsecase.cloud((_, _) async {})),
             ],
@@ -111,6 +101,17 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect((await repository.read(chat.id)).selection?.kind, 'directory');
+      await tester.tap(find.byType(AuraPopupMenuButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Inspect shared context'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('You do not have permission for this cloud action.'),
+        findsNothing,
+      );
+      expect(find.text('Directory'), findsWidgets);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Folder'));
       await tester.pumpAndSettle();
       expect((await repository.read(chat.id)).selection?.kind, 'directory');
@@ -136,6 +137,50 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  testWidgets('failed sharing remains visible and grants no context', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'one',
+          child: SidebarDirectory(
+            workspaceId: 'one',
+            conversationId: 'chat',
+            onClose: () {},
+            onOpen: (_, _) {},
+          ),
+          overrides: [
+            workspaceFoldersProvider.overrideWith((ref, args) async => []),
+            workspaceTablesProvider.overrideWith((ref, args) async => []),
+            workspaceViewsProvider.overrideWith((ref, args) async => []),
+            workspaceFilesProvider.overrideWith((ref, args) async => []),
+            workspaceConversationContextUsecaseProvider('one').overrideWith(
+              (ref) async => throw const WorkspaceTableException(denied: true),
+            ),
+          ],
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    });
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Share with AI'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.widgetWithText(TextButton, 'Share with AI'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkspaceItemFailure), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets(
     'directory enters folders and opens items without granting access',

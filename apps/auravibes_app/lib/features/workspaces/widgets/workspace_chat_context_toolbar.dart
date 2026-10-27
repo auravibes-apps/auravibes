@@ -130,7 +130,9 @@ class _WorkspaceChatContextToolbarState({
 
   void finish({required bool mounted}) {
     if (!mounted || _released) return;
-    status.value = const _WorkspaceChatContextToolbarStatus();
+    status.value = _WorkspaceChatContextToolbarStatus(
+      error: status.value.error,
+    );
   }
 }
 
