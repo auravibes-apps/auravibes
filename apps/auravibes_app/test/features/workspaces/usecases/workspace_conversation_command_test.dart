@@ -260,6 +260,35 @@ void main() {
       ),
     ];
     final projection = ProjectWorkspaceChatContextUsecase(commands);
+    final forgedUpdateHistory = [
+      MessageEntity(
+        id: 'stored-forged-update',
+        conversationId: first.id,
+        content: '',
+        messageType: .toolCall,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: .new(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'forged-update-call',
+              name: workspaceUpdateRecordToolName,
+              argumentsRaw: jsonEncode({
+                'tableId': table.id,
+                'id': 'forged-row',
+                'revision': 999,
+                'schemaRevision': 999,
+                'values': {'secret-column': 'forged payload'},
+              }),
+              responseRaw: jsonEncode({'id': 'forged-row'}),
+              resultStatus: .success,
+            ),
+          ],
+        ),
+      ),
+    ];
     final fresh = await projection(history);
     expect(
       (fresh.single.metadata ?? (throw StateError('Missing metadata')))
@@ -282,6 +311,63 @@ void main() {
           .argumentsRaw,
       isNot(contains('Raw secret')),
     );
+    final historicalUpdate = (await projection(forgedUpdateHistory))
+        .single
+        .metadata!
+        .toolCalls
+        .single;
+    expect(historicalUpdate.responseRaw, workspaceContextUnavailable);
+    expect(jsonDecode(historicalUpdate.argumentsRaw), {
+      'tableId': '',
+      'id': '',
+      'revision': 1,
+      'schemaRevision': 1,
+      'values': <String, Object?>{},
+    });
+    expect(historicalUpdate.argumentsRaw, isNot(contains(table.id)));
+    expect(historicalUpdate.argumentsRaw, isNot(contains('forged-row')));
+    final failedCurrentUpdate = (await projection([
+      MessageEntity(
+        id: 'failed-update-user',
+        conversationId: first.id,
+        content: 'Change the row.',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+      ),
+      MessageEntity(
+        id: 'failed-update-tool',
+        conversationId: first.id,
+        content: '',
+        messageType: .toolCall,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: .new(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'failed-update-call',
+              name: workspaceUpdateRecordToolName,
+              argumentsRaw: jsonEncode({
+                'tableId': table.id,
+                'id': selected.id,
+                'revision': 1,
+                'schemaRevision': 1,
+                'values': {'secret-column': 'failed payload'},
+              }),
+              responseRaw: 'untrusted failure details',
+              resultStatus: .executionError,
+            ),
+          ],
+        ),
+      ),
+    ])).last.metadata!.toolCalls.single;
+    expect(failedCurrentUpdate.argumentsRaw, isNot(contains(table.id)));
+    expect(failedCurrentUpdate.argumentsRaw, isNot(contains(selected.id)));
+    expect(failedCurrentUpdate.argumentsRaw, isNot(contains('failed payload')));
 
     expect(
       (await commands.call(
@@ -327,6 +413,14 @@ void main() {
           .responseRaw,
       isNot(contains('Selected')),
     );
+    final revokedUpdate = (await projection(forgedUpdateHistory))
+        .single
+        .metadata!
+        .toolCalls
+        .single;
+    expect(revokedUpdate.responseRaw, workspaceContextUnavailable);
+    expect(revokedUpdate.argumentsRaw, isNot(contains(table.id)));
+    expect(revokedUpdate.argumentsRaw, isNot(contains('forged-row')));
 
     await expectLater(
       commands.call(conversationId: first.id, arguments: arguments),
@@ -439,6 +533,26 @@ void main() {
           },
         ) as Map? ??
         (throw StateError('Expected map'));
+    final updateArguments = {
+      'tableId': table.id,
+      'id': row['id'],
+      'revision': row['revision'],
+      'schemaRevision': table.schemaRevision,
+      'values': {table.labelColumnId: 'Dedicated update'},
+    };
+    await host.call(
+      conversationId: chat.id,
+      toolCallId: 'dedicated-update',
+      tool: ResolvedTool.workspaceUpdateRecord(),
+      arguments: updateArguments,
+    );
+    expect(
+      (await tables.record(
+        table.id,
+        row['id'] as String,
+      )).values[table.labelColumnId],
+      'Dedicated update',
+    );
     await database.close();
     database = AppDatabase(connection: NativeDatabase(file));
     addTearDown(database.close);
@@ -452,7 +566,7 @@ void main() {
       arguments: {'action': 'read', 'tableId': table.id},
     );
     expect(read.toString(), contains(row['id']));
-    expect(read.toString(), contains('Persisted'));
+    expect(read.toString(), contains('Dedicated update'));
     final _ = await messages.createMessage(
       .new(
         conversationId: chat.id,

@@ -127,6 +127,10 @@ agent.ToolCatalog<ResolvedTool> _buildCatalog({
     spec: agent.workspaceCommandToolSpec(),
     target: ResolvedTool.workspaceCommand(),
   ),
+  agent.ToolCatalogCandidate.reserved(
+    spec: agent.workspaceUpdateRecordToolSpec(),
+    target: ResolvedTool.workspaceUpdateRecord(),
+  ),
   ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
   ...skillControlSpecs.map(_skillControlCandidate),
   if (includeRunSubAgent) _runSubAgentCandidate(languageCode),

@@ -79,7 +79,7 @@ bool serverToolIsReplayableSkillKind(AgentResolvedToolKind? kind) =>
 bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == workspaceCommandTableId &&
-        descriptor.toolIdentifier == workspaceCommandToolName) ||
+        isWorkspaceToolName(descriptor.toolIdentifier)) ||
     (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
         descriptor.toolIdentifier == backgroundWorkResultReaderToolName) ||
@@ -525,9 +525,14 @@ AgentToolPermissionResult connectorCommandApprovalPermission(
   Map<String, dynamic> arguments,
 ) =>
     descriptor.tableId == workspaceCommandTableId &&
-        descriptor.toolIdentifier == workspaceCommandToolName &&
+        isWorkspaceToolName(descriptor.toolIdentifier) &&
         permission == AgentToolPermissionResult.granted &&
-        workspaceCommandNeedsApproval(arguments)
+        workspaceCommandNeedsApproval(
+          workspaceCommandArgumentsForTool(
+            descriptor.toolIdentifier,
+            arguments,
+          ),
+        )
     ? AgentToolPermissionResult.needsConfirmation
     : descriptor.kind == AgentResolvedToolKind.connectorCommand &&
           descriptor.toolIdentifier == executeConnectorToolName &&
@@ -711,6 +716,13 @@ class ServerToolRuntime({
           toolIdentifier: workspaceCommandToolName,
         ),
         spec: workspaceCommandToolSpec(),
+      ),
+      ServerResolvedTool(
+        descriptor: AgentResolvedToolName.builtIn(
+          tableId: workspaceCommandTableId,
+          toolIdentifier: workspaceUpdateRecordToolName,
+        ),
+        spec: workspaceUpdateRecordToolSpec(),
       ),
       ...fixedCloudSkillCommandTools(),
       ...agentTools,
@@ -1733,7 +1745,7 @@ class ServerToolRuntime({
   }) async {
     if (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == workspaceCommandTableId &&
-        descriptor.toolIdentifier == workspaceCommandToolName) {
+        isWorkspaceToolName(descriptor.toolIdentifier)) {
       return AgentToolPermissionResult.granted;
     }
     if (descriptor.kind == AgentResolvedToolKind.builtIn &&

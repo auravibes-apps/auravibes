@@ -1263,13 +1263,13 @@ class const ServerToolExecutorService({
       isCancelled: request.isCancelled,
     );
     if (tool.descriptor.tableId == workspaceCommandTableId &&
-        tool.descriptor.toolIdentifier == workspaceCommandToolName) {
+        isWorkspaceToolName(tool.descriptor.toolIdentifier)) {
       try {
         return await const WorkspaceConversationCommands().call(
           session,
           turn,
           request.id,
-          request.arguments,
+          workspaceCommandArgumentsForTool(tool.descriptor.toolIdentifier, request.arguments),
         );
       } on FormatException catch (error, stackTrace) {
         throw _workspaceFailure('invalid', error, stackTrace);

@@ -34,16 +34,21 @@ class const ProjectWorkspaceChatContextUsecase(
       return _currentCall(
         call,
         jsonEncode(workspaceFailureContext(call.responseRaw)),
+        preserveTargetIdentifiers: false,
       );
     }
-    final action = workspaceContextAction(call.arguments);
+    final arguments = workspaceCommandArgumentsForTool(
+      call.name,
+      call.arguments,
+    );
+    final action = workspaceActionForTool(call.name, call.arguments);
     Map<String, Object?>? receipt;
     if (currentTurn && action != 'read' && action != 'listCreated') {
       try {
         receipt = await tools.verifiedMutation(
           conversationId: conversationId,
           operationId: call.id,
-          arguments: call.arguments,
+          arguments: arguments,
         );
         if (receipt == null) {
           return workspaceToolCallForContext(call, workspaceContextUnavailable);
@@ -54,13 +59,13 @@ class const ProjectWorkspaceChatContextUsecase(
     }
     final response = action == 'listCreated'
         ? await _listCreated(conversationId, call)
-        : await _read(conversationId, call, receipt);
+        : await _read(conversationId, call, receipt, arguments);
     if (receipt != null) {
       try {
         if (await tools.verifiedMutation(
               conversationId: conversationId,
               operationId: call.id,
-              arguments: call.arguments,
+              arguments: arguments,
             ) ==
             null) {
           return workspaceToolCallForContext(call, workspaceContextUnavailable);
@@ -79,6 +84,7 @@ class const ProjectWorkspaceChatContextUsecase(
                 'outcome': 'success',
                 'current': jsonDecode(response),
               }),
+        preserveTargetIdentifiers: response != workspaceContextUnavailable,
       );
     }
 
@@ -109,11 +115,15 @@ class const ProjectWorkspaceChatContextUsecase(
     String conversationId,
     MessageToolCallEntity call,
     Map<String, Object?>? receipt,
+    Map<String, dynamic> arguments,
   ) async {
     try {
       final result = await tools.call(
         conversationId: conversationId,
-        arguments: _WorkspaceToolContext.arguments(call, receipt),
+        arguments: workspaceContextReadArguments(
+          arguments,
+          receipt ?? jsonDecode(call.responseRaw ?? '{}'),
+        ),
       );
 
       return jsonEncode(result);
@@ -125,12 +135,18 @@ class const ProjectWorkspaceChatContextUsecase(
 
 MessageToolCallEntity _currentCall(
   MessageToolCallEntity call,
-  String response,
-) {
-  final action = workspaceContextAction(call.arguments);
-
+  String response, {
+  required bool preserveTargetIdentifiers,
+}) {
   return call.copyWith(
-    argumentsRaw: jsonEncode({'action': action}),
+    argumentsRaw: jsonEncode(
+      workspaceToolArgumentsForContext(
+        call.name,
+        call.arguments,
+        preserveAction: true,
+        preserveTargetIdentifiers: preserveTargetIdentifiers,
+      ),
+    ),
     responseRaw: projectToolOutput(response).text,
     responseContextRaw: projectToolOutput(response).text,
     appData: null,
@@ -154,30 +170,27 @@ class const _ProjectedMessage(
     List<MessageToolCallEntity> calls,
   ) async => [
     for (final call in calls)
-      if (call.name == workspaceCommandToolName)
+      if (isWorkspaceToolName(call.name))
         await projector._project(message.conversationId, call, currentTurn)
       else
         call,
   ];
 }
 
-abstract final class _WorkspaceToolContext {
-  static Map<String, dynamic> arguments(
-    MessageToolCallEntity call,
-    Map<String, Object?>? receipt,
-  ) => workspaceContextReadArguments(
-    jsonDecode(call.argumentsRaw) as Map<String, dynamic>,
-    receipt ?? jsonDecode(call.responseRaw ?? '{}'),
-  );
-}
-
 MessageToolCallEntity workspaceToolCallForContext(
   MessageToolCallEntity call,
   String response,
 ) => call.isPending
-    ? call.copyWith(argumentsRaw: '{"action":"read"}', appData: null)
+    ? call.copyWith(
+        argumentsRaw: jsonEncode(
+          workspaceToolArgumentsForContext(call.name, call.arguments),
+        ),
+        appData: null,
+      )
     : call.copyWith(
-        argumentsRaw: '{"action":"read"}',
+        argumentsRaw: jsonEncode(
+          workspaceToolArgumentsForContext(call.name, call.arguments),
+        ),
         responseRaw: response,
         responseContextRaw: response,
         appData: null,
@@ -204,7 +217,7 @@ abstract final class _WorkspaceHistoryRedaction {
     List<MessageToolCallEntity> calls,
   ) => [
     for (final call in calls)
-      if (call.name == workspaceCommandToolName)
+      if (isWorkspaceToolName(call.name))
         workspaceToolCallForContext(call, workspaceContextUnavailable)
       else
         call,

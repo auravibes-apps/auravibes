@@ -66,6 +66,11 @@ Map<String, Object?> workspaceFileToolResult({
 
 const workspaceCommandToolName = 'workspace_item';
 const workspaceCommandTableId = 'host.workspace.item';
+const workspaceUpdateRecordToolName = 'workspace_update_record';
+const workspaceToolNames = <String>{
+  workspaceCommandToolName,
+  workspaceUpdateRecordToolName,
+};
 const workspaceCommandActions = <String>[
   'read',
   'listCreated',
@@ -80,21 +85,115 @@ const workspaceCommandActions = <String>[
   'saveView',
 ];
 
+bool isWorkspaceToolName(String name) => workspaceToolNames.contains(name);
+
+Map<String, dynamic> workspaceCommandArgumentsForTool(
+  String toolName,
+  Map<String, dynamic> arguments,
+) => toolName == workspaceUpdateRecordToolName
+    ? {...arguments, 'action': 'updateRecord'}
+    : arguments;
+
+String workspaceActionForTool(
+  String toolName,
+  Map<String, dynamic> arguments,
+) => toolName == workspaceUpdateRecordToolName
+    ? 'updateRecord'
+    : workspaceContextAction(arguments);
+
+Map<String, Object?> workspaceToolArgumentsForContext(
+  String toolName,
+  Map<String, dynamic> arguments, {
+  bool preserveAction = false,
+  bool preserveTargetIdentifiers = false,
+}) {
+  if (toolName == workspaceUpdateRecordToolName) {
+    return {
+      'tableId': preserveTargetIdentifiers && arguments['tableId'] is String
+          ? arguments['tableId']
+          : '',
+      'id': preserveTargetIdentifiers && arguments['id'] is String
+          ? arguments['id']
+          : '',
+      'revision': preserveTargetIdentifiers && arguments['revision'] is int
+          ? arguments['revision']
+          : 1,
+      'schemaRevision':
+          preserveTargetIdentifiers && arguments['schemaRevision'] is int
+          ? arguments['schemaRevision']
+          : 1,
+      'values': const <String, Object?>{},
+    };
+  }
+
+  return {
+    'action': preserveAction
+        ? workspaceActionForTool(toolName, arguments)
+        : 'read',
+  };
+}
+
 /// Only fixed action names may survive prompt redaction.
 String workspaceContextAction(Object? input) {
   final action = input is Map ? input['action'] : null;
-  return action is String && workspaceCommandActions.contains(action)
+  return action is String &&
+          (workspaceCommandActions.contains(action) || action == 'updateRecord')
       ? action
       : 'read';
 }
+
+ToolSpec workspaceUpdateRecordToolSpec() => ToolSpec(
+  name: workspaceUpdateRecordToolName,
+  description:
+      'Update one existing row in an explicitly shared workspace table. '
+      'Use this tool for requests to change row values. '
+      'Do not use workspace_item read as a substitute for updating a row. '
+      'Use the existing row ID, table ID, row revision and table schema '
+      'revision from shared context or a specific table read. '
+      'Include only the columns the user asked to change. '
+      'Never infer access from another Conversation.',
+  inputJsonSchema: const {
+    'type': 'object',
+    'properties': {
+      'tableId': {
+        'type': 'string',
+        'description': 'ID of the explicitly shared target table.',
+      },
+      'id': {
+        'type': 'string',
+        'description': 'ID of the existing row to update.',
+      },
+      'revision': {
+        'type': 'integer',
+        'minimum': 1,
+        'description': 'Current revision of the target row.',
+      },
+      'schemaRevision': {
+        'type': 'integer',
+        'minimum': 1,
+        'description': 'Current schema revision of the target table.',
+      },
+      'values': {
+        'type': 'object',
+        'description':
+            'Map table column IDs to the new values. Include only changed '
+            'columns; use null for empty cells.',
+      },
+    },
+    'required': ['tableId', 'id', 'revision', 'schemaRevision', 'values'],
+    'additionalProperties': false,
+  },
+);
 
 /// Commands carry IDs and expected revisions; hosts own grants and execution.
 ToolSpec workspaceCommandToolSpec() => ToolSpec(
   name: workspaceCommandToolName,
   description:
       'Read or edit explicitly shared workspace items by stable ID. '
-      'For a request to change an existing table row, use updateRecord; '
-      'a root read is never a substitute for an edit. '
+      'For a request to change an existing table row, use the dedicated '
+      '$workspaceUpdateRecordToolName tool. The legacy updateRecord action '
+      'is retained for saved-call replay. '
+      'A root read is never a substitute for an edit. '
       'Find the target row in the selected workspace context or read the '
       'specific shared table before updating it. '
       'If the target is not in the shared scope, ask the user to select or '
@@ -119,9 +218,6 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'renameFolder requires id, revision and name. '
       'renameTable requires tableId, revision, schemaRevision and name. '
       'createRecord requires tableId, revision, schemaRevision and values. '
-      'For updateRecord, use the existing row ID and row revision returned '
-      'by shared context or a table read, plus its tableId, schemaRevision '
-      'and values containing only the requested changes. '
       'saveColumn requires tableId, revision, schemaRevision and column. '
       'createView requires tableId, revision, schemaRevision, name and '
       'columnIds. saveView requires id, revision, schemaRevision, name, '
@@ -133,16 +229,15 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
         'type': 'string',
         'enum': workspaceCommandActions,
         'description':
-            'Use updateRecord to change an existing row. If more data is '
-            'needed, use the read action only to fetch a specific shared '
-            'item; a '
+            'For new row edits, use the dedicated '
+            '$workspaceUpdateRecordToolName tool. The updateRecord action is '
+            'retained for saved-call replay. If more data is needed, '
+            'use the read action only to fetch a specific shared item; a '
             'Directory root read never completes an edit request.',
       },
       'id': {
         'type': 'string',
-        'description':
-            'Selected folder, file or view ID. For updateRecord, the existing '
-            'row ID returned by the selected table or a table read.',
+        'description': 'Selected folder, file or view ID.',
       },
       'tableId': {
         'type': 'string',
@@ -161,16 +256,12 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'revision': {
         'type': 'integer',
         'minimum': 1,
-        'description':
-            'Current revision of the target. For updateRecord, use the row '
-            'revision returned with the selected or read row.',
+        'description': 'Current revision of the target item.',
       },
       'schemaRevision': {
         'type': 'integer',
         'minimum': 1,
-        'description':
-            'Current table schema revision returned by the selected table or '
-            'a table read; required for updateRecord.',
+        'description': 'Current table schema revision.',
       },
       'name': {'type': 'string', 'description': 'Name of the item or column.'},
       'labelName': {
@@ -180,8 +271,7 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'values': {
         'type': 'object',
         'description':
-            'Map table column IDs to values; use null for empty cells. For '
-            'updateRecord, include only the columns the user asked to change.',
+            'Map table column IDs to values; use null for empty cells.',
       },
       'column': {
         'type': 'object',

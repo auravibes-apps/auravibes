@@ -51,6 +51,25 @@ void main() {
                 : ToolPermissionResult.needsConfirmation,
           );
         }
+        final dedicatedUpdate = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.workspaceUpdateRecord(),
+          argumentsRaw: jsonEncode({
+            'tableId': 'table-1',
+            'id': 'row-1',
+            'revision': 1,
+            'schemaRevision': 1,
+            'values': {'column-1': 'updated'},
+          }),
+        ));
+        expect(dedicatedUpdate.permissionResult, ToolPermissionResult.granted);
+        expect(
+          dedicatedUpdate.permissionTableId,
+          agent.workspaceCommandTableId,
+        );
+
         final denied = ResolveToolApprovalDecisionUsecase(
           conversationToolsRepository: fixture.conversationToolsRepository,
           toolsGroupsRepository: fixture.toolsGroupsRepository,

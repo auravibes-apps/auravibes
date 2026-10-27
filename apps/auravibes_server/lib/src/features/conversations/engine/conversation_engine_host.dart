@@ -60,7 +60,7 @@ String appendDurableSkillActivations(
 }
 
 String _toolResultForContext(ConversationToolCall call) {
-  if (call.name == workspaceCommandToolName) return workspaceContextUnavailable;
+  if (isWorkspaceToolName(call.name)) return workspaceContextUnavailable;
   final result = call.resultJson ?? call.status;
 
   return projectToolOutput(result).text;
@@ -366,8 +366,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
               ProviderToolCallRecord(
                 id: call.stableId,
                 name: call.name,
-                arguments: call.name == workspaceCommandToolName
-                    ? const {'action': 'read'}
+                arguments: isWorkspaceToolName(call.name)
+                    ? workspaceToolArgumentsForContext(
+                        call.name,
+                        _jsonObject(call.argumentsJson),
+                      )
                     : Map<String, Object?>.from(
                         jsonDecode(call.argumentsJson) as Map,
                       ),
@@ -397,8 +400,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
             ProviderToolCallRecord(
               id: call.stableId,
               name: call.name,
-              arguments: call.name == workspaceCommandToolName
-                  ? const {'action': 'read'}
+              arguments: isWorkspaceToolName(call.name)
+                  ? workspaceToolArgumentsForContext(
+                      call.name,
+                      _jsonObject(call.argumentsJson),
+                    )
                   : Map<String, Object?>.from(
                       jsonDecode(call.argumentsJson) as Map,
                     ),

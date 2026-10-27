@@ -280,12 +280,14 @@ resolveToolApprovalDecisionUsecaseProvider =
       );
     });
 
-bool _workspaceApproval(String? arguments) {
+bool _workspaceApproval(String? arguments, String toolName) {
   try {
     final decoded = jsonDecode(arguments ?? 'null');
 
     return decoded is! Map<String, dynamic> ||
-        agent.workspaceCommandNeedsApproval(decoded);
+        agent.workspaceCommandNeedsApproval(
+          agent.workspaceCommandArgumentsForTool(toolName, decoded),
+        );
   } on FormatException {
     return true;
   }
@@ -295,7 +297,11 @@ ToolApprovalDecision _workspaceConfiguredDecision(
   agent.AgentToolApprovalRequest<ResolvedTool> request,
 ) => ToolApprovalDecision(
   toolCallId: request.toolCallId,
-  permissionResult: _workspaceApproval(request.argumentsRaw)
+  permissionResult:
+      _workspaceApproval(
+        request.argumentsRaw,
+        request.resolvedTool.toolIdentifier,
+      )
       ? .needsConfirmation
       : .granted,
   permissionTableId: agent.workspaceCommandTableId,

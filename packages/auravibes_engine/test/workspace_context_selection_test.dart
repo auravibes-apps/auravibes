@@ -11,12 +11,72 @@ void main() {
 
   test('workspace edit intent is explicit in schemas sent to providers', () {
     final spec = workspaceCommandToolSpec();
+    final updateSpec = workspaceUpdateRecordToolSpec();
     expect(
       spec.description,
-      contains(
-        'For a request to change an existing table row, use updateRecord',
-      ),
+      contains('use the dedicated $workspaceUpdateRecordToolName tool'),
     );
+    expect(workspaceCommandActions, contains('updateRecord'));
+    expect(updateSpec.inputJsonSchema['required'], [
+      'tableId',
+      'id',
+      'revision',
+      'schemaRevision',
+      'values',
+    ]);
+    final updateProperties = Map<String, Object?>.from(
+      updateSpec.inputJsonSchema['properties']! as Map,
+    );
+    expect(
+      (updateProperties['values']! as Map)['description'],
+      contains('Include only changed columns'),
+    );
+
+    final rawUpdate = {
+      'tableId': 'table-1',
+      'id': 'row-1',
+      'revision': 3,
+      'schemaRevision': 2,
+      'values': {'email': 'new@example.com'},
+    };
+    final commandArguments = workspaceCommandArgumentsForTool(
+      workspaceUpdateRecordToolName,
+      rawUpdate,
+    );
+    expect(commandArguments, {...rawUpdate, 'action': 'updateRecord'});
+    expect(
+      workspaceActionForTool(workspaceUpdateRecordToolName, rawUpdate),
+      'updateRecord',
+    );
+    final contextArguments = workspaceToolArgumentsForContext(
+      workspaceUpdateRecordToolName,
+      rawUpdate,
+    );
+    expect(contextArguments['tableId'], '');
+    expect(contextArguments['id'], '');
+    expect(contextArguments['revision'], 1);
+    expect(contextArguments['schemaRevision'], 1);
+    expect(contextArguments['values'], isEmpty);
+    final failedCurrentArguments = workspaceToolArgumentsForContext(
+      workspaceUpdateRecordToolName,
+      rawUpdate,
+      preserveAction: true,
+    );
+    expect(failedCurrentArguments['tableId'], '');
+    expect(failedCurrentArguments['id'], '');
+    expect(failedCurrentArguments['values'], isEmpty);
+    final currentArguments = workspaceToolArgumentsForContext(
+      workspaceUpdateRecordToolName,
+      rawUpdate,
+      preserveAction: true,
+      preserveTargetIdentifiers: true,
+    );
+    expect(currentArguments['tableId'], 'table-1');
+    expect(currentArguments['id'], 'row-1');
+    expect(currentArguments['revision'], 3);
+    expect(currentArguments['schemaRevision'], 2);
+    expect(currentArguments['values'], isEmpty);
+
     final properties = Map<String, Object?>.from(
       spec.inputJsonSchema['properties']! as Map,
     );
@@ -24,19 +84,21 @@ void main() {
       (properties['action']! as Map)['description'],
       contains('a Directory root read never completes an edit request'),
     );
-    expect(
-      (properties['values']! as Map)['description'],
-      contains(
-        'For updateRecord, include only the columns the user asked to change',
-      ),
-    );
 
     final definition = ToolDefinition(
       name: spec.name,
       description: spec.description,
       inputSchema: spec.inputJsonSchema,
     );
-    final request = ModelRequest(messages: const [], tools: [definition]);
+    final updateDefinition = ToolDefinition(
+      name: updateSpec.name,
+      description: updateSpec.description,
+      inputSchema: updateSpec.inputJsonSchema,
+    );
+    final request = ModelRequest(
+      messages: const [],
+      tools: [definition, updateDefinition],
+    );
     final chat =
         ChatCompletionsCodec(
           errorLabel: 'test',
@@ -46,20 +108,34 @@ void main() {
           request: request,
           stream: false,
         );
-    final chatFunction =
-        ((chat['tools'] as List).single as Map<String, dynamic>)['function']
-            as Map<String, dynamic>;
+    final chatTools = (chat['tools'] as List).cast<Map<String, dynamic>>();
+    final chatFunction = chatTools
+        .map((tool) => tool['function'] as Map<String, dynamic>)
+        .singleWhere((function) => function['name'] == spec.name);
+    final chatUpdateFunction = chatTools
+        .map((tool) => tool['function'] as Map<String, dynamic>)
+        .singleWhere((function) => function['name'] == updateSpec.name);
     expect(chatFunction['description'], spec.description);
     expect(chatFunction['parameters'], spec.inputJsonSchema);
+    expect(chatUpdateFunction['description'], updateSpec.description);
+    expect(chatUpdateFunction['parameters'], updateSpec.inputJsonSchema);
 
     final codex = const OpenAICodexCodec().buildRequestBody(
       modelName: 'test-model',
       request: request,
       stream: false,
     );
-    final codexTool = (codex['tools'] as List).single as Map<String, dynamic>;
+    final codexTools = (codex['tools'] as List).cast<Map<String, dynamic>>();
+    final codexTool = codexTools.singleWhere(
+      (tool) => tool['name'] == spec.name,
+    );
+    final codexUpdateTool = codexTools.singleWhere(
+      (tool) => tool['name'] == updateSpec.name,
+    );
     expect(codexTool['description'], spec.description);
     expect(codexTool['parameters'], spec.inputJsonSchema);
+    expect(codexUpdateTool['description'], updateSpec.description);
+    expect(codexUpdateTool['parameters'], updateSpec.inputJsonSchema);
   });
 
   final selection = WorkspaceContextSelection(

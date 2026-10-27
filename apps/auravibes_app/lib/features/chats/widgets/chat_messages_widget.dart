@@ -3442,7 +3442,7 @@ class const _ActivityToolCallDetails({
             if (toolCall.resultStatus == ToolCallResultStatus.executionError &&
                 (decodedResponse == null || decodedResponse!.isEmpty))
               TextLocale(
-                toolCall.name == workspaceCommandToolName
+                isWorkspaceToolName(toolCall.name)
                     ? LocaleKeys
                           .chats_screens_chat_conversation_activity_workspace_failure_no_details
                     : LocaleKeys

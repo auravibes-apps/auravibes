@@ -152,7 +152,12 @@ class ResolvedToolService {
     }
 
     if (tool.isWorkspaceCommand) {
-      return await _workspaceCommand(conversationId, arguments, toolCallId);
+      return await _workspaceCommand(
+        conversationId,
+        tool.toolIdentifier,
+        arguments,
+        toolCallId,
+      );
     }
     final result = await delegate.call(
       conversationId: conversationId,
@@ -171,6 +176,7 @@ class ResolvedToolService {
 
   Future<Object?> _workspaceCommand(
     String conversationId,
+    String toolName,
     Map<String, dynamic> arguments,
     String toolCallId,
   ) async {
@@ -182,7 +188,7 @@ class ResolvedToolService {
     try {
       return await commands.call(
         conversationId: conversationId,
-        arguments: arguments,
+        arguments: agent.workspaceCommandArgumentsForTool(toolName, arguments),
         operationId: toolCallId,
       );
     } on WorkspaceTableException catch (error, stackTrace) {

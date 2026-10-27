@@ -30,7 +30,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         executeConnectorToolName,
         normalizeToolCallUserFacingDescription,
-        workspaceCommandToolName;
+        isWorkspaceToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -1978,7 +1978,7 @@ class _AllowButtonChildren {
            ),
          ),
          if (!handler._isCloudCall &&
-             handler.toolCall.name != workspaceCommandToolName)
+             !isWorkspaceToolName(handler.toolCall.name))
            Expanded(
              child: AuraButton(
                onPressed: () =>
