@@ -12,6 +12,7 @@ class const WorkspaceFileScreen({
   required final String workspaceId,
   required final String fileId,
   required final VoidCallback onBack,
+  final bool compact = false,
   super.key,
 }) extends ConsumerWidget {
   @override
@@ -21,9 +22,9 @@ class const WorkspaceFileScreen({
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _Back(onBack),
+        if (!compact) _Back(onBack),
         _Status(this, file),
-        _Reload(workspaceId, fileId, file),
+        if (!compact || file.hasError) _Reload(workspaceId, fileId, file),
       ],
     );
   }
@@ -81,7 +82,7 @@ class const _File(final WorkspaceFileScreen owner, final WorkspaceFile file)
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
-      Text(file.name),
+      if (!owner.compact) Text(file.name),
       WorkspaceAssetPreviewPanel(
         workspaceId: owner.workspaceId,
         assetId: file.assetId,

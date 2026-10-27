@@ -29,6 +29,7 @@ class const WorkspaceTableScreen({
   required final String workspaceId,
   required final String tableId,
   required final VoidCallback onBack,
+  final bool compact = false,
   super.key,
 }) extends HookWidget {
   @override
@@ -36,10 +37,12 @@ class const WorkspaceTableScreen({
     final draftOpen = useState(false);
 
     return PopScope(
-      child: AppScreen(
-        child: _TableState(screen: this, draftOpen: draftOpen),
-        appBar: _TableToolbar(screen: this, draftOpen: draftOpen),
-      ),
+      child: compact
+          ? _TableState(screen: this, draftOpen: draftOpen)
+          : AppScreen(
+              child: _TableState(screen: this, draftOpen: draftOpen),
+              appBar: _TableToolbar(screen: this, draftOpen: draftOpen),
+            ),
       canPop: !draftOpen.value,
     );
   }
@@ -86,7 +89,11 @@ class const _TableState({
     );
 
     if (table case AsyncError(:final error)) {
-      return _TableFailure(onBack: screen.onBack, error: error);
+      return _TableFailure(
+        onBack: screen.onBack,
+        error: error,
+        compact: screen.compact,
+      );
     }
     final current = table.value;
     if (current != null) {
@@ -112,6 +119,7 @@ class const _PendingTable(
     AsyncError(:final error) => _TableFailure(
       onBack: screen.onBack,
       error: error,
+      compact: screen.compact,
     ),
     AsyncLoading() => const Center(child: CircularProgressIndicator()),
   };
@@ -120,15 +128,17 @@ class const _PendingTable(
 class const _TableFailure({
   required final VoidCallback onBack,
   required final Object error,
+  required final bool compact,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     children: [
-      ListTile(
-        leading: const Icon(Icons.arrow_back),
-        title: const TextLocale(LocaleKeys.workspace_items_title),
-        onTap: onBack,
-      ),
+      if (!compact)
+        ListTile(
+          leading: const Icon(Icons.arrow_back),
+          title: const TextLocale(LocaleKeys.workspace_items_title),
+          onTap: onBack,
+        ),
       WorkspaceItemFailure(error: error),
     ],
   );
@@ -139,6 +149,7 @@ class const _TableContents({
   required final WorkspaceTable table,
   required final VoidCallback onBack,
   required final ValueNotifier<bool> draftOpen,
+  required final bool compact,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -268,6 +279,7 @@ class const _BrowsingPage({
     onAddColumn: (type) =>
         _column(context, null, initialType: type, compact: true),
     draftOpen: owner.draftOpen,
+    compact: owner.compact,
   );
   void _record(BuildContext context, WorkspaceRecord? record) {
     if (record != null) {
@@ -342,6 +354,7 @@ class const _TableBrowser({
   required final ValueChanged<WorkspaceColumn?> onColumn,
   required final ValueChanged<WorkspaceColumnType> onAddColumn,
   required final ValueNotifier<bool> draftOpen,
+  required final bool compact,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
@@ -350,10 +363,11 @@ class const _TableBrowser({
 
     return Column(
       children: [
-        IgnorePointer(
-          ignoring: draftOpen.value,
-          child: _BrowserToolbar(this, settings, selectionMode),
-        ),
+        if (!compact)
+          IgnorePointer(
+            ignoring: draftOpen.value,
+            child: _BrowserToolbar(this, settings, selectionMode),
+          ),
         Expanded(child: _BrowserContent(this, settings, selectionMode)),
       ],
     );
@@ -692,6 +706,7 @@ class const _LoadedTable({
     table: table,
     onBack: screen.onBack,
     draftOpen: draftOpen,
+    compact: screen.compact,
     key: ValueKey(table.id),
   );
 }

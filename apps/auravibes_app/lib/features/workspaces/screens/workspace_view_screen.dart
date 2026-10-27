@@ -29,6 +29,7 @@ class const WorkspaceViewScreen({
   required final String workspaceId,
   required final String viewId,
   required final VoidCallback onBack,
+  final bool compact = false,
   super.key,
 }) extends StatelessWidget {
   void refresh(WidgetRef ref, int offset) {
@@ -57,7 +58,7 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
 
     return Column(
       children: [
-        if (active) _Toolbar(owner, selected, offset),
+        if (active && !owner.compact) _Toolbar(owner, selected, offset),
         Expanded(child: _Contents(owner, selected, offset, active: active)),
       ],
     );

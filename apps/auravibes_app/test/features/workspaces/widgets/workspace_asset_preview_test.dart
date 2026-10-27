@@ -23,6 +23,47 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  testWidgets('compact file shows preview without page controls', (
+    tester,
+  ) async {
+    final repository = _Assets();
+    const file = WorkspaceFile(
+      id: 'file',
+      name: 'Stored notes',
+      assetId: 'asset',
+      revision: 1,
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'one',
+          child: Scaffold(
+            body: WorkspaceFileScreen(
+              workspaceId: 'one',
+              fileId: 'file',
+              onBack: () {},
+              compact: true,
+            ),
+          ),
+          overrides: [
+            workspaceFileProvider(
+              'one',
+              'file',
+            ).overrideWith((ref) async => file),
+            workspaceAssetsUsecaseProvider('one').overrideWith(
+              (ref) async => ManageWorkspaceAssetsUsecase(repository),
+            ),
+          ],
+        ),
+      );
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Private notes'), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+    expect(find.text('Stored notes'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('File reload hides stale preview while reauthorizing metadata', (
     tester,
   ) async {

@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_record_brows
 import 'package:auravibes_app/features/workspaces/widgets/workspace_record_fields.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -29,6 +30,65 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+  testWidgets('compact table shows records without page navigation', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'table',
+      name: 'Contacts',
+      labelColumnId: 'label',
+      columns: [WorkspaceColumn(id: 'label', name: 'Name')],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: 'one',
+          child: WorkspaceTableScreen(
+            workspaceId: 'one',
+            tableId: 'table',
+            onBack: () {},
+            compact: true,
+          ),
+          overrides: [
+            workspaceTableProvider(
+              'one',
+              'table',
+            ).overrideWith((ref) async => table),
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async => const WorkspaceRecordPage(
+                records: [
+                  WorkspaceRecord(
+                    id: 'record',
+                    tableId: 'table',
+                    values: {'label': 'Alice'},
+                    revision: 1,
+                  ),
+                ],
+                hasMore: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.byType(AuraAppBarWithDrawer), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'workspace_table_back',
+      ),
+      findsNothing,
+    );
+    expect(find.byType(WorkspaceRecordBrowser), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('read-only table opens records without exposing edit controls', (
     tester,
   ) async {

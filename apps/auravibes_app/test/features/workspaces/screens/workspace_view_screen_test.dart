@@ -233,6 +233,27 @@ void main() {
         expect(find.byType(PopupMenuButton<String>), findsNothing);
         await tester.tap(find.byIcon(Icons.arrow_back));
         expect(returned, isTrue);
+        await tester.pumpWidget(
+          TestableApp(
+            workspaceId: 'one',
+            child: WorkspaceViewScreen(
+              workspaceId: 'one',
+              viewId: 'view',
+              onBack: () {},
+              compact: true,
+            ),
+            overrides: [
+              workspaceViewDataProvider(
+                'one',
+                'view',
+              ).overrideWith((ref) async => data),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Visible owned record'), findsOneWidget);
+        expect(find.byIcon(Icons.arrow_back), findsNothing);
+        expect(find.byIcon(Icons.refresh), findsNothing);
         await tester.pumpWidget(const SizedBox.shrink());
       },
     );
