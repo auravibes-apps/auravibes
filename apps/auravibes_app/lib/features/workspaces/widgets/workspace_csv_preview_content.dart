@@ -31,7 +31,7 @@ class const _PreviewRow({
         ListTile(title: Text(column.name), subtitle: Text(_value(column.id))),
     ],
   );
-  String _value(String id) => preview.values[index].containsKey(id)
+  String _value(String id) => preview.values[index][id] != null
       ? jsonEncode(preview.values[index][id])
       : '--';
 }

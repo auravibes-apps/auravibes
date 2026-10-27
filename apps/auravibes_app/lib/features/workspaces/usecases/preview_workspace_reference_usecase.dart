@@ -67,7 +67,7 @@ bool _matches(
   Map<String, Object?> values,
   Map<String, WorkspaceRecord> targets,
 ) {
-  if (!values.containsKey(column.id)) return true;
+  if (values[column.id] == null) return true;
   if (!WorkspaceReferenceValue.valid(column, values[column.id])) return false;
 
   return _parentMatches(column, values, targets);

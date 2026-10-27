@@ -311,7 +311,6 @@ class const _BrowsingPage({
     unawaited(
       showDialog<void>(
         context: context,
-        barrierDismissible: false,
         builder: (dialogContext) => Dialog(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480, maxHeight: 550),
@@ -319,15 +318,16 @@ class const _BrowsingPage({
               workspaceId: owner.workspaceId,
               table: owner.table,
               column: null,
-              initialType: initialType,
-              compact: true,
               onBack: () {
                 Navigator.of(dialogContext).pop();
                 navigation.refresh();
               },
+              initialType: initialType,
+              compact: true,
             ),
           ),
         ),
+        barrierDismissible: false,
       ),
     );
   }

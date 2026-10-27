@@ -17,6 +17,74 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+  testWidgets('View treats null attachment as absent', (tester) async {
+    final data = WorkspaceViewData(
+      view: .new(
+        id: 'view',
+        name: 'Overview',
+        tableId: 'table',
+        bindings: {'assets': 'assets'},
+        columnTypes: {'assets': 'attachment'},
+        definition: .fromJson({
+          'version': 1,
+          'components': [
+            {
+              'id': 'root',
+              'component': 'Table',
+              'columns': {'path': '/columns'},
+              'rows': {'path': '/rows'},
+            },
+          ],
+        }),
+        revision: 1,
+      ),
+      table: const WorkspaceTable(
+        id: 'table',
+        name: 'Items',
+        labelColumnId: 'label',
+        columns: [
+          WorkspaceColumn(id: 'label', name: 'Title'),
+          WorkspaceColumn(id: 'assets', name: 'Documents', type: .attachment),
+        ],
+        revision: 1,
+        schemaRevision: 1,
+      ),
+      records: const [
+        WorkspaceRecord(
+          id: 'record',
+          tableId: 'table',
+          values: {'label': 'Empty record', 'assets': null},
+          revision: 1,
+        ),
+      ],
+      needsRepair: false,
+    );
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceViewScreen(
+            workspaceId: 'one',
+            viewId: 'view',
+            onBack: () => fail('Unexpected back'),
+          ),
+          overrides: [
+            workspaceViewDataProvider(
+              'one',
+              'view',
+            ).overrideWith((ref) async => data),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Empty record'));
+    final _ = await tester.pumpAndSettle();
+    final presence = tester.widget<CheckboxListTile>(
+      find.byType(CheckboxListTile),
+    );
+    expect(presence.value, isFalse);
+  });
   testWidgets(
     'View keeps asset IDs outside generated surface and uses host preview',
     (tester) async {

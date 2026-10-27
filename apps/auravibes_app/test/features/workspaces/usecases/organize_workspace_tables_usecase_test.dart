@@ -53,8 +53,8 @@ void main() {
         isRequired: true,
       );
       expect(
-        (await PreviewWorkspaceColumnUsecase(tables)
-            .call(table: table, column: requiredColumn)),
+        await PreviewWorkspaceColumnUsecase(tables)
+            .call(table: table, column: requiredColumn),
         isEmpty,
       );
       final unchanged = await tables.saveColumn(

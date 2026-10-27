@@ -52,7 +52,7 @@ class const _Field(
   final WorkspaceRecord record,
   final WorkspaceColumn column,
 ) extends StatelessWidget {
-  bool get _present => record.values.containsKey(column.id);
+  bool get _present => record.values[column.id] != null;
   bool get _restricted => record.restrictedReferenceColumns.contains(column.id);
 
   @override

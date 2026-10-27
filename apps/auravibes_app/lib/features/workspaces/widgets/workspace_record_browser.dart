@@ -400,13 +400,13 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
 class const _AddColumnMenu(final _Rows owner) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PopupMenuButton<WorkspaceColumnType>(
-    tooltip: LocaleKeys.workspace_items_create_column.tr(),
-    enabled: !owner.draft.draftOpen.value,
-    onSelected: owner.browser.onAddColumn,
-    icon: const Icon(Icons.add),
     itemBuilder: _items,
+    onSelected: owner.browser.onAddColumn,
+    tooltip: LocaleKeys.workspace_items_create_column.tr(),
+    icon: const Icon(Icons.add),
+    enabled: !owner.draft.draftOpen.value,
   );
-  List<PopupMenuEntry<WorkspaceColumnType>> _items(BuildContext context) => [
+  List<PopupMenuEntry<WorkspaceColumnType>> _items(BuildContext _) => [
     for (final type in WorkspaceColumnType.values)
       PopupMenuItem(
         value: type,
@@ -595,6 +595,7 @@ class const _SpreadsheetCell(
         event.logicalKey == LogicalKeyboardKey.escape &&
         _editing) {
       _cancel();
+
       return KeyEventResult.handled;
     }
     if (event is KeyDownEvent &&
@@ -670,63 +671,104 @@ class const _ComplexCellOverlay(
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) portal.show();
       });
+
       return null;
     }, const []);
 
     return OverlayPortal(
       controller: portal,
-      overlayChildBuilder: (context) => Align(
-        alignment: .topLeft,
-        child: CompositedTransformFollower(
-          link: link,
-          targetAnchor: .bottomLeft,
-          showWhenUnlinked: false,
-          child: Material(
-            elevation: 6,
-            child: SizedBox(
-              width: 320,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 300),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: .min,
-                    children: [
-                      WorkspaceRecordFields(
-                        table: cell.owner.table,
-                        workspaceId: cell.owner.browser.workspaceId,
-                        restricted: cell.record.restrictedReferenceColumns,
-                        draft: cell.owner.draft.values,
-                        disabled: action.pending,
-                        columnId: cell.column.id,
-                      ),
-                      if (action.error case final error?)
-                        WorkspaceItemFailure(error: error),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: action.pending
-                                ? null
-                                : () => cell._submit(ref, action),
-                            tooltip: LocaleKeys.workspace_items_save_record
-                                .tr(),
-                            icon: const Icon(Icons.check),
-                          ),
-                          IconButton(
-                            onPressed: action.pending ? null : cell._cancel,
-                            tooltip: LocaleKeys.common_cancel.tr(),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+      overlayChildBuilder: (overlayContext) => _ComplexOverlayLayout(
+        anchorContext: context,
+        cell: cell,
+        action: action,
+        ref: ref,
+        link: link,
+      ),
+      child: ClipRect(child: _Cell(cell.owner, cell.record, cell.column)),
+    );
+  }
+}
+
+class const _ComplexOverlayLayout({
+  required final BuildContext anchorContext,
+  required final _SpreadsheetCell cell,
+  required final WorkspaceTableAction action,
+  required final WidgetRef ref,
+  required final LayerLink link,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewport = MediaQuery.sizeOf(context);
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    final origin = box?.localToGlobal(Offset.zero) ?? .zero;
+    final anchorTop = origin.dy - 8;
+    final anchorBottom = origin.dy + (box?.size.height ?? 32) + 8;
+    final below = (viewport.height - keyboard - anchorBottom - 8).clamp(
+      0.0,
+      300.0,
+    );
+    final above = (anchorTop - 8).clamp(0.0, 300.0);
+    final flip = below < 300 && above > below;
+    final maxHeight = (flip ? above : below).clamp(48.0, 300.0);
+    final width = (viewport.width - 16).clamp(48.0, 320.0);
+    final rightOverflow = (origin.dx - 8 + width - viewport.width + 8).clamp(
+      0.0,
+      width,
+    );
+
+    return Align(
+      alignment: .topLeft,
+      child: CompositedTransformFollower(
+        link: link,
+        showWhenUnlinked: false,
+        offset: .new(-rightOverflow, 0),
+        targetAnchor: flip ? .topLeft : .bottomLeft,
+        followerAnchor: flip ? .bottomLeft : .topLeft,
+        child: Material(
+          elevation: 6,
+          child: SizedBox(
+            key: const ValueKey('workspace_cell_type_popup'),
+            width: width,
+            child: ConstrainedBox(
+              constraints: .new(maxHeight: maxHeight),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: .min,
+                  children: [
+                    WorkspaceRecordFields(
+                      table: cell.owner.table,
+                      workspaceId: cell.owner.browser.workspaceId,
+                      restricted: cell.record.restrictedReferenceColumns,
+                      draft: cell.owner.draft.values,
+                      disabled: action.pending,
+                      columnId: cell.column.id,
+                    ),
+                    if (action.error case final error?)
+                      WorkspaceItemFailure(error: error),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: action.pending
+                              ? null
+                              : () => cell._submit(ref, action),
+                          tooltip: LocaleKeys.workspace_items_save_record.tr(),
+                          icon: const Icon(Icons.check),
+                        ),
+                        IconButton(
+                          onPressed: action.pending ? null : cell._cancel,
+                          tooltip: LocaleKeys.common_cancel.tr(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
       ),
-      child: ClipRect(child: _Cell(cell.owner, cell.record, cell.column)),
     );
   }
 }
@@ -748,30 +790,30 @@ class const _InlineScalarEditor(
         children: [
           Expanded(
             child: Semantics(
-              label: cell.column.name,
               child: TextField(
                 key: const ValueKey('workspace_inline_record_value'),
                 controller: controller,
-                decoration: const InputDecoration.collapsed(hintText: ''),
+                decoration: const .collapsed(hintText: ''),
                 style: .new(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
                 autofocus: true,
                 onChanged: _change,
                 onSubmitted: (_) => cell._submit(ref, action),
-                onTapOutside: (_) => cell._submit(ref, action),
                 enabled: !action.pending,
+                onTapOutside: (_) => cell._submit(ref, action),
               ),
+              label: cell.column.name,
             ),
           ),
           if (action.error case final error?)
             Tooltip(
-              message: _errorText(error),
               child: Icon(
                 Icons.error_outline,
                 color: Theme.of(context).colorScheme.error,
                 size: 18,
               ),
+              message: _errorText(error),
             ),
         ],
       ),
@@ -783,12 +825,15 @@ class const _InlineScalarEditor(
     _ => CloudAppErrors.localizationKey(error).tr(),
   };
 
+  Object? _parse(String text) {
+    if (text.isEmpty) return null;
+    if (cell.column.type == .number) return num.tryParse(text) ?? text;
+
+    return text;
+  }
+
   void _change(String text) {
-    final Object? value = text.isEmpty
-        ? null
-        : cell.column.type == .number
-        ? num.tryParse(text) ?? text
-        : text;
+    final value = _parse(text);
     cell.owner.draft.values.value = {
       ...cell.owner.draft.values.value,
       cell.column.id: value,

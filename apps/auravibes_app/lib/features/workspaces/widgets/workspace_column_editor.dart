@@ -36,9 +36,10 @@ class const WorkspaceColumnEditor({
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = _ColumnActions.use(context, column, initialType);
 
-    final save = () => _ColumnActions.save(ref, this, draft);
-    if (compact)
+    Future<void> save() => _ColumnActions.save(ref, this, draft);
+    if (compact) {
       return _CompactColumnForm(editor: this, draft: draft, onSave: save);
+    }
 
     return _ColumnForm(editor: this, draft: draft, onSave: save);
   }
@@ -167,13 +168,13 @@ class const _CompactColumnForm({
         children: [
           AuraButton(
             onPressed: editor.onBack,
-            disabled: draft.action.pending,
             child: const TextLocale(LocaleKeys.common_cancel),
+            disabled: draft.action.pending,
           ),
           AuraButton(
             onPressed: () => unawaited(draft.action.run(onSave)),
-            disabled: draft.action.pending,
             child: const TextLocale(LocaleKeys.workspace_items_create_column),
+            disabled: draft.action.pending,
             identifier: 'workspace_column_create_confirm',
           ),
         ],

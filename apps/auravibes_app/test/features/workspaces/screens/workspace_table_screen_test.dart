@@ -17,7 +17,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -201,7 +200,7 @@ void main() {
       findsOneWidget,
     );
     expect(tester.getSize(cell), before);
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    final _ = await tester.sendKeyEvent(.escape);
     final _ = await tester.pumpAndSettle();
     final flag = find.byKey(const ValueKey('workspace_cell_row_flag'));
     final flagBefore = tester.getSize(flag);
@@ -218,6 +217,25 @@ void main() {
     await tester.tap(find.byTooltip('Cancel').last);
     final _ = await tester.pumpAndSettle();
     expect(find.byType(WorkspaceRecordFields), findsNothing);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final _ = await tester.pumpAndSettle();
+    await tester.drag(find.byType(DataTable), const Offset(-220, 0));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(flag);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(flag);
+    final _ = await tester.pumpAndSettle();
+    final popup = tester.getRect(
+      find.byKey(const ValueKey('workspace_cell_type_popup')),
+    );
+    expect(popup.left, greaterThanOrEqualTo(0));
+    expect(popup.right, lessThanOrEqualTo(400));
+    expect(popup.bottom, lessThanOrEqualTo(400));
+    await tester.tap(find.byTooltip('Cancel').last);
+    final _ = await tester.pumpAndSettle();
   });
   testWidgets('restricted reference cells hide stored IDs at both widths', (
     tester,
@@ -624,7 +642,8 @@ void main() {
     expect(emptyRecords.single.values[createdTable.labelColumnId], isNull);
     final emptyCell = find.byKey(
       ValueKey(
-        'workspace_cell_${emptyRecords.single.id}_${createdTable.labelColumnId}',
+        'workspace_cell_${emptyRecords.single.id}_'
+        '${createdTable.labelColumnId}',
       ),
     );
     await tester.tap(emptyCell);
