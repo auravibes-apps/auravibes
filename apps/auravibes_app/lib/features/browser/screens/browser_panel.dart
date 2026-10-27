@@ -109,6 +109,7 @@ class const _BrowserSessionView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tabs = _WorkspaceTabs.use();
+    final resultKeys = [request.selectedToolResultTabId];
     useEffect(() {
       if (request.selectedToolResultTabId != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -117,10 +118,11 @@ class const _BrowserSessionView({
       }
 
       return null;
-    }, [request.selectedToolResultTabId]);
+    }, resultKeys);
     final requested = ref.watch(
       workspaceOpenViewProvider(request.workspaceId, request.conversationId),
     );
+    final requestedKeys = [requested];
     useEffect(() {
       if (requested != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -131,7 +133,7 @@ class const _BrowserSessionView({
       }
 
       return null;
-    }, [requested]);
+    }, requestedKeys);
     ref.listen(
       workspaceOpenViewProvider(request.workspaceId, request.conversationId),
       (previous, next) {
