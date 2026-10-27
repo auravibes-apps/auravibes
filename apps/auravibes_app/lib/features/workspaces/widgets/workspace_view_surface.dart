@@ -104,8 +104,21 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   @override
   void didUpdateWidget(covariant WorkspaceViewSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.data, widget.data) ||
-        !identical(oldWidget.connectedModel, widget.connectedModel)) {
+    if (identical(oldWidget.data, widget.data) &&
+        identical(oldWidget.connectedModel, widget.connectedModel)) {
+      return;
+    }
+    try {
+      final previous = WorkspaceViewSurfaceData.envelope(
+        oldWidget.data,
+        oldWidget.connectedModel,
+      );
+      final current = WorkspaceViewSurfaceData.envelope(
+        widget.data,
+        widget.connectedModel,
+      );
+      if (jsonEncode(previous) != jsonEncode(current)) _load();
+    } on Object {
       _load();
     }
   }

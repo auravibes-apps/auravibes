@@ -57,12 +57,8 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
 
     return Column(
       children: [
-        _Toolbar(owner, selected, offset),
-        Expanded(
-          child: active || selected.value != null
-              ? _Contents(owner, selected, offset)
-              : const SizedBox.shrink(),
-        ),
+        if (active) _Toolbar(owner, selected, offset),
+        Expanded(child: _Contents(owner, selected, offset, active)),
       ],
     );
   }
@@ -194,13 +190,14 @@ class const _Contents(
   final WorkspaceViewScreen owner,
   final ValueNotifier<_Selection?> selected,
   final ValueNotifier<int> offset,
+  final bool active,
 ) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selection = selected.value;
     if (selection != null) return _Selected(owner, selection, () => _done(ref));
 
-    return _LoadState(owner, offset);
+    return _LoadState(owner, offset, active);
   }
 
   void _done(WidgetRef ref) {
@@ -212,18 +209,36 @@ class const _Contents(
 class const _LoadState(
   final WorkspaceViewScreen owner,
   final ValueNotifier<int> offset,
-) extends ConsumerWidget {
+  final bool active,
+) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(
-      workspaceViewDataProvider(
-        owner.workspaceId,
-        owner.viewId,
-        offset: offset.value,
-      ),
-    );
+    final cached = useRef<AsyncValue<WorkspaceViewData>?>(null);
+    final state = active
+        ? ref.watch(
+            workspaceViewDataProvider(
+              owner.workspaceId,
+              owner.viewId,
+              offset: offset.value,
+            ),
+          )
+        : cached.value;
+    if (state == null) return const SizedBox.shrink();
+    if (state is AsyncError<WorkspaceViewData>) cached.value = null;
+    if (state is AsyncData<WorkspaceViewData>) cached.value = state;
+    final retained = cached.value;
+    final waiting = active && state.isLoading && retained != null;
+    final display = waiting ? retained! : state;
 
-    return _LoadedContent(owner, state, offset);
+    return Stack(
+      children: [
+        Offstage(
+          offstage: waiting,
+          child: _LoadedContent(owner, display, offset),
+        ),
+        if (waiting) const Center(child: CircularProgressIndicator()),
+      ],
+    );
   }
 }
 
