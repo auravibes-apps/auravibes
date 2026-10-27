@@ -41,7 +41,6 @@ class const WorkspaceRecordBrowser({
     final localSelection = useState(false);
     final localDraft = useState(false);
     final draft = _Draft(
-      table,
       selectionMode ?? localSelection,
       draftOpen ?? localDraft,
     );
@@ -54,11 +53,11 @@ class const WorkspaceRecordBrowser({
 }
 
 class _Draft {
-  new(WorkspaceTable table, this.selecting, this.draftOpen)
+  new(this.selecting, this.draftOpen)
     : query = useState(const WorkspaceRecordQuery()),
       controls = useState(false),
       selected = useState<Map<String, WorkspaceRecord>>({}),
-      columns = useState(table.columns.map((column) => column.id).toSet()),
+      hiddenColumns = useState(<String>{}),
       active = useState<({String record, String column})?>(null),
       hovered = useState<String?>(null),
       editing = useState(false),
@@ -69,7 +68,7 @@ class _Draft {
   final ValueNotifier<bool> selecting;
   final ValueNotifier<bool> draftOpen;
   final ValueNotifier<Map<String, WorkspaceRecord>> selected;
-  final ValueNotifier<Set<String>> columns;
+  final ValueNotifier<Set<String>> hiddenColumns;
   final ValueNotifier<({String record, String column})?> active;
   final ValueNotifier<String?> hovered;
   final ValueNotifier<bool> editing;
@@ -166,7 +165,7 @@ class const _RecordState(
     AsyncData(:final value) => _Rows(
       owner,
       value.records,
-      draft.columns.value,
+      draft.hiddenColumns.value,
       owner.onRecord,
       draft,
     ),
@@ -232,7 +231,8 @@ class const _Controls(final WorkspaceRecordBrowser owner, final _Draft draft)
         _SortColumn(table, draft),
         _Direction(draft),
         _QueryAvailability(table),
-        for (final column in table.columns) _VisibleColumn(column, draft),
+        for (final column in table.columns)
+          _VisibleColumn(column, draft, table),
       ],
     ),
   );
@@ -293,31 +293,36 @@ class const _Direction(final _Draft draft) extends StatelessWidget {
       draft.query.value = draft.query.value.change(descending: value);
 }
 
-class const _VisibleColumn(final WorkspaceColumn column, final _Draft draft)
-    extends StatelessWidget {
+class const _VisibleColumn(
+  final WorkspaceColumn column,
+  final _Draft draft,
+  final WorkspaceTable table,
+) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CheckboxListTile(
-    value: draft.columns.value.contains(column.id),
+    value: !draft.hiddenColumns.value.contains(column.id),
     onChanged: _change,
     title: Text(column.name),
   );
   void _change(bool? checked) {
     if (checked == true) {
-      draft.columns.value = {...draft.columns.value, column.id};
+      draft.hiddenColumns.value = {...draft.hiddenColumns.value}
+        ..remove(column.id);
 
       return;
     }
-    if (draft.columns.value.length <= 1) return;
-    final selected = draft.columns.value.toSet();
-    final _ = selected.remove(column.id);
-    draft.columns.value = selected;
+    final visible = table.columns.where(
+      (candidate) => !draft.hiddenColumns.value.contains(candidate.id),
+    );
+    if (visible.length <= 1) return;
+    draft.hiddenColumns.value = {...draft.hiddenColumns.value, column.id};
   }
 }
 
 class const _Rows(
   final WorkspaceRecordBrowser browser,
   final List<WorkspaceRecord> records,
-  final Set<String> columns,
+  final Set<String> hiddenColumns,
   final ValueChanged<WorkspaceRecord> onRecord,
   final _Draft draft,
 ) extends StatelessWidget {
@@ -325,7 +330,7 @@ class const _Rows(
 
   List<WorkspaceColumn> get visible {
     final selected = table.columns
-        .where((column) => columns.contains(column.id))
+        .where((column) => !hiddenColumns.contains(column.id))
         .toList();
 
     return selected.isEmpty

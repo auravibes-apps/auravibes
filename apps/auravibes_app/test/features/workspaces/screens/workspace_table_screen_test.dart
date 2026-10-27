@@ -767,6 +767,7 @@ void main() {
       (await tables.list()).single.columns.last.type,
       WorkspaceColumnType.number,
     );
+    expect(find.text('Pages'), findsOneWidget);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetDevicePixelRatio);
     tester.view.physicalSize = const Size(400, 800);
