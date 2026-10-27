@@ -12,11 +12,20 @@ class const WorkspaceCommandDependencies(
   final String workspaceId,
 ) {
   Future<WorkspaceConversationCommandUsecase> load() async {
-    final table = _tables();
-    final folder = _folders();
-    final view = _views();
+    final link = ref.keepAlive();
+    try {
+      final table = _tables();
+      final folder = _folders();
+      final view = _views();
 
-    return .new(tables: await table, folders: await folder, views: await view);
+      return .new(
+        tables: await table,
+        folders: await folder,
+        views: await view,
+      );
+    } finally {
+      link.close();
+    }
   }
 
   Future<OrganizeWorkspaceTablesUsecase> _tables() =>

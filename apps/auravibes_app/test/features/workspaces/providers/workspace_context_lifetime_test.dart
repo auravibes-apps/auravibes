@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -16,6 +17,58 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
+  test(
+    'workspace discovery survives delayed production command dependencies',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final conversations = ConversationRepository(database);
+      final chat = await conversations.createConversation(
+        const .new(title: 'Test', workspaceId: 'one'),
+      );
+      final selection = WorkspaceContextSelection(
+        workspaceId: 'one',
+        conversationId: chat.id,
+        itemId: '',
+        kind: 'directory',
+      );
+      final _ = await LocalWorkspaceContextRepository(
+        database,
+        'one',
+      ).save(chat.id, 'share', selection);
+      final session = Completer<WorkspaceSession>();
+      final container = ProviderContainer(
+        overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, _) => session.future,
+          ),
+          appDatabaseProvider.overrideWith((_) => database),
+          conversationRepositoryProvider.overrideWith((_) => conversations),
+        ],
+      );
+      addTearDown(container.dispose);
+      final commands = container.read(workspaceConversationToolsProvider);
+      final pending = commands.call(
+        conversationId: chat.id,
+        arguments: {'action': 'listCreated'},
+      );
+      await container.pump();
+      session.complete(
+        const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'one')),
+      );
+      expect(await pending, {'items': <Object?>[], 'nextCursor': null});
+    },
+  );
+
   test('one-shot context read survives async dependency resolution', () async {
     final database = AppDatabase(connection: NativeDatabase.memory());
     addTearDown(database.close);
@@ -38,9 +91,7 @@ void main() {
         workspaceSessionForRouteProvider.overrideWith((_, _) => session.future),
         workspaceConversationCommandUsecaseProvider.overrideWith(
           (_, _) async => WorkspaceConversationCommandUsecase(
-            tables: .new(
-              LocalWorkspaceTableRepository(database, 'one'),
-            ),
+            tables: .new(LocalWorkspaceTableRepository(database, 'one')),
           ),
         ),
         appDatabaseProvider.overrideWith((_) => database),
