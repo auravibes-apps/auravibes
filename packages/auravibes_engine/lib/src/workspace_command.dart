@@ -197,12 +197,16 @@ Map<String, dynamic> workspaceContextReadArguments(
       ? output
       : const <String, dynamic>{};
   final created = (input['action'] as String? ?? '').startsWith('create');
-
-  return {
-    'action': 'read',
-    'id': created ? result['id'] : input['id'],
-    'tableId': created && result['kind'] == 'table'
-        ? result['id']
-        : input['tableId'],
+  final id = created && result['kind'] == 'table'
+      ? null
+      : created
+      ? result['id']
+      : input['id'];
+  final tableId = switch ((created, result['kind'])) {
+    (true, 'table') => result['id'],
+    (true, 'record') => result['tableId'],
+    _ => input['tableId'],
   };
+
+  return {'action': 'read', 'id': ?id, 'tableId': ?tableId};
 }

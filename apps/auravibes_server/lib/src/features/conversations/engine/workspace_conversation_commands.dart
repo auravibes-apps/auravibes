@@ -736,8 +736,18 @@ class _WorkspaceConversationTableReader {
       'schemaRevision': data['schemaRevision'],
       'labelColumnId': data['labelColumnId'],
       'columns': _readableColumns(table, command.authority.references),
-      'records': await _readableRecords(scope, command.selection.recordIds),
+      'records': await _readableRecords(scope, _recordIds(command)),
     };
+  }
+
+  List<String> _recordIds(_CommandExecution command) {
+    final id = command.arguments['id'];
+    if (id == null) return command.selection.recordIds;
+    if (id is! String || !command.selection.recordIds.contains(id)) {
+      _denied();
+    }
+
+    return [id];
   }
 
   List<Map<String, Object?>> _columns(WorkspaceResource table) =>

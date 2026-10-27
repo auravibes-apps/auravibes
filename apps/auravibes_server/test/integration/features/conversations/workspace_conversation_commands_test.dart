@@ -311,6 +311,21 @@ void main() {
       final read = await run('read', {'action': 'read', 'tableId': 'items'});
       expect(jsonEncode(read), contains('selected'));
       expect(jsonEncode(read), isNot(contains('unselected')));
+      final selectedRecord = await run('read-selected-record', {
+        'action': 'read',
+        'tableId': 'items',
+        'id': 'selected',
+      }) as Map;
+      expect((selectedRecord['records'] as List), hasLength(1));
+      expect((selectedRecord['records'] as List).single['id'], 'selected');
+      await expectLater(
+        run('read-unselected-record', {
+          'action': 'read',
+          'tableId': 'items',
+          'id': 'unselected',
+        }),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
       final edit = {
         'action': 'updateRecord',
         'tableId': 'items',
@@ -496,6 +511,23 @@ void main() {
             row.stableId.equals('created-record'),
       ))!;
       expect(rowCall.status, 'success');
+      final unrelatedAdded = await runtime.handle(
+        session,
+        turn: turn,
+        messageId: assistant.id!,
+        request: ServerToolRequest(
+          id: 'unrelated-record',
+          name: workspaceCommandToolName,
+          arguments: {
+            'action': 'createRecord',
+            'tableId': tableId,
+            'revision': 1,
+            'schemaRevision': 1,
+            'values': {label: 'Unrelated selected value'},
+          },
+        ),
+      );
+      expect(unrelatedAdded, ServerToolDisposition.completed);
       Future<Map<String, dynamic>> command(
         String id,
         Map<String, dynamic> arguments,
@@ -706,6 +738,21 @@ void main() {
         history,
       );
       expect(jsonEncode(fresh), contains('Current selected value'));
+      final createResult = jsonDecode(rowCall.resultJson!) as Map;
+      final projectedResult = jsonDecode(fresh[2]['content'] as String) as Map;
+      final projectedCurrent = projectedResult['current'] as Map;
+      final projectedRecords = (projectedCurrent['records'] as List)
+          .cast<Map>();
+      expect(projectedRecords, hasLength(1));
+      expect(projectedRecords.single['id'], createResult['id']);
+      expect(
+        projectedRecords.single['values'][label],
+        'Current selected value',
+      );
+      expect(
+        jsonEncode(projectedRecords),
+        isNot(contains('Unrelated selected value')),
+      );
       final projectedCall = (fresh[1]['tool_calls'] as List).single as Map;
       expect(
         jsonDecode((projectedCall['function'] as Map)['arguments'] as String),

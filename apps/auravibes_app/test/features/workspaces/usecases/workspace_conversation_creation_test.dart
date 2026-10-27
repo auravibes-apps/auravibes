@@ -150,6 +150,139 @@ void main() {
     },
   );
 
+  test('current record projection is scoped to its authorized row', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    final table = await fixture.run('projection-table', {
+      'action': 'createTable',
+      'name': 'People',
+      'labelName': 'Name',
+    });
+    final tableId =
+        table['id'] as String? ?? (throw StateError('Expected string'));
+    final tableData = await fixture.run('projection-table-read', {
+      'action': 'read',
+      'tableId': tableId,
+    });
+    final label =
+        tableData['labelColumnId'] as String? ??
+        (throw StateError('Expected string'));
+    final selected = await fixture.run('projection-selected-row', {
+      'action': 'createRecord',
+      'tableId': tableId,
+      'revision': 1,
+      'schemaRevision': 1,
+      'values': {label: 'Selected existing row'},
+    });
+    final unselected = await fixture.run('projection-unselected-row', {
+      'action': 'createRecord',
+      'tableId': tableId,
+      'revision': 1,
+      'schemaRevision': 1,
+      'values': {label: 'Unselected existing row'},
+    });
+    final _ = await LocalWorkspaceContextRepository(fixture.database, 'one')
+        .save(
+          fixture.conversationId,
+          'selected-table-context',
+          .new(
+            workspaceId: 'one',
+            conversationId: fixture.conversationId,
+            itemId: tableId,
+            kind: 'table',
+            recordIds: [
+              selected['id'] as String? ??
+                  (throw StateError('Expected string')),
+            ],
+          ),
+        );
+
+    await expectLater(
+      fixture
+          .service(fixture.tables)
+          .call(
+            conversationId: fixture.conversationId,
+            operationId: 'read-unselected-row',
+            arguments: {
+              'action': 'read',
+              'tableId': tableId,
+              'id': unselected['id'],
+            },
+          ),
+      throwsA(
+        isA<WorkspaceTableException>().having(
+          (error) => error.denied,
+          'denied',
+          isTrue,
+        ),
+      ),
+    );
+
+    final arguments = {
+      'action': 'createRecord',
+      'tableId': tableId,
+      'revision': 1,
+      'schemaRevision': 1,
+      'values': {label: 'Alex'},
+    };
+    final created = await fixture.run('current-alex-row', arguments);
+    expect(
+      workspaceContextReadArguments(
+        {'action': 'createRecord', 'tableId': 'untrusted-input'},
+        {...created, 'tableId': tableId, 'kind': 'record'},
+      ),
+      {'action': 'read', 'id': created['id'], 'tableId': tableId},
+    );
+
+    MessageEntity message({
+      required bool user,
+      MessageMetadataEntity? metadata,
+    }) => MessageEntity(
+      id: user ? 'projection-question' : 'projection-tool',
+      conversationId: fixture.conversationId,
+      content: '',
+      messageType: user ? .text : .toolCall,
+      isUser: user,
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+      metadata: metadata,
+    );
+
+    final projected =
+        await ProjectWorkspaceChatContextUsecase(
+          fixture.service(fixture.tables),
+        )([
+          message(user: true),
+          message(
+            user: false,
+            metadata: .new(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'current-alex-row',
+                  name: workspaceCommandToolName,
+                  argumentsRaw: jsonEncode(arguments),
+                  responseRaw: jsonEncode(created),
+                  resultStatus: .success,
+                ),
+              ],
+            ),
+          ),
+        ]);
+    final response = jsonDecode(
+      projected.last.metadata?.toolCalls.single.responseRaw ?? '{}',
+    ) as Map<String, dynamic>;
+    final current = response['current'] as Map<String, dynamic>;
+    final records = (current['records'] as List).cast<Map<String, Object?>>();
+    expect(records, hasLength(1));
+    expect(records.single['id'], created['id']);
+    final values =
+        records.single['values'] as Map<String, Object?>? ??
+        (throw StateError('Expected record values'));
+    expect(values[label], 'Alex');
+    expect(jsonEncode(records), isNot(contains('Selected existing row')));
+  });
+
   test('revoked selection cannot commit after command preparation', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);

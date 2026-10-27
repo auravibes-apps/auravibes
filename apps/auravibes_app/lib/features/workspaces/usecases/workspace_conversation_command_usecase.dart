@@ -513,12 +513,22 @@ class const _TableRead(
   };
 
   Future<List<Map<String, Object?>>> _rows() async => [
-    for (final id in command.input.selection.recordIds)
+    for (final id in _recordIds())
       _RecordProjection(
         table,
         command.input.references,
       ).read(await command.owner.tables.record(table.id, id)),
   ];
+
+  List<String> _recordIds() {
+    final id = command.input.arguments['id'];
+    if (id == null) return command.input.selection.recordIds;
+    if (id is! String || !command.input.selection.recordIds.contains(id)) {
+      _Arguments.denied();
+    }
+
+    return [id];
+  }
 }
 
 class const _RecordProjection(
