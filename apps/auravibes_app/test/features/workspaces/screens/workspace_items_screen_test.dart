@@ -507,9 +507,13 @@ void main() {
     );
     final create = find.byWidgetPredicate(
       (widget) =>
-          widget is AuraButton && widget.identifier == 'workspace_folder_create',
+          widget is AuraButton &&
+          widget.identifier == 'workspace_folder_create',
     );
-    expect(tester.getTopLeft(cancel).dx, lessThan(tester.getTopLeft(create).dx));
+    expect(
+      tester.getTopLeft(cancel).dx,
+      lessThan(tester.getTopLeft(create).dx),
+    );
     await tester.tap(cancel);
     final _ = await tester.pumpAndSettle();
     expect(create, findsNothing);

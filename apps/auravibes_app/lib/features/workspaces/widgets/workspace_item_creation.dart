@@ -106,7 +106,7 @@ class const _FormFields(
         children: [
           Flexible(
             child: AuraButton(
-              onPressed: () => unawaited(Navigator.of(context).maybePop()),
+              onPressed: () => Navigator.of(context).pop(),
               child: const TextLocale(LocaleKeys.common_cancel),
               variant: .ghost,
               disabled: state.pending.value,
