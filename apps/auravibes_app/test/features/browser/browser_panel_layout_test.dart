@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/browser/models/browser_session_state.dart
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
+import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
 import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
@@ -158,6 +159,14 @@ void main() {
       find.bySemanticsIdentifier('sidebar_workspace_file:second'),
       findsOneWidget,
     );
+    final count = ref.read(
+      sidebarWorkspaceTabCountProvider((
+        workspaceId: 'workspace',
+        conversationId: 'conversation',
+      )),
+    );
+    await tester.pump();
+    expect(count.value, 2);
     await tester.ensureVisible(
       find.bySemanticsIdentifier('sidebar_workspace_file:second'),
     );
