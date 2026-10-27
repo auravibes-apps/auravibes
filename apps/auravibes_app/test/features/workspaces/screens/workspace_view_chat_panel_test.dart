@@ -1,3 +1,7 @@
+import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
+import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
+import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
+import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
@@ -12,6 +16,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
+import '../../browser/helpers/fake_browser_web_view_service.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +39,13 @@ void main() {
           TestableApp(
             child: const _Harness(),
             overrides: [
+              browserSessionProvider(
+                'one',
+                'chat',
+              ).overrideWith(_BrowserSession.new),
+              browserWebViewServiceProvider.overrideWithValue(
+                FakeBrowserWebViewService().service,
+              ),
               workspaceViewDataProvider(
                 'one',
                 'view',
@@ -57,6 +69,8 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back));
       final _ = await tester.pumpAndSettle();
       expect(find.text('Saved surface'), findsNothing);
+      await tester.tap(find.text('Close panel'));
+      final _ = await tester.pumpAndSettle();
       expect(find.text('Keep my chat draft'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -112,6 +126,12 @@ class const _Harness() extends HookConsumerWidget {
                 .open('view'),
             child: const Text('Open view'),
           ),
+          TextButton(
+            onPressed: () => ref
+                .read(workspaceOpenViewProvider('one', 'chat').notifier)
+                .close(),
+            child: const Text('Close panel'),
+          ),
           Expanded(
             child: WorkspaceViewChatLayout(
               workspaceId: 'one',
@@ -122,8 +142,15 @@ class const _Harness() extends HookConsumerWidget {
                 mounted: false,
                 widthPercent: 0.4,
                 onWidthChanged: (_) => fail('No browser resize expected'),
-                onClose: () => fail('No browser close expected'),
-                builder: () => const Text('Browser'),
+                onClose: () {},
+                builder: () => BrowserPanel(
+                  workspaceId: 'one',
+                  conversationId: 'chat',
+                  toolResultTabs: const [],
+                  selectedToolResultTabId: null,
+                  onSelectToolResultTab: (_) {},
+                  onCloseToolResultTab: (_) {},
+                ),
               ),
             ),
           ),
@@ -131,4 +158,12 @@ class const _Harness() extends HookConsumerWidget {
       ),
     );
   }
+}
+
+class _BrowserSession extends BrowserSessionNotifier {
+  @override
+  Future<BrowserSessionState> build(
+    String workspaceId,
+    String conversationId,
+  ) async => BrowserSessionState.initial();
 }

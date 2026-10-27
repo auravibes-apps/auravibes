@@ -4,7 +4,10 @@ import 'package:auravibes_app/features/browser/providers/browser_session_notifie
 import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
 import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -98,11 +101,83 @@ void main() {
 
     await tester.tap(find.bySemanticsIdentifier('browser_new_tab_button'));
     await tester.pump();
+    expect(
+      find.bySemanticsIdentifier('sidebar_open_directory'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsIdentifier('sidebar_open_browser'), findsOneWidget);
+    await tester.tap(find.bySemanticsIdentifier('sidebar_open_browser'));
+    await tester.pump();
     final _ = await tester.pumpAndSettle();
 
     expect(find.bySemanticsIdentifier('browser_address_input'), findsOneWidget);
     expect(runtime.buildViewCount, greaterThan(0));
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('workspace requests open separate tabs and can be closed', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final runtime = FakeBrowserWebViewService();
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const _SidebarHarness(),
+          overrides: [
+            browserSessionProvider(
+              'workspace',
+              'conversation',
+            ).overrideWith(_TestBrowserSessionNotifier.new),
+            browserWebViewServiceProvider.overrideWithValue(runtime.service),
+          ],
+        ),
+      );
+    });
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open-sidebar')));
+    await tester.pumpAndSettle();
+    final ref = ProviderScope.containerOf(
+      tester.element(find.byType(BrowserPanel)),
+    );
+    final notifier = ref.read(
+      workspaceOpenViewProvider('workspace', 'conversation').notifier,
+    );
+    notifier.openItem('first', 'file');
+    await tester.pump();
+    await tester.pump();
+    notifier.openItem('second', 'file');
+    await tester.pump();
+    await tester.pump();
+    expect(
+      find.bySemanticsIdentifier('sidebar_workspace_file:first'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsIdentifier('sidebar_workspace_file:second'),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.bySemanticsIdentifier('sidebar_workspace_file:second'),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'sidebar_close_workspace_file:second',
+      ),
+    );
+    await tester.pump();
+    expect(
+      find.bySemanticsIdentifier('sidebar_workspace_file:first'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsIdentifier('sidebar_workspace_file:second'),
+      findsNothing,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }
@@ -141,7 +216,7 @@ class _SidebarHarnessState extends State<_SidebarHarness> {
                 conversationId: 'conversation',
                 toolResultTabs: const <SidebarToolResultTab>[],
                 selectedToolResultTabId: null,
-                onSelectToolResultTab: (id) => expect(id, isNotNull),
+                onSelectToolResultTab: (_) {},
                 onCloseToolResultTab: (id) => expect(id, isNotEmpty),
               ),
             ),

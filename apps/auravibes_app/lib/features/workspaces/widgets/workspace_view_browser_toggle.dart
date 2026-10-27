@@ -18,7 +18,7 @@ class const WorkspaceViewBrowserToggle({
         null;
 
     return ConversationSidebarToggleButton(
-      isPanelVisible: isPanelVisible && !open,
+      isPanelVisible: isPanelVisible || open,
       tabCount: tabCount,
       onPressed: () => _toggle(ref, open),
     );
@@ -33,6 +33,6 @@ class const WorkspaceViewBrowserToggle({
     ref
         .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
         .close();
-    if (!isPanelVisible) onPressed();
+    if (isPanelVisible) onPressed();
   }
 }
