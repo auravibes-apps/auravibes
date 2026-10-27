@@ -108,6 +108,7 @@ typedef _CommandGuardRequest = ({
 /// rules.
 class const WorkspaceConversationCommands({
   final Future<void> Function()? beforeMutation,
+  final Future<void> Function()? beforeReadVerification,
 }) {
   static const _items = _WorkspaceConversationItemCommands();
 
@@ -130,6 +131,7 @@ class const WorkspaceConversationCommands({
         ? await _listCreated(command)
         : await _execute(command);
     if (isRead) {
+      await beforeReadVerification?.call();
       await _verifyReadSelection(session, turn, command);
     }
 
@@ -144,6 +146,11 @@ class const WorkspaceConversationCommands({
     ConversationTurn turn,
     _CommandExecution command,
   ) async {
+    final member = await _member(session, turn);
+    if (member.revision != command.member.revision ||
+        member.role != command.member.role) {
+      _denied();
+    }
     final current = await _selection(session, turn);
     if (current?.id != command.contextSelectionId) _denied();
   }
@@ -175,13 +182,14 @@ class const WorkspaceConversationCommands({
   }
 
   Future<Map<String, Object?>> _listCreated(_CommandExecution command) async {
-    final offset = command.arguments['offset'] ?? 0;
-    if (offset is! int || offset < 0) {
-      throw const FormatException('Invalid offset.');
+    final cursor = command.arguments['cursor'];
+    if (cursor != null &&
+        (cursor is! String || cursor.isEmpty || cursor.length > 512)) {
+      throw const FormatException('Invalid cursor.');
     }
     final calls = await _CommandCallHistory(command.turn).find(
       command.session,
-      offset: offset,
+      cursor: cursor as String?,
       limit: 101,
     );
     final created = [
@@ -202,7 +210,7 @@ class const WorkspaceConversationCommands({
     }
     return {
       'items': items,
-      'nextOffset': calls.length > 100 ? offset + 100 : null,
+      'nextCursor': calls.length > 100 ? calls[99].stableId : null,
     };
   }
 
@@ -1075,13 +1083,14 @@ class _CommandCallHistory {
 
   Future<List<ConversationToolCall>> find(
     Session session, {
-    int? offset,
+    String? cursor,
     int? limit,
   }) => ConversationToolCall.db.find(
     session,
-    where: _matches,
-    orderBy: (row) => row.id,
-    offset: offset,
+    where: (row) => cursor == null
+        ? _matches(row)
+        : _matches(row) & (row.stableId > cursor),
+    orderBy: (row) => row.stableId,
     limit: limit,
   );
 

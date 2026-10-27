@@ -476,20 +476,86 @@ void main() {
       );
       expect(listed.map((item) => item['id']), isNot(contains('items')));
       expect(listed.every((item) => !item.containsKey('parentId')), isTrue);
-      expect(createdItems['nextOffset'], isNull);
-      final beyondEnd = await run('list-created-offset', {
+      expect(createdItems['nextCursor'], isNull);
+      final pagingCalls = <ConversationToolCall>[];
+      for (var index = 0; index < 101; index++) {
+        pagingCalls.add(
+          await ConversationToolCall.db.insertRow(
+            session,
+            ConversationToolCall(
+              workspaceId: workspace.id!,
+              conversationId: conversation.id!,
+              turnId: turn.id!,
+              messageId: assistant.id!,
+              stableId: '000-page-${index.toString().padLeft(3, '0')}',
+              name: workspaceCommandToolName,
+              argumentsJson: '{"action":"read"}',
+              argumentsDigest: 'fixture',
+              status: 'success',
+              resultJson: '{}',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ),
+        );
+      }
+      try {
+        final page = await run('list-first-page', {
+          'action': 'listCreated',
+        }) as Map;
+        expect(page['items'], isEmpty);
+        expect(page['nextCursor'], '000-page-099');
+        final nextPage = await run('list-second-page', {
+          'action': 'listCreated',
+          'cursor': page['nextCursor'],
+        }) as Map;
+        expect(
+          (nextPage['items'] as List).map((item) => (item as Map)['id']),
+          containsAll([tableId, view['id'], folder['id']]),
+        );
+        expect(nextPage['nextCursor'], isNull);
+      } finally {
+        for (final call in pagingCalls) {
+          await ConversationToolCall.db.deleteRow(session, call);
+        }
+      }
+      final beyondEnd = await run('list-created-cursor', {
         'action': 'listCreated',
-        'offset': 1000,
+        'cursor': 'zzzzzzzzzzzzzzzz',
       }) as Map;
       expect(beyondEnd['items'], isEmpty);
-      expect(beyondEnd['nextOffset'], isNull);
+      expect(beyondEnd['nextCursor'], isNull);
       await expectLater(
-        run('list-created-invalid-offset', {
+        run('list-created-invalid-cursor', {
           'action': 'listCreated',
-          'offset': -1,
+          'cursor': '',
         }),
         throwsFormatException,
       );
+      final owner = (await WorkspaceMember.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) & row.userId.equals(userId),
+      ))!;
+      final revokeDuringRead = WorkspaceConversationCommands(
+        beforeReadVerification: () async {
+          await WorkspaceMember.db.updateRow(
+            session,
+            owner.copyWith(removedAt: DateTime.now().toUtc()),
+          );
+        },
+      );
+      try {
+        await expectLater(
+          revokeDuringRead.call(session, turn, 'list-revoked-during-read', {
+            'action': 'listCreated',
+          }),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+      } finally {
+        await WorkspaceMember.db.updateRow(session, owner);
+      }
       final history = <Map<String, dynamic>>[
         {'role': 'user', 'content': 'Create a record'},
         {
