@@ -11,12 +11,13 @@ class const ProjectWorkspaceChatContextUsecase(
 ) {
   Future<List<MessageEntity>> call(List<MessageEntity> messages) async {
     final lastUser = messages.lastIndexWhere((message) => message.isUser);
+
     return [
       for (var i = 0; i < messages.length; i++)
         await _ProjectedMessage(
           this,
           messages[i],
-          lastUser >= 0 && i > lastUser,
+          currentTurn: lastUser >= 0 && i > lastUser,
         ).read(),
     ];
   }
@@ -101,6 +102,7 @@ MessageToolCallEntity _currentCall(
   String response,
 ) {
   final action = workspaceContextAction(call.arguments);
+
   return call.copyWith(
     argumentsRaw: jsonEncode({'action': action}),
     responseRaw: projectToolOutput(response).text,
@@ -111,9 +113,9 @@ MessageToolCallEntity _currentCall(
 
 class const _ProjectedMessage(
   final ProjectWorkspaceChatContextUsecase projector,
-  final MessageEntity message,
-  final bool currentTurn,
-) {
+  final MessageEntity message, {
+  required final bool currentTurn,
+}) {
   Future<MessageEntity> read() async {
     final metadata = message.metadata;
     if (metadata == null) return message;

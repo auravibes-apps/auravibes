@@ -16,8 +16,8 @@ import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_ta
 import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
-import 'package:drift/native.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -67,11 +67,13 @@ void main() {
         message(user: true),
         message(user: false, metadata: calls),
       ]);
-      final currentCall = current.last.metadata!.toolCalls.single;
-      expect(jsonDecode(currentCall.argumentsRaw), {'action': 'createTable'});
-      expect(currentCall.responseRaw, contains('success'));
-      expect(currentCall.responseRaw, isNot(contains('private response')));
-      expect(currentCall.argumentsRaw, isNot(contains('Created')));
+      final currentCall = current.last.metadata?.toolCalls.single;
+      expect(jsonDecode(currentCall?.argumentsRaw ?? '{}'), {
+        'action': 'createTable',
+      });
+      expect(currentCall?.responseRaw, contains('success'));
+      expect(currentCall?.responseRaw, isNot(contains('private response')));
+      expect(currentCall?.argumentsRaw, isNot(contains('Created')));
       final other = await fixture.run('other-table', {
         'action': 'createTable',
         'name': 'Other',
@@ -85,9 +87,9 @@ void main() {
         message(user: false, metadata: .new(toolCalls: [swapped])),
       ]);
       final swapOutput =
-          projectedSwap.last.metadata!.toolCalls.single.responseRaw!;
-      expect(swapOutput, contains(result['id'] as String));
-      expect(swapOutput, isNot(contains(other['id'] as String)));
+          projectedSwap.last.metadata?.toolCalls.single.responseRaw ?? '';
+      expect(swapOutput, contains(result['id']?.toString() ?? ''));
+      expect(swapOutput, isNot(contains(other['id']?.toString() ?? '')));
       final forged = calls.toolCalls.single.copyWith(
         argumentsRaw: jsonEncode({'action': 'renameTable', 'name': 'forged'}),
       );
@@ -96,16 +98,19 @@ void main() {
         message(user: false, metadata: .new(toolCalls: [forged])),
       ]);
       expect(
-        unverified.last.metadata!.toolCalls.single.responseRaw,
+        unverified.last.metadata?.toolCalls.single.responseRaw,
         workspaceContextUnavailable,
       );
       final old = await project([
         message(user: false, metadata: calls),
         message(user: true),
       ]);
-      expect(jsonDecode(old.first.metadata!.toolCalls.single.argumentsRaw), {
-        'action': 'read',
-      });
+      expect(
+        jsonDecode(
+          old.firstOrNull?.metadata?.toolCalls.single.argumentsRaw ?? '{}',
+        ),
+        {'action': 'read'},
+      );
       final failedCall = calls.toolCalls.single.copyWith(
         resultStatus: .executionError,
       );
@@ -113,9 +118,10 @@ void main() {
         message(user: true),
         message(user: false, metadata: .new(toolCalls: [failedCall])),
       ]);
-      expect(jsonDecode(failed.last.metadata!.toolCalls.single.responseRaw!), {
-        'outcome': 'failed',
-      });
+      expect(
+        jsonDecode(failed.last.metadata?.toolCalls.single.responseRaw ?? '{}'),
+        {'outcome': 'failed'},
+      );
       final _ = await LocalWorkspaceContextRepository(
         fixture.database,
         'one',
@@ -125,7 +131,7 @@ void main() {
         message(user: false, metadata: calls),
       ]);
       expect(
-        revoked.last.metadata!.toolCalls.single.responseRaw,
+        revoked.last.metadata?.toolCalls.single.responseRaw,
         workspaceContextUnavailable,
       );
     },

@@ -34,6 +34,7 @@ class const WorkspaceConversationToolsUsecase({
     if (store == null || operationId.isEmpty) return null;
     final target = await _target(conversationId);
     final shared = await _selection(target);
+
     return await store.matchedResult(
       workspaceId: target.workspaceId,
       conversationId: target.conversationId,
