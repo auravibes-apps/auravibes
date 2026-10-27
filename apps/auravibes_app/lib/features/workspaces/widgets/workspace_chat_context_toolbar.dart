@@ -30,6 +30,9 @@ class const WorkspaceChatContextToolbar({
   required final String conversationId,
   required final WorkspaceChatItem item,
   required final VoidCallback onClose,
+  final bool fixedTarget = false,
+  final String? fixedParentId,
+  final bool compact = false,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -44,12 +47,15 @@ class const WorkspaceChatContextToolbar({
       workspaceId: workspaceId,
       conversationId: conversationId,
       item: item,
+      fixedTarget: fixedTarget,
+      fixedParentId: fixedParentId,
     );
 
     return _WorkspaceChatContextToolbarContent(
       state: state,
       onClose: onClose,
       actions: actions,
+      compact: compact,
     );
   }
 }
@@ -58,16 +64,32 @@ class const _WorkspaceChatContextToolbarContent({
   required final _WorkspaceChatContextToolbarState state,
   required final VoidCallback onClose,
   required final _WorkspaceChatContextToolbarActions actions,
+  required final bool compact,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
     children: [
-      _WorkspaceChatContextToolbarHeader(
-        onClose: onClose,
-        busy: state.status.value.busy,
-        actions: actions,
-      ),
+      if (compact)
+        Row(
+          children: [
+            TextButton(
+              onPressed: state.status.value.busy ? null : actions.share,
+              child: const TextLocale(LocaleKeys.workspace_chat_share),
+            ),
+            const Spacer(),
+            _WorkspaceChatContextToolbarMenu(
+              busy: state.status.value.busy,
+              actions: actions,
+            ),
+          ],
+        )
+      else
+        _WorkspaceChatContextToolbarHeader(
+          onClose: onClose,
+          busy: state.status.value.busy,
+          actions: actions,
+        ),
       _WorkspaceChatContextToolbarFeedback(state: state),
     ],
   );
@@ -125,6 +147,8 @@ class const _WorkspaceChatContextToolbarActions({
   required final String workspaceId,
   required final String conversationId,
   required final WorkspaceChatItem item,
+  required final bool fixedTarget,
+  required final String? fixedParentId,
 }) {
   void inspect() {
     unawaited(
@@ -253,11 +277,12 @@ Future<_ContextSelectionChoice?> _chooseContextSelection(
   _WorkspaceChatContextToolbarActions actions, {
   required bool revoke,
 }) async {
-  final target = _selectedContextTarget(
-    actions.ref,
-    actions.workspaceId,
-    actions.item,
-  );
+  final target = actions.fixedTarget
+      ? _WorkspaceContextTarget(
+          item: actions.item,
+          parentId: actions.fixedParentId,
+        )
+      : _selectedContextTarget(actions.ref, actions.workspaceId, actions.item);
   final ids = await _contextRecordsForTarget(actions, target, revoke: revoke);
   if (!actions.context.mounted || ids == null) return null;
 
@@ -339,15 +364,19 @@ Future<List<String>?> _chooseContextRecords(
   _WorkspaceChatContextToolbarActions actions,
   WorkspaceChatItem item,
 ) {
-  if (item.kind != 'table') return _confirmWholeItem(actions.context);
+  if (item.kind != 'table')
+    return _confirmWholeItem(actions.context, item.kind);
 
   return _pickTableRecords(actions, item);
 }
 
-Future<List<String>?> _confirmWholeItem(BuildContext context) async {
+Future<List<String>?> _confirmWholeItem(
+  BuildContext context,
+  String kind,
+) async {
   final accepted = await showDialog<bool>(
     context: context,
-    builder: (_) => const _WorkspaceContextShareConfirmation(),
+    builder: (_) => _WorkspaceContextShareConfirmation(kind),
   );
 
   return accepted == true ? [] : null;
@@ -385,12 +414,20 @@ Future<List<String>?> _showContextRecordPicker(
   ),
 );
 
-class const _WorkspaceContextShareConfirmation() extends StatelessWidget {
+class const _WorkspaceContextShareConfirmation(final String kind)
+    extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const AlertDialog(
-    title: TextLocale(LocaleKeys.workspace_chat_share),
-    content: TextLocale(LocaleKeys.workspace_chat_scope),
-    actions: [_WorkspaceContextCancelButton(), _WorkspaceContextAcceptButton()],
+  Widget build(BuildContext context) => AlertDialog(
+    title: const TextLocale(LocaleKeys.workspace_chat_share),
+    content: TextLocale(switch (kind) {
+      'directory' => LocaleKeys.workspace_chat_directory_scope,
+      'folder' => LocaleKeys.workspace_chat_folder_scope,
+      _ => LocaleKeys.workspace_chat_scope,
+    }),
+    actions: const [
+      _WorkspaceContextCancelButton(),
+      _WorkspaceContextAcceptButton(),
+    ],
   );
 }
 

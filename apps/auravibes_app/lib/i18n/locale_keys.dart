@@ -3000,6 +3000,9 @@ abstract class LocaleKeys {
   static const workspace_connected_unset = 'workspace_connected.unset';
   static const workspace_connected_remove_extra_inputs =
       'workspace_connected.remove_extra_inputs';
+  static const workspace_chat_directory_scope =
+      'workspace_chat.directory_scope';
+  static const workspace_chat_folder_scope = 'workspace_chat.folder_scope';
   static const workspace_chat_reference_scope =
       'workspace_chat.reference_scope';
   static const workspace_chat_inspect = 'workspace_chat.inspect';

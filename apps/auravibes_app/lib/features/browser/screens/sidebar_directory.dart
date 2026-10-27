@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_folders_pr
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_chat_context_toolbar.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -16,6 +17,7 @@ import 'package:material_ui/material_ui.dart';
 
 class const SidebarDirectory({
   required final String workspaceId,
+  required final String conversationId,
   required final void Function(WorkspaceChatItem, String) onOpen,
   super.key,
 }) extends HookConsumerWidget {
@@ -63,6 +65,17 @@ class const SidebarDirectory({
 
     return ListView(
       children: [
+        WorkspaceChatContextToolbar(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          item: path.value.isEmpty
+              ? const WorkspaceChatItem(id: '', kind: 'directory')
+              : WorkspaceChatItem(id: path.value.last.id, kind: 'folder'),
+          fixedTarget: true,
+          fixedParentId: path.value.lastOrNull?.parentId,
+          compact: true,
+          onClose: () {},
+        ),
         if (path.value.isNotEmpty)
           Wrap(
             crossAxisAlignment: .center,

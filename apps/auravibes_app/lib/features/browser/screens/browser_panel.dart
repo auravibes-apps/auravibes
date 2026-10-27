@@ -1133,6 +1133,7 @@ class const _WorkspaceTabSlot({required final _BrowserPanelData data})
             offstage: selected != 'directory',
             child: SidebarDirectory(
               workspaceId: data.request.workspaceId,
+              conversationId: data.request.conversationId,
               onOpen: data.workspaceTabs.open,
             ),
           ),
