@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/features/workspaces/usecases/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -503,9 +504,11 @@ List<MessageToolCallEntity> _updatedToolCalls(
 MessageToolCallEntity _updatedToolCall(
   MessageToolCallEntity toolCall,
   _ToolCallPatchRequest request,
-) => _applyToolCallPatch(
-  toolCall.copyWith(resultStatus: request.resultStatus),
-  request,
+) => sanitizeWorkspaceToolResult(
+  _applyToolCallPatch(
+    toolCall.copyWith(resultStatus: request.resultStatus),
+    request,
+  ),
 );
 
 MessageToolCallEntity _applyToolCallPatch(

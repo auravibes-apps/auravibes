@@ -6,7 +6,10 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -81,11 +84,44 @@ void main() {
           'Hello',
         ),
       );
+      final storedCall = sanitizeWorkspaceToolResult(
+        .new(
+          id: 'file-read',
+          name: workspaceCommandToolName,
+          argumentsRaw: jsonEncode(args),
+          responseRaw: jsonEncode(result),
+          responseContextRaw: jsonEncode(result),
+          resultStatus: .success,
+        ),
+      );
+      expect(jsonEncode(storedCall.toJson()), isNot(contains('Hello')));
+      final message = MessageEntity(
+        id: 'tool-message',
+        conversationId: first.id,
+        content: '',
+        messageType: .toolCall,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: .new(toolCalls: [storedCall]),
+      );
+      final projection = ProjectWorkspaceChatContextUsecase(tools);
+      final authorized = await projection([message]);
+      expect(
+        authorized.single.metadata?.toolCalls.single.responseRaw,
+        contains('Hello'),
+      );
       await expectLater(
         tools.call(conversationId: second.id, arguments: args),
         throwsA(isA<Object>()),
       );
       final _ = await context.save(first.id, 'revoke', null);
+      final revokedProjection = await projection([message]);
+      expect(
+        revokedProjection.single.metadata?.toolCalls.single.responseRaw,
+        workspaceContextUnavailable,
+      );
       await expectLater(
         tools.call(conversationId: first.id, arguments: args),
         throwsA(isA<Object>()),
