@@ -42,8 +42,10 @@ class const LocalWorkspaceCommandRepository(final AppDatabase database) {
     ).find(requestId);
     if (row == null ||
         row.selectionId != selectionId ||
-        row.digest != _ReceiptCodec.digest(arguments))
+        row.digest != _ReceiptCodec.digest(arguments)) {
       return null;
+    }
+
     return _ReceiptCodec.decode(row.result);
   }
 }
