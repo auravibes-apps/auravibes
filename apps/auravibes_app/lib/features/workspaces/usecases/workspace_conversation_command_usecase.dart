@@ -154,6 +154,11 @@ class const _FileCommand(
       throw const WorkspaceTableException();
     }
 
+    final current = await files.file(file.id);
+    if (current.revision != file.revision || current.assetId != file.assetId) {
+      throw const WorkspaceTableException(denied: true);
+    }
+
     return workspaceFileToolResult(
       id: file.id,
       name: file.name,
