@@ -28,7 +28,7 @@ void main() {
       final session = authenticated.build();
       await AuthUser.db.insertRow(
         session,
-          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
       );
       await EmailAccount.db.insertRow(
         session,
@@ -156,6 +156,29 @@ void main() {
       ))!;
       expect(call.status, 'success');
       expect(call.resultJson, isNot(contains('hello')));
+      final unexpected = ServerToolRuntime(
+        executor: (_, _, _, _) async => {
+          'unexpected': 'private body',
+          'name': {'content': 'nested private body'},
+        },
+      );
+      await unexpected.handle(
+        session,
+        turn: turn,
+        messageId: assistant.id!,
+        request: const ServerToolRequest(
+          id: 'unexpected-file-read',
+          name: workspaceCommandToolName,
+          arguments: {'action': 'read', 'id': 'note'},
+        ),
+      );
+      final unexpectedCall = (await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.stableId.equals('unexpected-file-read'),
+      ))!;
+      expect(unexpectedCall.resultJson, isNot(contains('private body')));
       final history = <Map<String, dynamic>>[
         {'role': 'user', 'content': 'Read file'},
         {

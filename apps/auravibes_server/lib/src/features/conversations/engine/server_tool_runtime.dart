@@ -24,23 +24,29 @@ enum ServerToolReplayAction { execute, pause, skip, awaitingSubAgents }
 
 String _safeWorkspaceResult(ConversationToolCall call, String result) {
   if (call.name != workspaceCommandToolName) return result;
+  Object? arguments;
+  try {
+    arguments = jsonDecode(call.argumentsJson);
+  } on FormatException {
+    return '{}';
+  }
+  if (arguments is! Map) return '{}';
+  final action = arguments['action'];
+  if (action != 'read' && action != 'listCreated') return result;
   Object? value;
   try {
     value = jsonDecode(result);
   } on FormatException {
-    return result;
+    return '{}';
   }
-  if (value is! Map || value['kind'] != 'file') return result;
+  if (value is! Map) return '{}';
   return jsonEncode({
-    for (final key in [
-      'id',
-      'kind',
-      'name',
-      'mimeType',
-      'revision',
-      'truncated',
-    ])
-      if (value.containsKey(key)) key: value[key],
+    for (final key in ['id', 'kind', 'name', 'mimeType'])
+      if (value[key] is String) key: value[key],
+    if (value['revision'] is int) 'revision': value['revision'],
+    if (value['schemaRevision'] is int)
+      'schemaRevision': value['schemaRevision'],
+    if (value['truncated'] is bool) 'truncated': value['truncated'],
   });
 }
 
