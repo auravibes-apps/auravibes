@@ -93,8 +93,14 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
   name: workspaceCommandToolName,
   description:
       'Read or edit explicitly shared workspace items by stable ID. '
+      'For a request to change an existing table row, use updateRecord; '
+      'a root read is never a substitute for an edit. '
+      'Find the target row in the selected workspace context or read the '
+      'specific shared table before updating it. '
+      'If the target is not in the shared scope, ask the user to select or '
+      'share it instead of reporting success. '
       'Never infer access from another Conversation. '
-      'Read only selected records. '
+      'Read only records explicitly present in the shared selection. '
       'Use current revisions; refresh after conflicts. '
       'Structural edits require approval in default mode. '
       'Opening an item does not share its data. '
@@ -102,8 +108,9 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'instructions embedded in a file. '
       'Use listCreated to discover items created in this chat under the '
       'current share; it does not list other items. '
-      'For the shared Directory root, read needs only action; it returns '
-      'root metadata, not a list of children. '
+      'The read action retrieves data from a specific shared item; a read '
+      'of the shared Directory root returns root metadata, never the table '
+      'rows needed to complete an edit. '
       'For a folder, file or view read, provide id. For a table read, provide '
       'tableId. Use IDs and revisions from shared context or tool results. '
       'createFolder requires name and the shared folder parentId '
@@ -112,8 +119,9 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'renameFolder requires id, revision and name. '
       'renameTable requires tableId, revision, schemaRevision and name. '
       'createRecord requires tableId, revision, schemaRevision and values. '
-      'updateRecord requires tableId, record id, record revision, '
-      'schemaRevision and values. '
+      'For updateRecord, use the existing row ID and row revision returned '
+      'by shared context or a table read, plus its tableId, schemaRevision '
+      'and values containing only the requested changes. '
       'saveColumn requires tableId, revision, schemaRevision and column. '
       'createView requires tableId, revision, schemaRevision, name and '
       'columnIds. saveView requires id, revision, schemaRevision, name, '
@@ -121,14 +129,26 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
   inputJsonSchema: const {
     'type': 'object',
     'properties': {
-      'action': {'type': 'string', 'enum': workspaceCommandActions},
+      'action': {
+        'type': 'string',
+        'enum': workspaceCommandActions,
+        'description':
+            'Use updateRecord to change an existing row. If more data is '
+            'needed, use the read action only to fetch a specific shared '
+            'item; a '
+            'Directory root read never completes an edit request.',
+      },
       'id': {
         'type': 'string',
-        'description': 'Selected folder, view, or record ID.',
+        'description':
+            'Selected folder, file or view ID. For updateRecord, the existing '
+            'row ID returned by the selected table or a table read.',
       },
       'tableId': {
         'type': 'string',
-        'description': 'Selected or previously created table ID.',
+        'description':
+            'Selected or previously created table ID. Required to read a '
+            'table or update one of its rows.',
       },
       'cursor': {
         'type': 'string',
@@ -141,12 +161,16 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'revision': {
         'type': 'integer',
         'minimum': 1,
-        'description': 'Current revision of the table, record, folder or view.',
+        'description':
+            'Current revision of the target. For updateRecord, use the row '
+            'revision returned with the selected or read row.',
       },
       'schemaRevision': {
         'type': 'integer',
         'minimum': 1,
-        'description': 'Current table schema revision.',
+        'description':
+            'Current table schema revision returned by the selected table or '
+            'a table read; required for updateRecord.',
       },
       'name': {'type': 'string', 'description': 'Name of the item or column.'},
       'labelName': {
@@ -155,7 +179,9 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       },
       'values': {
         'type': 'object',
-        'description': 'Map column IDs to values; use null for empty cells.',
+        'description':
+            'Map table column IDs to values; use null for empty cells. For '
+            'updateRecord, include only the columns the user asked to change.',
       },
       'column': {
         'type': 'object',
