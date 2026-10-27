@@ -1,8 +1,49 @@
+import 'dart:convert';
+
 import 'package:auravibes_engine/src/tool_spec.dart';
 import 'package:auravibes_engine/src/workspace_context_selection.dart';
 import 'package:auravibes_engine/src/workspace_created_context.dart';
 
 export 'package:auravibes_engine/src/workspace_context_selection.dart';
+
+/// Limits the serialized result, so provider output remains valid JSON.
+Map<String, Object?> workspaceFileToolResult({
+  required String id,
+  required String name,
+  required String mimeType,
+  required int revision,
+  required String content,
+}) {
+  const limit = 12 * 1024;
+  if (name.length > 200 || id.length > 512) {
+    throw ArgumentError('Invalid file metadata');
+  }
+  final result = <String, Object?>{
+    'id': id,
+    'kind': 'file',
+    'name': name,
+    'mimeType': mimeType,
+    'revision': revision,
+    'content': '',
+    'truncated': false,
+  };
+  final remaining = limit - utf8.encode(jsonEncode(result)).length;
+  if (remaining < 0) throw ArgumentError('Invalid file metadata');
+  var budget = remaining;
+  final prefix = StringBuffer();
+  for (final rune in content.runes) {
+    final character = String.fromCharCode(rune);
+    final size = utf8.encode(jsonEncode(character)).length - 2;
+    if (size > budget) break;
+    prefix.write(character);
+    budget -= size;
+  }
+  final value = prefix.toString();
+  result['content'] = value;
+  result['truncated'] = value.length != content.length;
+
+  return result;
+}
 
 const workspaceCommandToolName = 'workspace_item';
 const workspaceCommandTableId = 'host.workspace.item';
