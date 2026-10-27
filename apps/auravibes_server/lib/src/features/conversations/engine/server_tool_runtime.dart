@@ -22,6 +22,28 @@ enum ServerToolDisposition {
 
 enum ServerToolReplayAction { execute, pause, skip, awaitingSubAgents }
 
+String _safeWorkspaceResult(ConversationToolCall call, String result) {
+  if (call.name != workspaceCommandToolName) return result;
+  Object? value;
+  try {
+    value = jsonDecode(result);
+  } on FormatException {
+    return result;
+  }
+  if (value is! Map || value['kind'] != 'file') return result;
+  return jsonEncode({
+    for (final key in [
+      'id',
+      'kind',
+      'name',
+      'mimeType',
+      'revision',
+      'truncated',
+    ])
+      if (value.containsKey(key)) key: value[key],
+  });
+}
+
 // Exceeds current 90s provider and 30s skill I/O bounds; tolerates clock drift.
 // ponytail: timestamp lease; add owner tokens if tool runtimes exceed this bound.
 const serverToolRunningRecoveryTimeout = Duration(minutes: 2);
@@ -1935,7 +1957,9 @@ class ServerToolRuntime({
     String status,
     String? result,
   ) async {
-    final projection = result == null ? null : projectToolOutput(result);
+    final projection = result == null
+        ? null
+        : projectToolOutput(_safeWorkspaceResult(call, result));
     final sourceTurn = await ConversationTurn.db.findById(
       session,
       call.turnId,

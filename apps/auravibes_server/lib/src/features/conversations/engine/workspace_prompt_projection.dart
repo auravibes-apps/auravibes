@@ -10,7 +10,9 @@ typedef _ProjectedTool = ({String content, String action});
 
 /// Refreshes selected authorized data at the provider boundary, not from
 /// history.
-class const WorkspacePromptProjection() {
+class const WorkspacePromptProjection({
+  final WorkspaceConversationCommands commands = const .new(),
+}) {
   Future<List<Map<String, dynamic>>> call(
     Session session,
     ConversationTurn turn,
@@ -50,8 +52,9 @@ class const WorkspacePromptProjection() {
     bool current,
   ) async {
     final call = await _findCall(session, turn, id);
-    if (call == null)
+    if (call == null) {
       return (content: workspaceContextUnavailable, action: 'read');
+    }
     try {
       final input = jsonDecode(call.argumentsJson) as Map<String, dynamic>;
       final inCurrentTurn = current && call.turnId == turn.id;
@@ -62,7 +65,9 @@ class const WorkspacePromptProjection() {
       final fresh = await _freshFromCall(session, turn, call, input);
       return (
         content: projectToolOutput(
-          jsonEncode(inCurrentTurn ? {'outcome': 'success', 'current': fresh} : fresh),
+          jsonEncode(
+            inCurrentTurn ? {'outcome': 'success', 'current': fresh} : fresh,
+          ),
         ).text,
         action: action,
       );
@@ -98,7 +103,7 @@ class const WorkspacePromptProjection() {
     Map<String, dynamic> input,
   ) async {
     final result = jsonDecode(call.resultJson ?? '{}');
-    final fresh = await const WorkspaceConversationCommands().call(
+    final fresh = await commands.call(
       session,
       turn,
       'context-projection',
