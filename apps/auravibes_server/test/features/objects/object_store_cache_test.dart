@@ -4,6 +4,40 @@ import 'package:auravibes_server/src/features/objects/object_store.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test(
+    'rejects an oversized signing response without exposing its contents',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final response = server.first.then((request) async {
+        request.response.write('secret-token${'x' * 8192}');
+        await request.response.close();
+      });
+      final store = HttpObjectStore(
+        legacyEndpoint: Uri(
+          scheme: 'http',
+          host: server.address.address,
+          port: server.port,
+        ),
+      );
+      await expectLater(
+        store.signGet(
+          key: 'object',
+          contentDisposition: 'attachment',
+          expiresIn: const Duration(minutes: 1),
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            'Object signing gateway response is too large.',
+          ),
+        ),
+      );
+      await response;
+    },
+  );
+
   test('signed private downloads request a no-store response', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));

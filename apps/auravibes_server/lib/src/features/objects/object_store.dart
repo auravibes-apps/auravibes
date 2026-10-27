@@ -281,12 +281,19 @@ class HttpObjectStore implements ObjectStore {
         );
         _authorize(request, registrationId);
         final response = await request.close();
-        final body = await response.transform(const Utf8Decoder()).join();
         if (response.statusCode != HttpStatus.ok) {
           throw StateError(
             'Object signing gateway failed (${response.statusCode}).',
           );
         }
+        final bytes = <int>[];
+        await for (final chunk in response) {
+          if (bytes.length + chunk.length > 8192) {
+            throw StateError('Object signing gateway response is too large.');
+          }
+          bytes.addAll(chunk);
+        }
+        final body = utf8.decode(bytes);
         return SignedObjectRequest(
           url: Uri.parse(body.trim()),
           headers: method == 'PUT' ? values : const {},
