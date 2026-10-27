@@ -112,10 +112,57 @@ class const _SelectedCommand(
     references: .new(shared.selection, created),
   );
 
-  Future<Map<String, Object?>> _dispatch(_PreparedCommand prepared) =>
-      request.arguments['action'] == 'read'
-      ? _read(prepared)
-      : _write(prepared);
+  Future<Map<String, Object?>> _dispatch(_PreparedCommand prepared) {
+    if (request.arguments['action'] == 'listCreated') return _listCreated();
+
+    return request.arguments['action'] == 'read'
+        ? _read(prepared)
+        : _write(prepared);
+  }
+
+  Future<Map<String, Object?>> _listCreated() async {
+    final created = await _created();
+    final offset = request.arguments['offset'] ?? 0;
+    if (offset is! int || offset < 0 || offset > created.length) {
+      throw const WorkspaceTableException();
+    }
+    final items = <Map<String, Object?>>[];
+    int? nextOffset;
+    for (var index = offset; index < created.length; index++) {
+      final item = created[index];
+      final kind = item['kind'];
+      final id = item['id'];
+      if (id is! String ||
+          kind is! String ||
+          !{'folder', 'table', 'view'}.contains(kind)) {
+        continue;
+      }
+      try {
+        final data = await _SelectedCommand(owner, target, shared, (
+          arguments: <String, dynamic>{
+            'action': 'read',
+            if (kind == 'table') 'tableId': id else 'id': id,
+          },
+          operationId: null,
+        )).call();
+        if (items.length == 100) {
+          nextOffset = index;
+          break;
+        }
+        items.add({
+          'id': id,
+          'kind': kind,
+          for (final key in ['name', 'revision', 'schemaRevision', 'parentId'])
+            if (data.containsKey(key)) key: data[key],
+        });
+      } on WorkspaceTableException {
+        // Deleted or no longer authorized items are not disclosed.
+      }
+    }
+    await _authorize();
+
+    return {'items': items, 'nextOffset': nextOffset};
+  }
 
   Future<List<Map<String, Object?>>> _created() async =>
       await owner.receipts?.created(

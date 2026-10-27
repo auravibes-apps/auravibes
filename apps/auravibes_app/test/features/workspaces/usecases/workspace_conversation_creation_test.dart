@@ -193,6 +193,71 @@ void main() {
     );
   });
 
+  test(
+    'created folder remains readable and renameable in a later turn',
+    () async {
+      final fixture = await _Fixture.create();
+      addTearDown(fixture.database.close);
+      final folder = await fixture.run('prior-create', {
+        'action': 'createFolder',
+        'name': 'Earlier',
+      });
+      final read = await fixture.run('later-read', {
+        'action': 'read',
+        'id': folder['id'],
+      });
+      expect(read['name'], 'Earlier');
+      final discovery = await fixture.run('discover', {
+        'action': 'listCreated',
+      });
+      final items = discovery['items'] as List<Object?>? ?? [];
+      expect(
+        items,
+        contains(
+          predicate<Map<String, Object?>>(
+            (item) => item['id'] == folder['id'] && item['name'] == 'Earlier',
+          ),
+        ),
+      );
+      expect(discovery['nextOffset'], isNull);
+      final renamed = await fixture.run('later-rename', {
+        'action': 'renameFolder',
+        'id': read['id'],
+        'revision': read['revision'],
+        'name': 'Later',
+      });
+      expect(renamed['revision'], 2);
+    },
+  );
+
+  test('discovery paginates only current chat creations', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    for (var i = 0; i < 101; i++) {
+      final _ = await fixture.run('item-${i.toString().padLeft(3, '0')}', {
+        'action': 'createFolder',
+        'name': 'Folder $i',
+      });
+    }
+    final first = await fixture.run('first-page', {'action': 'listCreated'});
+    expect((first['items'] as List<Object?>?)?.length, 100);
+    expect(first['nextOffset'], 100);
+    final second = await fixture.run('second-page', {
+      'action': 'listCreated',
+      'offset': first['nextOffset'],
+    });
+    expect((second['items'] as List<Object?>?)?.length, 1);
+    expect(second['nextOffset'], isNull);
+    final _ = await LocalWorkspaceContextRepository(
+      fixture.database,
+      'one',
+    ).save(fixture.conversationId, 'revoked', null);
+    await expectLater(
+      fixture.run('revoked-page', {'action': 'listCreated'}),
+      throwsA(isA<WorkspaceTableException>()),
+    );
+  });
+
   test('typed creation and View editing use stable IDs', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);

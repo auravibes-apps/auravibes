@@ -123,7 +123,8 @@ class const _ReceiptRows(
 
   Future<List<Map<String, Object?>>> created(String selectionId) async {
     final query = database.select(database.workspaceCommandReceipts)
-      ..where((row) => _created(row, selectionId));
+      ..where((row) => _created(row, selectionId))
+      ..orderBy([(row) => OrderingTerm.asc(row.requestId)]);
     final rows = await query.get();
 
     return [for (final row in rows) _ReceiptCodec.decode(row.result)];

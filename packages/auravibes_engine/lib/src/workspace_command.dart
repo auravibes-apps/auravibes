@@ -8,6 +8,7 @@ const workspaceCommandToolName = 'workspace_item';
 const workspaceCommandTableId = 'host.workspace.item';
 const workspaceCommandActions = <String>[
   'read',
+  'listCreated',
   'createFolder',
   'renameFolder',
   'createTable',
@@ -37,6 +38,8 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'Use current revisions; refresh after conflicts. '
       'Structural edits require approval in default mode. '
       'Opening an item does not share its data. '
+      'Use listCreated to discover items created in this chat under the '
+      'current share; it does not list other items. '
       'For the shared Directory root, read needs only action; it returns '
       'root metadata, not a list of children. '
       'For a folder or view read, provide id. For a table read, provide '
@@ -64,6 +67,11 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
       'tableId': {
         'type': 'string',
         'description': 'Selected or previously created table ID.',
+      },
+      'offset': {
+        'type': 'integer',
+        'minimum': 0,
+        'description': 'Pagination offset returned by listCreated.',
       },
       'parentId': {
         'type': ['string', 'null'],
@@ -113,8 +121,12 @@ ToolSpec workspaceCommandToolSpec() => ToolSpec(
   },
 );
 
-bool workspaceCommandNeedsApproval(Map<String, dynamic> arguments) =>
-    !{'read', 'createRecord', 'updateRecord'}.contains(arguments['action']);
+bool workspaceCommandNeedsApproval(Map<String, dynamic> arguments) => !{
+  'read',
+  'listCreated',
+  'createRecord',
+  'updateRecord',
+}.contains(arguments['action']);
 
 /// Hosts supply only verified creations from the active selection epoch.
 WorkspaceContextSelection workspaceCreatedContext(

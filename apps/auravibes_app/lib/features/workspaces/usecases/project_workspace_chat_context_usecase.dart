@@ -33,8 +33,9 @@ class const ProjectWorkspaceChatContextUsecase(
     if (currentTurn && !(call.resultStatus?.isSuccess() ?? false)) {
       return _currentCall(call, jsonEncode({'outcome': 'failed'}));
     }
+    final action = workspaceContextAction(call.arguments);
     Map<String, Object?>? receipt;
-    if (currentTurn && workspaceContextAction(call.arguments) != 'read') {
+    if (currentTurn && action != 'read' && action != 'listCreated') {
       try {
         receipt = await tools.verifiedMutation(
           conversationId: conversationId,
@@ -48,7 +49,9 @@ class const ProjectWorkspaceChatContextUsecase(
         return workspaceToolCallForContext(call, workspaceContextUnavailable);
       }
     }
-    final response = await _read(conversationId, call, receipt);
+    final response = action == 'listCreated'
+        ? await _listCreated(conversationId, call)
+        : await _read(conversationId, call, receipt);
     if (receipt != null) {
       try {
         if (await tools.verifiedMutation(
@@ -77,6 +80,26 @@ class const ProjectWorkspaceChatContextUsecase(
     }
 
     return workspaceToolCallForContext(call, projectToolOutput(response).text);
+  }
+
+  Future<String> _listCreated(
+    String conversationId,
+    MessageToolCallEntity call,
+  ) async {
+    try {
+      return jsonEncode(
+        await tools.call(
+          conversationId: conversationId,
+          arguments: {
+            'action': 'listCreated',
+            if (call.arguments['offset'] case final int offset)
+              'offset': offset,
+          },
+        ),
+      );
+    } on Object {
+      return workspaceContextUnavailable;
+    }
   }
 
   Future<String> _read(
