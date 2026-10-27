@@ -9,7 +9,14 @@ part 'workspace_conversation_context_provider.g.dart';
 Future<ManageWorkspaceChatContextUsecase> workspaceConversationContextUsecase(
   Ref ref,
   String workspaceId,
-) => WorkspaceContextDependencies(ref, workspaceId).load();
+) async {
+  final link = ref.keepAlive();
+  try {
+    return await WorkspaceContextDependencies(ref, workspaceId).load();
+  } finally {
+    link.close();
+  }
+}
 
 @riverpod
 Future<WorkspaceConversationContext> workspaceConversationContext(
