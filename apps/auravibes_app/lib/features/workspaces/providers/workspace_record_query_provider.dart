@@ -14,6 +14,15 @@ part 'workspace_record_query_provider.g.dart';
 Future<QueryWorkspaceRecordsUsecase> workspaceRecordQueryUsecase(
   Ref ref,
   String workspaceId,
+) {
+  final link = ref.keepAlive();
+
+  return _queryUsecase(ref, workspaceId).whenComplete(link.close);
+}
+
+Future<QueryWorkspaceRecordsUsecase> _queryUsecase(
+  Ref ref,
+  String workspaceId,
 ) async {
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
