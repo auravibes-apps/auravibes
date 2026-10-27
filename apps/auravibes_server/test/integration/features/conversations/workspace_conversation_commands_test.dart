@@ -1062,10 +1062,10 @@ void main() {
           'tableId': 'items',
         }),
         throwsA(
-          isA<CloudWorkspaceException>().having(
-            (error) => error.code,
-            'code',
-            CloudWorkspaceErrorCode.permissionDenied,
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
           ),
         ),
       );
@@ -1096,10 +1096,10 @@ void main() {
       await expectLater(
         memberRun('member-edit', memberEdit),
         throwsA(
-          isA<CloudWorkspaceException>().having(
-            (error) => error.code,
-            'code',
-            CloudWorkspaceErrorCode.permissionDenied,
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
           ),
         ),
       );
@@ -1114,10 +1114,10 @@ void main() {
       await expectLater(
         memberRun('revoked-read', {'action': 'read', 'tableId': 'items'}),
         throwsA(
-          isA<CloudWorkspaceException>().having(
-            (error) => error.code,
-            'code',
-            CloudWorkspaceErrorCode.permissionDenied,
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
           ),
         ),
       );
@@ -1133,10 +1133,10 @@ void main() {
       await expectLater(
         memberRun('removed-member', {'action': 'read', 'tableId': 'items'}),
         throwsA(
-          isA<CloudWorkspaceException>().having(
-            (error) => error.code,
-            'code',
-            CloudWorkspaceErrorCode.permissionDenied,
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains('unavailable'),
           ),
         ),
       );
