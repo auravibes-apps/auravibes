@@ -673,7 +673,8 @@ void main() {
     expect(tester.widget<PopScope>(find.byType(PopScope).last).canPop, isFalse);
     expect(inline, findsOneWidget);
     expect(find.text('First book'), findsOneWidget);
-    await tester.runAsync(() => tester.testTextInput.receiveAction(.done));
+    final search = input('workspace_record_search');
+    await tester.runAsync(() => tester.tap(search));
     await flush();
     for (
       var attempt = 0;
@@ -686,6 +687,17 @@ void main() {
       await flush();
     }
     expect(inline, findsNothing);
+    final searchInput = find.descendant(
+      of: search,
+      matching: find.byType(EditableText),
+    );
+    expect(tester.widget<EditableText>(searchInput).focusNode.hasFocus, isTrue);
+    expect(
+      (await tables.records(createdTable.id))
+          .single
+          .values[createdTable.labelColumnId],
+      'First book',
+    );
 
     final first = find.text('First book');
     await tester.tap(first);
@@ -727,12 +739,18 @@ void main() {
     await flush();
     expect(find.byType(DataTable), findsOneWidget);
     expect(find.text('Other book'), findsOneWidget);
-    await tester.enterText(input('workspace_record_search'), 'Updated');
-    await tester.testTextInput.receiveAction(.done);
+    final other = find.text('Other book');
+    final updated = find.text('Updated book');
+    await tester.tap(updated);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(updated);
+    await flush();
+    await tester.enterText(inline, 'Saved on selection');
+    await tester.runAsync(() => tester.tap(other));
     await flush();
     for (
       var attempt = 0;
-      attempt < 20 && find.text('Updated book').evaluate().isEmpty;
+      attempt < 20 && inline.evaluate().isNotEmpty;
       attempt++
     ) {
       await tester.runAsync(
@@ -740,7 +758,37 @@ void main() {
       );
       await flush();
     }
-    expect(find.text('Updated book'), findsOneWidget);
+    expect(inline, findsNothing);
+    expect(find.text('Saved on selection'), findsOneWidget);
+    final otherRecord = (await tables.records(current.id))
+        .firstWhere((row) => row.values[current.labelColumnId] == 'Other book');
+    final otherCell = find.byKey(
+      ValueKey('workspace_cell_${otherRecord.id}_${current.labelColumnId}'),
+    );
+    final decoration =
+        tester.widget<Container>(otherCell).decoration as BoxDecoration?;
+    expect(decoration?.border, isNotNull);
+    final cellFocus = find
+        .ancestor(of: otherCell, matching: find.byType(Focus))
+        .first;
+    expect(tester.widget<Focus>(cellFocus).focusNode?.hasFocus, isTrue);
+    await tester.enterText(
+      input('workspace_record_search'),
+      'Saved on selection',
+    );
+    await tester.testTextInput.receiveAction(.done);
+    await flush();
+    for (
+      var attempt = 0;
+      attempt < 20 && find.text('Saved on selection').evaluate().isEmpty;
+      attempt++
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await flush();
+    }
+    expect(find.text('Saved on selection'), findsWidgets);
     expect(find.text('Other book'), findsNothing);
     await tester.tap(find.byTooltip('Add column').last);
     await flush();
@@ -774,7 +822,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     await flush();
     expect(find.byType(DataTable), findsOneWidget);
-    expect(find.text('Updated book'), findsOneWidget);
+    expect(find.text('Saved on selection'), findsWidgets);
   });
 }
 

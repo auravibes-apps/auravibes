@@ -60,6 +60,8 @@ class _Draft {
       hiddenColumns = useState(<String>{}),
       active = useState<({String record, String column})?>(null),
       hovered = useState<String?>(null),
+      nextSelection = useRef<VoidCallback?>(null),
+      cellPointer = useRef<int?>(null),
       editing = useState(false),
       values = useState<Map<String, Object?>>({});
 
@@ -71,6 +73,8 @@ class _Draft {
   final ValueNotifier<Set<String>> hiddenColumns;
   final ValueNotifier<({String record, String column})?> active;
   final ValueNotifier<String?> hovered;
+  final ObjectRef<VoidCallback?> nextSelection;
+  final ObjectRef<int?> cellPointer;
   final ValueNotifier<bool> editing;
   final ValueNotifier<Map<String, Object?>> values;
   bool canSelect(WorkspaceRecord record) =>
@@ -111,11 +115,11 @@ class const _FrameContent(
   @override
   Widget build(BuildContext context) => Column(
     children: [
+      _Search(draft),
       IgnorePointer(
         ignoring: draft.draftOpen.value,
         child: Column(
           children: [
-            _Search(draft),
             if (owner.table.canEditRecords) _BulkToolbar(owner, draft),
             if (draft.controls.value) _Controls(owner, draft),
           ],
@@ -161,19 +165,23 @@ class const _RecordState(
   final AsyncValue<WorkspaceRecordPage> records,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => switch (records) {
-    AsyncData(:final value) => _Rows(
+  Widget build(BuildContext context) {
+    if (records case AsyncError(:final error)) {
+      return SingleChildScrollView(child: WorkspaceItemFailure(error: error));
+    }
+    final value = records.value;
+    if (value == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return _Rows(
       owner,
       value.records,
       draft.hiddenColumns.value,
       owner.onRecord,
       draft,
-    ),
-    AsyncError(:final error) => SingleChildScrollView(
-      child: WorkspaceItemFailure(error: error),
-    ),
-    AsyncLoading() => const Center(child: CircularProgressIndicator()),
-  };
+    );
+  }
 }
 
 class const _Pages(
@@ -344,12 +352,17 @@ class const _Rows(
 
   bool isSelecting() => table.canEditRecords && draft.selecting.value;
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _Grid(this),
-    onTap: _clearSelection,
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: _clearSelection,
     behavior: .opaque,
+    child: _Grid(this),
   );
-  void _clearSelection() {
+  void _clearSelection(PointerDownEvent event) {
+    if (draft.cellPointer.value == event.pointer) {
+      draft.cellPointer.value = null;
+
+      return;
+    }
     if (!draft.draftOpen.value) draft.active.value = null;
   }
 }
@@ -398,7 +411,11 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
     onTapOutside: _clearSelection,
   );
   void _clearSelection(PointerDownEvent _) {
-    if (!owner.draft.draftOpen.value) owner.draft.active.value = null;
+    if (owner.draft.editing.value) {
+      owner.draft.nextSelection.value = () => owner.draft.active.value = null;
+    } else if (!owner.draft.draftOpen.value) {
+      owner.draft.active.value = null;
+    }
   }
 }
 
@@ -513,40 +530,47 @@ class const _SpreadsheetCell(
     final action = WorkspaceTableActions.use(context);
     final colors = Theme.of(context).colorScheme;
     final link = useMemoized(LayerLink.new);
+    final focus = useFocusNode();
 
     return MouseRegion(
       onEnter: _hover,
       onExit: _leave,
       child: Focus(
-        child: GestureDetector(
-          child: CompositedTransformTarget(
-            link: link,
-            child: Container(
-              key: ValueKey('workspace_cell_${record.id}_${column.id}'),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _color(colors),
-                border: _border(colors),
-              ),
-              width: 200,
-              height: 48,
-              child: DefaultTextStyle.merge(
-                style: .new(
-                  color: _selected
-                      ? colors.onPrimaryContainer
-                      : colors.onSurface,
+        child: Listener(
+          onPointerDown: (event) {
+            owner.draft.cellPointer.value = event.pointer;
+            _select(context, focus);
+          },
+          child: GestureDetector(
+            child: CompositedTransformTarget(
+              link: link,
+              child: Container(
+                key: ValueKey('workspace_cell_${record.id}_${column.id}'),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _color(colors),
+                  border: _border(colors),
                 ),
-                child: _editing
-                    ? _SpreadsheetEditor(this, action, ref, link)
-                    : ClipRect(child: _Cell(owner, record, column)),
+                width: 200,
+                height: 48,
+                child: DefaultTextStyle.merge(
+                  style: .new(
+                    color: _selected
+                        ? colors.onPrimaryContainer
+                        : colors.onSurface,
+                  ),
+                  child: _editing
+                      ? _SpreadsheetEditor(this, action, ref, link)
+                      : ClipRect(child: _Cell(owner, record, column)),
+                ),
               ),
             ),
+            onDoubleTap: _canEdit ? _edit : null,
+            onLongPress: owner.table.canEditRecords ? _selectRow : null,
+            behavior: .opaque,
           ),
-          onTap: _select,
-          onDoubleTap: _canEdit ? _edit : null,
-          onLongPress: owner.table.canEditRecords ? _selectRow : null,
-          behavior: .opaque,
         ),
+        focusNode: focus,
         onKeyEvent: _key,
       ),
     );
@@ -577,14 +601,24 @@ class const _SpreadsheetCell(
     owner.draft.toggle(record);
   }
 
-  void _select() {
-    if (owner.draft.editing.value) return;
+  void _select(BuildContext context, FocusNode focus) {
+    if (owner.draft.editing.value) {
+      if (_selected) return;
+      owner.draft.nextSelection.value = () {
+        if (!context.mounted) return;
+        owner.draft.active.value = (record: record.id, column: column.id);
+        focus.requestFocus();
+      };
+
+      return;
+    }
     if (owner.isSelecting()) {
       _selectRow();
 
       return;
     }
     owner.draft.active.value = (record: record.id, column: column.id);
+    focus.requestFocus();
   }
 
   void _edit() {
@@ -615,6 +649,7 @@ class const _SpreadsheetCell(
   }
 
   void _cancel() {
+    owner.draft.nextSelection.value = null;
     owner.draft.editing.value = false;
     owner.draft.draftOpen.value = false;
   }
@@ -633,6 +668,9 @@ class const _SpreadsheetCell(
     if (!ref.context.mounted) return;
     owner.draft.editing.value = false;
     owner.draft.draftOpen.value = false;
+    final next = owner.draft.nextSelection.value;
+    owner.draft.nextSelection.value = null;
+    next?.call();
     ref
       ..invalidate(
         workspaceRecordQueryUsecaseProvider(owner.browser.workspaceId),
@@ -789,9 +827,27 @@ class const _InlineScalarEditor(
 ) extends HookWidget {
   @override
   Widget build(BuildContext context) {
+    final focus = useFocusNode();
+    final hadFocus = useRef(false);
     final controller = useTextEditingController(
       text: cell.owner.draft.values.value[cell.column.id]?.toString() ?? '',
     );
+    void Function()? effect() {
+      void onFocus() {
+        if (focus.hasFocus) {
+          hadFocus.value = true;
+        } else if (hadFocus.value && context.mounted && cell._editing) {
+          hadFocus.value = false;
+          cell._submit(ref, action);
+        }
+      }
+
+      focus.addListener(onFocus);
+
+      return () => focus.removeListener(onFocus);
+    }
+
+    useEffect(effect, [focus]);
 
     return SizedBox(
       height: 24,
@@ -802,6 +858,7 @@ class const _InlineScalarEditor(
               child: TextField(
                 key: const ValueKey('workspace_inline_record_value'),
                 controller: controller,
+                focusNode: focus,
                 decoration: const .collapsed(hintText: ''),
                 style: .new(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -810,7 +867,7 @@ class const _InlineScalarEditor(
                 onChanged: _change,
                 onSubmitted: (_) => cell._submit(ref, action),
                 enabled: !action.pending,
-                onTapOutside: (_) => cell._submit(ref, action),
+                onTapOutside: (_) => focus.unfocus(),
               ),
               label: cell.column.name,
             ),
