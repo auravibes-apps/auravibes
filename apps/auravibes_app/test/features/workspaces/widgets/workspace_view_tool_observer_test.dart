@@ -3,19 +3,19 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_tool_observer.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _Views extends Mock implements ManageWorkspaceViewsUsecase;
 
@@ -113,7 +113,7 @@ void main() {
           ),
         );
       });
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       final provider = workspaceOpenViewProvider('ws', 'chat');
       final subscription = container.listen(provider, (_, next) {
         final _ = next;
@@ -144,7 +144,8 @@ void main() {
       expect(container.read(provider), isNull);
       verify(() => views.open('denied')).called(1);
       expect(find.byType(SnackBarAction), findsNothing);
-      final _ = verifyNever(() => views.open('allowed'));
+      final never = verifyNever(() => views.open('allowed'));
+      expect(never, isNotNull);
       stream.add([
         _message([_call('retry-call', 'retry')]),
       ]);

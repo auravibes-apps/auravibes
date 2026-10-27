@@ -6,13 +6,13 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Opens newly completed view commands, never previously loaded history.
@@ -123,10 +123,11 @@ class _WorkspaceViewToolObserverState
           (error is CloudAppException &&
               error.localizationKey ==
                   LocaleKeys.cloud_errors_permission_denied);
+      if (!mounted) return;
       final messenger = ScaffoldMessenger.maybeOf(context);
       messenger?.hideCurrentSnackBar();
-      messenger?.showSnackBar(
-        SnackBar(
+      final _ = messenger?.showSnackBar(
+        .new(
           content: TextLocale(
             denied
                 ? LocaleKeys.cloud_errors_permission_denied
