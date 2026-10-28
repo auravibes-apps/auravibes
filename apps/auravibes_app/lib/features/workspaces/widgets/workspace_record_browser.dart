@@ -636,15 +636,19 @@ class const _AddEmptyRecord(final _Rows owner) extends HookConsumerWidget {
     return Row(
       children: [
         IconButton(
-          onPressed: action.pending || owner.draft.draftOpen.value
-              ? null
-              : () => unawaited(action.run(() => _create(ref))),
+          onPressed: _addCallback(ref, action),
           tooltip: LocaleKeys.workspace_items_create_record.tr(),
           icon: const Icon(Icons.add),
         ),
         if (action.error case final error?) WorkspaceItemFailure(error: error),
       ],
     );
+  }
+
+  VoidCallback? _addCallback(WidgetRef ref, WorkspaceTableAction action) {
+    if (action.pending || owner.draft.draftOpen.value) return null;
+
+    return () => unawaited(action.run(() => _create(ref)));
   }
 
   Future<void> _create(WidgetRef ref) async {
