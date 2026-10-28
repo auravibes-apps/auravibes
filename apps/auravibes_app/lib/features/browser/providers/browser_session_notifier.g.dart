@@ -53,7 +53,7 @@ final class BrowserSessionNotifierProvider
 }
 
 String _$browserSessionNotifierHash() =>
-    r'2b44cfe6a37afa82c54e04edeab191e074cf5383';
+    r'd8502e7e4095ae7fc00032cae11ac1737e4815dd';
 
 final class BrowserSessionNotifierFamily extends $Family
     with
