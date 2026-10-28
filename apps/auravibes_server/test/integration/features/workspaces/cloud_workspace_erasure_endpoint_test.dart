@@ -301,6 +301,108 @@ void main() {
       expect(store.signCalls, 0);
     });
 
+    test(
+      'opaque and legacy object keys remain isolated across workspaces',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        final repository = workspace_repo.CloudWorkspaceRepository();
+        final source = await repository.createWorkspace(
+          session,
+          name: 'Source',
+          ownerUserId: userId,
+          now: now,
+        );
+        final other = await repository.createWorkspace(
+          session,
+          name: 'Other',
+          ownerUserId: userId,
+          now: now,
+        );
+        final randomPart = userId.replaceAll('-', '');
+        for (final key in [
+          '$randomPart${'a' * 16}',
+          '${source.id}/$randomPart${'b' * 16}',
+        ]) {
+          final object = await _insertRegisteredUpload(
+            session,
+            workspaceId: source.id!,
+            userId: userId,
+            objectKey: key,
+            requestId: 'cross-workspace-$key-$userId',
+            now: now,
+          );
+          await WorkspaceResource.db.insertRow(
+            session,
+            WorkspaceResource(
+              workspaceId: source.id!,
+              resourceKind: WorkspaceResourceKind.file,
+              resourceId: 'file-${object.id}',
+              data: jsonEncode({
+                'name': 'Synthetic',
+                'assetId': '${object.id}',
+              }),
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          final own = GetDownloadRequest(
+            workspaceId: source.id!,
+            objectId: object.id!,
+          );
+          final foreign = GetDownloadRequest(
+            workspaceId: other.id!,
+            objectId: object.id!,
+          );
+          expect(
+            (await endpoints.object.describe(authenticated, own)).objectId,
+            object.id,
+          );
+          for (final action in [
+            () => endpoints.object.describe(authenticated, foreign),
+            () => endpoints.object.getDownload(authenticated, foreign),
+          ]) {
+            await expectLater(
+              action(),
+              throwsA(
+                isA<ObjectException>().having(
+                  (error) => error.code,
+                  'code',
+                  ObjectErrorCode.objectNotFound,
+                ),
+              ),
+            );
+          }
+          final unchanged = await WorkspaceObject.db.findById(
+            session,
+            object.id!,
+          );
+          expect(unchanged?.status, 'active');
+          expect(unchanged?.objectKey, key);
+        }
+      },
+    );
+
     test('persists a gateway registration before signing an upload', () async {
       final userId = const Uuid().v4().toString();
       final authenticated = builder.copyWith(

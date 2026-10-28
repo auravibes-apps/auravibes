@@ -67,21 +67,8 @@ class const _ItemCommand(
 
   Future<Map<String, Object?>> _directory() async {
     final arguments = input.arguments;
-    final action = arguments['action'];
-    if (action == 'readDirectory') {
-      return await readWorkspaceDirectory(
-        path: _optionalString(arguments, 'path'),
-        pathRegex: _optionalString(arguments, 'pathRegex'),
-        nameRegex: _optionalString(arguments, 'nameRegex'),
-        listChildren: (parentId) => _directoryItems(owner, parentId),
-      );
-    }
-    _Arguments.action(arguments, 'read');
-    if ((arguments['id'] ?? '') != '' ||
-        (arguments['tableId'] ?? '') != '' ||
-        arguments['parentId'] != null) {
-      _Arguments.denied();
-    }
+    if (arguments['action'] == 'readDirectory') return await _search(arguments);
+    _checkRootRead(arguments);
 
     return {
       'kind': 'directory',
@@ -89,6 +76,23 @@ class const _ItemCommand(
       'parentId': null,
       'items': await _directoryItems(owner, null),
     };
+  }
+
+  Future<Map<String, Object?>> _search(Map<String, dynamic> arguments) =>
+      readWorkspaceDirectory(
+        path: _optionalString(arguments, 'path'),
+        pathRegex: _optionalString(arguments, 'pathRegex'),
+        nameRegex: _optionalString(arguments, 'nameRegex'),
+        listChildren: (parentId) => _directoryItems(owner, parentId),
+      );
+
+  void _checkRootRead(Map<String, dynamic> arguments) {
+    _Arguments.action(arguments, 'read');
+    if ((arguments['id'] ?? '') != '' ||
+        (arguments['tableId'] ?? '') != '' ||
+        arguments['parentId'] != null) {
+      _Arguments.denied();
+    }
   }
 }
 
@@ -104,43 +108,38 @@ Future<List<Map<String, Object?>>> _directoryItems(
   WorkspaceConversationCommandUsecase owner,
   String? parentId,
 ) async {
-  final fileManager = owner.files;
-  final folders = await owner.folders?.list(parentId: parentId) ?? const [];
-  final tables = await owner.tables.list(parentId: parentId);
-  final views = await owner.views?.list(parentId: parentId) ?? const [];
-  final files = await fileManager?.list(parentId: parentId) ?? const [];
-
   return [
-    for (final item in folders)
-      {
-        'kind': 'folder',
-        'id': item.id,
-        'name': item.name,
-        'revision': item.revision,
-      },
-    for (final item in tables)
-      {
-        'kind': 'table',
-        'id': item.id,
-        'name': item.name,
-        'revision': item.revision,
-      },
-    for (final item in views)
-      {
-        'kind': 'view',
-        'id': item.id,
-        'name': item.name,
-        'revision': item.revision,
-      },
-    for (final item in files)
-      {
-        'kind': 'file',
-        'id': item.id,
-        'name': item.name,
-        'revision': item.revision,
-      },
+    ..._folderEntries(
+      await owner.folders?.list(parentId: parentId) ?? const [],
+    ),
+    ..._tableEntries(await owner.tables.list(parentId: parentId)),
+    ..._viewEntries(await owner.views?.list(parentId: parentId) ?? const []),
+    ..._fileEntries(await owner.files?.list(parentId: parentId) ?? const []),
   ];
 }
+
+Iterable<Map<String, Object?>> _folderEntries(List<WorkspaceFolder> folders) =>
+    folders.map(
+      (item) => _directoryEntry('folder', item.id, item.name, item.revision),
+    );
+
+Iterable<Map<String, Object?>> _tableEntries(List<WorkspaceTable> tables) =>
+    tables.map(
+      (item) => _directoryEntry('table', item.id, item.name, item.revision),
+    );
+
+Iterable<Map<String, Object?>> _viewEntries(List<WorkspaceView> views) => views
+    .map((item) => _directoryEntry('view', item.id, item.name, item.revision));
+
+Iterable<Map<String, Object?>> _fileEntries(List<WorkspaceFile> files) => files
+    .map((item) => _directoryEntry('file', item.id, item.name, item.revision));
+
+Map<String, Object?> _directoryEntry(
+  String kind,
+  String id,
+  String name,
+  int revision,
+) => {'kind': kind, 'id': id, 'name': name, 'revision': revision};
 
 class const _ReceiptAuthorization(
   final WorkspaceConversationCommandUsecase owner,
@@ -209,11 +208,12 @@ class const _FileCommand(
   final WorkspaceConversationCommandUsecase owner,
   final _CommandInput input,
 ) {
+  OrganizeWorkspaceFilesUsecase get _files =>
+      owner.files ?? (throw const WorkspaceTableException(denied: true));
+
   Future<Map<String, Object?>> call() async {
-    _Arguments.action(input.arguments, 'read');
-    if (input.arguments['id'] != input.selection.itemId) _Arguments.denied();
-    final files =
-        owner.files ?? (throw const WorkspaceTableException(denied: true));
+    _authorizeInput();
+    final files = _files;
     final assets =
         owner.assets ?? (throw const WorkspaceTableException(denied: true));
     final file = await files.file(input.selection.itemId);
@@ -221,6 +221,11 @@ class const _FileCommand(
     await _reauthorize(files, file);
 
     return _result(file, preview);
+  }
+
+  void _authorizeInput() {
+    _Arguments.action(input.arguments, 'read');
+    if (input.arguments['id'] != input.selection.itemId) _Arguments.denied();
   }
 
   Map<String, Object?> _result(
@@ -613,16 +618,17 @@ class const _TableRead(
 
   Future<List<String>> _recordIds() async {
     final id = command.input.arguments['id'];
-    if (id == null) {
-      return (await command.owner.tables.records(table.id))
-          .map((record) => record.id)
-          .toList();
-    }
+    if (id == null) return await _allRecordIds();
     if (id is! String) _Arguments.denied();
     final _ = await command.owner.tables.record(table.id, id);
 
     return [id];
   }
+
+  Future<List<String>> _allRecordIds() async =>
+      (await command.owner.tables.records(table.id))
+          .map((record) => record.id)
+          .toList();
 }
 
 class const _RecordProjection(
