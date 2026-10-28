@@ -42,7 +42,7 @@ type bucket interface {
 }
 
 var errNotFound = errors.New("object not found")
-var keyPattern = regexp.MustCompile(`^[1-9][0-9]*/[a-f0-9]{48}$`)
+var keyPattern = regexp.MustCompile(`^(?:[1-9][0-9]*/)?[a-f0-9]{48}$`)
 var checksumPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 const maxSize = 25 * 1024 * 1024

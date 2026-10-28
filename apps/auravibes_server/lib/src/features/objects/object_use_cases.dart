@@ -72,7 +72,7 @@ class ObjectUseCases {
     );
     final now = DateTime.now().toUtc();
     final expiresAt = now.add(const Duration(minutes: 10));
-    final key = '${request.workspaceId}/${_opaqueKey()}';
+    final key = _opaqueKey();
     final registrationId = _opaqueKey(bytes: 32);
     final upload = await session.db.transaction((transaction) async {
       await _lockActorWorkspaceMember(

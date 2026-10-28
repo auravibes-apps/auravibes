@@ -784,6 +784,17 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     family: 'workspace-item-typed-errors',
     sites: [
       DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_record_browser.dart',
+        method: 'tr',
+        keyExpression: 'failure.localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_record_browser.dart',
+        method: 'tr',
+        keyExpression: 'failure.localizationKey',
+        occurrence: 1,
+      ),
+      DynamicTranslationSite(
         file: 'features/workspaces/widgets/workspace_item_failure.dart',
         method: 'TextLocale',
         keyExpression: 'failure.localizationKey',
@@ -815,6 +826,8 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'workspace_assets.unavailable',
       'workspace_items.invalid_folder',
       'workspace_items.invalid_table',
+      'workspace_items.duplicate_unsupported',
+      'workspace_items.reference_incompatible',
       'workspace_csv.invalid_file',
       'workspace_csv.too_large',
       'workspace_csv.invalid_mapping',
@@ -1684,6 +1697,17 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
     family: 'cloud-application-error-keys',
     sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_record_browser.dart',
+        method: 'tr',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_record_browser.dart',
+        method: 'tr',
+        keyExpression: 'CloudAppErrors.localizationKey(error)',
+        occurrence: 1,
+      ),
       DynamicTranslationSite(
         file: 'features/workspaces/widgets/workspace_item_failure.dart',
         method: 'TextLocale',

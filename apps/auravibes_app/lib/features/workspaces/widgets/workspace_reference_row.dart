@@ -55,7 +55,7 @@ class const _ReferenceTile({
   @override
   Widget build(BuildContext context) => row.onSelect == null
       ? ListTile(
-          title: Text(_titleText.tr()),
+          title: Text(_titleText),
           subtitle: Text(table.name),
           onTap: () => _open(context),
         )

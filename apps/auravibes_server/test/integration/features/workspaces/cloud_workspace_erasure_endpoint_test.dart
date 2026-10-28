@@ -373,6 +373,13 @@ void main() {
         where: (row) => row.requestId.equals('$requestId-$userId'),
       );
 
+      final uploadedObject = await WorkspaceObject.db.findFirstRow(
+        session,
+        where: (row) => row.id.equals(upload!.objectId),
+      );
+      expect(uploadedObject?.objectKey, matches(RegExp(r'^[a-f0-9]{48}$')));
+      expect(uploadedObject?.objectKey, isNot(contains('${workspace.id}/')));
+      expect(store.registeredKey, uploadedObject?.objectKey);
       expect(store.operations, ['register', 'sign', 'sign']);
       expect(store.registrationAtRegistration, isNotNull);
       expect(store.registrationStateAtRegistration, 'registering');
@@ -2262,6 +2269,7 @@ class _RegistrationAwareObjectStore extends InMemoryObjectStore {
   String? registrationAtRegistration;
   String? registrationStateAtRegistration;
   String? registeredId;
+  String? registeredKey;
   String? signingRegistrationId;
   final registrationStatesAtSigning = <String?>[];
   final registrationStarted = Completer<void>();
@@ -2273,6 +2281,7 @@ class _RegistrationAwareObjectStore extends InMemoryObjectStore {
     required String registrationId,
   }) async {
     operations.add('register');
+    registeredKey = key;
     registeredId = registrationId;
     final object = await WorkspaceObject.db.findFirstRow(
       session,

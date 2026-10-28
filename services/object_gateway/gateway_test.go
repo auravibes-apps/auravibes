@@ -740,3 +740,17 @@ func TestDeleteDistinguishesReplicaBlockerFromTransientFailure(t *testing.T) {
 		})
 	}
 }
+
+func TestOpaqueAndLegacyKeyFormats(t *testing.T) {
+	g := testGateway(newFakeLedger(), newFakeBucket())
+	for _, key := range []string{strings.Repeat("a", 48), "12/" + strings.Repeat("b", 48)} {
+		if got := control(g, "POST", "https://gateway.example/objects/"+key+"?register=1").Code; got != http.StatusNoContent {
+			t.Fatalf("valid key %q returned %d", key, got)
+		}
+	}
+	for _, key := range []string{"0/" + strings.Repeat("a", 48), "a/" + strings.Repeat("a", 48), strings.Repeat("a", 47), strings.Repeat("a", 49)} {
+		if got := control(g, "POST", "https://gateway.example/objects/"+key+"?register=1").Code; got != http.StatusBadRequest {
+			t.Fatalf("invalid key %q returned %d", key, got)
+		}
+	}
+}
