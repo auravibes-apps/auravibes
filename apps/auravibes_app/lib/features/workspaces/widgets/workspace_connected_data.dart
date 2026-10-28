@@ -25,15 +25,61 @@ class const WorkspaceConnectedData({
   Widget build(BuildContext context, WidgetRef ref) {
     final active = TickerMode.valuesOf(context).enabled;
     final cached = useRef<AsyncValue<WorkspaceConnectedResult>?>(null);
-    final state = active
-        ? ref.watch(workspaceConnectedViewProvider(workspaceId, viewId))
-        : cached.value;
-    if (state == null) return const SizedBox.shrink();
+    final state = _watch(ref, active, cached.value);
+
+    return _ConnectedCache(this, state, cached, active: active);
+  }
+
+  AsyncValue<WorkspaceConnectedResult>? _watch(
+    WidgetRef ref,
+    bool active,
+    AsyncValue<WorkspaceConnectedResult>? cached,
+  ) => active
+      ? ref.watch(workspaceConnectedViewProvider(workspaceId, viewId))
+      : cached;
+
+  void _updateCache(
+    ObjectRef<AsyncValue<WorkspaceConnectedResult>?> cached,
+    AsyncValue<WorkspaceConnectedResult> state,
+  ) {
     if (state is AsyncError<WorkspaceConnectedResult>) cached.value = null;
     if (state is AsyncData<WorkspaceConnectedResult>) cached.value = state;
-    final retained = cached.value;
-    final waiting = active && state.isLoading && retained != null;
-    final display = waiting ? retained : state;
+  }
+}
+
+class const _ConnectedCache(
+  final WorkspaceConnectedData owner,
+  final AsyncValue<WorkspaceConnectedResult>? state,
+  final ObjectRef<AsyncValue<WorkspaceConnectedResult>?> cached, {
+  required final bool active,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final value = state;
+    if (value == null) return const SizedBox.shrink();
+    owner._updateCache(cached, value);
+
+    return _CachedConnected(
+      owner.workspaceId,
+      owner.data,
+      value,
+      cached.value,
+      active: active,
+    );
+  }
+}
+
+class const _CachedConnected(
+  final String workspaceId,
+  final WorkspaceViewData? data,
+  final AsyncValue<WorkspaceConnectedResult> state,
+  final AsyncValue<WorkspaceConnectedResult>? cached, {
+  required final bool active,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final waiting = active && state.isLoading && cached != null;
+    final display = waiting ? cached ?? state : state;
 
     return Stack(
       children: [

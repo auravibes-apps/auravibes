@@ -79,22 +79,36 @@ class const _ReferenceTile({
 class const _ReferenceChoice({required final _ReferenceTile tile})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => tile.row.multiple
-      ? AuraCheckboxListTile(
-          value: tile.row.selected,
-          onChanged: (_) => tile.row.onSelect?.call(),
-          title: Text(tile._titleText),
-          subtitle: Text(tile._subtitleText),
-          semanticLabel: tile._label,
-        )
-      : AuraRadioListTile<String>(
-          value: tile.row.record.id,
-          groupValue: tile.row.selectedId,
-          onChanged: (_) => tile.row.onSelect?.call(),
-          title: Text(tile._titleText),
-          subtitle: Text(tile._subtitleText),
-          semanticLabel: tile._label,
-        );
+  Widget build(BuildContext context) =>
+      tile.row.multiple ? _ReferenceCheckbox(tile) : _ReferenceRadio(tile);
+}
+
+class const _ReferenceCheckbox(final _ReferenceTile tile)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: tile.row.selected,
+    onChanged: _select,
+    title: Text(tile._titleText),
+    subtitle: Text(tile._subtitleText),
+    semanticLabel: tile._label,
+  );
+
+  void _select(bool _) => tile.row.onSelect?.call();
+}
+
+class const _ReferenceRadio(final _ReferenceTile tile) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRadioListTile<String>(
+    value: tile.row.record.id,
+    groupValue: tile.row.selectedId,
+    onChanged: _select,
+    title: Text(tile._titleText),
+    subtitle: Text(tile._subtitleText),
+    semanticLabel: tile._label,
+  );
+
+  void _select(String? _) => tile.row.onSelect?.call();
 }
 
 class const _ReferenceChoiceRow({required final _ReferenceTile tile})

@@ -13,31 +13,52 @@ class const WorkspaceViewChatLayout({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final provider = workspaceOpenViewProvider(workspaceId, conversationId);
+    final forcedOpen = _useForcedOpen(ref);
+    void close() {
+      forcedOpen.value = false;
+      ref
+          .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
+          .close();
+      fallbackSidePanel.onClose();
+    }
+
+    return _ViewChatContent(this, close, forcedOpen: forcedOpen.value);
+  }
+
+  ValueNotifier<bool> _useForcedOpen(WidgetRef ref) {
     final forcedOpen = useMemoized(() => ValueNotifier(false), [
       workspaceId,
       conversationId,
     ]);
     final _ = useValueListenable(forcedOpen);
     useEffect(() => forcedOpen.dispose, [forcedOpen]);
-    ref.listen(provider, (previous, next) {
-      forcedOpen.value = next != null;
-    });
-    void close() {
-      forcedOpen.value = false;
-      ref.read(provider.notifier).close();
-      fallbackSidePanel.onClose();
-    }
+    ref.listen(
+      workspaceOpenViewProvider(workspaceId, conversationId),
+      (_, next) => forcedOpen.value = next != null,
+    );
+
+    return forcedOpen;
+  }
+}
+
+class const _ViewChatContent(
+  final WorkspaceViewChatLayout owner,
+  final VoidCallback close, {
+  required final bool forcedOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final fallback = owner.fallbackSidePanel;
 
     return ResponsiveConversationLayout(
-      mainContent: mainContent,
+      mainContent: owner.mainContent,
       sidePanel: .new(
-        visible: fallbackSidePanel.visible || forcedOpen.value,
-        mounted: fallbackSidePanel.mounted || forcedOpen.value,
-        widthPercent: fallbackSidePanel.widthPercent,
-        onWidthChanged: fallbackSidePanel.onWidthChanged,
+        visible: fallback.visible || forcedOpen,
+        mounted: fallback.mounted || forcedOpen,
+        widthPercent: fallback.widthPercent,
+        onWidthChanged: fallback.onWidthChanged,
         onClose: close,
-        builder: fallbackSidePanel.builder,
+        builder: fallback.builder,
       ),
     );
   }
