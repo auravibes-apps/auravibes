@@ -476,80 +476,43 @@ Future<void> _saveColumnWidths(
 String _columnWidthKey(String workspaceId, String tableId) =>
     'workspace_table_column_widths_${workspaceId}_$tableId';
 
-class const _Grid(final _Rows owner) extends ConsumerWidget {
+class const _Grid(final _Rows owner) extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final line = BorderSide(
-      color: Theme.of(context).colorScheme.outlineVariant,
-    );
-
-    return TapRegion(
-      child: Align(
-        alignment: .topLeft,
+  Widget build(BuildContext context) => TapRegion(
+    onTapOutside: _clearSelection,
+    child: Align(
+      alignment: .topLeft,
+      child: SingleChildScrollView(
         child: SingleChildScrollView(
-          child: SingleChildScrollView(
-            scrollDirection: .horizontal,
-            child: DataTable(
-              columns: [
-                for (final column in owner.visible)
-                  DataColumn(
-                    label: _ColumnHeading(
-                      column: column,
-                      width:
-                          owner.draft.columnWidths.value[column.id] ??
-                          _defaultColumnWidth,
-                      onResize: (width) => owner.draft.columnWidths.value = {
-                        ...owner.draft.columnWidths.value,
-                        column.id: width,
-                      },
-                      onResizeEnd: () => unawaited(
-                        _saveColumnWidths(
-                          ref,
-                          owner.browser.workspaceId,
-                          owner.table.id,
-                          owner.draft.columnWidths.value,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (owner.table.canManage && owner.browser.onAddColumn != null)
-                  DataColumn(label: _AddColumnMenu(owner)),
-              ],
-              dataRowMaxHeight: .infinity,
-              horizontalMargin: 0,
-              columnSpacing: 0,
-              rows: [
-                for (final record in owner.records)
-                  _GridRecord(
-                    owner,
-                    record,
-                    Theme.of(context).colorScheme,
-                  ).create(),
-                if (owner.table.canEditRecords &&
-                    owner.browser.onAddRow != null)
-                  DataRow(
-                    cells: [
-                      DataCell(_AddEmptyRecord(owner)),
-                      for (var i = 1; i < owner.visible.length; i++)
-                        DataCell.empty,
-                      if (owner.table.canManage &&
-                          owner.browser.onAddColumn != null)
-                        DataCell.empty,
-                    ],
-                  ),
-              ],
-              border: .new(
-                bottom: line,
-                horizontalInside: line,
-                verticalInside: line,
-              ),
-            ),
-          ),
+          scrollDirection: .horizontal,
+          child: _GridDataTable(this),
         ),
       ),
-      onTapOutside: _clearSelection,
-    );
-  }
+    ),
+  );
+
+  List<DataColumn> _columns() => [
+    for (final column in owner.visible)
+      DataColumn(label: _ResizableColumnHeading(owner, column)),
+    if (owner.table.canManage && owner.browser.onAddColumn != null)
+      DataColumn(label: _AddColumnMenu(owner)),
+  ];
+
+  List<DataRow> _rows(BuildContext context) => [
+    for (final record in owner.records)
+      _GridRecord(owner, record, Theme.of(context).colorScheme).create(),
+    if (owner.table.canEditRecords && owner.browser.onAddRow != null)
+      _emptyRow(),
+  ];
+
+  DataRow _emptyRow() => DataRow(
+    cells: [
+      DataCell(_AddEmptyRecord(owner)),
+      for (var i = 1; i < owner.visible.length; i++) DataCell.empty,
+      if (owner.table.canManage && owner.browser.onAddColumn != null)
+        DataCell.empty,
+    ],
+  );
 
   void _clearSelection(PointerDownEvent _) {
     if (owner.draft.editing.value) {
@@ -558,6 +521,51 @@ class const _Grid(final _Rows owner) extends ConsumerWidget {
       owner.draft.active.value = null;
     }
   }
+}
+
+class const _GridDataTable(final _Grid grid) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final line = BorderSide(
+      color: Theme.of(context).colorScheme.outlineVariant,
+    );
+
+    return DataTable(
+      columns: grid._columns(),
+      dataRowMaxHeight: .infinity,
+      horizontalMargin: 0,
+      columnSpacing: 0,
+      rows: grid._rows(context),
+      border: .new(bottom: line, horizontalInside: line, verticalInside: line),
+    );
+  }
+}
+
+class const _ResizableColumnHeading(
+  final _Rows owner,
+  final WorkspaceColumn column,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _ColumnHeading(
+    column: column,
+    width: owner.draft.columnWidths.value[column.id] ?? _defaultColumnWidth,
+    onResize: _resize,
+    onResizeEnd: () => _save(ref),
+  );
+
+  void _resize(double width) => owner.draft.columnWidths.value = {
+    ...owner.draft.columnWidths.value,
+    column.id: width,
+  };
+
+  void _save(WidgetRef ref) => unawaited(
+    _saveColumnWidths(
+      ref,
+      owner.browser.workspaceId,
+      owner.table.id,
+      owner.draft.columnWidths.value,
+    ),
+  );
 }
 
 class const _ColumnHeading({
