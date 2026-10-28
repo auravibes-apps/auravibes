@@ -893,71 +893,29 @@ class const _SpreadsheetCell(
   }
 
   KeyEventResult _key(FocusNode _, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape &&
-        _editing) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final handled = _editingKey(event.logicalKey);
+    if (handled != null) return handled;
+    if (!_editing && _isGridNavigationKey(event.logicalKey)) {
+      return _GridNavigator(owner, record.id, column.id).move(event.logicalKey);
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  KeyEventResult? _editingKey(LogicalKeyboardKey key) {
+    if (key == LogicalKeyboardKey.escape && _editing) {
       _cancel();
 
       return KeyEventResult.handled;
     }
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.enter &&
-        _canEdit) {
+    if (key == LogicalKeyboardKey.enter && _canEdit) {
       _edit();
 
       return KeyEventResult.handled;
     }
-    if (event is KeyDownEvent &&
-        !_editing &&
-        _isGridNavigationKey(event.logicalKey)) {
-      final rows = owner.records;
-      final columns = owner.visible;
-      final rowIndex = rows.indexWhere((row) => row.id == record.id);
-      final columnIndex = columns.indexWhere((item) => item.id == column.id);
-      var nextRow = rowIndex;
-      var nextColumnIndex = columnIndex;
-      switch (event.logicalKey) {
-        case .arrowLeft:
-          nextColumnIndex--;
-        case .arrowRight:
-          nextColumnIndex++;
-        case .arrowUp:
-          nextRow--;
-        case .arrowDown:
-          nextRow++;
-        case .tab:
-          if (HardwareKeyboard.instance.isShiftPressed) {
-            if (nextColumnIndex == 0) {
-              nextRow--;
-              nextColumnIndex = columns.length - 1;
-            } else {
-              nextColumnIndex--;
-            }
-          } else if (nextColumnIndex == columns.length - 1) {
-            nextRow++;
-            nextColumnIndex = 0;
-          } else {
-            nextColumnIndex++;
-          }
-      }
-      if (nextRow >= 0 &&
-          nextRow < rows.length &&
-          nextColumnIndex >= 0 &&
-          nextColumnIndex < columns.length) {
-        final nextRecord = rows[nextRow];
-        final nextColumn = columns[nextColumnIndex];
-        owner.draft.active.value = (
-          record: nextRecord.id,
-          column: nextColumn.id,
-        );
-        owner.draft.focusNodes.value[_focusKey(nextRecord.id, nextColumn.id)]
-            ?.requestFocus();
 
-        return KeyEventResult.handled;
-      }
-    }
-
-    return KeyEventResult.ignored;
+    return null;
   }
 
   void _cancel() {
@@ -998,6 +956,72 @@ class const _SpreadsheetCell(
       ..invalidate(workspaceReferencedRecordProvider)
       ..invalidate(workspaceReferencesUsecaseProvider(workspaceId));
   }
+}
+
+class const _GridNavigator(
+  final _Rows owner,
+  final String recordId,
+  final String columnId,
+) {
+  int get _rowIndex => owner.records.indexWhere((item) => item.id == recordId);
+  int get _columnIndex =>
+      owner.visible.indexWhere((item) => item.id == columnId);
+
+  KeyEventResult move(LogicalKeyboardKey key) {
+    final target = _target(key);
+    if (!_contains(target, owner.records.length, owner.visible.length)) {
+      return KeyEventResult.ignored;
+    }
+
+    return _activate(owner.records[target.row], owner.visible[target.column]);
+  }
+
+  ({int row, int column}) _target(LogicalKeyboardKey key) =>
+      _gridTarget(key, _rowIndex, _columnIndex, owner.visible.length);
+
+  bool _contains(({int row, int column}) target, int rows, int columns) =>
+      target.row >= 0 &&
+      target.row < rows &&
+      target.column >= 0 &&
+      target.column < columns;
+
+  KeyEventResult _activate(WorkspaceRecord record, WorkspaceColumn column) {
+    final draft = owner.draft;
+    draft.active.value = (record: record.id, column: column.id);
+    draft.focusNodes.value[_focusKey(record.id, column.id)]?.requestFocus();
+
+    return KeyEventResult.handled;
+  }
+}
+
+({int row, int column}) _gridTarget(
+  LogicalKeyboardKey key,
+  int row,
+  int column,
+  int count,
+) {
+  if (key == LogicalKeyboardKey.tab) return _gridTabTarget(row, column, count);
+  if (key == LogicalKeyboardKey.arrowLeft) {
+    return (row: row, column: column - 1);
+  }
+  if (key == LogicalKeyboardKey.arrowRight) {
+    return (row: row, column: column + 1);
+  }
+  if (key == LogicalKeyboardKey.arrowUp) return (row: row - 1, column: column);
+
+  return (row: row + 1, column: column);
+}
+
+({int row, int column}) _gridTabTarget(int row, int column, int count) {
+  if (HardwareKeyboard.instance.isShiftPressed) {
+    return column == 0
+        ? (row: row - 1, column: count - 1)
+        : (row: row, column: column - 1);
+  }
+
+  return column == count - 1
+      ? (row: row + 1, column: 0)
+      : (row: row, column: column + 1);
 }
 
 String _focusKey(String recordId, String columnId) => '$recordId:$columnId';

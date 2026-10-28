@@ -545,6 +545,11 @@ void main() {
       find.byKey(const ValueKey('workspace_cell_keyboard-row_label')),
     );
     final _ = await tester.sendKeyEvent(.arrowRight);
+    final _ = await tester.sendKeyDownEvent(.shiftLeft);
+    final _ = await tester.sendKeyEvent(.tab);
+    final _ = await tester.sendKeyUpEvent(.shiftLeft);
+    final _ = await tester.sendKeyEvent(.tab);
+    final _ = await tester.sendKeyEvent(.arrowDown);
     final _ = await tester.sendKeyEvent(.enter);
     final _ = await tester.pumpAndSettle();
 
