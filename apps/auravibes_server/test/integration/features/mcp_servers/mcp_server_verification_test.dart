@@ -569,7 +569,7 @@ void main() {
         expect((await fixture.counts()).receipts, 0);
       },
     );
-  });
+  }, rollbackDatabase: RollbackDatabase.disabled);
 }
 
 Matcher _cloudError(CloudWorkspaceErrorCode code) =>

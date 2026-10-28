@@ -109,7 +109,9 @@ class McpOAuthTokenResolver {
               snapshot,
               transaction,
             );
-            exchangeFuture = exchange(credentials!);
+            exchangeFuture = Future.sync(() => exchange(credentials!));
+            // The exchange can fail before the dispatch transaction commits.
+            exchangeFuture.ignore();
           });
         } else {
           final tokenEndpoint = McpServerPolicy.validateUri(

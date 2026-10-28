@@ -2,12 +2,10 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/tool_argument_validator.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
-import 'package:auravibes_engine/src/workspace_context_selection.dart';
-import 'package:auravibes_engine/src/workspace_created_context.dart';
 
 export 'package:auravibes_engine/src/workspace_context_selection.dart';
 export 'package:auravibes_engine/src/workspace_created_context.dart'
-    show workspaceTargetKind;
+    show workspaceCreatedContext, workspaceTargetKind;
 
 /// Projects only known failure categories from stored tool output.
 Map<String, Object?> workspaceFailureContext(String? raw) {
@@ -311,7 +309,7 @@ Map<String, Object?> workspaceToolArgumentsForContext(
 }
 
 /// Only fixed action names may survive prompt redaction.
-String workspaceContextAction(Object? input) {
+String workspaceContextAction(Object input) {
   final action = input is Map ? input['action'] : null;
   return action is String && _workspaceContextActions.contains(action)
       ? action
@@ -885,51 +883,5 @@ bool workspaceCommandNeedsApproval(Map<String, dynamic> arguments) => !{
   'updateRecord',
 }.contains(arguments['action']);
 
-/// Projects a created item into the target used by legacy workspace commands.
-WorkspaceContextSelection workspaceCreatedContext(
-  WorkspaceContextSelection selection,
-  List<Map<String, Object?>> created,
-  Map<String, dynamic> arguments, {
-  String? targetKind,
-}) {
-  return WorkspaceCreatedContext(
-    selection,
-    created,
-  ).resolve(arguments, targetKind: targetKind);
-}
-
 const workspaceContextUnavailable =
     'Workspace content is unavailable with the current workspace permissions.';
-
-/// Hosts reauthorize this read before replaying a stored workspace tool result.
-Map<String, dynamic> workspaceContextReadArguments(
-  Map<String, dynamic> input,
-  Object? output,
-) {
-  if (input['action'] == 'readDirectory') {
-    return {
-      'action': 'readDirectory',
-      if (input['path'] case final String path) 'path': path,
-      if (input['pathRegex'] case final String pathRegex)
-        'pathRegex': pathRegex,
-      if (input['nameRegex'] case final String nameRegex)
-        'nameRegex': nameRegex,
-    };
-  }
-  final result = output is Map<String, dynamic>
-      ? output
-      : const <String, dynamic>{};
-  final created = (input['action'] as String? ?? '').startsWith('create');
-  final id = created && result['kind'] == 'table'
-      ? null
-      : created
-      ? result['id']
-      : input['id'];
-  final tableId = switch ((created, result['kind'])) {
-    (true, 'table') => result['id'],
-    (true, 'record') => result['tableId'],
-    _ => input['tableId'],
-  };
-
-  return {'action': 'read', 'id': ?id, 'tableId': ?tableId};
-}

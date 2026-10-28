@@ -2,16 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-
-/// Redacts stored workspace results; it never re-reads workspace data.
-class const ProjectWorkspaceChatContextUsecase(
-  WorkspaceConversationToolsUsecase _,
-) {
-  Future<List<MessageEntity>> call(List<MessageEntity> messages) async =>
-      redactWorkspaceToolHistory(messages);
-}
 
 MessageToolCallEntity workspaceToolCallForContext(
   MessageToolCallEntity call,

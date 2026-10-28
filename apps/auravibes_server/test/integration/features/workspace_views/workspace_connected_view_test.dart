@@ -467,7 +467,19 @@ void main() {
           expect(calls, 3);
           await expectLater(
             endpoint.readConnected(memberSession, workspace.id!, 'view'),
-            throwsA(isA<CloudWorkspaceException>()),
+            throwsA(
+              connectedOnly
+                  ? isA<CloudWorkspaceException>().having(
+                      (error) => error.code,
+                      'code',
+                      CloudWorkspaceErrorCode.permissionDenied,
+                    )
+                  : isA<WorkspaceConnectedReadException>().having(
+                      (error) => error.code,
+                      'code',
+                      'denied',
+                    ),
+            ),
           );
           expect(calls, 3);
           revoke = false;
@@ -633,7 +645,7 @@ void main() {
               'erased-form',
             ),
           );
-          expect(erasedAction['status'], 'completed');
+          expect(erasedAction['status'], 'uncertain');
           expect(erasedAction.containsKey('result'), isFalse);
           expect(calls, 7);
           final uncertainWrite = await ConnectorWrite.db.findFirstRow(
@@ -668,5 +680,5 @@ void main() {
         },
       );
     }
-  });
+  }, rollbackDatabase: RollbackDatabase.disabled);
 }

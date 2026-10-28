@@ -9,9 +9,9 @@ import 'package:auravibes_app/data/repositories/local_workspace_table_repository
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_history_redaction.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/native.dart';
@@ -262,8 +262,8 @@ void main() {
         updatedAt: .new(2026),
         metadata: .new(toolCalls: [storedCall]),
       );
-      final projection = ProjectWorkspaceChatContextUsecase(tools);
-      final authorized = await projection([message]);
+      const projection = redactWorkspaceToolHistory;
+      final authorized = projection([message]);
       expect(
         authorized.single.metadata?.toolCalls.single.responseRaw,
         workspaceContextUnavailable,
@@ -273,7 +273,7 @@ void main() {
         containsPair('content', 'Hello'),
       );
       final _ = await context.save(first.id, 'revoke', null);
-      final revokedProjection = await projection([message]);
+      final revokedProjection = projection([message]);
       expect(
         revokedProjection.single.metadata?.toolCalls.single.responseRaw,
         workspaceContextUnavailable,

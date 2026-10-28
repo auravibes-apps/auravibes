@@ -14,9 +14,9 @@ import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_view
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_history_redaction.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,9 +49,7 @@ void main() {
         ],
       ),
     );
-    final result = await ProjectWorkspaceChatContextUsecase(
-      fixture.service(fixture.tables),
-    )([message]);
+    final result = redactWorkspaceToolHistory([message]);
     final call = result.single.metadata?.toolCalls.single;
     expect(call?.responseRaw, workspaceContextUnavailable);
     expect(call?.argumentsRaw, isNot(contains('private-table')));

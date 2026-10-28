@@ -69,3 +69,16 @@ class const WorkspaceCreatedContext(
         if (resource['id'] case final String recordId) recordId,
   }.toList();
 }
+
+/// Projects a created item into the target used by legacy workspace commands.
+WorkspaceContextSelection workspaceCreatedContext(
+  WorkspaceContextSelection selection,
+  List<Map<String, Object?>> created,
+  Map<String, dynamic> arguments, {
+  String? targetKind,
+}) {
+  return WorkspaceCreatedContext(
+    selection,
+    created,
+  ).resolve(arguments, targetKind: targetKind);
+}

@@ -16,9 +16,9 @@ import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_view
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_command_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_history_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/native.dart';
@@ -654,7 +654,7 @@ void main() {
         ),
       ),
     ];
-    final projection = ProjectWorkspaceChatContextUsecase(commands);
+    const projection = redactWorkspaceToolHistory;
     final forgedUpdateHistory = [
       MessageEntity(
         id: 'stored-forged-update',
@@ -684,7 +684,7 @@ void main() {
         ),
       ),
     ];
-    final fresh = await projection(history);
+    final fresh = projection(history);
     expect(
       (fresh.single.metadata ?? (throw StateError('Missing metadata')))
           .toolCalls
@@ -707,7 +707,7 @@ void main() {
       isNot(contains('Raw secret')),
     );
     final historicalUpdate =
-        ((await projection(forgedUpdateHistory)).single.metadata ??
+        (projection(forgedUpdateHistory).single.metadata ??
                 (throw StateError('Missing metadata')))
             .toolCalls
             .single;
@@ -722,7 +722,7 @@ void main() {
     expect(historicalUpdate.argumentsRaw, isNot(contains(table.id)));
     expect(historicalUpdate.argumentsRaw, isNot(contains('forged-row')));
     final failedCurrentUpdate =
-        (await projection([
+        projection([
           MessageEntity(
             id: 'failed-update-user',
             conversationId: first.id,
@@ -760,7 +760,7 @@ void main() {
               ],
             ),
           ),
-        ])).last.metadata?.toolCalls.single ??
+        ]).last.metadata?.toolCalls.single ??
         (throw StateError('Missing metadata'));
     expect(failedCurrentUpdate.argumentsRaw, contains(table.id));
     expect(failedCurrentUpdate.argumentsRaw, contains(selected.id));
@@ -798,7 +798,7 @@ void main() {
       database,
       'one',
     ).save(first.id, 'trusted-revoke', null);
-    final revoked = await projection(history);
+    final revoked = projection(history);
     expect(
       (revoked.single.metadata ?? (throw StateError('Missing metadata')))
           .toolCalls
@@ -814,7 +814,7 @@ void main() {
       isNot(contains('Selected')),
     );
     final revokedUpdate =
-        ((await projection(forgedUpdateHistory)).single.metadata ??
+        (projection(forgedUpdateHistory).single.metadata ??
                 (throw StateError('Missing metadata')))
             .toolCalls
             .single;
@@ -1015,9 +1015,7 @@ void main() {
     );
     final fork = await conversations.forkConversation(chat.id);
     final forkHistory = await messages.getMessagesByConversation(fork.id);
-    final forkProjection = await ProjectWorkspaceChatContextUsecase(service())(
-      forkHistory,
-    );
+    final forkProjection = redactWorkspaceToolHistory(forkHistory);
     final forkCalls = forkProjection
         .expand(
           (message) => message.metadata?.toolCalls ?? <MessageToolCallEntity>[],
