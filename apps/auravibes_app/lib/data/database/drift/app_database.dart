@@ -286,6 +286,10 @@ extension on AppDatabase {
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
+    await _runWorkspaceUpgrades(m, from);
+  }
+
+  Future<void> _runWorkspaceUpgrades(Migrator m, int from) async {
     await _upgradeWorkspaceContentSchema(m, from);
     await _upgradeWorkspaceAttachmentDeletionsSchema(m, from);
     await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
