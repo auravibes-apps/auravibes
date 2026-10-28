@@ -501,7 +501,7 @@ void main() {
     expect((await trash.list()).map((batch) => batch.target.id), [target.id]);
   });
   test(
-    'restore rejects newly required values without rewriting current content',
+    'restore accepts an empty value after a column is marked required',
     () async {
       final fixture = await _fixture();
       var table = await fixture.tables.create(name: 'Data', labelName: 'Name');
@@ -523,21 +523,17 @@ void main() {
         table: table,
         column: .fromJson({...extra.toJson(), 'required': true}),
       );
-      await expectLater(
-        fixture.history.restore(
-          .new(
-            kind: .record,
-            id: original.id,
-            tableId: table.id,
-            revision: current.revision,
-          ),
-          1,
+      await fixture.history.restore(
+        .new(
+          kind: .record,
+          id: original.id,
+          tableId: table.id,
+          revision: current.revision,
         ),
-        throwsA(isA<WorkspaceTableException>()),
+        1,
       );
       expect((await fixture.tables.record(table.id, original.id)).values, {
-        table.labelColumnId: 'Current',
-        extra.id: 'Required now',
+        table.labelColumnId: 'Original',
       });
       expect(
         (await fixture.history.history(
@@ -548,7 +544,7 @@ void main() {
             revision: current.revision,
           ),
         )).length,
-        2,
+        3,
       );
     },
   );
