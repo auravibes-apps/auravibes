@@ -757,6 +757,30 @@ const _workspaceSetupDynamicKeys = <String>{
 /// Dynamic translations are listed by source call site and finite key family.
 const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
+    family: 'workspace-tool-name-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'utils/tool_name_formatter.dart',
+        method: 'tr',
+        keyExpression: '[toolIdentifier]',
+      ),
+    ],
+    keys: {
+      'workspace_tool_names.read_directory',
+      'workspace_tool_names.open_file_or_view',
+      'workspace_tool_names.read_table',
+      'workspace_tool_names.create_folder',
+      'workspace_tool_names.rename_folder',
+      'workspace_tool_names.create_table',
+      'workspace_tool_names.rename_table',
+      'workspace_tool_names.add_row',
+      'workspace_tool_names.update_row',
+      'workspace_tool_names.edit_column',
+      'workspace_tool_names.create_view',
+      'workspace_tool_names.edit_view',
+    },
+  ),
+  LocalizationDynamicRegistry(
     family: 'workspace-history-approval',
     sites: [
       DynamicTranslationSite(
