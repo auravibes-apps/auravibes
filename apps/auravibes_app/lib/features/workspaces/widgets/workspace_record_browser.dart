@@ -1253,42 +1253,42 @@ class const _ComplexCellOverlay(
 ) extends HookWidget {
   @override
   Widget build(BuildContext context) {
-    final portal = useMemoized(OverlayPortalController.new);
-    void showPortal(Duration _) {
-      if (context.mounted) portal.show();
-    }
-
-    void Function()? effect() {
-      WidgetsBinding.instance.addPostFrameCallback(showPortal);
-
-      return null;
-    }
-
-    useEffect(effect, const []);
+    final portal = _useOverlayPortal(context);
 
     return OverlayPortal(
       controller: portal,
-      overlayChildBuilder: (overlayContext) => _ComplexOverlayLayout(
-        anchorContext: context,
-        cell: cell,
-        action: action,
-        ref: ref,
-        link: link,
-      ),
+      overlayChildBuilder: (overlayContext) =>
+          _ComplexOverlayLayout(anchorContext: context, editor: this),
       child: ClipRect(child: _Cell(cell.owner, cell.record, cell.column)),
     );
   }
 }
 
+OverlayPortalController _useOverlayPortal(BuildContext context) {
+  final portal = useMemoized(OverlayPortalController.new);
+  VoidCallback? show() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) portal.show();
+    });
+
+    return null;
+  }
+
+  useEffect(show, const []);
+
+  return portal;
+}
+
 class const _ComplexOverlayLayout({
   required final BuildContext anchorContext,
-  required final _SpreadsheetCell cell,
-  required final WorkspaceTableAction action,
-  required final WidgetRef ref,
-  required final LayerLink link,
+  required final _ComplexCellOverlay editor,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final cell = editor.cell;
+    final action = editor.action;
+    final ref = editor.ref;
+    final link = editor.link;
     final owner = cell.owner;
     final pending = action.pending;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
