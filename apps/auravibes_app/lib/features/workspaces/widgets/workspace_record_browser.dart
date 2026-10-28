@@ -570,23 +570,34 @@ class const _ColumnHeading({
         ),
         const SizedBox(width: 8),
         Expanded(child: Text(column.name, overflow: .ellipsis)),
-        MouseRegion(
-          cursor: SystemMouseCursors.resizeLeftRight,
-          child: GestureDetector(
-            child: Icon(
-              Icons.drag_indicator,
-              size: _resizeIconSize,
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
-            onHorizontalDragUpdate: (event) => onResize(
-              (width + event.delta.dx).clamp(_minColumnWidth, _maxColumnWidth),
-            ),
-            onHorizontalDragEnd: (_) => onResizeEnd(),
-            behavior: .opaque,
-          ),
-        ),
+        _ColumnResizeHandle(width, onResize, onResizeEnd),
       ],
     ),
+  );
+}
+
+class const _ColumnResizeHandle(
+  final double width,
+  final ValueChanged<double> onResize,
+  final VoidCallback onResizeEnd,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.resizeLeftRight,
+    child: GestureDetector(
+      child: Icon(
+        Icons.drag_indicator,
+        size: _resizeIconSize,
+        color: Theme.of(context).colorScheme.outlineVariant,
+      ),
+      onHorizontalDragUpdate: _resize,
+      onHorizontalDragEnd: (_) => onResizeEnd(),
+      behavior: .opaque,
+    ),
+  );
+
+  void _resize(DragUpdateDetails event) => onResize(
+    (width + event.delta.dx).clamp(_minColumnWidth, _maxColumnWidth),
   );
 }
 
