@@ -734,154 +734,14 @@ class const _SpreadsheetCell(
   bool get _selected =>
       owner.draft.active.value == (record: record.id, column: column.id);
   bool get _editing => _selected && owner.draft.editing.value;
-  bool get _guide {
-    final active = owner.draft.active.value;
-
-    return active != null &&
-        (active.record == record.id || active.column == column.id);
-  }
-
-  bool get _showRecordAction =>
-      column.id == owner.table.labelColumnId &&
-      (owner.draft.hovered.value == record.id ||
-          owner.draft.selected.value.containsKey(record.id) ||
-          _selected);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = WorkspaceTableActions.use(context);
-    final colors = Theme.of(context).colorScheme;
     final link = useMemoized(LayerLink.new);
     final focus = useFocusNode();
-    useEffect(() => _registerFocus(focus), [focus]);
+    _useCellFocus(this, focus);
 
-    return MouseRegion(
-      onEnter: _hover,
-      onExit: _leave,
-      child: Focus(
-        child: Listener(
-          onPointerDown: (event) {
-            owner.draft.cellPointer.value = event.pointer;
-            _select(context, focus);
-          },
-          child: GestureDetector(
-            child: CompositedTransformTarget(
-              link: link,
-              child: Container(
-                key: ValueKey('workspace_cell_${record.id}_${column.id}'),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _color(colors),
-                  border: _border(colors),
-                ),
-                width:
-                    owner.draft.columnWidths.value[column.id] ??
-                    _defaultColumnWidth,
-                height: _cellHeight,
-                child: DefaultTextStyle.merge(
-                  style: .new(
-                    color: _editing
-                        ? colors.onPrimaryContainer
-                        : colors.onSurface,
-                  ),
-                  child: _cellContent(action, ref, link),
-                ),
-              ),
-            ),
-            onDoubleTap: _canEdit && column.type != .checkbox ? _edit : null,
-            onLongPress: owner.table.canEditRecords && column.type != .checkbox
-                ? _selectRow
-                : null,
-            behavior: .opaque,
-          ),
-        ),
-        focusNode: focus,
-        onFocusChange: _focusChanged,
-        onKeyEvent: _key,
-      ),
-    );
-  }
-
-  VoidCallback _registerFocus(FocusNode focus) {
-    final key = _focusKey(record.id, column.id);
-    final nodes = owner.draft.focusNodes.value;
-    nodes[key] = focus;
-
-    return () {
-      if (identical(nodes[key], focus)) {
-        final _ = nodes.remove(key);
-      }
-    };
-  }
-
-  void _hover(PointerEnterEvent _) => owner.draft.hovered.value = record.id;
-  void _focusChanged(bool hasFocus) {
-    if (hasFocus || !_selected) return;
-    if (owner.draft.editing.value) {
-      owner.draft.nextSelection.value ??= () => owner.draft.active.value = null;
-    } else if (!owner.draft.draftOpen.value) {
-      owner.draft.active.value = null;
-    }
-  }
-
-  void _leave(PointerExitEvent _) {
-    if (owner.draft.hovered.value == record.id) {
-      owner.draft.hovered.value = null;
-    }
-  }
-
-  Color? _color(ColorScheme colors) {
-    if (_editing) return colors.primaryContainer;
-    if (_selected) return colors.primary.withValues(alpha: 0.12);
-    if (_guide) return colors.surfaceContainerHighest;
-
-    return null;
-  }
-
-  Border? _border(ColorScheme colors) {
-    if (!_selected) return null;
-
-    return Border.all(color: colors.primary, width: _editing ? 3 : 1);
-  }
-
-  void _selectRow() {
-    if (owner.draft.draftOpen.value) return;
-    owner.draft.toggle(record);
-  }
-
-  Widget _cellContent(
-    WorkspaceTableAction action,
-    WidgetRef ref,
-    LayerLink link,
-  ) {
-    if (column.type == .checkbox) return _CheckboxCell(this, action, ref);
-    if (column.type == .url) return _UrlCell(this, showMenu: _selected);
-    if (_editing) return _SpreadsheetEditor(this, action, ref, link);
-
-    return _CellContent(this);
-  }
-
-  void _select(BuildContext context, FocusNode focus) {
-    if (owner.draft.editing.value) {
-      if (_selected) return;
-      owner.draft.nextSelection.value = () {
-        if (!context.mounted) return;
-        _focus(focus);
-      };
-
-      return;
-    }
-    if (owner.isSelecting()) {
-      _selectRow();
-
-      return;
-    }
-    _focus(focus);
-  }
-
-  void _focus(FocusNode focus) {
-    owner.draft.active.value = (record: record.id, column: column.id);
-    focus.requestFocus();
+    return _CellFocus(this, focus, action, ref, link);
   }
 
   void _edit() {
@@ -930,32 +790,254 @@ class const _SpreadsheetCell(
     final usecase = await ref.read(
       workspaceTableUsecaseProvider(owner.browser.workspaceId).future,
     );
-    final _ = await usecase.updateRecord(
-      table: owner.table,
-      record: record,
-      values: owner.draft.values.value,
-    );
+    await _writeCell(usecase, this);
     if (!ref.context.mounted) return;
-    _finishSave(ref);
+    _finishCellSave(owner.draft, owner.browser.workspaceId, ref);
+  }
+}
+
+class const _CellSelection(final _SpreadsheetCell cell, final FocusNode focus) {
+  void select(BuildContext context) {
+    final owner = cell.owner;
+    if (owner.draft.editing.value) {
+      if (cell._selected) return;
+      owner.draft.nextSelection.value = () {
+        if (!context.mounted) return;
+        _focus();
+      };
+
+      return;
+    }
+    if (owner.isSelecting()) {
+      _selectCellRow(cell);
+
+      return;
+    }
+    _focus();
   }
 
-  void _finishSave(WidgetRef ref) {
-    final draft = owner.draft;
-    draft.editing.value = false;
-    draft.draftOpen.value = false;
-    final next = draft.nextSelection.value;
-    draft.nextSelection.value = null;
-    next?.call();
-    _refreshReferences(ref);
+  void _focus() {
+    cell.owner.draft.active.value = (
+      record: cell.record.id,
+      column: cell.column.id,
+    );
+    focus.requestFocus();
+  }
+}
+
+Future<void> _writeCell(
+  OrganizeWorkspaceTablesUsecase usecase,
+  _SpreadsheetCell cell,
+) async {
+  final owner = cell.owner;
+  final _ = await usecase.updateRecord(
+    table: owner.table,
+    record: cell.record,
+    values: owner.draft.values.value,
+  );
+}
+
+void _finishCellSave(_Draft draft, String workspaceId, WidgetRef ref) {
+  draft.editing.value = false;
+  draft.draftOpen.value = false;
+  final next = draft.nextSelection.value;
+  draft.nextSelection.value = null;
+  next?.call();
+  _refreshCellReferences(workspaceId, ref);
+}
+
+void _refreshCellReferences(String workspaceId, WidgetRef ref) {
+  ref
+    ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId))
+    ..invalidate(workspaceReferencedRecordProvider)
+    ..invalidate(workspaceReferencesUsecaseProvider(workspaceId));
+}
+
+void _useCellFocus(_SpreadsheetCell cell, FocusNode focus) {
+  useEffect(
+    () => _registerCellFocus(
+      cell.owner.draft,
+      _focusKey(cell.record.id, cell.column.id),
+      focus,
+    ),
+    [focus],
+  );
+}
+
+void _selectCellRow(_SpreadsheetCell cell) {
+  if (cell.owner.draft.draftOpen.value) return;
+  cell.owner.draft.toggle(cell.record);
+}
+
+VoidCallback _registerCellFocus(_Draft draft, String key, FocusNode focus) {
+  final nodes = draft.focusNodes.value;
+  nodes[key] = focus;
+
+  return () {
+    if (identical(nodes[key], focus)) {
+      final _ = nodes.remove(key);
+    }
+  };
+}
+
+bool _showRecordAction(_SpreadsheetCell cell) =>
+    cell.column.id == cell.owner.table.labelColumnId &&
+    (cell.owner.draft.hovered.value == cell.record.id ||
+        cell.owner.draft.selected.value.containsKey(cell.record.id) ||
+        cell._selected);
+
+class const _CellContentSelector(
+  final _SpreadsheetCell cell,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
+  final LayerLink link,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (cell.column.type == .checkbox) return _CheckboxCell(cell, action, ref);
+    if (cell.column.type == .url) {
+      return _UrlCell(cell, showMenu: cell._selected);
+    }
+    if (cell._editing) return _SpreadsheetEditor(cell, action, ref, link);
+
+    return _CellContent(cell);
+  }
+}
+
+class const _CellFocus(
+  final _SpreadsheetCell cell,
+  final FocusNode focus,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
+  final LayerLink link,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: _hover,
+    onExit: _leave,
+    child: Focus(
+      child: _CellInteraction(cell, focus, action, ref, link),
+      focusNode: focus,
+      onFocusChange: _focusChanged,
+      onKeyEvent: cell._key,
+    ),
+  );
+
+  void _focusChanged(bool hasFocus) {
+    final draft = cell.owner.draft;
+    if (hasFocus || !cell._selected) return;
+    if (draft.editing.value) {
+      draft.nextSelection.value ??= () => draft.active.value = null;
+    } else if (!draft.draftOpen.value) {
+      draft.active.value = null;
+    }
   }
 
-  void _refreshReferences(WidgetRef ref) {
-    final workspaceId = owner.browser.workspaceId;
-    ref
-      ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId))
-      ..invalidate(workspaceReferencedRecordProvider)
-      ..invalidate(workspaceReferencesUsecaseProvider(workspaceId));
+  void _hover(PointerEnterEvent _) =>
+      cell.owner.draft.hovered.value = cell.record.id;
+  void _leave(PointerExitEvent _) {
+    if (cell.owner.draft.hovered.value == cell.record.id) {
+      cell.owner.draft.hovered.value = null;
+    }
   }
+}
+
+class const _CellInteraction(
+  final _SpreadsheetCell cell,
+  final FocusNode focus,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
+  final LayerLink link,
+) extends StatelessWidget {
+  VoidCallback? get _doubleTap =>
+      cell._canEdit && cell.column.type != .checkbox ? cell._edit : null;
+  VoidCallback? get _longPress =>
+      cell.owner.table.canEditRecords && cell.column.type != .checkbox
+      ? () => _selectCellRow(cell)
+      : null;
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (event) => _select(context, event),
+    child: GestureDetector(
+      child: _CellBox(cell, action, ref, link),
+      onDoubleTap: _doubleTap,
+      onLongPress: _longPress,
+      behavior: .opaque,
+    ),
+  );
+
+  void _select(BuildContext context, PointerDownEvent event) {
+    cell.owner.draft.cellPointer.value = event.pointer;
+    _CellSelection(cell, focus).select(context);
+  }
+}
+
+class const _CellBox(
+  final _SpreadsheetCell cell,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
+  final LayerLink link,
+) extends StatelessWidget {
+  bool get _guide {
+    final active = cell.owner.draft.active.value;
+
+    return active != null &&
+        (active.record == cell.record.id || active.column == cell.column.id);
+  }
+
+  @override
+  Widget build(BuildContext context) => CompositedTransformTarget(
+    link: link,
+    child: _CellContainer(this, Theme.of(context).colorScheme),
+  );
+
+  Color? _color(ColorScheme colors) {
+    if (cell._editing) return colors.primaryContainer;
+    if (cell._selected) return colors.primary.withValues(alpha: 0.12);
+    if (_guide) return colors.surfaceContainerHighest;
+
+    return null;
+  }
+
+  Border? _border(ColorScheme colors) {
+    if (!cell._selected) return null;
+
+    return Border.all(color: colors.primary, width: cell._editing ? 3 : 1);
+  }
+}
+
+class const _CellContainer(final _CellBox box, final ColorScheme colors)
+    extends StatelessWidget {
+  Key get _key =>
+      ValueKey('workspace_cell_${box.cell.record.id}_${box.cell.column.id}');
+  double get _width =>
+      box.cell.owner.draft.columnWidths.value[box.cell.column.id] ??
+      _defaultColumnWidth;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    key: _key,
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: box._color(colors),
+      border: box._border(colors),
+    ),
+    width: _width,
+    height: _cellHeight,
+    child: _CellTextStyle(box, colors),
+  );
+}
+
+class const _CellTextStyle(final _CellBox box, final ColorScheme colors)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle.merge(
+    style: .new(
+      color: box.cell._editing ? colors.onPrimaryContainer : colors.onSurface,
+    ),
+    child: _CellContentSelector(box.cell, box.action, box.ref, box.link),
+  );
 }
 
 class const _GridNavigator(
@@ -1694,7 +1776,7 @@ class const _CellContent(final _SpreadsheetCell cell) extends StatelessWidget {
     fit: .expand,
     children: [
       ClipRect(child: _Cell(cell.owner, cell.record, cell.column)),
-      if (_canShowEdit || cell._showRecordAction)
+      if (_canShowEdit || _showRecordAction(cell))
         _CellActionOverlay(cell, showEdit: _canShowEdit),
     ],
   );
@@ -1723,7 +1805,7 @@ class const _CellActions(
     mainAxisSize: .min,
     children: [
       if (showEdit) _EditCellButton(cell),
-      if (cell._showRecordAction) _OpenRecordButton(cell),
+      if (_showRecordAction(cell)) _OpenRecordButton(cell),
     ],
   );
 }
