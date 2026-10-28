@@ -165,21 +165,29 @@ class const _FrameContent(
   Widget build(BuildContext context) => Column(
     children: [
       _Search(draft),
-      IgnorePointer(
-        ignoring: draft.draftOpen.value,
-        child: Column(
-          children: [
-            if (owner.table.canEditRecords) _BulkToolbar(owner, draft),
-            if (draft.controls.value) _Controls(owner, draft),
-          ],
-        ),
-      ),
+      _TableControls(owner, draft),
       Expanded(child: _RecordState(owner, draft, records)),
       IgnorePointer(
         ignoring: draft.draftOpen.value,
         child: _Pages(draft.query, more: records.value?.hasMore ?? false),
       ),
     ],
+  );
+}
+
+class const _TableControls(
+  final WorkspaceRecordBrowser owner,
+  final _Draft draft,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: draft.draftOpen.value,
+    child: Column(
+      children: [
+        if (owner.table.canEditRecords) _BulkToolbar(owner, draft),
+        if (draft.controls.value) _Controls(owner, draft),
+      ],
+    ),
   );
 }
 
