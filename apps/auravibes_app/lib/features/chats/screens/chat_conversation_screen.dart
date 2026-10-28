@@ -1457,8 +1457,9 @@ void _applySidePanelPreferences(
     panel.widthPercent.value = stored.widthPercent;
   }
   if (flags.visibilityChanged) return;
-  panel.mounted.value = stored.isOpenFor(conversationId);
-  panel.visible.value = stored.isOpenFor(conversationId);
+  final isOpen = stored.isOpenFor(conversationId);
+  panel.mounted.value = isOpen;
+  panel.visible.value = isOpen;
 }
 
 void _useBrowserActionSidebarEffect(
@@ -1605,8 +1606,6 @@ class const _LoadedChatConversationScreen({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sideValues = sidePanel.values;
-    final actions = sidePanel.actions;
     final workspaceTabs = useValueListenable(
       ref.watch(
         sidebarWorkspaceTabCountProvider((
@@ -1630,9 +1629,8 @@ class const _LoadedChatConversationScreen({
           data: data,
           actions: _chatConversationAppBarActions(
             data,
-            sideValues,
+            sidePanel,
             browserSession,
-            actions,
             workspaceTabs,
           ),
         ),
@@ -1643,20 +1641,19 @@ class const _LoadedChatConversationScreen({
 
 _ChatConversationAppBarActions _chatConversationAppBarActions(
   _LoadedChatConversationData data,
-  _LoadedSidePanelValues sideValues,
+  _LoadedConversationSidePanel sidePanel,
   BrowserSessionState? browserSession,
-  _LoadedSidePanelActions actions,
   int workspaceTabs,
 ) => .new(
   workspaceId: data.workspaceId,
   conversationId: data.conversation.id,
-  sidePanelVisible: sideValues.isVisible,
+  sidePanelVisible: sidePanel.values.isVisible,
   tabCount: _browserTabCount(
     browserSession,
-    sideValues.toolResultTabs,
+    sidePanel.values.toolResultTabs,
     workspaceTabs,
   ),
-  onSidebarToggle: actions.onToggle,
+  onSidebarToggle: sidePanel.actions.onToggle,
 );
 
 int? _browserTabCount(
