@@ -7,6 +7,10 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
 
+const _pickerMaximumWidth = 720.0;
+const _pickerMaximumHeight = 620.0;
+const _insetsPerAxis = 2;
+
 class const WorkspaceReferenceField({
   required final String workspaceId,
   required final WorkspaceTable table,
@@ -35,19 +39,7 @@ class const WorkspaceReferenceField({
   );
   Future<void> _pick(BuildContext context) => showDialog<void>(
     context: context,
-    builder: (context) {
-      final size = MediaQuery.sizeOf(context);
-      final inset = size.width < 600 ? 8.0 : 40.0;
-
-      return Dialog(
-        insetPadding: .all(inset),
-        child: SizedBox(
-          width: (size.width - inset * 2).clamp(0.0, 720.0),
-          height: (size.height - inset * 2).clamp(0.0, 620.0),
-          child: _ReferencePickerContent(field: this),
-        ),
-      );
-    },
+    builder: (context) => _ReferencePickerDialog(field: this),
   );
   void _selected(BuildContext context, List<String> ids) {
     if (ids.isEmpty) {
@@ -58,6 +50,34 @@ class const WorkspaceReferenceField({
     Navigator.of(context).pop();
   }
 }
+
+class const _ReferencePickerDialog({
+  required final WorkspaceReferenceField field,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final inset = size.width < 600 ? 8.0 : 40.0;
+    final dimensions = _pickerDimensions(size, inset);
+
+    return Dialog(
+      insetPadding: .all(inset),
+      child: SizedBox(
+        width: dimensions.width,
+        height: dimensions.height,
+        child: _ReferencePickerContent(field: field),
+      ),
+    );
+  }
+}
+
+({double width, double height}) _pickerDimensions(Size size, double inset) => (
+  width: (size.width - inset * _insetsPerAxis).clamp(0.0, _pickerMaximumWidth),
+  height: (size.height - inset * _insetsPerAxis).clamp(
+    0.0,
+    _pickerMaximumHeight,
+  ),
+);
 
 class const _ReferenceChoices({required final WorkspaceReferenceField field})
     extends StatelessWidget {

@@ -114,47 +114,60 @@ class const _SingleSelectInput({required final WorkspaceRecordField field})
 
 class const _MultiSelectInput({required final WorkspaceRecordField field})
     extends StatelessWidget {
+  static const _chipSpacing = 4.0;
   List<String> get _selection => switch (field.value) {
     final List<dynamic> selected => selected.whereType<String>().toList(),
     _ => [],
   };
   @override
   Widget build(BuildContext context) => PopupMenuButton<String>(
-    itemBuilder: (_) => [
-      for (final option in field.column.options)
-        CheckedPopupMenuItem(
-          value: option,
-          checked: _selection.contains(option),
-          child: Text(option),
-        ),
-    ],
+    itemBuilder: _options,
     onSelected: _toggle,
     tooltip: field.column.name,
-    child: Row(
-      children: [
-        Expanded(
-          child: Wrap(
-            spacing: 4,
-            runSpacing: 4,
-            children: [
-              if (_selection.isEmpty)
-                const TextLocale(LocaleKeys.workspace_items_missing_value)
-              else
-                for (final value in _selection) Chip(label: Text(value)),
-            ],
-          ),
-        ),
-        const Icon(Icons.arrow_drop_down),
-      ],
-    ),
+    child: _MultiSelectValues(values: _selection),
     enabled: !field.disabled,
   );
+
+  List<PopupMenuEntry<String>> _options(BuildContext _) => [
+    for (final option in field.column.options)
+      CheckedPopupMenuItem(
+        value: option,
+        checked: _selection.contains(option),
+        child: Text(option),
+      ),
+  ];
 
   void _toggle(String option) {
     final values = _selection;
     if (!values.remove(option)) values.add(option);
     field.onChanged(values);
   }
+}
+
+class const _MultiSelectValues({required final List<String> values})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: _MultiSelectChips(values: values)),
+      const Icon(Icons.arrow_drop_down),
+    ],
+  );
+}
+
+class const _MultiSelectChips({required final List<String> values})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: _MultiSelectInput._chipSpacing,
+    runSpacing: _MultiSelectInput._chipSpacing,
+    children: [
+      if (values.isEmpty)
+        const TextLocale(LocaleKeys.workspace_items_missing_value)
+      else
+        for (final value in values) Chip(label: Text(value)),
+    ],
+  );
 }
 
 class const _TextInput({

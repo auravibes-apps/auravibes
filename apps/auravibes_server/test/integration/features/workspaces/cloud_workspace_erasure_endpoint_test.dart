@@ -403,6 +403,109 @@ void main() {
       },
     );
 
+    test(
+      'missing erasure state stays blocked after worker refresh and retry',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        final repository = workspace_repo.CloudWorkspaceRepository();
+        final missing = await repository.createWorkspace(
+          session,
+          name: 'Missing',
+          ownerUserId: userId,
+          now: now,
+        );
+        final unmarked = await repository.createWorkspace(
+          session,
+          name: 'Unmarked',
+          ownerUserId: userId,
+          now: now,
+        );
+        await WorkspaceMember.db.deleteWhere(
+          session,
+          where: (row) => row.workspaceId.equals(missing.id!),
+        );
+        await CloudWorkspace.db.deleteRow(session, missing);
+        for (final workspace in [missing, unmarked]) {
+          await WorkspaceErasureRequest.db.insertRow(
+            session,
+            WorkspaceErasureRequest(
+              workspaceId: workspace.id!,
+              workspaceName: workspace.name,
+              ownerUserId: userId,
+              requestId: 'orphan-${workspace.id}-$userId',
+              requestHash: 'synthetic',
+              state: 'pending',
+              requestedAt: now,
+            ),
+          );
+        }
+        final lease = await const WorkerCoordinatorRepository()
+            .acquireCoordinator(
+              session,
+              ownerId: 'orphan-test-$userId',
+            );
+        expect(lease, isNotNull);
+        await WorkspaceErasureCleanup(session).purgeReady(lease!);
+        for (final workspace in [missing, unmarked]) {
+          final requestId = 'orphan-${workspace.id}-$userId';
+          final statuses = await endpoints.cloudWorkspace.listWorkspaceErasures(
+            authenticated,
+          );
+          final status = statuses.singleWhere(
+            (item) => item.requestId == requestId,
+          );
+          expect(status.state, 'needsAttention');
+          expect(status.failureReason, 'workspaceErasureStateUnverified');
+          expect(status.completedAt, isNull);
+          final retried = await endpoints.cloudWorkspace.retryWorkspaceErasure(
+            authenticated,
+            RetryCloudWorkspaceErasureRequest(requestId: requestId),
+          );
+          expect(retried.state, 'needsAttention');
+          expect(retried.failureReason, 'workspaceErasureStateUnverified');
+          expect(retried.completedAt, isNull);
+        }
+        final normal = await repository.createWorkspace(
+          session,
+          name: 'Normal',
+          ownerUserId: userId,
+          now: now,
+        );
+        final completed = await endpoints.cloudWorkspace.eraseWorkspace(
+          authenticated,
+          EraseCloudWorkspaceRequest(
+            workspaceId: normal.id!,
+            confirmationName: normal.name,
+            requestId: 'normal-$userId',
+            expectedWorkspaceRevision: normal.revision,
+          ),
+        );
+        expect(completed.state, 'complete');
+        expect(completed.completedAt, isNotNull);
+        expect(await CloudWorkspace.db.findById(session, normal.id!), isNull);
+      },
+    );
+
     test('persists a gateway registration before signing an upload', () async {
       final userId = const Uuid().v4().toString();
       final authenticated = builder.copyWith(

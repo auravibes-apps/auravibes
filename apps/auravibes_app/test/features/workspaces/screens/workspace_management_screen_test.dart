@@ -1877,6 +1877,14 @@ void main() {
             failureReason: 'gatewayRegistrationUnverified',
           ),
           CloudWorkspaceErasureStatus(
+            workspaceId: 10,
+            workspaceName: 'State unverified',
+            requestId: 'erase-state-unverified',
+            state: 'needsAttention',
+            requestedAt: .utc(2026),
+            failureReason: 'workspaceErasureStateUnverified',
+          ),
+          CloudWorkspaceErasureStatus(
             workspaceId: 3,
             workspaceName: 'Complete',
             requestId: 'erase-complete',
@@ -1981,6 +1989,14 @@ void main() {
         find.textContaining(
           'No expiry is configured for this record, '
           'and account deletion removes it.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Cloud workspace erasure is blocked because its deletion state '
+          'cannot be verified. It needs investigation before cleanup can '
+          'continue; retry is not available here.',
         ),
         findsOneWidget,
       );

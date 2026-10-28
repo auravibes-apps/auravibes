@@ -368,8 +368,28 @@ class const WorkspaceErasureCleanup(final Session session) {
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (workspace == null) {
-      await _markComplete(workspaceId, transaction);
+    if (workspace == null ||
+        workspace.deletedAt == null ||
+        workspace.erasureRequestedAt == null) {
+      final requests = await WorkspaceErasureRequest.db.find(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspaceId) &
+            row.state.notEquals('complete'),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final request in requests) {
+        await WorkspaceErasureRequest.db.updateRow(
+          session,
+          request.copyWith(
+            state: 'needsAttention',
+            failureReason: 'workspaceErasureStateUnverified',
+            completedAt: null,
+          ),
+          transaction: transaction,
+        );
+      }
       return;
     }
     final deletions = await ObjectDeletion.db.find(

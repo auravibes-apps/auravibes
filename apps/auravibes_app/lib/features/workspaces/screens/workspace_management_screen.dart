@@ -2595,6 +2595,8 @@ String _cloudErasureStatusAttentionKey(
     LocaleKeys.cloud_workspaces_erasure_status_legacy_upload_unverifiable,
   'gatewayRegistrationUnverified' =>
     LocaleKeys.cloud_workspaces_erasure_status_gateway_registration_unverified,
+  'workspaceErasureStateUnverified' =>
+    LocaleKeys.cloud_workspaces_erasure_status_state_unverified,
   'providerDeletionUnverified' =>
     LocaleKeys.cloud_workspaces_erasure_status_provider_deletion_unverified,
   _ => LocaleKeys.cloud_workspaces_erasure_status_attention,
@@ -2675,7 +2677,8 @@ bool _canRetryCloudErasure(CloudWorkspaceErasureStatus status) =>
     status.failureReason != 'uploadSigningOutcomeUnresolved' &&
     status.failureReason != 'legacyUploadUnverifiable' &&
     status.failureReason != 'gatewayRegistrationUnverified' &&
-    status.failureReason != 'providerDeletionUnverified';
+    status.failureReason != 'providerDeletionUnverified' &&
+    status.failureReason != 'workspaceErasureStateUnverified';
 
 class const _PendingWorkspaceInvites({
   required final CloudAccountSession account,

@@ -1082,8 +1082,18 @@ class CloudWorkspaceUseCases(
         _fail(CloudWorkspaceErrorCode.workspaceNotFound);
       }
       if (erasure.state != 'needsAttention') return erasure;
-      if (workspace == null || workspace.erasureRequestedAt == null) {
-        return await _completeErasure(session, erasure, transaction);
+      if (workspace == null ||
+          workspace.deletedAt == null ||
+          workspace.erasureRequestedAt == null) {
+        return await WorkspaceErasureRequest.db.updateRow(
+          session,
+          erasure.copyWith(
+            state: 'needsAttention',
+            failureReason: 'workspaceErasureStateUnverified',
+            completedAt: null,
+          ),
+          transaction: transaction,
+        );
       }
       final pendingDeletions = await ObjectDeletion.db.find(
         session,
@@ -1126,20 +1136,6 @@ class CloudWorkspaceUseCases(
     });
     return _status(status);
   }
-
-  Future<WorkspaceErasureRequest> _completeErasure(
-    Session session,
-    WorkspaceErasureRequest erasure,
-    Transaction transaction,
-  ) => WorkspaceErasureRequest.db.updateRow(
-    session,
-    erasure.copyWith(
-      state: 'complete',
-      completedAt: DateTime.now().toUtc(),
-      failureReason: null,
-    ),
-    transaction: transaction,
-  );
 
   CloudWorkspaceErasureStatus _status(WorkspaceErasureRequest erasure) =>
       CloudWorkspaceErasureStatus(
