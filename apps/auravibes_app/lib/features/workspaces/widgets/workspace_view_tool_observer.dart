@@ -18,6 +18,25 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+typedef _Item = ({
+  String id,
+  String kind,
+  bool refreshDirectory,
+  String? parentId,
+});
+typedef _OpenRequest = ({
+  String id,
+  String kind,
+  int sequence,
+  bool refreshDirectory,
+});
+typedef _RefreshRequest = ({
+  String id,
+  String workspaceId,
+  String conversationId,
+  bool refreshDirectory,
+});
+
 /// Opens newly completed view commands, never previously loaded history.
 class WorkspaceViewToolObserver extends ConsumerStatefulWidget {
   const new({
@@ -72,111 +91,73 @@ class _WorkspaceViewToolObserverState
   }
 
   void _observe(List<MessageEntity> messages) {
-    final calls = messages
-        .where(
-          (message) =>
-              message.conversationId == widget.conversationId &&
-              !message.isForkReference &&
-              message.sourceConversationId == null,
-        )
-        .expand(
-          (message) =>
-              message.metadata?.toolCalls ?? const <MessageToolCallEntity>[],
-        );
-    for (final call in calls) {
+    for (final call in _calls(messages)) {
       if (call.resultStatus != ToolCallResultStatus.success) continue;
       if (!_initialized) {
         final _ = _handled.add(call.id);
         continue;
       }
-      final item = _item(call);
-      if (item != null && _handled.add(call.id)) {
-        if (item.kind == 'folder') {
-          if (item.refreshDirectory) {
-            ref.invalidate(
-              workspaceFoldersProvider(widget.workspaceId, item.parentId),
-            );
-          } else {
-            ref.invalidate(workspaceFoldersProvider);
-          }
-          continue;
-        }
-        if (workspaceActionForTool(call.name, call.arguments) ==
-            'createTable') {
-          ref.invalidate(
-            workspaceTablesProvider(widget.workspaceId, item.parentId),
-          );
-        }
-        unawaited(
-          _open(
-            item.id,
-            item.kind,
-            ++_sequence,
-            item.refreshDirectory &&
-                workspaceActionForTool(call.name, call.arguments) !=
-                    'createTable',
-          ),
-        );
-      }
+      _handleCall(call);
     }
     _initialized = true;
   }
 
-  Future<void> _open(
-    String id,
-    String kind,
-    int sequence,
-    bool refreshDirectory,
-  ) async {
+  Future<void> _open(_OpenRequest request) async {
     if (!mounted) return;
-    final workspaceId = widget.workspaceId;
-    final conversationId = widget.conversationId;
+    final context = (
+      workspaceId: widget.workspaceId,
+      conversationId: widget.conversationId,
+    );
     try {
-      if (kind == 'table') {
-        await _refreshTable(id, workspaceId, conversationId, refreshDirectory);
-      } else {
-        await _refreshView(id, workspaceId, conversationId, refreshDirectory);
-      }
-      if (!_isCurrent(workspaceId, conversationId, sequence)) return;
-      ref
-          .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
-          .openItem(id, kind);
+      await _refreshItem(request, context.workspaceId, context.conversationId);
+      _openIfCurrent(request, context.workspaceId, context.conversationId);
     } on _StaleWorkspaceContext {
       return;
     } on Object catch (error) {
-      if (!_isCurrent(workspaceId, conversationId, sequence)) return;
-      _showError(error, () {
-        if (!_isCurrent(workspaceId, conversationId, sequence)) return;
-        unawaited(_open(id, kind, sequence, refreshDirectory));
-      });
+      _reportError(error, request, context);
     }
   }
 
-  void _showError(Object error, VoidCallback onRetry) {
-    final denied =
-        (error is WorkspaceTableException &&
-            error.localizationKey ==
-                LocaleKeys.cloud_errors_permission_denied) ||
-        (error is CloudAppException &&
-            error.localizationKey == LocaleKeys.cloud_errors_permission_denied);
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    messenger?.hideCurrentSnackBar();
-    final _ = messenger?.showSnackBar(
-      .new(
-        content: TextLocale(
-          denied
-              ? LocaleKeys.cloud_errors_permission_denied
-              : LocaleKeys.common_error_message,
-        ),
-        action: denied
-            ? null
-            : SnackBarAction(
-                label: LocaleKeys.route_state_retry.tr(),
-                onPressed: onRetry,
-              ),
-      ),
+  void _reportError(
+    Object error,
+    _OpenRequest request,
+    ({String workspaceId, String conversationId}) context,
+  ) {
+    final (:workspaceId, :conversationId) = context;
+    if (!_isCurrent(workspaceId, conversationId, request.sequence)) return;
+    _showError(error, () {
+      if (!_isCurrent(workspaceId, conversationId, request.sequence)) return;
+      unawaited(_open(request));
+    });
+  }
+
+  Future<void> _refreshItem(
+    _OpenRequest request,
+    String workspaceId,
+    String conversationId,
+  ) async {
+    final refresh = (
+      id: request.id,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      refreshDirectory: request.refreshDirectory,
     );
+    if (request.kind == 'table') {
+      await _refreshTable(refresh);
+    } else {
+      await _refreshView(refresh);
+    }
+  }
+
+  void _openIfCurrent(
+    _OpenRequest request,
+    String workspaceId,
+    String conversationId,
+  ) {
+    if (!_isCurrent(workspaceId, conversationId, request.sequence)) return;
+    ref
+        .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
+        .openItem(request.id, request.kind);
   }
 
   bool _sameContext(String workspaceId, String conversationId) =>
@@ -189,6 +170,90 @@ class _WorkspaceViewToolObserverState
       sequence == _sequence &&
       workspaceId == widget.workspaceId &&
       conversationId == widget.conversationId;
+}
+
+extension _WorkspaceToolErrors on _WorkspaceViewToolObserverState {
+  void _showError(Object error, VoidCallback onRetry) {
+    final denied = _denied(error);
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    final _ = messenger?.showSnackBar(_snackBar(denied, onRetry));
+  }
+
+  SnackBar _snackBar(bool denied, VoidCallback onRetry) => SnackBar(
+    content: TextLocale(
+      denied
+          ? LocaleKeys.cloud_errors_permission_denied
+          : LocaleKeys.common_error_message,
+    ),
+    action: denied
+        ? null
+        : SnackBarAction(
+            label: LocaleKeys.route_state_retry.tr(),
+            onPressed: onRetry,
+          ),
+  );
+
+  bool _denied(Object error) =>
+      (error is WorkspaceTableException &&
+          error.localizationKey == LocaleKeys.cloud_errors_permission_denied) ||
+      (error is CloudAppException &&
+          error.localizationKey == LocaleKeys.cloud_errors_permission_denied);
+}
+
+extension _WorkspaceToolCalls on _WorkspaceViewToolObserverState {
+  Iterable<MessageToolCallEntity> _calls(List<MessageEntity> messages) =>
+      messages
+          .where(_eligible)
+          .expand(
+            (message) =>
+                message.metadata?.toolCalls ?? const <MessageToolCallEntity>[],
+          );
+
+  bool _eligible(MessageEntity message) =>
+      message.conversationId == widget.conversationId &&
+      !message.isForkReference &&
+      message.sourceConversationId == null;
+
+  void _handleCall(MessageToolCallEntity call) {
+    final item = _item(call);
+    if (item == null || !_handled.add(call.id)) return;
+    if (item.kind == 'folder') {
+      _refreshFolder(item);
+
+      return;
+    }
+    _openItem(call, item);
+  }
+
+  void _openItem(MessageToolCallEntity call, _Item item) {
+    final createTable =
+        workspaceActionForTool(call.name, call.arguments) == 'createTable';
+    if (createTable) {
+      ref.invalidate(
+        workspaceTablesProvider(widget.workspaceId, item.parentId),
+      );
+    }
+    unawaited(_open(_request(item, createTable)));
+  }
+
+  _OpenRequest _request(_Item item, bool createTable) => (
+    id: item.id,
+    kind: item.kind,
+    sequence: ++_sequence,
+    refreshDirectory: item.refreshDirectory && !createTable,
+  );
+
+  void _refreshFolder(_Item item) {
+    if (item.refreshDirectory) {
+      ref.invalidate(
+        workspaceFoldersProvider(widget.workspaceId, item.parentId),
+      );
+    } else {
+      ref.invalidate(workspaceFoldersProvider);
+    }
+  }
 }
 
 extension _WorkspaceToolRefresh on _WorkspaceViewToolObserverState {
@@ -205,20 +270,21 @@ extension _WorkspaceToolRefresh on _WorkspaceViewToolObserverState {
     return result;
   }
 
-  Future<void> _refreshTable(
-    String id,
-    String workspaceId,
-    String conversationId,
-    bool refreshDirectory,
-  ) async {
+  Future<void> _refreshTable(_RefreshRequest request) async {
+    final (:id, :workspaceId, :conversationId, :refreshDirectory) = request;
     final tables = await _guarded(
       ref.read(workspaceTableUsecaseProvider(workspaceId).future),
       workspaceId,
       conversationId,
     );
     final table = await _guarded(tables.table(id), workspaceId, conversationId);
+    _invalidateTable(request, table.parentId);
+  }
+
+  void _invalidateTable(_RefreshRequest request, String? parentId) {
+    final (:id, :workspaceId, :refreshDirectory, conversationId: _) = request;
     if (refreshDirectory) {
-      ref.invalidate(workspaceTablesProvider(workspaceId, table.parentId));
+      ref.invalidate(workspaceTablesProvider(workspaceId, parentId));
     }
     ref
       ..invalidate(workspaceTableProvider(workspaceId, id))
@@ -226,20 +292,21 @@ extension _WorkspaceToolRefresh on _WorkspaceViewToolObserverState {
       ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
   }
 
-  Future<void> _refreshView(
-    String id,
-    String workspaceId,
-    String conversationId,
-    bool refreshDirectory,
-  ) async {
+  Future<void> _refreshView(_RefreshRequest request) async {
+    final (:id, :workspaceId, :conversationId, :refreshDirectory) = request;
     final views = await _guarded(
       ref.read(workspaceViewUsecaseProvider(workspaceId).future),
       workspaceId,
       conversationId,
     );
     final data = await _guarded(views.open(id), workspaceId, conversationId);
+    _invalidateView(request, data.view.parentId);
+  }
+
+  void _invalidateView(_RefreshRequest request, String? parentId) {
+    final (:id, :workspaceId, :refreshDirectory, conversationId: _) = request;
     if (refreshDirectory) {
-      ref.invalidate(workspaceViewsProvider(workspaceId, data.view.parentId));
+      ref.invalidate(workspaceViewsProvider(workspaceId, parentId));
     }
     ref.invalidate(workspaceViewDataProvider(workspaceId, id));
   }
@@ -249,9 +316,7 @@ class _StaleWorkspaceContext implements Exception {
   const new();
 }
 
-({String id, String kind, bool refreshDirectory, String? parentId})? _item(
-  MessageToolCallEntity call,
-) {
+_Item? _item(MessageToolCallEntity call) {
   if (call.id.isEmpty || !isWorkspaceToolName(call.name)) return null;
   try {
     final result = jsonDecode(call.responseRaw ?? '');
@@ -263,34 +328,64 @@ class _StaleWorkspaceContext implements Exception {
   }
 }
 
-({String id, String kind, bool refreshDirectory, String? parentId})?
-_itemResult(MessageToolCallEntity call, Map<dynamic, dynamic> result) {
+_Item? _itemResult(MessageToolCallEntity call, Map<dynamic, dynamic> result) {
   final action = workspaceActionForTool(call.name, call.arguments);
   final expectedKind = _expectedKind(action);
   if (expectedKind == null) return null;
   final kind = result['kind'];
-  final id = kind == 'record' ? result['tableId'] : result['id'];
-  if ((kind != expectedKind &&
-          !(expectedKind == 'record' && kind == 'table')) ||
-      id is! String ||
-      id.isEmpty) {
+  final id = _resultId(result, kind);
+  if (!_validResult(kind, expectedKind, id)) {
     return null;
   }
 
-  final parentId = action == 'createTable' || action == 'createFolder'
-      ? call.arguments['parentId']
-      : result['parentId'];
+  return _resolvedItem(call, result, action);
+}
+
+_Item? _resolvedItem(
+  MessageToolCallEntity call,
+  Map<dynamic, dynamic> result,
+  String action,
+) {
+  final parentId = _parentId(call, result, action);
   if (parentId != null && parentId is! String) return null;
 
+  return _buildItem(result, action, parentId as String?);
+}
+
+_Item _buildItem(
+  Map<dynamic, dynamic> result,
+  String action,
+  String? parentId,
+) {
+  final kind = result['kind'] as String;
+
   return (
-    id: id,
-    kind: kind == 'record' ? 'table' : kind as String,
+    id: _resultId(result, kind) as String? ?? '',
+    kind: _displayKind(kind),
     refreshDirectory: _refreshDirectory(action, result),
-    parentId: parentId as String?,
+    parentId: parentId,
   );
 }
 
-String? _expectedKind(String? action) => switch (action) {
+String _displayKind(String kind) => kind == 'record' ? 'table' : kind;
+
+Object? _resultId(Map<dynamic, dynamic> result, Object? kind) =>
+    kind == 'record' ? result['tableId'] : result['id'];
+
+bool _validResult(Object? kind, String expectedKind, Object? id) =>
+    (kind == expectedKind || (expectedKind == 'record' && kind == 'table')) &&
+    id is String &&
+    id.isNotEmpty;
+
+Object? _parentId(
+  MessageToolCallEntity call,
+  Map<dynamic, dynamic> result,
+  String action,
+) => action == 'createTable' || action == 'createFolder'
+    ? call.arguments['parentId']
+    : result['parentId'];
+
+String? _expectedKind(String action) => switch (action) {
   'createFolder' || 'renameFolder' => 'folder',
   'createView' || 'saveView' => 'view',
   'createRecord' || 'updateRecord' => 'record',
@@ -298,7 +393,7 @@ String? _expectedKind(String? action) => switch (action) {
   _ => null,
 };
 
-bool _refreshDirectory(String? action, Map<dynamic, dynamic> result) =>
+bool _refreshDirectory(String action, Map<dynamic, dynamic> result) =>
     switch (action) {
       'createTable' || 'createFolder' => true,
       'renameFolder' => result.containsKey('parentId'),
