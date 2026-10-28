@@ -107,83 +107,25 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
   @override
   void didUpdateWidget(covariant WorkspaceViewSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (identical(oldWidget.data, widget.data) &&
-        identical(oldWidget.connectedModel, widget.connectedModel)) {
-      return;
-    }
-    try {
-      final previous = WorkspaceViewSurfaceData.envelope(
-        oldWidget.data,
-        oldWidget.connectedModel,
-      );
-      final current = WorkspaceViewSurfaceData.envelope(
-        widget.data,
-        widget.connectedModel,
-      );
-      final actionChanged =
-          jsonEncode(oldWidget.data.view.action?.toJson()) !=
-          jsonEncode(widget.data.view.action?.toJson());
-      final envelopeChanged = jsonEncode(previous) != jsonEncode(current);
-      if (envelopeChanged || actionChanged) {
-        if (oldWidget.data.view.action != null ||
-            widget.data.view.action != null) {
-          _conflicted = true;
-          _hideStaleContent = _hideStaleContent || envelopeChanged;
-        } else {
-          _load();
-        }
-      }
-    } on Object {
-      _conflicted = true;
-      _hideStaleContent = true;
-    }
+    _SurfaceUpdate(this).apply(oldWidget);
   }
 
   @override
   Widget build(BuildContext context) {
     if (_failed) return const TextLocale(LocaleKeys.workspace_views_repair);
 
-    final content = _SurfaceContent(
-      controller: _controller,
-      canSubmit: _canSubmit,
-      submitting: _submitting,
-      statusKey: _statusKey,
-      formErrors: _formErrors,
-      onSubmit: () => unawaited(_submit()),
-    );
-
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        if (_conflicted)
-          const TextLocale(LocaleKeys.workspace_views_action_changed),
-        if (_conflicted)
-          TextButton(
-            onPressed: () => unawaited(_confirmRefresh()),
-            child: const TextLocale(LocaleKeys.skills_selector_refresh),
-          ),
-        Offstage(offstage: _hideStaleContent, child: content),
-      ],
+    return _SurfaceFrame(
+      conflicted: _conflicted,
+      hideStaleContent: _hideStaleContent,
+      onRefresh: () => unawaited(_confirmRefresh()),
+      content: _SurfaceStateContent(this),
     );
   }
 
   Future<void> _confirmRefresh() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
-        content: const TextLocale(LocaleKeys.common_unsaved_changes_message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const TextLocale(LocaleKeys.common_discard_changes),
-          ),
-        ],
-      ),
+      builder: (_) => const _DiscardViewChangesDialog(),
     );
     if (confirmed != true || !mounted) return;
     setState(() {
@@ -219,8 +161,6 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
     }
   }
 
-  Future<void> _submit() => _WorkspaceViewSubmissionController(this).submit();
-
   void _setSubmitting({required bool value, bool clearFeedback = false}) =>
       setState(() {
         _submitting = value;
@@ -246,6 +186,130 @@ class _WorkspaceViewSurfaceState extends ConsumerState<WorkspaceViewSurface> {
         ..invalidate(workspaceConnectedViewProvider(workspaceId, viewId));
     }
   }
+}
+
+class const _SurfaceStateContent(final _WorkspaceViewSurfaceState state)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SurfaceContent(
+    controller: state._controller,
+    canSubmit: state._canSubmit,
+    submitting: state._submitting,
+    statusKey: state._statusKey,
+    formErrors: state._formErrors,
+    onSubmit: () =>
+        unawaited(_WorkspaceViewSubmissionController(state).submit()),
+  );
+}
+
+class const _SurfaceUpdate(final _WorkspaceViewSurfaceState state) {
+  void apply(WorkspaceViewSurface previous) {
+    final current = state.widget;
+    if (identical(previous.data, current.data) &&
+        identical(previous.connectedModel, current.connectedModel)) {
+      return;
+    }
+    try {
+      _applyChanges(previous, current);
+    } on Object {
+      state._conflicted = true;
+      state._hideStaleContent = true;
+    }
+  }
+
+  void _applyChanges(
+    WorkspaceViewSurface previous,
+    WorkspaceViewSurface current,
+  ) {
+    final changes = _SurfaceChanges.between(previous, current);
+    if (!changes.envelope && !changes.action) return;
+    if (_neitherHasAction(previous, current)) {
+      state._load();
+
+      return;
+    }
+    state._conflicted = true;
+    state._hideStaleContent = state._hideStaleContent || changes.envelope;
+  }
+
+  bool _neitherHasAction(
+    WorkspaceViewSurface previous,
+    WorkspaceViewSurface current,
+  ) => previous.data.view.action == null && current.data.view.action == null;
+}
+
+class const _SurfaceFrame({
+  required final bool conflicted,
+  required final bool hideStaleContent,
+  required final VoidCallback onRefresh,
+  required final Widget content,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      if (conflicted)
+        const TextLocale(LocaleKeys.workspace_views_action_changed),
+      if (conflicted) _SurfaceRefreshButton(onRefresh),
+      Offstage(offstage: hideStaleContent, child: content),
+    ],
+  );
+}
+
+class const _SurfaceRefreshButton(final VoidCallback onRefresh)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: onRefresh,
+    child: const TextLocale(LocaleKeys.skills_selector_refresh),
+  );
+}
+
+abstract final class _SurfaceChanges {
+  static ({bool envelope, bool action}) between(
+    WorkspaceViewSurface previous,
+    WorkspaceViewSurface current,
+  ) => (
+    envelope:
+        jsonEncode(
+          WorkspaceViewSurfaceData.envelope(
+            previous.data,
+            previous.connectedModel,
+          ),
+        ) !=
+        jsonEncode(
+          WorkspaceViewSurfaceData.envelope(
+            current.data,
+            current.connectedModel,
+          ),
+        ),
+    action:
+        jsonEncode(previous.data.view.action?.toJson()) !=
+        jsonEncode(current.data.view.action?.toJson()),
+  );
+}
+
+class const _DiscardViewChangesDialog() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AlertDialog(
+    title: TextLocale(LocaleKeys.common_unsaved_changes_title),
+    content: TextLocale(LocaleKeys.common_unsaved_changes_message),
+    actions: [
+      _DiscardViewChangesButton(discard: false),
+      _DiscardViewChangesButton(discard: true),
+    ],
+  );
+}
+
+class const _DiscardViewChangesButton({required final bool discard})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: () => Navigator.of(context).pop(discard),
+    child: TextLocale(
+      discard ? LocaleKeys.common_discard_changes : LocaleKeys.common_cancel,
+    ),
+  );
 }
 
 class const _WorkspaceViewSubmissionController(

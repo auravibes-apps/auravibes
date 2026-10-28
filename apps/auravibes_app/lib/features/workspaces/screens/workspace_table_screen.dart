@@ -124,24 +124,34 @@ class const _TableFailure({
   @override
   Widget build(BuildContext context, WidgetRef ref) => ListView(
     children: [
-      if (!screen.compact)
-        ListTile(
-          leading: const Icon(Icons.arrow_back),
-          title: const TextLocale(LocaleKeys.workspace_items_title),
-          onTap: screen.onBack,
-        ),
+      if (!screen.compact) _TableFailureBack(screen: screen),
       WorkspaceItemFailure(error: error),
-      if (screen.compact)
-        AuraButton(
-          onPressed: () => _TableNavigationActions.refresh(
-            ref,
-            screen.workspaceId,
-            screen.tableId,
-          ),
-          child: const TextLocale(LocaleKeys.common_reload),
-          identifier: 'workspace_table_retry',
-        ),
+      if (screen.compact) _TableFailureRetry(screen: screen),
     ],
+  );
+}
+
+class const _TableFailureBack({required final WorkspaceTableScreen screen})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.arrow_back),
+    title: const TextLocale(LocaleKeys.workspace_items_title),
+    onTap: screen.onBack,
+  );
+}
+
+class const _TableFailureRetry({required final WorkspaceTableScreen screen})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraButton(
+    onPressed: () => _TableNavigationActions.refresh(
+      ref,
+      screen.workspaceId,
+      screen.tableId,
+    ),
+    child: const TextLocale(LocaleKeys.common_reload),
+    identifier: 'workspace_table_retry',
   );
 }
 
@@ -275,13 +285,16 @@ class const _BrowsingPage({
     table: owner.table,
     onBack: owner.onBack,
     onChanged: navigation.refresh,
-    onRecord: (record) => _record(context, record),
-    onColumn: (column) => _column(context, column),
-    onAddColumn: (type) =>
-        _column(context, null, initialType: type, compact: true),
+    onRecord: _recordCallback(context),
+    onColumn: _column,
+    onAddColumn: _columnCallback(context),
     draftOpen: owner.draftOpen,
     compact: owner.compact,
   );
+  ValueChanged<WorkspaceRecord?> _recordCallback(BuildContext context) =>
+      (record) => _record(context, record);
+  ValueChanged<WorkspaceColumnType> _columnCallback(BuildContext context) =>
+      (type) => _addColumn(context, type);
   void _record(BuildContext context, WorkspaceRecord? record) {
     if (record != null) {
       navigation.selected.value = _RecordSelection(record);
@@ -291,59 +304,72 @@ class const _BrowsingPage({
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (dialogContext) => Dialog(
-          child: SizedBox(
-            width: 600,
-            height: 600,
-            child: WorkspaceRecordEditor(
-              workspaceId: owner.workspaceId,
-              table: owner.table,
-              record: null,
-              onBack: () {
-                Navigator.of(dialogContext).pop();
-                navigation.refresh();
-              },
-            ),
-          ),
-        ),
+        builder: (_) => _NewRecordDialog(owner: owner, navigation: navigation),
       ),
     );
   }
 
-  void _column(
-    BuildContext context,
-    WorkspaceColumn? column, {
-    WorkspaceColumnType initialType = .text,
-    bool compact = false,
-  }) {
-    if (!compact) {
-      navigation.selected.value = _ColumnSelection(column);
+  void _column(WorkspaceColumn? column) {
+    navigation.selected.value = _ColumnSelection(column);
+  }
 
-      return;
-    }
+  void _addColumn(BuildContext context, WorkspaceColumnType type) {
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (dialogContext) => Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480, maxHeight: 550),
-            child: WorkspaceColumnEditor(
-              workspaceId: owner.workspaceId,
-              table: owner.table,
-              column: null,
-              onBack: () {
-                Navigator.of(dialogContext).pop();
-                navigation.refresh();
-              },
-              initialType: initialType,
-              compact: true,
-            ),
-          ),
-        ),
+        builder: (_) =>
+            _NewColumnDialog(owner: owner, navigation: navigation, type: type),
         barrierDismissible: false,
       ),
     );
   }
+}
+
+class const _NewRecordDialog({
+  required final _TableContents owner,
+  required final _TableNavigation navigation,
+}) extends StatelessWidget {
+  static const _size = 600.0;
+  @override
+  Widget build(BuildContext context) => Dialog(
+    child: SizedBox(
+      width: _size,
+      height: _size,
+      child: WorkspaceRecordEditor(
+        workspaceId: owner.workspaceId,
+        table: owner.table,
+        record: null,
+        onBack: () {
+          Navigator.of(context).pop();
+          navigation.refresh();
+        },
+      ),
+    ),
+  );
+}
+
+class const _NewColumnDialog({
+  required final _TableContents owner,
+  required final _TableNavigation navigation,
+  required final WorkspaceColumnType type,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Dialog(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 480, maxHeight: 550),
+      child: WorkspaceColumnEditor(
+        workspaceId: owner.workspaceId,
+        table: owner.table,
+        column: null,
+        onBack: () {
+          Navigator.of(context).pop();
+          navigation.refresh();
+        },
+        initialType: type,
+        compact: true,
+      ),
+    ),
+  );
 }
 
 class const _TableBrowser({
@@ -462,22 +488,22 @@ class const _NewRecordButton(
 
     return AuraIconButton(
       icon: Icons.add,
-      onPressed: action.pending
-          ? null
-          : () {
-              settings.value = false;
-              unawaited(
-                action.run(
-                  () => createEmptyWorkspaceRecord(
-                    ref,
-                    workspaceId: browser.workspaceId,
-                    table: browser.table,
-                  ),
-                ),
-              );
-            },
+      onPressed: action.pending ? null : () => _create(ref, action),
       identifier: 'workspace_record_create',
       tooltip: LocaleKeys.workspace_items_create_record.tr(),
+    );
+  }
+
+  void _create(WidgetRef ref, WorkspaceTableAction action) {
+    settings.value = false;
+    unawaited(
+      action.run(
+        () => createEmptyWorkspaceRecord(
+          ref,
+          workspaceId: browser.workspaceId,
+          table: browser.table,
+        ),
+      ),
     );
   }
 }

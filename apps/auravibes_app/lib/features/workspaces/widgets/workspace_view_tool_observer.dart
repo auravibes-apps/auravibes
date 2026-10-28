@@ -59,21 +59,16 @@ class _WorkspaceViewToolObserverState
       widget.workspaceId,
       widget.conversationId,
     );
-    final initial = ref.read(provider);
-    final initialMessages = initial.value;
-    if (!_initialized &&
-        initialMessages != null &&
-        !initial.isLoading &&
-        !initial.hasError) {
-      _observe(initialMessages);
-    }
-    ref.listen(provider, (_, next) {
-      final messages = next.value;
-      if (messages == null || next.isLoading || next.hasError) return;
-      _observe(messages);
-    });
+    if (!_initialized) _observeReady(ref.read(provider));
+    ref.listen(provider, (_, next) => _observeReady(next));
 
     return widget.child;
+  }
+
+  void _observeReady(AsyncValue<List<MessageEntity>> state) {
+    final messages = state.value;
+    if (messages == null || state.isLoading || state.hasError) return;
+    _observe(messages);
   }
 
   void _observe(List<MessageEntity> messages) {

@@ -748,19 +748,18 @@ typedef _SidebarTabIdentifiers = ({String tile, String closeButton});
 typedef _SidebarTabActions = ({VoidCallback onSelect, VoidCallback onClose});
 typedef _SidebarTabRef = ({String kind, String id});
 
-List<_SidebarTabRef> _sidebarTabs(_BrowserPanelData data) {
-  final workspaceTabs = data.workspaceTabs;
+List<_SidebarTabRef> _sidebarTabs(_BrowserPanelData data) => [
+  for (final tab in data.request.session.tabs) (kind: 'browser', id: tab.id),
+  for (final tab in data.request.toolResultTabs) (kind: 'tool', id: tab.id),
+  ..._workspaceSidebarTabs(data.workspaceTabs),
+];
 
-  return [
-    for (final tab in data.request.session.tabs) (kind: 'browser', id: tab.id),
-    for (final tab in data.request.toolResultTabs) (kind: 'tool', id: tab.id),
-    if (workspaceTabs.selected.value == 'chooser')
-      (kind: 'workspace', id: 'chooser'),
-    if (workspaceTabs.directoryOpen.value) (kind: 'workspace', id: 'directory'),
-    for (final item in workspaceTabs.items.value)
-      (kind: 'workspace', id: _WorkspaceTabs.key(item)),
-  ];
-}
+List<_SidebarTabRef> _workspaceSidebarTabs(_WorkspaceTabs tabs) => [
+  if (tabs.selected.value == 'chooser') (kind: 'workspace', id: 'chooser'),
+  if (tabs.directoryOpen.value) (kind: 'workspace', id: 'directory'),
+  for (final item in tabs.items.value)
+    (kind: 'workspace', id: _WorkspaceTabs.key(item)),
+];
 
 _SidebarTabRef? _activeSidebarTab(_BrowserPanelData data) {
   final selectedWorkspace = data.workspaceTabs.selected.value;
@@ -1124,13 +1123,7 @@ class _WorkspaceTabs {
 
       return;
     }
-    final id = key(item);
-    if (name != null) names.value = {...names.value, id: name};
-    items.value = [
-      ...items.value.where((existing) => key(existing) != id),
-      item,
-    ];
-    selected.value = id;
+    _openItem(item, name);
     _persist();
   }
 
@@ -1139,6 +1132,16 @@ class _WorkspaceTabs {
     if (id == 'directory') directoryOpen.value = false;
     if (selected.value == id) selected.value = selectAfterClose;
     _persist();
+  }
+
+  void _openItem(WorkspaceChatItem item, String? name) {
+    final id = key(item);
+    if (name != null) names.value = {...names.value, id: name};
+    items.value = [
+      ...items.value.where((existing) => key(existing) != id),
+      item,
+    ];
+    selected.value = id;
   }
 
   void _persist() => unawaited(
@@ -1154,13 +1157,15 @@ class _WorkspaceTabs {
   );
 }
 
+const _sidebarChooserSpacing = 12.0;
+
 class const _SidebarChooser({required final _BrowserPanelData data})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Wrap(
-      spacing: 12,
-      runSpacing: 12,
+      spacing: _sidebarChooserSpacing,
+      runSpacing: _sidebarChooserSpacing,
       children: [
         AuraButton(
           onPressed: _openDirectory,
@@ -1284,19 +1289,33 @@ class const _WorkspaceTabSlot({required final _BrowserPanelData data})
             ),
           ),
         for (final item in workspaceTabs.items.value)
-          Positioned.fill(
-            child: Offstage(
-              offstage: _WorkspaceTabs.key(item) != selected,
-              child: TickerMode(
-                enabled: _WorkspaceTabs.key(item) == selected,
-                child: KeyedSubtree(
-                  key: ValueKey(_WorkspaceTabs.key(item)),
-                  child: _WorkspaceTabContent(data: data, item: item),
-                ),
-              ),
-            ),
-          ),
+          _WorkspaceTabEntry(data: data, item: item, selected: selected),
       ],
+    );
+  }
+}
+
+class const _WorkspaceTabEntry({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+  required final String? selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final id = _WorkspaceTabs.key(item);
+    final active = id == selected;
+
+    return Positioned.fill(
+      child: Offstage(
+        offstage: !active,
+        child: TickerMode(
+          enabled: active,
+          child: KeyedSubtree(
+            key: ValueKey(id),
+            child: _WorkspaceTabContent(data: data, item: item),
+          ),
+        ),
+      ),
     );
   }
 }

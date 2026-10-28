@@ -157,29 +157,62 @@ class const _CompactColumnForm({
     shrinkWrap: true,
     padding: const EdgeInsets.all(16),
     children: [
+      _CompactColumnInputs(editor: editor, draft: draft),
+      if (draft.action.error case final error?)
+        WorkspaceItemFailure(error: error),
+      _CompactColumnButtons(editor: editor, draft: draft, onSave: onSave),
+    ],
+  );
+}
+
+class const _CompactColumnInputs({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
       _ColumnBasicInputs(editor: editor, draft: draft),
       _ColumnDraftReference(editor: editor, draft: draft),
       _ColumnTimeZone(draft: draft),
       _ColumnPreviewResult(editor: editor, draft: draft),
-      if (draft.action.error case final error?)
-        WorkspaceItemFailure(error: error),
-      Row(
-        mainAxisAlignment: .end,
-        children: [
-          AuraButton(
-            onPressed: editor.onBack,
-            child: const TextLocale(LocaleKeys.common_cancel),
-            disabled: draft.action.pending,
-          ),
-          AuraButton(
-            onPressed: () => unawaited(draft.action.run(onSave)),
-            child: const TextLocale(LocaleKeys.workspace_items_create_column),
-            disabled: draft.action.pending,
-            identifier: 'workspace_column_create_confirm',
-          ),
-        ],
-      ),
     ],
+  );
+}
+
+class const _CompactColumnButtons({
+  required final WorkspaceColumnEditor editor,
+  required final _ColumnDraft draft,
+  required final Future<void> Function() onSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final action = draft.action;
+
+    return Row(
+      mainAxisAlignment: .end,
+      children: [
+        _CompactColumnCancel(onBack: editor.onBack, pending: action.pending),
+        AuraButton(
+          onPressed: () => unawaited(action.run(onSave)),
+          child: const TextLocale(LocaleKeys.workspace_items_create_column),
+          disabled: action.pending,
+          identifier: 'workspace_column_create_confirm',
+        ),
+      ],
+    );
+  }
+}
+
+class const _CompactColumnCancel({
+  required final VoidCallback onBack,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onBack,
+    child: const TextLocale(LocaleKeys.common_cancel),
+    disabled: pending,
   );
 }
 
