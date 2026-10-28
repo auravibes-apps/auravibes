@@ -1421,55 +1421,69 @@ class const _Cell(
 }
 
 class const _CellContent(final _SpreadsheetCell cell) extends StatelessWidget {
+  bool get _canShowEdit =>
+      cell._selected && cell._canEdit && cell.column.type != .url;
+
   @override
   Widget build(BuildContext context) => Stack(
     fit: .expand,
     children: [
       ClipRect(child: _Cell(cell.owner, cell.record, cell.column)),
-      if (cell._selected && cell._canEdit && cell.column.type != .url)
-        Align(
-          alignment: .centerRight,
-          child: ColoredBox(
-            color: Theme.of(context).colorScheme.surface,
-            child: Row(
-              mainAxisSize: .min,
-              children: [
-                IconButton(
-                  visualDensity: .compact,
-                  onPressed: cell._edit,
-                  tooltip: LocaleKeys.common_edit.tr(),
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-                if (cell._showRecordAction)
-                  IconButton(
-                    visualDensity: .compact,
-                    onPressed: cell.owner.draft.draftOpen.value
-                        ? null
-                        : () => cell.owner.onRecord(cell.record),
-                    tooltip: LocaleKeys.common_show_more.tr(),
-                    icon: const Icon(Icons.more_horiz),
-                  ),
-              ],
-            ),
-          ),
-        )
-      else if (cell._showRecordAction)
-        Align(
-          alignment: .centerRight,
-          child: ColoredBox(
-            color: Theme.of(context).colorScheme.surface,
-            child: IconButton(
-              visualDensity: .compact,
-              onPressed: cell.owner.draft.draftOpen.value
-                  ? null
-                  : () => cell.owner.onRecord(cell.record),
-              tooltip: LocaleKeys.common_show_more.tr(),
-              icon: const Icon(Icons.more_horiz),
-            ),
-          ),
-        ),
+      if (_canShowEdit || cell._showRecordAction)
+        _CellActionOverlay(cell, showEdit: _canShowEdit),
     ],
   );
+}
+
+class const _CellActionOverlay(
+  final _SpreadsheetCell cell, {
+  required final bool showEdit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: .centerRight,
+    child: ColoredBox(
+      color: Theme.of(context).colorScheme.surface,
+      child: _CellActions(cell, showEdit: showEdit),
+    ),
+  );
+}
+
+class const _CellActions(
+  final _SpreadsheetCell cell, {
+  required final bool showEdit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      if (showEdit) _EditCellButton(cell),
+      if (cell._showRecordAction) _OpenRecordButton(cell),
+    ],
+  );
+}
+
+class const _EditCellButton(final _SpreadsheetCell cell)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IconButton(
+    visualDensity: .compact,
+    onPressed: cell._edit,
+    tooltip: LocaleKeys.common_edit.tr(),
+    icon: const Icon(Icons.edit_outlined),
+  );
+}
+
+class const _OpenRecordButton(final _SpreadsheetCell cell)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IconButton(
+    visualDensity: .compact,
+    onPressed: cell.owner.draft.draftOpen.value ? null : _open,
+    tooltip: LocaleKeys.common_show_more.tr(),
+    icon: const Icon(Icons.more_horiz),
+  );
+  void _open() => cell.owner.onRecord(cell.record);
 }
 
 class const _ReferenceCell(
