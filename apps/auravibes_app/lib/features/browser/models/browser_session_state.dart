@@ -101,35 +101,35 @@ BrowserSessionState _browserSessionFromJson(Map<String, dynamic> json) {
 
   return _restoreBrowserSession(
     tabs,
-    json['activeTabId'] as String?,
-    json['isSuspended'] as bool? ?? false,
     workspaceTabs,
-    json['selectedWorkspaceTabId'] as String?,
+    json,
   );
 }
 
 BrowserSessionState _restoreBrowserSession(
   List<BrowserTab> tabs,
-  String? activeTabId,
-  bool isSuspended,
   List<WorkspaceContentTab> workspaceTabs,
-  String? selectedWorkspaceTabId,
+  Map<String, dynamic> json,
 ) {
-  final fallbackTab = tabs.firstOrNull;
-  final activeTab = tabs.where((tab) => tab.id == activeTabId).firstOrNull;
-
   return BrowserSessionState(
     tabs: tabs,
-    activeTabId: activeTab?.id ?? fallbackTab?.id ?? '',
+    activeTabId: _activeBrowserTab(tabs, json['activeTabId'] as String?),
     workspaceTabs: workspaceTabs,
-    selectedWorkspaceTabId:
-        selectedWorkspaceTabId == 'chooser' ||
-            workspaceTabs.any((tab) => tab.key == selectedWorkspaceTabId)
-        ? selectedWorkspaceTabId
-        : null,
-    isSuspended: isSuspended,
+    selectedWorkspaceTabId: _selectedWorkspaceTab(
+      workspaceTabs,
+      json['selectedWorkspaceTabId'] as String?,
+    ),
+    isSuspended: json['isSuspended'] as bool? ?? false,
   );
 }
+
+String _activeBrowserTab(List<BrowserTab> tabs, String? id) =>
+    tabs.where((tab) => tab.id == id).firstOrNull?.id ??
+    tabs.firstOrNull?.id ??
+    '';
+
+String? _selectedWorkspaceTab(List<WorkspaceContentTab> tabs, String? id) =>
+    id == 'chooser' || tabs.any((tab) => tab.key == id) ? id : null;
 
 BrowserSessionState _copyBrowserSession(
   BrowserSessionState current,
@@ -197,19 +197,16 @@ _BrowserSessionMetadata _copyBrowserSessionMetadata(
 );
 
 void _validateBrowserSessionJson(Map<String, dynamic> json) {
-  final tabs = json['tabs'];
-  final workspaceTabs = json['workspaceTabs'];
-  final activeTabId = json['activeTabId'];
-  final isSuspended = json['isSuspended'];
-  if (tabs is! List ||
-      activeTabId != null && activeTabId is! String ||
-      workspaceTabs != null && workspaceTabs is! List ||
-      json['selectedWorkspaceTabId'] != null &&
-          json['selectedWorkspaceTabId'] is! String ||
-      isSuspended != null && isSuspended is! bool) {
+  if (json['tabs'] is! List ||
+      !_optional<String>(json['activeTabId']) ||
+      !_optional<List<Object?>>(json['workspaceTabs']) ||
+      !_optional<String>(json['selectedWorkspaceTabId']) ||
+      !_optional<bool>(json['isSuspended'])) {
     throw const FormatException('Invalid browser session.');
   }
 }
+
+bool _optional<T>(Object? value) => value == null || value is T;
 
 List<BrowserTab> _decodeBrowserTabs(List<Object?> tabs) => tabs.map((item) {
   if (item is! Map<String, dynamic>) {
