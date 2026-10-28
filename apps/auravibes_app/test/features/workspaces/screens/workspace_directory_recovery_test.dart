@@ -167,10 +167,38 @@ void main() {
       await flush();
       await tester.tap(find.text('Trash'));
       await flush();
-      await settleUntil(() => find.text('Restore').evaluate().isNotEmpty);
-      await tester.runAsync(() => tester.tap(find.text('Restore')));
+      await settleUntil(
+        () => find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is AuraPopupMenuButton &&
+                  (widget.identifier?.startsWith('workspace_trash_menu_') ??
+                      false),
+            )
+            .evaluate()
+            .isNotEmpty,
+      );
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraPopupMenuButton &&
+              (widget.identifier?.startsWith('workspace_trash_menu_') ?? false),
+        ),
+      );
       await flush();
-      await tester.tap(find.text('Close'));
+      await tester.tap(find.text('Restore'));
+      await tester.pump();
+      await tester.runAsync(
+        () => tester.tap(button('workspace_history_confirm')),
+      );
+      await flush();
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraIconButton &&
+              widget.identifier == 'workspace_trash_close',
+        ),
+      );
       await flush();
       expect(find.text('Recover folder'), findsOneWidget);
       await tester.tap(find.text('Recover folder'));
@@ -197,12 +225,17 @@ void main() {
         await flush();
       }
       await tester.tap(find.text('Recover record'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await flush();
+      await tester.tap(find.byIcon(Icons.more_horiz));
+      await tester.pump(const Duration(milliseconds: 400));
       await flush();
       final field = find.byWidgetPredicate(
         (widget) =>
             widget is AuraInput &&
             widget.identifier == 'workspace_record_value',
       );
+      await settleUntil(() => field.evaluate().isNotEmpty);
       await tester.enterText(field, 'Uncommitted edit');
       await tester.tap(menu('workspace_record_overflow'));
       await flush();
