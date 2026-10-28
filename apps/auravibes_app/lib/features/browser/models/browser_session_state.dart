@@ -99,11 +99,7 @@ BrowserSessionState _browserSessionFromJson(Map<String, dynamic> json) {
     json['workspaceTabs'] as List<Object?>? ?? const [],
   );
 
-  return _restoreBrowserSession(
-    tabs,
-    workspaceTabs,
-    json,
-  );
+  return _restoreBrowserSession(tabs, workspaceTabs, json);
 }
 
 BrowserSessionState _restoreBrowserSession(
