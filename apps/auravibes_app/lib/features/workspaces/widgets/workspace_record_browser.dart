@@ -1064,25 +1064,15 @@ class const _UrlCell(
   final _SpreadsheetCell cell, {
   required final bool showMenu,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final value = cell.record.values[cell.column.id]?.toString() ?? '';
-    final colors = Theme.of(context).colorScheme;
+  String get _value => cell.record.values[cell.column.id]?.toString() ?? '';
 
-    return Row(
-      children: [
-        Expanded(child: Text(value, overflow: .ellipsis)),
-        if (showMenu)
-          PopupMenuButton<_UrlAction>(
-            itemBuilder: _menuItems,
-            onSelected: (action) => _select(context, action, value),
-            tooltip: LocaleKeys.workspace_items_type_url.tr(),
-            icon: const Icon(Icons.arrow_drop_down),
-            color: colors.surface,
-          ),
-      ],
-    );
-  }
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: Text(_value, overflow: .ellipsis)),
+      if (showMenu) _UrlMenu(this),
+    ],
+  );
 
   List<PopupMenuEntry<_UrlAction>> _menuItems(BuildContext _) => [
     if (cell._canEdit)
@@ -1137,6 +1127,30 @@ class const _UrlCell(
           content: Text(LocaleKeys.markdown_editor_external_link_error.tr()),
         ),
       );
+}
+
+class const _UrlMenu(final _UrlCell owner) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _UrlPopup(
+    owner,
+    Theme.of(context).colorScheme.surface,
+    (action) => owner._select(context, action, owner._value),
+  );
+}
+
+class const _UrlPopup(
+  final _UrlCell owner,
+  final Color color,
+  final ValueChanged<_UrlAction> onSelected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<_UrlAction>(
+    itemBuilder: owner._menuItems,
+    onSelected: onSelected,
+    tooltip: LocaleKeys.workspace_items_type_url.tr(),
+    icon: const Icon(Icons.arrow_drop_down),
+    color: color,
+  );
 }
 
 class const _SpreadsheetEditor(
