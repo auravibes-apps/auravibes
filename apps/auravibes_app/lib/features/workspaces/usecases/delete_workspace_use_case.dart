@@ -53,15 +53,20 @@ class DeleteWorkspaceUseCase {
       _restoreBackgroundWorkAfterFailedDeletion(id);
     }
     if (deletedWorkspace) {
-      await _clearWorkspaceDrafts(id);
-      await _cleanupDeletedAssets();
-      if (await hasPendingCleanup(id)) {
+      if (await _cleanup(id)) {
         return WorkspaceDeletionResult.cleanupPending;
       }
     }
     assert(deletedWorkspace, 'Workspace must be deleted.');
 
     return WorkspaceDeletionResult.complete;
+  }
+
+  Future<bool> _cleanup(String id) async {
+    await _clearWorkspaceDrafts(id);
+    await _cleanupDeletedAssets();
+
+    return await hasPendingCleanup(id);
   }
 }
 

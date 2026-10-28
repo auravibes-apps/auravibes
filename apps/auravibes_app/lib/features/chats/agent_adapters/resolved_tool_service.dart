@@ -152,12 +152,10 @@ class ResolvedToolService {
     }
 
     if (tool.isWorkspaceCommand) {
-      return await _workspaceCommand(
-        conversationId,
-        tool.toolIdentifier,
-        arguments,
-        toolCallId,
-      );
+      return await _workspaceCommand(conversationId, arguments, (
+        name: tool.toolIdentifier,
+        id: toolCallId,
+      ));
     }
     final result = await delegate.call(
       conversationId: conversationId,
@@ -176,57 +174,62 @@ class ResolvedToolService {
 
   Future<Object?> _workspaceCommand(
     String conversationId,
-    String toolName,
     Map<String, dynamic> arguments,
-    String toolCallId,
+    ({String name, String id}) tool,
+  ) async {
+    try {
+      return await _runWorkspaceCommand(conversationId, arguments, tool);
+    } on WorkspaceTableException catch (error, stackTrace) {
+      _throwWorkspaceFailure(error, stackTrace, _workspaceErrorCode(error));
+    } on FormatException catch (error, stackTrace) {
+      _throwWorkspaceFailure(error, stackTrace, 'invalid');
+    }
+  }
+
+  Future<Object?> _runWorkspaceCommand(
+    String conversationId,
+    Map<String, dynamic> arguments,
+    ({String name, String id}) tool,
   ) async {
     final commands = workspaceConversationTools;
     if (commands == null) {
       throw StateError('Workspace commands are not configured.');
     }
 
-    try {
-      return await commands.call(
-        conversationId: conversationId,
-        arguments: agent.workspaceToolArgumentsForExecution(
-          toolName,
-          arguments,
-        ),
-        operationId: toolCallId,
-      );
-    } on WorkspaceTableException catch (error, stackTrace) {
-      var code = 'invalid';
-      if (error.conflict) code = 'conflict';
-      if (error.denied) code = 'unavailable';
-      if (error.incompatibleRelationship) code = 'incompatible_relationship';
-      if (error.unsupportedCopy) code = 'unsupported';
-      final response = agent.workspaceFailureContext(
-        jsonEncode({'code': code}),
-      );
-      Error.throwWithStackTrace(
-        agent.AgentToolExecutionFailure(
-          responseRaw: jsonEncode(response),
-          error: error,
-          stackTrace: stackTrace,
-          failurePhase: 'workspace.command',
-        ),
-        stackTrace,
-      );
-    } on FormatException catch (error, stackTrace) {
-      final response = agent.workspaceFailureContext(
-        jsonEncode({'code': 'invalid', 'detail': error.message}),
-      );
-      Error.throwWithStackTrace(
-        agent.AgentToolExecutionFailure(
-          responseRaw: jsonEncode(response),
-          error: error,
-          stackTrace: stackTrace,
-          failurePhase: 'workspace.command',
-        ),
-        stackTrace,
-      );
-    }
+    return await commands.call(
+      conversationId: conversationId,
+      arguments: agent.workspaceToolArgumentsForExecution(tool.name, arguments),
+      operationId: tool.id,
+    );
   }
+}
+
+String _workspaceErrorCode(WorkspaceTableException error) {
+  var code = 'invalid';
+  if (error.conflict) code = 'conflict';
+  if (error.denied) code = 'unavailable';
+  if (error.incompatibleRelationship) code = 'incompatible_relationship';
+  if (error.unsupportedCopy) code = 'unsupported';
+
+  return code;
+}
+
+Never _throwWorkspaceFailure(Object error, StackTrace stackTrace, String code) {
+  final response = agent.workspaceFailureContext(
+    jsonEncode({
+      'code': code,
+      if (error is FormatException) 'detail': error.message,
+    }),
+  );
+  Error.throwWithStackTrace(
+    agent.AgentToolExecutionFailure(
+      responseRaw: jsonEncode(response),
+      error: error,
+      stackTrace: stackTrace,
+      failurePhase: 'workspace.command',
+    ),
+    stackTrace,
+  );
 }
 
 Object? _modelToolResult(
