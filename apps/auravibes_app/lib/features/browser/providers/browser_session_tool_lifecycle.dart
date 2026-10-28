@@ -1493,6 +1493,20 @@ mixin BrowserSessionToolControls on _$BrowserSessionNotifier {
 mixin BrowserSessionTabStateUpdates on _$BrowserSessionNotifier {
   BrowserSessionNotifier get _updateNotifier => this as BrowserSessionNotifier;
 
+  Future<void> saveWorkspaceTabs({
+    required List<WorkspaceContentTab> tabs,
+    required String? selectedTabId,
+  }) async {
+    final current = _updateNotifier._current;
+    await _updateNotifier._save(
+      current.copyWith(
+        workspaceTabs: tabs,
+        selectedWorkspaceTabId: selectedTabId,
+        clearSelectedWorkspaceTab: selectedTabId == null,
+      ),
+    );
+  }
+
   Future<void> updateTab(String tabId, BrowserTabUpdate update) async {
     if (update.isLoading == true) {
       final _ = _updateNotifier._snapshotIdsByTab.remove(tabId);

@@ -1860,7 +1860,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
   MessagesCompanion _mapToMessagesCompanion(MessageToCreate message) {
     return MessagesCompanion(
       createdAt: .absentIfNull(message.createdAt),
-      updatedAt: .absentIfNull(message.updatedAt ?? message.createdAt),
+      updatedAt: .absentIfNull(_messageUpdatedAt(message)),
       conversationId: .new(message.conversationId),
       content: .new(message.content),
       messageType: .new(_messageTypeToTableType(message.messageType)),
@@ -2073,3 +2073,6 @@ String? _sanitizeMetadataJson(String? raw) {
 
 MessageMetadataEntity? _sanitizeMetadata(MessageMetadataEntity? metadata) =>
     metadata == null ? null : sanitizeWorkspaceToolMetadata(metadata);
+
+DateTime? _messageUpdatedAt(MessageToCreate message) =>
+    message.updatedAt ?? message.createdAt;
