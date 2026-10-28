@@ -283,16 +283,16 @@ Map<String, Future<Object?> Function()> _readers(
       fixture.authenticated,
       ListCloudWorkspaceInvitesRequest(workspaceId: workspaceId),
     ),
-    'workspace stream': () => endpoints.workspaceStream
-        .subscribe(
-          fixture.authenticated,
-          WorkspaceSubscribeRequest(
-            workspaceId: workspaceId,
-            afterSequence: 0,
-            activeTurnIds: const [],
-          ),
-        )
-        .first,
+    'workspace stream': () => _firstWorkspaceEvent(
+      endpoints.workspaceStream.subscribe(
+        fixture.authenticated,
+        WorkspaceSubscribeRequest(
+          workspaceId: workspaceId,
+          afterSequence: 0,
+          activeTurnIds: const [],
+        ),
+      ),
+    ),
     'record query': () => endpoints.workspaceState.queryRecords(
       fixture.authenticated,
       workspaceId,
@@ -328,6 +328,39 @@ Map<String, Future<Object?> Function()> _readers(
       workspaceId,
     ),
   };
+}
+
+Future<Object?> _firstWorkspaceEvent(
+  Stream<WorkspaceStreamEnvelope> stream,
+) async {
+  final first = Completer<Object?>();
+  final ended = Completer<void>();
+  final errors = <Object>[];
+  StackTrace? firstStack;
+  late StreamSubscription<WorkspaceStreamEnvelope> subscription;
+  subscription = stream.listen(
+    (value) {
+      if (!first.isCompleted) first.complete(value);
+    },
+    onError: (Object error, StackTrace stack) {
+      errors.add(error);
+      firstStack ??= stack;
+      if (!first.isCompleted) first.complete(null);
+    },
+    onDone: ended.complete,
+  );
+  final result = await first.future;
+  if (errors.isNotEmpty) {
+    await ended.future.timeout(const Duration(seconds: 5));
+  } else {
+    await subscription.cancel();
+  }
+  if (errors.isNotEmpty) {
+    // The generated test transport emits a close error after the source error.
+    expect(errors.skip(1), everyElement(isA<ConnectionClosedException>()));
+    Error.throwWithStackTrace(errors.first, firstStack!);
+  }
+  return result;
 }
 
 typedef _Reader = Future<Object?> Function();

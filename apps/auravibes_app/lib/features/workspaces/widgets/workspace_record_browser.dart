@@ -423,6 +423,11 @@ Future<Map<String, double>> _loadColumnWidths(
   final preferences = await ref.read(sharedPreferencesProvider.future);
   final saved = preferences.getString(_columnWidthKey(workspaceId, tableId));
   if (saved == null) return {};
+
+  return _decodeColumnWidths(saved);
+}
+
+Map<String, double> _decodeColumnWidths(String saved) {
   try {
     final decoded = jsonDecode(saved);
     if (decoded is! Map<String, dynamic>) return {};
@@ -625,18 +630,22 @@ class const _GridRecord(
   bool get _selecting => owner.isSelecting();
   bool get _selected => owner.draft.selected.value.containsKey(record.id);
   bool get _canSelect => _selecting && owner.draft.canSelect(record);
+  WidgetStateProperty<Color?>? get _hoverColor =>
+      owner.draft.hovered.value == record.id
+      ? WidgetStatePropertyAll(colors.onSurface.withValues(alpha: 0.08))
+      : null;
+
   DataRow create() => DataRow(
     selected: _selected,
     onSelectChanged: _canSelect ? _changed : null,
-    color: owner.draft.hovered.value == record.id
-        ? WidgetStatePropertyAll(colors.onSurface.withValues(alpha: 0.08))
-        : null,
+    color: _hoverColor,
     cells: [
       for (final column in owner.visible) _cell(column),
       if (owner.table.canManage && owner.browser.onAddColumn != null)
         DataCell.empty,
     ],
   );
+
   void _changed(bool? checked) =>
       owner.draft.setSelected(record, checked: checked ?? false);
   DataCell _cell(WorkspaceColumn column) =>
