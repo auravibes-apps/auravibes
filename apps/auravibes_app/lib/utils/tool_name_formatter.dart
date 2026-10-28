@@ -75,7 +75,7 @@ class const ToolNameFormatter._() {
 }
 
 abstract final class _ResolvedToolNameFormatter {
-  static const _workspaceNames = {
+  static const Map<String, String> _workspaceNames = {
     'workspace_read_directory': LocaleKeys.workspace_tool_names_read_directory,
     'workspace_read_item': LocaleKeys.workspace_tool_names_open_file_or_view,
     'workspace_read_table': LocaleKeys.workspace_tool_names_read_table,

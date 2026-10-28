@@ -197,13 +197,15 @@ void main() {
       final current = await tester.runAsync(() async {
         final table = (await tables.list()).single;
         final record = (await tables.records(table.id)).single;
+
         return (table: table, record: record);
       });
       if (current == null) fail('Missing created record');
       expect(current.record.values[current.table.columns.last.id], isNull);
       final cell = find.byKey(
         ValueKey(
-          'workspace_cell_${current.record.id}_${current.table.columns.last.id}',
+          'workspace_cell_${current.record.id}_'
+          '${current.table.columns.last.id}',
         ),
       );
       await tester.tap(cell);
@@ -215,7 +217,7 @@ void main() {
         const ValueKey('workspace_inline_record_value'),
       );
       await tester.enterText(number, '0');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.testTextInput.receiveAction(.done);
       await flush();
       await tester.runAsync(() async {
         final table = (await tables.list()).single;
