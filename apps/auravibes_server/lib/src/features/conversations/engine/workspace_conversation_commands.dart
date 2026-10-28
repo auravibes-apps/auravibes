@@ -6,7 +6,6 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../accounts/auth_user_lock.dart';
-import '../../workspace_context/workspace_context_store.dart';
 import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/domain/workspace_table_constraints.dart';
 import '../../workspace_state/usecases/workspace_state_usecases.dart';
@@ -22,6 +21,7 @@ typedef _CommandAuthority = ({
 typedef _RecordReadScope = ({
   Session session,
   WorkspaceMember member,
+  Transaction transaction,
   String tableId,
   List<Map<String, Object?>> columns,
   WorkspaceReferenceScope references,
@@ -31,7 +31,7 @@ typedef _CommandExecution = ({
   Session session,
   ConversationTurn turn,
   String operationId,
-  String contextSelectionId,
+  String conversationStableId,
   Map<String, dynamic> arguments,
   WorkspaceMember member,
   WorkspaceContextSelection selection,
@@ -48,7 +48,7 @@ typedef _PrepareCommandRequest = ({
 typedef _ResolvedCommandContext = ({
   _PrepareCommandRequest request,
   String operationId,
-  String contextSelectionId,
+  String conversationStableId,
   WorkspaceMember member,
   WorkspaceContextSelection selection,
 });
@@ -101,7 +101,6 @@ typedef _CommandGuardRequest = ({
   Session session,
   ConversationTurn turn,
   String conversationId,
-  String epoch,
   Transaction transaction,
 });
 
@@ -126,22 +125,77 @@ class const WorkspaceConversationCommands({
       operationId: operationId,
       arguments: arguments,
     ));
-    final isRead =
-        arguments['action'] == 'read' || arguments['action'] == 'listCreated';
+    final isRead = {'read', 'readDirectory'}.contains(arguments['action']);
     if (!isRead) await beforeMutation?.call();
-    final result = arguments['action'] == 'listCreated'
-        ? await _listCreated(command)
-        : await _execute(command);
+    if (arguments['action'] == 'read' &&
+        command.selection.kind == 'file' &&
+        arguments['id'] != command.selection.itemId) {
+      _denied();
+    }
+    final fileSnapshot =
+        arguments['action'] == 'read' && command.selection.kind == 'file'
+        ? await (fileReader ?? const WorkspaceConversationFile()).readSnapshot(
+            session,
+            command.member,
+            command.selection.itemId,
+          )
+        : null;
+    var result = fileSnapshot?.result ?? await _execute(command);
     if (isRead) {
       await beforeReadVerification?.call();
+      if (fileSnapshot != null) {
+        await _verifyFileSnapshot(
+          command,
+          fileSnapshot.resource,
+          fileSnapshot.object,
+        );
+      } else {
+        result = await _execute(command);
+      }
       await _verifyReadSelection(session, turn, command);
     }
 
-    return _includeSelectionId(result, command);
+    return result;
   }
 
   Future<_CommandExecution> _prepare(_PrepareCommandRequest request) =>
       _WorkspaceCommandPreparation(this, request).build();
+
+  Future<void> _verifyFileSnapshot(
+    _CommandExecution command,
+    WorkspaceResource original,
+    WorkspaceObject object,
+  ) => command.session.db.transaction((transaction) async {
+    await command.authority.guard(transaction);
+    await _authorizedWorkspace(command, transaction);
+    final member = await _transactionMember(command, transaction);
+    final current = await WorkspaceResource.db.findFirstRow(
+      command.session,
+      where: (row) => row.id.equals(original.id) & row.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final currentObject = await WorkspaceObject.db.findFirstRow(
+      command.session,
+      where: (row) => row.id.equals(object.id) & row.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        current.revision != original.revision ||
+        currentObject == null ||
+        currentObject.workspaceId != member.workspaceId ||
+        currentObject.revision != object.revision ||
+        currentObject.status != 'active' ||
+        await WorkspaceTableAccess(transaction: transaction).visible(
+              command.session,
+              member,
+              current,
+            ) ==
+            null) {
+      _denied();
+    }
+  });
 
   Future<void> _verifyReadSelection(
     Session session,
@@ -154,100 +208,52 @@ class const WorkspaceConversationCommands({
       _denied();
     }
     final current = await _selection(session, turn);
-    if (current?.id != command.contextSelectionId) _denied();
+    if (current?.id != command.conversationStableId) _denied();
   }
 
   Future<void> _guard(
     _CommandGuardRequest request,
   ) async {
-    final current = jsonDecode(
-      await WorkspaceContextStore(
-        request.session,
-        request.turn.workspaceId,
-        request.conversationId,
-        request.turn.initiatorUserId,
-      ).readInTransaction(request.transaction),
-    ) as Map<String, dynamic>;
-    if (current['id'] != request.epoch) _denied();
+    final conversation = await Conversation.db.findFirstRow(
+      request.session,
+      where: (row) =>
+          row.id.equals(request.turn.conversationId) &
+          row.workspaceId.equals(request.turn.workspaceId) &
+          row.stableId.equals(request.conversationId) &
+          row.deletedAt.equals(null),
+      transaction: request.transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (conversation == null) _denied();
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      request.session,
+      where: (row) =>
+          row.id.equals(request.turn.workspaceId) &
+          row.deletedAt.equals(null) &
+          row.erasureRequestedAt.equals(null),
+      transaction: request.transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _denied();
+    final member = await WorkspaceMember.db.findFirstRow(
+      request.session,
+      where: (row) =>
+          row.workspaceId.equals(request.turn.workspaceId) &
+          row.userId.equals(request.turn.initiatorUserId) &
+          row.removedAt.equals(null),
+      transaction: request.transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (member == null) _denied();
   }
 
   Future<List<Map<String, Object?>>> _created(
     Session session,
     ConversationTurn turn,
-    String epoch,
   ) async {
     final calls = await _CommandCallHistory(turn).find(session);
 
-    return [
-      for (final call in calls) ?_creationForSelection(call, epoch),
-    ];
-  }
-
-  Future<Map<String, Object?>> _listCreated(_CommandExecution command) async {
-    final cursor = command.arguments['cursor'];
-    if (cursor != null &&
-        (cursor is! String || cursor.isEmpty || cursor.length > 512)) {
-      throw const FormatException('Invalid cursor.');
-    }
-    final calls = await _CommandCallHistory(command.turn).find(
-      command.session,
-      cursor: cursor as String?,
-      limit: 101,
-    );
-    final created = [
-      for (final call in calls.take(100))
-        ?_creationForSelection(call, command.contextSelectionId),
-    ];
-    final items = <Map<String, Object?>>[];
-    for (final entry in created) {
-      await _verifyReadSelection(command.session, command.turn, command);
-      final kind = entry['kind'];
-      final id = entry['id'];
-      if (id is! String || !{'folder', 'table', 'view'}.contains(kind)) {
-        continue;
-      }
-      final item = await _createdItem(command, created, kind! as String, id);
-      if (item == null) continue;
-      items.add(item);
-    }
-    return {
-      'items': items,
-      'nextCursor': calls.length > 100 ? calls[99].stableId : null,
-    };
-  }
-
-  Future<Map<String, Object?>?> _createdItem(
-    _CommandExecution command,
-    List<Map<String, Object?>> created,
-    String kind,
-    String id,
-  ) async {
-    final arguments = <String, dynamic>{
-      'action': 'read',
-      if (kind == 'table') 'tableId': id else 'id': id,
-    };
-    final read = (
-      session: command.session,
-      turn: command.turn,
-      operationId: command.operationId,
-      contextSelectionId: command.contextSelectionId,
-      arguments: arguments,
-      member: command.member,
-      selection: workspaceCreatedContext(command.selection, created, arguments),
-      authority: command.authority,
-    );
-    try {
-      final data = await _execute(read) as Map<String, dynamic>;
-      return {
-        'id': id,
-        'kind': kind,
-        for (final key in ['name', 'revision', 'schemaRevision'])
-          if (data.containsKey(key)) key: data[key],
-      };
-    } on CloudWorkspaceException catch (error) {
-      if (error.code == .permissionDenied) return null;
-      rethrow;
-    }
+    return [for (final call in calls) ?_creationForConversation(call)];
   }
 
   Future<Object?> _execute(_CommandExecution command) async {
@@ -263,13 +269,15 @@ class const WorkspaceConversationCommands({
         selection.itemId,
       );
     }
-    if (selection.kind == 'directory' && action == 'read') {
+    if (selection.kind == 'directory' &&
+        (action == 'read' || action == 'readDirectory')) {
+      if (action == 'readDirectory') return _readDirectory(command);
       if ((command.arguments['id'] ?? '') != '' ||
           (command.arguments['tableId'] ?? '') != '' ||
           command.arguments['parentId'] != null) {
         _denied();
       }
-      return {'kind': 'directory', 'id': '', 'parentId': null};
+      return _directory(command, null);
     }
     if (selection.kind == 'view') return _items.view(command);
     if (selection.kind == 'folder' && !_createsItem(action)) {
@@ -278,6 +286,89 @@ class const WorkspaceConversationCommands({
     if (_createsItem(action)) return _items.createItem(command);
 
     return _executeTable(command);
+  }
+
+  Future<Map<String, Object?>> _readDirectory(
+    _CommandExecution command,
+  ) => command.session.db.transaction((transaction) async {
+    await command.authority.guard(transaction);
+    await _authorizedWorkspace(command, transaction);
+    final member = await _transactionMember(command, transaction);
+    final path = _optionalDirectoryString(command.arguments, 'path');
+    final pathRegex = _optionalDirectoryString(command.arguments, 'pathRegex');
+    final nameRegex = _optionalDirectoryString(command.arguments, 'nameRegex');
+    return readWorkspaceDirectory(
+      path: path,
+      pathRegex: pathRegex,
+      nameRegex: nameRegex,
+      listChildren: (parentId) async =>
+          ((await _directoryInTransaction(
+                    command,
+                    parentId,
+                    member,
+                    transaction,
+                  ))['items']!
+                  as List)
+              .cast<Map<String, Object?>>(),
+    );
+  });
+
+  Future<Map<String, Object?>> _directory(
+    _CommandExecution command,
+    String? parentId,
+  ) => command.session.db.transaction((transaction) async {
+    await command.authority.guard(transaction);
+    await _authorizedWorkspace(command, transaction);
+    final member = await _transactionMember(command, transaction);
+    return _directoryInTransaction(command, parentId, member, transaction);
+  });
+
+  Future<Map<String, Object?>> _directoryInTransaction(
+    _CommandExecution command,
+    String? parentId,
+    WorkspaceMember member,
+    Transaction transaction,
+  ) async {
+    final resources = await WorkspaceResource.db.find(
+      command.session,
+      where: (row) =>
+          row.workspaceId.equals(member.workspaceId) &
+          row.resourceKind.inSet({.folder, .table, .file}) &
+          row.deletedAt.equals(null),
+      transaction: transaction,
+    );
+    final items = <Map<String, Object?>>[];
+    for (final resource in resources) {
+      if (_data(resource)['parentId'] != parentId) continue;
+      final visible = await WorkspaceTableAccess(transaction: transaction)
+          .visible(command.session, member, resource);
+      if (visible == null) continue;
+      items.add({
+        'kind': resource.resourceKind.name,
+        'id': resource.resourceId,
+        'name': _data(visible)['name'],
+        'revision': resource.revision,
+      });
+    }
+    final views = await WorkspaceViewStore(
+      command.session,
+      member,
+      transaction,
+    ).list(parentId, false);
+    for (final view in views) {
+      items.add({
+        'kind': 'view',
+        'id': view.stableId,
+        'name': (jsonDecode(view.data) as Map<String, dynamic>)['name'],
+        'revision': view.revision,
+      });
+    }
+    return {
+      'kind': 'directory',
+      'id': '',
+      'parentId': null,
+      'items': items,
+    };
   }
 
   Future<Object?> _executeTable(_CommandExecution command) =>
@@ -312,26 +403,23 @@ class const WorkspaceConversationCommands({
         conversation.deletedAt != null) {
       _denied();
     }
-    final result = jsonDecode(
-      await WorkspaceContextStore(
-        session,
-        turn.workspaceId,
-        conversation.stableId,
-        turn.initiatorUserId,
-      ).read(),
-    ) as Map<String, dynamic>;
-    final id = result['id'];
-    if (id is! String) return null;
-
     return (
-      id: id,
-      selection: WorkspaceContextSelection.decode(
-        result['selection'],
-        '${turn.workspaceId}',
-        conversation.stableId,
+      id: conversation.stableId,
+      selection: WorkspaceContextSelection(
+        workspaceId: '${turn.workspaceId}',
+        conversationId: conversation.stableId,
+        itemId: '',
+        kind: 'directory',
       ),
     );
   }
+}
+
+String? _optionalDirectoryString(Map<String, dynamic> arguments, String key) {
+  final value = arguments[key];
+  if (value == null) return null;
+  if (value is! String) throw const FormatException('Invalid directory query.');
+  return value;
 }
 
 class _WorkspaceCommandPreparation {
@@ -342,15 +430,71 @@ class _WorkspaceCommandPreparation {
 
   Future<_CommandExecution> build() async {
     final resolved = await _resolve();
-    final created = request.arguments['action'] == 'listCreated'
-        ? <Map<String, Object?>>[]
-        : await commands._created(
-            request.session,
-            request.turn,
-            resolved.contextSelectionId,
-          );
+    final created = await commands._created(request.session, request.turn);
 
-    return _execution((resolved: resolved, created: created));
+    final execution = _execution((resolved: resolved, created: created));
+    final selection = await _directoryTarget(execution);
+    return (
+      session: execution.session,
+      turn: execution.turn,
+      operationId: execution.operationId,
+      conversationStableId: execution.conversationStableId,
+      arguments: execution.arguments,
+      member: execution.member,
+      selection: selection,
+      authority: execution.authority,
+    );
+  }
+
+  Future<WorkspaceContextSelection> _directoryTarget(
+    _CommandExecution command,
+  ) async {
+    final root = command.selection;
+    if (root.kind != 'directory') return root;
+    final target = switch (command.arguments['action']) {
+      'read' => command.arguments['tableId'] ?? command.arguments['id'],
+      'createFolder' || 'createTable' => command.arguments['parentId'],
+      'renameFolder' => command.arguments['id'],
+      'renameTable' ||
+      'saveColumn' ||
+      'createRecord' ||
+      'updateRecord' ||
+      'createView' => command.arguments['tableId'],
+      'saveView' => command.arguments['id'],
+      _ => null,
+    };
+    if (target is! String || target.isEmpty) return root;
+    final expectedKind = workspaceTargetKind(command.arguments);
+    WorkspaceContextSelection? match;
+    final pending = <String?>[null];
+    final visited = <String?>{};
+    while (pending.isNotEmpty) {
+      final parentId = pending.removeLast();
+      if (!visited.add(parentId)) continue;
+      final data = await commands._directory(command, parentId);
+      for (final item in (data['items'] as List).cast<Map<String, Object?>>()) {
+        final id = item['id'];
+        final kind = item['kind'];
+        if (id is! String || kind is! String) continue;
+        if (kind == 'folder') pending.add(id);
+        if (id != target || (expectedKind != null && kind != expectedKind)) {
+          continue;
+        }
+        if (expectedKind == null && kind == 'table') continue;
+        final child = WorkspaceContextSelection(
+          workspaceId: root.workspaceId,
+          conversationId: root.conversationId,
+          itemId: id,
+          kind: kind,
+          parentId: parentId,
+        );
+        if (expectedKind != null) return child;
+        if (match != null) _denied();
+        match = child;
+      }
+    }
+    if (match != null) return match;
+    _denied();
   }
 
   Future<_ResolvedCommandContext> _resolve() async {
@@ -364,7 +508,7 @@ class _WorkspaceCommandPreparation {
     return (
       request: request,
       operationId: operationId,
-      contextSelectionId: selected.id,
+      conversationStableId: selected.id,
       member: member,
       selection: selected.selection!,
     );
@@ -382,7 +526,7 @@ class _WorkspaceCommandPreparation {
     final resolved = ready.resolved;
     final request = resolved.request;
     final operationId = resolved.operationId;
-    final contextSelectionId = resolved.contextSelectionId;
+    final conversationStableId = resolved.conversationStableId;
     final member = resolved.member;
     final created = ready.created;
     final selection = workspaceCreatedContext(
@@ -395,7 +539,7 @@ class _WorkspaceCommandPreparation {
       session: request.session,
       turn: request.turn,
       operationId: operationId,
-      contextSelectionId: contextSelectionId,
+      conversationStableId: conversationStableId,
       arguments: request.arguments,
       member: member,
       selection: selection,
@@ -409,7 +553,6 @@ class _WorkspaceCommandPreparation {
   ) {
     final resolved = ready.resolved;
     final request = resolved.request;
-    final selectionId = resolved.contextSelectionId;
     final references = WorkspaceReferenceScope(
       resolved.selection,
       ready.created,
@@ -429,7 +572,6 @@ class _WorkspaceCommandPreparation {
           session: request.session,
           turn: request.turn,
           conversationId: selection.conversationId,
-          epoch: selectionId,
           transaction: transaction,
         ));
       },
@@ -602,19 +744,39 @@ class _WorkspaceConversationItemCommands {
     final arguments = command.arguments;
     final selection = command.selection;
     if (arguments['id'] != selection.itemId) _denied();
+    if (arguments['action'] == 'read') {
+      return command.session.db.transaction((transaction) async {
+        await command.authority.guard(transaction);
+        await _authorizedWorkspace(command, transaction);
+        final member = await _transactionMember(command, transaction);
+        final folder = await _WorkspaceConversationTableReader().visible(
+          command.session,
+          member,
+          .folder,
+          selection.itemId,
+          transaction: transaction,
+        );
+        final children = await WorkspaceConversationCommands()
+            ._directoryInTransaction(
+              command,
+              folder.resourceId,
+              member,
+              transaction,
+            );
+        return {
+          'id': folder.resourceId,
+          'name': _data(folder)['name'],
+          'revision': folder.revision,
+          'items': children['items'],
+        };
+      });
+    }
     final folder = await _WorkspaceConversationTableReader().visible(
       command.session,
       command.member,
       .folder,
       selection.itemId,
     );
-    if (arguments['action'] == 'read') {
-      return {
-        'id': folder.resourceId,
-        'name': _data(folder)['name'],
-        'revision': folder.revision,
-      };
-    }
     if (arguments['action'] != 'renameFolder') {
       throw const FormatException('Invalid folder action.');
     }
@@ -685,8 +847,9 @@ class _WorkspaceConversationTableReader {
     Session session,
     WorkspaceMember member,
     WorkspaceResourceKind kind,
-    String id,
-  ) async {
+    String id, {
+    Transaction? transaction,
+  }) async {
     final row = await WorkspaceResource.db.findFirstRow(
       session,
       where: (row) =>
@@ -694,13 +857,15 @@ class _WorkspaceConversationTableReader {
           row.resourceKind.equals(kind) &
           row.resourceId.equals(id) &
           row.deletedAt.equals(null),
+      transaction: transaction,
     );
     if (row == null) _denied();
-    final visible = await const WorkspaceTableAccess().visible(
-      session,
-      member,
-      row,
-    );
+    final visible = await WorkspaceTableAccess(transaction: transaction)
+        .visible(
+          session,
+          member,
+          row,
+        );
     if (visible == null) _denied();
 
     return visible;
@@ -708,22 +873,36 @@ class _WorkspaceConversationTableReader {
 
   Future<WorkspaceResource> raw(
     Session session,
-    WorkspaceResource visible,
-  ) async {
-    final raw = await WorkspaceResource.db.findById(session, visible.id!);
+    WorkspaceResource visible, {
+    Transaction? transaction,
+  }) async {
+    final raw = await WorkspaceResource.db.findById(
+      session,
+      visible.id!,
+      transaction: transaction,
+    );
     if (raw == null || raw.workspaceId != visible.workspaceId) _denied();
 
     return raw;
   }
 
-  Future<Map<String, Object?>> read(_TableExecution execution) async {
+  Future<Map<String, Object?>> read(
+    _TableExecution execution,
+    WorkspaceMember member,
+    Transaction transaction,
+  ) async {
     final command = execution.command;
     final table = execution.table;
-    final raw = await this.raw(command.session, table);
+    final raw = await this.raw(
+      command.session,
+      table,
+      transaction: transaction,
+    );
     final data = _data(table);
     final scope = (
       session: command.session,
-      member: command.member,
+      member: member,
+      transaction: transaction,
       tableId: table.resourceId,
       columns: _columns(raw),
       references: command.authority.references,
@@ -736,18 +915,36 @@ class _WorkspaceConversationTableReader {
       'schemaRevision': data['schemaRevision'],
       'labelColumnId': data['labelColumnId'],
       'columns': _readableColumns(table, command.authority.references),
-      'records': await _readableRecords(scope, _recordIds(command)),
+      'records': await _readableRecords(
+        scope,
+        await _recordIds(scope, command),
+      ),
     };
   }
 
-  List<String> _recordIds(_CommandExecution command) {
+  Future<List<String>> _recordIds(
+    _RecordReadScope scope,
+    _CommandExecution command,
+  ) async {
     final id = command.arguments['id'];
-    if (id == null) return command.selection.recordIds;
-    if (id is! String || !command.selection.recordIds.contains(id)) {
-      _denied();
+    if (id != null) {
+      if (id is! String || id.isEmpty) _denied();
+
+      return [id];
     }
 
-    return [id];
+    final records = await WorkspaceResource.db.find(
+      scope.session,
+      where: (row) =>
+          row.workspaceId.equals(scope.member.workspaceId) &
+          row.resourceKind.equals(.tableRecord) &
+          row.deletedAt.equals(null),
+      transaction: scope.transaction,
+    );
+    return [
+      for (final record in records)
+        if (_data(record)['tableId'] == scope.tableId) record.resourceId,
+    ];
   }
 
   List<Map<String, Object?>> _columns(WorkspaceResource table) =>
@@ -774,6 +971,7 @@ class _WorkspaceConversationTableReader {
       scope.member,
       .tableRecord,
       id,
+      transaction: scope.transaction,
     );
     final data = _data(record);
     if (data['tableId'] != scope.tableId) _denied();
@@ -886,7 +1084,6 @@ class _WorkspaceConversationRecordUpdater {
     String id,
   ) async {
     final command = execution.command;
-    if (!command.selection.recordIds.contains(id)) _denied();
     final current = await _WorkspaceConversationTableReader().visible(
       command.session,
       command.member,
@@ -1034,20 +1231,32 @@ class _WorkspaceConversationColumnSaver {
 
 class _WorkspaceConversationTableRouter {
   Future<Object?> execute(_CommandExecution command) async {
-    final visible = await _selectedTable(command);
     if (command.arguments['action'] == 'read') {
-      return _WorkspaceConversationTableReader().read((
-        command: command,
-        table: visible,
-      ));
+      return command.session.db.transaction((transaction) async {
+        await command.authority.guard(transaction);
+        await _authorizedWorkspace(command, transaction);
+        final member = await _transactionMember(command, transaction);
+        final visible = await _selectedTable(
+          command,
+          member: member,
+          transaction: transaction,
+        );
+        return _WorkspaceConversationTableReader().read(
+          (command: command, table: visible),
+          member,
+          transaction,
+        );
+      });
     }
-
+    final visible = await _selectedTable(command);
     return _mutate(command, visible);
   }
 
   Future<WorkspaceResource> _selectedTable(
-    _CommandExecution command,
-  ) async {
+    _CommandExecution command, {
+    WorkspaceMember? member,
+    Transaction? transaction,
+  }) async {
     final selection = command.selection;
     if (selection.kind != 'table' ||
         command.arguments['tableId'] != selection.itemId) {
@@ -1056,9 +1265,10 @@ class _WorkspaceConversationTableRouter {
 
     return _WorkspaceConversationTableReader().visible(
       command.session,
-      command.member,
+      member ?? command.member,
       .table,
       selection.itemId,
+      transaction: transaction,
     );
   }
 
@@ -1129,7 +1339,7 @@ class _CommandCallHistory {
       row.conversationId.equals(turn.conversationId);
 
   Expression _workspaceTool(ConversationToolCallTable row) =>
-      row.name.equals(workspaceCommandToolName);
+      row.name.inSet(workspaceToolNames);
 
   Expression _success(ConversationToolCallTable row) =>
       row.status.equals('success');
@@ -1270,39 +1480,23 @@ Map<String, Object?> _operationResult(
   if (operation.resourceKind == .tableRecord) 'tableId': table.resourceId,
 };
 
-Map<String, Object?>? _creationForSelection(
-  ConversationToolCall call,
-  String selectionId,
-) {
+Map<String, Object?>? _creationForConversation(ConversationToolCall call) {
   final result = jsonDecode(call.resultJson ?? '{}');
-  final arguments = jsonDecode(call.argumentsJson);
-  if (_createdForSelection(result, arguments, selectionId)) {
+  final arguments = workspaceCommandArgumentsForTool(
+    call.name,
+    jsonDecode(call.argumentsJson) as Map<String, dynamic>,
+  );
+  if (_createdByCall(result, arguments)) {
     return result as Map<String, Object?>;
   }
 
   return null;
 }
 
-bool _createdForSelection(
-  Object? result,
-  Object? arguments,
-  String selectionId,
-) =>
+bool _createdByCall(Object? result, Object? arguments) =>
     result is Map<String, dynamic> &&
     arguments is Map<String, dynamic> &&
-    result['contextSelectionId'] == selectionId &&
     (arguments['action'] as String? ?? '').startsWith('create');
-
-Object? _includeSelectionId(Object? result, _CommandExecution command) {
-  if (!(command.arguments['action'] as String).startsWith('create')) {
-    return result;
-  }
-
-  return {
-    ...result as Map<String, Object?>,
-    'contextSelectionId': command.contextSelectionId,
-  };
-}
 
 Map<String, dynamic> _data(WorkspaceResource row) =>
     jsonDecode(row.data) as Map<String, dynamic>;

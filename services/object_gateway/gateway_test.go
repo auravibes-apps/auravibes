@@ -88,6 +88,48 @@ func (l *fakeLedger) close(_ context.Context, key, registrationID string) (bool,
 }
 func (l *fakeLedger) ping(context.Context) error { return nil }
 
+func (l *fakeLedger) status(_ context.Context, key, id string) (bool, int64, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.registered[key] != id {
+		return false, 0, errUnknown
+	}
+	return l.closed[key], int64(len(l.pending[key])), nil
+}
+
+func TestStatusRequiresAuthorizationAndDoesNotChangeReservations(t *testing.T) {
+	l := newFakeLedger()
+	g := testGateway(l, newFakeBucket())
+	target := "https://gateway.example/objects/" + testKey + "?status=1"
+	unauthorized := httptest.NewRecorder()
+	g.ServeHTTP(unauthorized, httptest.NewRequest("GET", target, nil))
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatal("status accepted an unauthenticated request")
+	}
+	wrongID := httptest.NewRequest("GET", target, nil)
+	wrongID.Header.Set("Authorization", "Bearer "+g.controlToken)
+	wrongID.Header.Set("X-Registration-Id", strings.Repeat("b", 64))
+	w := httptest.NewRecorder()
+	g.ServeHTTP(w, wrongID)
+	if w.Code != http.StatusConflict {
+		t.Fatal("status accepted a different registration")
+	}
+	id := strings.Repeat("a", 64)
+	if err := l.start(context.Background(), testKey, id, "pending"); err != nil {
+		t.Fatal(err)
+	}
+	if ready, err := l.close(context.Background(), testKey, id); err != nil || ready {
+		t.Fatal("pending reservation was not retained")
+	}
+	w = control(g, "GET", target)
+	if w.Code != http.StatusOK || w.Body.String() != "{\"closed\":true,\"pendingOperations\":1}\n" || w.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("unexpected status: %d %s", w.Code, w.Body.String())
+	}
+	if ready, err := l.close(context.Background(), testKey, id); err != nil || ready {
+		t.Fatal("status changed the pending reservation")
+	}
+}
+
 type fakeBucket struct {
 	mu      sync.Mutex
 	objects map[string]storedObject

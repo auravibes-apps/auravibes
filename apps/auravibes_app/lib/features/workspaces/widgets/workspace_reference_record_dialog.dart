@@ -6,9 +6,6 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_record_edito
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _dialogWidth = 680.0;
-const _dialogHeight = 560.0;
-
 typedef WorkspaceReferenceRecordInput = ({
   WorkspaceTable table,
   WorkspaceRecord? record,
@@ -26,20 +23,27 @@ class const WorkspaceReferenceRecordDialog({
     WorkspaceReferenceRecordInput input,
   ) => showDialog<void>(
     context: context,
-    builder: (_) => Dialog(
-      child: WorkspaceReferenceRecordDialog(
-        workspaceId: workspaceId,
-        input: input,
-      ),
-    ),
+    builder: (context) {
+      final size = MediaQuery.sizeOf(context);
+      final inset = size.width < 600 ? 8.0 : 40.0;
+
+      return Dialog(
+        insetPadding: .all(inset),
+        child: SizedBox(
+          width: (size.width - inset * 2).clamp(0.0, 680.0),
+          height: (size.height - inset * 2).clamp(0.0, 560.0),
+          child: WorkspaceReferenceRecordDialog(
+            workspaceId: workspaceId,
+            input: input,
+          ),
+        ),
+      );
+    },
   );
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: _dialogWidth,
-    height: _dialogHeight,
-    child: _ReferenceEditor(workspaceId: workspaceId, input: input),
-  );
+  Widget build(BuildContext context) =>
+      _ReferenceEditor(workspaceId: workspaceId, input: input);
 }
 
 class const _ReferenceEditor({

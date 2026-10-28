@@ -2,8 +2,10 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_record_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -11,6 +13,8 @@ class const WorkspaceReferenceRow({
   required final String workspaceId,
   required final WorkspaceRecord record,
   final bool selected = false,
+  final String? selectedId,
+  final bool multiple = false,
   final VoidCallback? onSelect,
   super.key,
 }) extends ConsumerWidget {
@@ -30,14 +34,28 @@ class const _ReferenceTile({
   required final WorkspaceReferenceRow row,
   required final WorkspaceTable table,
 }) extends StatelessWidget {
-  String get _label => row.record.values[table.labelColumnId]?.toString() ?? '';
-  String get _details =>
-      table.columns.where(_secondary).take(2).map(_detail).join(' / ');
+  String get _label =>
+      row.record.values[table.labelColumnId]?.toString().trim() ?? '';
+  String get _details => table.columns
+      .where(_secondary)
+      .map(_detail)
+      .where((detail) => detail.isNotEmpty)
+      .take(2)
+      .join(' / ');
+  String get _shortId => row.record.id.lastCharacters(6);
+  String get _titleText => _label.isEmpty
+      ? LocaleKeys.workspace_items_reference_unnamed.tr(args: [_shortId])
+      : _label;
+  String get _subtitleText => _details.isEmpty
+      ? LocaleKeys.workspace_items_reference_record_id.tr(args: [_shortId])
+      : LocaleKeys.workspace_items_reference_candidate_details.tr(
+          args: [_details, _shortId],
+        );
 
   @override
   Widget build(BuildContext context) => row.onSelect == null
       ? ListTile(
-          title: Text(_label),
+          title: Text(_titleText.tr()),
           subtitle: Text(table.name),
           onTap: () => _open(context),
         )
@@ -46,7 +64,10 @@ class const _ReferenceTile({
   bool _secondary(WorkspaceColumn column) =>
       column.id != table.labelColumnId && column.type != .reference;
   String _detail(WorkspaceColumn column) =>
-      '${column.name}: ${row.record.values[column.id] ?? ''}';
+      switch (row.record.values[column.id]) {
+        null || '' => '',
+        final value => '${column.name}: $value',
+      };
   Future<void> _open(BuildContext context) =>
       WorkspaceReferenceRecordDialog.open(context, row.workspaceId, (
         table: table,
@@ -58,13 +79,22 @@ class const _ReferenceTile({
 class const _ReferenceChoice({required final _ReferenceTile tile})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraCheckboxListTile(
-    value: tile.row.selected,
-    onChanged: (_) => tile.row.onSelect?.call(),
-    title: Text(tile._label),
-    subtitle: Text(tile._details),
-    semanticLabel: tile._label,
-  );
+  Widget build(BuildContext context) => tile.row.multiple
+      ? AuraCheckboxListTile(
+          value: tile.row.selected,
+          onChanged: (_) => tile.row.onSelect?.call(),
+          title: Text(tile._titleText),
+          subtitle: Text(tile._subtitleText),
+          semanticLabel: tile._label,
+        )
+      : AuraRadioListTile<String>(
+          value: tile.row.record.id,
+          groupValue: tile.row.selectedId,
+          onChanged: (_) => tile.row.onSelect?.call(),
+          title: Text(tile._titleText),
+          subtitle: Text(tile._subtitleText),
+          semanticLabel: tile._label,
+        );
 }
 
 class const _ReferenceChoiceRow({required final _ReferenceTile tile})
@@ -73,9 +103,10 @@ class const _ReferenceChoiceRow({required final _ReferenceTile tile})
   Widget build(BuildContext context) => Row(
     children: [
       Expanded(child: _ReferenceChoice(tile: tile)),
-      AuraButton(
+      IconButton(
         onPressed: () => tile._open(context),
-        child: const TextLocale(LocaleKeys.workspace_items_reference_details),
+        tooltip: LocaleKeys.workspace_items_reference_details.tr(),
+        icon: const Icon(Icons.open_in_new),
       ),
     ],
   );

@@ -29,8 +29,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         executeConnectorToolName,
-        normalizeToolCallUserFacingDescription,
-        isWorkspaceToolName;
+        isWorkspaceToolName,
+        normalizeToolCallUserFacingDescription;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';

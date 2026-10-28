@@ -86,18 +86,37 @@ void main() {
         syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
 
-      final result = await usecase(
+      final catalog = await usecase.buildCatalog(
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result.map((spec) => spec.name), [
-        workspaceCommandToolName,
-        workspaceUpdateRecordToolName,
+      expect(catalog.specs.map((spec) => spec.name), [
+        ...workspaceReadToolActions.keys,
+        ...workspaceMutationToolActions.keys,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,
         runSubAgentToolName,
       ]);
+      for (final name in [
+        ...workspaceReadToolActions.keys,
+        ...workspaceMutationToolActions.keys,
+      ]) {
+        final target = catalog.resolve(name);
+        expect(target?.isWorkspaceCommand, isTrue, reason: name);
+        expect(target?.toolIdentifier, name);
+        expect(
+          ResolvedTool.builtIn(
+            tableId: 'configured-tool-row',
+            toolIdentifier: name,
+            tooltype: .calculator,
+          ).isWorkspaceCommand,
+          isTrue,
+          reason: name,
+        );
+      }
+      expect(isWorkspaceToolName('workspace_item'), isFalse);
+      expect(isWorkspaceToolName('workspace_list_created'), isFalse);
     });
 
     test('hides agent tools from child conversations', () async {
@@ -155,8 +174,8 @@ void main() {
         );
 
         expect(result.map((spec) => spec.name), [
-          workspaceCommandToolName,
-          workspaceUpdateRecordToolName,
+          ...workspaceReadToolActions.keys,
+          ...workspaceMutationToolActions.keys,
           listConnectorConnectionsToolName,
           listConnectorToolsToolName,
           executeConnectorToolName,
@@ -218,8 +237,8 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
-        workspaceCommandToolName,
-        workspaceUpdateRecordToolName,
+        ...workspaceReadToolActions.keys,
+        ...workspaceMutationToolActions.keys,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,
@@ -249,7 +268,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(7));
+      expect(result, hasLength(17));
       expect(result.firstOrNull?.name, 'tool-1');
     });
 
@@ -438,7 +457,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(9));
+      expect(result, hasLength(19));
     });
 
     test('constructor stores dependencies', () {
@@ -533,8 +552,8 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
-        workspaceCommandToolName,
-        workspaceUpdateRecordToolName,
+        ...workspaceReadToolActions.keys,
+        ...workspaceMutationToolActions.keys,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,
@@ -607,8 +626,8 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
-        workspaceCommandToolName,
-        workspaceUpdateRecordToolName,
+        ...workspaceReadToolActions.keys,
+        ...workspaceMutationToolActions.keys,
         listConnectorConnectionsToolName,
         listConnectorToolsToolName,
         executeConnectorToolName,

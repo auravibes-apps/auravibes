@@ -129,9 +129,11 @@ mixin BrowserSessionToolLifecycle on _$BrowserSessionNotifier {
   }
 
   Future<void> _save(BrowserSessionState next) async {
-    final repository = await ref.read(browserSessionRepositoryProvider.future);
+    final repositoryFuture = ref.read(browserSessionRepositoryProvider.future);
     if (!ref.mounted) return;
     state = AsyncData(next);
+    final repository = await repositoryFuture;
+    if (!ref.mounted) return;
     await repository.save(conversationId, next);
   }
 

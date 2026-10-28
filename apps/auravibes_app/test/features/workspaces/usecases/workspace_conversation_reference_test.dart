@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'unselected references stay hidden and reject guessed targets',
+    'workspace tools read same-workspace references without selection',
     () async {
       final fixture = await _create();
       addTearDown(fixture.database.close);
@@ -68,38 +68,42 @@ void main() {
         table: source,
         values: {source.labelColumnId: 'Selected', reference.id: retained.id},
       );
-      final _ = await fixture.context.save(
-        fixture.chatId,
-        'selected-source',
-        .new(
-          workspaceId: 'one',
-          conversationId: fixture.chatId,
-          itemId: source.id,
-          kind: 'table',
-          recordIds: [row.id],
-        ),
-      );
       final read = await fixture.tools.call(
         conversationId: fixture.chatId,
         arguments: {'action': 'read', 'tableId': source.id},
       );
-      expect(read.toString(), isNot(contains(retained.id)));
-      expect(read.toString(), isNot(contains(target.id)));
-      expect(read.toString(), isNot(contains('Retained secret')));
-      expect(read.toString(), isNot(contains('Unselected secret')));
-      expect(read.toString(), contains('restrictedReferenceColumns'));
+      expect(read.toString(), contains(retained.id));
       expect(read.toString(), contains(reference.id));
-      var failureIndex = 0;
-      for (final input in [
-        {
-          'action': 'saveColumn',
-          'column': {
-            'id': '',
-            'name': 'Guessed',
-            'type': 'reference',
-            'targetTableId': target.id,
+      final targetRead = await fixture.tools.call(
+        conversationId: fixture.chatId,
+        arguments: {'action': 'read', 'tableId': target.id},
+      );
+      expect(targetRead.toString(), contains('Retained secret'));
+      expect(targetRead.toString(), contains('Unselected secret'));
+      final linkedRecord = await fixture.tools.call(
+        conversationId: fixture.chatId,
+        operationId: 'link-same-workspace-row',
+        arguments: {
+          'action': 'createRecord',
+          'tableId': source.id,
+          'revision': source.revision,
+          'schemaRevision': source.schemaRevision,
+          'values': {
+            source.labelColumnId: 'Linked row',
+            reference.id: guessed.id,
           },
         },
+      );
+      final linkedRecordId = (linkedRecord as Map?)?['id'];
+      expect(linkedRecordId, isA<String>());
+      final sourceAfterLink = await fixture.tools.call(
+        conversationId: fixture.chatId,
+        arguments: {'action': 'read', 'tableId': source.id},
+      );
+      expect(sourceAfterLink.toString(), contains(linkedRecordId));
+      expect(sourceAfterLink.toString(), contains(guessed.id));
+      var failureIndex = 0;
+      for (final input in [
         {
           'action': 'saveColumn',
           'column': {
@@ -110,29 +114,11 @@ void main() {
           },
         },
         {
-          'action': 'saveColumn',
-          'column': {
-            'id': reference.id,
-            'name': 'Related',
-            'type': 'reference',
-            'defaultValue': guessed.id,
-          },
-        },
-        {
-          'action': 'createRecord',
-          'values': {source.labelColumnId: 'Guessed', reference.id: guessed.id},
-        },
-        {
           'action': 'createRecord',
           'values': {
             source.labelColumnId: 'Foreign workspace',
             reference.id: otherRecord.id,
           },
-        },
-        {
-          'action': 'updateRecord',
-          'id': row.id,
-          'values': {source.labelColumnId: 'Guessed', reference.id: guessed.id},
         },
       ]) {
         await expectLater(
@@ -149,13 +135,7 @@ void main() {
                 'revision': source.revision,
             },
           ),
-          throwsA(
-            isA<WorkspaceTableException>().having(
-              (error) => error.denied,
-              'denied',
-              isTrue,
-            ),
-          ),
+          throwsA(isA<WorkspaceTableException>()),
         );
       }
       final _ = await fixture.tools.call(
@@ -177,7 +157,7 @@ void main() {
         (await fixture.tables.table(source.id)).schemaRevision,
         source.schemaRevision,
       );
-      expect(await fixture.tables.records(source.id), hasLength(1));
+      expect(await fixture.tables.records(source.id), hasLength(2));
       final _ = await fixture.tools.call(
         conversationId: fixture.chatId,
         operationId: 'rename-retained-reference',

@@ -1269,13 +1269,22 @@ class const ServerToolExecutorService({
           session,
           turn,
           request.id,
-          workspaceCommandArgumentsForTool(tool.descriptor.toolIdentifier, request.arguments),
+          workspaceToolArgumentsForExecution(
+            tool.descriptor.toolIdentifier,
+            request.arguments,
+          ),
         );
       } on FormatException catch (error, stackTrace) {
-        throw _workspaceFailure('invalid', error, stackTrace);
+        throw _workspaceFailure(
+          'invalid',
+          error,
+          stackTrace,
+          detail: error.message,
+        );
       } on CloudWorkspaceException catch (error, stackTrace) {
         final code = switch (error.code) {
           .conflict || .staleRevision => 'conflict',
+          .incompatibleRelationship => 'incompatible_relationship',
           .validationFailed || .invalidCursor => 'invalid',
           .permissionDenied ||
           .membershipRequired ||
@@ -3033,11 +3042,13 @@ ServerToolRequest _readRequest(Map<String, dynamic> arguments) => .new(
 AgentToolExecutionFailure _workspaceFailure(
   String code,
   Object error,
-  StackTrace stackTrace,
-) => AgentToolExecutionFailure(
+  StackTrace stackTrace, {
+  String? detail,
+}) => AgentToolExecutionFailure(
   responseRaw: jsonEncode({
-    'code': code,
-    ...workspaceFailureContext(jsonEncode({'code': code})),
+    ...workspaceFailureContext(
+      jsonEncode({'code': code, 'detail': ?detail}),
+    ),
   }),
   error: error,
   stackTrace: stackTrace,

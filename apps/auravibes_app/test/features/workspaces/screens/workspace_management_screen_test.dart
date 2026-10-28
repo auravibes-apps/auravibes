@@ -1,8 +1,11 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_erasure.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -18,6 +21,7 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/features/workspaces/services/workspace_configuration_file_service.dart';
@@ -40,6 +44,10 @@ import 'package:mocktail/mocktail.dart';
 import '../../../data/database/drift/database_test_utils.dart';
 
 class _UnusedCloudClient extends Mock implements Client;
+
+class _ErasureCleanup extends Mock implements LocalWorkspaceAssetErasure;
+class _CleanupFileStore extends Mock implements AttachmentFileStore;
+
 class _CloudEndpoint extends Mock implements EndpointCloudWorkspace;
 
 class _FakeGoRouter implements GoRouter {
@@ -390,9 +398,15 @@ void main() {
       WorkspaceSelectionRepository? selectionRepository,
       WorkspaceConfigurationArchiveUsecase? archiveUsecase,
       bool cleanupPending = false,
+      LocalWorkspaceAssetErasure? erasureCleanup,
     }) {
       final useRepo = repo ?? repository;
       final restoredWorkspaceIds = <String>[];
+      final cleanup = erasureCleanup ?? _ErasureCleanup();
+      if (erasureCleanup == null) {
+        when(cleanup.hasPendingDeletedWorkspaceCleanup)
+            .thenAnswer((_) async => false);
+      }
 
       return EasyLocalization(
         child: Builder(
@@ -424,6 +438,7 @@ void main() {
               cloudAccountsProvider.overrideWith((ref) async => accounts),
               routerProvider.overrideWithValue(navigationRouter ?? router),
               workspaceRepositoryProvider.overrideWithValue(useRepo),
+              workspaceAssetErasureProvider.overrideWithValue(cleanup),
               deleteWorkspaceUseCaseProvider.overrideWithValue(
                 .new(
                   repository: useRepo,
@@ -550,6 +565,228 @@ void main() {
       });
       await tester.pump();
     }
+
+    testWidgets(
+      'persisted deleted workspace cleanup is visible and retryable',
+      (tester) async {
+        final directory = await tester.runAsync(
+          () => Directory.systemTemp.createTemp('workspace-cleanup-test-'),
+        );
+        if (directory == null) {
+          throw StateError('Temporary directory unavailable');
+        }
+        addTearDown(() => directory.delete(recursive: true));
+        final file = File('${directory.path}/workspace.sqlite');
+        final store = _CleanupFileStore();
+        const assetId = 'private-synthetic-asset';
+        when(() => store.deleteAsset(assetId))
+            .thenThrow(StateError('synthetic failure'));
+        var db = AppDatabase(connection: NativeDatabase(file));
+        final actualRepository = WorkspaceRepository(
+          db,
+          attachmentFileStore: store,
+        );
+        var cleanup = LocalWorkspaceAssetErasure(db, store);
+        await tester.runAsync(
+          () =>
+              (() async {
+                final deleted = await actualRepository.createWorkspace(
+                  const WorkspaceToCreate(
+                    name: 'Private deleted workspace',
+                    type: .local,
+                  ),
+                );
+                expect(
+                  await actualRepository.deleteWorkspace(deleted.id),
+                  isTrue,
+                );
+                await cleanup.recoverUntrackedWrite(
+                  assetId,
+                  workspaceId: deleted.id,
+                );
+                await cleanup.flush();
+                expect(
+                  await db.select(db.workspaceAssetDeletions).get(),
+                  hasLength(1),
+                );
+              })().timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => throw StateError('SQLite setup timed out'),
+              ),
+        );
+        final active = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Active workspace', type: .local),
+        );
+        await _pumpAndInit(
+          tester,
+          _buildScreen(workspaceId: active.id, erasureCleanup: cleanup),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+        expect(find.textContaining(assetId), findsNothing);
+        expect(find.textContaining('Private deleted workspace'), findsNothing);
+
+        await tester.runAsync(() async {
+          await tester.pumpWidget(const SizedBox());
+          await Future<void>.delayed(.zero);
+          await db.close().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => throw StateError('SQLite close timed out'),
+          );
+        });
+        db = AppDatabase(connection: NativeDatabase(file));
+        addTearDown(db.close);
+        cleanup = LocalWorkspaceAssetErasure(db, store);
+        await _pumpAndInit(
+          tester,
+          _buildScreen(workspaceId: active.id, erasureCleanup: cleanup),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+        when(() => store.deleteAsset(assetId))
+            .thenAnswer((_) => Future.value());
+        await tester.tap(find.text('Retry cleanup'));
+        final _ = await tester.pumpAndSettle();
+        await tester.runAsync(() async {
+          expect(await db.select(db.workspaceAssetDeletions).get(), isEmpty);
+        });
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'removed workspace cleanup remains visible and retries safely',
+      (tester) async {
+        final workspace = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Active workspace', type: .local),
+        );
+        final cleanup = _ErasureCleanup();
+        var pending = true;
+        var fail = true;
+        when(cleanup.hasPendingDeletedWorkspaceCleanup)
+            .thenAnswer((_) async => pending);
+        when(cleanup.flush).thenAnswer((_) async {
+          if (fail) throw StateError('synthetic cleanup failure');
+          pending = false;
+        });
+        final screen = _buildScreen(
+          workspaceId: workspace.id,
+          erasureCleanup: cleanup,
+        );
+        await _pumpAndInit(tester, screen);
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+
+        await tester.pumpWidget(const SizedBox());
+        await _pumpAndInit(tester, screen);
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Retry cleanup'));
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+
+        fail = false;
+        await tester.tap(find.text('Retry cleanup'));
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsNothing,
+        );
+        verify(cleanup.flush).called(2);
+      },
+    );
+
+    testWidgets(
+      'cleanup status failures remain visible and retry is serialized',
+      (tester) async {
+        final workspace = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Active workspace', type: .local),
+        );
+        final cleanup = _ErasureCleanup();
+        var statusFails = true;
+        final running = Completer<void>();
+        when(cleanup.hasPendingDeletedWorkspaceCleanup).thenAnswer((_) async {
+          if (statusFails) throw StateError('synthetic status failure');
+
+          return true;
+        });
+        when(cleanup.flush).thenAnswer((_) => running.future);
+        await _pumpAndInit(
+          tester,
+          _buildScreen(workspaceId: workspace.id, erasureCleanup: cleanup),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining('Could not check local workspace cleanup status'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Retry cleanup'));
+        await tester.pump();
+        final button = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Retry cleanup'),
+        );
+        expect(button.onPressed, isNull);
+        verify(cleanup.flush).called(1);
+        statusFails = false;
+        running.complete();
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Could not check local workspace cleanup status'),
+          findsNothing,
+        );
+        statusFails = true;
+        await tester.tap(find.text('Retry cleanup'));
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'local file or credential cleanup is still queued',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Could not check local workspace cleanup status'),
+          findsOneWidget,
+        );
+      },
+    );
 
     for (final accept in [true, false]) {
       for (final code in [

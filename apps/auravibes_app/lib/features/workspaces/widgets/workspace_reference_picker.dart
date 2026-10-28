@@ -52,6 +52,10 @@ class const _PickerState(
         cursor: useState<String?>(null),
         refresh: useState(0),
       ));
+  bool get multiple => !picker.queryFilter && picker.column.referenceMultiple;
+  String? get selectedId => multiple || draft.selected.value.isEmpty
+      ? null
+      : draft.selected.value.first;
   List<Object?> get dependencies => [
     draft.search.value,
     draft.cursor.value,
@@ -95,6 +99,7 @@ class const _PickerState(
         onSaved: _created,
       ));
   void done() => picker.onSelected(draft.selected.value.toList());
+  void clear() => draft.selected.value = {};
 
   void _created(WorkspaceRecord record) {
     select(record.id);
@@ -134,16 +139,29 @@ class const _PickerBody({
 class const _PickerHeader({required final _PickerState state})
     extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Column(
-    children: [
-      Text(state.picker.column.name),
-      AuraInput(
-        label: const TextLocale(LocaleKeys.workspace_items_reference_search),
-        onChanged: state.search,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final target = ref.watch(
+      workspaceTableProvider(
+        state.picker.workspaceId,
+        state.picker.column.targetTableId ?? '',
       ),
-      _PickerCreate(state: state),
-    ],
-  );
+    );
+    final name = target.asData?.value.name ?? state.picker.column.name;
+
+    return Column(
+      children: [
+        TextLocale(
+          LocaleKeys.workspace_items_reference_picker_title,
+          args: [name],
+        ),
+        AuraInput(
+          label: const TextLocale(LocaleKeys.workspace_items_reference_search),
+          onChanged: state.search,
+        ),
+        _PickerCreate(state: state),
+      ],
+    );
+  }
 }
 
 class const _PickerCreate({required final _PickerState state})
@@ -185,9 +203,27 @@ class const _PickerPages({
     children: [
       _NextPage(state: state, nextId: nextId),
       _FirstPage(state: state),
-      AuraButton(
-        onPressed: state.done,
-        child: const TextLocale(LocaleKeys.workspace_items_done),
+      Row(
+        children: [
+          if (state.draft.selected.value.isNotEmpty) ...[
+            TextLocale(
+              LocaleKeys.workspace_items_reference_selection_count,
+              args: ['${state.draft.selected.value.length}'],
+            ),
+            const Spacer(),
+            AuraButton(
+              onPressed: state.clear,
+              child: const TextLocale(
+                LocaleKeys.workspace_items_reference_remove,
+              ),
+            ),
+          ] else
+            const Spacer(),
+          AuraButton(
+            onPressed: state.done,
+            child: const TextLocale(LocaleKeys.workspace_items_reference_apply),
+          ),
+        ],
       ),
     ],
   );
@@ -251,6 +287,8 @@ class const _PickerRow({
     workspaceId: state.picker.workspaceId,
     record: record,
     selected: state.draft.selected.value.contains(record.id),
+    selectedId: state.selectedId,
+    multiple: state.multiple,
     onSelect: () => state.select(record.id),
   );
 }

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
-import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -22,38 +21,11 @@ class const LocalWorkspaceCommandRepository(final AppDatabase database) {
   Future<Map<String, Object?>> execute(WorkspaceReceiptWrite request) =>
       database.transaction(_ReceiptTransaction(database, request).execute);
 
-  Future<List<Map<String, Object?>>> created(
-    String workspaceId,
-    String conversationId,
-    String selectionId,
-  ) => _ReceiptRows(database, workspaceId, conversationId).created(selectionId);
-
   Future<List<WorkspaceCommandReceiptRow>> receiptPage(
     String workspaceId,
     String conversationId,
     String? cursor,
   ) => _ReceiptRows(database, workspaceId, conversationId).receiptPage(cursor);
-
-  Future<Map<String, Object?>?> matchedResult({
-    required String workspaceId,
-    required String conversationId,
-    required String selectionId,
-    required String requestId,
-    required Map<String, dynamic> arguments,
-  }) async {
-    final row = await _ReceiptRows(
-      database,
-      workspaceId,
-      conversationId,
-    ).find(requestId);
-    if (row == null ||
-        row.selectionId != selectionId ||
-        row.digest != _ReceiptCodec.digest(arguments)) {
-      return null;
-    }
-
-    return _ReceiptCodec.decode(row.result);
-  }
 }
 
 class _ReceiptTransaction(
@@ -65,7 +37,6 @@ class _ReceiptTransaction(
       _ReceiptRows(database, request.workspaceId, request.conversationId);
 
   Future<Map<String, Object?>> execute() async {
-    await _authorizeSelection();
     final previous = await rows.find(request.requestId);
     if (previous != null) return await _replay(previous);
     final result = await request.run();
@@ -74,21 +45,10 @@ class _ReceiptTransaction(
     return result;
   }
 
-  Future<void> _authorizeSelection() async {
-    final current = await LocalWorkspaceContextRepository(
-      database,
-      request.workspaceId,
-    ).latest(request.workspaceId, request.conversationId);
-    if (current?.id != request.selectionId || current?.selection == null) {
-      throw const WorkspaceTableException(denied: true);
-    }
-  }
-
   Future<Map<String, Object?>> _replay(
     WorkspaceCommandReceiptRow previous,
   ) async {
-    if (previous.digest != digest ||
-        previous.selectionId != request.selectionId) {
+    if (previous.digest != digest) {
       throw const WorkspaceTableException(conflict: true);
     }
     final result = _ReceiptCodec.decode(previous.result);
@@ -127,15 +87,6 @@ class const _ReceiptRows(
     return query.getSingleOrNull();
   }
 
-  Future<List<Map<String, Object?>>> created(String selectionId) async {
-    final query = database.select(database.workspaceCommandReceipts)
-      ..where((row) => _created(row, selectionId))
-      ..orderBy([(row) => OrderingTerm.asc(row.requestId)]);
-    final rows = await query.get();
-
-    return [for (final row in rows) _ReceiptCodec.decode(row.result)];
-  }
-
   Future<List<WorkspaceCommandReceiptRow>> receiptPage(String? cursor) {
     final query = database.select(database.workspaceCommandReceipts)
       ..where(
@@ -154,11 +105,6 @@ class const _ReceiptRows(
   Expression<bool> _scope(WorkspaceCommandReceipts row) =>
       row.workspaceId.equals(workspaceId) &
       row.conversationId.equals(conversationId);
-
-  Expression<bool> _created(WorkspaceCommandReceipts row, String selectionId) =>
-      _scope(row) &
-      row.selectionId.equals(selectionId) &
-      row.created.equals(true);
 }
 
 abstract final class _ReceiptCodec {

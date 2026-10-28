@@ -141,6 +141,20 @@ class BrowserSessionNotifier extends _$BrowserSessionNotifier
     _releaseSession();
   }
 
+  Future<void> saveWorkspaceTabs({
+    required List<WorkspaceContentTab> tabs,
+    required String? selectedTabId,
+  }) async {
+    final current = _current;
+    await _save(
+      current.copyWith(
+        workspaceTabs: tabs,
+        selectedWorkspaceTabId: selectedTabId,
+        clearSelectedWorkspaceTab: selectedTabId == null,
+      ),
+    );
+  }
+
   Future<void> navigate(String url, {String? tabId}) async {
     final targetId = _targetTabId(tabId);
     final normalizedUrl = _normalizeUrl(url);

@@ -267,6 +267,7 @@ typedef _LoadedConversationSidePanel = ({
 typedef _LoadedSidePanelRequest = ({
   BuildContext context,
   WidgetRef ref,
+  String conversationId,
   _SidePanelHookValues panel,
   _ToolResultTabHookValues tabs,
   AsyncValue<SharedPreferences> preferencesAsync,
@@ -293,7 +294,7 @@ typedef _BrowserActionSidebarEffectRequest = ({
   VoidCallback openSidebar,
 });
 
-class _SidePanelHookFlags {
+class _SidePanelHookFlags(final String conversationId) {
   bool preferencesLoaded = false;
   bool visibilityChanged = false;
   bool widthChanged = false;
@@ -1315,12 +1316,13 @@ void _openSidebarForBrowserAction(
 
 Future<void> _persistSidePanelOpen(
   WidgetRef ref, {
+  required String conversationId,
   required bool isOpen,
 }) async {
   try {
     final preferences = await ref.read(sharedPreferencesProvider.future);
     await SidePanelPreferencesRepository(preferences)
-        .saveIsOpen(isOpen: isOpen);
+        .saveIsOpen(conversationId: conversationId, isOpen: isOpen);
   } on Object {
     return;
   }
@@ -1348,6 +1350,7 @@ class const _LoadedChatConversationView({
     final sidePanel = _useLoadedConversationSidePanel(
       context: context,
       ref: ref,
+      conversationId: data.conversation.id,
       browserActionRevision: browserSession?.agentActionRevision,
     );
 
@@ -1362,16 +1365,18 @@ class const _LoadedChatConversationView({
 _LoadedConversationSidePanel _useLoadedConversationSidePanel({
   required BuildContext context,
   required WidgetRef ref,
+  required String conversationId,
   required int? browserActionRevision,
 }) {
   final preferencesAsync = ref.watch(sharedPreferencesProvider);
-  final panel = _useSidePanelHookValues();
+  final panel = _useSidePanelHookValues(conversationId);
   final tabs = _useToolResultTabHookValues();
   final hasAutoOpenedSidebar = useRef(false);
 
   return _prepareLoadedConversationSidePanel((
     context: context,
     ref: ref,
+    conversationId: conversationId,
     panel: panel,
     tabs: tabs,
     preferencesAsync: preferencesAsync,
@@ -1383,7 +1388,11 @@ _LoadedConversationSidePanel _useLoadedConversationSidePanel({
 _LoadedConversationSidePanel _prepareLoadedConversationSidePanel(
   _LoadedSidePanelRequest request,
 ) {
-  _useStoredSidePanelPreferences(request.preferencesAsync, request.panel);
+  _useStoredSidePanelPreferences(
+    request.preferencesAsync,
+    request.panel,
+    request.conversationId,
+  );
   _useBrowserActionSidebarEffect((
     revision: request.browserActionRevision,
     preferencesAsync: request.preferencesAsync,
@@ -1396,11 +1405,13 @@ _LoadedConversationSidePanel _prepareLoadedConversationSidePanel(
   return _loadedConversationSidePanelState(request);
 }
 
-_SidePanelHookValues _useSidePanelHookValues() => (
+_SidePanelHookValues _useSidePanelHookValues(String conversationId) => (
   visible: useState(false),
   mounted: useState(false),
   widthPercent: useState(SidePanelPreferencesRepository.defaultWidthPercent),
-  flags: useMemoized(_SidePanelHookFlags.new),
+  flags: useMemoized(() => _SidePanelHookFlags(conversationId), [
+    conversationId,
+  ]),
 );
 
 _ToolResultTabHookValues _useToolResultTabHookValues() => (
@@ -1411,20 +1422,24 @@ _ToolResultTabHookValues _useToolResultTabHookValues() => (
 void _useStoredSidePanelPreferences(
   AsyncValue<SharedPreferences> preferencesAsync,
   _SidePanelHookValues panel,
+  String conversationId,
 ) {
-  useEffect(() => _restoreSidePanelPreferences(preferencesAsync, panel), [
-    preferencesAsync.value,
-    preferencesAsync.hasError,
-  ]);
+  useEffect(
+    () => _restoreSidePanelPreferences(preferencesAsync, panel, conversationId),
+    [preferencesAsync.value, preferencesAsync.hasError, conversationId],
+  );
 }
 
 VoidCallback? _restoreSidePanelPreferences(
   AsyncValue<SharedPreferences> preferencesAsync,
   _SidePanelHookValues panel,
+  String conversationId,
 ) {
   final preferences = preferencesAsync.value;
   if (preferences == null && !preferencesAsync.hasError) return null;
-  if (preferences != null) _applySidePanelPreferences(preferences, panel);
+  if (preferences != null) {
+    _applySidePanelPreferences(preferences, panel, conversationId);
+  }
 
   return null;
 }
@@ -1432,6 +1447,7 @@ VoidCallback? _restoreSidePanelPreferences(
 void _applySidePanelPreferences(
   SharedPreferences preferences,
   _SidePanelHookValues panel,
+  String conversationId,
 ) {
   final flags = panel.flags;
   if (flags.preferencesLoaded) return;
@@ -1441,8 +1457,8 @@ void _applySidePanelPreferences(
     panel.widthPercent.value = stored.widthPercent;
   }
   if (flags.visibilityChanged) return;
-  panel.mounted.value = stored.isOpen;
-  panel.visible.value = stored.isOpen;
+  panel.mounted.value = stored.isOpenFor(conversationId);
+  panel.visible.value = stored.isOpenFor(conversationId);
 }
 
 void _useBrowserActionSidebarEffect(
@@ -1507,7 +1523,13 @@ void _setSidePanelOpen(
   panel.flags.visibilityChanged = true;
   if (isOpen) panel.mounted.value = true;
   panel.visible.value = isOpen;
-  unawaited(_persistSidePanelOpen(ref, isOpen: isOpen));
+  unawaited(
+    _persistSidePanelOpen(
+      ref,
+      conversationId: panel.flags.conversationId,
+      isOpen: isOpen,
+    ),
+  );
 }
 
 void _toggleSidePanel(
@@ -1777,6 +1799,7 @@ class const _LoadedChatBrowserPanel({
     selectedToolResultTabId: values.selectedToolResultTabId,
     onSelectToolResultTab: actions.onSelectToolResult,
     onCloseToolResultTab: actions.onCloseToolResult,
+    onCloseSidebar: actions.onClose,
   );
 }
 

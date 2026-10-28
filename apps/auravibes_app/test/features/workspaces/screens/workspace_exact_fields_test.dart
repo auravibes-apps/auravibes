@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -50,6 +51,37 @@ void main() {
     });
     await tester.enterText(input('amount'), '0.000000000000000001');
     expect(changed, {'amount': '0.000000000000000001', 'currency': 'EUR'});
+  });
+  testWidgets('multi-select values use a compact tag dropdown', (tester) async {
+    Object? changed;
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordField(
+            column: const WorkspaceColumn(
+              id: 'tags',
+              name: 'Tags',
+              type: .multiSelect,
+              options: ['A', 'B'],
+            ),
+            value: const ['A'],
+            present: true,
+            disabled: false,
+            identifier: 'tags',
+            onChanged: (value) => changed = value,
+            onUnset: () => fail('Unexpected unset'),
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(PopupMenuButton<String>), findsOneWidget);
+    expect(find.text('A'), findsOneWidget);
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('B').last, warnIfMissed: false);
+    final _ = await tester.pumpAndSettle();
+    expect(changed, ['A', 'B']);
   });
   testWidgets('timestamps display both sides of DST in selected IANA zone', (
     tester,

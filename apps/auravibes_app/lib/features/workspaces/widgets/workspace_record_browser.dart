@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/features/workspaces/models/workspace_query_filter_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_record_change.dart';
@@ -18,6 +19,8 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_record_field
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -25,6 +28,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+
+const _minColumnWidth = 120.0;
+const _maxColumnWidth = 500.0;
+const _defaultColumnWidth = 200.0;
+const _columnIconSize = 18.0;
+const _resizeIconSize = 16.0;
+const _cellHeight = 48.0;
+const _inlineEditorHeight = 24.0;
+const _selectionToolbarSpacing = 8.0;
 
 class const WorkspaceRecordBrowser({
   required final String workspaceId,
@@ -44,11 +56,43 @@ class const WorkspaceRecordBrowser({
       selectionMode ?? localSelection,
       draftOpen ?? localDraft,
     );
+    void Function()? loadWidthsEffect() {
+      var mounted = true;
+      Future<void> load() async {
+        final widths = await _loadColumnWidths(ref, workspaceId, table.id);
+        if (mounted) {
+          draft.columnWidths.value = {...widths, ...draft.columnWidths.value};
+        }
+      }
+
+      unawaited(load());
+
+      return () => mounted = false;
+    }
+
+    useEffect(loadWidthsEffect, [workspaceId, table.id]);
     final records = ref.watch(
       workspaceRecordQueryProvider(workspaceId, table.id, draft.query.value),
     );
 
     return _Frame(this, draft, records);
+  }
+}
+
+Future<void> createEmptyWorkspaceRecord(
+  WidgetRef ref, {
+  required String workspaceId,
+  required WorkspaceTable table,
+}) async {
+  final usecase = await ref.read(
+    workspaceTableUsecaseProvider(workspaceId).future,
+  );
+  final _ = await usecase.createRecord(
+    table: table,
+    values: {for (final column in table.columns) column.id: null},
+  );
+  if (ref.context.mounted) {
+    ref.invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
   }
 }
 
@@ -58,12 +102,14 @@ class _Draft {
       controls = useState(false),
       selected = useState<Map<String, WorkspaceRecord>>({}),
       hiddenColumns = useState(<String>{}),
+      columnWidths = useState<Map<String, double>>({}),
       active = useState<({String record, String column})?>(null),
       hovered = useState<String?>(null),
       nextSelection = useRef<VoidCallback?>(null),
       cellPointer = useRef<int?>(null),
       editing = useState(false),
-      values = useState<Map<String, Object?>>({});
+      values = useState<Map<String, Object?>>({}),
+      focusNodes = useRef(<String, FocusNode>{});
 
   final ValueNotifier<WorkspaceRecordQuery> query;
   final ValueNotifier<bool> controls;
@@ -71,12 +117,14 @@ class _Draft {
   final ValueNotifier<bool> draftOpen;
   final ValueNotifier<Map<String, WorkspaceRecord>> selected;
   final ValueNotifier<Set<String>> hiddenColumns;
+  final ValueNotifier<Map<String, double>> columnWidths;
   final ValueNotifier<({String record, String column})?> active;
   final ValueNotifier<String?> hovered;
   final ObjectRef<VoidCallback?> nextSelection;
   final ObjectRef<int?> cellPointer;
   final ValueNotifier<bool> editing;
   final ValueNotifier<Map<String, Object?>> values;
+  final ObjectRef<Map<String, FocusNode>> focusNodes;
   bool canSelect(WorkspaceRecord record) =>
       selected.value.containsKey(record.id) ||
       selected.value.length < WorkspaceRecordChange.maxOperations;
@@ -367,49 +415,122 @@ class const _Rows(
   }
 }
 
-class const _Grid(final _Rows owner) extends StatelessWidget {
+Future<Map<String, double>> _loadColumnWidths(
+  WidgetRef ref,
+  String workspaceId,
+  String tableId,
+) async {
+  final preferences = await ref.read(sharedPreferencesProvider.future);
+  final saved = preferences.getString(_columnWidthKey(workspaceId, tableId));
+  if (saved == null) return {};
+  try {
+    final decoded = jsonDecode(saved);
+    if (decoded is! Map<String, dynamic>) return {};
+
+    return {
+      for (final entry in decoded.entries)
+        if (entry.value is num)
+          entry.key: (entry.value as num).toDouble().clamp(
+            _minColumnWidth,
+            _maxColumnWidth,
+          ),
+    };
+  } on FormatException {
+    return {};
+  }
+}
+
+Future<void> _saveColumnWidths(
+  WidgetRef ref,
+  String workspaceId,
+  String tableId,
+  Map<String, double> widths,
+) async {
+  final preferences = await ref.read(sharedPreferencesProvider.future);
+  final _ = await preferences.setString(
+    _columnWidthKey(workspaceId, tableId),
+    jsonEncode(widths),
+  );
+}
+
+String _columnWidthKey(String workspaceId, String tableId) =>
+    'workspace_table_column_widths_${workspaceId}_$tableId';
+
+class const _Grid(final _Rows owner) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => TapRegion(
-    child: Align(
-      alignment: .topLeft,
-      child: SingleChildScrollView(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final line = BorderSide(
+      color: Theme.of(context).colorScheme.outlineVariant,
+    );
+
+    return TapRegion(
+      child: Align(
+        alignment: .topLeft,
         child: SingleChildScrollView(
-          scrollDirection: .horizontal,
-          child: DataTable(
-            columns: [
-              const DataColumn(label: SizedBox.shrink()),
-              for (final column in owner.visible)
-                DataColumn(label: Text(column.name)),
-              if (owner.table.canManage && owner.browser.onAddColumn != null)
-                DataColumn(label: _AddColumnMenu(owner)),
-            ],
-            dataRowMaxHeight: .infinity,
-            rows: [
-              for (final record in owner.records)
-                _GridRecord(
-                  owner,
-                  record,
-                  Theme.of(context).colorScheme,
-                ).create(),
-              if (owner.table.canEditRecords && owner.browser.onAddRow != null)
-                DataRow(
-                  cells: [
-                    DataCell.empty,
-                    DataCell(_AddEmptyRecord(owner)),
-                    for (var i = 1; i < owner.visible.length; i++)
-                      DataCell.empty,
-                    if (owner.table.canManage &&
-                        owner.browser.onAddColumn != null)
-                      DataCell.empty,
-                  ],
-                ),
-            ],
+          child: SingleChildScrollView(
+            scrollDirection: .horizontal,
+            child: DataTable(
+              columns: [
+                for (final column in owner.visible)
+                  DataColumn(
+                    label: _ColumnHeading(
+                      column: column,
+                      width:
+                          owner.draft.columnWidths.value[column.id] ??
+                          _defaultColumnWidth,
+                      onResize: (width) => owner.draft.columnWidths.value = {
+                        ...owner.draft.columnWidths.value,
+                        column.id: width,
+                      },
+                      onResizeEnd: () => unawaited(
+                        _saveColumnWidths(
+                          ref,
+                          owner.browser.workspaceId,
+                          owner.table.id,
+                          owner.draft.columnWidths.value,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (owner.table.canManage && owner.browser.onAddColumn != null)
+                  DataColumn(label: _AddColumnMenu(owner)),
+              ],
+              dataRowMaxHeight: .infinity,
+              horizontalMargin: 0,
+              columnSpacing: 0,
+              rows: [
+                for (final record in owner.records)
+                  _GridRecord(
+                    owner,
+                    record,
+                    Theme.of(context).colorScheme,
+                  ).create(),
+                if (owner.table.canEditRecords &&
+                    owner.browser.onAddRow != null)
+                  DataRow(
+                    cells: [
+                      DataCell(_AddEmptyRecord(owner)),
+                      for (var i = 1; i < owner.visible.length; i++)
+                        DataCell.empty,
+                      if (owner.table.canManage &&
+                          owner.browser.onAddColumn != null)
+                        DataCell.empty,
+                    ],
+                  ),
+              ],
+              border: .new(
+                bottom: line,
+                horizontalInside: line,
+                verticalInside: line,
+              ),
+            ),
           ),
         ),
       ),
-    ),
-    onTapOutside: _clearSelection,
-  );
+      onTapOutside: _clearSelection,
+    );
+  }
+
   void _clearSelection(PointerDownEvent _) {
     if (owner.draft.editing.value) {
       owner.draft.nextSelection.value = () => owner.draft.active.value = null;
@@ -419,22 +540,53 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
   }
 }
 
+class const _ColumnHeading({
+  required final WorkspaceColumn column,
+  required final double width,
+  required final ValueChanged<double> onResize,
+  required final VoidCallback onResizeEnd,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    key: ValueKey('workspace_column_heading_${column.id}'),
+    width: width,
+    child: Row(
+      children: [
+        Icon(
+          WorkspaceColumnTypeLabel.iconFor(column.type),
+          size: _columnIconSize,
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Text(column.name, overflow: .ellipsis)),
+        MouseRegion(
+          cursor: SystemMouseCursors.resizeLeftRight,
+          child: GestureDetector(
+            child: Icon(
+              Icons.drag_indicator,
+              size: _resizeIconSize,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            onHorizontalDragUpdate: (event) => onResize(
+              (width + event.delta.dx).clamp(_minColumnWidth, _maxColumnWidth),
+            ),
+            onHorizontalDragEnd: (_) => onResizeEnd(),
+            behavior: .opaque,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class const _AddColumnMenu(final _Rows owner) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => PopupMenuButton<WorkspaceColumnType>(
-    itemBuilder: _items,
-    onSelected: owner.browser.onAddColumn,
+  Widget build(BuildContext context) => IconButton(
+    onPressed: owner.draft.draftOpen.value
+        ? null
+        : () => owner.browser.onAddColumn?.call(.text),
     tooltip: LocaleKeys.workspace_items_create_column.tr(),
     icon: const Icon(Icons.add),
-    enabled: !owner.draft.draftOpen.value,
   );
-  List<PopupMenuEntry<WorkspaceColumnType>> _items(BuildContext _) => [
-    for (final type in WorkspaceColumnType.values)
-      PopupMenuItem(
-        value: type,
-        child: WorkspaceColumnTypeLabel(type: type),
-      ),
-  ];
 }
 
 class const _AddEmptyRecord(final _Rows owner) extends HookConsumerWidget {
@@ -457,18 +609,11 @@ class const _AddEmptyRecord(final _Rows owner) extends HookConsumerWidget {
   }
 
   Future<void> _create(WidgetRef ref) async {
-    final usecase = await ref.read(
-      workspaceTableUsecaseProvider(owner.browser.workspaceId).future,
-    );
-    final _ = await usecase.createRecord(
+    await createEmptyWorkspaceRecord(
+      ref,
+      workspaceId: owner.browser.workspaceId,
       table: owner.table,
-      values: {for (final column in owner.table.columns) column.id: null},
     );
-    if (ref.context.mounted) {
-      ref.invalidate(
-        workspaceRecordQueryUsecaseProvider(owner.browser.workspaceId),
-      );
-    }
   }
 }
 
@@ -487,15 +632,6 @@ class const _GridRecord(
         ? WidgetStatePropertyAll(colors.onSurface.withValues(alpha: 0.08))
         : null,
     cells: [
-      DataCell(
-        IconButton(
-          onPressed: owner.draft.draftOpen.value
-              ? null
-              : () => owner.onRecord(record),
-          tooltip: LocaleKeys.common_show_more.tr(),
-          icon: const Icon(Icons.more_horiz),
-        ),
-      ),
       for (final column in owner.visible) _cell(column),
       if (owner.table.canManage && owner.browser.onAddColumn != null)
         DataCell.empty,
@@ -525,12 +661,30 @@ class const _SpreadsheetCell(
         (active.record == record.id || active.column == column.id);
   }
 
+  bool get _showRecordAction =>
+      column.id == owner.table.labelColumnId &&
+      (owner.draft.hovered.value == record.id ||
+          owner.draft.selected.value.containsKey(record.id) ||
+          _selected);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = WorkspaceTableActions.use(context);
     final colors = Theme.of(context).colorScheme;
     final link = useMemoized(LayerLink.new);
     final focus = useFocusNode();
+    void Function() registerFocus() {
+      final key = _focusKey(record.id, column.id);
+      owner.draft.focusNodes.value[key] = focus;
+
+      return () {
+        if (identical(owner.draft.focusNodes.value[key], focus)) {
+          final _ = owner.draft.focusNodes.value.remove(key);
+        }
+      };
+    }
+
+    useEffect(registerFocus, [focus]);
 
     return MouseRegion(
       onEnter: _hover,
@@ -551,32 +705,44 @@ class const _SpreadsheetCell(
                   color: _color(colors),
                   border: _border(colors),
                 ),
-                width: 200,
-                height: 48,
+                width:
+                    owner.draft.columnWidths.value[column.id] ??
+                    _defaultColumnWidth,
+                height: _cellHeight,
                 child: DefaultTextStyle.merge(
                   style: .new(
-                    color: _selected
+                    color: _editing
                         ? colors.onPrimaryContainer
                         : colors.onSurface,
                   ),
-                  child: _editing
-                      ? _SpreadsheetEditor(this, action, ref, link)
-                      : ClipRect(child: _Cell(owner, record, column)),
+                  child: _cellContent(action, ref, link),
                 ),
               ),
             ),
-            onDoubleTap: _canEdit ? _edit : null,
-            onLongPress: owner.table.canEditRecords ? _selectRow : null,
+            onDoubleTap: _canEdit && column.type != .checkbox ? _edit : null,
+            onLongPress: owner.table.canEditRecords && column.type != .checkbox
+                ? _selectRow
+                : null,
             behavior: .opaque,
           ),
         ),
         focusNode: focus,
+        onFocusChange: _focusChanged,
         onKeyEvent: _key,
       ),
     );
   }
 
   void _hover(PointerEnterEvent _) => owner.draft.hovered.value = record.id;
+  void _focusChanged(bool hasFocus) {
+    if (hasFocus || !_selected) return;
+    if (owner.draft.editing.value) {
+      owner.draft.nextSelection.value ??= () => owner.draft.active.value = null;
+    } else if (!owner.draft.draftOpen.value) {
+      owner.draft.active.value = null;
+    }
+  }
+
   void _leave(PointerExitEvent _) {
     if (owner.draft.hovered.value == record.id) {
       owner.draft.hovered.value = null;
@@ -584,7 +750,8 @@ class const _SpreadsheetCell(
   }
 
   Color? _color(ColorScheme colors) {
-    if (_selected) return colors.primaryContainer;
+    if (_editing) return colors.primaryContainer;
+    if (_selected) return colors.primary.withValues(alpha: 0.12);
     if (_guide) return colors.surfaceContainerHighest;
 
     return null;
@@ -599,6 +766,18 @@ class const _SpreadsheetCell(
   void _selectRow() {
     if (owner.draft.draftOpen.value) return;
     owner.draft.toggle(record);
+  }
+
+  Widget _cellContent(
+    WorkspaceTableAction action,
+    WidgetRef ref,
+    LayerLink link,
+  ) {
+    if (column.type == .checkbox) return _CheckboxCell(this, action, ref);
+    if (column.type == .url) return _UrlCell(this, showMenu: _selected);
+    if (_editing) return _SpreadsheetEditor(this, action, ref, link);
+
+    return _CellContent(this);
   }
 
   void _select(BuildContext context, FocusNode focus) {
@@ -644,6 +823,55 @@ class const _SpreadsheetCell(
 
       return KeyEventResult.handled;
     }
+    if (event is KeyDownEvent &&
+        !_editing &&
+        _isGridNavigationKey(event.logicalKey)) {
+      final rows = owner.records;
+      final columns = owner.visible;
+      final rowIndex = rows.indexWhere((row) => row.id == record.id);
+      final columnIndex = columns.indexWhere((item) => item.id == column.id);
+      var nextRow = rowIndex;
+      var nextColumnIndex = columnIndex;
+      switch (event.logicalKey) {
+        case .arrowLeft:
+          nextColumnIndex--;
+        case .arrowRight:
+          nextColumnIndex++;
+        case .arrowUp:
+          nextRow--;
+        case .arrowDown:
+          nextRow++;
+        case .tab:
+          if (HardwareKeyboard.instance.isShiftPressed) {
+            if (nextColumnIndex == 0) {
+              nextRow--;
+              nextColumnIndex = columns.length - 1;
+            } else {
+              nextColumnIndex--;
+            }
+          } else if (nextColumnIndex == columns.length - 1) {
+            nextRow++;
+            nextColumnIndex = 0;
+          } else {
+            nextColumnIndex++;
+          }
+      }
+      if (nextRow >= 0 &&
+          nextRow < rows.length &&
+          nextColumnIndex >= 0 &&
+          nextColumnIndex < columns.length) {
+        final nextRecord = rows[nextRow];
+        final nextColumn = columns[nextColumnIndex];
+        owner.draft.active.value = (
+          record: nextRecord.id,
+          column: nextColumn.id,
+        );
+        owner.draft.focusNodes.value[_focusKey(nextRecord.id, nextColumn.id)]
+            ?.requestFocus();
+
+        return KeyEventResult.handled;
+      }
+    }
 
     return KeyEventResult.ignored;
   }
@@ -679,6 +907,171 @@ class const _SpreadsheetCell(
       ..invalidate(
         workspaceReferencesUsecaseProvider(owner.browser.workspaceId),
       );
+  }
+}
+
+String _focusKey(String recordId, String columnId) => '$recordId:$columnId';
+
+bool _isGridNavigationKey(LogicalKeyboardKey key) =>
+    key == LogicalKeyboardKey.arrowLeft ||
+    key == LogicalKeyboardKey.arrowRight ||
+    key == LogicalKeyboardKey.arrowUp ||
+    key == LogicalKeyboardKey.arrowDown ||
+    key == LogicalKeyboardKey.tab;
+
+class const _CheckboxCell(
+  final _SpreadsheetCell cell,
+  final WorkspaceTableAction action,
+  final WidgetRef ref,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final checked = cell.record.values[cell.column.id] == true;
+    final enabled = cell._canEdit && !action.pending;
+    void toggle() => _change(!checked);
+
+    return Center(
+      child: Semantics(
+        child: InkWell(
+          child: Row(
+            mainAxisSize: .min,
+            children: [
+              IgnorePointer(
+                child: Checkbox(
+                  value: checked,
+                  onChanged: null,
+                  fillColor: WidgetStatePropertyAll(colors.primary),
+                  checkColor: colors.onPrimary,
+                ),
+              ),
+              if (action.error case final error?)
+                Tooltip(
+                  message: _workspaceErrorText(error),
+                  child: Icon(
+                    Icons.error_outline,
+                    size: _columnIconSize,
+                    color: colors.error,
+                  ),
+                ),
+            ],
+          ),
+          onTap: enabled ? toggle : null,
+        ),
+        enabled: enabled,
+        checked: checked,
+        onTap: enabled ? toggle : null,
+      ),
+    );
+  }
+
+  void _change(bool? value) => unawaited(() {
+    cell.owner.draft.active.value = (
+      record: cell.record.id,
+      column: cell.column.id,
+    );
+
+    return action.run(() async {
+      final usecase = await ref.read(
+        workspaceTableUsecaseProvider(cell.owner.browser.workspaceId).future,
+      );
+      final _ = await usecase.updateRecord(
+        table: cell.owner.table,
+        record: cell.record,
+        values: {...cell.record.values, cell.column.id: value ?? false},
+      );
+      if (!ref.context.mounted) return;
+      ref.invalidate(
+        workspaceRecordQueryUsecaseProvider(cell.owner.browser.workspaceId),
+      );
+    });
+  }());
+}
+
+String _workspaceErrorText(Object error) => switch (error) {
+  final WorkspaceTableException failure => failure.localizationKey.tr(),
+  _ => CloudAppErrors.localizationKey(error).tr(),
+};
+
+enum _UrlAction { edit, copy, open }
+
+class const _UrlCell(
+  final _SpreadsheetCell cell, {
+  required final bool showMenu,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final value = cell.record.values[cell.column.id]?.toString() ?? '';
+    final colors = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(child: Text(value, overflow: .ellipsis)),
+        if (showMenu)
+          PopupMenuButton<_UrlAction>(
+            itemBuilder: (_) => [
+              if (cell._canEdit)
+                PopupMenuItem(
+                  value: .edit,
+                  child: Text(LocaleKeys.common_edit.tr()),
+                ),
+              PopupMenuItem(
+                value: .copy,
+                child: Text(
+                  LocaleKeys.models_screens_add_provider_device_code_copy_link
+                      .tr(),
+                ),
+              ),
+              PopupMenuItem(
+                value: .open,
+                child: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
+              ),
+            ],
+            onSelected: (action) => _select(context, action, value),
+            tooltip: LocaleKeys.workspace_items_type_url.tr(),
+            icon: const Icon(Icons.arrow_drop_down),
+            color: colors.surface,
+          ),
+      ],
+    );
+  }
+
+  void _select(BuildContext context, _UrlAction action, String value) {
+    switch (action) {
+      case .edit:
+        cell._edit();
+      case .copy:
+        unawaited(Clipboard.setData(.new(text: value)));
+      case .open:
+        unawaited(
+          ConfirmedExternalLink.open(
+            context: context,
+            url: value,
+            confirm: (uri) => AuraDialogs.confirm(
+              context: context,
+              title: Text(LocaleKeys.markdown_editor_external_link_title.tr()),
+              message: AuraSelectableText(
+                LocaleKeys.markdown_editor_external_link_message.tr(
+                  namedArgs: {'host': uri.host, 'url': uri.toString()},
+                ),
+              ),
+              actions: .new(
+                confirmLabel: Text(
+                  LocaleKeys.markdown_editor_external_link_open.tr(),
+                ),
+                cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+              ),
+            ),
+            onLaunchFailure: () => ScaffoldMessenger.of(context).showSnackBar(
+              .new(
+                content: Text(
+                  LocaleKeys.markdown_editor_external_link_error.tr(),
+                ),
+              ),
+            ),
+          ),
+        );
+    }
   }
 }
 
@@ -745,77 +1138,102 @@ class const _ComplexOverlayLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final viewport = MediaQuery.sizeOf(context);
+    final owner = cell.owner;
+    final pending = action.pending;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final box = anchorContext.findRenderObject() as RenderBox?;
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
     final origin = box?.localToGlobal(.zero) ?? .zero;
-    final anchorTop = origin.dy - 8;
-    final anchorBottom = origin.dy + (box?.size.height ?? 32) + 8;
-    final below = (viewport.height - keyboard - anchorBottom - 8).clamp(
+    final overlayOrigin = overlayBox?.localToGlobal(.zero) ?? .zero;
+    final overlaySize = overlayBox?.size ?? MediaQuery.sizeOf(context);
+    final anchorLeft = origin.dx - overlayOrigin.dx;
+    final anchorTop = origin.dy - overlayOrigin.dy;
+    final anchorWidth = box?.size.width ?? 32;
+    final anchorHeight = box?.size.height ?? 32;
+    final anchorRight = anchorLeft + anchorWidth;
+    final anchorBottom = anchorTop + anchorHeight;
+    final overlayBottom = (overlaySize.height - keyboard).clamp(
       0.0,
-      300.0,
+      overlaySize.height,
     );
-    final above = (anchorTop - 8).clamp(0.0, 300.0);
-    final flip = below < 300 && above > below;
-    final maxHeight = (flip ? above : below).clamp(48.0, 300.0);
-    final width = (viewport.width - 16).clamp(48.0, 320.0);
-    final anchorLeft = origin.dx - 8;
-    final minOffset = 8 - anchorLeft;
-    final maxOffset = viewport.width - 8 - width - anchorLeft;
-    final horizontalOffset = 0.0.clamp(minOffset, maxOffset);
+    final below = (overlayBottom - anchorBottom - 8).clamp(0.0, 240.0);
+    final above = (anchorTop - 8).clamp(0.0, 240.0);
+    final flipVertical = below < 240 && above > below;
+    final maxHeight = flipVertical ? above : below;
+    final rightSpace = (overlaySize.width - anchorRight - 8).clamp(0.0, 280.0);
+    final leftSpace = (anchorRight - 8).clamp(0.0, 280.0);
+    final flipHorizontal = rightSpace < 280 && leftSpace > rightSpace;
+    final width = (flipHorizontal ? leftSpace : rightSpace).clamp(0.0, 280.0);
+    final targetAlignment = Alignment(
+      flipHorizontal ? 1 : -1,
+      flipVertical ? -1 : 1,
+    );
 
-    return Align(
-      alignment: .topLeft,
-      child: CompositedTransformFollower(
-        link: link,
-        showWhenUnlinked: false,
-        offset: .new(horizontalOffset, 0),
-        targetAnchor: flip ? .topLeft : .bottomLeft,
-        followerAnchor: flip ? .bottomLeft : .topLeft,
-        child: Material(
-          elevation: 6,
-          child: SizedBox(
-            key: const ValueKey('workspace_cell_type_popup'),
-            width: width,
-            child: ConstrainedBox(
-              constraints: .new(maxHeight: maxHeight),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: .min,
-                  children: [
-                    WorkspaceRecordFields(
-                      table: cell.owner.table,
-                      workspaceId: cell.owner.browser.workspaceId,
-                      restricted: cell.record.restrictedReferenceColumns,
-                      draft: cell.owner.draft.values,
-                      disabled: action.pending,
-                      columnId: cell.column.id,
-                    ),
-                    if (action.error case final error?)
-                      WorkspaceItemFailure(error: error),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: action.pending
-                              ? null
-                              : () => cell._submit(ref, action),
-                          tooltip: LocaleKeys.workspace_items_save_record.tr(),
-                          icon: const Icon(Icons.check),
+    return TapRegion(
+      child: Align(
+        alignment: .topLeft,
+        child: CompositedTransformFollower(
+          link: link,
+          showWhenUnlinked: false,
+          targetAnchor: targetAlignment,
+          followerAnchor: .new(flipHorizontal ? 1 : -1, flipVertical ? 1 : -1),
+          child: Material(
+            elevation: 6,
+            child: SizedBox(
+              key: const ValueKey('workspace_cell_type_popup'),
+              width: width,
+              child: ConstrainedBox(
+                constraints: .new(maxHeight: maxHeight),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: .min,
+                    children: [
+                      WorkspaceRecordFields(
+                        table: owner.table,
+                        workspaceId: owner.browser.workspaceId,
+                        restricted: cell.record.restrictedReferenceColumns,
+                        draft: owner.draft.values,
+                        disabled: pending,
+                        columnId: cell.column.id,
+                      ),
+                      if (cell.column.type == .reference)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: TextLocale(
+                            LocaleKeys.workspace_items_reference_apply_row_hint,
+                          ),
                         ),
-                        IconButton(
-                          onPressed: action.pending ? null : cell._cancel,
-                          tooltip: LocaleKeys.common_cancel.tr(),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                  ],
+                      if (action.error case final error?)
+                        WorkspaceItemFailure(error: error),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: pending
+                                ? null
+                                : () => cell._submit(ref, action),
+                            tooltip: LocaleKeys.workspace_items_save_record
+                                .tr(),
+                            icon: const Icon(Icons.check),
+                          ),
+                          IconButton(
+                            onPressed: pending ? null : cell._cancel,
+                            tooltip: LocaleKeys.common_cancel.tr(),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
+      onTapOutside: (_) {
+        if (!action.pending && cell._editing) cell._submit(ref, action);
+      },
     );
   }
 }
@@ -835,22 +1253,37 @@ class const _InlineScalarEditor(
     void Function()? effect() {
       void onFocus() {
         if (focus.hasFocus) {
-          hadFocus.value = true;
+          if (!hadFocus.value) {
+            hadFocus.value = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted || !focus.hasFocus || !cell._editing) {
+                return;
+              }
+              controller.selection = .new(
+                baseOffset: 0,
+                extentOffset: controller.text.length,
+              );
+            });
+          }
         } else if (hadFocus.value && context.mounted && cell._editing) {
           hadFocus.value = false;
           cell._submit(ref, action);
         }
       }
 
-      focus.addListener(onFocus);
+      focus
+        ..addListener(onFocus)
+        ..requestFocus();
 
       return () => focus.removeListener(onFocus);
     }
 
     useEffect(effect, [focus]);
 
+    final colors = Theme.of(context).colorScheme;
+
     return SizedBox(
-      height: 24,
+      height: _inlineEditorHeight,
       child: Row(
         children: [
           Expanded(
@@ -860,13 +1293,11 @@ class const _InlineScalarEditor(
                 controller: controller,
                 focusNode: focus,
                 decoration: const .collapsed(hintText: ''),
-                style: .new(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                autofocus: true,
+                style: .new(color: colors.onPrimaryContainer),
                 onChanged: _change,
                 onSubmitted: (_) => cell._submit(ref, action),
                 enabled: !action.pending,
+                cursorColor: colors.onPrimaryContainer,
                 onTapOutside: (_) => focus.unfocus(),
               ),
               label: cell.column.name,
@@ -877,8 +1308,8 @@ class const _InlineScalarEditor(
               message: _errorText(error),
               child: Icon(
                 Icons.error_outline,
-                size: 18,
-                color: Theme.of(context).colorScheme.error,
+                size: _columnIconSize,
+                color: colors.error,
               ),
             ),
         ],
@@ -921,6 +1352,58 @@ class const _Cell(
 
     return Text(_value(record, column.id, column));
   }
+}
+
+class const _CellContent(final _SpreadsheetCell cell) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    fit: .expand,
+    children: [
+      ClipRect(child: _Cell(cell.owner, cell.record, cell.column)),
+      if (cell._selected && cell._canEdit && cell.column.type != .url)
+        Align(
+          alignment: .centerRight,
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                IconButton(
+                  visualDensity: .compact,
+                  onPressed: cell._edit,
+                  tooltip: LocaleKeys.common_edit.tr(),
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+                if (cell._showRecordAction)
+                  IconButton(
+                    visualDensity: .compact,
+                    onPressed: cell.owner.draft.draftOpen.value
+                        ? null
+                        : () => cell.owner.onRecord(cell.record),
+                    tooltip: LocaleKeys.common_show_more.tr(),
+                    icon: const Icon(Icons.more_horiz),
+                  ),
+              ],
+            ),
+          ),
+        )
+      else if (cell._showRecordAction)
+        Align(
+          alignment: .centerRight,
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surface,
+            child: IconButton(
+              visualDensity: .compact,
+              onPressed: cell.owner.draft.draftOpen.value
+                  ? null
+                  : () => cell.owner.onRecord(cell.record),
+              tooltip: LocaleKeys.common_show_more.tr(),
+              icon: const Icon(Icons.more_horiz),
+            ),
+          ),
+        ),
+    ],
+  );
 }
 
 class const _ReferenceCell(
@@ -1009,7 +1492,7 @@ class const _SelectedRecordsToolbar(final _BulkToolbar owner)
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Wrap(
-    spacing: 8,
+    spacing: _selectionToolbarSpacing,
     crossAxisAlignment: .center,
     children: [
       _SelectionCount(owner.draft),

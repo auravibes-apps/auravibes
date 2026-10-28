@@ -40,22 +40,15 @@ typedef _ToolResultMediaCallRequest = ({
 class const BuildPromptChatMessages({
   final List<String> modalitiesInput = const [],
   final bool supportsImageToolResults = false,
-  final Future<List<MessageEntity>> Function(List<MessageEntity>)?
-  workspaceProjection,
 }) {
   static const _agentBuilder = agent.BuildPromptChatMessages();
 
   Future<List<ChatMessage>> call(List<MessageEntity> messages) async {
-    final projection = workspaceProjection;
-    final authorized = projection == null
-        ? redactWorkspaceToolHistory(messages)
-        : await projection(messages);
-
     return await _buildPromptMessages(
       _agentBuilder,
       modalitiesInput,
       supportsImageToolResults,
-      authorized,
+      redactWorkspaceToolHistory(messages),
     );
   }
 }

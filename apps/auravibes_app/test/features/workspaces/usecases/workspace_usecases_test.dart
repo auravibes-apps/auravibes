@@ -375,7 +375,10 @@ void main() {
       fixture.repository.beforeDeleteWorkspace = (_) async =>
           fixture.calls.add('delete');
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-2');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-2',
+      );
 
       expect(fixture.calls, ['prepare', 'delete']);
       final remaining = await fixture.repository.getAllWorkspaces();
@@ -387,7 +390,10 @@ void main() {
         const WorkspaceToCreate(name: 'Only', type: .local),
       );
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'other');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'other',
+      );
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);
@@ -401,7 +407,10 @@ void main() {
         const WorkspaceToCreate(name: 'WS2', type: .local),
       );
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-1',
+      );
 
       expect(await fixture.repository.getWorkspaceCount(), 1);
     });
@@ -411,7 +420,10 @@ void main() {
         const WorkspaceToCreate(name: 'Only', type: .local),
       );
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-1',
+      );
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);
@@ -481,7 +493,7 @@ void main() {
           .read(otherWorkspaceDraftProvider.notifier)
           .save(otherWorkspaceDraft);
 
-      await container
+      final _ = await container
           .read(deleteWorkspaceUseCaseProvider)
           .call(id: deletedWorkspace.id, activeWorkspaceId: otherWorkspace.id);
 

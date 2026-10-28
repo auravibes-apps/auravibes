@@ -26,6 +26,7 @@ type ledger interface {
 	start(context.Context, string, string, string) error
 	finish(context.Context, string, string) error
 	close(context.Context, string, string) (bool, error)
+	status(context.Context, string, string) (bool, int64, error)
 	ping(context.Context) error
 }
 type storedObject struct {
@@ -115,6 +116,17 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case r.Method == "GET" && q.Get("status") == "1":
+		closed, pending, err := g.ledger.status(r.Context(), key, id)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(struct {
+			Closed            bool  `json:"closed"`
+			PendingOperations int64 `json:"pendingOperations"`
+		}{closed, pending})
 	case r.Method == "POST" && q.Get("register") == "1":
 		if err := g.ledger.register(r.Context(), key, id); err != nil {
 			fail(w, err)

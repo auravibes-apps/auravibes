@@ -123,13 +123,17 @@ agent.ToolCatalog<ResolvedTool> _buildCatalog({
   String? languageCode,
 }) => agent.buildToolCatalog([
   ...toolCandidates,
-  agent.ToolCatalogCandidate.reserved(
-    spec: agent.workspaceCommandToolSpec(),
-    target: ResolvedTool.workspaceCommand(),
+  ...agent.workspaceReadToolSpecs().map(
+    (spec) => agent.ToolCatalogCandidate.reserved(
+      spec: spec,
+      target: ResolvedTool.workspaceAction(toolIdentifier: spec.name),
+    ),
   ),
-  agent.ToolCatalogCandidate.reserved(
-    spec: agent.workspaceUpdateRecordToolSpec(),
-    target: ResolvedTool.workspaceUpdateRecord(),
+  ...agent.workspaceMutationToolSpecs().map(
+    (spec) => agent.ToolCatalogCandidate.reserved(
+      spec: spec,
+      target: ResolvedTool.workspaceAction(toolIdentifier: spec.name),
+    ),
   ),
   ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
   ...skillControlSpecs.map(_skillControlCandidate),

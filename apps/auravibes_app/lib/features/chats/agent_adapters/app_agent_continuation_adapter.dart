@@ -16,8 +16,6 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
-import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
@@ -41,7 +39,6 @@ class AppAgentContinuationAdapter({
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
   final ConversationAgentLanguageRuntime? conversationLanguageRuntime,
-  final ProjectWorkspaceChatContextUsecase? workspaceContextProjection,
 }) with _AgentContinuationMessageRoleChecks
     implements
         AgentContinuationProvider<
@@ -179,7 +176,6 @@ class AppAgentContinuationAdapter({
         supportsImageToolResults:
             model.modelsProvider.type == ModelProvidersType.anthropic &&
             (model.modelConnection.url?.trim().isEmpty ?? true),
-        workspaceProjection: workspaceContextProjection?.call,
       )(messages),
     ];
   }
@@ -281,9 +277,6 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
     conversationLanguageRuntime: ref.watch(
       conversationAgentLanguageRuntimeProvider,
-    ),
-    workspaceContextProjection: .new(
-      ref.watch(workspaceConversationToolsProvider),
     ),
   );
 });

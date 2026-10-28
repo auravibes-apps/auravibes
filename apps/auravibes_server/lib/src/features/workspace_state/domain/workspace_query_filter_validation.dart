@@ -58,6 +58,7 @@ abstract final class WorkspaceQueryFilterValidation {
 
   static void _exact(Map<String, dynamic> column, String encoded) {
     final value = _value(column, encoded);
+    if (value == null) throw const FormatException();
     WorkspaceTableValidation.values(
       {
         'columns': [column],

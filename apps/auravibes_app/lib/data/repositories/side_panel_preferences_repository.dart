@@ -16,15 +16,25 @@ class const SidePanelPreferencesRepository(
     return stored;
   }
 
-  bool get isOpen => _preferences.getBool(isOpenKey) ?? false;
+  bool isOpenFor(String conversationId) =>
+      _preferences.getBool(_conversationIsOpenKey(conversationId)) ?? false;
 
   Future<void> saveWidthPercent(double value) async {
     final saved = await _preferences.setDouble(widthPercentKey, value);
     if (!saved) throw StateError('Could not persist side panel width.');
   }
 
-  Future<void> saveIsOpen({required bool isOpen}) async {
-    final saved = await _preferences.setBool(isOpenKey, isOpen);
+  Future<void> saveIsOpen({
+    required String conversationId,
+    required bool isOpen,
+  }) async {
+    final saved = await _preferences.setBool(
+      _conversationIsOpenKey(conversationId),
+      isOpen,
+    );
     if (!saved) throw StateError('Could not persist side panel state.');
   }
+
+  String _conversationIsOpenKey(String conversationId) =>
+      '${isOpenKey}_$conversationId';
 }

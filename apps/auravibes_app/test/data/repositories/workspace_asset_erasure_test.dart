@@ -15,12 +15,162 @@ import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/legacy_api_key_storage.dart';
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 void main() {
+  test(
+    'removing a cloud mirror clears local residue and preserves cleanup jobs',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = _InterruptedStore();
+      final repository = WorkspaceRepository(
+        database,
+        attachmentFileStore: store,
+      );
+      final mirror = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'synthetic-cloud',
+        cloudAccountId: 'synthetic-account',
+        name: 'Mirror',
+        serverUrl: 'http://localhost:8080/',
+      );
+      final other = await repository.createWorkspace(
+        const .new(name: 'Other', type: .local),
+      );
+      for (final id in [mirror.id, other.id]) {
+        final _ = await database
+            .into(database.workspaceContentReports)
+            .insert(
+              WorkspaceContentReportsCompanion.insert(
+                workspaceId: id,
+                reportId: 'report',
+                kind: 'table',
+                resourceId: 'resource',
+                revision: 1,
+              ),
+            );
+        final _ = await database
+            .into(database.recentModelSelections)
+            .insert(
+              RecentModelSelectionsCompanion.insert(
+                workspaceId: id,
+                selectionId: 'model',
+                selectedAtMicros: 1,
+              ),
+            );
+      }
+      final cleanup = LocalWorkspaceAssetErasure(database, store);
+      await cleanup.recoverUntrackedWrite(
+        'synthetic-asset',
+        workspaceId: mirror.id,
+      );
+      await expectLater(
+        database.transaction(() async {
+          expect(await repository.deleteWorkspace(mirror.id), isTrue);
+          throw StateError('synthetic rollback');
+        }),
+        throwsStateError,
+      );
+      expect(await repository.getWorkspaceById(mirror.id), isNotNull);
+      expect(
+        await database.select(database.workspaceContentReports).get(),
+        hasLength(2),
+      );
+      expect(
+        await database.select(database.recentModelSelections).get(),
+        hasLength(2),
+      );
+      expect(await repository.deleteWorkspace(mirror.id), isTrue);
+      expect(
+        (await database.select(database.workspaceContentReports).get())
+            .single
+            .workspaceId,
+        other.id,
+      );
+      expect(
+        (await database.select(database.recentModelSelections).get())
+            .single
+            .workspaceId,
+        other.id,
+      );
+      expect(
+        await database.select(database.workspaceAssetDeletions).get(),
+        hasLength(1),
+      );
+    },
+  );
+  test(
+    'workspace erasure removes unlinked reports and selections atomically',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final store = _InterruptedStore();
+      final repository = WorkspaceRepository(
+        database,
+        attachmentFileStore: store,
+      );
+      final first = await repository.createWorkspace(
+        const .new(name: 'First', type: .local),
+      );
+      final second = await repository.createWorkspace(
+        const .new(name: 'Second', type: .local),
+      );
+      for (final id in [first.id, second.id]) {
+        final _ = await database
+            .into(database.workspaceContentReports)
+            .insert(
+              WorkspaceContentReportsCompanion.insert(
+                workspaceId: id,
+                reportId: 'report',
+                kind: 'table',
+                resourceId: 'resource',
+                revision: 1,
+              ),
+            );
+        final _ = await database
+            .into(database.recentModelSelections)
+            .insert(
+              RecentModelSelectionsCompanion.insert(
+                workspaceId: id,
+                selectionId: 'model',
+                selectedAtMicros: 1,
+              ),
+            );
+      }
+      await expectLater(
+        database.transaction(() async {
+          expect(await repository.deleteWorkspace(first.id), isTrue);
+          throw StateError('synthetic rollback');
+        }),
+        throwsStateError,
+      );
+      expect(
+        await database.select(database.workspaceContentReports).get(),
+        hasLength(2),
+      );
+      expect(
+        await database.select(database.recentModelSelections).get(),
+        hasLength(2),
+      );
+      expect(await repository.getWorkspaceById(first.id), isNotNull);
+      expect(await repository.deleteWorkspace(first.id), isTrue);
+      expect(
+        (await database.select(database.workspaceContentReports).get())
+            .single
+            .workspaceId,
+        second.id,
+      );
+      expect(
+        (await database.select(database.recentModelSelections).get())
+            .single
+            .workspaceId,
+        second.id,
+      );
+    },
+  );
   test(
     'failed byte write leaves retryable cleanup for its partial bytes',
     () async {
@@ -495,6 +645,13 @@ void main() {
     await erasure.flush();
     expect(store.deletedFiles, isEmpty);
     expect(await erasure.hasPendingCleanup(workspace.id), isTrue);
+    expect(
+      await LocalWorkspaceAssetErasure(
+        database,
+        store,
+      ).hasPendingDeletedWorkspaceCleanup(),
+      isTrue,
+    );
 
     store.failFileDeletion = false;
     await erasure.flush();
@@ -504,6 +661,7 @@ void main() {
       isEmpty,
     );
     expect(await erasure.hasPendingCleanup(workspace.id), isFalse);
+    expect(await erasure.hasPendingDeletedWorkspaceCleanup(), isFalse);
   });
 }
 

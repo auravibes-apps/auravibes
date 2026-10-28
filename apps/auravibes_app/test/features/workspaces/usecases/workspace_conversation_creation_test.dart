@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_view_repository.
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
@@ -19,169 +20,68 @@ import 'package:auravibes_app/features/workspaces/usecases/workspace_conversatio
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _EmptyFiles extends Mock implements OrganizeWorkspaceFilesUsecase;
 
 void main() {
-  test(
-    'current action outcome stays visible without replaying raw data',
-    () async {
-      final fixture = await _Fixture.create();
-      addTearDown(fixture.database.close);
-      final result = await fixture.run('new-table', {
-        'action': 'createTable',
-        'name': 'Created',
-        'labelName': 'Title',
-      });
-      MessageEntity message({
-        required bool user,
-        MessageMetadataEntity? metadata,
-      }) => MessageEntity(
-        id: user ? 'prompt' : 'answer',
-        conversationId: fixture.conversationId,
-        content: '',
-        messageType: user ? .text : .toolCall,
-        isUser: user,
-        status: .sent,
-        createdAt: .new(2026),
-        updatedAt: .new(2026),
-        metadata: metadata,
-      );
-      final calls = MessageMetadataEntity(
+  test('archived workspace tool output is not re-read or injected', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    final message = MessageEntity(
+      id: 'old-tool-result',
+      conversationId: fixture.conversationId,
+      content: '',
+      messageType: .toolCall,
+      isUser: false,
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+      metadata: const .new(
         toolCalls: [
-          MessageToolCallEntity(
-            id: 'new-table',
-            name: workspaceCommandToolName,
-            argumentsRaw: jsonEncode({
-              'action': 'createTable',
-              'name': 'Created',
-              'labelName': 'Title',
-            }),
-            responseRaw: jsonEncode({...result, 'secret': 'private response'}),
+          .new(
+            id: 'old-read',
+            name: workspaceReadTableToolName,
+            argumentsRaw: '{"tableId":"private-table"}',
+            responseRaw: '{"records":["private row"]}',
             resultStatus: .success,
           ),
         ],
-      );
-      final project = ProjectWorkspaceChatContextUsecase(
-        fixture.service(fixture.tables),
-      );
-      final current = await project([
-        message(user: true),
-        message(user: false, metadata: calls),
-      ]);
-      final currentCall = current.last.metadata?.toolCalls.single;
-      expect(jsonDecode(currentCall?.argumentsRaw ?? '{}'), {
-        'action': 'createTable',
-      });
-      expect(currentCall?.responseRaw, contains('success'));
-      expect(currentCall?.responseRaw, isNot(contains('private response')));
-      expect(currentCall?.argumentsRaw, isNot(contains('Created')));
-      final other = await fixture.run('other-table', {
-        'action': 'createTable',
-        'name': 'Other',
-        'labelName': 'Title',
-      });
-      final swapped = calls.toolCalls.single.copyWith(
-        responseRaw: jsonEncode(other),
-      );
-      final projectedSwap = await project([
-        message(user: true),
-        message(user: false, metadata: .new(toolCalls: [swapped])),
-      ]);
-      final swapOutput =
-          projectedSwap.last.metadata?.toolCalls.single.responseRaw ?? '';
-      expect(swapOutput, contains(result['id']?.toString() ?? ''));
-      expect(swapOutput, isNot(contains(other['id']?.toString() ?? '')));
-      final forged = calls.toolCalls.single.copyWith(
-        argumentsRaw: jsonEncode({'action': 'renameTable', 'name': 'forged'}),
-      );
-      final unverified = await project([
-        message(user: true),
-        message(user: false, metadata: .new(toolCalls: [forged])),
-      ]);
-      expect(
-        unverified.last.metadata?.toolCalls.single.responseRaw,
-        workspaceContextUnavailable,
-      );
-      final old = await project([
-        message(user: false, metadata: calls),
-        message(user: true),
-      ]);
-      expect(
-        jsonDecode(
-          old.firstOrNull?.metadata?.toolCalls.single.argumentsRaw ?? '{}',
-        ),
-        {'action': 'read'},
-      );
-      final failedCall = calls.toolCalls.single.copyWith(
-        resultStatus: .executionError,
-      );
-      final failed = await project([
-        message(user: true),
-        message(user: false, metadata: .new(toolCalls: [failedCall])),
-      ]);
-      expect(
-        jsonDecode(failed.last.metadata?.toolCalls.single.responseRaw ?? '{}'),
-        {'outcome': 'failed'},
-      );
-      final safeFailure = failedCall.copyWith(
-        responseRaw: jsonEncode({'code': 'conflict', 'error': 'secret'}),
-      );
-      final projectedFailure = await project([
-        message(user: true),
-        message(user: false, metadata: .new(toolCalls: [safeFailure])),
-      ]);
-      final failureResponse =
-          projectedFailure.last.metadata?.toolCalls.single.responseRaw ?? '';
-      expect(failureResponse, contains('Read it again'));
-      expect(failureResponse, isNot(contains('secret')));
-      final forgedFailure = safeFailure.copyWith(
-        responseRaw: '{"code":"secret"}',
-      );
-      final projectedForged = await project([
-        message(user: true),
-        message(user: false, metadata: .new(toolCalls: [forgedFailure])),
-      ]);
-      expect(
-        jsonDecode(
-          projectedForged.last.metadata?.toolCalls.single.responseRaw ?? '{}',
-        ),
-        {'outcome': 'failed'},
-      );
-      final _ = await LocalWorkspaceContextRepository(
-        fixture.database,
-        'one',
-      ).save(fixture.conversationId, 'revoke', null);
-      final revoked = await project([
-        message(user: true),
-        message(user: false, metadata: calls),
-      ]);
-      expect(
-        revoked.last.metadata?.toolCalls.single.responseRaw,
-        workspaceContextUnavailable,
-      );
-    },
-  );
-  test(
-    'shared Directory root can be read without disclosing children',
-    () async {
-      final fixture = await _Fixture.create();
-      addTearDown(fixture.database.close);
-      final result = await fixture.run('read-root', {'action': 'read'});
-      expect(result, {'kind': 'directory', 'id': '', 'parentId': null});
-      await expectLater(
-        fixture.run('read-unshared', {'action': 'read', 'tableId': 'unknown'}),
-        throwsA(isA<WorkspaceTableException>()),
-      );
-    },
-  );
-
-  test('current record projection is scoped to its authorized row', () async {
+      ),
+    );
+    final result = await ProjectWorkspaceChatContextUsecase(
+      fixture.service(fixture.tables),
+    )([message]);
+    final call = result.single.metadata?.toolCalls.single;
+    expect(call?.responseRaw, workspaceContextUnavailable);
+    expect(call?.argumentsRaw, isNot(contains('private-table')));
+    expect(call?.responseRaw, isNot(contains('private row')));
+  });
+  test('empty Directory root returns an empty list', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);
-    final table = await fixture.run('projection-table', {
-      'action': 'createTable',
-      'name': 'People',
-      'labelName': 'Name',
+    final result = await fixture.run('read-root', {'action': 'read'});
+    expect(result, {
+      'kind': 'directory',
+      'id': '',
+      'parentId': null,
+      'items': <Object?>[],
     });
+    await expectLater(
+      fixture.run('read-unshared', {'action': 'read', 'tableId': 'unknown'}),
+      throwsA(isA<WorkspaceTableException>()),
+    );
+  });
+
+  test('AI table reads include all rows without chat selection', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    final projectionTableArguments = {'name': 'People', 'labelName': 'Name'};
+    final table = await fixture.run(
+      'projection-table',
+      projectionTableArguments,
+      toolName: workspaceCreateTableToolName,
+    );
     final tableId =
         table['id'] as String? ?? (throw StateError('Expected string'));
     final tableData = await fixture.run('projection-table-read', {
@@ -191,20 +91,28 @@ void main() {
     final label =
         tableData['labelColumnId'] as String? ??
         (throw StateError('Expected string'));
-    final selected = await fixture.run('projection-selected-row', {
-      'action': 'createRecord',
+    final firstRowArguments = {
       'tableId': tableId,
       'revision': 1,
       'schemaRevision': 1,
-      'values': {label: 'Selected existing row'},
-    });
-    final unselected = await fixture.run('projection-unselected-row', {
-      'action': 'createRecord',
+      'values': {label: 'First row'},
+    };
+    final selected = await fixture.run(
+      'projection-first-row',
+      firstRowArguments,
+      toolName: workspaceAddRowToolName,
+    );
+    final secondRowArguments = {
       'tableId': tableId,
       'revision': 1,
       'schemaRevision': 1,
-      'values': {label: 'Unselected existing row'},
-    });
+      'values': {label: 'Second row'},
+    };
+    final unselected = await fixture.run(
+      'projection-second-row',
+      secondRowArguments,
+      toolName: workspaceAddRowToolName,
+    );
     final _ = await LocalWorkspaceContextRepository(fixture.database, 'one')
         .save(
           fixture.conversationId,
@@ -216,98 +124,28 @@ void main() {
             kind: 'table',
             recordIds: [
               selected['id'] as String? ??
-                  (throw StateError('Expected string')),
+                  (throw StateError('Expected record ID')),
             ],
           ),
         );
 
-    await expectLater(
-      fixture
-          .service(fixture.tables)
-          .call(
-            conversationId: fixture.conversationId,
-            operationId: 'read-unselected-row',
-            arguments: {
-              'action': 'read',
-              'tableId': tableId,
-              'id': unselected['id'],
-            },
-          ),
-      throwsA(
-        isA<WorkspaceTableException>().having(
-          (error) => error.denied,
-          'denied',
-          isTrue,
-        ),
-      ),
-    );
-
-    final arguments = {
-      'action': 'createRecord',
+    final read = await fixture.run('read-all-rows', {
+      'action': 'read',
       'tableId': tableId,
-      'revision': 1,
-      'schemaRevision': 1,
-      'values': {label: 'Alex'},
-    };
-    final created = await fixture.run('current-alex-row', arguments);
+    });
+    final records =
+        (read['records'] as List<Object?>? ??
+                (throw StateError('Expected records')))
+            .cast<Map<String, Object?>>();
     expect(
-      workspaceContextReadArguments(
-        {'action': 'createRecord', 'tableId': 'untrusted-input'},
-        {...created, 'tableId': tableId, 'kind': 'record'},
-      ),
-      {'action': 'read', 'id': created['id'], 'tableId': tableId},
+      records.map((row) => row['id']),
+      containsAll([selected['id'], unselected['id']]),
     );
-
-    MessageEntity message({
-      required bool user,
-      MessageMetadataEntity? metadata,
-    }) => MessageEntity(
-      id: user ? 'projection-question' : 'projection-tool',
-      conversationId: fixture.conversationId,
-      content: '',
-      messageType: user ? .text : .toolCall,
-      isUser: user,
-      status: .sent,
-      createdAt: .new(2026),
-      updatedAt: .new(2026),
-      metadata: metadata,
-    );
-
-    final projected =
-        await ProjectWorkspaceChatContextUsecase(
-          fixture.service(fixture.tables),
-        )([
-          message(user: true),
-          message(
-            user: false,
-            metadata: .new(
-              toolCalls: [
-                MessageToolCallEntity(
-                  id: 'current-alex-row',
-                  name: workspaceCommandToolName,
-                  argumentsRaw: jsonEncode(arguments),
-                  responseRaw: jsonEncode(created),
-                  resultStatus: .success,
-                ),
-              ],
-            ),
-          ),
-        ]);
-    final response = jsonDecode(
-      projected.last.metadata?.toolCalls.single.responseRaw ?? '{}',
-    ) as Map<String, dynamic>;
-    final current = response['current'] as Map<String, dynamic>;
-    final records = (current['records'] as List).cast<Map<String, Object?>>();
-    expect(records, hasLength(1));
-    expect(records.single['id'], created['id']);
-    final values =
-        records.single['values'] as Map<String, Object?>? ??
-        (throw StateError('Expected record values'));
-    expect(values[label], 'Alex');
-    expect(jsonEncode(records), isNot(contains('Selected existing row')));
+    expect(jsonEncode(records), contains('First row'));
+    expect(jsonEncode(records), contains('Second row'));
   });
 
-  test('revoked selection cannot commit after command preparation', () async {
+  test('legacy selection changes do not block workspace commands', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);
     final tools = WorkspaceConversationToolsUsecase(
@@ -323,30 +161,24 @@ void main() {
       },
       receipts: .new(fixture.database),
     );
-    await expectLater(
-      tools.call(
-        conversationId: fixture.conversationId,
-        operationId: 'race-create',
-        arguments: {
-          'action': 'createTable',
-          'name': 'Denied',
-          'labelName': 'Title',
-        },
-      ),
-      throwsA(
-        isA<WorkspaceTableException>().having(
-          (error) => error.denied,
-          'denied',
-          isTrue,
-        ),
-      ),
-    );
-    expect(await fixture.tables.list(), isEmpty);
+    final created =
+        (await tools.call(
+          conversationId: fixture.conversationId,
+          operationId: 'race-create',
+          arguments: {
+            'action': 'createTable',
+            'name': 'Denied',
+            'labelName': 'Title',
+          },
+        )) as Map<String, Object?>? ??
+        (throw StateError('Expected table result'));
+    expect(created['kind'], 'table');
+    expect(await fixture.tables.list(), hasLength(1));
     expect(
       await fixture.database
           .select(fixture.database.workspaceCommandReceipts)
           .get(),
-      isEmpty,
+      hasLength(1),
     );
   });
 
@@ -355,121 +187,54 @@ void main() {
     () async {
       final fixture = await _Fixture.create();
       addTearDown(fixture.database.close);
-      final folder = await fixture.run('prior-create', {
-        'action': 'createFolder',
-        'name': 'Earlier',
-      });
-      final read = await fixture.run('later-read', {
-        'action': 'read',
-        'id': folder['id'],
-      });
+      final priorCreateArguments = {'name': 'Earlier'};
+      final folder = await fixture.run(
+        'prior-create',
+        priorCreateArguments,
+        toolName: workspaceCreateFolderToolName,
+      );
+      final laterReadArguments = {
+        'itemId': folder['id'] as String? ?? (throw StateError('Expected id')),
+      };
+      final read = await fixture.run(
+        'later-read',
+        laterReadArguments,
+        toolName: workspaceReadItemToolName,
+      );
       expect(read['name'], 'Earlier');
-      final discovery = await fixture.run('discover', {
-        'action': 'listCreated',
-      });
-      final items = discovery['items'] as List<Object?>? ?? [];
-      expect(
-        items,
-        contains(
-          predicate<Map<String, Object?>>(
-            (item) => item['id'] == folder['id'] && item['name'] == 'Earlier',
-          ),
-        ),
-      );
-      expect(discovery['nextCursor'], isNull);
-      expect(
-        items.every((item) => item is Map && !item.containsKey('parentId')),
-        isTrue,
-      );
-      final discoverCall = MessageToolCallEntity(
-        id: 'discovery-call',
-        name: workspaceCommandToolName,
-        argumentsRaw: jsonEncode({'action': 'listCreated', 'cursor': 'aaa'}),
-        responseRaw: jsonEncode({'secret': 'stale private data'}),
-        resultStatus: .success,
-      );
-      MessageEntity transcript({
-        required bool user,
-        MessageMetadataEntity? metadata,
-      }) => MessageEntity(
-        id: user ? 'question' : 'tool',
-        conversationId: fixture.conversationId,
-        content: '',
-        messageType: user ? .text : .toolCall,
-        isUser: user,
-        status: .sent,
-        createdAt: .new(2026),
-        updatedAt: .new(2026),
-        metadata: metadata,
-      );
-      final projection = ProjectWorkspaceChatContextUsecase(
-        fixture.service(fixture.tables),
-      );
-      final projected = await projection([
-        transcript(user: true),
-        transcript(user: false, metadata: .new(toolCalls: [discoverCall])),
-      ]);
-      final output =
-          projected.last.metadata?.toolCalls.single.responseRaw ?? '';
-      expect(output, contains('Earlier'));
-      expect(output, isNot(contains('stale private data')));
-      final readInput = {'action': 'listCreated', 'cursor': 'abc'};
-      expect(workspaceContextReadArguments(readInput, {}), {
-        'action': 'listCreated',
-        'cursor': 'abc',
-      });
-
-      final renamed = await fixture.run('later-rename', {
-        'action': 'renameFolder',
+      final laterRenameArguments = {
         'id': read['id'],
         'revision': read['revision'],
         'name': 'Later',
-      });
+      };
+      final renamed = await fixture.run(
+        'later-rename',
+        laterRenameArguments,
+        toolName: workspaceRenameFolderToolName,
+      );
       expect(renamed['revision'], 2);
     },
   );
 
-  test('discovery paginates only current chat creations', () async {
-    final fixture = await _Fixture.create();
-    addTearDown(fixture.database.close);
-    for (var i = 0; i < 101; i++) {
-      final _ = await fixture.run('item-${i.toString().padLeft(3, '0')}', {
-        'action': 'createFolder',
-        'name': 'Folder $i',
-      });
-    }
-    final first = await fixture.run('first-page', {'action': 'listCreated'});
-    expect((first['items'] as List<Object?>?)?.length, 100);
-    expect(first['nextCursor'], 'item-099');
-    final second = await fixture.run('second-page', {
-      'action': 'listCreated',
-      'cursor': first['nextCursor'],
-    });
-    expect((second['items'] as List<Object?>?)?.length, 1);
-    expect(second['nextCursor'], isNull);
-    final _ = await LocalWorkspaceContextRepository(
-      fixture.database,
-      'one',
-    ).save(fixture.conversationId, 'revoked', null);
-    await expectLater(
-      fixture.run('revoked-page', {'action': 'listCreated'}),
-      throwsA(isA<WorkspaceTableException>()),
-    );
-  });
-
   test('typed creation and View editing use stable IDs', () async {
     final fixture = await _Fixture.create();
     addTearDown(fixture.database.close);
-    final folder = await fixture.run('folder', {
-      'action': 'createFolder',
-      'name': 'Group',
-    });
-    final table = await fixture.run('table', {
-      'action': 'createTable',
+    final folderArguments = {'name': 'Group'};
+    final folder = await fixture.run(
+      'folder',
+      folderArguments,
+      toolName: workspaceCreateFolderToolName,
+    );
+    final tableArguments = {
       'name': 'Items',
       'labelName': 'Title',
       'parentId': folder['id'],
-    });
+    };
+    final table = await fixture.run(
+      'table',
+      tableArguments,
+      toolName: workspaceCreateTableToolName,
+    );
     final first = await fixture.run('read', {
       'action': 'read',
       'tableId': table['id'],
@@ -477,49 +242,99 @@ void main() {
     final label =
         first['labelColumnId'] as String? ??
         (throw StateError('Expected string'));
-    final schema = await fixture.run('column', {
-      'action': 'saveColumn',
+    final columnArguments = {
       'tableId': table['id'],
       'revision': 1,
       'schemaRevision': 1,
       'column': {'id': '', 'name': 'Amount', 'type': 'number'},
-    });
+    };
+    final schema = await fixture.run(
+      'column',
+      columnArguments,
+      toolName: workspaceSaveColumnToolName,
+    );
     expect(schema['schemaRevision'], 2);
-    final renamed = await fixture.run('rename', {
-      'action': 'renameTable',
+    final afterColumnCreation = await fixture.run('read-column-created', {
+      'action': 'read',
       'tableId': table['id'],
-      'revision': 2,
-      'schemaRevision': 2,
-      'name': 'Renamed',
     });
-    expect(renamed['revision'], 3);
-    final movedName = await fixture.run('rename-folder', {
-      'action': 'renameFolder',
+    final amount =
+        ((afterColumnCreation['columns'] as List?) ??
+                (throw StateError('Expected columns')))
+            .cast<Map<String, dynamic>>()
+            .singleWhere((column) => column['name'] == 'Amount')['id'];
+    final columnRenameArguments = {
+      'tableId': table['id'],
+      'revision': afterColumnCreation['revision'],
+      'schemaRevision': afterColumnCreation['schemaRevision'],
+      'column': {'id': amount, 'name': 'Total', 'type': 'number'},
+    };
+    final _ = await fixture.run(
+      'rename-column',
+      columnRenameArguments,
+      toolName: workspaceSaveColumnToolName,
+    );
+    final afterColumnRename = await fixture.run('read-column-renamed', {
+      'action': 'read',
+      'tableId': table['id'],
+    });
+    expect(
+      ((afterColumnRename['columns'] as List?) ??
+              (throw StateError('Expected columns')))
+          .cast<Map<String, dynamic>>()
+          .singleWhere((column) => column['id'] == amount)['name'],
+      'Total',
+    );
+    final tableRenameArguments = {
+      'tableId': table['id'],
+      'revision': afterColumnRename['revision'],
+      'schemaRevision': afterColumnRename['schemaRevision'],
+      'name': 'Renamed',
+    };
+    final renamed = await fixture.run(
+      'rename',
+      tableRenameArguments,
+      toolName: workspaceRenameTableToolName,
+    );
+    expect(renamed['revision'], 4);
+    final folderRenameArguments = {
       'id': folder['id'],
       'revision': 1,
       'name': 'Updated group',
-    });
+    };
+    final movedName = await fixture.run(
+      'rename-folder',
+      folderRenameArguments,
+      toolName: workspaceRenameFolderToolName,
+    );
     expect(movedName['id'], folder['id']);
-    final row = await fixture.run('record', {
-      'action': 'createRecord',
+    final recordArguments = {
       'tableId': table['id'],
-      'revision': 3,
-      'schemaRevision': 2,
+      'revision': renamed['revision'],
+      'schemaRevision': renamed['schemaRevision'],
       'values': {label: 'One'},
-    });
-    final view = await fixture.run('view', {
-      'action': 'createView',
+    };
+    final row = await fixture.run(
+      'record',
+      recordArguments,
+      toolName: workspaceAddRowToolName,
+    );
+    final viewArguments = {
       'tableId': table['id'],
-      'revision': 3,
-      'schemaRevision': 2,
+      'revision': renamed['revision'],
+      'schemaRevision': renamed['schemaRevision'],
       'name': 'Overview',
       'columnIds': [label],
-    });
-    final saved = await fixture.run('save-view', {
-      'action': 'saveView',
+    };
+    final view = await fixture.run(
+      'view',
+      viewArguments,
+      toolName: workspaceCreateViewToolName,
+    );
+    final savedViewArguments = {
       'id': view['id'],
       'revision': 1,
-      'schemaRevision': 2,
+      'schemaRevision': renamed['schemaRevision'],
       'name': 'Updated overview',
       'bindings': {'title': label},
       'definition': {
@@ -528,7 +343,12 @@ void main() {
           {'id': 'root', 'component': 'Text', 'text': 'Edited surface'},
         ],
       },
-    });
+    };
+    final saved = await fixture.run(
+      'save-view',
+      savedViewArguments,
+      toolName: workspaceSaveViewToolName,
+    );
     expect(saved['revision'], 2);
     final current = await fixture.run('read-view', {
       'action': 'read',
@@ -542,18 +362,21 @@ void main() {
       )).values[label],
       'One',
     );
+    final staleColumnArguments = {
+      'tableId': table['id'],
+      'revision': 1,
+      'schemaRevision': 1,
+      'column': {'id': label, 'name': 'Stale', 'type': 'text'},
+    };
     await expectLater(
-      fixture.run('stale-column', {
-        'action': 'saveColumn',
-        'tableId': table['id'],
-        'revision': 1,
-        'schemaRevision': 1,
-        'column': {'id': label, 'name': 'Stale', 'type': 'text'},
-      }),
+      fixture.run(
+        'stale-column',
+        staleColumnArguments,
+        toolName: workspaceSaveColumnToolName,
+      ),
       throwsA(isA<WorkspaceTableException>()),
     );
     final invalid = {
-      'action': 'saveView',
       'id': view['id'],
       'revision': 2,
       'schemaRevision': 2,
@@ -571,7 +394,7 @@ void main() {
       },
     };
     await expectLater(
-      fixture.run('invalid-view', invalid),
+      fixture.run('invalid-view', invalid, toolName: workspaceSaveViewToolName),
       throwsA(isA<Object>()),
     );
     expect(
@@ -579,6 +402,29 @@ void main() {
         view['id'] as String? ?? (throw StateError('Expected string')),
       )).view.revision,
       2,
+    );
+  });
+
+  test('dedicated folder tool creates a discoverable folder', () async {
+    final fixture = await _Fixture.create();
+    addTearDown(fixture.database.close);
+    final arguments = {'name': 'Dedicated folder'};
+    final created = await fixture.run(
+      'dedicated-folder',
+      arguments,
+      toolName: workspaceCreateFolderToolName,
+    );
+    expect(created['kind'], 'folder');
+    final listed = await fixture.run(
+      'directory-root',
+      const {},
+      toolName: workspaceReadDirectoryToolName,
+    );
+    expect(
+      ((listed['entries'] as List?) ?? (throw StateError('Expected entries')))
+          .cast<Map<String, dynamic>>()
+          .map((item) => item['id']),
+      contains(created['id']),
     );
   });
 
@@ -590,22 +436,30 @@ void main() {
       final failing = fixture.service(
         .new(_InterruptedTableRepository(fixture.database)),
       );
-      final arguments = {
-        'action': 'createTable',
-        'name': 'Atomic',
-        'labelName': 'Title',
-      };
+      final arguments = {'name': 'Atomic', 'labelName': 'Title'};
+      final commandArguments = workspaceCommandArgumentsForTool(
+        workspaceCreateTableToolName,
+        arguments,
+      );
       await expectLater(
         failing.call(
           conversationId: fixture.conversationId,
           operationId: 'create-once',
-          arguments: arguments,
+          arguments: commandArguments,
         ),
         throwsA(isA<StateError>()),
       );
       expect(await fixture.tables.list(), isEmpty);
-      final created = await fixture.run('create-once', arguments);
-      final retried = await fixture.run('create-once', arguments);
+      final created = await fixture.run(
+        'create-once',
+        arguments,
+        toolName: workspaceCreateTableToolName,
+      );
+      final retried = await fixture.run(
+        'create-once',
+        arguments,
+        toolName: workspaceCreateTableToolName,
+      );
       expect(retried['id'], created['id']);
       expect(await fixture.tables.list(), hasLength(1));
     },
@@ -674,23 +528,34 @@ class _Fixture {
 
   WorkspaceConversationToolsUsecase service(
     OrganizeWorkspaceTablesUsecase editor,
-  ) => WorkspaceConversationToolsUsecase(
-    conversations: conversations,
-    context: (id) => LocalWorkspaceContextRepository(database, id),
-    commands: (_) async => WorkspaceConversationCommandUsecase(
-      tables: editor,
-      folders: folders,
-      views: views,
-    ),
-    receipts: .new(database),
-  );
+  ) {
+    final files = _EmptyFiles();
+    when(() => files.list(parentId: any(named: 'parentId')))
+        .thenAnswer((_) async => []);
+
+    return WorkspaceConversationToolsUsecase(
+      conversations: conversations,
+      context: (id) => LocalWorkspaceContextRepository(database, id),
+      commands: (_) async => WorkspaceConversationCommandUsecase(
+        tables: editor,
+        folders: folders,
+        views: views,
+        files: files,
+      ),
+      receipts: .new(database),
+    );
+  }
+
   Future<Map<String, Object?>> run(
     String id,
-    Map<String, dynamic> arguments,
-  ) async {
+    Map<String, dynamic> arguments, {
+    String? toolName,
+  }) async {
     final result = await service(tables).call(
       conversationId: conversationId,
-      arguments: arguments,
+      arguments: toolName == null
+          ? arguments
+          : workspaceToolArgumentsForExecution(toolName, arguments),
       operationId: id,
     );
     if (result is! Map<String, Object?>) throw StateError('Expected result');

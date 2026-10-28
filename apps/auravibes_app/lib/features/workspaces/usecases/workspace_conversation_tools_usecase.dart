@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_command_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
@@ -8,7 +6,10 @@ import 'package:auravibes_app/features/workspaces/usecases/workspace_conversatio
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 typedef _ConversationTarget = ({String workspaceId, String conversationId});
-typedef _SharedContext = ({String epoch, WorkspaceContextSelection selection});
+typedef _ToolScope = ({
+  String receiptScopeId,
+  WorkspaceContextSelection selection,
+});
 typedef _CommandRequest = ({
   Map<String, dynamic> arguments,
   String? operationId,
@@ -27,34 +28,24 @@ class const WorkspaceConversationToolsUsecase({
   commands,
   final LocalWorkspaceCommandRepository? receipts,
 }) {
-  Future<Map<String, Object?>?> verifiedMutation({
-    required String conversationId,
-    required String operationId,
-    required Map<String, dynamic> arguments,
-  }) async {
-    final store = receipts;
-    if (store == null || operationId.isEmpty) return null;
-    final target = await _target(conversationId);
-    final shared = await _selection(target);
-
-    return await store.matchedResult(
-      workspaceId: target.workspaceId,
-      conversationId: target.conversationId,
-      selectionId: shared.epoch,
-      requestId: operationId,
-      arguments: arguments,
-    );
-  }
-
   Future<Object?> call({
     required String conversationId,
     required Map<String, dynamic> arguments,
     String? operationId,
   }) async {
     final target = await _target(conversationId);
-    final shared = await _selection(target);
+    final receiptScopeId = await _receiptScopeId(target);
+    final scope = (
+      receiptScopeId: receiptScopeId,
+      selection: WorkspaceContextSelection(
+        workspaceId: target.workspaceId,
+        conversationId: conversationId,
+        itemId: '',
+        kind: 'directory',
+      ),
+    );
 
-    return await _SelectedCommand(this, target, shared, (
+    return await _SelectedCommand(this, target, scope, (
       arguments: arguments,
       operationId: operationId,
     )).call();
@@ -72,124 +63,61 @@ class const WorkspaceConversationToolsUsecase({
     );
   }
 
-  Future<_SharedContext> _selection(_ConversationTarget target) async {
-    final selected = await context(target.workspaceId)
-        .read(target.conversationId);
-    final epoch = selected.id;
-    final selection = selected.selection;
-    if (epoch == null || selection == null) {
-      throw const WorkspaceTableException(denied: true);
-    }
+  Future<String> _receiptScopeId(_ConversationTarget target) async {
+    final context = await this
+        .context(target.workspaceId)
+        .readOrInitialize(target.conversationId);
 
-    return (epoch: epoch, selection: selection);
+    return context.id ?? (throw const WorkspaceTableException());
   }
 }
 
 class const _SelectedCommand(
   final WorkspaceConversationToolsUsecase owner,
   final _ConversationTarget target,
-  final _SharedContext shared,
+  final _ToolScope shared,
   final _CommandRequest request,
 ) {
   Future<Map<String, Object?>> call() async =>
-      request.arguments['action'] == 'listCreated'
-      ? await _listCreated()
-      : await _dispatch(await _prepare());
+      await _dispatch(await _prepare());
 
   Future<_PreparedCommand> _prepare() async {
-    final created = await _created();
     final command = await owner.commands(target.workspaceId);
 
-    return _bind(command, created);
+    final selection = await _directoryTarget(command, shared.selection);
+
+    return (
+      command: command,
+      selection: selection,
+      references: WorkspaceReferenceScope(shared.selection, const []),
+    );
   }
 
-  _PreparedCommand _bind(
+  Future<WorkspaceContextSelection> _directoryTarget(
     WorkspaceConversationCommandUsecase command,
-    List<Map<String, Object?>> created,
-  ) => (
-    command: command,
-    selection: workspaceCreatedContext(
-      shared.selection,
-      created,
-      request.arguments,
-    ),
-    references: .new(shared.selection, created),
-  );
+    WorkspaceContextSelection selection,
+  ) async {
+    if (selection.kind != 'directory') return selection;
+    final arguments = request.arguments;
+    final target = _directoryTargetId(arguments);
+    if (target is! String || target.isEmpty) return selection;
+
+    return await _DirectorySearch(
+      command,
+      selection,
+      target,
+      workspaceTargetKind(arguments),
+      _authorize,
+    ).find();
+  }
 
   Future<Map<String, Object?>> _dispatch(_PreparedCommand prepared) {
-    return request.arguments['action'] == 'read'
+    final action = request.arguments['action'];
+
+    return action == 'read' || action == 'readDirectory'
         ? _read(prepared)
         : _write(prepared);
   }
-
-  Future<Map<String, Object?>> _listCreated() async {
-    final cursor = request.arguments['cursor'];
-    if (cursor != null &&
-        (cursor is! String || cursor.isEmpty || cursor.length > 512)) {
-      throw const WorkspaceTableException();
-    }
-    final created =
-        await owner.receipts?.receiptPage(
-          target.workspaceId,
-          target.conversationId,
-          cursor as String?,
-        ) ??
-        [];
-    final command = await owner.commands(target.workspaceId);
-    final items = <Map<String, Object?>>[];
-    final nextCursor = created.length > 100 ? created[99].requestId : null;
-    for (var index = 0; index < created.length && index < 100; index++) {
-      final row = created[index];
-      if (!row.created || row.selectionId != shared.epoch) continue;
-      final item = (jsonDecode(row.result) as Map<String, dynamic>)
-          .cast<String, Object?>();
-      final kind = item['kind'];
-      final id = item['id'];
-      if (id is! String ||
-          kind is! String ||
-          !{'folder', 'table', 'view'}.contains(kind)) {
-        continue;
-      }
-      await _authorize();
-      try {
-        final arguments = <String, dynamic>{
-          'action': 'read',
-          if (kind == 'table') 'tableId': id else 'id': id,
-        };
-        final itemsInScope = [item];
-        final selection = workspaceCreatedContext(
-          shared.selection,
-          itemsInScope,
-          arguments,
-        );
-        final data = await command.call(
-          selection: selection,
-          arguments: arguments,
-          references: .new(shared.selection, [item]),
-          conversationId: target.conversationId,
-        );
-        items.add({
-          'id': id,
-          'kind': kind,
-          for (final key in ['name', 'revision', 'schemaRevision'])
-            if (data.containsKey(key)) key: data[key],
-        });
-      } on WorkspaceTableException {
-        // Deleted or no longer authorized items are not disclosed.
-      }
-    }
-    await _authorize();
-
-    return {'items': items, 'nextCursor': nextCursor};
-  }
-
-  Future<List<Map<String, Object?>>> _created() async =>
-      await owner.receipts?.created(
-        target.workspaceId,
-        target.conversationId,
-        shared.epoch,
-      ) ??
-      [];
 
   Future<Map<String, Object?>> _read(_PreparedCommand prepared) async {
     final result = await _run(prepared);
@@ -199,10 +127,8 @@ class const _SelectedCommand(
   }
 
   Future<void> _authorize() async {
-    final current = await owner
-        .context(target.workspaceId)
-        .read(target.conversationId);
-    if (current.id != shared.epoch) {
+    final current = await owner._target(target.conversationId);
+    if (current.workspaceId != target.workspaceId) {
       throw const WorkspaceTableException(denied: true);
     }
   }
@@ -223,7 +149,7 @@ class const _SelectedCommand(
   ) => (
     workspaceId: target.workspaceId,
     conversationId: target.conversationId,
-    selectionId: shared.epoch,
+    selectionId: shared.receiptScopeId,
     requestId: operationId,
     arguments: request.arguments,
     run: () => _run(prepared),
@@ -237,4 +163,105 @@ class const _SelectedCommand(
         references: prepared.references,
         conversationId: target.conversationId,
       );
+}
+
+Object? _directoryTargetId(Map<String, dynamic> arguments) =>
+    switch (arguments['action']) {
+      'read' => arguments['tableId'] ?? arguments['id'],
+      'createFolder' || 'createTable' => arguments['parentId'],
+      'renameFolder' || 'saveView' => arguments['id'],
+      'renameTable' ||
+      'saveColumn' ||
+      'createView' ||
+      'createRecord' ||
+      'updateRecord' => arguments['tableId'],
+      _ => null,
+    };
+
+class _DirectorySearch {
+  new(this.command, this.root, this.target, this.expectedKind, this.authorize);
+  final WorkspaceConversationCommandUsecase command;
+  final WorkspaceContextSelection root;
+  final String target;
+  final String? expectedKind;
+  final Future<void> Function() authorize;
+  final visited = <String>{};
+  WorkspaceContextSelection? match;
+
+  Future<WorkspaceContextSelection> find() async {
+    final pending = <WorkspaceContextSelection>[root];
+    while (pending.isNotEmpty) {
+      final parent = pending.removeLast();
+      if (!visited.add(parent.itemId)) continue;
+      if (await _scanParent(parent, pending) case final found?) return found;
+    }
+
+    return match ?? (throw const WorkspaceTableException(denied: true));
+  }
+
+  Future<WorkspaceContextSelection?> _scanParent(
+    WorkspaceContextSelection parent,
+    List<WorkspaceContextSelection> pending,
+  ) async {
+    await authorize();
+    final data = await command.call(
+      selection: parent,
+      arguments: {'action': 'read', 'id': parent.itemId},
+    );
+
+    return _scan(data, parent, pending);
+  }
+
+  WorkspaceContextSelection? _scan(
+    Map<String, Object?> data,
+    WorkspaceContextSelection parent,
+    List<WorkspaceContextSelection> pending,
+  ) {
+    for (final item in (data['items']! as List).cast<Map<String, Object?>>()) {
+      final found = _visit(item, parent, pending);
+      if (found != null) return found;
+    }
+
+    return null;
+  }
+
+  WorkspaceContextSelection? _visit(
+    Map<String, Object?> item,
+    WorkspaceContextSelection parent,
+    List<WorkspaceContextSelection> pending,
+  ) {
+    final child = _child(item, parent);
+    if (child == null) return null;
+    if (child.kind == 'folder') pending.add(child);
+    if (!_matches(child)) return null;
+    if (expectedKind != null) return child;
+    if (match != null) throw const WorkspaceTableException(denied: true);
+    match = child;
+
+    return null;
+  }
+
+  WorkspaceContextSelection? _child(
+    Map<String, Object?> item,
+    WorkspaceContextSelection parent,
+  ) {
+    final id = item['id'];
+    final kind = item['kind'];
+    if (id is! String || kind is! String) return null;
+
+    return WorkspaceContextSelection(
+      workspaceId: root.workspaceId,
+      conversationId: root.conversationId,
+      itemId: id,
+      kind: kind,
+      parentId: parent.kind == 'directory' ? null : parent.itemId,
+    );
+  }
+
+  bool _matches(WorkspaceContextSelection child) {
+    if (child.itemId != target) return false;
+    if (expectedKind == null) return child.kind != 'table';
+
+    return child.kind == expectedKind;
+  }
 }

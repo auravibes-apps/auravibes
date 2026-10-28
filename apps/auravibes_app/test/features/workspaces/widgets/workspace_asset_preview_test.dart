@@ -36,12 +36,13 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'one',
           child: Scaffold(
             body: WorkspaceFileScreen(
               workspaceId: 'one',
               fileId: 'file',
-              onBack: () {},
+              onBack: () {
+                return;
+              },
               compact: true,
             ),
           ),
@@ -54,10 +55,11 @@ void main() {
               (ref) async => ManageWorkspaceAssetsUsecase(repository),
             ),
           ],
+          workspaceId: 'one',
         ),
       );
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Private notes'), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back), findsNothing);
     expect(find.text('Stored notes'), findsNothing);

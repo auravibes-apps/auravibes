@@ -2,8 +2,8 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -26,7 +26,6 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'one',
           child: ValueListenableBuilder<bool>(
             valueListenable: active,
             builder: (context, value, child) => TickerMode(
@@ -34,7 +33,9 @@ void main() {
               child: WorkspaceViewScreen(
                 workspaceId: 'one',
                 viewId: 'view',
-                onBack: () {},
+                onBack: () {
+                  return;
+                },
               ),
             ),
           ),
@@ -44,6 +45,7 @@ void main() {
               throw StateError('test');
             }),
           ],
+          workspaceId: 'one',
         ),
       );
     });
@@ -70,29 +72,31 @@ void main() {
       (item) => item.identifier == 'synthetic',
     );
     final tool = connector.tools.firstWhere((item) => item.slug == 'search');
+    final formDefinition = <String, Object?>{
+      'version': 1,
+      'components': [
+        {
+          'id': 'root',
+          'component': 'Column',
+          'children': ['query'],
+        },
+        {
+          'id': 'query',
+          'component': 'TextField',
+          'label': 'Query',
+          'value': {'path': '/answers/query'},
+        },
+      ],
+    };
     final data = WorkspaceViewData(
-      view: WorkspaceView(
+      view: .new(
         id: 'view',
         name: 'Form',
         tableId: 'table',
         bindings: const {},
         columnTypes: const {},
-        definition: .fromJson({
-          'version': 1,
-          'components': [
-            {
-              'id': 'root',
-              'component': 'Column',
-              'children': ['query'],
-            },
-            {
-              'id': 'query',
-              'component': 'TextField',
-              'label': 'Query',
-              'value': {'path': '/answers/query'},
-            },
-          ],
-        }, requiresUserAction: true),
+        definition: .fromJson(formDefinition, requiresUserAction: true),
+        revision: 1,
         action: .fromJson({
           'version': 1,
           'type': 'connectorWrite',
@@ -101,7 +105,6 @@ void main() {
           'connectionId': 'service:synthetic-submit',
           'inputs': {'query': '/answers/query'},
         }),
-        revision: 1,
       ),
       table: const WorkspaceTable(
         id: 'table',
@@ -120,7 +123,6 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'one',
           child: ValueListenableBuilder<bool>(
             valueListenable: active,
             builder: (context, value, child) => TickerMode(
@@ -128,7 +130,9 @@ void main() {
               child: WorkspaceViewScreen(
                 workspaceId: 'one',
                 viewId: 'view',
-                onBack: () {},
+                onBack: () {
+                  return;
+                },
               ),
             ),
           ),
@@ -142,18 +146,17 @@ void main() {
               ),
             ),
           ],
+          workspaceId: 'one',
         ),
       );
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'draft stays');
     active.value = false;
     await tester.pump();
     await tester.pump(const Duration(seconds: 11));
-    final container = ProviderScope.containerOf(
-      tester.element(find.byType(WorkspaceViewScreen)),
-    );
-    container.invalidate(workspaceViewDataProvider('one', 'view'));
+    ProviderScope.containerOf(tester.element(find.byType(WorkspaceViewScreen)))
+        .invalidate(workspaceViewDataProvider('one', 'view'));
     active.value = true;
     await tester.pump();
     await tester.pump();
@@ -235,11 +238,12 @@ void main() {
         expect(returned, isTrue);
         await tester.pumpWidget(
           TestableApp(
-            workspaceId: 'one',
             child: WorkspaceViewScreen(
               workspaceId: 'one',
               viewId: 'view',
-              onBack: () {},
+              onBack: () {
+                return;
+              },
               compact: true,
             ),
             overrides: [
@@ -248,9 +252,10 @@ void main() {
                 'view',
               ).overrideWith((ref) async => data),
             ],
+            workspaceId: 'one',
           ),
         );
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
         expect(find.text('Visible owned record'), findsOneWidget);
         expect(find.byIcon(Icons.arrow_back), findsNothing);
         expect(find.byIcon(Icons.refresh), findsNothing);

@@ -431,7 +431,6 @@ class const _Content(final WorkspaceViewData data, final String workspaceId)
       padding: const EdgeInsets.all(16),
       children: [
         Text(data.view.name),
-        const TextLocale(LocaleKeys.workspace_views_display_only),
         _DataSurface(data, selected, workspaceId),
         WorkspaceViewSummary(data: data),
         WorkspaceViewAssets(workspaceId: workspaceId, data: data),

@@ -114,10 +114,12 @@ void main() {
       () async {
         const call = MessageToolCallEntity(
           id: 'read-file',
-          name: 'workspace_item',
-          argumentsRaw: '{"action":"read","id":"file"}',
+          name: 'workspace_read_item',
+          argumentsRaw: '{"itemId":"file"}',
         );
-        toolMessage = toolMessage.copyWith(metadata: .new(toolCalls: [call]));
+        toolMessage = toolMessage.copyWith(
+          metadata: const .new(toolCalls: [call]),
+        );
         final provider = AppAllowedToolsDataProvider(
           messageRepository: messageRepository,
           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,

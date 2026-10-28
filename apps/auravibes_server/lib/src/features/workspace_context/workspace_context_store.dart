@@ -16,6 +16,29 @@ class const WorkspaceContextStore(
 ) {
   Future<String> read() => session.db.transaction(readInTransaction);
 
+  Future<String> readOrInitialize() => session.db.transaction((
+    transaction,
+  ) async {
+    final reader = _WorkspaceContextSelectionReader(this);
+    final context = await _authorize(transaction);
+    final event = await reader._latestEvent(context.conversation, transaction);
+    if (event != null) return reader.read(transaction);
+    final selection = WorkspaceContextSelection(
+      workspaceId: '$workspaceId',
+      conversationId: conversationId,
+      itemId: '',
+      kind: 'directory',
+    );
+    final id = const Uuid().v7();
+    await _WorkspaceContextSelectionSaver(this)._insert(
+      transaction,
+      id,
+      context.conversation.id!,
+      jsonEncode(selection.toJson()),
+    );
+    return _selectionResult(id, selection);
+  });
+
   Future<String> readInTransaction(Transaction transaction) =>
       _WorkspaceContextSelectionReader(this).read(transaction);
 

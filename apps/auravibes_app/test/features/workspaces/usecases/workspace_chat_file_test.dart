@@ -32,8 +32,134 @@ void main() {
     expect(output['truncated'], isTrue);
   });
 
+  test('current directory reads keep safe item metadata for the model', () {
+    final call = sanitizeWorkspaceToolResult(
+      .new(
+        id: 'directory-read',
+        name: workspaceReadDirectoryToolName,
+        argumentsRaw: jsonEncode({'action': 'readDirectory'}),
+        responseRaw: jsonEncode({
+          'kind': 'directory',
+          'path': '/',
+          'entries': [
+            {
+              'id': 'table-1',
+              'kind': 'table',
+              'name': 'Contacts',
+              'path': 'Contacts',
+              'revision': 2,
+              'private': 'must not persist',
+            },
+          ],
+          'private': 'must not persist',
+        }),
+        resultStatus: .success,
+      ),
+    );
+
+    expect(
+      jsonDecode(
+        call.responseContextRaw ?? (throw StateError('Missing response')),
+      ),
+      {
+        'kind': 'directory',
+        'path': '/',
+        'entries': [
+          {
+            'id': 'table-1',
+            'kind': 'table',
+            'name': 'Contacts',
+            'path': 'Contacts',
+            'revision': 2,
+          },
+        ],
+        'truncated': false,
+      },
+    );
+  });
+
+  test('folder reads keep safe child metadata but redact content', () {
+    final call = sanitizeWorkspaceToolResult(
+      .new(
+        id: 'folder-read',
+        name: workspaceReadItemToolName,
+        argumentsRaw: jsonEncode({'action': 'read', 'itemId': 'folder-1'}),
+        responseRaw: jsonEncode({
+          'id': 'folder-1',
+          'name': 'Sales',
+          'revision': 3,
+          'items': [
+            {'id': 'file-1', 'kind': 'file', 'name': 'Notes'},
+          ],
+          'content': 'must not persist',
+        }),
+        resultStatus: .success,
+      ),
+    );
+
+    expect(
+      jsonDecode(
+        call.responseContextRaw ?? (throw StateError('Missing response')),
+      ),
+      {
+        'id': 'folder-1',
+        'name': 'Sales',
+        'revision': 3,
+        'items': [
+          {'id': 'file-1', 'kind': 'file', 'name': 'Notes'},
+        ],
+        'truncated': false,
+      },
+    );
+  });
+
+  test('table reads retain schema but redact record values', () {
+    final call = sanitizeWorkspaceToolResult(
+      .new(
+        id: 'table-read',
+        name: workspaceReadTableToolName,
+        argumentsRaw: jsonEncode({'tableId': 'table-1'}),
+        responseRaw: jsonEncode({
+          'id': 'table-1',
+          'name': 'Contacts',
+          'revision': 3,
+          'schemaRevision': 2,
+          'labelColumnId': 'name',
+          'columns': [
+            {'id': 'name', 'name': 'Name', 'type': 'text'},
+          ],
+          'records': [
+            {
+              'id': 'row-1',
+              'values': {'name': 'Private contact'},
+            },
+          ],
+        }),
+        resultStatus: .success,
+      ),
+    );
+
+    expect(
+      jsonDecode(
+        call.responseContextRaw ?? (throw StateError('Missing response')),
+      ),
+      {
+        'id': 'table-1',
+        'kind': 'table',
+        'name': 'Contacts',
+        'revision': 3,
+        'schemaRevision': 2,
+        'labelColumnId': 'name',
+        'columns': [
+          {'id': 'name', 'name': 'Name', 'type': 'text'},
+        ],
+      },
+    );
+    expect(call.responseContextRaw, isNot(contains('Private contact')));
+  });
+
   test(
-    'file grant is isolated to its chat and revocation blocks reads',
+    'workspace files are available across chats and prompts redact old results',
     () async {
       final database = AppDatabase(connection: NativeDatabase.memory());
       addTearDown(database.close);
@@ -71,7 +197,10 @@ void main() {
         context: (_) => context,
         commands: (_) async => command,
       );
-      final args = {'action': 'read', 'id': 'file'};
+      final args = workspaceToolArgumentsForExecution(
+        workspaceReadItemToolName,
+        {'itemId': 'file'},
+      );
       final result = await tools.call(
         conversationId: first.id,
         arguments: args,
@@ -87,14 +216,41 @@ void main() {
       final storedCall = sanitizeWorkspaceToolResult(
         .new(
           id: 'file-read',
-          name: workspaceCommandToolName,
-          argumentsRaw: jsonEncode(args),
+          name: workspaceReadItemToolName,
+          argumentsRaw: jsonEncode({'itemId': 'file'}),
           responseRaw: jsonEncode(result),
           responseContextRaw: jsonEncode(result),
           resultStatus: .success,
         ),
       );
       expect(jsonEncode(storedCall.toJson()), isNot(contains('Hello')));
+      final failedRead = sanitizeWorkspaceToolResult(
+        .new(
+          id: 'unshared-read',
+          name: workspaceReadItemToolName,
+          argumentsRaw: jsonEncode({'itemId': 'file'}),
+          responseRaw: jsonEncode({
+            'code': 'unavailable',
+            'error': 'private provider details',
+          }),
+          resultStatus: .executionError,
+        ),
+      );
+      expect(failedRead.responseRaw, contains('unavailable or not accessible'));
+      expect(
+        failedRead.responseRaw,
+        isNot(contains('private provider details')),
+      );
+      final folderCreation = sanitizeWorkspaceToolResult(
+        .new(
+          id: 'folder-create',
+          name: workspaceCreateFolderToolName,
+          argumentsRaw: jsonEncode({'name': 'Group'}),
+          responseRaw: jsonEncode({'id': 'folder-id', 'kind': 'folder'}),
+          resultStatus: .success,
+        ),
+      );
+      expect(folderCreation.responseRaw, contains('folder-id'));
       final message = MessageEntity(
         id: 'tool-message',
         conversationId: first.id,
@@ -110,11 +266,11 @@ void main() {
       final authorized = await projection([message]);
       expect(
         authorized.single.metadata?.toolCalls.single.responseRaw,
-        contains('Hello'),
+        workspaceContextUnavailable,
       );
-      await expectLater(
-        tools.call(conversationId: second.id, arguments: args),
-        throwsA(isA<Object>()),
+      expect(
+        await tools.call(conversationId: second.id, arguments: args),
+        containsPair('content', 'Hello'),
       );
       final _ = await context.save(first.id, 'revoke', null);
       final revokedProjection = await projection([message]);
@@ -122,9 +278,9 @@ void main() {
         revokedProjection.single.metadata?.toolCalls.single.responseRaw,
         workspaceContextUnavailable,
       );
-      await expectLater(
-        tools.call(conversationId: first.id, arguments: args),
-        throwsA(isA<Object>()),
+      expect(
+        await tools.call(conversationId: first.id, arguments: args),
+        containsPair('content', 'Hello'),
       );
     },
   );
@@ -279,8 +435,14 @@ class _Files implements WorkspaceFileRepository {
   }
 
   @override
-  Future<List<WorkspaceFile>> list({String? parentId}) =>
-      throw UnimplementedError();
+  Future<List<WorkspaceFile>> list({String? parentId}) async => [
+    WorkspaceFile(
+      id: 'file',
+      name: 'notes.txt',
+      assetId: 'asset',
+      revision: revision,
+    ),
+  ];
   @override
   Future<WorkspaceFile> create(
     WorkspaceFileDraft draft, {

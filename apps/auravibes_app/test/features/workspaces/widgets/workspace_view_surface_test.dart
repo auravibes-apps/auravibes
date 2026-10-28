@@ -79,30 +79,31 @@ void main() {
     final usecase = _usecase(
       executeConnector: (_) async {
         calls++;
+
         return {'status': 'completed'};
       },
     );
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'workspace',
-          overrides: [
-            workspaceViewActionUsecaseProvider('workspace')
-                .overrideWith((ref) async => usecase),
-          ],
           child: ValueListenableBuilder<WorkspaceViewData>(
             valueListenable: data,
             builder: (context, value, child) =>
                 WorkspaceViewSurface(data: value, workspaceId: 'workspace'),
           ),
+          overrides: [
+            workspaceViewActionUsecaseProvider('workspace')
+                .overrideWith((ref) async => usecase),
+          ],
+          workspaceId: 'workspace',
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 30));
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'keep my draft');
     data.value = _data(connectionId: 'service:changed');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('keep my draft'), findsOneWidget);
     expect(
       find.text('This view changed. Refresh it before submitting again.'),
@@ -114,18 +115,18 @@ void main() {
     );
     expect(calls, 0);
     await tester.tap(find.text('Refresh'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(
       find.text('You have unsaved changes. Discard them?'),
       findsOneWidget,
     );
     await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('keep my draft'), findsOneWidget);
     await tester.tap(find.text('Refresh'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Discard changes'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('keep my draft'), findsNothing);
     expect(
       find.byKey(const ValueKey('workspace_view_action_submit')),
@@ -145,23 +146,23 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'workspace',
           child: ValueListenableBuilder<Map<String, Object?>>(
             valueListenable: model,
             builder: (context, value, child) => WorkspaceViewSurface(
               data: data,
-              workspaceId: 'workspace',
               connectedModel: value,
+              workspaceId: 'workspace',
             ),
           ),
+          workspaceId: 'workspace',
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 30));
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('previously visible secret'), findsOneWidget);
     model.value = {'answers': <String, Object?>{}};
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('previously visible secret'), findsNothing);
     expect(find.byType(EditableText), findsNothing);
     expect(find.byType(EditableText, skipOffstage: false), findsOneWidget);

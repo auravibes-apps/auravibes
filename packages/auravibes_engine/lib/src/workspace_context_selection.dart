@@ -1,4 +1,4 @@
-/// A user selection event never grants data in a copied/forked Conversation.
+/// Legacy selection data never grants or revokes workspace tool access.
 class WorkspaceContextSelection {
   new({
     required this.workspaceId,

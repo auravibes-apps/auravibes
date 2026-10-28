@@ -17,7 +17,7 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Workspace file tool result privacy', (builder, endpoints) {
-    test('history excludes file content while provider gets fresh authorized bytes', () async {
+    test('prompt projection never refetches archived file content', () async {
       final userId = const Uuid().v4().toString();
       final authenticated = builder.copyWith(
         authentication: AuthenticationOverride.authenticationInfo(
@@ -128,15 +128,26 @@ void main() {
         'select-$userId',
         jsonEncode(selection.toJson()),
       );
+      var fileFetches = 0;
       final commands = WorkspaceConversationCommands(
         fileReader: WorkspaceConversationFile(
           store: const _Store(),
-          fetch: (_, _) async => utf8.encode('hello'),
+          fetch: (_, _) async {
+            fileFetches++;
+            return utf8.encode('hello');
+          },
         ),
       );
       final runtime = ServerToolRuntime(
-        executor: (session, turn, tool, request) =>
-            commands.call(session, turn, request.id, request.arguments),
+        executor: (session, turn, tool, request) => commands.call(
+          session,
+          turn,
+          request.id,
+          workspaceToolArgumentsForExecution(
+            tool.descriptor.toolIdentifier,
+            request.arguments,
+          ),
+        ),
       );
       await runtime.handle(
         session,
@@ -144,10 +155,11 @@ void main() {
         messageId: assistant.id!,
         request: const ServerToolRequest(
           id: 'private-file-read',
-          name: workspaceCommandToolName,
-          arguments: {'action': 'read', 'id': 'note'},
+          name: workspaceReadItemToolName,
+          arguments: {'itemId': 'note'},
         ),
       );
+      expect(fileFetches, 1);
       final call = (await ConversationToolCall.db.findFirstRow(
         session,
         where: (row) =>
@@ -168,8 +180,8 @@ void main() {
         messageId: assistant.id!,
         request: const ServerToolRequest(
           id: 'unexpected-file-read',
-          name: workspaceCommandToolName,
-          arguments: {'action': 'read', 'id': 'note'},
+          name: workspaceReadItemToolName,
+          arguments: {'itemId': 'note'},
         ),
       );
       final unexpectedCall = (await ConversationToolCall.db.findFirstRow(
@@ -187,7 +199,10 @@ void main() {
             {
               'id': 'private-file-read',
               'type': 'function',
-              'function': {'name': workspaceCommandToolName, 'arguments': '{}'},
+              'function': {
+                'name': workspaceReadItemToolName,
+                'arguments': jsonEncode({'itemId': 'note'}),
+              },
             },
           ],
         },
@@ -197,11 +212,12 @@ void main() {
           'content': call.resultJson,
         },
       ];
-      final projection = WorkspacePromptProjection(commands: commands);
+      final projection = const WorkspacePromptProjection();
       expect(
         jsonEncode(await projection.call(session, turn, history)),
-        contains('hello'),
+        isNot(contains('hello')),
       );
+      expect(fileFetches, 1);
       await endpoints.workspaceContext.save(
         authenticated,
         workspace.id!,
@@ -209,10 +225,52 @@ void main() {
         'revoke-$userId',
         null,
       );
-      expect(
-        jsonEncode(await projection.call(session, turn, history)),
-        isNot(contains('hello')),
+      final archived = await projection.call(session, turn, [
+        ...history,
+        {'role': 'user', 'content': 'A later request.'},
+      ]);
+      expect(jsonEncode(archived), isNot(contains('hello')));
+      await ConversationMessage.db.updateRow(
+        session,
+        assistant.copyWith(turnId: turn.id),
       );
+      for (final status in ['success', 'pending']) {
+        await ConversationToolCall.db.insertRow(
+          session,
+          ConversationToolCall(
+            workspaceId: workspace.id!,
+            conversationId: conversation.id!,
+            turnId: turn.id!,
+            messageId: assistant.id!,
+            stableId: 'mutation-$status',
+            name: workspaceUpdateRecordToolName,
+            argumentsJson:
+                '{"tableId":"secret-table","values":{"title":"secret-value"}}',
+            argumentsDigest: 'fixture',
+            status: status,
+            resultJson: '{"id":"secret-record"}',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+      final snapshot = await endpoints.conversation.getConversationSnapshot(
+        authenticated,
+        GetConversationRequest(
+          workspaceId: workspace.id!,
+          conversationId: conversation.stableId,
+        ),
+      );
+      final completed = snapshot.toolCalls.singleWhere(
+        (value) => value.id == 'mutation-success',
+      );
+      expect(completed.argumentsJson, '{}');
+      expect(completed.resultJson, '{}');
+      final pending = snapshot.toolCalls.singleWhere(
+        (value) => value.id == 'mutation-pending',
+      );
+      expect(pending.argumentsJson, contains('secret-value'));
     });
   });
 }

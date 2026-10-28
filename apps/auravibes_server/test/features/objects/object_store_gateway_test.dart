@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:auravibes_server/src/features/objects/object_store.dart';
@@ -6,6 +7,138 @@ import 'package:test/test.dart';
 void main() {
   final registrationId = 'a' * 64;
   final objectKey = '7/${'b' * 48}';
+
+  for (final operation in ['register', 'head']) {
+    test('$operation times out when response headers stall', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final subscription = server.listen((_) {});
+      addTearDown(subscription.cancel);
+      final store = _store(server, timeout: const Duration(milliseconds: 250));
+
+      await expectLater(
+        operation == 'register'
+            ? store.registerFreshKey(
+                key: objectKey,
+                registrationId: registrationId,
+              )
+            : store.head(objectKey, registrationId: registrationId),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+  }
+
+  test('registration times out when response body stalls', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final subscription = server.listen((request) {
+      request.response.statusCode = HttpStatus.conflict;
+      request.response.write('conflict');
+      unawaited(request.response.flush().catchError((Object _) {}));
+    });
+    addTearDown(subscription.cancel);
+    final store = _store(server, timeout: const Duration(milliseconds: 250));
+
+    await expectLater(
+      store.registerFreshKey(key: objectKey, registrationId: registrationId),
+      throwsA(isA<TimeoutException>()),
+    );
+  });
+
+  test('registration rejects an oversized conflict response', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final subscription = server.listen((request) {
+      request.response.statusCode = HttpStatus.conflict;
+      request.response.write('x' * 8193);
+      unawaited(request.response.close());
+    });
+    addTearDown(subscription.cancel);
+
+    await expectLater(
+      _store(server).registerFreshKey(
+        key: objectKey,
+        registrationId: registrationId,
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
+  for (final operation in ['quiesce', 'delete']) {
+    test('$operation times out when response headers stall', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final subscription = server.listen((_) {});
+      addTearDown(subscription.cancel);
+      final store = _store(server, timeout: const Duration(milliseconds: 250));
+
+      await expectLater(
+        operation == 'quiesce'
+            ? store.confirmsUploadQuiescence(
+                key: objectKey,
+                expiresAt: DateTime.now(),
+                registrationId: registrationId,
+              )
+            : store.delete(objectKey, registrationId: registrationId),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+
+    test('$operation times out when response body stalls', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final subscription = server.listen((request) {
+        request.response.statusCode = HttpStatus.conflict;
+        request.response.write('pending');
+        unawaited(request.response.flush().catchError((Object _) {}));
+      });
+      addTearDown(subscription.cancel);
+      final store = _store(server, timeout: const Duration(milliseconds: 250));
+
+      await expectLater(
+        operation == 'quiesce'
+            ? store.confirmsUploadQuiescence(
+                key: objectKey,
+                expiresAt: DateTime.now(),
+                registrationId: registrationId,
+              )
+            : store.delete(objectKey, registrationId: registrationId),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+  }
+
+  for (final scenario in [
+    (operation: 'quiesce', status: HttpStatus.conflict),
+    (operation: 'delete', status: HttpStatus.conflict),
+    (operation: 'delete', status: HttpStatus.unprocessableEntity),
+  ]) {
+    test(
+      '${scenario.operation} rejects oversized ${scenario.status} body',
+      () async {
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(() => server.close(force: true));
+        final subscription = server.listen((request) {
+          request.response.statusCode = scenario.status;
+          request.response.write('x' * 8193);
+          unawaited(request.response.close());
+        });
+        addTearDown(subscription.cancel);
+        final store = _store(server);
+
+        await expectLater(
+          scenario.operation == 'quiesce'
+              ? store.confirmsUploadQuiescence(
+                  key: objectKey,
+                  expiresAt: DateTime.now(),
+                  registrationId: registrationId,
+                )
+              : store.delete(objectKey, registrationId: registrationId),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
+  }
 
   test('registers a fresh key with its durable identity', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -559,9 +692,13 @@ void main() {
   );
 }
 
-HttpObjectStore _store(HttpServer server) => HttpObjectStore(
+HttpObjectStore _store(
+  HttpServer server, {
+  Duration timeout = const Duration(seconds: 30),
+}) => HttpObjectStore(
   gatewayEndpoint: _endpoint(server),
   gatewayBearerToken: 'gateway-secret',
+  requestTimeout: timeout,
 );
 
 Uri _endpoint(HttpServer server) => Uri(

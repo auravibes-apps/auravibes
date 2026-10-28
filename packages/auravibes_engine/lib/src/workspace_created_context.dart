@@ -1,11 +1,28 @@
 import 'package:auravibes_engine/src/workspace_context_selection.dart';
 
+/// The resource kind named by a workspace command, if its target is typed.
+String? workspaceTargetKind(Map<String, dynamic> arguments) =>
+    switch (arguments['action']) {
+      'read' when arguments['tableId'] != null => 'table',
+      'createFolder' || 'createTable' || 'renameFolder' => 'folder',
+      'renameTable' ||
+      'saveColumn' ||
+      'createView' ||
+      'createRecord' ||
+      'updateRecord' => 'table',
+      'saveView' => 'view',
+      _ => null,
+    };
+
 class const WorkspaceCreatedContext(
   final WorkspaceContextSelection selection,
   final List<Map<String, Object?>> created,
 ) {
-  WorkspaceContextSelection resolve(Map<String, dynamic> arguments) {
-    final owned = _target(arguments);
+  WorkspaceContextSelection resolve(
+    Map<String, dynamic> arguments, {
+    String? targetKind,
+  }) {
+    final owned = _target(arguments, targetKind);
     final id = owned?['id'] as String? ?? selection.itemId;
 
     return _selection(owned, id);
@@ -28,11 +45,21 @@ class const WorkspaceCreatedContext(
   String? _parent(Map<String, Object?>? owned) =>
       owned?['parentId'] as String? ?? selection.parentId;
 
-  Map<String, Object?>? _target(Map<String, dynamic> arguments) {
+  Map<String, Object?>? _target(
+    Map<String, dynamic> arguments,
+    String? targetKind,
+  ) {
     final target =
         arguments['tableId'] ?? arguments['parentId'] ?? arguments['id'];
+    final kind = targetKind ?? workspaceTargetKind(arguments);
+    if (kind == null && selection.kind == 'directory') return null;
+    final matches = created.where(
+      (resource) =>
+          resource['id'] == target &&
+          (kind == null || resource['kind'] == kind),
+    );
 
-    return created.where((resource) => resource['id'] == target).firstOrNull;
+    return matches.singleOrNull;
   }
 
   List<String> _records(String id, bool selected) => <String>{

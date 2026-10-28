@@ -59,13 +59,13 @@ void main() {
       final commands = container.read(workspaceConversationToolsProvider);
       final pending = commands.call(
         conversationId: chat.id,
-        arguments: {'action': 'listCreated'},
+        arguments: {'action': 'readDirectory'},
       );
       await container.pump();
       session.complete(
         const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'one')),
       );
-      expect(await pending, {'items': <Object?>[], 'nextCursor': null});
+      expect(await pending, containsPair('kind', 'directory'));
     },
   );
 

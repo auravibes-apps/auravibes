@@ -13,8 +13,17 @@ class const LocalWorkspaceAssetErasure(
   Future<bool> delete(String workspaceId, Future<bool> Function() action) =>
       database.transaction(() async {
         await _capture(workspaceId);
+        final deleted = await action();
+        if (deleted) {
+          final _ = await (database.delete(
+            database.workspaceContentReports,
+          )..where((row) => row.workspaceId.equals(workspaceId))).go();
+          final _ = await (database.delete(
+            database.recentModelSelections,
+          )..where((row) => row.workspaceId.equals(workspaceId))).go();
+        }
 
-        return await action();
+        return deleted;
       });
 
   Future<void> flush() async {
@@ -41,6 +50,29 @@ class const LocalWorkspaceAssetErasure(
     )..where((row) => row.workspaceId.equals(workspaceId))).get();
 
     return attachmentJobs.isNotEmpty;
+  }
+
+  /// Reports queued cleanup belonging to a workspace that no longer exists.
+  Future<bool> hasPendingDeletedWorkspaceCleanup() async {
+    final assets = await database
+        .select(database.workspaceAssetDeletions)
+        .get();
+    final attachments = await database
+        .select(database.workspaceAttachmentDeletions)
+        .get();
+    final credentials = await database
+        .select(database.workspaceCredentialDeletions)
+        .get();
+    final ids = <String>{
+      ...assets.map((job) => job.workspaceId).whereType<String>(),
+      ...attachments.map((job) => job.workspaceId),
+      ...credentials.map((job) => job.workspaceId),
+    };
+    for (final id in ids) {
+      if (await database.workspaceDao.getWorkspaceById(id) == null) return true;
+    }
+
+    return false;
   }
 
   Future<void> recoverUntrackedWrite(String id, {String? workspaceId}) =>

@@ -1,9 +1,12 @@
+import 'dart:ui' show Size;
+
 import 'package:auravibes_app/features/workspaces/models/workspace_reference_page.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/browse_workspace_references_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_field.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_reference_picker.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -47,8 +50,9 @@ void main() {
         ),
       );
       await _flush(tester);
+      expect(find.text('Choose records from People'), findsOneWidget);
       expect(repository.parents, ['parent-two']);
-      await tester.tap(find.text('Done'));
+      await tester.tap(find.text('Apply selection'));
       expect(selected, ['first']);
     },
   );
@@ -82,7 +86,9 @@ void main() {
       await _flush(tester);
       expect(repository.tableRequests, ['target']);
       expect(find.text('Add record'), findsNothing);
-      await tester.tap(find.text('Done'));
+      expect(find.byType(AuraRadioListTile<String>), findsOneWidget);
+      expect(find.byType(AuraCheckboxListTile), findsNothing);
+      await tester.tap(find.text('Apply selection'));
       expect(selected, ['first']);
     },
   );
@@ -114,7 +120,9 @@ void main() {
     );
     await _flush(tester);
     expect(find.text('Ada'), findsOneWidget);
-    expect(find.text('Email: ada@example.com'), findsOneWidget);
+    expect(find.byType(AuraCheckboxListTile), findsOneWidget);
+    expect(find.byType(AuraRadioListTile<String>), findsNothing);
+    expect(find.textContaining('Email: ada@example.com'), findsOneWidget);
     expect(find.text('Add record'), findsNothing);
     await tester.tap(find.text('Ada'));
     await tester.tap(find.text('Next page'));
@@ -126,8 +134,104 @@ void main() {
     await _flush(tester);
     expect(repository.searches.last, 'Ada');
     expect(repository.cursors.last, isNull);
-    await tester.tap(find.text('Done'));
+    await tester.tap(find.text('Apply selection'));
     expect(selected, ['first', 'second']);
+  });
+  testWidgets('single selection can be cleared before applying', (
+    tester,
+  ) async {
+    final repository = _References();
+    List<String>? selected;
+    await tester.pumpWidget(
+      TestableApp(
+        child: WorkspaceReferencePicker(
+          workspaceId: 'one',
+          table: _source,
+          column: _source.columns.last,
+          selected: const ['first'],
+          onSelected: (ids) => selected = ids,
+          queryFilter: true,
+        ),
+        overrides: [
+          workspaceReferencesUsecaseProvider('one').overrideWith(
+            (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+          ),
+          workspaceTableProvider(
+            'one',
+            'target',
+          ).overrideWith((ref) async => _target),
+        ],
+        workspaceId: 'one',
+      ),
+    );
+    await _flush(tester);
+    await tester.tap(find.text('Clear selection'));
+    await tester.tap(find.text('Apply selection'));
+    expect(selected, isEmpty);
+  });
+  testWidgets('picker identifies records without labels by short ID', (
+    tester,
+  ) async {
+    final repository = _References()..emptyLabel = true;
+    await tester.pumpWidget(
+      TestableApp(
+        child: WorkspaceReferencePicker(
+          workspaceId: 'one',
+          table: _source,
+          column: _source.columns.last,
+          selected: const [],
+          onSelected: ignoreSelection,
+        ),
+        overrides: [
+          workspaceReferencesUsecaseProvider('one').overrideWith(
+            (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+          ),
+          workspaceTableProvider(
+            'one',
+            'target',
+          ).overrideWith((ref) async => _target),
+        ],
+        workspaceId: 'one',
+      ),
+    );
+    await _flush(tester);
+    expect(find.textContaining('Untitled record'), findsOneWidget);
+  });
+  testWidgets('reference picker opens in a narrow viewport', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _References();
+    await tester.pumpWidget(
+      TestableApp(
+        child: WorkspaceReferenceField(
+          workspaceId: 'one',
+          table: _source,
+          column: _source.columns.last,
+          value: null,
+          disabled: false,
+          restricted: false,
+          onChanged: (_) => fail('Picker has not applied a selection'),
+          onUnset: () => fail('Empty field must not be unset'),
+        ),
+        overrides: [
+          workspaceReferencesUsecaseProvider('one').overrideWith(
+            (ref) async => BrowseWorkspaceReferencesUsecase(repository),
+          ),
+          workspaceTableProvider(
+            'one',
+            'target',
+          ).overrideWith((ref) async => _target),
+        ],
+        workspaceId: 'one',
+      ),
+    );
+    await _flush(tester);
+    await tester.tap(find.text('Choose records'));
+    await _flush(tester);
+    expect(find.text('Choose records from People'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
   testWidgets('authorized target creation selects the new stable record ID', (
     tester,
@@ -184,7 +288,7 @@ void main() {
     await tester.tap(save);
     await _flush(tester);
     expect(tables.saved, {'name': 'New person'});
-    await tester.tap(find.text('Done'));
+    await tester.tap(find.text('Apply selection'));
     expect(selected, ['created']);
   });
   testWidgets(
@@ -276,7 +380,7 @@ void main() {
             findsOneWidget,
           );
         } else {
-          await tester.tap(find.text('Done'));
+          await tester.tap(find.text('Apply selection'));
           expect(selected, ['first']);
         }
       },
@@ -320,6 +424,7 @@ class _References implements WorkspaceReferenceRepository {
   final searches = <String>[];
   final tableRequests = <String>[];
   bool denyTables = false;
+  bool emptyLabel = false;
   String label = 'Ada';
   @override
   Future<WorkspaceReferencePage> tableTargets(
@@ -361,12 +466,15 @@ class _References implements WorkspaceReferenceRepository {
     searches.add(search);
 
     return afterId == null
-        ? const WorkspaceReferencePage(
+        ? WorkspaceReferencePage(
             records: [
               WorkspaceRecord(
                 id: 'first',
                 tableId: 'target',
-                values: {'name': 'Ada', 'email': 'ada@example.com'},
+                values: {
+                  'name': _maybeEmpty('Ada'),
+                  'email': _maybeEmpty('ada@example.com'),
+                },
                 revision: 1,
               ),
             ],
@@ -390,7 +498,11 @@ class _References implements WorkspaceReferenceRepository {
     required String recordId,
     String? afterId,
   }) async => const WorkspaceReferencePage(records: []);
+
+  String _maybeEmpty(String value) => emptyLabel ? '' : value;
 }
+
+void ignoreSelection(List<String> ids) => expect(ids, isNotNull);
 
 Future<void> _flush(WidgetTester tester) async {
   for (var index = 0; index < 5; index++) {

@@ -56,6 +56,7 @@ abstract final class WorkspaceQueryFilterValidation {
       return {column.id: encoded};
     }
     final values = _values(column, encoded);
+    if (values[column.id] == null) throw const WorkspaceTableException();
     WorkspaceColumnValidation.values([column], values);
 
     return values;

@@ -293,6 +293,13 @@ bool _workspaceApproval(String? arguments, String toolName) {
   }
 }
 
+Future<bool> _canAccessWorkspace(
+  agent.AgentToolApprovalRequest<ResolvedTool> request,
+  Future<bool> Function(String, String)? workspaceAccess,
+) =>
+    workspaceAccess?.call(request.conversationId, request.workspaceId) ??
+    Future.value(false);
+
 ToolApprovalDecision _workspaceConfiguredDecision(
   agent.AgentToolApprovalRequest<ResolvedTool> request,
 ) => ToolApprovalDecision(
@@ -306,10 +313,3 @@ ToolApprovalDecision _workspaceConfiguredDecision(
       : .granted,
   permissionTableId: agent.workspaceCommandTableId,
 );
-
-Future<bool> _canAccessWorkspace(
-  agent.AgentToolApprovalRequest<ResolvedTool> request,
-  Future<bool> Function(String, String)? workspaceAccess,
-) =>
-    workspaceAccess?.call(request.conversationId, request.workspaceId) ??
-    Future.value(false);

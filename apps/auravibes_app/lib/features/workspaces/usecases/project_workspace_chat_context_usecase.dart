@@ -5,176 +5,12 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-/// Stored tool output is display history, never an enduring data-access grant.
+/// Redacts stored workspace results; it never re-reads workspace data.
 class const ProjectWorkspaceChatContextUsecase(
-  final WorkspaceConversationToolsUsecase tools,
+  WorkspaceConversationToolsUsecase _,
 ) {
-  Future<List<MessageEntity>> call(List<MessageEntity> messages) async {
-    final lastUser = messages.lastIndexWhere((message) => message.isUser);
-
-    return [
-      for (var i = 0; i < messages.length; i++)
-        await _ProjectedMessage(
-          this,
-          messages[i],
-          currentTurn: lastUser >= 0 && i > lastUser,
-        ).read(),
-    ];
-  }
-
-  Future<MessageToolCallEntity> _project(
-    String conversationId,
-    MessageToolCallEntity call,
-    bool currentTurn,
-  ) async {
-    if (call.isPending) {
-      return workspaceToolCallForContext(call, workspaceContextUnavailable);
-    }
-    if (currentTurn && !(call.resultStatus?.isSuccess() ?? false)) {
-      return _currentCall(
-        call,
-        jsonEncode(workspaceFailureContext(call.responseRaw)),
-        preserveTargetIdentifiers: false,
-      );
-    }
-    final arguments = workspaceCommandArgumentsForTool(
-      call.name,
-      call.arguments,
-    );
-    final action = workspaceActionForTool(call.name, call.arguments);
-    Map<String, Object?>? receipt;
-    if (currentTurn && action != 'read' && action != 'listCreated') {
-      try {
-        receipt = await tools.verifiedMutation(
-          conversationId: conversationId,
-          operationId: call.id,
-          arguments: arguments,
-        );
-        if (receipt == null) {
-          return workspaceToolCallForContext(call, workspaceContextUnavailable);
-        }
-      } on Object {
-        return workspaceToolCallForContext(call, workspaceContextUnavailable);
-      }
-    }
-    final response = action == 'listCreated'
-        ? await _listCreated(conversationId, call)
-        : await _read(conversationId, call, receipt, arguments);
-    if (receipt != null) {
-      try {
-        if (await tools.verifiedMutation(
-              conversationId: conversationId,
-              operationId: call.id,
-              arguments: arguments,
-            ) ==
-            null) {
-          return workspaceToolCallForContext(call, workspaceContextUnavailable);
-        }
-      } on Object {
-        return workspaceToolCallForContext(call, workspaceContextUnavailable);
-      }
-    }
-
-    if (currentTurn) {
-      return _currentCall(
-        call,
-        response == workspaceContextUnavailable
-            ? response
-            : jsonEncode({
-                'outcome': 'success',
-                'current': jsonDecode(response),
-              }),
-        preserveTargetIdentifiers: response != workspaceContextUnavailable,
-      );
-    }
-
-    return workspaceToolCallForContext(call, projectToolOutput(response).text);
-  }
-
-  Future<String> _listCreated(
-    String conversationId,
-    MessageToolCallEntity call,
-  ) async {
-    try {
-      return jsonEncode(
-        await tools.call(
-          conversationId: conversationId,
-          arguments: {
-            'action': 'listCreated',
-            if (call.arguments['cursor'] case final String cursor)
-              'cursor': cursor,
-          },
-        ),
-      );
-    } on Object {
-      return workspaceContextUnavailable;
-    }
-  }
-
-  Future<String> _read(
-    String conversationId,
-    MessageToolCallEntity call,
-    Map<String, Object?>? receipt,
-    Map<String, dynamic> arguments,
-  ) async {
-    try {
-      final result = await tools.call(
-        conversationId: conversationId,
-        arguments: workspaceContextReadArguments(
-          arguments,
-          receipt ?? jsonDecode(call.responseRaw ?? '{}'),
-        ),
-      );
-
-      return jsonEncode(result);
-    } on Object {
-      return workspaceContextUnavailable;
-    }
-  }
-}
-
-MessageToolCallEntity _currentCall(
-  MessageToolCallEntity call,
-  String response, {
-  required bool preserveTargetIdentifiers,
-}) {
-  return call.copyWith(
-    argumentsRaw: jsonEncode(
-      workspaceToolArgumentsForContext(
-        call.name,
-        call.arguments,
-        preserveAction: true,
-        preserveTargetIdentifiers: preserveTargetIdentifiers,
-      ),
-    ),
-    responseRaw: projectToolOutput(response).text,
-    responseContextRaw: projectToolOutput(response).text,
-    appData: null,
-  );
-}
-
-class const _ProjectedMessage(
-  final ProjectWorkspaceChatContextUsecase projector,
-  final MessageEntity message, {
-  required final bool currentTurn,
-}) {
-  Future<MessageEntity> read() async {
-    final metadata = message.metadata;
-    if (metadata == null) return message;
-    final calls = await _calls(metadata.toolCalls);
-
-    return message.copyWith(metadata: metadata.copyWith(toolCalls: calls));
-  }
-
-  Future<List<MessageToolCallEntity>> _calls(
-    List<MessageToolCallEntity> calls,
-  ) async => [
-    for (final call in calls)
-      if (isWorkspaceToolName(call.name))
-        await projector._project(message.conversationId, call, currentTurn)
-      else
-        call,
-  ];
+  Future<List<MessageEntity>> call(List<MessageEntity> messages) async =>
+      redactWorkspaceToolHistory(messages);
 }
 
 MessageToolCallEntity workspaceToolCallForContext(
@@ -200,26 +36,68 @@ List<MessageEntity> redactWorkspaceToolHistory(List<MessageEntity> messages) =>
     _WorkspaceHistoryRedaction.all(messages);
 
 abstract final class _WorkspaceHistoryRedaction {
-  static List<MessageEntity> all(List<MessageEntity> messages) => [
-    for (final message in messages) _message(message),
-  ];
+  static List<MessageEntity> all(List<MessageEntity> messages) {
+    final lastUser = messages.lastIndexWhere((message) => message.isUser);
 
-  static MessageEntity _message(MessageEntity message) {
+    return [
+      for (var index = 0; index < messages.length; index++)
+        _message(
+          messages[index],
+          currentTurn:
+              lastUser >= 0 &&
+              index > lastUser &&
+              !messages[index].isForkReference,
+        ),
+    ];
+  }
+
+  static MessageEntity _message(
+    MessageEntity message, {
+    required bool currentTurn,
+  }) {
     final metadata = message.metadata;
     if (metadata == null) return message;
 
     return message.copyWith(
-      metadata: metadata.copyWith(toolCalls: _calls(metadata.toolCalls)),
+      metadata: metadata.copyWith(
+        toolCalls: _calls(metadata.toolCalls, currentTurn: currentTurn),
+      ),
     );
   }
 
   static List<MessageToolCallEntity> _calls(
-    List<MessageToolCallEntity> calls,
-  ) => [
+    List<MessageToolCallEntity> calls, {
+    required bool currentTurn,
+  }) => [
     for (final call in calls)
-      if (isWorkspaceToolName(call.name))
+      if (isWorkspaceToolName(call.name) && currentTurn)
+        _currentCall(call)
+      else if (isWorkspaceToolName(call.name))
         workspaceToolCallForContext(call, workspaceContextUnavailable)
       else
         call,
   ];
+}
+
+MessageToolCallEntity _currentCall(MessageToolCallEntity call) {
+  if (call.isPending) return workspaceToolCallForContext(call, '');
+  final response = call.resultStatus?.isSuccess() ?? false
+      ? call.responseContextRaw ?? call.responseRaw ?? '{}'
+      : jsonEncode(
+          workspaceFailureContext(call.responseContextRaw ?? call.responseRaw),
+        );
+
+  return call.copyWith(
+    argumentsRaw: jsonEncode(
+      workspaceToolArgumentsForContext(
+        call.name,
+        call.arguments,
+        preserveAction: true,
+        preserveTargetIdentifiers: true,
+      ),
+    ),
+    responseRaw: projectToolOutput(response).text,
+    responseContextRaw: projectToolOutput(response).text,
+    appData: null,
+  );
 }

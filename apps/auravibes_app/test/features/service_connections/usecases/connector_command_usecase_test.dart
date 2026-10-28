@@ -19,6 +19,7 @@ void main() {
               required arguments,
             }) async {
               ran = true;
+
               return 'done';
             },
       );

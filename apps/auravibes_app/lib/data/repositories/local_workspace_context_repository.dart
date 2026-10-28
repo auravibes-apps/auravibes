@@ -5,8 +5,9 @@ import 'package:auravibes_app/features/workspaces/models/workspace_conversation_
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
-/// Only explicit host controls write these events; transcript imports cannot.
+/// Host-owned context events are never derived from transcript imports.
 class const LocalWorkspaceContextRepository(
   final AppDatabase database,
   final String workspaceId,
@@ -20,6 +21,25 @@ class const LocalWorkspaceContextRepository(
       selection: .decode(value?.selection, workspaceId, conversationId),
     );
   }
+
+  /// Establishes a root context only for conversations with no prior event.
+  Future<WorkspaceConversationContext> readOrInitialize(
+    String conversationId,
+  ) => database.transaction(() async {
+    final current = await read(conversationId);
+    if (current.id != null) return current;
+
+    return await save(
+      conversationId,
+      const Uuid().v4(),
+      .new(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        itemId: '',
+        kind: 'directory',
+      ),
+    );
+  });
 
   @override
   Future<WorkspaceConversationContext> save(

@@ -47,8 +47,17 @@ func TestPostgresFencePersistsUnknownWrites(t *testing.T) {
 	if err = l.start(ctx, key, id, "reservation"); err != nil {
 		t.Fatal(err)
 	}
+	if closed, pending, err := l.status(ctx, key, id); err != nil || closed || pending != 1 {
+		t.Fatal("status did not report the open pending reservation")
+	}
+	if _, _, err := l.status(ctx, key, "wrong"); !errors.Is(err, errUnknown) {
+		t.Fatal("status accepted a different registration")
+	}
 	if ok, err := l.close(ctx, key, id); err != nil || ok {
 		t.Fatal("pending upload attested")
+	}
+	if closed, pending, err := l.status(ctx, key, id); err != nil || !closed || pending != 1 {
+		t.Fatal("status did not report the closed pending reservation")
 	}
 	restarted := &postgresLedger{pool: pool}
 	if err = restarted.start(ctx, key, id, "later"); !errors.Is(err, errClosed) {

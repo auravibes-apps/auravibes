@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
@@ -65,15 +66,80 @@ class const _ItemCommand(
   };
 
   Future<Map<String, Object?>> _directory() async {
-    _Arguments.action(input.arguments, 'read');
-    if ((input.arguments['id'] ?? '') != '' ||
-        (input.arguments['tableId'] ?? '') != '' ||
-        input.arguments['parentId'] != null) {
+    final arguments = input.arguments;
+    final action = arguments['action'];
+    if (action == 'readDirectory') {
+      return await readWorkspaceDirectory(
+        path: _optionalString(arguments, 'path'),
+        pathRegex: _optionalString(arguments, 'pathRegex'),
+        nameRegex: _optionalString(arguments, 'nameRegex'),
+        listChildren: (parentId) => _directoryItems(owner, parentId),
+      );
+    }
+    _Arguments.action(arguments, 'read');
+    if ((arguments['id'] ?? '') != '' ||
+        (arguments['tableId'] ?? '') != '' ||
+        arguments['parentId'] != null) {
       _Arguments.denied();
     }
 
-    return {'kind': 'directory', 'id': '', 'parentId': null};
+    return {
+      'kind': 'directory',
+      'id': '',
+      'parentId': null,
+      'items': await _directoryItems(owner, null),
+    };
   }
+}
+
+String? _optionalString(Map<String, dynamic> arguments, String key) {
+  final value = arguments[key];
+  if (value == null) return null;
+  if (value is! String) throw const FormatException('Invalid directory query.');
+
+  return value;
+}
+
+Future<List<Map<String, Object?>>> _directoryItems(
+  WorkspaceConversationCommandUsecase owner,
+  String? parentId,
+) async {
+  final fileManager = owner.files;
+  final folders = await owner.folders?.list(parentId: parentId) ?? const [];
+  final tables = await owner.tables.list(parentId: parentId);
+  final views = await owner.views?.list(parentId: parentId) ?? const [];
+  final files = await fileManager?.list(parentId: parentId) ?? const [];
+
+  return [
+    for (final item in folders)
+      {
+        'kind': 'folder',
+        'id': item.id,
+        'name': item.name,
+        'revision': item.revision,
+      },
+    for (final item in tables)
+      {
+        'kind': 'table',
+        'id': item.id,
+        'name': item.name,
+        'revision': item.revision,
+      },
+    for (final item in views)
+      {
+        'kind': 'view',
+        'id': item.id,
+        'name': item.name,
+        'revision': item.revision,
+      },
+    for (final item in files)
+      {
+        'kind': 'file',
+        'id': item.id,
+        'name': item.name,
+        'revision': item.revision,
+      },
+  ];
 }
 
 class const _ReceiptAuthorization(
@@ -130,6 +196,15 @@ class const _ReceiptAuthorization(
   }
 }
 
+const _maximumToolFileBytes = 65536;
+
+void _checkFileAsset(WorkspaceAsset asset) {
+  if (asset.sizeBytes > _maximumToolFileBytes ||
+      !{'text/plain', 'application/json'}.contains(asset.mimeType)) {
+    throw const WorkspaceTableException();
+  }
+}
+
 class const _FileCommand(
   final WorkspaceConversationCommandUsecase owner,
   final _CommandInput input,
@@ -142,30 +217,44 @@ class const _FileCommand(
     final assets =
         owner.assets ?? (throw const WorkspaceTableException(denied: true));
     final file = await files.file(input.selection.itemId);
-    final asset = await assets.describe(file.assetId);
-    if (asset.sizeBytes > 65536 ||
-        !{'text/plain', 'application/json'}.contains(asset.mimeType)) {
-      throw const WorkspaceTableException();
-    }
-    final preview = await assets.preview(file.assetId);
-    if (preview.asset.id != asset.id ||
-        preview.asset.sizeBytes > 65536 ||
-        !{'text/plain', 'application/json'}.contains(preview.asset.mimeType)) {
-      throw const WorkspaceTableException();
-    }
+    final preview = await _preview(assets, file);
+    await _reauthorize(files, file);
 
+    return _result(file, preview);
+  }
+
+  Map<String, Object?> _result(
+    WorkspaceFile file,
+    WorkspaceAssetPreview preview,
+  ) => workspaceFileToolResult(
+    id: file.id,
+    name: file.name,
+    mimeType: preview.asset.mimeType,
+    revision: file.revision,
+    content: utf8.decode(preview.bytes),
+  );
+
+  Future<WorkspaceAssetPreview> _preview(
+    ManageWorkspaceAssetsUsecase assets,
+    WorkspaceFile file,
+  ) async {
+    final asset = await assets.describe(file.assetId);
+    _checkFileAsset(asset);
+    final preview = await assets.preview(file.assetId);
+    if (preview.asset.id != asset.id) throw const WorkspaceTableException();
+    _checkFileAsset(preview.asset);
+
+    return preview;
+  }
+
+  Future<void> _reauthorize(
+    OrganizeWorkspaceFilesUsecase files,
+    WorkspaceFile file,
+  ) async {
     final current = await files.file(file.id);
     if (current.revision != file.revision || current.assetId != file.assetId) {
       throw const WorkspaceTableException(denied: true);
     }
-
-    return workspaceFileToolResult(
-      id: file.id,
-      name: file.name,
-      mimeType: preview.asset.mimeType,
-      revision: file.revision,
-      content: utf8.decode(preview.bytes),
-    );
   }
 }
 
@@ -179,7 +268,10 @@ class const _FolderCommand(
   Future<Map<String, Object?>> call() async {
     final folder = await _selected();
     if (input.arguments['action'] == 'read') {
-      return _Snapshots.folderContent(folder);
+      return {
+        ..._Snapshots.folderContent(folder),
+        'items': await _directoryItems(owner, folder.id),
+      };
     }
 
     return await _rename(folder);
@@ -409,7 +501,6 @@ class const _RecordUpdate(
 
   Future<WorkspaceRecord> _selected() async {
     final id = _Arguments.string(command.input.arguments, 'id');
-    if (!command.input.selection.recordIds.contains(id)) _Arguments.denied();
     final current = await command.owner.tables.record(table.id, id);
     _current(current);
 
@@ -513,19 +604,22 @@ class const _TableRead(
   };
 
   Future<List<Map<String, Object?>>> _rows() async => [
-    for (final id in _recordIds())
+    for (final id in await _recordIds())
       _RecordProjection(
         table,
         command.input.references,
       ).read(await command.owner.tables.record(table.id, id)),
   ];
 
-  List<String> _recordIds() {
+  Future<List<String>> _recordIds() async {
     final id = command.input.arguments['id'];
-    if (id == null) return command.input.selection.recordIds;
-    if (id is! String || !command.input.selection.recordIds.contains(id)) {
-      _Arguments.denied();
+    if (id == null) {
+      return (await command.owner.tables.records(table.id))
+          .map((record) => record.id)
+          .toList();
     }
+    if (id is! String) _Arguments.denied();
+    final _ = await command.owner.tables.record(table.id, id);
 
     return [id];
   }

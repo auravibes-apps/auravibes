@@ -402,8 +402,8 @@ void main() {
             toolCalls: [
               MessageToolCallEntity(
                 id: 'tool-1',
-                name: 'workspace_item',
-                argumentsRaw: '{"action":"read","id":"file"}',
+                name: 'workspace_read_item',
+                argumentsRaw: '{"itemId":"file"}',
               ),
             ],
           ),

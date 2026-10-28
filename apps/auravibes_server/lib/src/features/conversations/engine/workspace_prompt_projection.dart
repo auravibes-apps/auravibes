@@ -4,15 +4,12 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
-import 'workspace_conversation_commands.dart';
 
 typedef _ProjectedTool = ({String content, String argumentsJson});
 
-/// Refreshes selected authorized data at the provider boundary, not from
-/// history.
-class const WorkspacePromptProjection({
-  final WorkspaceConversationCommands commands = const .new(),
-}) {
+/// Redacts archived workspace calls and keeps only results from the active
+/// turn that the server tool executor already persisted.
+class const WorkspacePromptProjection() {
   Future<List<Map<String, dynamic>>> call(
     Session session,
     ConversationTurn turn,
@@ -51,7 +48,7 @@ class const WorkspacePromptProjection({
         session,
         turn,
         id,
-        names[id] ?? workspaceCommandToolName,
+        names[id] ?? workspaceReadDirectoryToolName,
         currentIds.contains(id),
       );
     }
@@ -79,6 +76,14 @@ class const WorkspacePromptProjection({
       final rawInput = jsonDecode(call.argumentsJson) as Map<String, dynamic>;
       final input = workspaceCommandArgumentsForTool(call.name, rawInput);
       final inCurrentTurn = current && call.turnId == turn.id;
+      if (!inCurrentTurn) {
+        return (
+          content: workspaceContextUnavailable,
+          argumentsJson: jsonEncode(
+            workspaceToolArgumentsForContext(call.name, input),
+          ),
+        );
+      }
       if (inCurrentTurn && call.status != 'success') {
         return (
           content: jsonEncode(workspaceFailureContext(call.resultJson)),
@@ -91,12 +96,10 @@ class const WorkspacePromptProjection({
           ),
         );
       }
-      final fresh = await _freshFromCall(session, turn, call, input);
+      final storedResult = jsonDecode(call.resultJson ?? '{}');
       return (
         content: projectToolOutput(
-          jsonEncode(
-            inCurrentTurn ? {'outcome': 'success', 'current': fresh} : fresh,
-          ),
+          jsonEncode({'outcome': 'success', 'current': storedResult}),
         ).text,
         argumentsJson: jsonEncode(
           workspaceToolArgumentsForContext(
@@ -133,23 +136,6 @@ class const WorkspacePromptProjection({
           row.stableId.equals(id) &
           row.name.inSet(workspaceToolNames),
     );
-  }
-
-  Future<Object?> _freshFromCall(
-    Session session,
-    ConversationTurn turn,
-    ConversationToolCall call,
-    Map<String, dynamic> input,
-  ) async {
-    final result = jsonDecode(call.resultJson ?? '{}');
-    final fresh = await commands.call(
-      session,
-      turn,
-      'context-projection',
-      workspaceContextReadArguments(input, result),
-    );
-
-    return fresh;
   }
 
   Map<String, dynamic> _message(

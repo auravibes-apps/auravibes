@@ -498,11 +498,11 @@ class const _SelectionSpace(final List<WorkspaceDirectoryMoveItem>? items)
         ],
       ),
       Visibility(
-        visible: items != null,
-        maintainSize: true,
-        maintainAnimation: true,
-        maintainState: true,
         child: _SelectionCount(items?.length ?? 0),
+        visible: items != null,
+        maintainState: true,
+        maintainAnimation: true,
+        maintainSize: true,
       ),
     ],
   );
@@ -512,8 +512,8 @@ class const _SelectionCount(final int count) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     LocaleKeys.workspace_items_selected.tr(args: [count.toString()]),
-    maxLines: 1,
     overflow: .ellipsis,
+    maxLines: 1,
   );
 }
 

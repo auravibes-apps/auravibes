@@ -246,6 +246,24 @@ void main() {
           jsonEncode({'filterColumnId': 'quantity', 'filterValue': '2.0'}),
         );
         expect(equivalentNumbers.map((row) => row.resourceId), ['numeric-2']);
+        await expectLater(
+          endpoints.workspaceState.queryRecords(
+            authenticated,
+            workspace.id!,
+            'numeric',
+            jsonEncode({
+              'filterColumnId': 'quantity',
+              'filterValue': 'invalid',
+            }),
+          ),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.validationFailed,
+            ),
+          ),
+        );
         final rounded = await endpoints.workspaceState.queryRecords(
           authenticated,
           workspace.id!,

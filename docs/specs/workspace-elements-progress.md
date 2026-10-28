@@ -1233,3 +1233,237 @@ Dedicated `workspace_update_record` was integrated as `9d67c404d`, preserving th
 The local file-write experiment has a prototype-only checkpoint `00dff1d4` in `/Users/davidlondono/.codex/worktrees/workspace-ai-file-write/auravibes` (do not integrate). Ten staging/receipt tests passed. A later native shared-executor test found a nested-writer deadlock; a nonshared native executor subsequently rejected nested staging before bytes and permitted a subsequent write without a stray marker. Web remains explicitly unsupported in the prototype, and its attempted Chrome test is blocked by the existing `flutter_test_config.dart` import resolution. Connection lifecycle, migrations, private approval payloads, provider retention, cross-platform behavior and independent review remain open. The live Luna retry remains blocked by the locked Mac.
 
 After the user unlocked the Mac, the same plain-language Morgan email request succeeded in the `shared-preview` GPT-6 Luna chat. Luna reported the updated value, and a read-only query of the synthetic local table confirmed `morgan.updated@example.com`. This verifies the dedicated row-update tool for that local flow; it does not establish complete live coverage of file, View, connector or cloud actions. The prior `PlatformException` did not recur after unlock, but its precise cause was not established.
+
+### Workspace AI tool catalog and safety verification — 2026-10-27
+
+On integration head `b163b8890e52`, workspace actions now have dedicated read and mutation tools. `workspace_item` advertises root reads only; new read tools discover chat-created items, read folders/files/Views, and read tables. Mutation tools expose only their named action. Local and cloud hosts validate arguments against the same schemas before dispatch, reject empty IDs, preserve existing authorization and approval checks, and return safe failures. File bytes are freshly read for the provider and removed from persisted tool history; created-item history keeps only safe item metadata.
+
+Focused verification passed: app workspace/tool/approval tests, 89 tests; engine schema/argument tests, 25 tests; authenticated cloud command and file privacy integration tests, 2 tests. Synthetic connector execution tests passed 20 tests in the local connector suite. `validate:changed` passed for 19 changed Dart files, and `git diff --check` passed. The shared Mac preview was hot reloaded successfully.
+
+Live GPT-6 Luna evidence remains bounded. Earlier synthetic runs created a table and optional Email column and added one Ada row. Before the refreshed tool catalog reached the active chat, a legacy add-row call sent empty table and revision arguments; validation rejected it before mutation. After hot reload, the provider received the narrowed read-only `workspace_item` plus dedicated read tools. A plain-language update then called `workspace_update_record` with the existing table/row IDs, revisions and only the changed Name value. The tool returned success at row revision 2; the assistant confirmed it, and a read-only DB query confirms exactly one `Ada Lovelace` row with Email empty. Tests cover local/cloud create, rename, row, column, View and read paths; not every action has a separate live model run. No real connector provider is connected, so provider behavior remains unverified; synthetic connector tests cover read/edit dispatch and approval. File creation, editing and execution remain out of scope.
+
+No commit, push, issue transition, release, or production data change occurred. The preview remains open for the user.
+
+### Directory discovery and default chat context — 2026-10-27
+
+New chats initialize a Directory-root context on their first workspace tool call. Explicit revocations remain revoked. Root and folder reads list visible children; authorized listed folders and tables can be navigated or managed, while table rows remain limited to selected or chat-created records. Empty list cursors are normalized for both execution and provider projection. Cloud reads recheck resource authorization and revisions, and completed workspace tool results are redacted in conversation API views.
+
+The shared-preview Mac app was relaunched. A new GPT-6 Luna chat listed the synthetic Directory, created one root folder and one root table after approval, listed an existing folder, and created one nested folder. SQLite confirmed the created root folder, table and nested folder. A live created-item discovery call initially failed on an empty cursor and then succeeded after the execution and projection fixes. Local focused app tests passed 60 tests; engine context tests passed 6; authenticated cloud command and file privacy integration passed 2 tests. The Mac preview remains open.
+
+Changed-file validation passed for 28 Dart files. The final app changes were hot reloaded, and GPT-6 Luna successfully used created-item discovery again. Cloud pending-approval API views still require viewer-aware authorization for targets, records and references; completed-call redaction does not resolve pending payload visibility. Directory target lookup currently scans visible folders without pagination, so large workspaces may be slow. Generic item reads with the same ID across item types fail closed. No commit, push, release, or production-data change was made.
+
+### Open modified tables in chat sidebar — 2026-10-27
+
+Successful authorized table create, rename, column, and row tools now open or focus that table in the chat sidebar. Table metadata and rows refresh before display; tab labels use the table name. Selecting a workspace tab no longer shows the empty Directory/Browser chooser over it. Focused app tests pass for tool-result authorization, reopening, refresh invalidation, and table-name labels. Authenticated cloud tests cover safe table-result projection.
+
+GPT-6 Luna created a synthetic table and added a second row. The named table tab stayed visible, both rows appeared, and the empty chooser stayed hidden. The live rename attempt did not complete: Luna supplied invalid row IDs to a table-read tool; no rename occurred. The preview hot reloaded successfully and remains open. Focused observer and sidebar tests pass (5 total); targeted fatal analysis passed; changed-file formatting reports zero differences; `git diff --check` passes. No commit, push, release, or production-data change was made.
+
+### Schema read and column type tool contracts — 2026-10-27
+
+The live `workspace_read_table` repro had a valid created-table ID and malformed `rowId` arguments (`")} }"` and whitespace). The optional row selector encouraged the model to send unrelated values; the executor then rejected those values against explicit row scope. Removed `rowId` from the read tool's provider schema and model-visible argument projection. Unexpected row IDs now fail schema validation before local or cloud dispatch; no fallback reads the whole table. Historical calls keep their row ID during reauthorization and remain limited to explicitly shared record IDs. `workspace_save_column` now lists the supported `type` enum and documents select options and reference targets.
+
+Engine workspace schema/context tests pass (6 tests), and local resolved-tool service tests pass (28 tests). Authenticated cloud command integration passes, including regressions for malformed row IDs and the create → list-created → read-schema flow. The shared Mac app hot reloaded. GPT-6 Luna then called list-created and read-table with only the valid table ID, and reported `Lead name — text`; read-only SQLite confirmed that schema. Persisted tool panels show a redacted result, while the model receives freshly authorized schema data. The original failed reads performed no writes. No commit, push, release, or production-data change was made.
+
+### Reopen a closed table after edits — 2026-10-27
+
+The table observer reopens the authorized table after successful `saveColumn`, `createRecord`, and `updateRecord` calls. It refreshes table and row providers first; duplicate call IDs do not reopen a tab. A widget regression covers close → duplicate call stays closed → new schema and content edits each reopen the same table. The observer test passes; denied and failed calls remain covered.
+
+Live GPT-6 Luna smoke: with the Leads CRM tab closed, an approved `Email` column edit reopened the named table tab. SQLite confirms `Email` (`email`) was added once; table and schema revisions are both 2. The assistant summary incorrectly said the column already existed and that it could not open the tab; the app did both. Model tool guidance for automatic sidebar behavior is being updated separately. No commit, push, release, or production-data change was made.
+
+### Refresh Directory after AI table creation — 2026-10-27
+
+Successful AI table creation opened the new table but left an already loaded Directory table list cached. The observer now invalidates the table list for the created table's `parentId`; the focused observer regression confirms the root listing reloads. The focused observer test passes and `git diff --check` passes. DTD and Marionette hot-reload calls stalled, so this fix is not confirmed in the running preview. No commit, push, release, or production-data change was made.
+
+### Spreadsheet table spacing and focus — 2026-10-27
+
+Reduced DataTable horizontal margins and column spacing, added visible horizontal/vertical grid lines above cell highlights, and made complex-cell edits save and close on outside taps. The focused table screen suite passes 9 tests, including adjacency, grid-line configuration, scalar focus transfer, and complex-cell outside-save. Targeted fatal analysis and `git diff --check` pass. Marionette inspection works, but hot reload stalled and live visual comparison remains unverified.
+
+### Workspace AI access without sharing controls — 2026-10-27
+
+User decision supersedes the earlier selected-only scope: workspace tools are available in every Conversation in that workspace, subject to workspace membership/ACLs and the existing action approval rules. Saved workspace content is not injected into prompts; tool results are fetched only by current tool calls. Legacy per-Conversation selection state no longer grants or revokes tool access. Removed the AI context/share controls and their selection UI from Directory and item tabs; tool approval behavior remains action-based.
+
+Root Directory routing now resolves `createRecord`/`updateRecord` table IDs, so valid row operations work without a per-Conversation selection. Local tests cover row reads and edits, references, context-state changes, prompt redaction, tool availability/approval, and the removed UI controls. The focused Flutter suite passed 77 tests across nine files. Authenticated cloud command and file privacy integration passed two tests. Localization generation passed. Focused fatal-warnings analysis completed without warnings or errors; info-level lints remain. A broader package analyzer run was interrupted after it exceeded four minutes.
+
+Hot reload was attempted through both Dart DTD and Marionette. Dart DTD stalled; Marionette reported that hot reload failed and hot restart was unavailable because its app was not running through `flutter run`. The shared preview remains open on its previous build, so it still displays the old `AI context` label until restarted from a Flutter debug runner. No stored workspace data was changed.
+
+### Table value type controls — 2026-10-27
+
+Added a left-side icon for every column type in type selectors and table headers. Grid lines now use the lighter outline variant, and the inline text caret uses the selected cell's high-contrast foreground. Checkbox cells render as real checkboxes and save immediately; multi-select tags use a compact option dropdown; selected URL cells expose edit, copy, and confirmation-protected open actions. Reference columns retain their searchable linked-record picker for large tables.
+
+Focused table and exact-field widget suites pass: 14 tests. Targeted fatal-warning analysis found no warnings or errors; info-level lint findings remain. Marionette hot reload failed with `Hot reload failed. The app may need a full restart.` The shared preview may still show the prior build. No workspace data changed.
+
+### Directory-first AI tools — 2026-10-27
+
+The AI now gets one directory read action. No arguments list the workspace root; `path` lists a folder's direct contents; `pathRegex` and `nameRegex` search nested folders and files. Results include reusable paths, empty searches return an empty list, and searches stop at 100 matches or 1,000 folders with `truncated` set. Exact paths reject missing, ambiguous, or escaping folders. Local and cloud use the same query helper, with cloud reads retaining current membership and authorization checks.
+
+New model catalogs omit the generic `Workspace Item` and chat-scoped `List Created` tools. Saved legacy calls remain recognized for safe replay/history. Chat activity uses localized action names without the `Workspace` prefix. The specification records this directory-first contract.
+
+Verification: engine directory/context tests passed (12); local workspace-command tests passed (23); tool-catalog tests passed (15); authenticated cloud workspace-command integration passed (1); engine fatal-warning analysis passed with five info-level style findings; `git diff --check` passed. The shared preview hot-reload request stalled and did not confirm reload. No live GPT-6 Luna regex scenario was run.
+
+### Directory read result projection — 2026-10-27
+
+Live diagnosis found a second read failure: successful directory results were reduced to `{"redacted":true}` before the next model step. Added a bounded shared projection that keeps only item IDs, kinds, names, paths, and revisions for directory and folder listings; table and file contents remain redacted. Local and cloud persistence use the same projection, while archived chat history remains redacted by the existing current-turn boundary.
+
+Focused app, engine, and server unit tests pass (14 total); `git diff --check` passes. Marionette hot reload succeeded. With GPT-6 Luna, a new root read completed and the model reported `Companies` and `Leads CRM` from the returned listing. The earlier failing “Checking for a CRM” conversation was deleted with user authorization. No production data changed.
+
+### Workspace tool errors and directory regex — 2026-10-27
+
+The 12 dedicated workspace tools share one execution and failure path. Validation failures previously reached the model as generic `failed` or invalid-request output, so the model could not correct the offending argument. Local and cloud handlers now return bounded structured errors with `code`, `error`, and `nextAction`; safe categories cover invalid arguments, invalid regex, invalid/missing/ambiguous paths, conflicts, unavailable items, and incompatible references. Generic dispatcher exceptions also return structured guidance instead of bare failure text.
+
+`workspace_read_directory` now documents the root contract explicitly: omit `path` or pass `/` to read root. `null` and empty strings are not valid schema values. Regex fields document bounded ECMAScript syntax and support a leading `(?i)` compatibility prefix for case-insensitive search. A malformed regex response identifies `pathRegex` or `nameRegex` and tells the model how to repair it.
+
+Verification: engine directory and dispatcher tests passed; app local adapter/file-result tests passed (35); cloud result privacy test passed (1). Marionette hot reload succeeded. A live follow-up prompt stayed in the composer and did not submit, so GPT-6 Luna regex behavior after reload remains unverified. No workspace data changed.
+
+### Local table schema visibility — 2026-10-27
+
+The local tool-result sanitizer treated every successful `read` like a folder listing. A table result has `columns`, not `entries` or `items`, so the sanitizer replaced it with `{"redacted":true}`. The model could answer the boolean `true` instead of seeing the schema. Local table reads now preserve table metadata and column definitions while omitting record values; prior-turn prompt projection still redacts old results.
+
+The focused workspace chat-file suite passes (7 tests). Marionette hot reload succeeded. Live GPT-6 Luna confirmation remains unverified; the current preview composer did not submit the probe. No workspace data changed.
+
+### #1691 bucket verification — 2026-10-28
+
+Added a read-only AWS bucket audit command that checks current replication, versioning, Object Lock, lifecycle, ownership, public access, and empty-bucket state. Synthetic gateway tests, `go vet`, and `go mod verify` pass. The audit is a snapshot and does not establish lifetime replication history or enforce configuration restrictions. Gateway provider deletion remains fail-closed; uncertain upload recovery, legacy objects, control-plane restrictions, provider verification, and final integration acceptance remain open. No real bucket was inspected or modified.
+
+Follow-up: fixed audit tests that previously missed the object-version and delete-marker failures, and reject unsupported gateway command arguments. `go test -race ./...`, `go vet ./...`, and `go mod verify` pass. The current shell has no configured bucket and Docker is unavailable, so provider and disposable PostgreSQL integration checks remain unverified. The PR and #1691/#1692 remain open.
+
+Docker became available. `TestPostgresFencePersistsUnknownWrites` passed under the race detector against a newly created disposable PostgreSQL 17 container; the container was stopped afterward. Bucket/provider verification and the erasure blockers remain open.
+
+A disposable LocalStack 3.8.1 S3 bucket passed direct create, upload, metadata read, delete and missing-object checks. This smoke checks the emulator directly; it does not exercise the gateway deletion path or prove AWS/R2 production behavior. The container was stopped afterward.
+
+Real R2 verification: a fresh private disposable bucket and a 24-hour token scoped to that bucket were created with user approval. A guarded provider test passed through the gateway's S3 adapter: synthetic upload, read and checksum, gateway fail-closed deletion, direct synthetic-object deletion and missing-object check. The token was revoked, the empty bucket deleted, and temporary credential files removed. The test was generalized to require an explicitly named disposable bucket and R2 endpoint; default gateway tests pass afterward. This does not establish safe gateway erasure or resolve uncertain uploads. The fresh R2 bucket included Cloudflare's default multipart-abort lifecycle rule.
+
+Changed-file validation on October 28 failed with compile errors in uncommitted workspace tool integration and tests, including a missing server command preparation method and references to removed tool names. The validator reported four files requiring formatting; its `-o none` option did not edit them. Restored the missing server preparation method; the remaining compile and lint findings require repair and a fresh full validation before publishing.
+
+Continuation: confirmed `4eee5ba1` is an ancestor. Fixed two app test compile errors involving the nullable Directory result and removed generic tool constructor. Focused app tests compiled, but `atomic retries, reopen and fork retain workspace access` failed because the fork projection returned a sanitized schema where the test expects a redacted result; resolve the history boundary before changing the assertion. The separate worktree `workspace-tool-test-repair` contains a candidate server integration-test migration to current Directory tools; review its security coverage and run authenticated integration before copying it. Gateway race tests, vet and module verification pass. #1691 remains blocked on R2-specific provenance and uncertain writes; #1692 remains dependent on #1691. No push or issue closure occurred.
+
+Follow-up: integrated the reviewed server test migration; authenticated cloud command integration passes (1 test). Fixed inherited and materialized fork history so workspace results are redacted, including after the source chat is deleted; 22 focused app tests pass. Integrated authenticated read-only gateway status reporting for closed keys and pending operation counts; gateway race tests, vet and module verification pass. Worker also verified the diagnostic against disposable PostgreSQL. No running Flutter debug preview was found, so hot reload remains pending. Full changed-file validation and #1691/#1692 acceptance remain open.
+
+Further integration: 14 authenticated cloud erasure tests passed with process-local synthetic auth keys. After lint repairs, 28 focused app tests and 6 engine context tests passed. The Mac `shared-preview` app was relaunched and hot reloaded. In a local synthetic workspace, GPT-6 Luna read an empty Directory, created `PR 1693 Test` after approval, added the `Ada` row, and the table and row appeared in the chat sidebar. This covers only those live local flows; the test table remains in the local demo workspace. Full changed-file validation, R2 erasure, release evidence, final review, push and issue acceptance remain open.
+
+The synthetic table was also verified in the main Directory. A new opt-in LocalStack/PostgreSQL gateway integration test passes under the race detector: signed upload and download, key closure, rejection of old tokens, blocked provider deletion, and an uncertain PUT that remains pending after gateway restart. Disposable containers and their synthetic objects were removed. Changed-file analysis reached zero diagnostics, but the format check reported two test files needing formatting; those files were then formatted explicitly. The real R2 erasure path and #1691 remain open.
+
+The integrated LocalStack test was extended and rerun successfully for a PUT that reaches storage but returns an uncertain outcome; the reservation persists after restart and blocks quiescence and deletion. A 100-case app widget/use-case suite passed after correcting a stale observer fixture to use the dedicated row tool. GPT-6 Luna subsequently added an Email column to the synthetic table after approval; the named table reopened in the sidebar and displayed the new column. Local demo data remains for inspection.
+
+Live follow-up: GPT-6 Luna created the synthetic root folder `PR 1693 Test Folder` after approval. The Directory did not show it until its Reload action, confirming a stale folder-list cache after a successful AI create. The existing folder must be used to verify the refresh fix; do not repeat the write. PR #1693 is still draft at published head `aaaa3cc9`, whose hosted checks do not validate the 131 newer local commits and uncommitted changes. Full PR validation is running locally. #1691 and #1692 remain open.
+
+Independent #1692 evidence audit: existing limits include 100 local columns, 100 records per query page, 50 columns in cloud summaries, 50 operations per workspace transaction, 25 MiB per object, and 64 KiB cloud resource JSON. A cloud endpoint test rejects query limit 101. These guards are not capacity measurements; representative local and cloud load, boundary behavior, and reviewer evidence still need verification. #1692 remains dependent on #1691.
+
+R2 recovery design investigated: conditional writes and durable same-key markers may fence delayed writes for a new, exclusively controlled bucket, but this requires verified R2 conditional-write semantics, durable marker provenance, crash recovery, exclusive writers, configuration controls, and an authorized retention decision. Existing unconditional uploads and legacy objects cannot use that proof. This is an unimplemented candidate; provider deletion stays blocked.
+
+The AI folder-create observer now invalidates the affected parent folder list without opening a tab; regression coverage was added for root, nested, and failed calls. The Mac preview hot reloaded successfully; the focused integration-worktree test is running. `validate:pr` completed its format and import steps but failed workspace analysis with 42 info-level diagnostics across 10 files; fixes are in progress. The hosted PR checks remain for the older published commit.
+
+The folder observer widget suite passed both tests in the integration worktree. Live verification of automatic Directory refresh remains pending; the created folder already exists and must not be created again.
+
+Independent local behavior suite: 32 tests passed and one failed. `typed queries compare exact timestamps, money and numeric equality` receives `FormatException: invalid` instead of `WorkspaceTableException` for an invalid numeric operand. The local query error path is under investigation. This run provides no capacity measurement.
+
+Fixed malformed typed query operands in local and cloud validation: nullable stored cells no longer allow malformed filter strings to reach numeric parsing. The focused local query tests passed (2), and the authenticated cloud query endpoint test passed (1) against isolated PostgreSQL with synthetic process-local credentials; the database container was stopped. The app hot reloaded successfully. Seven files with strict-analysis findings were repaired and await the integrated validation rerun.
+
+All 42 findings reported by the first full `validate:pr` analysis were addressed in the assigned files; scoped fatal-info analysis passed in the worker worktrees, and 11 related View/asset widget tests passed there. The fixes were integrated and full `validate:pr` restarted; its result is pending. These checks do not resolve #1691 or establish capacity limits.
+
+Read-only AI integration review identified another possible stale Directory listing after successful rename or View changes. The observer fix is being extended where parent scope can be determined safely. Current-head live Luna evidence covers root read, table/folder creation, row and column creation; regex, rename, row update, View edit, file read and connector actions still need live verification. Real connector-provider behavior remains unverified.
+
+Read-only #1691 review identified an availability gap: gateway quiescence and deletion HTTP calls have no timeout or response-size bound, so a stalled response can block the serial cleanup worker. A bounded, fail-closed fix and regression tests are in progress. Shared-workspace identity retention remains a documented legal/release decision. The review used gateway worktree commit `8c33ab920`; a final integration-head security review is still required.
+
+An opt-in local capacity harness was added in `apps/auravibes_app/test/features/workspaces/benchmarks/local_workspace_capacity_test.dart`. One synthetic in-memory SQLite run in a separate worktree on Apple M1 Pro, 16 GiB, macOS 27.2, Flutter 3.47.8 / Dart 3.13.7 measured 100 columns, 1,000 rows with one populated column, ten 100-row queries, and one 50-row atomic update: schema 380,357 µs, inserts 4,952,213 µs, query median 1,983 µs, sample maximum (nearest-rank p95 of 10) 9,263 µs, bulk 431,904 µs. It also checked rejection of column 101 and query limit 101. The opt-in test and scoped strict analysis passed in that worktree. This single in-memory run is not a production capacity recommendation; on-disk local, cloud, assets, concurrency, and repeated measurements remain outstanding.
+
+The Directory observer was extended for successful folder/table renames and View creation or edits. Unknown folder parents invalidate the folder-provider family; asynchronous parent resolution refreshes every successful edit while only the latest edit opens a tab. A delayed-table-edit versus View-edit regression was added. Scoped analysis passed in the worker worktree and the app hot reloaded. The integrated widget test is waiting on the full-validation lease.
+
+Gateway quiescence and deletion HTTP calls now use a 30-second deadline and 8 KiB response limit; timeouts and oversized bodies remain failures rather than successful erasure. Seven loopback regressions cover stalled headers/bodies and oversized errors. The worker's focused gateway/cache suite passed 28 tests and strict analysis passed; integration-head verification is pending. The full PR validation rerun passed workspace analysis and proceeded to DCL, but files changed during that run, so its result cannot by itself validate final state.
+
+The full `validate:pr` rerun passed formatting, import checks and workspace analyzer, then failed `dcl:analyze` with numerous warning/alarm diagnostics. Baseline comparison and policy triage are pending. The integrated expanded observer suite failed two tests after the latest refresh changes, including a missing active View tab; that regression is under investigation and must be fixed before acceptance. Changes made during validation require a final rerun on the final code.
+
+Fixed the observer regression: stale retry actions now verify their original workspace/chat, and the race test keeps tab state subscribed. All three integrated observer widget tests pass, including overlapping edits; hot reload succeeded. The integrated gateway/cache suite also passed 28 tests. Live refresh verification and final full validation remain open.
+
+The opt-in capacity harness also passed in the integration checkout: schema 284,792 µs, 1,000 inserts 4,034,450 µs, query median 1,688 µs, sample maximum 6,471 µs, and 50-record update 376,603 µs. Workload and limitations are unchanged from the preceding entry.
+
+The six-file local query, bulk, CSV, asset, access and history behavior suite was rerun after the filter fix: all 33 tests passed. This establishes behavior for the covered fixtures, not capacity or cloud parity.
+
+DCL baseline comparison used a clean archive of committed integration HEAD with pinned FVM: baseline had 92 WARNING and 33 ALARM diagnostics; the dirty integration validation had 144 WARNING and 49 ALARM. Diagnostic-heading comparison is approximate because severities can change. Both fail the warning threshold; STYLE findings alone do not fail it. Largest added clusters include the record browser, browser panel, conversation tools and command use cases, and observer/sanitizer. Focused repairs are in progress without suppressions. Logs: `/tmp/auravibes-1693-dcl-clean-head.log` and `/tmp/auravibes-1693-pr-validation-rerun.log`.
+
+Authenticated cloud behavior suite: four tests passed; table and erasure-access tests failed. The table test expects null rejection, which may conflict with the newer nullable-cell decision; erasure access expected `permissionDenied` but received `membershipRequired`. Both need diagnosis rather than blind expectation updates. PostgreSQL was stopped. Gateway registration and HEAD requests were also bounded after review found they could hold upload reservations or completion indefinitely; the worker's gateway/cache suite passed 32 tests, with integration rerun pending.
+
+The expanded gateway/cache suite passed all 32 tests in the integration checkout after registration/HEAD timeout fixes. Provider-level deletion remains blocked; these tests do not prove R2 erasure.
+
+Cloud failure analysis: erasure-requested workspaces are excluded by the repository before command authorization, so the command returns `membershipRequired` and performs no mutation; Skill/context paths continue returning `permissionDenied`. The integration test was updated to assert that actual denial code and retains its no-created-folder assertion; rerun is pending. The null-value failure is being checked against the approved nullable-column contract before changing the test.
+
+Authenticated cloud suite rerun passed all six tests covering bulk updates, CSV preview, table updates, reports, asset download and erasure access. The table test now verifies that a nullable numeric cell persists as null while retaining invalid-value checks; erasure access still asserts no unauthorized folder is created. The isolated database container was stopped.
+
+Provider decision (user, 2026-10-28): Cloudflare R2 is the intended production provider for the dedicated workspace asset bucket, not merely a test provider. This does not authorize production deployment or data changes. R2-specific provenance, exclusive configuration controls, uncertain-upload recovery, legacy objects, and retention/legal guarantees still require proof; existing deletion remains fail-closed until then.
+
+Added and ran an opt-in authenticated server capacity harness using isolated local PostgreSQL, not a deployed cloud service. One synthetic run with 20 text columns, 100 rows written in four 25-operation batches, and a 100-record resource page measured table creation 204 ms, writes 8,266 ms and page read 473 ms. It also verified rejection of page size 101 and batch size 51. The test passed and the database container was stopped. This is a single local server measurement, not deployed cloud capacity, a latency guarantee, or an enforceable capacity recommendation.
+
+R2-specific review confirms the current gateway sends unconditional PUTs; therefore the conditional-marker candidate cannot safely resolve existing or legacy uploads. A new protocol would require durable proof from first registration that every writer used conditional writes, crash-safe marker recovery, exclusive bucket/control-plane configuration and retention review. Cloudflare documents that conditional PUT checks occur at commit and that a negative HEAD does not settle an earlier in-flight PUT: https://developers.cloudflare.com/r2/reference/consistency/. Deletion stays fail-closed.
+
+Latest `validate:changed` checked 100 Dart files and failed on one info diagnostic: `prefer-extracting-callbacks` in `workspace_view_tool_observer.dart:195`; the fix is in progress. A Marionette read-only check saw a recent interaction in the shared preview, so it did not navigate or submit prompts. Current-head GPT-6 Luna regex and schema reads remain unverified in that pass.
+
+The callback lint was fixed without an ignore. `validate:changed` then passed for 100 Dart files; formatting found no changes. The Mac preview hot reloaded successfully. Full `validate:pr` remains failed at DCL, and current-head live regex/schema testing was not performed because the shared preview appeared active.
+
+Further #1691 review found a potential local/cloud parity gap: failed local asset/credential cleanup jobs persist, but the apparent local UI notification is transient after workspace deletion, while cloud has status/retry. Durable local status and recovery are under investigation. Browser-panel and spreadsheet DCL work remains incomplete in separate worktrees; no unverified candidate was integrated.
+
+Integrated a behavior-preserving browser-panel cleanup that reduces its DCL warning/alarm headings; the worker's current panel-layout test and strict scoped analyzer passed. The DCL gate remains failed with additional findings, including baseline findings. Hot reload was requested and is pending. Local durable cleanup status/retry has a candidate in a separate worktree, but it has not passed its required widget and integration tests and is not integrated.
+
+Browser-panel hot reload completed successfully. The local recovery candidate remains unintegrated pending its targeted widget regression and review.
+
+The local Directory-target search was refactored with authorization before each folder read, cycle detection and ambiguity rejection preserved. Scoped worker DCL and analyzer reported no findings; the integrated conversation-command and reference suites passed 10 tests, and the app hot reloaded. Overall DCL remains unresolved.
+
+Integrated the local cleanup notice/retry candidate for testing; the app hot reloaded. Its two-file test run passed 54 tests and failed the new retry test because its `setState` callback returned a Future, plus the management-screen golden. The retry defect is being fixed; the golden must be compared against baseline before any snapshot decision. This candidate is not yet accepted.
+
+Fixed the local retry callback to return void from `setState`; the focused management-screen regression now passes after screen reconstruction, failed retry and successful retry. In the earlier combined run, 54 tests passed and the golden failed with four mismatch tuples exactly matching the documented pre-feature baseline (`workspace-elements-golden-baseline.md`): 0.66%/7,570 px, 0.73%/8,450 px, 1.96%/7,406 px, and 1.92%/7,250 px. The golden remains failing; no snapshots were updated. Latest hot reload is pending.
+
+The latest cleanup-retry fix hot reloaded successfully. A separate review of the local notice and retry behavior is pending; R2 erasure remains blocked.
+
+Independent local-cleanup review found two gaps in the candidate: status-query errors can hide the notice, and retry remains enabled while a flush is running. Fixes and regressions are in progress. Repository tests cover persisted attachment and credential queues separately, but the UI regression uses a mock; a real persisted-job-to-UI recovery test remains desirable for acceptance. Cloud erasure uses a separate flow.
+
+`validate:changed` passed for 104 Dart files after the local cleanup candidate and Directory-search refactor; subsequent cleanup fixes will require another check.
+
+The local cleanup notice now reports status-query errors in English and Spanish, retains the last known pending state, and disables overlapping retries until cleanup/status refresh finishes. Localization was generated using the repository command. Both focused cleanup widget tests passed in integration, and the app hot reloaded. A real persisted-job-to-UI test and final review remain pending.
+
+Added a real synthetic on-disk SQLite cleanup-to-UI regression, but its first integration run hung after starting; it was interrupted and is under investigation. No runtime pass is claimed. Worker DCL work on the conversation command is incomplete and remains outside integration.
+
+The persisted cleanup UI regression passed after moving real filesystem/SQLite work out of Flutter's fake-async zone. It closes and reopens an on-disk synthetic database, verifies a failed job and notice survive, verifies the UI does not reveal the synthetic workspace name or asset ID, then retries and checks the queue and notice clear. The first interrupted run was a test harness deadlock, not an application pass.
+
+R2 implementation review: a new-registration-only conditional PUT fence cannot establish safety on its own because the ledger lacks a protocol epoch and an older running gateway could still write unconditionally. A safe design needs a legacy-default protocol migration, transactional enforcement for every upload, and a verified cutover excluding old gateway binaries and direct writers; ambiguous writes remain pending. Marker retention and replica provenance remain separate unresolved requirements. No R2 deletion behavior was enabled.
+
+Integrated behavior-preserving record-browser DCL cleanup after the worker's current table-screen suite and strict analyzer passed. It removes warning-level rule findings in that file but leaves 25 complexity metric headings; the overall DCL gate still fails. Hot reload is pending.
+
+Hot reload for the latest record-browser cleanup timed out twice during Marionette identity verification. The Flutter debug runner is still present, but its session stdin is closed, so direct terminal reload was unavailable. The app may still show the prior build. No app restart was forced while the shared preview appeared active.
+
+The opt-in server benchmark was extended to query the authenticated record endpoint ten times and verify its page-size limit. Against local isolated PostgreSQL, one run measured table creation 238 ms, 100 writes in four batches 8,351 ms, raw page read 530 ms, filtered 100-row query median 691,278 µs and maximum 1,317,422 µs. The benchmark passed and the container was stopped. This is a small local synthetic run, not a production latency or cloud capacity guarantee; the observed query cost merits investigation before setting limits.
+
+Latest changed-file validation failed on formatting of `workspace_record_browser.dart` and three info lints in the local cleanup UI/test. The table file was formatted through the lease; the lint fixes are in progress. This supersedes the earlier 104-file pass for final-state purposes.
+
+Added an opt-in local asset benchmark. In one integration run using synthetic bytes, temporary disk storage and in-memory SQLite metadata, 25 MiB upload took 415,138 µs and read took 17,573 µs; exact bytes matched and 25 MiB plus one byte was rejected. The test passed and removed its temporary directory. This does not measure deployed cloud or establish production throughput.
+
+The local cleanup screen/test lint fixes passed strict analysis in the worker and were copied into integration. Full changed-file validation needs a new run; a hot reload request is pending because the shared debug connection has been unresponsive.
+
+The latest Marionette hot-reload request stalled and was interrupted; the shared app may still show a prior build. Current changed-file validation is running after the lint and benchmark additions.
+
+The latest changed-file run found one additional dot-shorthand lint in the new asset benchmark after checking 105 Dart files. It has been corrected; validation is running again. No Dart formatting differences were reported in that run.
+
+An opt-in gateway capacity measurement passed in a separate worktree using disposable LocalStack 3.8.1, PostgreSQL 17, synthetic 25 MiB content, and in-process signed gateway handlers: upload 360,333 µs, read 223,726 µs, exact bytes matched. The lifecycle and uncertain-write checks also passed, and containers were removed. The opt-in test change was integrated. This does not measure authenticated Serverpod end-to-end, TLS, deployed cloud, concurrency, or production capacity.
+
+`validate:changed` passed for 105 Dart files after the final shorthand fix. Subsequent changes require a fresh run. Read-only review found no false-success path in the gateway timeout changes; the local cleanup notice can remain stale while the screen stays open if background work changes the queue without changing the workspace list. Retry or reopening refreshes it; live queue observation remains a UX gap.
+
+Integrated a narrow workspace-command DCL cleanup that caches the existing arguments map and names the existing 65,536-byte file limit. Fifteen integrated command/file behavior tests passed; DCL complexity findings remain. A further hot-reload attempt failed because the shared debug app's connection timed out; latest changes may not be visible in the preview.
+
+Integrated a live deleted-workspace cleanup status query that observes all three durable queues and workspace deletion, exposes only a boolean, and keeps last-known status on stream error. The app hot reloaded. Its first combined widget run hung in the persisted cleanup test and was interrupted; investigation is in progress. Do not treat this candidate as verified until the live-update and error/retry tests pass.
+
+The live-status widget rerun no longer hangs at SQLite close but failed with a pending Flutter timer after disposal; subsequent cleanup test was interrupted. Test lifecycle/stream cleanup remains under investigation. The live-status code is not yet verified.
+
+Removed the unverified live-subscription candidate after its Drift test teardown remained unstable. Restored the refresh-on-retry/reopen cleanup implementation; all three focused cleanup widget tests now pass, including persisted SQLite recovery and status-error/serialized-retry behavior. The known stale-while-open status limitation remains. A hot reload is pending.
+
+The restored cleanup flow hot reloaded successfully. The next changed-file validation found one dot-shorthand lint in the persisted cleanup test; it was fixed and the check is rerunning. Overall DCL and R2 erasure remain open.
+
+`validate:changed` passed for 105 Dart files after the latest cleanup-test lint fix. The specification now records the user's R2 production-provider decision; other provider and release decisions remain blocked. The attempted additional record-browser extraction was not integrated because it only redistributed DCL findings. Final full DCL, exact-head CI, R2 erasure, deployed-cloud measurements and issue acceptance remain open.
+
+Further #1691 parity review found local deletion did not remove `WorkspaceContentReports` or `RecentModelSelections`, whose workspace IDs do not use cascading foreign keys; cloud erasure explicitly removes both. A scoped transactional fix and isolation/rollback tests are in progress. Durable asset, attachment and credential cleanup queues must remain for retry.
+
+Local erasure now removes the deleted local workspace's content reports and recent model selections inside the workspace deletion transaction. Durable cleanup queues remain. The focused local erasure suite passed all 13 tests, including rollback and preservation of another workspace's rows. The preview hot reloaded. The first test attempt failed to compile due an ambiguous matcher import; the corrected rerun passed.
+
+A file-read cleanup preserves asset size/type validation and rechecks the file revision and asset after preview; its seven focused tests pass in integration, including replacement/deletion during preview. Scoped DCL reduced the file command alarm to a warning, but four use-case warnings remain and the overall gate remains failed. Hot reload is pending. `validate:changed` passed for 105 files before this final file-read edit and must be rerun.
+
+`validate:changed` passed again after the file-read refactor, and the preview hot reloaded. A follow-up review identified the same local report/model-selection residue when a cloud workspace mirror is removed; a scoped local-only fix and synthetic test are in progress. This does not authorize or delete cloud data.
+
+Removing a local cloud-workspace mirror now also removes its local report and model-selection rows after successful local deletion, without remote calls or deleting queued cleanup jobs. The integrated local erasure suite passed all 14 tests, including mirror isolation and rollback. Hot reload is pending; full changed-file validation must be repeated after this edit.
+
+`validate:changed` passed for 105 Dart files after the local mirror cleanup. The latest hot-reload request stalled and was interrupted; the app may show the prior build. PR #1693 remains draft at published head `aaaa3cc9`, 131 commits behind local HEAD `b163b8890`; extensive intended changes remain uncommitted. Full `validate:pr` is blocked by DCL warnings/alarms, including baseline findings; four baseline golden mismatches remain. No push or issue closure occurred. Next: resolve the R2 erasure provenance/late-write protocol and legal retention requirements, finish DCL, run remaining cloud/live tool and release-evidence checks, review and commit intended changes, then dry-run/preflight/push the draft and check hosted CI on the new head. Do not merge or deploy.

@@ -222,7 +222,7 @@ void main() {
         await tester.tap(button('workspace_filter_reference'));
         await flush();
         await tester.tap(find.text('Target').last);
-        await tester.tap(find.text('Done'));
+        await tester.tap(find.text('Apply selection'));
       } else {
         await tester.tap(
           find.byWidgetPredicate(
@@ -292,7 +292,7 @@ void main() {
         await tester.tap(find.text('Choose records').hitTestable().last);
         await flush();
         await tester.tap(find.text('Updated').last);
-        await tester.tap(find.text('Done'));
+        await tester.tap(find.text('Apply selection'));
         await flush();
       }
 

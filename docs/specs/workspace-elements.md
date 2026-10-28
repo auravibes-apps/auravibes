@@ -53,7 +53,7 @@ Do not ship a CRM template, seeded business workflow, or HTML/JS execution. User
 35. As a user, I want loading, empty, stale, disconnected, denied, and failure states, so that I understand what happened and can recover.
 36. As a user, I want to open an item beside a Conversation on a wide screen or full-screen on mobile, so that I can discuss and inspect it together.
 37. As a user, I want another authorized Conversation to edit the same item, so that useful work is independent of its creation chat.
-38. As a user, I want only necessary authorized data supplied as AI context, so that discussing one item does not expose the whole workspace.
+38. As a user, I want AI to read and edit workspace items through tools without per-Conversation sharing controls or automatic context injection, so that workspace access stays predictable and tool results are fetched only when needed.
 39. As a user, I want stale record/schema/view edits detected, so that concurrent work does not silently overwrite changes.
 40. As a user, I want unrelated record edits to proceed independently, so that a table is not unnecessarily locked.
 41. As a user, I want multi-step owned-data changes committed atomically, so that failed edits leave no partial records.
@@ -150,9 +150,17 @@ Do not ship a CRM template, seeded business workflow, or HTML/JS execution. User
 - External reads/edits do not create synchronized owned copies. Imports are explicit. External operations report completed/failed/uncertain outcomes, reconcile unknown writes before retry, and offer undo only through supported compensating actions.
 - Expose useful actor/AI/operation/revision history without credentials or unnecessary sensitive content. Provide generation safeguards, in-app reporting, and maintained response operations.
 
+### AI directory discovery
+
+- Expose one directory-reading tool. No arguments list the root; an exact folder path lists its direct contents.
+- Optional path and name regexes search below the selected folder. Return full paths so later file or table calls can target them.
+- Bound search results and traversal. Return an empty entry list for no matches and mark capped results as truncated.
+- Use directory reads to discover new content. Do not expose chat-scoped “created here” listings as a second directory.
+- Show localized action names in chat activity without internal `Workspace` prefixes. Keep IDs and revisions in tool results for safe follow-up edits.
+
 ## Testing Decisions
 
-The user confirmed these boundaries during spec synthesis: shared behavior through workspace use cases for local/cloud storage, authenticated server endpoint tests for cloud authorization, and focused UI tests for selectors, A2UI, and approval prompts.
+The user confirmed these boundaries during spec synthesis: shared behavior through workspace use cases for local/cloud storage, authenticated server endpoint tests for cloud authorization, and focused UI tests for selectors, A2UI, and approval prompts. The user later superseded the per-Conversation AI-sharing model: workspace AI tools are always available within the current workspace, subject to workspace membership/ACLs and existing action approval rules. Do not inject saved workspace content into prompts or let legacy sharing/context selections gate tool access.
 
 - Prefer one reusable behavioral scenario suite at the workspace use-case boundary, exercised against local persistence and cloud-backed adapters. This is a proposed extension of existing seams, not a new generic testing framework. Assert externally visible results, persisted state, errors, and access boundaries; do not mirror implementation internals.
 - Use existing Workspace use-case tests and CloudWorkspaceEndpoint integration tests as prior art. Exercise real local persistence for restart, migrations, transactions, reference integrity, and history. Exercise authenticated cloud endpoints for membership/table/tool access, resource guessing, stale writes, and mutation replay behavior.
@@ -183,7 +191,7 @@ This spec synthesizes the accepted 72-question interview, including explicit cor
 
 Treat it as one coherent feature specification that can be delivered in ordered increments: item/storage lifecycle; typed relational data; persistent views; workspace read/edit Connections and approvals; release verification. Do not interpret an issue label as authorization to release or to narrow accepted scope silently.
 
-Launch countries, minimum age, retention durations, actual AI/hosting/Connector providers and permitted tools, numerical capacity limits, and any payments remain explicit release blockers. Resolve matching disclosures, separate consent, contracts, moderation, deletion, and store declarations before launch. The existing policy research is dated and does not certify compliance.
+Cloudflare R2 is the selected production provider for the dedicated workspace asset bucket. Launch countries, minimum age, retention durations, other AI/hosting/Connector providers and permitted tools, numerical capacity limits, and any payments remain explicit release blockers. Resolve matching disclosures, separate consent, contracts, moderation, deletion, and store declarations before launch. The existing policy research is dated and does not certify compliance.
 
 No prototype established a physical schema or new runtime. No production behavior, migration, live provider integration, or test execution is claimed by this specification. Related existing issues concerning tool modes, workspace policies, local-network disclosure, and shared-Conversation visibility should be coordinated during implementation rather than overwritten or silently closed.
 

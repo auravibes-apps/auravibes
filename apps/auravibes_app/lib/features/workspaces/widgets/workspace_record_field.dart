@@ -119,35 +119,42 @@ class const _MultiSelectInput({required final WorkspaceRecordField field})
     _ => [],
   };
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
+  Widget build(BuildContext context) => PopupMenuButton<String>(
+    itemBuilder: (_) => [
       for (final option in field.column.options)
-        _MultiOption(input: this, option: option),
+        CheckedPopupMenuItem(
+          value: option,
+          checked: _selection.contains(option),
+          child: Text(option),
+        ),
     ],
+    onSelected: _toggle,
+    tooltip: field.column.name,
+    child: Row(
+      children: [
+        Expanded(
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              if (_selection.isEmpty)
+                const TextLocale(LocaleKeys.workspace_items_missing_value)
+              else
+                for (final value in _selection) Chip(label: Text(value)),
+            ],
+          ),
+        ),
+        const Icon(Icons.arrow_drop_down),
+      ],
+    ),
+    enabled: !field.disabled,
   );
-  void _change(String option, bool selected) {
+
+  void _toggle(String option) {
     final values = _selection;
-    if (selected) {
-      values.add(option);
-    } else {
-      final _ = values.remove(option);
-    }
+    if (!values.remove(option)) values.add(option);
     field.onChanged(values);
   }
-}
-
-class const _MultiOption({
-  required final _MultiSelectInput input,
-  required final String option,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraCheckboxListTile(
-    value: input._selection.contains(option),
-    onChanged: (selected) => input._change(option, selected),
-    title: Text(option),
-    disabled: input.field.disabled,
-    semanticLabel: '${input.field.column.name}: $option',
-  );
 }
 
 class const _TextInput({

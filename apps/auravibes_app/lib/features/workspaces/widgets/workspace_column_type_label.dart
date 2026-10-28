@@ -27,6 +27,36 @@ class const WorkspaceColumnTypeLabel({
     _ => LocaleKeys.workspace_items_type_text,
   };
 
+  static IconData iconFor(WorkspaceColumnType type) => switch (type) {
+    .text => Icons.text_fields,
+    .number => Icons.numbers,
+    .checkbox => Icons.check_box_outlined,
+    .singleSelect => Icons.radio_button_checked,
+    .multiSelect => Icons.sell_outlined,
+    .url => Icons.link,
+    .email => Icons.mail_outline,
+    .phone => Icons.phone_outlined,
+    .dateOnly => Icons.calendar_today_outlined,
+    .timestamp => Icons.schedule_outlined,
+    .money => Icons.payments_outlined,
+    .reference => Icons.link_outlined,
+    .attachment => Icons.attach_file,
+  };
+
   @override
-  Widget build(BuildContext context) => TextLocale(_labelKey);
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      Icon(iconFor(type), size: 18),
+      const SizedBox(width: 8),
+      Flexible(
+        child: TextLocale(
+          _labelKey,
+          softWrap: false,
+          overflow: .ellipsis,
+          maxLines: 1,
+        ),
+      ),
+    ],
+  );
 }

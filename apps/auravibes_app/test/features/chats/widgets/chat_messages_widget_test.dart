@@ -2897,8 +2897,8 @@ void main() {
           toolCalls: [
             MessageToolCallEntity(
               id: 'tc-missing-error',
-              name: 'workspace_item',
-              argumentsRaw: '{"action":"read"}',
+              name: 'workspace_read_item',
+              argumentsRaw: '{"itemId":"file"}',
               resultStatus: ToolCallResultStatus.executionError,
             ),
           ],

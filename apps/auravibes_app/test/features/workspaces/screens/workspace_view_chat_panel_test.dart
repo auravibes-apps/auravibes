@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
-import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
+import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
@@ -66,7 +66,13 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text('Saved surface'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
-      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraIconButton &&
+              widget.identifier == 'sidebar_close_workspace_view:view',
+        ),
+      );
       final _ = await tester.pumpAndSettle();
       expect(find.text('Saved surface'), findsNothing);
       await tester.tap(find.text('Close panel'));
@@ -142,14 +148,23 @@ class const _Harness() extends HookConsumerWidget {
                 mounted: false,
                 widthPercent: 0.4,
                 onWidthChanged: (_) => fail('No browser resize expected'),
-                onClose: () {},
+                onClose: () {
+                  return;
+                },
                 builder: () => BrowserPanel(
                   workspaceId: 'one',
                   conversationId: 'chat',
                   toolResultTabs: const [],
                   selectedToolResultTabId: null,
-                  onSelectToolResultTab: (_) {},
-                  onCloseToolResultTab: (_) {},
+                  onSelectToolResultTab: (_) {
+                    return;
+                  },
+                  onCloseToolResultTab: (_) {
+                    return;
+                  },
+                  onCloseSidebar: () {
+                    return;
+                  },
                 ),
               ),
             ),

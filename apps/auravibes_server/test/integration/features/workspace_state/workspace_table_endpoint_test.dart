@@ -380,7 +380,6 @@ void main() {
           {'website': 'javascript:alert(1)'},
           {'email': 'missing-at'},
           {'phone': 'call me'},
-          {'count': null},
           {'unknown': 'field'},
         ]) {
           await expectLater(
@@ -454,6 +453,26 @@ void main() {
           typedValues,
         );
         expect(retained.revision, 1);
+        final cleared = await patch([
+          WorkspacePatchOperation(
+            operation: .update,
+            resourceKind: .tableRecord,
+            resourceId: 'typed-record',
+            expectedRevision: 1,
+            data: jsonEncode({
+              'tableId': 'typed-table',
+              'schemaRevision': 1,
+              'values': {...typedValues, 'count': null},
+            }),
+            fieldMask: const [],
+          ),
+        ]);
+        final clearedValues =
+            (jsonDecode(cleared.resources.single.data)
+                    as Map<String, dynamic>)['values']
+                as Map<String, dynamic>;
+        expect(clearedValues['count'], isNull);
+        expect(cleared.resources.single.revision, 2);
         final outsiderId = const Uuid().v4().toString();
         await AuthUser.db.insertRow(
           session,

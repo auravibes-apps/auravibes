@@ -7,9 +7,6 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _pickerWidth = 720.0;
-const _pickerHeight = 620.0;
-
 class const WorkspaceReferenceField({
   required final String workspaceId,
   required final WorkspaceTable table,
@@ -38,7 +35,19 @@ class const WorkspaceReferenceField({
   );
   Future<void> _pick(BuildContext context) => showDialog<void>(
     context: context,
-    builder: (_) => Dialog(child: _ReferencePickerDialog(field: this)),
+    builder: (context) {
+      final size = MediaQuery.sizeOf(context);
+      final inset = size.width < 600 ? 8.0 : 40.0;
+
+      return Dialog(
+        insetPadding: .all(inset),
+        child: SizedBox(
+          width: (size.width - inset * 2).clamp(0.0, 720.0),
+          height: (size.height - inset * 2).clamp(0.0, 620.0),
+          child: _ReferencePickerContent(field: this),
+        ),
+      );
+    },
   );
   void _selected(BuildContext context, List<String> ids) {
     if (ids.isEmpty) {
@@ -89,17 +98,6 @@ class const _ReferenceActions({required final WorkspaceReferenceField field})
           child: const TextLocale(LocaleKeys.workspace_items_reference_remove),
         ),
     ],
-  );
-}
-
-class const _ReferencePickerDialog({
-  required final WorkspaceReferenceField field,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: _pickerWidth,
-    height: _pickerHeight,
-    child: _ReferencePickerContent(field: field),
   );
 }
 

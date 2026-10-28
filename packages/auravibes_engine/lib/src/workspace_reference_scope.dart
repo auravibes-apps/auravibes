@@ -1,16 +1,23 @@
 import 'package:auravibes_engine/src/workspace_command.dart';
 
-/// Additional reference authority comes only from verified host creations.
+/// Controls reference projection; the host enforces resource authorization.
+///
+/// This is a projection boundary, not resource authorization. Hosts must check
+/// target table and record access against their current workspace ACLs before
+/// persisting reference values.
 class const WorkspaceReferenceScope(
   final WorkspaceContextSelection selection,
   final List<Map<String, Object?>> created,
 ) {
   bool tableAllowed(String id) =>
+      (selection.kind == 'directory' && id.isNotEmpty) ||
       (selection.kind == 'table' && selection.itemId == id) ||
       created.any((value) => value['kind'] == 'table' && value['id'] == id);
 
   bool recordAllowed(String tableId, String id) =>
-      _selectedRecord(tableId, id) || _createdRecord(tableId, id);
+      (selection.kind == 'directory' && tableId.isNotEmpty && id.isNotEmpty) ||
+      _selectedRecord(tableId, id) ||
+      _createdRecord(tableId, id);
 
   bool columnAllowed(
     Map<String, Object?> column,

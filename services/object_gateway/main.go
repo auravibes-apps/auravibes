@@ -104,6 +104,13 @@ func run(ctx context.Context) error {
 	return server.ListenAndServe()
 }
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "audit-bucket" {
+		os.Exit(runBucketAudit(context.Background()))
+	}
+	if len(os.Args) != 1 {
+		log.Print("unsupported command")
+		os.Exit(2)
+	}
 	if err := run(context.Background()); err != nil {
 		log.Print("gateway stopped: ", err)
 		os.Exit(1)

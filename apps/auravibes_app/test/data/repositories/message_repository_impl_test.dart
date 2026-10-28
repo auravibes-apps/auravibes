@@ -608,7 +608,7 @@ void main() {
       },
     );
 
-    test('batch persistence redacts workspace read output with missing or malformed actions', () async {
+    Future<void> verifyWorkspaceReadRedaction() async {
       for (final arguments in [
         '{"action":"read","id":"file"}',
         '{}',
@@ -626,7 +626,7 @@ void main() {
                 toolCalls: [
                   MessageToolCallEntity(
                     id: 'file-read',
-                    name: 'workspace_item',
+                    name: 'workspace_read_item',
                     argumentsRaw: arguments,
                     resultStatus: .running,
                   ),
@@ -659,14 +659,20 @@ void main() {
           isNot(contains('private bytes')),
         );
       }
-    });
+    }
+
+    test(
+      'batch persistence redacts workspace read output with missing or '
+      'malformed actions',
+      verifyWorkspaceReadRedaction,
+    );
 
     test('message create and patch redact workspace read results', () async {
-      final metadata = MessageMetadataEntity(
+      const metadata = MessageMetadataEntity(
         toolCalls: [
-          const MessageToolCallEntity(
+          MessageToolCallEntity(
             id: 'read',
-            name: 'workspace_item',
+            name: 'workspace_read_item',
             argumentsRaw: '{"action":"read","id":"file"}',
             responseRaw: '{"content":"private bytes"}',
           ),
@@ -689,7 +695,7 @@ void main() {
       );
       final _ = await repository.patchMessage(
         created.id,
-        .new(metadata: metadata),
+        const .new(metadata: metadata),
         conversationId: 'conv-1',
       );
       final second = await repository.getMessageById(created.id);

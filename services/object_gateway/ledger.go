@@ -114,3 +114,13 @@ func (l *postgresLedger) close(ctx context.Context, key, registrationID string) 
 	return !pending, nil
 }
 func (l *postgresLedger) ping(ctx context.Context) error { return l.pool.Ping(ctx) }
+
+func (l *postgresLedger) status(ctx context.Context, key, id string) (bool, int64, error) {
+	var closed bool
+	var pending int64
+	err := l.pool.QueryRow(ctx, `SELECT k.closed, count(u.nonce_hash) FROM object_gateway.keys k LEFT JOIN object_gateway.uploads u ON u.key_hash=k.key_hash AND u.pending WHERE k.key_hash=$1 AND k.registration_hash=$2 GROUP BY k.closed`, keyDigest(key), keyDigest(id)).Scan(&closed, &pending)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, 0, errUnknown
+	}
+	return closed, pending, err
+}

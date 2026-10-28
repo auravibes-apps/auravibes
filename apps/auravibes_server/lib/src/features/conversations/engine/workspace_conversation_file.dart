@@ -26,7 +26,16 @@ class WorkspaceConversationFile {
     Session session,
     WorkspaceMember member,
     String id,
-  ) async {
+  ) async => (await readSnapshot(session, member, id)).result;
+
+  Future<
+    ({
+      Map<String, Object?> result,
+      WorkspaceResource resource,
+      WorkspaceObject object,
+    })
+  >
+  readSnapshot(Session session, WorkspaceMember member, String id) async {
     final resource = await _resource(session, member, id);
     final data = jsonDecode(resource.data) as Map<String, dynamic>;
     final objectId = int.tryParse(data['assetId'] as String? ?? '');
@@ -97,12 +106,16 @@ class WorkspaceConversationFile {
     }
     final name = data['name'];
     if (name is! String) throw const FormatException('Invalid file metadata.');
-    return workspaceFileToolResult(
-      id: id,
-      name: name,
-      mimeType: object.mimeType,
-      revision: resource.revision,
-      content: content,
+    return (
+      resource: resource,
+      object: object,
+      result: workspaceFileToolResult(
+        id: id,
+        name: name,
+        mimeType: object.mimeType,
+        revision: resource.revision,
+        content: content,
+      ),
     );
   }
 

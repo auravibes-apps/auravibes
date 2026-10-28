@@ -107,12 +107,29 @@ class HttpObjectStore implements ObjectStore {
     this.gatewayBearerToken,
     this.legacyEndpoint,
     this.legacyBearerToken,
+    this.requestTimeout = const Duration(seconds: 30),
   });
 
   final Uri? gatewayEndpoint;
   final String? gatewayBearerToken;
   final Uri? legacyEndpoint;
   final String? legacyBearerToken;
+  final Duration requestTimeout;
+  static const _maxResponseBytes = 8192;
+
+  Future<String> _boundedResponse(
+    HttpClientResponse response, {
+    String errorMessage = 'Object gateway response is too large.',
+  }) async {
+    final bytes = <int>[];
+    await for (final chunk in response) {
+      if (bytes.length + chunk.length > _maxResponseBytes) {
+        throw StateError(errorMessage);
+      }
+      bytes.addAll(chunk);
+    }
+    return utf8.decode(bytes);
+  }
 
   static ObjectStore fromEnvironment() {
     final gatewayEndpoint = _environmentUri('OBJECT_STORE_GATEWAY_ENDPOINT');
@@ -195,21 +212,23 @@ class HttpObjectStore implements ObjectStore {
     }
     final client = HttpClient();
     try {
-      final request = await client.postUrl(
-        _uri(registrationId, key, {'register': '1'}),
-      );
-      _authorize(request, registrationId);
-      final response = await request.close();
-      final body = await response.transform(const Utf8Decoder()).join();
-      if (response.statusCode == HttpStatus.conflict &&
-          body.trim() == 'conflict') {
-        throw const ObjectStoreRegistrationConflictException();
-      }
-      if (response.statusCode != HttpStatus.noContent) {
-        throw StateError(
-          'Object gateway registration failed (${response.statusCode}).',
+      await (() async {
+        final request = await client.postUrl(
+          _uri(registrationId, key, {'register': '1'}),
         );
-      }
+        _authorize(request, registrationId);
+        final response = await request.close();
+        final body = await _boundedResponse(response);
+        if (response.statusCode == HttpStatus.conflict &&
+            body.trim() == 'conflict') {
+          throw const ObjectStoreRegistrationConflictException();
+        }
+        if (response.statusCode != HttpStatus.noContent) {
+          throw StateError(
+            'Object gateway registration failed (${response.statusCode}).',
+          );
+        }
+      })().timeout(requestTimeout);
     } finally {
       client.close(force: true);
     }
@@ -286,20 +305,16 @@ class HttpObjectStore implements ObjectStore {
             'Object signing gateway failed (${response.statusCode}).',
           );
         }
-        final bytes = <int>[];
-        await for (final chunk in response) {
-          if (bytes.length + chunk.length > 8192) {
-            throw StateError('Object signing gateway response is too large.');
-          }
-          bytes.addAll(chunk);
-        }
-        final body = utf8.decode(bytes);
+        final body = await _boundedResponse(
+          response,
+          errorMessage: 'Object signing gateway response is too large.',
+        );
         return SignedObjectRequest(
           url: Uri.parse(body.trim()),
           headers: method == 'PUT' ? values : const {},
           expiresAt: expiresAt,
         );
-      })().timeout(const Duration(seconds: 30));
+      })().timeout(requestTimeout);
     } finally {
       client.close(force: true);
     }
@@ -314,24 +329,24 @@ class HttpObjectStore implements ObjectStore {
     if (registrationId == null) return false;
     final client = HttpClient();
     try {
-      final request = await client.postUrl(
-        _uri(registrationId, key, {'quiesce': '1'}),
-      );
-      _authorize(request, registrationId);
-      final response = await request.close();
-      if (response.statusCode == HttpStatus.noContent) return true;
-      if (response.statusCode == HttpStatus.conflict) {
-        final body = await response.transform(const Utf8Decoder()).join();
-        if (body.trim() == 'pending') return false;
-        if (body.trim() == 'conflict') {
-          throw const ObjectStoreRegistrationConflictException();
+      return await (() async {
+        final request = await client.postUrl(
+          _uri(registrationId, key, {'quiesce': '1'}),
+        );
+        _authorize(request, registrationId);
+        final response = await request.close();
+        if (response.statusCode == HttpStatus.noContent) return true;
+        final body = await _boundedResponse(response);
+        if (response.statusCode == HttpStatus.conflict) {
+          if (body.trim() == 'pending') return false;
+          if (body.trim() == 'conflict') {
+            throw const ObjectStoreRegistrationConflictException();
+          }
         }
-      } else {
-        await response.drain<void>();
-      }
-      throw StateError(
-        'Object gateway quiescence failed (${response.statusCode}).',
-      );
+        throw StateError(
+          'Object gateway quiescence failed (${response.statusCode}).',
+        );
+      })().timeout(requestTimeout);
     } finally {
       client.close(force: true);
     }
@@ -344,21 +359,23 @@ class HttpObjectStore implements ObjectStore {
   }) async {
     final client = HttpClient();
     try {
-      final request = await client.openUrl(
-        'HEAD',
-        _uri(registrationId, key),
-      );
-      _authorize(request, registrationId);
-      final response = await request.close();
-      if (response.statusCode == HttpStatus.notFound) return null;
-      if (response.statusCode != HttpStatus.ok) {
-        throw StateError('Object HEAD failed (${response.statusCode}).');
-      }
-      return ObjectMetadata(
-        sizeBytes: response.contentLength,
-        mimeType: response.headers.contentType?.mimeType ?? '',
-        checksumSha256: response.headers.value('x-checksum-sha256') ?? '',
-      );
+      return await (() async {
+        final request = await client.openUrl(
+          'HEAD',
+          _uri(registrationId, key),
+        );
+        _authorize(request, registrationId);
+        final response = await request.close();
+        if (response.statusCode == HttpStatus.notFound) return null;
+        if (response.statusCode != HttpStatus.ok) {
+          throw StateError('Object HEAD failed (${response.statusCode}).');
+        }
+        return ObjectMetadata(
+          sizeBytes: response.contentLength,
+          mimeType: response.headers.contentType?.mimeType ?? '',
+          checksumSha256: response.headers.value('x-checksum-sha256') ?? '',
+        );
+      })().timeout(requestTimeout);
     } finally {
       client.close(force: true);
     }
@@ -368,42 +385,36 @@ class HttpObjectStore implements ObjectStore {
   Future<void> delete(String key, {String? registrationId}) async {
     final client = HttpClient();
     try {
-      final request = await client.deleteUrl(_uri(registrationId, key));
-      _authorize(request, registrationId);
-      final response = await request.close();
-      if (registrationId != null &&
-          response.statusCode == HttpStatus.conflict) {
-        final body = await response.transform(const Utf8Decoder()).join();
-        if (body.trim() == 'pending') {
-          throw const ObjectStoreDeletePendingException();
+      await (() async {
+        final request = await client.deleteUrl(_uri(registrationId, key));
+        _authorize(request, registrationId);
+        final response = await request.close();
+        if (response.statusCode == HttpStatus.noContent) return;
+        final body = await _boundedResponse(response);
+        if (registrationId != null &&
+            response.statusCode == HttpStatus.conflict) {
+          if (body.trim() == 'pending') {
+            throw const ObjectStoreDeletePendingException();
+          }
+          if (body.trim() == 'conflict') {
+            throw const ObjectStoreRegistrationConflictException();
+          }
         }
-        if (body.trim() == 'conflict') {
-          throw const ObjectStoreRegistrationConflictException();
+        if (registrationId == null &&
+            response.statusCode == HttpStatus.notFound) {
+          return;
         }
-        throw StateError(
-          'Object deletion failed (${response.statusCode}).',
-        );
-      }
-      if (response.statusCode == HttpStatus.noContent) return;
-      if (registrationId == null &&
-          response.statusCode == HttpStatus.notFound) {
-        await response.drain<void>();
-        return;
-      }
-      if (registrationId != null &&
-          response.statusCode == HttpStatus.unprocessableEntity) {
-        final body = await response.transform(const Utf8Decoder()).join();
-        if (_isReplicaProvenanceBlocker(body)) {
+        if (registrationId != null &&
+            response.statusCode == HttpStatus.unprocessableEntity &&
+            _isReplicaProvenanceBlocker(body)) {
           throw const ObjectStoreDeleteBlockedException(
             'replica_provenance_unavailable',
           );
         }
-      } else {
-        await response.drain<void>();
-      }
-      throw StateError(
-        'Object deletion failed (${response.statusCode}).',
-      );
+        throw StateError(
+          'Object deletion failed (${response.statusCode}).',
+        );
+      })().timeout(requestTimeout);
     } finally {
       client.close(force: true);
     }

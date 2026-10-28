@@ -188,19 +188,37 @@ class ResolvedToolService {
     try {
       return await commands.call(
         conversationId: conversationId,
-        arguments: agent.workspaceCommandArgumentsForTool(toolName, arguments),
+        arguments: agent.workspaceToolArgumentsForExecution(
+          toolName,
+          arguments,
+        ),
         operationId: toolCallId,
       );
     } on WorkspaceTableException catch (error, stackTrace) {
       var code = 'invalid';
       if (error.conflict) code = 'conflict';
       if (error.denied) code = 'unavailable';
+      if (error.incompatibleRelationship) code = 'incompatible_relationship';
+      if (error.unsupportedCopy) code = 'unsupported';
       final response = agent.workspaceFailureContext(
         jsonEncode({'code': code}),
       );
       Error.throwWithStackTrace(
         agent.AgentToolExecutionFailure(
-          responseRaw: jsonEncode({'code': code, ...response}),
+          responseRaw: jsonEncode(response),
+          error: error,
+          stackTrace: stackTrace,
+          failurePhase: 'workspace.command',
+        ),
+        stackTrace,
+      );
+    } on FormatException catch (error, stackTrace) {
+      final response = agent.workspaceFailureContext(
+        jsonEncode({'code': 'invalid', 'detail': error.message}),
+      );
+      Error.throwWithStackTrace(
+        agent.AgentToolExecutionFailure(
+          responseRaw: jsonEncode(response),
           error: error,
           stackTrace: stackTrace,
           failurePhase: 'workspace.command',

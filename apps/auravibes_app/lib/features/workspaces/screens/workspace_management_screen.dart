@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/cloud_workspaces/widgets/cloud_workspace_connect_list.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -807,6 +808,11 @@ class const _WorkspaceListSections({
         .copyWith(bottom: BottomPadding.of(context)),
     children: [
       _WorkspaceViewNavigation(data: data),
+      _LocalErasureRecovery(
+        key: ValueKey(
+          data.workspaces.map((workspace) => workspace.id).join('|'),
+        ),
+      ),
       _WorkspaceSearchInput(onChanged: onSearchChanged),
       _WorkspaceListControls(data: data, actions: actions),
       _WorkspaceSourceSections(
@@ -817,6 +823,80 @@ class const _WorkspaceListSections({
     ],
     keyboardDismissBehavior: .onDrag,
   );
+}
+
+class _LocalErasureRecovery extends ConsumerStatefulWidget {
+  const new({super.key});
+
+  @override
+  ConsumerState<_LocalErasureRecovery> createState() =>
+      _LocalErasureRecoveryState();
+}
+
+class _LocalErasureRecoveryState extends ConsumerState<_LocalErasureRecovery> {
+  bool _pending = false;
+  bool _statusError = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_pending && !_statusError) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        if (_pending)
+          const TextLocale(
+            LocaleKeys.workspace_management_delete_cleanup_pending,
+          ),
+        if (_statusError)
+          const TextLocale(
+            LocaleKeys.workspace_management_delete_cleanup_status_error,
+          ),
+        TextButton(
+          onPressed: _busy ? null : () => unawaited(_retry()),
+          child: const TextLocale(LocaleKeys.cloud_workspaces_erasure_retry),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final pending = await ref
+          .read(workspaceAssetErasureProvider)
+          .hasPendingDeletedWorkspaceCleanup();
+      if (!mounted) return;
+      setState(() {
+        _pending = pending;
+        _statusError = false;
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() => _statusError = true);
+    }
+  }
+
+  Future<void> _retry() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final cleanup = ref.read(workspaceAssetErasureProvider);
+    try {
+      await cleanup.flush();
+    } on Object {
+      if (mounted) setState(() => _busy = false);
+
+      return;
+    }
+    await _refresh();
+    if (mounted) setState(() => _busy = false);
+  }
 }
 
 class const _WorkspaceViewNavigation({required final _WorkspaceListData data})

@@ -24,6 +24,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
 
+void _noop() {
+  return;
+}
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -43,16 +47,16 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'one',
-          child: WorkspaceTableScreen(
+          child: const WorkspaceTableScreen(
             workspaceId: 'one',
             tableId: 'table',
-            onBack: () {},
+            onBack: _noop,
             compact: true,
           ),
           overrides: [
             workspaceTableProvider('one', 'table').overrideWith((ref) async {
               if (++attempts == 1) throw StateError('temporary failure');
+
               return table;
             }),
             workspaceRecordQueryProvider.overrideWith(
@@ -69,11 +73,12 @@ void main() {
               ),
             ),
           ],
+          workspaceId: 'one',
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 20));
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(attempts, 1);
     await tester.tap(
       find.byWidgetPredicate(
@@ -82,7 +87,7 @@ void main() {
             widget.identifier == 'workspace_table_retry',
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(find.text('Alice'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -102,11 +107,10 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: 'one',
-          child: WorkspaceTableScreen(
+          child: const WorkspaceTableScreen(
             workspaceId: 'one',
             tableId: 'table',
-            onBack: () {},
+            onBack: _noop,
             compact: true,
           ),
           overrides: [
@@ -128,11 +132,12 @@ void main() {
               ),
             ),
           ],
+          workspaceId: 'one',
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 20));
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Alice'), findsOneWidget);
     expect(find.byType(AuraAppBarWithDrawer), findsNothing);
     expect(
@@ -252,7 +257,7 @@ void main() {
       columns: [
         WorkspaceColumn(id: 'label', name: 'Title'),
         WorkspaceColumn(id: 'flag', name: 'Flag', type: .checkbox),
-        WorkspaceColumn(id: 'third', name: 'Third'),
+        WorkspaceColumn(id: 'third', name: 'Third', type: .money),
       ],
       revision: 1,
       schemaRevision: 1,
@@ -285,6 +290,25 @@ void main() {
     final cell = find.byKey(const ValueKey('workspace_cell_row_label'));
     expect(cell, findsOneWidget);
     expect(tester.getTopLeft(find.byType(DataTable)).dx, lessThan(40));
+    final grid = tester.widget<DataTable>(find.byType(DataTable));
+    expect(grid.horizontalMargin, 0);
+    expect(grid.columnSpacing, 0);
+    expect(grid.columns, hasLength(3));
+    expect(grid.border?.horizontalInside.style, BorderStyle.solid);
+    expect(grid.border?.verticalInside.style, BorderStyle.solid);
+    final flag = find.byKey(const ValueKey('workspace_cell_row_flag'));
+    final third = find.byKey(const ValueKey('workspace_cell_row_third'));
+    expect(tester.getRect(cell).right, closeTo(tester.getRect(flag).left, 1));
+    final flagRect = tester.getRect(flag);
+    await tester.tapAt(.new(flagRect.left + 4, flagRect.center.dy));
+    final _ = await tester.pumpAndSettle();
+    final flagDecoration =
+        tester.widget<Container>(flag).decoration as BoxDecoration?;
+    expect(flagDecoration?.border, isNotNull);
+    final flagFocus = find
+        .ancestor(of: flag, matching: find.byType(Focus))
+        .first;
+    expect(tester.widget<Focus>(flagFocus).focusNode?.hasFocus, isTrue);
     final mouse = await tester.createGesture(kind: .mouse);
     await mouse.addPointer();
     await mouse.moveTo(tester.getCenter(cell));
@@ -301,6 +325,26 @@ void main() {
     final selected =
         tester.widget<Container>(cell).decoration as BoxDecoration?;
     expect(selected?.border, isNotNull);
+    final colors = Theme.of(tester.element(cell)).colorScheme;
+    expect(selected?.color, isNot(colors.primaryContainer));
+    final cellFocus = find
+        .ancestor(of: cell, matching: find.byType(Focus))
+        .first;
+    final searchInput = find.descendant(
+      of: find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraInput &&
+            widget.identifier == 'workspace_record_search',
+      ),
+      matching: find.byType(EditableText),
+    );
+    expect(tester.widget<Focus>(cellFocus).focusNode?.hasFocus, isTrue);
+    tester.widget<EditableText>(searchInput).focusNode.requestFocus();
+    final _ = await tester.pumpAndSettle();
+    expect(tester.widget<Focus>(cellFocus).focusNode?.hasFocus, isFalse);
+    final focusCleared =
+        tester.widget<Container>(cell).decoration as BoxDecoration?;
+    expect(focusCleared?.border, isNull);
     final textStyle = tester.widget<DefaultTextStyle>(
       find.descendant(of: cell, matching: find.byType(DefaultTextStyle)).first,
     );
@@ -319,23 +363,28 @@ void main() {
       findsOneWidget,
     );
     expect(tester.getSize(cell), before);
+    final editing = tester.widget<Container>(cell).decoration as BoxDecoration?;
+    expect(editing?.color, colors.primaryContainer);
+    final editor = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byKey(const ValueKey('workspace_inline_record_value')),
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(editor.focusNode.hasFocus, isTrue);
+    expect(
+      editor.controller.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 'Value'.length),
+    );
     final _ = await tester.sendKeyEvent(.escape);
     final _ = await tester.pumpAndSettle();
-    final flag = find.byKey(const ValueKey('workspace_cell_row_flag'));
     final flagBefore = tester.getSize(flag);
-    await tester.tap(flag);
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.tap(flag);
-    final _ = await tester.pumpAndSettle();
-    expect(find.byType(WorkspaceRecordFields), findsOneWidget);
-    expect(tester.getSize(flag), flagBefore);
     expect(
-      tester.getTopLeft(find.byType(WorkspaceRecordFields)).dy,
-      closeTo(tester.getBottomLeft(flag).dy, 1),
+      find.descendant(of: flag, matching: find.byType(Checkbox)),
+      findsOneWidget,
     );
-    await tester.tap(find.byTooltip('Cancel').last);
-    final _ = await tester.pumpAndSettle();
     expect(find.byType(WorkspaceRecordFields), findsNothing);
+    expect(tester.getSize(flag), flagBefore);
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(400, 400);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -343,34 +392,172 @@ void main() {
     final _ = await tester.pumpAndSettle();
     await tester.dragFrom(const Offset(300, 140), const Offset(-220, 0));
     final _ = await tester.pumpAndSettle();
-    await tester.tap(flag);
+    await tester.tap(third);
     await tester.pump(const Duration(milliseconds: 50));
-    await tester.tap(flag);
+    await tester.tap(third);
     final _ = await tester.pumpAndSettle();
     final popup = tester.getRect(
       find.byKey(const ValueKey('workspace_cell_type_popup')),
     );
+    expect(popup.width, lessThanOrEqualTo(280));
+    expect(popup.height, lessThanOrEqualTo(240));
     expect(popup.left, greaterThanOrEqualTo(0));
     expect(popup.right, lessThanOrEqualTo(400));
     expect(popup.bottom, lessThanOrEqualTo(400));
     await tester.tap(find.byTooltip('Cancel').last);
     final _ = await tester.pumpAndSettle();
-    final left = tester.getTopLeft(flag).dx;
-    await tester.dragFrom(const Offset(300, 140), .new(-left - 60, 0));
-    final _ = await tester.pumpAndSettle();
-    expect(tester.getTopLeft(flag).dx, lessThan(0));
-    final partiallyVisible = Offset(10, tester.getCenter(flag).dy);
-    await tester.tapAt(partiallyVisible);
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.tapAt(partiallyVisible);
-    final _ = await tester.pumpAndSettle();
-    final clamped = tester.getRect(
-      find.byKey(const ValueKey('workspace_cell_type_popup')),
+  });
+  testWidgets('selected cell exposes touch edit and resizable columns', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'source',
+      name: 'Source',
+      labelColumnId: 'label',
+      columns: [
+        WorkspaceColumn(id: 'label', name: 'Name'),
+        WorkspaceColumn(id: 'notes', name: 'Notes'),
+      ],
+      revision: 1,
+      schemaRevision: 1,
     );
-    expect(clamped.left, greaterThanOrEqualTo(0));
-    expect(clamped.right, lessThanOrEqualTo(400));
-    await tester.tap(find.byTooltip('Cancel').last);
+    const record = WorkspaceRecord(
+      id: 'row',
+      tableId: 'source',
+      values: {'label': 'Book', 'notes': 'Read chapter one'},
+      revision: 1,
+    );
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => _noop(),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
     final _ = await tester.pumpAndSettle();
+
+    final cell = find.byKey(const ValueKey('workspace_cell_row_notes'));
+    final before = tester.getSize(cell).width;
+    final heading = find.byKey(
+      const ValueKey('workspace_column_heading_notes'),
+    );
+    final headingRect = tester.getRect(heading);
+    final resize = Offset(headingRect.right - 2, headingRect.center.dy);
+    final mouse = await tester.createGesture(kind: .mouse);
+    await mouse.addPointer(location: resize);
+    await mouse.down(resize);
+    await mouse.moveBy(const Offset(48, 0));
+    await mouse.up();
+    final _ = await tester.pumpAndSettle();
+    expect(tester.getSize(cell).width, greaterThan(before));
+    expect(
+      (await SharedPreferences.getInstance()).getString(
+        'workspace_table_column_widths_one_source',
+      ),
+      contains('"notes":248.0'),
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => _noop(),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(tester.getSize(cell).width, greaterThan(before));
+
+    await tester.tap(cell);
+    final _ = await tester.pumpAndSettle();
+    final edit = find.byIcon(Icons.edit_outlined);
+    expect(edit, findsOneWidget);
+    await tester.tap(edit);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('workspace_inline_record_value')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('arrow keys move cell selection and Enter edits selected cell', (
+    tester,
+  ) async {
+    const table = WorkspaceTable(
+      id: 'keyboard-table',
+      name: 'Keyboard',
+      labelColumnId: 'label',
+      columns: [
+        WorkspaceColumn(id: 'label', name: 'Name'),
+        WorkspaceColumn(id: 'notes', name: 'Notes'),
+      ],
+      revision: 1,
+      schemaRevision: 1,
+    );
+    const record = WorkspaceRecord(
+      id: 'keyboard-row',
+      tableId: 'keyboard-table',
+      values: {'label': 'Book', 'notes': 'Read chapter one'},
+      revision: 1,
+    );
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => _noop(),
+          ),
+          overrides: [
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async =>
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('workspace_cell_keyboard-row_label')),
+    );
+    final _ = await tester.sendKeyEvent(.arrowRight);
+    final _ = await tester.sendKeyEvent(.enter);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<TextField>(
+            find.byKey(const ValueKey('workspace_inline_record_value')),
+          )
+          .controller
+          ?.text,
+      'Read chapter one',
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('restricted reference cells hide stored IDs at both widths', (
     tester,
@@ -764,6 +951,7 @@ void main() {
     await flush();
     await tester.tap(find.byTooltip('Add record').last);
     await flush();
+    expect(find.byType(Dialog), findsNothing);
     final createdTable = (await tables.list()).single;
     var emptyRecords = await tables.records(createdTable.id);
     for (var attempt = 0; attempt < 20 && emptyRecords.isEmpty; attempt++) {
@@ -910,9 +1098,17 @@ void main() {
     expect(find.text('Other book'), findsNothing);
     await tester.tap(find.byTooltip('Add column').last);
     await flush();
+    expect(find.byType(Dialog), findsOneWidget);
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraDropdownSelector &&
+            widget.identifier == 'workspace_column_type',
+      ),
+    );
+    await flush();
     await tester.tap(find.text('Number').last);
     await flush();
-    expect(find.byType(Dialog), findsOneWidget);
     await tester.enterText(input('workspace_column_name'), 'Pages');
     await tester.runAsync(
       () => tester.tap(button('workspace_column_create_confirm')),
@@ -934,6 +1130,69 @@ void main() {
       WorkspaceColumnType.number,
     );
     expect(find.text('Pages'), findsOneWidget);
+    await tester.tap(find.byTooltip('Add column').last);
+    await flush();
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraDropdownSelector &&
+            widget.identifier == 'workspace_column_type',
+      ),
+    );
+    await flush();
+    await tester.tap(find.text('Checkbox').last);
+    await flush();
+    await tester.enterText(input('workspace_column_name'), 'Flag');
+    await tester.runAsync(
+      () => tester.tap(button('workspace_column_create_confirm')),
+    );
+    await flush();
+    for (
+      var attempt = 0;
+      attempt < 20 && find.byType(Dialog).evaluate().isNotEmpty;
+      attempt++
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await flush();
+    }
+    final editedTable = (await tables.list()).single;
+    final flagColumn = editedTable.columns.last;
+    final editedRecord = (await tables.records(editedTable.id)).firstWhere(
+      (record) =>
+          record.values[editedTable.labelColumnId] == 'Saved on selection',
+    );
+    final checkboxCell = find.byKey(
+      ValueKey('workspace_cell_${editedRecord.id}_${flagColumn.id}'),
+    );
+    final checkbox = find.descendant(
+      of: checkboxCell,
+      matching: find.byType(Checkbox),
+    );
+    expect(checkbox, findsOneWidget);
+    final checkboxTap = find.descendant(
+      of: checkboxCell,
+      matching: find.byType(InkWell),
+    );
+    expect(tester.widget<InkWell>(checkboxTap).onTap, isNotNull);
+    expect(find.byIcon(Icons.check_box_outlined), findsOneWidget);
+    await tester.tap(checkboxTap);
+    await flush();
+    expect(find.byType(WorkspaceRecordFields), findsNothing);
+    final errorMessage = tester
+        .widgetList<Tooltip>(
+          find.descendant(of: checkboxCell, matching: find.byType(Tooltip)),
+        )
+        .map((tooltip) => tooltip.message)
+        .join(', ');
+    expect(
+      (await tables.records(editedTable.id))
+          .singleWhere((record) => record.id == editedRecord.id)
+          .values[flagColumn.id],
+      true,
+      reason: errorMessage,
+    );
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetDevicePixelRatio);
     tester.view.physicalSize = const Size(400, 800);

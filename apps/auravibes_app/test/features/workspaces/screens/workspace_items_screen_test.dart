@@ -19,7 +19,6 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -113,7 +112,7 @@ void main() {
       await tester.pumpWidget(
         TestableApp(
           child: const MediaQuery(
-            data: MediaQueryData(textScaler: TextScaler.linear(2)),
+            data: .new(textScaler: .linear(2)),
             child: WorkspaceItemsScreen(workspaceId: 'one'),
           ),
           overrides: [
@@ -142,10 +141,7 @@ void main() {
     );
     final beforeRow = tester.getRect(row);
     final beforeLabel = tester.getRect(find.text('Documents'));
-    final mouse = await tester.createGesture(
-      pointer: 42,
-      kind: PointerDeviceKind.mouse,
-    );
+    final mouse = await tester.createGesture(pointer: 42, kind: .mouse);
     await mouse.addPointer(location: tester.getCenter(row));
     final _ = await tester.pumpAndSettle();
     expect(

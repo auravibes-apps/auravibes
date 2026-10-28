@@ -133,13 +133,13 @@ class const _TableFailure({
       WorkspaceItemFailure(error: error),
       if (screen.compact)
         AuraButton(
-          identifier: 'workspace_table_retry',
           onPressed: () => _TableNavigationActions.refresh(
             ref,
             screen.workspaceId,
             screen.tableId,
           ),
           child: const TextLocale(LocaleKeys.common_reload),
+          identifier: 'workspace_table_retry',
         ),
     ],
   );
@@ -455,17 +455,30 @@ class const _TableBackButton(
 class const _NewRecordButton(
   final _TableBrowser browser,
   final ValueNotifier<bool> settings,
-) extends StatelessWidget {
+) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraIconButton(
-    icon: Icons.add,
-    onPressed: _create,
-    identifier: 'workspace_record_create',
-    tooltip: LocaleKeys.workspace_items_create_record.tr(),
-  );
-  void _create() {
-    settings.value = false;
-    browser.onRecord(null);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final action = WorkspaceTableActions.use(context);
+
+    return AuraIconButton(
+      icon: Icons.add,
+      onPressed: action.pending
+          ? null
+          : () {
+              settings.value = false;
+              unawaited(
+                action.run(
+                  () => createEmptyWorkspaceRecord(
+                    ref,
+                    workspaceId: browser.workspaceId,
+                    table: browser.table,
+                  ),
+                ),
+              );
+            },
+      identifier: 'workspace_record_create',
+      tooltip: LocaleKeys.workspace_items_create_record.tr(),
+    );
   }
 }
 

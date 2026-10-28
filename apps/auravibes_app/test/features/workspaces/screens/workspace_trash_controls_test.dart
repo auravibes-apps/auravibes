@@ -119,7 +119,7 @@ void main() {
         await tester.tap(find.text('Restore').last);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
-        expect((await folders.list()), isEmpty);
+        expect(await folders.list(), isEmpty);
         await tester.tap(button('workspace_history_confirm'));
         final _ = await tester.pumpAndSettle();
         expect(tester.getSize(find.byType(WorkspaceTrashPanel)), before);

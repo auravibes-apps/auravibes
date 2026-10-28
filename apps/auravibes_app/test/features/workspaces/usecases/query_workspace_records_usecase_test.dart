@@ -143,6 +143,7 @@ void main() {
         WorkspaceColumn(id: '', name: 'Instant', type: .timestamp),
         WorkspaceColumn(id: '', name: 'Cost', type: .money),
         WorkspaceColumn(id: '', name: 'Quantity', type: .number),
+        WorkspaceColumn(id: '', name: 'Flag', type: .checkbox),
       ]) {
         table = await tables.saveColumn(table: table, column: column);
       }
@@ -152,7 +153,10 @@ void main() {
       final cost = table.columns
           .firstWhere((column) => column.name == 'Cost')
           .id;
-      final quantity = table.columns.last.id;
+      final quantity = table.columns
+          .firstWhere((column) => column.name == 'Quantity')
+          .id;
+      final flag = table.columns.last.id;
       for (final value in [
         (
           label: 'A',
@@ -236,6 +240,7 @@ void main() {
       expect(signedZero.records, hasLength(2));
       for (final invalid in [
         (column: quantity, value: 'invalid'),
+        (column: flag, value: 'invalid'),
         (column: instant, value: 'invalid'),
         (column: cost, value: '{'),
       ]) {

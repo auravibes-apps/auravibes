@@ -202,16 +202,16 @@ class const _ItemRow(
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPressable(
-    key: ValueKey(item.key),
-    color: context.auraColors.primary,
-    onPressed: owner.selection == null ? onOpen : _select,
-    onLongPress: _select,
     child: ListTile(
       leading: SizedBox(width: 48, child: Center(child: _Leading(this))),
       title: Text(item.name),
       trailing: SizedBox(width: 48, child: _Menu(this)),
       mouseCursor: SystemMouseCursors.click,
     ),
+    color: context.auraColors.primary,
+    key: ValueKey(item.key),
+    onPressed: owner.selection == null ? onOpen : _select,
+    onLongPress: _select,
   );
   void _select() => owner.onSelect?.call(item);
 }

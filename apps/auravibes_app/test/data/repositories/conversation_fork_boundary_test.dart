@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/background_work_repository.dart'
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/workspaces/usecases/project_workspace_chat_context_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -54,6 +55,57 @@ void main() {
       status: .new(status),
       metadata: .new(metadata),
     ),
+  );
+
+  test(
+    'fork history redacts workspace results before and after materialization',
+    () async {
+      await insertSource();
+      final _ = await insertMessage(
+        id: 'user-before-tool',
+        createdAt: .utc(2026),
+        isUser: true,
+        status: .sent,
+      );
+      final _ = await insertMessage(
+        id: 'workspace-tool',
+        createdAt: .utc(2026, 1, 1, 0, 0, 1),
+        isUser: false,
+        status: .sent,
+        metadata: jsonEncode(
+          const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'read-table',
+                name: 'workspace_read_table',
+                argumentsRaw: '{"tableId":"private-table"}',
+                responseRaw: '{"columns":[{"name":"private-schema"}]}',
+                resultStatus: .success,
+              ),
+            ],
+          ).toJson(),
+        ),
+      );
+      final fork = await repository.forkConversation('source');
+      final messages = MessageRepository(database);
+
+      Future<void> expectRedacted() async {
+        final history = await messages.getMessagesByConversation(fork.id);
+        final projected = redactWorkspaceToolHistory(history);
+        final calls = projected.expand(
+          (message) => message.metadata?.toolCalls ?? <MessageToolCallEntity>[],
+        );
+        final call = calls.singleWhere((call) => call.id == 'read-table');
+        expect(call.responseRaw, workspaceContextUnavailable);
+        expect(call.argumentsRaw, isNot(contains('private-table')));
+      }
+
+      await expectRedacted();
+      expect(await repository.deleteConversation('source'), isTrue);
+      final materialized = await messages.getMessagesByConversation(fork.id);
+      expect(materialized.every((message) => !message.isForkReference), isTrue);
+      await expectRedacted();
+    },
   );
 
   test(

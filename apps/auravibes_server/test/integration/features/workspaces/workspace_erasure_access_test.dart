@@ -206,7 +206,13 @@ void main() {
             'after-erasure',
             {'action': 'createFolder', 'name': 'Must remain blocked'},
           ),
-          throwsA(permissionDenied),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.membershipRequired,
+            ),
+          ),
         );
         expect(
           await WorkspaceResource.db.count(

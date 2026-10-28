@@ -18,7 +18,7 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Conversation workspace commands', (sessionBuilder, endpoints) {
-    test('registered cloud command limits context and rejects revocation before replay', () async {
+    test('cloud commands use workspace scope without chat selection', () async {
       final userId = const Uuid().v4().toString();
       final authenticated = sessionBuilder.copyWith(
         authentication: AuthenticationOverride.authenticationInfo(
@@ -178,6 +178,39 @@ void main() {
           updatedAt: now,
         ),
       );
+      final defaultRoot = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'default-root-read',
+        {'action': 'read'},
+      ) as Map;
+      expect(defaultRoot['kind'], 'directory');
+      final directoryTable = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'default-root-item',
+        {'action': 'read', 'tableId': 'items'},
+      );
+      expect(directoryTable.toString(), contains('Items'));
+      expect(directoryTable.toString(), contains('unselected'));
+      await expectLater(
+        const WorkspaceConversationCommands().call(
+          session,
+          turn,
+          'missing-root-item',
+          {'action': 'read', 'id': 'missing'},
+        ),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      await select(null);
+      final rootWithoutSelection =
+          await const WorkspaceConversationCommands().call(
+            session,
+            turn,
+            'root-without-selection',
+            {'action': 'read'},
+          ) as Map;
+      expect(rootWithoutSelection['kind'], 'directory');
       final fileSelection = WorkspaceContextSelection(
         workspaceId: '${workspace.id}',
         conversationId: conversation.stableId,
@@ -185,10 +218,14 @@ void main() {
         kind: 'file',
       );
       await select(fileSelection);
+      var fileFetches = 0;
       final fileCommand = WorkspaceConversationCommands(
         fileReader: WorkspaceConversationFile(
           store: const _FileStore(),
-          fetch: (_, _) async => utf8.encode('hello'),
+          fetch: (_, _) async {
+            fileFetches++;
+            return utf8.encode('hello');
+          },
         ),
       );
       final file = await fileCommand.call(session, turn, 'read-file', {
@@ -196,8 +233,32 @@ void main() {
         'id': 'note',
       }) as Map;
       expect(file['content'], 'hello');
+      expect(fileFetches, 1);
       expect(file['truncated'], isFalse);
       expect(jsonEncode(file), isNot(contains('https://')));
+      final changedAfterFetch = WorkspaceConversationCommands(
+        fileReader: WorkspaceConversationFile(
+          store: const _FileStore(),
+          fetch: (_, _) async => utf8.encode('hello'),
+        ),
+        beforeReadVerification: () async {
+          await WorkspaceObject.db.updateRow(
+            session,
+            object.copyWith(revision: object.revision + 1),
+          );
+        },
+      );
+      try {
+        await expectLater(
+          changedAfterFetch.call(session, turn, 'changed-file', {
+            'action': 'read',
+            'id': 'note',
+          }),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+      } finally {
+        await WorkspaceObject.db.updateRow(session, object);
+      }
       var lateFetch = false;
       final slowSigner = WorkspaceConversationCommands(
         fileReader: WorkspaceConversationFile(
@@ -260,16 +321,18 @@ void main() {
           'action': 'read',
           'id': 'note',
         }),
-        throwsA(isA<CloudWorkspaceException>()),
+        completion(
+          isA<Map>().having((result) => result['content'], 'content', 'hello'),
+        ),
       );
       await select(null);
-      await expectLater(
-        fileCommand.call(session, turn, 'read-revoked-file', {
-          'action': 'read',
-          'id': 'note',
-        }),
-        throwsA(isA<CloudWorkspaceException>()),
-      );
+      final fileWithoutSelection = await fileCommand.call(
+        session,
+        turn,
+        'read-file-without-selection',
+        {'action': 'read', 'id': 'note'},
+      ) as Map;
+      expect(fileWithoutSelection['content'], 'hello');
 
       final selection = WorkspaceContextSelection(
         workspaceId: '${workspace.id}',
@@ -278,76 +341,82 @@ void main() {
         kind: 'table',
         recordIds: ['selected'],
       );
-      final tool = ServerResolvedTool(
-        descriptor: AgentResolvedToolName.builtIn(
-          tableId: workspaceCommandTableId,
-          toolIdentifier: workspaceCommandToolName,
-        ),
-        spec: workspaceCommandToolSpec(),
-      );
-      Future<Object?> run(String id, Map<String, dynamic> arguments) =>
-          const ServerToolExecutorService().call(
-            session,
-            turn,
-            tool,
-            ServerToolRequest(
-              id: id,
-              name: workspaceCommandToolName,
-              arguments: arguments,
-              isCancelled: () async => false,
-            ),
-          );
-      await select(selection, role: 'assistant');
-      await expectLater(
-        run('read-denied', {'action': 'read', 'tableId': 'items'}),
-        throwsA(
-          isA<AgentToolExecutionFailure>().having(
-            (failure) => failure.responseRaw,
-            'safe message',
-            contains('unavailable'),
+      ServerResolvedTool toolFor(String name) {
+        final spec = workspaceToolSpecForName(name)!;
+
+        return ServerResolvedTool(
+          descriptor: AgentResolvedToolName.builtIn(
+            tableId: workspaceCommandTableId,
+            toolIdentifier: name,
           ),
+          spec: spec,
+        );
+      }
+
+      Future<Object?> run(
+        String id,
+        Map<String, dynamic> arguments, {
+        String toolName = workspaceReadTableToolName,
+      }) => const ServerToolExecutorService().call(
+        session,
+        turn,
+        toolFor(toolName),
+        ServerToolRequest(
+          id: id,
+          name: toolName,
+          arguments: {
+            for (final entry in arguments.entries)
+              if (entry.key != 'action') entry.key: entry.value,
+          },
+          isCancelled: () async => false,
         ),
+      );
+      await select(selection, role: 'assistant');
+      expect(
+        jsonEncode(
+          await run('read-with-assistant-selection', {
+            'action': 'read',
+            'tableId': 'items',
+          }),
+        ),
+        contains('unselected'),
       );
       await select(selection, trusted: false);
-      await expectLater(
-        run('forged-user-denied', {'action': 'read', 'tableId': 'items'}),
-        throwsA(
-          isA<AgentToolExecutionFailure>().having(
-            (failure) => failure.responseRaw,
-            'safe message',
-            contains('unavailable'),
-          ),
+      expect(
+        jsonEncode(
+          await run('read-with-untrusted-context-message', {
+            'action': 'read',
+            'tableId': 'items',
+          }),
         ),
+        contains('unselected'),
       );
       await select(selection);
       final read = await run('read', {'action': 'read', 'tableId': 'items'});
       expect(jsonEncode(read), contains('selected'));
-      expect(jsonEncode(read), isNot(contains('unselected')));
-      final selectedRecord = await run('read-selected-record', {
-        'action': 'read',
-        'tableId': 'items',
-        'id': 'selected',
-      }) as Map;
-      expect((selectedRecord['records'] as List), hasLength(1));
-      expect((selectedRecord['records'] as List).single['id'], 'selected');
-      await expectLater(
-        run('read-unselected-record', {
-          'action': 'read',
-          'tableId': 'items',
-          'id': 'unselected',
-        }),
-        throwsA(isA<CloudWorkspaceException>()),
-      );
+      expect(jsonEncode(read), contains('unselected'));
+      for (final recordId in ['selected', 'unselected']) {
+        final record = await const WorkspaceConversationCommands().call(
+          session,
+          turn,
+          'read-internal-record-$recordId',
+          {'action': 'read', 'tableId': 'items', 'id': recordId},
+        ) as Map;
+        expect((record['records'] as List).single['id'], recordId);
+      }
       final edit = {
-        'action': 'updateRecord',
         'tableId': 'items',
         'id': 'selected',
         'revision': 1,
         'schemaRevision': 1,
         'values': {'title': 'Edited'},
       };
-      await run('edit', edit);
-      await run('edit', edit);
+      try {
+        await run('edit', edit, toolName: workspaceUpdateRecordToolName);
+      } on AgentToolExecutionFailure catch (error) {
+        fail('Cloud update failed: ${error.responseRaw}');
+      }
+      await run('edit', edit, toolName: workspaceUpdateRecordToolName);
       final aiRevision = (await WorkspaceRevision.db.find(
         session,
         where: (row) =>
@@ -379,16 +448,7 @@ void main() {
       expect(selected.revision, 2);
       expect(jsonDecode(selected.data)['values']['title'], 'Edited');
       await select(null);
-      await expectLater(
-        run('edit', edit),
-        throwsA(
-          isA<AgentToolExecutionFailure>().having(
-            (failure) => failure.responseRaw,
-            'safe message',
-            contains('unavailable'),
-          ),
-        ),
-      );
+      await run('edit', edit, toolName: workspaceUpdateRecordToolName);
       await select(
         WorkspaceContextSelection(
           workspaceId: '${workspace.id}',
@@ -399,15 +459,14 @@ void main() {
         ),
         trusted: false,
       );
-      await expectLater(
-        run('fork-denied', {'action': 'read', 'tableId': 'items'}),
-        throwsA(
-          isA<AgentToolExecutionFailure>().having(
-            (failure) => failure.responseRaw,
-            'safe message',
-            contains('unavailable'),
-          ),
+      expect(
+        jsonEncode(
+          await run('fork-context-is-not-access', {
+            'action': 'read',
+            'tableId': 'items',
+          }),
         ),
+        contains('unselected'),
       );
 
       final assistant = await ConversationMessage.db.insertRow(
@@ -416,6 +475,7 @@ void main() {
           workspaceId: workspace.id!,
           conversationId: conversation.id!,
           stableId: 'assistant-workspace-tools',
+          turnId: turn.id!,
           role: 'assistant',
           kind: 'text',
           status: 'sent',
@@ -429,17 +489,92 @@ void main() {
         executor: const ServerToolExecutorService().call,
       );
       await select(selection);
+      final loadedWorkspaceTools = await runtime.loadTools(
+        session,
+        workspaceId: workspace.id!,
+        conversationStableId: conversation.stableId,
+      );
+      expect(
+        loadedWorkspaceTools
+            .where((tool) => tool.descriptor.tableId == workspaceCommandTableId)
+            .map((tool) => tool.spec.name),
+        containsAll([
+          ...workspaceReadToolActions.keys,
+          ...workspaceMutationToolActions.keys,
+        ]),
+      );
+      expect(
+        loadedWorkspaceTools.map((tool) => tool.spec.name),
+        isNot(contains('workspace_list_created')),
+      );
+      final directory = await run(
+        'directory-root',
+        const <String, dynamic>{},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      expect(directory['path'], '/');
+      expect(
+        (directory['entries'] as List).any(
+          (item) => (item as Map)['id'] == 'items',
+        ),
+        isTrue,
+      );
+      final search = await run(
+        'directory-name-search',
+        {'nameRegex': r'^Items$'},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      expect((search['entries'] as List), hasLength(1));
+      final pathSearch = await run(
+        'directory-path-search',
+        {'pathRegex': r'^Items$'},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      expect((pathSearch['entries'] as List).single['id'], 'items');
       final dedicatedTable = await run('dedicated-table-read', {
-        'action': 'read',
         'tableId': 'items',
-      }) as Map;
+      }, toolName: workspaceReadTableToolName) as Map;
+      final tableReadProperties =
+          (workspaceReadTableToolSpec().inputJsonSchema['properties']!
+                  as Map<String, Object?>)
+              .keys;
+      expect(tableReadProperties, ['tableId']);
+      for (final (index, rowId) in [')} }', ' '].indexed) {
+        await expectLater(
+          run('invalid-schema-row-id-$index', {
+            'tableId': 'items',
+            'rowId': rowId,
+          }, toolName: workspaceReadTableToolName),
+          throwsA(
+            isA<AgentToolExecutionFailure>().having(
+              (failure) => failure.responseRaw,
+              'safe argument failure',
+              contains('invalid'),
+            ),
+          ),
+        );
+      }
+      await expectLater(
+        run('invalid-empty-row-target', {
+          'tableId': '',
+          'revision': 1,
+          'schemaRevision': 1,
+          'values': <String, Object?>{},
+        }, toolName: workspaceAddRowToolName),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe argument failure',
+            contains('invalid'),
+          ),
+        ),
+      );
       final dedicatedRow = await run('dedicated-row-create', {
-        'action': 'createRecord',
         'tableId': 'items',
         'revision': dedicatedTable['revision'],
         'schemaRevision': dedicatedTable['schemaRevision'],
         'values': {'title': 'Initial dedicated value'},
-      }) as Map;
+      }, toolName: workspaceAddRowToolName) as Map;
       final dedicatedRowId = dedicatedRow['id'] as String;
       await select(
         WorkspaceContextSelection(
@@ -519,7 +654,7 @@ void main() {
       ) as Map;
       expect(projectedUpdateArguments['values'], isEmpty);
       expect(projectedUpdateArguments['id'], dedicatedRowId);
-      expect(projectedUpdate[2]['content'], contains('Dedicated update'));
+      expect(projectedUpdate[2]['content'], contains(dedicatedRowId));
       expect(
         projectedUpdate[2]['content'],
         isNot(contains('raw tool content')),
@@ -562,6 +697,10 @@ void main() {
         'schemaRevision': 1,
         'values': <String, Object?>{},
       });
+      expect(
+        historicalUpdate[2]['content'],
+        workspaceContextUnavailable,
+      );
 
       final forgedUpdate = await const WorkspacePromptProjection().call(
         session,
@@ -619,31 +758,252 @@ void main() {
           kind: 'directory',
         ),
       );
+      final emptyWorkspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            session,
+            name: 'Empty',
+            ownerUserId: userId,
+            now: now,
+          );
+      final emptyConversation = await Conversation.db.insertRow(
+        session,
+        Conversation(
+          workspaceId: emptyWorkspace.id!,
+          stableId: 'empty-chat',
+          isPinned: false,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final emptyTurn = await ConversationTurn.db.insertRow(
+        session,
+        ConversationTurn(
+          workspaceId: emptyWorkspace.id!,
+          conversationId: emptyConversation.id!,
+          requestId: 'empty-turn',
+          requestHash: 'fixture',
+          initiatorUserId: userId,
+          status: 'running',
+          revision: 1,
+          acceptedSequence: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await endpoints.workspaceContext.save(
+        authenticated,
+        emptyWorkspace.id!,
+        emptyConversation.stableId,
+        'empty-selection',
+        jsonEncode(
+          WorkspaceContextSelection(
+            workspaceId: '${emptyWorkspace.id}',
+            conversationId: emptyConversation.stableId,
+            itemId: '',
+            kind: 'directory',
+          ).toJson(),
+        ),
+      );
+      final emptyRoot = await const WorkspaceConversationCommands().call(
+        session,
+        emptyTurn,
+        'read-empty-root',
+        {'action': 'read'},
+      ) as Map;
+      expect(emptyRoot['items'], isEmpty);
       final root = await const WorkspaceConversationCommands().call(
         session,
         turn,
         'read-directory-root',
         {'action': 'read'},
       );
-      expect(root, {'kind': 'directory', 'id': '', 'parentId': null});
+      final rootItems = (root as Map)['items'] as List;
+      expect(rootItems, contains(containsPair('id', 'items')));
+      expect(rootItems, isNot(contains(containsPair('id', 'selected'))));
+      await patch([
+        WorkspacePatchOperation(
+          operation: .create,
+          resourceKind: .folder,
+          resourceId: 'items',
+          data: jsonEncode({'name': 'Same ID folder'}),
+          fieldMask: [],
+        ),
+      ]);
+      await WorkspaceResource.db.insertRow(
+        session,
+        WorkspaceResource(
+          workspaceId: workspace.id!,
+          resourceKind: .file,
+          resourceId: 'items',
+          data: jsonEncode({'name': 'Same ID file', 'assetId': '${object.id}'}),
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final unsharedTable = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'read-unshared-table',
+        {'action': 'read', 'tableId': 'items'},
+      ) as Map;
+      final unsharedRecords = (unsharedTable['records'] as List).cast<Map>();
+      expect(
+        unsharedRecords.map((record) => record['id']),
+        contains('unselected'),
+      );
+      expect(
+        unsharedRecords.map((record) => record['id']),
+        contains(dedicatedRowId),
+      );
       await expectLater(
         const WorkspaceConversationCommands().call(
           session,
           turn,
-          'read-unshared-table',
-          {'action': 'read', 'tableId': 'items'},
+          'ambiguous-item',
+          {'action': 'read', 'id': 'items'},
         ),
-        throwsA(isA<Object>()),
+        throwsA(isA<CloudWorkspaceException>()),
       );
+      final collisionChild = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'same-id-parent',
+        {'action': 'createFolder', 'parentId': 'items', 'name': 'Nested'},
+      ) as Map;
+      expect(collisionChild['parentId'], 'items');
+      await patch([
+        WorkspacePatchOperation(
+          operation: .create,
+          resourceKind: .table,
+          resourceId: 'directory-edit-table',
+          data: jsonEncode({
+            'name': 'Directory edit',
+            'labelColumnId': 'label',
+            'schemaRevision': 1,
+            'columns': [
+              {'id': 'label', 'name': 'Label', 'type': 'text'},
+            ],
+          }),
+          fieldMask: [],
+        ),
+      ]);
+      final directoryCommands = const WorkspaceConversationCommands();
+      await directoryCommands.call(
+        session,
+        turn,
+        'directory-save-column',
+        {
+          'action': 'saveColumn',
+          'tableId': 'directory-edit-table',
+          'revision': 1,
+          'schemaRevision': 1,
+          'column': {'id': '', 'name': 'Details', 'type': 'text'},
+        },
+      );
+      final editedTable = await directoryCommands.call(
+        session,
+        turn,
+        'directory-read-edited',
+        {'action': 'read', 'tableId': 'directory-edit-table'},
+      ) as Map;
+      final directoryView = await directoryCommands.call(
+        session,
+        turn,
+        'directory-create-view',
+        {
+          'action': 'createView',
+          'tableId': 'directory-edit-table',
+          'revision': editedTable['revision'],
+          'schemaRevision': editedTable['schemaRevision'],
+          'name': 'Directory view',
+          'columnIds': ['label'],
+        },
+      ) as Map;
+      expect(directoryView['kind'], 'view');
+      await patch([
+        WorkspacePatchOperation(
+          operation: .create,
+          resourceKind: .folder,
+          resourceId: 'existing-folder',
+          data: jsonEncode({'name': 'Existing'}),
+          fieldMask: [],
+        ),
+      ]);
+      final folderCommand = const WorkspaceConversationCommands();
+      final existingFolder = await folderCommand.call(
+        session,
+        turn,
+        'read-existing-folder',
+        {'action': 'read', 'id': 'existing-folder'},
+      ) as Map;
+      await folderCommand.call(session, turn, 'create-child-folder', {
+        'action': 'createFolder',
+        'parentId': 'existing-folder',
+        'name': 'Child',
+      });
+      await folderCommand.call(session, turn, 'rename-existing-folder', {
+        'action': 'renameFolder',
+        'id': 'existing-folder',
+        'name': 'Renamed',
+        'revision': existingFolder['revision'],
+      });
+      final renamed = await folderCommand.call(
+        session,
+        turn,
+        'read-renamed-folder',
+        {'action': 'read', 'id': 'existing-folder'},
+      ) as Map;
+      expect(renamed['name'], 'Renamed');
+      expect(renamed['items'], contains(containsPair('name', 'Child')));
+      final refreshedFolder =
+          await WorkspaceConversationCommands(
+                beforeReadVerification: () => patch([
+                  WorkspacePatchOperation(
+                    operation: .update,
+                    resourceKind: .folder,
+                    resourceId: 'existing-folder',
+                    expectedRevision: renamed['revision'] as int,
+                    data: jsonEncode({'name': 'Refreshed', 'parentId': null}),
+                    fieldMask: [],
+                  ),
+                ]),
+              ).call(session, turn, 'read-refreshed-folder', {
+                'action': 'read',
+                'id': 'existing-folder',
+              })
+              as Map;
+      expect(refreshedFolder['name'], 'Refreshed');
+      expect(refreshedFolder['items'], contains(containsPair('name', 'Child')));
+      final dedicatedFolderTool =
+          (await runtime.loadTools(
+            session,
+            workspaceId: workspace.id!,
+            conversationStableId: conversation.stableId,
+          )).singleWhere(
+            (tool) => tool.spec.name == workspaceCreateFolderToolName,
+          );
+      expect(dedicatedFolderTool.spec.inputJsonSchema['required'], ['name']);
+      final pendingFolder = await runtime.handle(
+        session,
+        turn: turn,
+        messageId: assistant.id!,
+        request: const ServerToolRequest(
+          id: 'pending-dedicated-folder',
+          name: workspaceCreateFolderToolName,
+          arguments: {'name': 'Needs folder approval'},
+        ),
+      );
+      expect(pendingFolder, ServerToolDisposition.awaitingApproval);
       final pending = await runtime.handle(
         session,
         turn: turn,
         messageId: assistant.id!,
         request: const ServerToolRequest(
           id: 'pending-create',
-          name: workspaceCommandToolName,
+          name: workspaceCreateTableToolName,
           arguments: {
-            'action': 'createTable',
             'name': 'Needs approval',
             'labelName': 'Title',
           },
@@ -660,20 +1020,52 @@ void main() {
           eventLimit: 0,
         ),
       );
-      expect(before.pages.single.resources, hasLength(1));
+      expect(before.pages.single.resources, hasLength(2));
       final _ = await Conversation.db.updateRow(
         session,
         conversation.copyWith(toolAccessMode: 'allow_all'),
       );
+      final readToolWrite = await runtime.handle(
+        session,
+        turn: turn,
+        messageId: assistant.id!,
+        request: const ServerToolRequest(
+          id: 'directory-write-rejected',
+          name: workspaceReadDirectoryToolName,
+          arguments: {
+            'action': 'createTable',
+            'name': 'Must not be created',
+            'labelName': 'Title',
+          },
+        ),
+      );
+      expect(readToolWrite, ServerToolDisposition.completed);
+      final rejectedCall = (await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id) &
+            row.stableId.equals('directory-write-rejected'),
+      ))!;
+      expect(rejectedCall.status, isNot('success'));
+      final afterRejectedWrite = await endpoints.workspaceState.read(
+        authenticated,
+        ReadWorkspaceStateRequest(
+          workspaceId: workspace.id!,
+          pages: [
+            WorkspaceResourcePageRequest(resourceKind: .table, limit: 100),
+          ],
+          eventLimit: 0,
+        ),
+      );
+      expect(afterRejectedWrite.pages.single.resources, hasLength(2));
       final created = await runtime.handle(
         session,
         turn: turn,
         messageId: assistant.id!,
         request: const ServerToolRequest(
           id: 'created-table',
-          name: workspaceCommandToolName,
+          name: workspaceCreateTableToolName,
           arguments: {
-            'action': 'createTable',
             'name': 'Created table',
             'labelName': 'Title',
           },
@@ -689,10 +1081,20 @@ void main() {
       expect(tableCall.status, 'success');
       final tableId =
           (jsonDecode(tableCall.resultJson!) as Map)['id'] as String;
-      final tableRead = await run('read-created', {
-        'action': 'read',
-        'tableId': tableId,
-      }) as Map;
+      final discoveredItems = await run(
+        'created-table-discovery',
+        const <String, dynamic>{},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      final discoveredTableId = (discoveredItems['entries'] as List)
+          .cast<Map>()
+          .singleWhere((item) => item['name'] == 'Created table')['id'];
+      expect(discoveredTableId, tableId);
+      final tableRead = await run(
+        'read-created-schema',
+        {'tableId': discoveredTableId},
+        toolName: workspaceReadTableToolName,
+      ) as Map;
       final label = (tableRead['columns'] as List).first['id'] as String;
       final added = await runtime.handle(
         session,
@@ -700,9 +1102,8 @@ void main() {
         messageId: assistant.id!,
         request: ServerToolRequest(
           id: 'created-record',
-          name: workspaceCommandToolName,
+          name: workspaceAddRowToolName,
           arguments: {
-            'action': 'createRecord',
             'tableId': tableId,
             'revision': 1,
             'schemaRevision': 1,
@@ -724,9 +1125,8 @@ void main() {
         messageId: assistant.id!,
         request: ServerToolRequest(
           id: 'unrelated-record',
-          name: workspaceCommandToolName,
+          name: workspaceAddRowToolName,
           arguments: {
-            'action': 'createRecord',
             'tableId': tableId,
             'revision': 1,
             'schemaRevision': 1,
@@ -737,15 +1137,16 @@ void main() {
       expect(unrelatedAdded, ServerToolDisposition.completed);
       Future<Map<String, dynamic>> command(
         String id,
-        Map<String, dynamic> arguments,
-      ) async {
+        Map<String, dynamic> arguments, {
+        String toolName = workspaceReadTableToolName,
+      }) async {
         final _ = await runtime.handle(
           session,
           turn: turn,
           messageId: assistant.id!,
           request: ServerToolRequest(
             id: id,
-            name: workspaceCommandToolName,
+            name: toolName,
             arguments: arguments,
           ),
         );
@@ -760,12 +1161,11 @@ void main() {
       }
 
       await command('cloud-column', {
-        'action': 'saveColumn',
         'tableId': tableId,
         'revision': 1,
         'schemaRevision': 1,
         'column': {'id': '', 'name': 'Amount', 'type': 'number'},
-      });
+      }, toolName: workspaceSaveColumnToolName);
       final changedTable = await run('read-columns', {
         'action': 'read',
         'tableId': tableId,
@@ -773,19 +1173,33 @@ void main() {
       final amount = (changedTable['columns'] as List).singleWhere(
         (column) => column['name'] == 'Amount',
       )['id'];
-      final view = await command('cloud-view', {
-        'action': 'createView',
+      await command('cloud-column-rename', {
         'tableId': tableId,
-        'revision': 2,
-        'schemaRevision': 2,
+        'revision': changedTable['revision'],
+        'schemaRevision': changedTable['schemaRevision'],
+        'column': {'id': amount, 'name': 'Balance', 'type': 'number'},
+      }, toolName: workspaceSaveColumnToolName);
+      final renamedColumnTable = await run('read-renamed-column', {
+        'action': 'read',
+        'tableId': tableId,
+      }) as Map;
+      expect(
+        (renamedColumnTable['columns'] as List).singleWhere(
+          (column) => column['id'] == amount,
+        )['name'],
+        'Balance',
+      );
+      final view = await command('cloud-view', {
+        'tableId': tableId,
+        'revision': renamedColumnTable['revision'],
+        'schemaRevision': renamedColumnTable['schemaRevision'],
         'name': 'Overview',
         'columnIds': [label],
-      });
+      }, toolName: workspaceCreateViewToolName);
       final editedView = await command('cloud-view-edit', {
-        'action': 'saveView',
         'id': view['id'],
         'revision': 1,
-        'schemaRevision': 2,
+        'schemaRevision': renamedColumnTable['schemaRevision'],
         'name': 'Updated overview',
         'bindings': {'amount': amount},
         'definition': {
@@ -798,109 +1212,91 @@ void main() {
             },
           ],
         },
-      });
+      }, toolName: workspaceSaveViewToolName);
       expect(editedView['revision'], 2);
       expect(
         (await run('view-read', {
-          'action': 'read',
-          'id': view['id'],
-        })).toString(),
+          'itemId': view['id'],
+        }, toolName: workspaceReadItemToolName)).toString(),
         contains('Updated cloud surface'),
       );
       await command('cloud-table-rename', {
-        'action': 'renameTable',
         'tableId': tableId,
-        'revision': 2,
-        'schemaRevision': 2,
+        'revision': renamedColumnTable['revision'],
+        'schemaRevision': renamedColumnTable['schemaRevision'],
         'name': 'Updated table',
-      });
-      final folder = await command('cloud-folder', {
-        'action': 'createFolder',
-        'name': 'Group',
-      });
+      }, toolName: workspaceRenameTableToolName);
+      final folderDisposition = await runtime.handle(
+        session,
+        turn: turn,
+        messageId: assistant.id!,
+        request: const ServerToolRequest(
+          id: 'cloud-folder',
+          name: workspaceCreateFolderToolName,
+          arguments: {'name': 'Group'},
+        ),
+      );
+      expect(folderDisposition, ServerToolDisposition.completed);
+      final folderCall = (await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id) &
+            row.stableId.equals('cloud-folder'),
+      ))!;
+      expect(folderCall.status, 'success', reason: folderCall.resultJson);
+      final folder = jsonDecode(folderCall.resultJson!) as Map<String, dynamic>;
       await command('cloud-folder-rename', {
-        'action': 'renameFolder',
         'id': folder['id'],
         'revision': 1,
         'name': 'Updated group',
-      });
-      final createdItems = await run('list-created', {
-        'action': 'listCreated',
-      }) as Map;
-      final listed = (createdItems['items'] as List).cast<Map>();
+      }, toolName: workspaceRenameFolderToolName);
+      final directoryPath = await run(
+        'directory-exact-path',
+        {'path': 'Updated group'},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      expect(directoryPath['path'], 'Updated group');
+      expect(directoryPath['entries'], isEmpty);
+      final rootDirectory = await run(
+        'directory-after-edits',
+        const {},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      final entries = (rootDirectory['entries'] as List).cast<Map>();
       expect(
-        listed.map((item) => item['id']),
+        entries.map((item) => item['id']),
         containsAll([tableId, view['id'], folder['id']]),
       );
       expect(
-        listed.singleWhere((item) => item['id'] == folder['id'])['name'],
+        entries.singleWhere((item) => item['id'] == folder['id'])['name'],
         'Updated group',
       );
-      expect(listed.map((item) => item['id']), isNot(contains('items')));
-      expect(listed.every((item) => !item.containsKey('parentId')), isTrue);
-      expect(createdItems['nextCursor'], isNull);
-      final pagingCalls = <ConversationToolCall>[];
-      for (var index = 0; index < 101; index++) {
-        pagingCalls.add(
-          await ConversationToolCall.db.insertRow(
-            session,
-            ConversationToolCall(
-              workspaceId: workspace.id!,
-              conversationId: conversation.id!,
-              turnId: turn.id!,
-              messageId: assistant.id!,
-              stableId: '000-page-${index.toString().padLeft(3, '0')}',
-              name: workspaceCommandToolName,
-              argumentsJson: '{"action":"read"}',
-              argumentsDigest: 'fixture',
-              status: 'success',
-              resultJson: '{}',
-              revision: 1,
-              createdAt: now,
-              updatedAt: now,
-            ),
-          ),
-        );
-      }
-      try {
-        final page = await run('list-first-page', {
-          'action': 'listCreated',
-        }) as Map;
-        expect(page['items'], isEmpty);
-        expect(page['nextCursor'], '000-page-099');
-        final nextPage = await run('list-second-page', {
-          'action': 'listCreated',
-          'cursor': page['nextCursor'],
-        }) as Map;
-        expect(
-          (nextPage['items'] as List).map((item) => (item as Map)['id']),
-          containsAll([tableId, view['id'], folder['id']]),
-        );
-        expect(nextPage['nextCursor'], isNull);
-      } finally {
-        for (final call in pagingCalls) {
-          await ConversationToolCall.db.deleteRow(session, call);
-        }
-      }
-      final beyondEnd = await run('list-created-cursor', {
-        'action': 'listCreated',
-        'cursor': 'zzzzzzzzzzzzzzzz',
-      }) as Map;
-      expect(beyondEnd['items'], isEmpty);
-      expect(beyondEnd['nextCursor'], isNull);
-      await expectLater(
-        run('list-created-invalid-cursor', {
-          'action': 'listCreated',
-          'cursor': '',
-        }),
-        throwsA(
-          isA<AgentToolExecutionFailure>().having(
-            (failure) => failure.responseRaw,
-            'safe message',
-            contains('invalid'),
-          ),
-        ),
+      expect(
+        entries.singleWhere((item) => item['id'] == view['id'])['kind'],
+        'view',
       );
+      for (final request in [
+        ServerToolRequest(
+          id: 'persisted-table-read',
+          name: workspaceReadTableToolName,
+          arguments: {'tableId': tableId},
+        ),
+        ServerToolRequest(
+          id: 'persisted-folder-read',
+          name: workspaceReadItemToolName,
+          arguments: {'itemId': folder['id']},
+        ),
+      ]) {
+        expect(
+          await runtime.handle(
+            session,
+            turn: turn,
+            messageId: assistant.id!,
+            request: request,
+          ),
+          ServerToolDisposition.completed,
+        );
+      }
       final owner = (await WorkspaceMember.db.findFirstRow(
         session,
         where: (row) =>
@@ -916,9 +1312,14 @@ void main() {
       );
       try {
         await expectLater(
-          revokeDuringRead.call(session, turn, 'list-revoked-during-read', {
-            'action': 'listCreated',
-          }),
+          revokeDuringRead.call(
+            session,
+            turn,
+            'directory-revoked-during-read',
+            {
+              'action': 'readDirectory',
+            },
+          ),
           throwsA(isA<CloudWorkspaceException>()),
         );
       } finally {
@@ -933,7 +1334,7 @@ void main() {
               'id': 'created-record',
               'type': 'function',
               'function': {
-                'name': workspaceCommandToolName,
+                'name': workspaceAddRowToolName,
                 'arguments': '{"values":"Raw argument secret"}',
               },
             },
@@ -950,22 +1351,11 @@ void main() {
         turn,
         history,
       );
-      expect(jsonEncode(fresh), contains('Current selected value'));
+      expect(jsonEncode(fresh), isNot(contains('Current selected value')));
       final createResult = jsonDecode(rowCall.resultJson!) as Map;
       final projectedResult = jsonDecode(fresh[2]['content'] as String) as Map;
       final projectedCurrent = projectedResult['current'] as Map;
-      final projectedRecords = (projectedCurrent['records'] as List)
-          .cast<Map>();
-      expect(projectedRecords, hasLength(1));
-      expect(projectedRecords.single['id'], createResult['id']);
-      expect(
-        projectedRecords.single['values'][label],
-        'Current selected value',
-      );
-      expect(
-        jsonEncode(projectedRecords),
-        isNot(contains('Unrelated selected value')),
-      );
+      expect(projectedCurrent, createResult);
       final projectedCall = (fresh[1]['tool_calls'] as List).single as Map;
       expect(
         jsonDecode((projectedCall['function'] as Map)['arguments'] as String),
@@ -986,7 +1376,10 @@ void main() {
         turn,
         history,
       );
-      expect(failedProjection[2]['content'], contains('Read it again'));
+      final failed =
+          jsonDecode(failedProjection[2]['content'] as String) as Map;
+      expect(failed['code'], 'conflict');
+      expect(failed['nextAction'], contains('Read the item again'));
       expect(failedProjection[2]['content'], isNot(contains('secret')));
       await ConversationToolCall.db.updateRow(session, rowCall);
       final old = await const WorkspacePromptProjection().call(
@@ -1002,10 +1395,15 @@ void main() {
         jsonDecode((oldCall['function'] as Map)['arguments'] as String),
         {'action': 'read'},
       );
+      expect(old[2]['content'], workspaceContextUnavailable);
       await select(null);
-      await expectLater(
-        run('list-created-revoked', {'action': 'listCreated'}),
-        throwsA(isA<AgentToolExecutionFailure>()),
+      expect(
+        await run(
+          'directory-no-context-gate',
+          const {},
+          toolName: workspaceReadDirectoryToolName,
+        ),
+        isA<Map>(),
       );
       final revoked = await const WorkspacePromptProjection().call(
         session,
@@ -1013,7 +1411,7 @@ void main() {
         history,
       );
       expect(jsonEncode(revoked), isNot(contains('Current selected value')));
-      expect(jsonEncode(revoked), contains(workspaceContextUnavailable));
+      expect(jsonEncode(revoked), isNot(contains(workspaceContextUnavailable)));
       final revokedUpdate = await const WorkspacePromptProjection().call(
         session,
         turn,
@@ -1054,6 +1452,7 @@ void main() {
           'values': <String, Object?>{},
         },
       );
+      expect(revokedUpdate[2]['content'], workspaceContextUnavailable);
       expect(
         jsonEncode(revokedUpdate),
         isNot(contains('revoked result is not trusted')),
@@ -1082,33 +1481,37 @@ void main() {
             );
           },
         );
-        await expectLater(
-          command.call(session, turn, 'selection-race-$replace', {
+        final renamed = await command.call(
+          session,
+          turn,
+          'selection-race-$replace',
+          {
             'action': 'renameTable',
             'tableId': 'items',
             'id': 'items',
             'revision': beforeRace.revision,
             'schemaRevision':
                 (jsonDecode(beforeRace.data) as Map)['schemaRevision'],
-            'name': 'Unauthorized race edit',
-          }),
-          throwsA(
-            isA<CloudWorkspaceException>().having(
-              (error) => error.code,
-              'code',
-              CloudWorkspaceErrorCode.permissionDenied,
-            ),
-          ),
-        );
+            'name': 'Authorized race edit $replace',
+          },
+        ) as Map;
+        expect(renamed['id'], 'items');
         final afterRace = await WorkspaceResource.db.findById(
           session,
           beforeRace.id!,
         );
-        expect(afterRace!.revision, beforeRace.revision);
-        expect(afterRace.data, beforeRace.data);
+        expect(afterRace!.revision, beforeRace.revision + 1);
+        expect(afterRace.data, contains('Authorized race edit $replace'));
       }
 
       for (final replace in [false, true]) {
+        final sourceTable = (await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(workspace.id!) &
+              row.resourceKind.equals(.table) &
+              row.resourceId.equals(tableId),
+        ))!;
         final beforeView = (await WorkspaceView.db.findFirstRow(
           session,
           where: (row) =>
@@ -1128,35 +1531,33 @@ void main() {
             await select(replace ? selection : null);
           },
         );
-        await expectLater(
-          command.call(session, turn, 'view-race-$replace', {
+        final saved = await command.call(
+          session,
+          turn,
+          'view-race-$replace',
+          {
             'action': 'saveView',
             'id': beforeView.stableId,
             'revision': beforeView.revision,
-            'schemaRevision': 2,
-            'name': 'Denied race edit',
+            'schemaRevision':
+                (jsonDecode(sourceTable.data) as Map)['schemaRevision'],
+            'name': 'Authorized race edit $replace',
             'bindings': {'amount': amount},
             'definition': {
               'version': 1,
               'components': [
-                {'id': 'root', 'component': 'Text', 'text': 'Denied race'},
+                {'id': 'root', 'component': 'Text', 'text': 'Authorized race'},
               ],
             },
-          }),
-          throwsA(
-            isA<CloudWorkspaceException>().having(
-              (error) => error.code,
-              'code',
-              CloudWorkspaceErrorCode.permissionDenied,
-            ),
-          ),
-        );
+          },
+        ) as Map;
+        expect(saved['id'], beforeView.stableId);
         final afterView = await WorkspaceView.db.findById(
           session,
           beforeView.id!,
         );
-        expect(afterView!.revision, beforeView.revision);
-        expect(afterView.data, beforeView.data);
+        expect(afterView!.revision, beforeView.revision + 1);
+        expect(afterView.data, contains('Authorized race edit $replace'));
       }
 
       final rootSelection = WorkspaceContextSelection(
@@ -1179,21 +1580,13 @@ void main() {
           await select(null);
         },
       );
-      await expectLater(
-        cachedReplay.call(
-          session,
-          turn,
-          'cached-protected-write',
-          cachedCreate,
-        ),
-        throwsA(
-          isA<CloudWorkspaceException>().having(
-            (error) => error.code,
-            'code',
-            CloudWorkspaceErrorCode.permissionDenied,
-          ),
-        ),
-      );
+      final replay = await cachedReplay.call(
+        session,
+        turn,
+        'cached-protected-write',
+        cachedCreate,
+      ) as Map;
+      expect(replay['id'], originalCreate['id']);
       final originalFolder = (await WorkspaceResource.db.findFirstRow(
         session,
         where: (row) =>
@@ -1271,31 +1664,70 @@ void main() {
           updatedAt: now,
         ),
       );
-      Future<Object?> memberRun(String id, Map<String, dynamic> arguments) =>
-          const ServerToolExecutorService().call(
-            session,
-            memberTurn,
-            tool,
-            ServerToolRequest(
-              id: id,
-              name: workspaceCommandToolName,
-              arguments: arguments,
-              isCancelled: () async => false,
-            ),
-          );
-      await expectLater(
-        memberRun('no-inherited-consent', {
-          'action': 'read',
-          'tableId': 'items',
-        }),
-        throwsA(
-          isA<AgentToolExecutionFailure>().having(
-            (failure) => failure.responseRaw,
-            'safe message',
-            contains('unavailable'),
-          ),
+      Future<Object?> memberRun(
+        String id,
+        Map<String, dynamic> arguments, {
+        String toolName = workspaceReadTableToolName,
+      }) => const ServerToolExecutorService().call(
+        session,
+        memberTurn,
+        toolFor(toolName),
+        ServerToolRequest(
+          id: id,
+          name: toolName,
+          arguments: {
+            for (final entry in arguments.entries)
+              if (entry.key != 'action') entry.key: entry.value,
+          },
+          isCancelled: () async => false,
         ),
       );
+      final defaultMemberRead = await memberRun('no-inherited-consent', {
+        'action': 'read',
+        'tableId': 'items',
+      }) as Map;
+      expect(defaultMemberRead['records'], hasLength(3));
+      final tableGrantRevokedDuringRead = WorkspaceConversationCommands(
+        beforeReadVerification: () => setAccess(null),
+      );
+      await expectLater(
+        tableGrantRevokedDuringRead.call(
+          session,
+          memberTurn,
+          'member-table-grant-revoked-during-read',
+          {'action': 'read', 'tableId': 'items'},
+        ),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      await setAccess('edit');
+      final visibleRoot = await const WorkspaceConversationCommands().call(
+        session,
+        memberTurn,
+        'member-root-before-grant-revocation',
+        {'action': 'read'},
+      ) as Map;
+      expect(
+        (visibleRoot['items'] as List).whereType<Map>().any(
+          (item) => item['id'] == 'items' && item['kind'] == 'table',
+        ),
+        isTrue,
+      );
+      final grantRevokedDuringRead = WorkspaceConversationCommands(
+        beforeReadVerification: () => setAccess(null),
+      );
+      final refreshedRoot = await grantRevokedDuringRead.call(
+        session,
+        memberTurn,
+        'member-root-grant-revoked-during-read',
+        {'action': 'read'},
+      ) as Map;
+      expect(
+        (refreshedRoot['items'] as List).whereType<Map>().any(
+          (item) => item['id'] == 'items' && item['kind'] == 'table',
+        ),
+        isFalse,
+      );
+      await setAccess('edit');
       final _ = await endpoints.workspaceContext.save(
         memberAuth,
         workspace.id!,
@@ -1311,17 +1743,24 @@ void main() {
         contains('Edited'),
       );
       final memberEdit = {
-        'action': 'updateRecord',
         'tableId': 'items',
         'id': 'selected',
         'revision': 2,
         'schemaRevision': 1,
         'values': {'title': 'Member edit'},
       };
-      await memberRun('member-edit', memberEdit);
+      await memberRun(
+        'member-edit',
+        memberEdit,
+        toolName: workspaceUpdateRecordToolName,
+      );
       await setAccess('read');
       await expectLater(
-        memberRun('member-edit', memberEdit),
+        memberRun(
+          'member-edit',
+          memberEdit,
+          toolName: workspaceUpdateRecordToolName,
+        ),
         throwsA(
           isA<AgentToolExecutionFailure>().having(
             (failure) => failure.responseRaw,
@@ -1348,6 +1787,186 @@ void main() {
           ),
         ),
       );
+      await endpoints.workspaceContext.save(
+        memberAuth,
+        workspace.id!,
+        conversation.stableId,
+        'member-root-selection',
+        jsonEncode(rootSelection.toJson()),
+      );
+      final memberRoot = await memberRun(
+        'member-root-hidden',
+        const {},
+        toolName: workspaceReadDirectoryToolName,
+      ) as Map;
+      expect(
+        (memberRoot['entries'] as List).whereType<Map>().any(
+          (item) => item['id'] == 'items' && item['kind'] == 'table',
+        ),
+        isFalse,
+      );
+
+      for (final id in [
+        'persisted-table-read',
+        'persisted-folder-read',
+      ]) {
+        final legacy = (await ConversationToolCall.db.findFirstRow(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(workspace.id!) & row.stableId.equals(id),
+        ))!;
+        expect(legacy.resultJson, isNot(contains('Updated table')));
+        await ConversationToolCall.db.updateRow(
+          session,
+          legacy.copyWith(
+            resultJson: jsonEncode({
+              'id': tableId,
+              'name': 'Updated table',
+              'items': [
+                {'id': tableId, 'name': 'Updated group'},
+              ],
+            }),
+          ),
+        );
+      }
+      final receiptFixture = (await ConversationToolCall.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.stableId.equals('persisted-table-read'),
+      ))!;
+      await ConversationToolCall.db.insertRow(
+        session,
+        receiptFixture.copyWith(
+          id: null,
+          stableId: 'visible-mutation-receipt',
+          name: workspaceUpdateRecordToolName,
+          status: 'success',
+          argumentsJson: jsonEncode({'secret': 'private argument'}),
+          resultJson: jsonEncode({
+            'kind': 'record',
+            'tableId': 'items',
+            'id': 'private row',
+          }),
+        ),
+      );
+      final existingView = (await WorkspaceView.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.stableId.equals(view['id'] as String),
+      ))!;
+      final viewData = jsonDecode(existingView.data) as Map<String, dynamic>;
+      viewData['tableId'] = 'items';
+      await WorkspaceView.db.insertRow(
+        session,
+        existingView.copyWith(
+          id: null,
+          stableId: 'receipt-view',
+          data: jsonEncode(viewData),
+        ),
+      );
+      for (final status in ['success', 'pending', 'error']) {
+        await ConversationToolCall.db.insertRow(
+          session,
+          receiptFixture.copyWith(
+            id: null,
+            stableId: 'view-receipt-$status',
+            name: workspaceSaveViewToolName,
+            status: status,
+            argumentsJson: '{"private":"argument"}',
+            resultJson:
+                '{"kind":"view","id":"receipt-view","private":"receipt"}',
+          ),
+        );
+      }
+      Future<void> checkProjections(dynamic auth, bool visible) async {
+        final turnView = await endpoints.conversation.getTurn(
+          auth,
+          GetTurnRequest(workspaceId: workspace.id!, turnId: turn.requestId),
+        );
+        final messages = await endpoints.conversation.listMessages(
+          auth,
+          ListConversationMessagesRequest(
+            workspaceId: workspace.id!,
+            conversationId: conversation.stableId,
+            limit: 500,
+          ),
+        );
+        final snapshot = await endpoints.conversation.getConversationSnapshot(
+          auth,
+          GetConversationRequest(
+            workspaceId: workspace.id!,
+            conversationId: conversation.stableId,
+          ),
+        );
+        for (final calls in [
+          turnView.toolCalls,
+          messages.expand((message) => message.toolCalls).toList(),
+          snapshot.toolCalls,
+        ]) {
+          final tableCall = calls.singleWhere(
+            (call) => call.id == 'visible-mutation-receipt',
+          );
+          final viewCall = calls.singleWhere(
+            (call) => call.id == 'view-receipt-success',
+          );
+          expect(tableCall.argumentsJson, '{}');
+          expect(
+            tableCall.resultJson,
+            visible ? jsonEncode({'kind': 'table', 'id': 'items'}) : '{}',
+          );
+          expect(viewCall.argumentsJson, '{}');
+          expect(
+            viewCall.resultJson,
+            visible ? jsonEncode({'kind': 'view', 'id': 'receipt-view'}) : '{}',
+          );
+          expect(
+            calls
+                .singleWhere((call) => call.id == 'view-receipt-error')
+                .resultJson,
+            '{}',
+          );
+          expect(
+            calls
+                .singleWhere((call) => call.id == 'view-receipt-pending')
+                .argumentsJson,
+            contains('argument'),
+          );
+        }
+      }
+
+      await checkProjections(authenticated, true);
+      await checkProjections(memberAuth, false);
+      final targetTable = (await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.resourceKind.equals(WorkspaceResourceKind.table) &
+            row.resourceId.equals('items'),
+      ))!;
+      await WorkspaceResource.db.updateRow(
+        session,
+        targetTable.copyWith(deletedAt: now),
+      );
+      // A workspace owner must not receive a View whose source table is deleted.
+      await checkProjections(authenticated, false);
+      await WorkspaceResource.db.updateRow(session, targetTable);
+      final memberSnapshot = await endpoints.conversation.getTurn(
+        memberAuth,
+        GetTurnRequest(workspaceId: workspace.id!, turnId: turn.requestId),
+      );
+      for (final id in [
+        'persisted-table-read',
+        'persisted-folder-read',
+      ]) {
+        final stored = memberSnapshot.toolCalls
+            .singleWhere((call) => call.id == id)
+            .resultJson;
+        expect(stored, isNot(contains('Updated table')));
+        expect(stored, isNot(contains(tableId)));
+        expect(stored, isNot(contains('Updated group')));
+      }
       await endpoints.cloudWorkspace.removeMember(
         authenticated,
         RemoveWorkspaceMemberRequest(
@@ -1433,22 +2052,18 @@ void main() {
           }),
         ),
       ]);
-      await select(
-        WorkspaceContextSelection(
-          workspaceId: '${workspace.id}',
-          conversationId: conversation.stableId,
-          itemId: 'ref-source',
-          kind: 'table',
-          recordIds: ['ref-selected'],
-        ),
-      );
-      final scopedReferences = await run('read-reference-scope', {
+      await select(null);
+      final scopedReferences = await run('read-workspace-references', {
         'action': 'read',
         'tableId': 'ref-source',
       });
-      expect(scopedReferences.toString(), isNot(contains('ref-retained')));
-      expect(scopedReferences.toString(), isNot(contains('ref-target')));
-      expect(scopedReferences.toString(), isNot(contains('Hidden target')));
+      expect(scopedReferences.toString(), contains('ref-retained'));
+      expect(scopedReferences.toString(), contains('Related'));
+      final referencedTable = await run('read-referenced-workspace-table', {
+        'action': 'read',
+        'tableId': 'ref-target',
+      });
+      expect(referencedTable.toString(), contains('Hidden target'));
       final _ = await ConversationToolCall.db.insertRow(
         session,
         ConversationToolCall(
@@ -1457,7 +2072,7 @@ void main() {
           turnId: turn.id!,
           messageId: assistant.id!,
           stableId: 'archived-reference-read',
-          name: workspaceCommandToolName,
+          name: workspaceReadTableToolName,
           argumentsJson: '{"action":"read","tableId":"ref-source"}',
           argumentsDigest: 'fixture',
           status: 'success',
@@ -1479,7 +2094,7 @@ void main() {
               'id': 'archived-reference-read',
               'type': 'function',
               'function': {
-                'name': workspaceCommandToolName,
+                'name': workspaceReadTableToolName,
                 'arguments': '{"secret":"Hidden target"}',
               },
             },
@@ -1490,13 +2105,18 @@ void main() {
           'tool_call_id': 'archived-reference-read',
           'content': 'ref-retained Hidden target',
         },
+        {'role': 'user', 'content': 'A later request.'},
       ];
       final referencePrompt = await const WorkspacePromptProjection().call(
         session,
         turn,
         referenceHistory,
       );
-      expect(jsonEncode(referencePrompt), contains('Selected'));
+      expect(
+        jsonEncode(referencePrompt),
+        contains(workspaceContextUnavailable),
+      );
+      expect(jsonEncode(referencePrompt), isNot(contains('secret')));
       expect(jsonEncode(referencePrompt), isNot(contains('ref-retained')));
       expect(jsonEncode(referencePrompt), isNot(contains('Hidden target')));
       await select(null);
@@ -1504,9 +2124,8 @@ void main() {
           .call(session, turn, referenceHistory);
       expect(
         jsonEncode(revokedReferencePrompt),
-        contains(workspaceContextUnavailable),
+        jsonEncode(referencePrompt),
       );
-      expect(jsonEncode(revokedReferencePrompt), isNot(contains('Selected')));
       await select(
         WorkspaceContextSelection(
           workspaceId: '${workspace.id}',
@@ -1573,36 +2192,10 @@ void main() {
           'action': 'saveColumn',
           'column': {
             'id': '',
-            'name': 'Guessed',
-            'type': 'reference',
-            'targetTableId': 'ref-target',
-          },
-        },
-        {
-          'action': 'saveColumn',
-          'column': {
-            'id': '',
             'name': 'Foreign workspace',
             'type': 'reference',
             'targetTableId': 'foreign-target',
           },
-        },
-        {
-          'action': 'saveColumn',
-          'column': {
-            'id': 'link',
-            'name': 'Related',
-            'type': 'reference',
-            'defaultValue': 'ref-guessed',
-          },
-        },
-        {
-          'action': 'createRecord',
-          'values': {'source-title': 'Guess', 'link': 'ref-guessed'},
-        },
-        {
-          'action': 'createRecord',
-          'values': {'source-title': 'Default guess'},
         },
         {
           'action': 'createRecord',
@@ -1611,39 +2204,71 @@ void main() {
             'link': 'foreign-record',
           },
         },
-        {
-          'action': 'updateRecord',
-          'id': 'ref-selected',
-          'values': {
-            'source-title': 'Guess',
-            'link': 'ref-guessed',
-          },
-        },
       ]) {
+        final toolName = switch (input['action']) {
+          'saveColumn' => workspaceSaveColumnToolName,
+          'createRecord' => workspaceAddRowToolName,
+          'updateRecord' => workspaceUpdateRecordToolName,
+          _ => workspaceReadTableToolName,
+        };
+        final arguments = <String, dynamic>{
+          'tableId': 'ref-source',
+          'revision': 1,
+          'schemaRevision': 1,
+          for (final entry in input.entries)
+            if (entry.key != 'action') entry.key: entry.value,
+        };
+        final expectedError =
+            (input['column'] as Map?)?.containsKey('defaultValue') == true ||
+                (input['column'] as Map?)?['targetTableId'] ==
+                    'foreign-target' ||
+                (input['values'] as Map?)?['link'] == 'foreign-record'
+            ? 'invalid'
+            : 'unavailable';
         await expectLater(
-          run('reject-reference-${referenceSequence++}', {
-            'tableId': 'ref-source',
-            'revision': 1,
-            'schemaRevision': 1,
-            ...input,
-          }),
+          run(
+            'reject-reference-${referenceSequence++}',
+            arguments,
+            toolName: toolName,
+          ),
           throwsA(
             isA<AgentToolExecutionFailure>().having(
               (failure) => failure.responseRaw,
               'safe message',
-              contains('unavailable'),
+              contains(expectedError),
             ),
           ),
+          reason: 'Input: ${jsonEncode(arguments)}',
         );
       }
+      final linkedUnselectedRecord = await run(
+        'allow-same-workspace-reference',
+        {
+          'tableId': 'ref-source',
+          'revision': 1,
+          'schemaRevision': 1,
+          'values': {
+            'source-title': 'Linked unselected row',
+            'link': 'ref-guessed',
+          },
+        },
+        toolName: workspaceAddRowToolName,
+      );
+      final linkedUnselectedId =
+          (linkedUnselectedRecord as Map)['id'] as String;
+      final sourceAfterReference = await run('read-unselected-reference', {
+        'action': 'read',
+        'tableId': 'ref-source',
+      });
+      expect(sourceAfterReference.toString(), contains(linkedUnselectedId));
+      expect(sourceAfterReference.toString(), contains('ref-guessed'));
       final _ = await run('preserve-hidden-reference', {
-        'action': 'updateRecord',
         'tableId': 'ref-source',
         'id': 'ref-selected',
         'revision': 1,
         'schemaRevision': 1,
         'values': {'source-title': 'Edited'},
-      });
+      }, toolName: workspaceUpdateRecordToolName);
       final retainedRow = (await WorkspaceResource.db.findFirstRow(
         session,
         where: (row) =>
@@ -1657,12 +2282,11 @@ void main() {
       );
       expect(retainedRow.revision, 2);
       final _ = await run('rename-retained-column', {
-        'action': 'saveColumn',
         'tableId': 'ref-source',
         'revision': 1,
         'schemaRevision': 1,
         'column': {'id': 'link', 'name': 'Renamed', 'type': 'reference'},
-      });
+      }, toolName: workspaceSaveColumnToolName);
     });
   });
 }

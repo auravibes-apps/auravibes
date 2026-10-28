@@ -6,6 +6,9 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -91,29 +94,81 @@ class _WorkspaceViewToolObserverState
         final _ = _handled.add(call.id);
         continue;
       }
-      final id = _viewId(call);
-      if (id != null && _handled.add(call.id)) {
-        unawaited(_open(id, ++_sequence));
+      final item = _item(call);
+      if (item != null && _handled.add(call.id)) {
+        if (item.kind == 'folder') {
+          if (item.refreshDirectory) {
+            ref.invalidate(
+              workspaceFoldersProvider(widget.workspaceId, item.parentId),
+            );
+          } else {
+            ref.invalidate(workspaceFoldersProvider);
+          }
+          continue;
+        }
+        if (workspaceActionForTool(call.name, call.arguments) ==
+            'createTable') {
+          ref.invalidate(
+            workspaceTablesProvider(widget.workspaceId, item.parentId),
+          );
+        }
+        unawaited(
+          _open(
+            item.id,
+            item.kind,
+            ++_sequence,
+            item.refreshDirectory &&
+                workspaceActionForTool(call.name, call.arguments) !=
+                    'createTable',
+          ),
+        );
       }
     }
     _initialized = true;
   }
 
-  Future<void> _open(String id, int sequence) async {
-    if (!mounted || sequence != _sequence) return;
+  Future<void> _open(
+    String id,
+    String kind,
+    int sequence,
+    bool refreshDirectory,
+  ) async {
+    if (!mounted) return;
     final workspaceId = widget.workspaceId;
     final conversationId = widget.conversationId;
     try {
-      final views = await ref.read(
-        workspaceViewUsecaseProvider(workspaceId).future,
-      );
+      if (kind == 'table') {
+        final tables = await ref.read(
+          workspaceTableUsecaseProvider(workspaceId).future,
+        );
+        if (!_sameContext(workspaceId, conversationId)) return;
+        final table = await tables.table(id);
+        if (!_sameContext(workspaceId, conversationId)) return;
+        if (refreshDirectory) {
+          ref.invalidate(workspaceTablesProvider(workspaceId, table.parentId));
+        }
+        ref
+          ..invalidate(workspaceTableProvider(workspaceId, id))
+          ..invalidate(workspaceTableRecordsProvider(workspaceId, id))
+          ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
+      } else {
+        final views = await ref.read(
+          workspaceViewUsecaseProvider(workspaceId).future,
+        );
+        if (!_sameContext(workspaceId, conversationId)) return;
+        final data = await views.open(id);
+        if (!_sameContext(workspaceId, conversationId)) return;
+        if (refreshDirectory) {
+          ref.invalidate(
+            workspaceViewsProvider(workspaceId, data.view.parentId),
+          );
+        }
+        ref.invalidate(workspaceViewDataProvider(workspaceId, id));
+      }
       if (!_isCurrent(workspaceId, conversationId, sequence)) return;
-      final _ = await views.open(id);
-      if (!_isCurrent(workspaceId, conversationId, sequence)) return;
-      ref.invalidate(workspaceViewDataProvider(workspaceId, id));
       ref
           .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
-          .openItem(id, 'view');
+          .openItem(id, kind);
     } on Object catch (error) {
       if (!_isCurrent(workspaceId, conversationId, sequence)) return;
       final denied =
@@ -126,6 +181,11 @@ class _WorkspaceViewToolObserverState
       if (!mounted) return;
       final messenger = ScaffoldMessenger.maybeOf(context);
       messenger?.hideCurrentSnackBar();
+      void retry() {
+        if (!_isCurrent(workspaceId, conversationId, sequence)) return;
+        unawaited(_open(id, kind, sequence, refreshDirectory));
+      }
+
       final _ = messenger?.showSnackBar(
         .new(
           content: TextLocale(
@@ -137,12 +197,17 @@ class _WorkspaceViewToolObserverState
               ? null
               : SnackBarAction(
                   label: LocaleKeys.route_state_retry.tr(),
-                  onPressed: () => unawaited(_open(id, sequence)),
+                  onPressed: retry,
                 ),
         ),
       );
     }
   }
+
+  bool _sameContext(String workspaceId, String conversationId) =>
+      mounted &&
+      workspaceId == widget.workspaceId &&
+      conversationId == widget.conversationId;
 
   bool _isCurrent(String workspaceId, String conversationId, int sequence) =>
       mounted &&
@@ -151,16 +216,59 @@ class _WorkspaceViewToolObserverState
       conversationId == widget.conversationId;
 }
 
-String? _viewId(MessageToolCallEntity call) {
-  if (call.id.isEmpty || call.name != workspaceCommandToolName) return null;
-  final action = call.arguments['action'];
-  if (action != 'createView' && action != 'saveView') return null;
+({String id, String kind, bool refreshDirectory, String? parentId})? _item(
+  MessageToolCallEntity call,
+) {
+  if (call.id.isEmpty || !isWorkspaceToolName(call.name)) return null;
   try {
     final result = jsonDecode(call.responseRaw ?? '');
-    if (result is! Map || result['kind'] != 'view') return null;
-    final id = result['id'];
+    if (result is! Map) return null;
+    final resolvedAction = workspaceActionForTool(call.name, call.arguments);
+    final action = resolvedAction;
+    if (!{
+      'createFolder',
+      'renameFolder',
+      'createView',
+      'saveView',
+      'createTable',
+      'renameTable',
+      'saveColumn',
+      'createRecord',
+      'updateRecord',
+    }.contains(action)) {
+      return null;
+    }
+    final kind = result['kind'];
+    final id = kind == 'record' ? result['tableId'] : result['id'];
+    final expectedKind = switch (action) {
+      'createFolder' || 'renameFolder' => 'folder',
+      'createView' || 'saveView' => 'view',
+      'createRecord' || 'updateRecord' => 'record',
+      _ => 'table',
+    };
+    if ((kind != expectedKind &&
+            !(expectedKind == 'record' && kind == 'table')) ||
+        id is! String ||
+        id.isEmpty) {
+      return null;
+    }
 
-    return id is String && id.isNotEmpty ? id : null;
+    final parentId = action == 'createTable' || action == 'createFolder'
+        ? call.arguments['parentId']
+        : result['parentId'];
+    if (parentId != null && parentId is! String) return null;
+
+    return (
+      id: id,
+      kind: kind == 'record' ? 'table' : kind as String,
+      refreshDirectory: switch (action) {
+        'createTable' || 'createFolder' => true,
+        'renameFolder' => result.containsKey('parentId'),
+        'renameTable' || 'createView' || 'saveView' => true,
+        _ => false,
+      },
+      parentId: parentId as String?,
+    );
   } on FormatException {
     return null;
   }

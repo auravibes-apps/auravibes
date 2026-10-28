@@ -8,6 +8,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         a2uiChatFormSubmitComponentId,
         ReasoningConfiguration,
         ReasoningOption,
+        isWorkspaceToolName,
+        workspaceActionForTool,
         projectToolOutput;
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
@@ -17,11 +19,14 @@ import '../../accounts/auth_user_lock.dart';
 import '../../objects/object_retained_assets.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../../workspaces/domain/workspace_roles.dart';
+import '../../workspace_state/workspace_table_access.dart';
+import '../../workspace_views/workspace_view_store.dart';
 import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
 import '../domain/message_bookmark_view_mapper.dart';
 import '../engine/a2ui_protocol.dart';
 import '../engine/conversation_host_effects.dart';
+import '../engine/workspace_result_privacy.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 
 typedef ConversationJobPublisher = Future<void> Function(
@@ -378,8 +383,12 @@ class ConversationUseCases {
       session,
       workspaceId: request.workspaceId,
       userId: userId,
-      read: (transaction) =>
-          _listMessages(session, request, transaction: transaction),
+      read: (transaction) => _listMessages(
+        session,
+        request,
+        userId: userId,
+        transaction: transaction,
+      ),
     );
   }
 
@@ -387,6 +396,7 @@ class ConversationUseCases {
     Session session,
     ListConversationMessagesRequest request, {
     required Transaction transaction,
+    required String userId,
   }) async {
     final conversation = await _requireConversation(
       session,
@@ -456,6 +466,12 @@ class ConversationUseCases {
       final messageId = call.messageId;
       (calls[messageId] ??= []).add(call);
     }
+    final targets = await _visibleTableTargets(
+      session,
+      calls.values.expand((calls) => calls),
+      userId,
+      transaction,
+    );
     return messages.reversed.map((message) {
       final turn = turns[message.turnId];
       return ConversationMessageView(
@@ -484,7 +500,7 @@ class ConversationUseCases {
         ),
         toolCalls: [
           for (final call in calls[message.id] ?? const [])
-            _toolCallView(call, turn!, messages),
+            _toolCallView(call, turn!, messages, targets[call.stableId]),
         ],
         revision: message.revision,
         createdAt: message.createdAt,
@@ -1321,6 +1337,12 @@ class ConversationUseCases {
           turn: turn,
           transaction: transaction,
         );
+        final targets = await _visibleTableTargets(
+          session,
+          toolCalls,
+          userId,
+          transaction,
+        );
         return TurnSnapshot(
           turn: _turnView(turn, conversation.stableId, messages),
           messages: messages
@@ -1338,7 +1360,10 @@ class ConversationUseCases {
               )
               .toList(),
           toolCalls: toolCalls
-              .map((call) => _toolCallView(call, turn, messages))
+              .map(
+                (call) =>
+                    _toolCallView(call, turn, messages, targets[call.stableId]),
+              )
               .toList(),
           terminal: ConversationStatuses.isTerminal(turn.status),
         );
@@ -1355,8 +1380,12 @@ class ConversationUseCases {
       session,
       workspaceId: request.workspaceId,
       userId: userId,
-      read: (transaction) =>
-          _getConversationSnapshot(session, request, transaction: transaction),
+      read: (transaction) => _getConversationSnapshot(
+        session,
+        request,
+        userId: userId,
+        transaction: transaction,
+      ),
     );
   }
 
@@ -1364,6 +1393,7 @@ class ConversationUseCases {
     Session session,
     GetConversationRequest request, {
     required Transaction transaction,
+    required String userId,
   }) async {
     final conversation = await _requireConversation(
       session,
@@ -1380,6 +1410,7 @@ class ConversationUseCases {
         limit: 500,
       ),
       transaction: transaction,
+      userId: userId,
     );
     final pendingStoredMessages = await _repository.listConversationMessages(
       session,
@@ -1441,6 +1472,12 @@ class ConversationUseCases {
       turnIds: turns.keys,
       transaction: transaction,
     );
+    final targets = await _visibleTableTargets(
+      session,
+      toolCalls,
+      userId,
+      transaction,
+    );
     final effectiveMessageIds = effectiveMessages
         .map((message) => message.id)
         .toSet();
@@ -1495,6 +1532,7 @@ class ConversationUseCases {
                   toolCall,
                   turn,
                   effectiveMessages,
+                  targets[toolCall.stableId],
                 ),
       ],
       sequence: conversation.eventSequence,
@@ -6137,12 +6175,123 @@ class ConversationUseCases {
     updatedAt: turn.updatedAt,
   );
 
+  Future<Map<String, String>> _visibleTableTargets(
+    Session session,
+    Iterable<ConversationToolCall> calls,
+    String userId,
+    Transaction transaction,
+  ) async {
+    final targets = <String, String>{};
+    final members = <int, WorkspaceMember>{};
+    final visibility = <(int, String, String), bool>{};
+    Future<bool> canReadTable(WorkspaceMember member, String id) async {
+      final key = (member.workspaceId, 'table', id);
+      if (!visibility.containsKey(key)) {
+        final table = await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(member.workspaceId) &
+              row.resourceKind.equals(WorkspaceResourceKind.table) &
+              row.resourceId.equals(id),
+          transaction: transaction,
+        );
+        visibility[key] =
+            table != null &&
+            await WorkspaceTableAccess(transaction: transaction)
+                .canReadTable(session, member, table);
+      }
+      return visibility[key]!;
+    }
+
+    for (final call in calls) {
+      if (!isWorkspaceToolName(call.name) ||
+          call.status != 'success' ||
+          call.resultJson == null) {
+        continue;
+      }
+      final arguments = _tryJsonMap(call.argumentsJson);
+      final action = workspaceActionForTool(call.name, arguments);
+      if (!const {
+        'createTable',
+        'renameTable',
+        'saveColumn',
+        'createRecord',
+        'updateRecord',
+        'createView',
+        'saveView',
+      }.contains(action)) {
+        continue;
+      }
+      final result = _tryJsonMap(call.resultJson!);
+      if (action == 'createView' || action == 'saveView') {
+        final id = result['kind'] == 'view' ? result['id'] : null;
+        if (id is! String || id.isEmpty) continue;
+        final member = members[call.workspaceId] ??= await _requireMember(
+          session,
+          workspaceId: call.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        final key = (call.workspaceId, 'view', id);
+        if (!visibility.containsKey(key)) {
+          try {
+            final view = await WorkspaceViewStore(
+              session,
+              member,
+              transaction,
+            ).read(id);
+            final tableId = _tryJsonMap(view.data)['tableId'];
+            visibility[key] =
+                tableId is String &&
+                tableId.isNotEmpty &&
+                await canReadTable(member, tableId);
+          } on CloudWorkspaceException {
+            visibility[key] = false;
+          }
+        }
+        if (visibility[key]!) {
+          targets[call.stableId] = jsonEncode({
+            'kind': 'view',
+            'id': id,
+          });
+        }
+        continue;
+      }
+      final id = result['kind'] == 'table'
+          ? result['id']
+          : result['kind'] == 'record'
+          ? result['tableId']
+          : null;
+      if (id is! String || id.isEmpty) continue;
+      final member = members[call.workspaceId] ??= await _requireMember(
+        session,
+        workspaceId: call.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (await canReadTable(member, id)) {
+        targets[call.stableId] = jsonEncode({
+          'kind': 'table',
+          'id': id,
+        });
+      }
+    }
+    return targets;
+  }
+
   ConversationToolCallView _toolCallView(
     ConversationToolCall call,
     ConversationTurn turn,
     List<ConversationMessage> messages,
+    String? target,
   ) {
-    final result = call.resultJson;
+    final redact = isWorkspaceToolName(call.name) && call.status != 'pending';
+    final stored = call.resultJson;
+    final result = stored == null
+        ? null
+        : redact
+        ? target ?? '{}'
+        : safeWorkspaceResult(call, stored);
     final projection = result == null ? null : projectToolOutput(result);
     final truncated = projection?.truncated ?? false;
 
@@ -6156,7 +6305,7 @@ class ConversationUseCases {
               ?.stableId ??
           '',
       name: call.name,
-      argumentsJson: call.argumentsJson,
+      argumentsJson: redact ? '{}' : call.argumentsJson,
       argumentsDigest: call.argumentsDigest,
       userFacingDescription: call.userFacingDescription,
       backgroundEligible: call.backgroundEligible,

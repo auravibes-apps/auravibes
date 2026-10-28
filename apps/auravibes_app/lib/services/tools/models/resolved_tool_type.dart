@@ -64,9 +64,8 @@ class ResolvedTool._({
   })
   skillNative = _skillNative;
 
-  static const ResolvedTool Function() workspaceCommand = _workspaceCommand;
-  static const ResolvedTool Function() workspaceUpdateRecord =
-      _workspaceUpdateRecord;
+  static const ResolvedTool Function({required String toolIdentifier})
+  workspaceAction = _workspaceAction;
 
   final bool isBuiltIn = type == .builtIn;
   final bool isMcp = type == .mcp;
@@ -75,11 +74,7 @@ class ResolvedTool._({
   final bool isConnectorCommand = type == .connectorCommand;
   final bool isSkillNative = type == .skillNative;
 
-  final bool isWorkspaceCommand =
-      tableId == workspaceCommandTableId &&
-      (toolIdentifier == workspaceCommandToolName ||
-          toolIdentifier == workspaceUpdateRecordToolName) &&
-      type == .builtIn;
+  final bool isWorkspaceCommand = isWorkspaceToolName(toolIdentifier);
 }
 
 ResolvedTool _mcp({
@@ -153,16 +148,10 @@ String _skillNativeName(String tableId, String skillSlug, String tool) =>
       toolIdentifier: tool,
     ).fullName;
 
-ResolvedTool _workspaceCommand() => ResolvedTool._(
-  type: .builtIn,
-  tableId: workspaceCommandTableId,
-  toolIdentifier: workspaceCommandToolName,
-  fullName: workspaceCommandToolName,
-);
-
-ResolvedTool _workspaceUpdateRecord() => ResolvedTool._(
-  type: .builtIn,
-  tableId: workspaceCommandTableId,
-  toolIdentifier: workspaceUpdateRecordToolName,
-  fullName: workspaceUpdateRecordToolName,
-);
+ResolvedTool _workspaceAction({required String toolIdentifier}) =>
+    ResolvedTool._(
+      type: .builtIn,
+      tableId: workspaceCommandTableId,
+      toolIdentifier: toolIdentifier,
+      fullName: toolIdentifier,
+    );

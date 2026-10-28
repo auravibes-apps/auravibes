@@ -28,34 +28,28 @@ void main() {
           getToolAccessMode: (_) async => mode,
           workspaceAccess: (_, _) async => true,
         );
-        for (final action in [
-          'read',
-          'createRecord',
-          'updateRecord',
-          'createTable',
-          'saveColumn',
-          'saveView',
-        ]) {
-          final result = await usecase.callForRequest((
+        for (final name in agent.workspaceToolNames) {
+          final decision = await usecase.callForRequest((
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
             toolCallId: 'call',
-            resolvedTool: ResolvedTool.workspaceCommand(),
-            argumentsRaw: jsonEncode({'action': action}),
+            resolvedTool: ResolvedTool.workspaceAction(toolIdentifier: name),
+            argumentsRaw: '{}',
           ));
           expect(
-            result.permissionResult,
-            mode == .allowAll ||
-                    ['read', 'createRecord', 'updateRecord'].contains(action)
-                ? ToolPermissionResult.granted
-                : ToolPermissionResult.needsConfirmation,
+            decision.permissionResult,
+            isNot(ToolPermissionResult.notConfigured),
+            reason: name,
           );
+          expect(decision.permissionTableId, agent.workspaceCommandTableId);
         }
         final dedicatedUpdate = await usecase.callForRequest((
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
           toolCallId: 'call',
-          resolvedTool: ResolvedTool.workspaceUpdateRecord(),
+          resolvedTool: ResolvedTool.workspaceAction(
+            toolIdentifier: agent.workspaceUpdateRecordToolName,
+          ),
           argumentsRaw: jsonEncode({
             'tableId': 'table-1',
             'id': 'row-1',
@@ -70,6 +64,62 @@ void main() {
           agent.workspaceCommandTableId,
         );
 
+        final dedicatedFolder = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.workspaceAction(
+            toolIdentifier: agent.workspaceCreateFolderToolName,
+          ),
+          argumentsRaw: jsonEncode({'name': 'Group'}),
+        ));
+        expect(
+          dedicatedFolder.permissionResult,
+          mode == .allowAll
+              ? ToolPermissionResult.granted
+              : ToolPermissionResult.needsConfirmation,
+        );
+        expect(
+          dedicatedFolder.permissionTableId,
+          agent.workspaceCommandTableId,
+        );
+
+        for (final toolName in [
+          agent.workspaceRenameFolderToolName,
+          agent.workspaceCreateTableToolName,
+          agent.workspaceRenameTableToolName,
+          agent.workspaceSaveColumnToolName,
+          agent.workspaceCreateViewToolName,
+          agent.workspaceSaveViewToolName,
+        ]) {
+          final decision = await usecase.callForRequest((
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'call',
+            resolvedTool: ResolvedTool.workspaceAction(
+              toolIdentifier: toolName,
+            ),
+            argumentsRaw: '{}',
+          ));
+          expect(
+            decision.permissionResult,
+            mode == .allowAll
+                ? ToolPermissionResult.granted
+                : ToolPermissionResult.needsConfirmation,
+          );
+        }
+
+        final addRow = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.workspaceAction(
+            toolIdentifier: agent.workspaceAddRowToolName,
+          ),
+          argumentsRaw: '{}',
+        ));
+        expect(addRow.permissionResult, ToolPermissionResult.granted);
+
         final denied = ResolveToolApprovalDecisionUsecase(
           conversationToolsRepository: fixture.conversationToolsRepository,
           toolsGroupsRepository: fixture.toolsGroupsRepository,
@@ -82,8 +132,10 @@ void main() {
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
             toolCallId: 'call',
-            resolvedTool: ResolvedTool.workspaceCommand(),
-            argumentsRaw: '{"action":"updateRecord"}',
+            resolvedTool: ResolvedTool.workspaceAction(
+              toolIdentifier: agent.workspaceReadDirectoryToolName,
+            ),
+            argumentsRaw: '{}',
           ))).permissionResult,
           ToolPermissionResult.disabledInWorkspace,
         );

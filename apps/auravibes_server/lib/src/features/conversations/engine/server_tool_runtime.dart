@@ -13,6 +13,7 @@ import '../usecases/conversation_usecases.dart';
 import 'background_work_result_reader.dart';
 import 'conversation_host_effects.dart';
 import 'server_agent_guidance.dart';
+import 'workspace_result_privacy.dart';
 
 enum ServerToolDisposition {
   completed,
@@ -21,34 +22,6 @@ enum ServerToolDisposition {
 }
 
 enum ServerToolReplayAction { execute, pause, skip, awaitingSubAgents }
-
-String _safeWorkspaceResult(ConversationToolCall call, String result) {
-  if (call.name != workspaceCommandToolName) return result;
-  Object? arguments;
-  try {
-    arguments = jsonDecode(call.argumentsJson);
-  } on FormatException {
-    return '{}';
-  }
-  if (arguments is! Map) return '{}';
-  final action = arguments['action'];
-  if (action != 'read' && action != 'listCreated') return result;
-  Object? value;
-  try {
-    value = jsonDecode(result);
-  } on FormatException {
-    return '{}';
-  }
-  if (value is! Map) return '{}';
-  return jsonEncode({
-    for (final key in ['id', 'kind', 'name', 'mimeType'])
-      if (value[key] is String) key: value[key],
-    if (value['revision'] is int) 'revision': value['revision'],
-    if (value['schemaRevision'] is int)
-      'schemaRevision': value['schemaRevision'],
-    if (value['truncated'] is bool) 'truncated': value['truncated'],
-  });
-}
 
 // Exceeds current 90s provider and 30s skill I/O bounds; tolerates clock drift.
 // ponytail: timestamp lease; add owner tokens if tool runtimes exceed this bound.
@@ -710,19 +683,23 @@ class ServerToolRuntime({
     return [
       ...genericTools,
       ...fixedCloudConnectorCommandTools(),
-      ServerResolvedTool(
-        descriptor: AgentResolvedToolName.builtIn(
-          tableId: workspaceCommandTableId,
-          toolIdentifier: workspaceCommandToolName,
+      ...workspaceReadToolSpecs().map(
+        (spec) => ServerResolvedTool(
+          descriptor: AgentResolvedToolName.builtIn(
+            tableId: workspaceCommandTableId,
+            toolIdentifier: spec.name,
+          ),
+          spec: spec,
         ),
-        spec: workspaceCommandToolSpec(),
       ),
-      ServerResolvedTool(
-        descriptor: AgentResolvedToolName.builtIn(
-          tableId: workspaceCommandTableId,
-          toolIdentifier: workspaceUpdateRecordToolName,
+      ...workspaceMutationToolSpecs().map(
+        (spec) => ServerResolvedTool(
+          descriptor: AgentResolvedToolName.builtIn(
+            tableId: workspaceCommandTableId,
+            toolIdentifier: spec.name,
+          ),
+          spec: spec,
         ),
-        spec: workspaceUpdateRecordToolSpec(),
       ),
       ...fixedCloudSkillCommandTools(),
       ...agentTools,
@@ -1977,7 +1954,7 @@ class ServerToolRuntime({
   ) async {
     final projection = result == null
         ? null
-        : projectToolOutput(_safeWorkspaceResult(call, result));
+        : projectToolOutput(safeWorkspaceResult(call, result));
     final sourceTurn = await ConversationTurn.db.findById(
       session,
       call.turnId,
