@@ -32,12 +32,7 @@ class const LocalWorkspaceContextRepository(
     return await save(
       conversationId,
       const Uuid().v4(),
-      .new(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        itemId: '',
-        kind: 'directory',
-      ),
+      _rootDirectory(conversationId),
     );
   });
 
@@ -73,6 +68,14 @@ class const LocalWorkspaceContextRepository(
           : jsonDecode(value) as Map<String, dynamic>,
     );
   }
+
+  WorkspaceContextSelection _rootDirectory(String conversationId) =>
+      WorkspaceContextSelection(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        itemId: '',
+        kind: 'directory',
+      );
 
   Future<QueryRow?> _latestRow(String workspaceId, String conversationId) =>
       database
