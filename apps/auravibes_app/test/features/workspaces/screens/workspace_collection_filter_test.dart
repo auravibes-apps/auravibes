@@ -137,7 +137,7 @@ void main() {
       expect(find.text('Add record'), findsNothing);
       expect(repository.requested, 'target');
       await tester.tap(find.text('Ada').last);
-      await tester.tap(find.text('Done'));
+      await tester.tap(find.text('Apply selection'));
       final _ = await tester.pumpAndSettle();
       expect(find.text('private-record-id'), findsNothing);
       await tester.ensureVisible(apply);
