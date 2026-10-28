@@ -354,12 +354,21 @@ class const _VisibleColumn(
   final _Draft draft,
   final WorkspaceTable table,
 ) extends StatelessWidget {
+  bool get _canHide =>
+      table.columns
+          .where(
+            (candidate) => !draft.hiddenColumns.value.contains(candidate.id),
+          )
+          .length >
+      1;
+
   @override
   Widget build(BuildContext context) => CheckboxListTile(
     value: !draft.hiddenColumns.value.contains(column.id),
     onChanged: _change,
     title: Text(column.name),
   );
+
   void _change(bool? checked) {
     if (checked == true) {
       draft.hiddenColumns.value = {...draft.hiddenColumns.value}
@@ -367,10 +376,7 @@ class const _VisibleColumn(
 
       return;
     }
-    final visible = table.columns.where(
-      (candidate) => !draft.hiddenColumns.value.contains(candidate.id),
-    );
-    if (visible.length <= 1) return;
+    if (!_canHide) return;
     draft.hiddenColumns.value = {...draft.hiddenColumns.value, column.id};
   }
 }
@@ -794,8 +800,7 @@ class const _SpreadsheetCell(
       if (_selected) return;
       owner.draft.nextSelection.value = () {
         if (!context.mounted) return;
-        owner.draft.active.value = (record: record.id, column: column.id);
-        focus.requestFocus();
+        _focus(focus);
       };
 
       return;
@@ -805,6 +810,10 @@ class const _SpreadsheetCell(
 
       return;
     }
+    _focus(focus);
+  }
+
+  void _focus(FocusNode focus) {
     owner.draft.active.value = (record: record.id, column: column.id);
     focus.requestFocus();
   }
@@ -903,19 +912,25 @@ class const _SpreadsheetCell(
       values: owner.draft.values.value,
     );
     if (!ref.context.mounted) return;
-    owner.draft.editing.value = false;
-    owner.draft.draftOpen.value = false;
-    final next = owner.draft.nextSelection.value;
-    owner.draft.nextSelection.value = null;
+    _finishSave(ref);
+  }
+
+  void _finishSave(WidgetRef ref) {
+    final draft = owner.draft;
+    draft.editing.value = false;
+    draft.draftOpen.value = false;
+    final next = draft.nextSelection.value;
+    draft.nextSelection.value = null;
     next?.call();
+    _refreshReferences(ref);
+  }
+
+  void _refreshReferences(WidgetRef ref) {
+    final workspaceId = owner.browser.workspaceId;
     ref
-      ..invalidate(
-        workspaceRecordQueryUsecaseProvider(owner.browser.workspaceId),
-      )
+      ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId))
       ..invalidate(workspaceReferencedRecordProvider)
-      ..invalidate(
-        workspaceReferencesUsecaseProvider(owner.browser.workspaceId),
-      );
+      ..invalidate(workspaceReferencesUsecaseProvider(workspaceId));
   }
 }
 
