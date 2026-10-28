@@ -720,18 +720,7 @@ class const _SpreadsheetCell(
     final colors = Theme.of(context).colorScheme;
     final link = useMemoized(LayerLink.new);
     final focus = useFocusNode();
-    void Function() registerFocus() {
-      final key = _focusKey(record.id, column.id);
-      owner.draft.focusNodes.value[key] = focus;
-
-      return () {
-        if (identical(owner.draft.focusNodes.value[key], focus)) {
-          final _ = owner.draft.focusNodes.value.remove(key);
-        }
-      };
-    }
-
-    useEffect(registerFocus, [focus]);
+    useEffect(() => _registerFocus(focus), [focus]);
 
     return MouseRegion(
       onEnter: _hover,
@@ -778,6 +767,16 @@ class const _SpreadsheetCell(
         onKeyEvent: _key,
       ),
     );
+  }
+
+  VoidCallback _registerFocus(FocusNode focus) {
+    final key = _focusKey(record.id, column.id);
+    final nodes = owner.draft.focusNodes.value;
+    nodes[key] = focus;
+
+    return () {
+      if (identical(nodes[key], focus)) nodes.remove(key);
+    };
   }
 
   void _hover(PointerEnterEvent _) => owner.draft.hovered.value = record.id;
