@@ -88,6 +88,7 @@ void main() {
       matching: find.byType(AuraButton),
     );
     await tester.tap(link);
+    await tester.pump(const Duration(milliseconds: 400));
     await flush();
     final input = find.byWidgetPredicate(
       (widget) =>
