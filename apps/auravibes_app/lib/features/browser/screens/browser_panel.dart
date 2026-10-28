@@ -809,18 +809,22 @@ Future<void> _closeSidebarTab(
   _BrowserPanelData data,
   _SidebarTabRef closing,
 ) async {
-  final tabs = _sidebarTabs(data);
-  final index = tabs.indexOf(closing);
   final isActive = _activeSidebarTab(data) == closing;
-  _SidebarTabRef? next;
-  if (isActive && index >= 0) {
-    if (index > 0) {
-      next = tabs[index - 1];
-    } else if (index + 1 < tabs.length) {
-      next = tabs[index + 1];
-    }
-  }
+  final next = isActive ? _nextSidebarTab(_sidebarTabs(data), closing) : null;
 
+  await _removeSidebarTab(data, closing, isActive, next);
+
+  if (!isActive) return;
+
+  await _selectNextSidebarTab(data, next);
+}
+
+Future<void> _removeSidebarTab(
+  _BrowserPanelData data,
+  _SidebarTabRef closing,
+  bool isActive,
+  _SidebarTabRef? next,
+) async {
   switch (closing.kind) {
     case 'browser':
       await data.request.notifier.closeTab(closing.id);
@@ -832,13 +836,14 @@ Future<void> _closeSidebarTab(
           : null;
       data.workspaceTabs.close(closing.id, selectAfterClose: selectAfterClose);
   }
+}
 
-  if (!isActive) return;
-
+Future<void> _selectNextSidebarTab(
+  _BrowserPanelData data,
+  _SidebarTabRef? next,
+) async {
   if (next == null) {
-    data.workspaceTabs.select(null);
-    data.request.onSelectToolResultTab(null);
-    data.onCloseSidebar();
+    _closeEmptySidebar(data);
 
     return;
   }
@@ -855,6 +860,20 @@ Future<void> _closeSidebarTab(
       data.request.onSelectToolResultTab(null);
       data.workspaceTabs.select(next.id);
   }
+}
+
+void _closeEmptySidebar(_BrowserPanelData data) {
+  data.workspaceTabs.select(null);
+  data.request.onSelectToolResultTab(null);
+  data.onCloseSidebar();
+}
+
+_SidebarTabRef? _nextSidebarTab(List<_SidebarTabRef> tabs, _SidebarTabRef tab) {
+  final index = tabs.indexOf(tab);
+  if (index > 0) return tabs[index - 1];
+  if (index == 0 && tabs.length > 1) return tabs[1];
+
+  return null;
 }
 
 class const _SidebarTabTile({required final _SidebarTabTileData data})
@@ -1236,29 +1255,49 @@ class const _WorkspaceTabChipRow({required final _BrowserPanelData data})
       mainAxisSize: .min,
       children: [
         if (workspaceTabs.selected.value == 'chooser')
-          _WorkspaceChip(
-            data: data,
-            id: 'chooser',
-            title: LocaleKeys.browser_new_tab.tr(),
-          ),
+          _WorkspaceChooserChip(data: data),
         if (workspaceTabs.directoryOpen.value)
-          _WorkspaceChip(
-            data: data,
-            id: 'directory',
-            title: LocaleKeys.workspace_items_title.tr(),
-          ),
+          _WorkspaceDirectoryChip(data: data),
         for (final item in workspaceTabs.items.value)
-          _WorkspaceChip(
-            data: data,
-            id: _WorkspaceTabs.key(item),
-            title:
-                workspaceTabs.names.value[_WorkspaceTabs.key(item)] ??
-                _title(item.kind),
-            tableId: item.kind == 'table' ? item.id : null,
-          ),
+          _WorkspaceItemChip(data: data, item: item),
       ],
     );
   }
+}
+
+class const _WorkspaceChooserChip({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceChip(
+    data: data,
+    id: 'chooser',
+    title: LocaleKeys.browser_new_tab.tr(),
+  );
+}
+
+class const _WorkspaceDirectoryChip({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceChip(
+    data: data,
+    id: 'directory',
+    title: LocaleKeys.workspace_items_title.tr(),
+  );
+}
+
+class const _WorkspaceItemChip({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceChip(
+    data: data,
+    id: _WorkspaceTabs.key(item),
+    title:
+        data.workspaceTabs.names.value[_WorkspaceTabs.key(item)] ??
+        _title(item.kind),
+    tableId: item.kind == 'table' ? item.id : null,
+  );
 
   String _title(String kind) => switch (kind) {
     'table' => LocaleKeys.workspace_items_table.tr(),
@@ -1276,36 +1315,48 @@ class const _WorkspaceChip({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final label = _label(ref);
+    final selected = data.workspaceTabs.selected.value == id;
+
+    return _SidebarTabChip(
+      data: _tileData(label, selected),
+      key: selected ? data.activeTabKey : null,
+    );
+  }
+
+  String _label(WidgetRef ref) {
     final tableIdentifier = tableId;
     final table = tableIdentifier == null
         ? null
         : ref.watch(
             workspaceTableProvider(data.request.workspaceId, tableIdentifier),
           );
-    final label = switch (table) {
+
+    return switch (table) {
       AsyncData(:final value) => value.name,
       AsyncLoading() || AsyncError() || null => title,
     };
-
-    return _SidebarTabChip(
-      data: (
-        identifiers: (
-          tile: 'sidebar_workspace_$id',
-          closeButton: 'sidebar_close_workspace_$id',
-        ),
-        title: label,
-        child: Text(label, overflow: .ellipsis, maxLines: 1),
-        selected: data.workspaceTabs.selected.value == id,
-        onSelect: () {
-          data.request.onSelectToolResultTab(null);
-          data.workspaceTabs.select(id);
-        },
-        onClose: () =>
-            unawaited(_closeSidebarTab(data, (kind: 'workspace', id: id))),
-      ),
-      key: data.workspaceTabs.selected.value == id ? data.activeTabKey : null,
-    );
   }
+
+  _SidebarTabTileData _tileData(String label, bool selected) => (
+    identifiers: (
+      tile: 'sidebar_workspace_$id',
+      closeButton: 'sidebar_close_workspace_$id',
+    ),
+    title: label,
+    child: Text(label, overflow: .ellipsis, maxLines: 1),
+    selected: selected,
+    onSelect: _select,
+    onClose: _close,
+  );
+
+  void _select() {
+    data.request.onSelectToolResultTab(null);
+    data.workspaceTabs.select(id);
+  }
+
+  void _close() =>
+      unawaited(_closeSidebarTab(data, (kind: 'workspace', id: id)));
 }
 
 class const _WorkspaceTabSlot({required final _BrowserPanelData data})
@@ -1371,31 +1422,55 @@ class const _WorkspaceTabContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final workspaceId = data.request.workspaceId;
-    void close() => unawaited(
-      _closeSidebarTab(data, (kind: 'workspace', id: _WorkspaceTabs.key(item))),
-    );
-
     return switch (item.kind) {
-      'view' => WorkspaceViewScreen(
-        workspaceId: workspaceId,
-        viewId: item.id,
-        onBack: close,
-        compact: true,
-      ),
-      'table' => WorkspaceTableScreen(
-        workspaceId: workspaceId,
-        tableId: item.id,
-        onBack: close,
-        compact: true,
-      ),
-      'file' => WorkspaceFileScreen(
-        workspaceId: workspaceId,
-        fileId: item.id,
-        onBack: close,
-        compact: true,
-      ),
+      'view' => _WorkspaceViewTab(data: data, item: item),
+      'table' => _WorkspaceTableTab(data: data, item: item),
+      'file' => _WorkspaceFileTab(data: data, item: item),
       _ => const SizedBox.shrink(),
     };
   }
+}
+
+void _closeWorkspaceContent(_BrowserPanelData data, WorkspaceChatItem item) =>
+    unawaited(
+      _closeSidebarTab(data, (kind: 'workspace', id: _WorkspaceTabs.key(item))),
+    );
+
+class const _WorkspaceViewTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceViewScreen(
+    workspaceId: data.request.workspaceId,
+    viewId: item.id,
+    onBack: () => _closeWorkspaceContent(data, item),
+    compact: true,
+  );
+}
+
+class const _WorkspaceTableTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceTableScreen(
+    workspaceId: data.request.workspaceId,
+    tableId: item.id,
+    onBack: () => _closeWorkspaceContent(data, item),
+    compact: true,
+  );
+}
+
+class const _WorkspaceFileTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceFileScreen(
+    workspaceId: data.request.workspaceId,
+    fileId: item.id,
+    onBack: () => _closeWorkspaceContent(data, item),
+    compact: true,
+  );
 }
