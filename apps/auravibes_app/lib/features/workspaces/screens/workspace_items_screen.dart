@@ -432,17 +432,25 @@ class const _DirectoryList(final _Navigation navigation) extends HookWidget {
     );
     _rememberScroll(scroll, navigation, parent);
 
-    return Column(
-      children: [
-        Expanded(child: _DirectoryScroll(navigation, scroll)),
-        Flexible(
-          child: SingleChildScrollView(
-            child: _SelectionSpace(navigation.selection.value?.values.toList()),
-          ),
-        ),
-      ],
-    );
+    return _DirectoryLayout(navigation, scroll);
   }
+}
+
+class const _DirectoryLayout(
+  final _Navigation navigation,
+  final ScrollController scroll,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Expanded(child: _DirectoryScroll(navigation, scroll)),
+      Flexible(
+        child: SingleChildScrollView(
+          child: _SelectionSpace(navigation.selection.value?.values.toList()),
+        ),
+      ),
+    ],
+  );
 }
 
 class const _DirectoryScroll(
@@ -480,27 +488,7 @@ class const _SelectionSpace(final List<WorkspaceDirectoryMoveItem>? items)
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Stack(
-        children: [
-          const ExcludeSemantics(
-            child: Opacity(
-              opacity: 0,
-              child: TextLocale(
-                LocaleKeys.workspace_items_selection_move_limit,
-              ),
-            ),
-          ),
-          const ExcludeSemantics(
-            child: Opacity(
-              opacity: 0,
-              child: TextLocale(
-                LocaleKeys.workspace_items_selection_move_denied,
-              ),
-            ),
-          ),
-          if (items case final selected?) _SelectionStatus(selected),
-        ],
-      ),
+      _SelectionMessages(items),
       Visibility(
         child: _SelectionCount(items?.length ?? 0),
         visible: items != null,
@@ -508,6 +496,28 @@ class const _SelectionSpace(final List<WorkspaceDirectoryMoveItem>? items)
         maintainAnimation: true,
         maintainSize: true,
       ),
+    ],
+  );
+}
+
+class const _SelectionMessages(final List<WorkspaceDirectoryMoveItem>? items)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      const ExcludeSemantics(
+        child: Opacity(
+          opacity: 0,
+          child: TextLocale(LocaleKeys.workspace_items_selection_move_limit),
+        ),
+      ),
+      const ExcludeSemantics(
+        child: Opacity(
+          opacity: 0,
+          child: TextLocale(LocaleKeys.workspace_items_selection_move_denied),
+        ),
+      ),
+      if (items case final selected?) _SelectionStatus(selected),
     ],
   );
 }

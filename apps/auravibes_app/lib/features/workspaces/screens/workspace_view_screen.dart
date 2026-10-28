@@ -56,12 +56,7 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
     final active = TickerMode.valuesOf(context).enabled;
     _useRefresh(ref, selected, offset, active);
 
-    return Column(
-      children: [
-        if (active && !owner.compact) _Toolbar(owner, selected, offset),
-        Expanded(child: _Contents(owner, selected, offset, active: active)),
-      ],
-    );
+    return _SessionContent(owner, selected, offset, active: active);
   }
 
   void _useRefresh(
@@ -86,6 +81,21 @@ class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
 
     return timer.cancel;
   }
+}
+
+class const _SessionContent(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (active && !owner.compact) _Toolbar(owner, selected, offset),
+      Expanded(child: _Contents(owner, selected, offset, active: active)),
+    ],
+  );
 }
 
 class const _Toolbar(
@@ -215,21 +225,46 @@ class const _LoadState(
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cached = useRef<AsyncValue<WorkspaceViewData>?>(null);
-    final state = active
-        ? ref.watch(
-            workspaceViewDataProvider(
-              owner.workspaceId,
-              owner.viewId,
-              offset: offset.value,
-            ),
-          )
-        : cached.value;
+    final state = _watch(ref, cached.value);
     if (state == null) return const SizedBox.shrink();
+    _updateCache(cached, state);
+
+    return _CachedContent(owner, state, cached.value, offset, active: active);
+  }
+
+  AsyncValue<WorkspaceViewData>? _watch(
+    WidgetRef ref,
+    AsyncValue<WorkspaceViewData>? cached,
+  ) => active
+      ? ref.watch(
+          workspaceViewDataProvider(
+            owner.workspaceId,
+            owner.viewId,
+            offset: offset.value,
+          ),
+        )
+      : cached;
+
+  void _updateCache(
+    ObjectRef<AsyncValue<WorkspaceViewData>?> cached,
+    AsyncValue<WorkspaceViewData> state,
+  ) {
     if (state is AsyncError<WorkspaceViewData>) cached.value = null;
     if (state is AsyncData<WorkspaceViewData>) cached.value = state;
-    final retained = cached.value;
+  }
+}
+
+class const _CachedContent(
+  final WorkspaceViewScreen owner,
+  final AsyncValue<WorkspaceViewData> state,
+  final AsyncValue<WorkspaceViewData>? retained,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final waiting = active && state.isLoading && retained != null;
-    final display = waiting ? retained : state;
+    final display = waiting ? retained ?? state : state;
 
     return Stack(
       children: [
