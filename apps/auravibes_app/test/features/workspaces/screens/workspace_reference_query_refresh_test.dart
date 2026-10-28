@@ -283,11 +283,18 @@ void main() {
         await flush();
       }
 
-      Finder one() => find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraCheckboxListTile &&
-            widget.semanticLabel == 'Tags: One',
-      );
+      Future<void> toggleOne() async {
+        final menu = find.byWidgetPredicate(
+          (widget) =>
+              widget is PopupMenuButton<String> && widget.tooltip == 'Tags',
+        );
+        await tester.ensureVisible(menu);
+        await tester.tapAt(tester.getTopLeft(menu) + const Offset(10, 10));
+        await flush();
+        await tester.tap(find.byType(CheckedPopupMenuItem<String>).first);
+        await flush();
+      }
+
       Future<void> chooseTarget() async {
         await tester.tap(find.text('Choose records').hitTestable().last);
         await flush();
@@ -308,9 +315,7 @@ void main() {
       if (reference) {
         await tester.tap(find.text('Clear selection').hitTestable().last);
       } else {
-        await tester.ensureVisible(one());
-        await flush();
-        await tester.tap(one());
+        await toggleOne();
       }
       await save();
       expect(find.text('Target'), findsNothing);
@@ -320,9 +325,7 @@ void main() {
       if (reference) {
         await chooseTarget();
       } else {
-        await tester.ensureVisible(one());
-        await flush();
-        await tester.tap(one());
+        await toggleOne();
       }
       await save();
       expect(find.text('Updated'), findsNWidgets(reference ? 3 : 2));
@@ -354,7 +357,7 @@ void main() {
           ),
         );
         await flush();
-        await tester.tap(one());
+        await toggleOne();
       }
       await save();
       expect(find.text('New'), findsOneWidget);
