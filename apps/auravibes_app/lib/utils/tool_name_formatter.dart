@@ -75,6 +75,21 @@ class const ToolNameFormatter._() {
 }
 
 abstract final class _ResolvedToolNameFormatter {
+  static const _workspaceNames = {
+    'workspace_read_directory': LocaleKeys.workspace_tool_names_read_directory,
+    'workspace_read_item': LocaleKeys.workspace_tool_names_open_file_or_view,
+    'workspace_read_table': LocaleKeys.workspace_tool_names_read_table,
+    'workspace_create_folder': LocaleKeys.workspace_tool_names_create_folder,
+    'workspace_rename_folder': LocaleKeys.workspace_tool_names_rename_folder,
+    'workspace_create_table': LocaleKeys.workspace_tool_names_create_table,
+    'workspace_rename_table': LocaleKeys.workspace_tool_names_rename_table,
+    'workspace_add_row': LocaleKeys.workspace_tool_names_add_row,
+    'workspace_update_record': LocaleKeys.workspace_tool_names_update_row,
+    'workspace_save_column': LocaleKeys.workspace_tool_names_edit_column,
+    'workspace_create_view': LocaleKeys.workspace_tool_names_create_view,
+    'workspace_save_view': LocaleKeys.workspace_tool_names_edit_view,
+  };
+
   static String formatWorkspaceToolName(String toolIdentifier) =>
       _formatToolName(toolIdentifier);
 
@@ -124,28 +139,6 @@ abstract final class _ResolvedToolNameFormatter {
   static String _formatSkillName(String skillSlug, String toolIdentifier) =>
       '${skillSlug.toHumanReadable()}: ${_formatToolName(toolIdentifier)}';
 
-  static String _formatToolName(
-    String toolIdentifier,
-  ) => switch (toolIdentifier) {
-    'workspace_read_directory' =>
-      LocaleKeys.workspace_tool_names_read_directory.tr(),
-    'workspace_read_item' =>
-      LocaleKeys.workspace_tool_names_open_file_or_view.tr(),
-    'workspace_read_table' => LocaleKeys.workspace_tool_names_read_table.tr(),
-    'workspace_create_folder' =>
-      LocaleKeys.workspace_tool_names_create_folder.tr(),
-    'workspace_rename_folder' =>
-      LocaleKeys.workspace_tool_names_rename_folder.tr(),
-    'workspace_create_table' =>
-      LocaleKeys.workspace_tool_names_create_table.tr(),
-    'workspace_rename_table' =>
-      LocaleKeys.workspace_tool_names_rename_table.tr(),
-    'workspace_add_row' => LocaleKeys.workspace_tool_names_add_row.tr(),
-    'workspace_update_record' =>
-      LocaleKeys.workspace_tool_names_update_row.tr(),
-    'workspace_save_column' => LocaleKeys.workspace_tool_names_edit_column.tr(),
-    'workspace_create_view' => LocaleKeys.workspace_tool_names_create_view.tr(),
-    'workspace_save_view' => LocaleKeys.workspace_tool_names_edit_view.tr(),
-    _ => toolIdentifier.toHumanReadable(),
-  };
+  static String _formatToolName(String toolIdentifier) =>
+      _workspaceNames[toolIdentifier]?.tr() ?? toolIdentifier.toHumanReadable();
 }
