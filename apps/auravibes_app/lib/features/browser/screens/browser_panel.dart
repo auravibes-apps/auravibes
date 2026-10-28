@@ -1288,18 +1288,26 @@ class const _WorkspaceTabSlot({required final _BrowserPanelData data})
     return Stack(
       children: [
         if (workspaceTabs.directoryOpen.value)
-          Offstage(
-            offstage: selected != 'directory',
-            child: SidebarDirectory(
-              workspaceId: data.request.workspaceId,
-              onOpen: workspaceTabs.open,
-            ),
-          ),
+          _WorkspaceDirectorySlot(data: data, selected: selected),
         for (final item in workspaceTabs.items.value)
           _WorkspaceTabEntry(data: data, item: item, selected: selected),
       ],
     );
   }
+}
+
+class const _WorkspaceDirectorySlot({
+  required final _BrowserPanelData data,
+  required final String? selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Offstage(
+    offstage: selected != 'directory',
+    child: SidebarDirectory(
+      workspaceId: data.request.workspaceId,
+      onOpen: data.workspaceTabs.open,
+    ),
+  );
 }
 
 class const _WorkspaceTabEntry({
