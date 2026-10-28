@@ -17,14 +17,7 @@ abstract final class WorkspaceHistoryApproval {
   }) async =>
       await showDialog<bool>(
         context: context,
-        builder: (_) => _ApprovalDialog(
-          notice: all
-              ? LocaleKeys.workspace_items_trash_delete_all_notice
-              : LocaleKeys.workspace_items_trash_restore_notice,
-          action: all
-              ? LocaleKeys.workspace_items_trash_delete_all
-              : LocaleKeys.workspace_items_trash_restore,
-        ),
+        builder: (_) => _TrashApproval(all: all),
       ) ??
       false;
 
@@ -47,6 +40,18 @@ abstract final class WorkspaceHistoryApproval {
         ),
       ) ??
       false;
+}
+
+class const _TrashApproval({required final bool all}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ApprovalDialog(
+    notice: all
+        ? LocaleKeys.workspace_items_trash_delete_all_notice
+        : LocaleKeys.workspace_items_trash_restore_notice,
+    action: all
+        ? LocaleKeys.workspace_items_trash_delete_all
+        : LocaleKeys.workspace_items_trash_restore,
+  );
 }
 
 class const _ApprovalDialog({

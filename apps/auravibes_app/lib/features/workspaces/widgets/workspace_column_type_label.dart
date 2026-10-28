@@ -36,11 +36,7 @@ class const WorkspaceColumnTypeLabel({
     .url => Icons.link,
     .email => Icons.mail_outline,
     .phone => Icons.phone_outlined,
-    .dateOnly => Icons.calendar_today_outlined,
-    .timestamp => Icons.schedule_outlined,
-    .money => Icons.payments_outlined,
-    .reference => Icons.link_outlined,
-    .attachment => Icons.attach_file,
+    _ => _otherIcon(type),
   };
 
   @override
@@ -59,4 +55,13 @@ class const WorkspaceColumnTypeLabel({
       ),
     ],
   );
+
+  static IconData _otherIcon(WorkspaceColumnType type) => switch (type) {
+    .dateOnly => Icons.calendar_today_outlined,
+    .timestamp => Icons.schedule_outlined,
+    .money => Icons.payments_outlined,
+    .reference => Icons.link_outlined,
+    .attachment => Icons.attach_file,
+    _ => Icons.text_fields,
+  };
 }

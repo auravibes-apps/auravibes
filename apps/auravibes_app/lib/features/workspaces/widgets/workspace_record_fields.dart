@@ -21,20 +21,28 @@ class const WorkspaceRecordFields({
       for (final column in table.columns.where(
         (column) => columnId == null || column.id == columnId,
       ))
-        Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            _RecordValue(
-              table: table,
-              column: column,
-              workspaceId: workspaceId,
-              restricted: restricted.contains(column.id),
-              draft: draft,
-              disabled: disabled,
-            ),
-            _RecordConstraintHints(column: column),
-          ],
-        ),
+        _RecordColumn(this, column),
+    ],
+  );
+}
+
+class const _RecordColumn(
+  final WorkspaceRecordFields fields,
+  final WorkspaceColumn column,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _RecordValue(
+        table: fields.table,
+        column: column,
+        workspaceId: fields.workspaceId,
+        restricted: fields.restricted.contains(column.id),
+        draft: fields.draft,
+        disabled: fields.disabled,
+      ),
+      _RecordConstraintHints(column: column),
     ],
   );
 }
