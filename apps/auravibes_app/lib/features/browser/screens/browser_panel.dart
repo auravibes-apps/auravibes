@@ -114,72 +114,9 @@ class const _BrowserSessionView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tabs = _WorkspaceTabs.use(request);
-    final count = ref.watch(
-      sidebarWorkspaceTabCountProvider((
-        workspaceId: request.workspaceId,
-        conversationId: request.conversationId,
-      )),
-    );
-    useEffect(
-      () =>
-          () => count.value = 0,
-      [count],
-    );
-    final tabCount =
-        tabs.items.value.length +
-        (tabs.directoryOpen.value ? 1 : 0) +
-        (tabs.selected.value == 'chooser' ? 1 : 0);
-    useEffect(
-      () {
-        var mounted = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) count.value = tabCount;
-        });
-
-        return () => mounted = false;
-      },
-      [count, tabCount], // Update the badge when tabs change.
-    );
-    final resultKeys = [request.selectedToolResultTabId];
-    useEffect(
-      () {
-        if (request.selectedToolResultTabId != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) tabs.select(null);
-          });
-        }
-
-        return null;
-      },
-      resultKeys, // Follow the selected tool result.
-    );
-    final requested = ref.watch(
-      workspaceOpenViewProvider(request.workspaceId, request.conversationId),
-    );
-    final requestedKeys = [requested];
-    useEffect(
-      () {
-        if (requested != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!context.mounted) return;
-            request.onSelectToolResultTab(null);
-            tabs.open(requested);
-          });
-        }
-
-        return null;
-      },
-      requestedKeys, // Open workspace requests in their own tab.
-    );
-    ref.listen(
-      workspaceOpenViewProvider(request.workspaceId, request.conversationId),
-      (previous, next) {
-        if (next != null) {
-          request.onSelectToolResultTab(null);
-          tabs.open(next);
-        }
-      },
-    );
+    _useTabCount(ref, tabs);
+    _useSelectedTool(context, tabs);
+    _useRequestedView(context, ref, tabs);
 
     return _BrowserSessionColumn(
       data: _createPanelData(
@@ -247,6 +184,99 @@ class const _BrowserSessionView({
     onCloseSidebar: request.onCloseSidebar,
   );
 }
+
+extension _BrowserWorkspaceHooks on _BrowserSessionView {
+  void _useTabCount(WidgetRef ref, _WorkspaceTabs tabs) {
+    final count = ref.watch(
+      sidebarWorkspaceTabCountProvider((
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      )),
+    );
+    useEffect(
+      () =>
+          () => count.value = 0,
+      [count],
+    );
+    final tabCount = _workspaceTabCount(tabs);
+    useEffect(
+      () => _trackTabCount(count, tabCount),
+      [count, tabCount], // Update the badge when tabs change.
+    );
+  }
+
+  void _useSelectedTool(BuildContext context, _WorkspaceTabs tabs) {
+    final resultKeys = [request.selectedToolResultTabId];
+    useEffect(
+      () => _selectToolAfterFrame(context, tabs),
+      resultKeys, // Follow the selected tool result.
+    );
+  }
+
+  void _useRequestedView(
+    BuildContext context,
+    WidgetRef ref,
+    _WorkspaceTabs tabs,
+  ) {
+    final provider = workspaceOpenViewProvider(
+      request.workspaceId,
+      request.conversationId,
+    );
+    final requested = ref.watch(provider);
+    useEffect(
+      () => _openViewAfterFrame(context, tabs, requested),
+      [requested], // Open workspace requests in their own tab.
+    );
+    ref.listen(provider, (previous, next) => _openRequestedView(tabs, next));
+  }
+
+  VoidCallback _trackTabCount(ValueNotifier<int> count, int tabCount) {
+    var mounted = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) count.value = tabCount;
+    });
+
+    return () => mounted = false;
+  }
+
+  VoidCallback? _selectToolAfterFrame(
+    BuildContext context,
+    _WorkspaceTabs tabs,
+  ) {
+    if (request.selectedToolResultTabId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) tabs.select(null);
+      });
+    }
+
+    return null;
+  }
+
+  VoidCallback? _openViewAfterFrame(
+    BuildContext context,
+    _WorkspaceTabs tabs,
+    WorkspaceChatItem? requested,
+  ) {
+    if (requested != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) _openRequestedView(tabs, requested);
+      });
+    }
+
+    return null;
+  }
+
+  void _openRequestedView(_WorkspaceTabs tabs, WorkspaceChatItem? requested) {
+    if (requested == null) return;
+    request.onSelectToolResultTab(null);
+    tabs.open(requested);
+  }
+}
+
+int _workspaceTabCount(_WorkspaceTabs tabs) =>
+    tabs.items.value.length +
+    (tabs.directoryOpen.value ? 1 : 0) +
+    (tabs.selected.value == 'chooser' ? 1 : 0);
 
 class const _BrowserSessionColumn({required final _BrowserPanelData data})
     extends StatelessWidget {
