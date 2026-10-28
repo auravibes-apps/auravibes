@@ -96,7 +96,8 @@ void main() {
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Cost').first);
       final _ = await tester.pumpAndSettle();
-      expect(tester.widget<AuraButton>(apply).disabled, isTrue);
+      expect(tester.widget<AuraButton>(apply).disabled, isFalse);
+      expect(queries.last.filterColumnId, isNull);
       final amount = find.byWidgetPredicate(
         (widget) =>
             widget is AuraInput &&

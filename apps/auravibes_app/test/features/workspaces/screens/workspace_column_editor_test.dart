@@ -1,20 +1,17 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_record_query_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_editor.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -137,10 +134,6 @@ void main() {
             ),
             overrides: [
               appDatabaseProvider.overrideWithValue(database),
-              workspaceRecordQueryProvider.overrideWith(
-                (ref, arguments) async =>
-                    const WorkspaceRecordPage(records: [], hasMore: false),
-              ),
               workspaceTableUsecaseProvider('one')
                   .overrideWith((ref) async => tables),
             ],
@@ -201,24 +194,28 @@ void main() {
       expect(find.text('Count'), findsOneWidget);
       await tester.tap(button('workspace_record_create'));
       await flush();
-      final number = find.byWidgetPredicate(
-        (widget) => widget is AuraInput && widget.keyboardType?.index == 2,
-      );
-      expect(tester.widget<AuraInput>(number).controller?.text, '2.5');
-      await tester.enterText(number, 'bad');
-      await tester.runAsync(() => tester.tap(button('workspace_record_save')));
-      await flush();
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is TextLocale &&
-              widget.data == LocaleKeys.workspace_items_invalid_table,
+      final current = await tester.runAsync(() async {
+        final table = (await tables.list()).single;
+        final record = (await tables.records(table.id)).single;
+        return (table: table, record: record);
+      });
+      if (current == null) fail('Missing created record');
+      expect(current.record.values[current.table.columns.last.id], isNull);
+      final cell = find.byKey(
+        ValueKey(
+          'workspace_cell_${current.record.id}_${current.table.columns.last.id}',
         ),
-        findsOneWidget,
       );
-      expect(find.text('bad'), findsOneWidget);
+      await tester.tap(cell);
+      await flush();
+      await tester.tap(cell);
+      await tester.tap(cell);
+      await flush();
+      final number = find.byKey(
+        const ValueKey('workspace_inline_record_value'),
+      );
       await tester.enterText(number, '0');
-      await tester.runAsync(() => tester.tap(button('workspace_record_save')));
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await flush();
       await tester.runAsync(() async {
         final table = (await tables.list()).single;
