@@ -8,14 +8,21 @@ Before dispatch, assign each shared editor, repository, or contract to one worke
 Serialize overlapping edits; independent work can continue. Transfer ownership
 with the receiving commit and pending checks, rather than only a ticket number.
 
-Keep one canonical checkpoint per active worker, linked from the parent's
-progress document. Update it before handoff or context loss:
+Keep the parent progress document as an index, not a transcript. Keep one
+compact checkpoint per active worker and replace superseded status at each
+milestone. Summarize completed checks and link detailed output. Update before
+handoff or context loss:
 
 - Owner, worktree, branch, integration base, completed commit, owned/shared paths.
 - Acceptance criteria completed and pending, including provisional integration.
-- Each check's exact command, working directory, checked revision, result,
-  output path, and active process/session handle when applicable.
+- For active or pending checks, exact command, working directory, revision,
+  output path, and process/session handle.
 - Baseline failure evidence, blockers, next action, and superseded decisions.
+
+At each workstream boundary, collect one status with owner, worktree, branch,
+commit, completed and pending checks, blockers, and next action. Inspect the
+current process or output before retrying a check. Avoid duplicate status
+requests while worker state has not changed.
 
 For broad handwritten feature changes, include scoped DCL results before a
 readiness handoff. Reuse the configured `dcl:analyze` command and CI parity

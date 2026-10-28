@@ -14,7 +14,7 @@ class SonarWorkflowTest(unittest.TestCase):
             self.assertIn('github.event.pull_request.head.repo.full_name == github.repository', job)
             self.assertIn('SONAR_TOKEN is required for same-repository pull requests.', job)
             self.assertIn('exit 1', job)
-            self.assertIn('SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9', job)
+            self.assertIn('SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304', job)
         self.assertIn("steps.check-sonar-token.outputs.token_available == 'true'", coverage)
         self.assertIn("needs.coverage.result == 'skipped'", fallback)
         self.assertIn("needs.change.outputs.run_code_checks == 'false'", fallback)
