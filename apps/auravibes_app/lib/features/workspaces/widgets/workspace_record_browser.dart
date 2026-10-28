@@ -51,32 +51,55 @@ class const WorkspaceRecordBrowser({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localSelection = useState(false);
-    final localDraft = useState(false);
-    final draft = _Draft(
-      selectionMode ?? localSelection,
-      draftOpen ?? localDraft,
-    );
-    void Function()? loadWidthsEffect() {
-      var mounted = true;
-      Future<void> load() async {
-        final widths = await _loadColumnWidths(ref, workspaceId, table.id);
-        if (mounted) {
-          draft.columnWidths.value = {...widths, ...draft.columnWidths.value};
-        }
-      }
-
-      unawaited(load());
-
-      return () => mounted = false;
-    }
-
-    useEffect(loadWidthsEffect, [workspaceId, table.id]);
+    final draft = _Draft.use(selectionMode, draftOpen);
+    _useSavedColumnWidths(ref, this, draft);
     final records = ref.watch(
       workspaceRecordQueryProvider(workspaceId, table.id, draft.query.value),
     );
 
     return _Frame(this, draft, records);
+  }
+}
+
+void _useSavedColumnWidths(
+  WidgetRef ref,
+  WorkspaceRecordBrowser browser,
+  _Draft draft,
+) {
+  useEffect(() => _loadSavedColumnWidths(ref, browser, draft), [
+    browser.workspaceId,
+    browser.table.id,
+  ]);
+}
+
+VoidCallback _loadSavedColumnWidths(
+  WidgetRef ref,
+  WorkspaceRecordBrowser browser,
+  _Draft draft,
+) => _ColumnWidthLoad(ref, browser, draft).start();
+
+class _ColumnWidthLoad(
+  final WidgetRef ref,
+  final WorkspaceRecordBrowser browser,
+  final _Draft draft,
+) {
+  bool _mounted = true;
+
+  VoidCallback start() {
+    unawaited(_load());
+
+    return () => _mounted = false;
+  }
+
+  Future<void> _load() async {
+    final widths = await _loadColumnWidths(
+      ref,
+      browser.workspaceId,
+      browser.table.id,
+    );
+    if (_mounted) {
+      draft.columnWidths.value = {...widths, ...draft.columnWidths.value};
+    }
   }
 }
 
@@ -111,6 +134,16 @@ class _Draft {
       editing = useState(false),
       values = useState<Map<String, Object?>>({}),
       focusNodes = useRef(<String, FocusNode>{});
+
+  factory use(
+    ValueNotifier<bool>? selectionMode,
+    ValueNotifier<bool>? draftOpen,
+  ) {
+    final localSelection = useState(false);
+    final localDraft = useState(false);
+
+    return _Draft(selectionMode ?? localSelection, draftOpen ?? localDraft);
+  }
 
   final ValueNotifier<WorkspaceRecordQuery> query;
   final ValueNotifier<bool> controls;
