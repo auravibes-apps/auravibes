@@ -108,7 +108,8 @@ void main() {
     await tester.tap(_button('workspace_filter_reference'));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Ada').last);
-    await tester.tap(find.text('Done'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply selection'));
     final _ = await tester.pumpAndSettle();
     await tester.ensureVisible(_button('workspace_filter_apply'));
     await tester.tap(_button('workspace_filter_apply'));

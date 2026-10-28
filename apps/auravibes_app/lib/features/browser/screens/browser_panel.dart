@@ -936,12 +936,17 @@ class const _SidebarToolResultTabChip({
     title: tab.title,
     child: Text(tab.title, overflow: .ellipsis, maxLines: 1),
     selected: isSelected,
-    onSelect: () {
-      data.workspaceTabs.select(null);
-      data.request.onSelectToolResultTab(tabId);
-    },
-    onClose: () => unawaited(_closeSidebarTab(data, (kind: 'tool', id: tabId))),
+    onSelect: _select,
+    onClose: _close,
   );
+
+  void _select() {
+    data.workspaceTabs.select(null);
+    data.request.onSelectToolResultTab(tab.id);
+  }
+
+  void _close() =>
+      unawaited(_closeSidebarTab(data, (kind: 'tool', id: tab.id)));
 }
 
 class const _SidebarTabCloseButton({
@@ -1173,10 +1178,7 @@ class const _SidebarChooser({required final _BrowserPanelData data})
           identifier: 'sidebar_open_directory',
         ),
         AuraButton(
-          onPressed: () {
-            data.workspaceTabs.select(null);
-            unawaited(data.request.notifier.openTab());
-          },
+          onPressed: _openBrowser,
           child: const TextLocale(LocaleKeys.app_skills_browser_title),
           identifier: 'sidebar_open_browser',
         ),
@@ -1186,6 +1188,11 @@ class const _SidebarChooser({required final _BrowserPanelData data})
 
   void _openDirectory() {
     data.workspaceTabs.open(const WorkspaceChatItem(id: '', kind: 'directory'));
+  }
+
+  void _openBrowser() {
+    data.workspaceTabs.select(null);
+    unawaited(data.request.notifier.openTab());
   }
 }
 

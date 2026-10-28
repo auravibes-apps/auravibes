@@ -189,8 +189,8 @@ class const _CompactColumnButtons({
   Widget build(BuildContext context) {
     final action = draft.action;
 
-    return Row(
-      mainAxisAlignment: .end,
+    return Wrap(
+      alignment: .end,
       children: [
         _CompactColumnCancel(onBack: editor.onBack, pending: action.pending),
         AuraButton(

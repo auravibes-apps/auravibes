@@ -435,7 +435,11 @@ class const _DirectoryList(final _Navigation navigation) extends HookWidget {
     return Column(
       children: [
         Expanded(child: _DirectoryScroll(navigation, scroll)),
-        _SelectionSpace(navigation.selection.value?.values.toList()),
+        Flexible(
+          child: SingleChildScrollView(
+            child: _SelectionSpace(navigation.selection.value?.values.toList()),
+          ),
+        ),
       ],
     );
   }

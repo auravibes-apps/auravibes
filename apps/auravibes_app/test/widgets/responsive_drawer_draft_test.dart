@@ -52,6 +52,12 @@ void main() {
       revision: 1,
       schemaRevision: 1,
     );
+    const record = WorkspaceRecord(
+      id: 'row',
+      tableId: 'table',
+      values: {'label': 'Existing'},
+      revision: 1,
+    );
     await tester.runAsync(
       () => tester.pumpWidget(
         TestableApp(
@@ -63,7 +69,7 @@ void main() {
             ).overrideWith((ref) async => table),
             workspaceRecordQueryProvider.overrideWith(
               (ref, arguments) async =>
-                  const WorkspaceRecordPage(records: [], hasMore: false),
+                  const WorkspaceRecordPage(records: [record], hasMore: false),
             ),
           ],
           workspaceId: 'one',
@@ -71,56 +77,24 @@ void main() {
       ),
     );
     final _ = await tester.pumpAndSettle();
-    await tester.tap(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraIconButton &&
-            widget.identifier == 'workspace_record_create',
-      ),
-    );
+    final cell = find.byKey(const ValueKey('workspace_cell_row_label'));
+    await tester.tap(cell);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(cell);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Title'));
-    final _ = await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraInput &&
-            widget.identifier == 'workspace_record_value',
-      ),
-      'Unsaved record',
-    );
+    final inline = find.byKey(const ValueKey('workspace_inline_record_value'));
+    await tester.enterText(inline, 'Unsaved record');
     for (final width in [400.0, 1200.0]) {
       tester.view.physicalSize = .new(width, 900);
       final _ = await tester.pumpAndSettle();
       expect(
-        tester
-            .widget<AuraInput>(_input('workspace_record_value'))
-            .controller
-            ?.text,
+        tester.widget<TextField>(inline).controller?.text,
         'Unsaved record',
       );
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is AuraButton &&
-              widget.identifier == 'workspace_record_save',
-        ),
-        findsOneWidget,
-      );
     }
-    await tester.tap(find.text('Notes'));
+    final _ = await tester.sendKeyEvent(.escape);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.byType(AuraPopupMenuButton));
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Table settings'));
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraButton &&
-            widget.identifier == 'workspace_column_create',
-      ),
-    );
+    await tester.tap(find.byTooltip('Add column').last);
     final _ = await tester.pumpAndSettle();
     await tester.enterText(
       find.byWidgetPredicate(
@@ -143,7 +117,7 @@ void main() {
         find.byWidgetPredicate(
           (widget) =>
               widget is AuraButton &&
-              widget.identifier == 'workspace_column_save',
+              widget.identifier == 'workspace_column_create_confirm',
         ),
         findsOneWidget,
       );
