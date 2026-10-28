@@ -1,3 +1,5 @@
+// Drift schema declarations require column getters instead of methods.
+// ignore_for_file: weight-of-class
 import 'package:drift/drift.dart';
 
 /// Durable references to secure-store credentials queued by workspace erasure.
