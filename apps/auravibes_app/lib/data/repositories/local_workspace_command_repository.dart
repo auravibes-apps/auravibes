@@ -89,18 +89,18 @@ class const _ReceiptRows(
 
   Future<List<WorkspaceCommandReceiptRow>> receiptPage(String? cursor) {
     final query = database.select(database.workspaceCommandReceipts)
-      ..where(
-        (row) =>
-            _scope(row) &
-            (cursor == null
-                ? const Constant(true)
-                : row.requestId.isBiggerThanValue(cursor)),
-      )
+      ..where((row) => _pageScope(row, cursor))
       ..orderBy([(row) => OrderingTerm.asc(row.requestId)])
       ..limit(101);
 
     return query.get();
   }
+
+  Expression<bool> _pageScope(WorkspaceCommandReceipts row, String? cursor) =>
+      _scope(row) &
+      (cursor == null
+          ? const Constant(true)
+          : row.requestId.isBiggerThanValue(cursor));
 
   Expression<bool> _scope(WorkspaceCommandReceipts row) =>
       row.workspaceId.equals(workspaceId) &
