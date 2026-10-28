@@ -133,70 +133,50 @@ class _WorkspaceViewToolObserverState
     final conversationId = widget.conversationId;
     try {
       if (kind == 'table') {
-        final tables = await ref.read(
-          workspaceTableUsecaseProvider(workspaceId).future,
-        );
-        if (!_sameContext(workspaceId, conversationId)) return;
-        final table = await tables.table(id);
-        if (!_sameContext(workspaceId, conversationId)) return;
-        if (refreshDirectory) {
-          ref.invalidate(workspaceTablesProvider(workspaceId, table.parentId));
-        }
-        ref
-          ..invalidate(workspaceTableProvider(workspaceId, id))
-          ..invalidate(workspaceTableRecordsProvider(workspaceId, id))
-          ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
+        await _refreshTable(id, workspaceId, conversationId, refreshDirectory);
       } else {
-        final views = await ref.read(
-          workspaceViewUsecaseProvider(workspaceId).future,
-        );
-        if (!_sameContext(workspaceId, conversationId)) return;
-        final data = await views.open(id);
-        if (!_sameContext(workspaceId, conversationId)) return;
-        if (refreshDirectory) {
-          ref.invalidate(
-            workspaceViewsProvider(workspaceId, data.view.parentId),
-          );
-        }
-        ref.invalidate(workspaceViewDataProvider(workspaceId, id));
+        await _refreshView(id, workspaceId, conversationId, refreshDirectory);
       }
       if (!_isCurrent(workspaceId, conversationId, sequence)) return;
       ref
           .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
           .openItem(id, kind);
+    } on _StaleWorkspaceContext {
+      return;
     } on Object catch (error) {
       if (!_isCurrent(workspaceId, conversationId, sequence)) return;
-      final denied =
-          (error is WorkspaceTableException &&
-              error.localizationKey ==
-                  LocaleKeys.cloud_errors_permission_denied) ||
-          (error is CloudAppException &&
-              error.localizationKey ==
-                  LocaleKeys.cloud_errors_permission_denied);
-      if (!mounted) return;
-      final messenger = ScaffoldMessenger.maybeOf(context);
-      messenger?.hideCurrentSnackBar();
-      void retry() {
+      _showError(error, () {
         if (!_isCurrent(workspaceId, conversationId, sequence)) return;
         unawaited(_open(id, kind, sequence, refreshDirectory));
-      }
-
-      final _ = messenger?.showSnackBar(
-        .new(
-          content: TextLocale(
-            denied
-                ? LocaleKeys.cloud_errors_permission_denied
-                : LocaleKeys.common_error_message,
-          ),
-          action: denied
-              ? null
-              : SnackBarAction(
-                  label: LocaleKeys.route_state_retry.tr(),
-                  onPressed: retry,
-                ),
-        ),
-      );
+      });
     }
+  }
+
+  void _showError(Object error, VoidCallback onRetry) {
+    final denied =
+        (error is WorkspaceTableException &&
+            error.localizationKey ==
+                LocaleKeys.cloud_errors_permission_denied) ||
+        (error is CloudAppException &&
+            error.localizationKey == LocaleKeys.cloud_errors_permission_denied);
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    final _ = messenger?.showSnackBar(
+      .new(
+        content: TextLocale(
+          denied
+              ? LocaleKeys.cloud_errors_permission_denied
+              : LocaleKeys.common_error_message,
+        ),
+        action: denied
+            ? null
+            : SnackBarAction(
+                label: LocaleKeys.route_state_retry.tr(),
+                onPressed: onRetry,
+              ),
+      ),
+    );
   }
 
   bool _sameContext(String workspaceId, String conversationId) =>
@@ -211,6 +191,64 @@ class _WorkspaceViewToolObserverState
       conversationId == widget.conversationId;
 }
 
+extension _WorkspaceToolRefresh on _WorkspaceViewToolObserverState {
+  Future<T> _guarded<T>(
+    Future<T> operation,
+    String workspaceId,
+    String conversationId,
+  ) async {
+    final result = await operation;
+    if (!_sameContext(workspaceId, conversationId)) {
+      throw const _StaleWorkspaceContext();
+    }
+
+    return result;
+  }
+
+  Future<void> _refreshTable(
+    String id,
+    String workspaceId,
+    String conversationId,
+    bool refreshDirectory,
+  ) async {
+    final tables = await _guarded(
+      ref.read(workspaceTableUsecaseProvider(workspaceId).future),
+      workspaceId,
+      conversationId,
+    );
+    final table = await _guarded(tables.table(id), workspaceId, conversationId);
+    if (refreshDirectory) {
+      ref.invalidate(workspaceTablesProvider(workspaceId, table.parentId));
+    }
+    ref
+      ..invalidate(workspaceTableProvider(workspaceId, id))
+      ..invalidate(workspaceTableRecordsProvider(workspaceId, id))
+      ..invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
+  }
+
+  Future<void> _refreshView(
+    String id,
+    String workspaceId,
+    String conversationId,
+    bool refreshDirectory,
+  ) async {
+    final views = await _guarded(
+      ref.read(workspaceViewUsecaseProvider(workspaceId).future),
+      workspaceId,
+      conversationId,
+    );
+    final data = await _guarded(views.open(id), workspaceId, conversationId);
+    if (refreshDirectory) {
+      ref.invalidate(workspaceViewsProvider(workspaceId, data.view.parentId));
+    }
+    ref.invalidate(workspaceViewDataProvider(workspaceId, id));
+  }
+}
+
+class _StaleWorkspaceContext implements Exception {
+  const new();
+}
+
 ({String id, String kind, bool refreshDirectory, String? parentId})? _item(
   MessageToolCallEntity call,
 ) {
@@ -218,53 +256,52 @@ class _WorkspaceViewToolObserverState
   try {
     final result = jsonDecode(call.responseRaw ?? '');
     if (result is! Map) return null;
-    final resolvedAction = workspaceActionForTool(call.name, call.arguments);
-    final action = resolvedAction;
-    if (!{
-      'createFolder',
-      'renameFolder',
-      'createView',
-      'saveView',
-      'createTable',
-      'renameTable',
-      'saveColumn',
-      'createRecord',
-      'updateRecord',
-    }.contains(action)) {
-      return null;
-    }
-    final kind = result['kind'];
-    final id = kind == 'record' ? result['tableId'] : result['id'];
-    final expectedKind = switch (action) {
-      'createFolder' || 'renameFolder' => 'folder',
-      'createView' || 'saveView' => 'view',
-      'createRecord' || 'updateRecord' => 'record',
-      _ => 'table',
-    };
-    if ((kind != expectedKind &&
-            !(expectedKind == 'record' && kind == 'table')) ||
-        id is! String ||
-        id.isEmpty) {
-      return null;
-    }
 
-    final parentId = action == 'createTable' || action == 'createFolder'
-        ? call.arguments['parentId']
-        : result['parentId'];
-    if (parentId != null && parentId is! String) return null;
-
-    return (
-      id: id,
-      kind: kind == 'record' ? 'table' : kind as String,
-      refreshDirectory: switch (action) {
-        'createTable' || 'createFolder' => true,
-        'renameFolder' => result.containsKey('parentId'),
-        'renameTable' || 'createView' || 'saveView' => true,
-        _ => false,
-      },
-      parentId: parentId as String?,
-    );
+    return _itemResult(call, result);
   } on FormatException {
     return null;
   }
 }
+
+({String id, String kind, bool refreshDirectory, String? parentId})?
+_itemResult(MessageToolCallEntity call, Map<dynamic, dynamic> result) {
+  final action = workspaceActionForTool(call.name, call.arguments);
+  final expectedKind = _expectedKind(action);
+  if (expectedKind == null) return null;
+  final kind = result['kind'];
+  final id = kind == 'record' ? result['tableId'] : result['id'];
+  if ((kind != expectedKind &&
+          !(expectedKind == 'record' && kind == 'table')) ||
+      id is! String ||
+      id.isEmpty) {
+    return null;
+  }
+
+  final parentId = action == 'createTable' || action == 'createFolder'
+      ? call.arguments['parentId']
+      : result['parentId'];
+  if (parentId != null && parentId is! String) return null;
+
+  return (
+    id: id,
+    kind: kind == 'record' ? 'table' : kind as String,
+    refreshDirectory: _refreshDirectory(action, result),
+    parentId: parentId as String?,
+  );
+}
+
+String? _expectedKind(String? action) => switch (action) {
+  'createFolder' || 'renameFolder' => 'folder',
+  'createView' || 'saveView' => 'view',
+  'createRecord' || 'updateRecord' => 'record',
+  'createTable' || 'renameTable' || 'saveColumn' => 'table',
+  _ => null,
+};
+
+bool _refreshDirectory(String? action, Map<dynamic, dynamic> result) =>
+    switch (action) {
+      'createTable' || 'createFolder' => true,
+      'renameFolder' => result.containsKey('parentId'),
+      'renameTable' || 'createView' || 'saveView' => true,
+      _ => false,
+    };

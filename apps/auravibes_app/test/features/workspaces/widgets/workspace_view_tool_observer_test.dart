@@ -592,4 +592,135 @@ void main() {
     expect(tablesLoaded, 3);
     expect(container.read(workspaceOpenViewProvider('ws', 'chat'))?.id, 'view');
   });
+  for (final kind in ['table', 'view']) {
+    for (final boundary in ['provider', 'item']) {
+      for (final changed in ['workspace', 'conversation']) {
+        for (final fails in [false, true]) {
+          testWidgets(
+            '$kind $boundary stops after $changed changes (fails: $fails)',
+            (tester) async {
+              final stream = StreamController<List<MessageEntity>>();
+              addTearDown(stream.close);
+              final ids = ValueNotifier((
+                workspace: 'ws',
+                conversation: 'chat',
+              ));
+              addTearDown(ids.dispose);
+              final tables = _Tables();
+              final views = _Views();
+              final table = _Table();
+              when(() => table.parentId).thenReturn(null);
+              final tableProvider = Completer<OrganizeWorkspaceTablesUsecase>();
+              final viewProvider = Completer<ManageWorkspaceViewsUsecase>();
+              final tableResult = Completer<WorkspaceTable>();
+              final viewResult = Completer<WorkspaceViewData>();
+              when(() => tables.table('target'))
+                  .thenAnswer((_) => tableResult.future);
+              when(() => views.open('target'))
+                  .thenAnswer((_) => viewResult.future);
+              final container = ProviderContainer(
+                overrides: [
+                  chatMessagesProvider(
+                    'ws',
+                    'chat',
+                  ).overrideWith((ref) => stream.stream),
+                  chatMessagesProvider(
+                    'other',
+                    'chat',
+                  ).overrideWith((ref) => const Stream.empty()),
+                  chatMessagesProvider(
+                    'ws',
+                    'other',
+                  ).overrideWith((ref) => const Stream.empty()),
+                  workspaceTableUsecaseProvider('ws')
+                      .overrideWith((ref) => tableProvider.future),
+                  workspaceViewUsecaseProvider('ws')
+                      .overrideWith((ref) => viewProvider.future),
+                ],
+              );
+              addTearDown(container.dispose);
+              if (boundary == 'item') {
+                tableProvider.complete(tables);
+                viewProvider.complete(views);
+              }
+              await tester.pumpWidget(
+                UncontrolledProviderScope(
+                  container: container,
+                  child: MaterialApp(
+                    home: ValueListenableBuilder(
+                      valueListenable: ids,
+                      builder: (_, value, _) => WorkspaceViewToolObserver(
+                        workspaceId: value.workspace,
+                        conversationId: value.conversation,
+                        child: const SizedBox(),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              stream.add([_message([])]);
+              await tester.pump();
+              final call = kind == 'table'
+                  ? _call('call', 'target', action: 'renameTable').copyWith(
+                      responseRaw: jsonEncode({
+                        'kind': 'table',
+                        'id': 'target',
+                      }),
+                    )
+                  : _call('call', 'target');
+              stream.add([
+                _message([call]),
+              ]);
+              await tester.pump();
+              if (boundary == 'item') {
+                if (kind == 'table') {
+                  verify(() => tables.table('target')).called(1);
+                } else {
+                  verify(() => views.open('target')).called(1);
+                }
+              }
+              ids.value = changed == 'workspace'
+                  ? (workspace: 'other', conversation: 'chat')
+                  : (workspace: 'ws', conversation: 'other');
+              await tester.pump();
+              if (boundary == 'provider') {
+                if (fails && kind == 'table') {
+                  tableProvider.completeError(StateError('late failure'));
+                } else {
+                  tableProvider.complete(tables);
+                }
+                if (fails && kind == 'view') {
+                  viewProvider.completeError(StateError('late failure'));
+                } else {
+                  viewProvider.complete(views);
+                }
+              } else {
+                if (fails && kind == 'table') {
+                  tableResult.completeError(StateError('late failure'));
+                } else {
+                  tableResult.complete(table);
+                }
+                if (fails && kind == 'view') {
+                  viewResult.completeError(StateError('late failure'));
+                } else {
+                  viewResult.complete(_ViewData());
+                }
+              }
+              await tester.pump();
+              await tester.pump();
+              expect(
+                container.read(workspaceOpenViewProvider('ws', 'chat')),
+                isNull,
+              );
+              if (boundary == 'provider') {
+                final _ = verifyNever(() => tables.table(any()));
+                final _ = verifyNever(() => views.open(any()));
+              }
+              expect(tester.takeException(), isNull);
+            },
+          );
+        }
+      }
+    }
+  }
 }
