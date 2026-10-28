@@ -965,7 +965,7 @@ class const _CheckboxCell(
     );
   }
 
-  void _change(bool? value) => unawaited(() {
+  void _change(bool value) => unawaited(() {
     cell.owner.draft.active.value = (
       record: cell.record.id,
       column: cell.column.id,
@@ -978,7 +978,7 @@ class const _CheckboxCell(
       final _ = await usecase.updateRecord(
         table: cell.owner.table,
         record: cell.record,
-        values: {...cell.record.values, cell.column.id: value ?? false},
+        values: {...cell.record.values, cell.column.id: value},
       );
       if (!ref.context.mounted) return;
       ref.invalidate(
@@ -1437,15 +1437,11 @@ class const _ReferenceLabel(
   );
 }
 
-String _value(
-  WorkspaceRecord record,
-  String columnId, [
-  WorkspaceColumn? column,
-]) {
+String _value(WorkspaceRecord record, String columnId, WorkspaceColumn column) {
   final value = record.values[columnId];
   if (value == null) return LocaleKeys.workspace_items_missing_value.tr();
-  if (column?.type == WorkspaceColumnType.timestamp && value is String) {
-    return WorkspaceTimeZones.display(value, column?.timeZone ?? 'UTC');
+  if (column.type == WorkspaceColumnType.timestamp && value is String) {
+    return WorkspaceTimeZones.display(value, column.timeZone);
   }
 
   return _display(value);

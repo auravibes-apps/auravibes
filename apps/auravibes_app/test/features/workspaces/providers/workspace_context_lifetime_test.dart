@@ -65,5 +65,4 @@ void main() {
       expect(await pending, containsPair('kind', 'directory'));
     },
   );
-
 }

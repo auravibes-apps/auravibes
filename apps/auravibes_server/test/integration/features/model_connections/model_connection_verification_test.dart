@@ -60,7 +60,7 @@ void main() {
       await expectLater(
         useCases.verifyDraft(
           fixture.session,
-          userId: 'not-a-member',
+          userId: const Uuid().v4().toString(),
           request: _verifyRequest(fixture),
         ),
         throwsA(isA<CloudWorkspaceException>()),
@@ -263,7 +263,7 @@ void main() {
       expect(updated.url, 'https://new.example/v1');
       expect(updated.revision, 2);
     });
-  });
+  }, rollbackDatabase: RollbackDatabase.disabled);
 }
 
 ModelConnectionUseCases _useCases({required ModelCatalogFetcher fetch}) =>

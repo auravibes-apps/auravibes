@@ -75,19 +75,21 @@ class const LocalWorkspaceAssetErasure(
     return false;
   }
 
-  Future<void> recoverUntrackedWrite(String id, {String? workspaceId}) =>
-      database.transaction(() async {
-        if (await _metadataExists(id)) return;
-        final _ = await database
-            .into(database.workspaceAssetDeletions)
-            .insert(
-              WorkspaceAssetDeletionsCompanion.insert(
-                assetId: id,
-                workspaceId: .new(workspaceId),
-              ),
-              mode: .insertOrIgnore,
-            );
-      });
+  Future<void> recoverUntrackedWrite(
+    String id, {
+    required String workspaceId,
+  }) => database.transaction(() async {
+    if (await _metadataExists(id)) return;
+    final _ = await database
+        .into(database.workspaceAssetDeletions)
+        .insert(
+          WorkspaceAssetDeletionsCompanion.insert(
+            assetId: id,
+            workspaceId: .new(workspaceId),
+          ),
+          mode: .insertOrIgnore,
+        );
+  });
 
   Future<void> _capture(String id) async {
     final workspace = await database.workspaceDao.getWorkspaceById(id);
@@ -211,7 +213,7 @@ class const LocalWorkspaceAssetErasure(
 
 WorkspaceAssetDeletionsCompanion _job(
   WorkspaceAssetRow row, {
-  String? workspaceId,
+  required String workspaceId,
 }) => WorkspaceAssetDeletionsCompanion.insert(
   assetId: row.id,
   workspaceId: .new(workspaceId),

@@ -12,7 +12,7 @@ typedef _ToolScope = ({
 });
 typedef _CommandRequest = ({
   Map<String, dynamic> arguments,
-  String? operationId,
+  String operationId,
 });
 typedef _PreparedCommand = ({
   WorkspaceConversationCommandUsecase command,
@@ -31,7 +31,7 @@ class const WorkspaceConversationToolsUsecase({
   Future<Object?> call({
     required String conversationId,
     required Map<String, dynamic> arguments,
-    String? operationId,
+    String operationId = '',
   }) async {
     final target = await _target(conversationId);
     final receiptScopeId = await _receiptScopeId(target);
@@ -136,7 +136,7 @@ class const _SelectedCommand(
   Future<Map<String, Object?>> _write(_PreparedCommand prepared) async {
     final store = owner.receipts;
     final operationId = request.operationId;
-    if (store == null || operationId == null || operationId.isEmpty) {
+    if (store == null || operationId.isEmpty) {
       throw const WorkspaceTableException();
     }
 

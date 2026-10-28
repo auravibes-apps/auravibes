@@ -15,10 +15,10 @@ class DeleteWorkspaceUseCase {
     required this._restoreBackgroundWorkAfterFailedDeletion,
     required this._clearWorkspaceDrafts,
     required this._cleanupDeletedAssets,
-    this.hasPendingCleanup,
+    this.hasPendingCleanup = _noPendingCleanup,
   });
 
-  final Future<bool> Function(String workspaceId)? hasPendingCleanup;
+  final Future<bool> Function(String workspaceId) hasPendingCleanup;
   final WorkspaceRepository _repository;
   final Future<void> Function(String workspaceId)
   _prepareBackgroundWorkDeletion;
@@ -55,7 +55,7 @@ class DeleteWorkspaceUseCase {
     if (deletedWorkspace) {
       await _clearWorkspaceDrafts(id);
       await _cleanupDeletedAssets();
-      if (await (hasPendingCleanup ?? _noPendingCleanup)(id)) {
+      if (await hasPendingCleanup(id)) {
         return WorkspaceDeletionResult.cleanupPending;
       }
     }
