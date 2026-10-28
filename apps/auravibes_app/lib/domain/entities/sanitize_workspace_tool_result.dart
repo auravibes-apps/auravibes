@@ -6,35 +6,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 
 /// Stored tool history is not an enduring grant to workspace data.
 MessageToolCallEntity sanitizeWorkspaceToolResult(MessageToolCallEntity call) {
-  if (!isWorkspaceToolName(call.name) ||
-      !{
-        'read',
-        'readDirectory',
-      }.contains(workspaceActionForTool(call.name, call.arguments)) ||
-      (call.responseRaw == null &&
-          call.responseContextRaw == null &&
-          call.appData == null)) {
-    return call;
-  }
-
-  if (call.resultStatus?.isFailure() ?? false) {
-    final response = jsonEncode(
-      workspaceFailureContext(call.responseContextRaw ?? call.responseRaw),
-    );
-
-    return call.copyWith(
-      responseRaw: response,
-      responseContextRaw: response,
-      appData: null,
-      outputTruncated: false,
-      originalResponseBytes: null,
-      fullOutputForContext: false,
-    );
-  }
-
-  final response = call.name == workspaceReadTableToolName
-      ? _safeTableSchemaResult(call)
-      : _safeDirectoryResult(call);
+  if (!_isReadWithOutput(call)) return call;
+  final response = _safeResponse(call);
 
   return call.copyWith(
     responseRaw: response,
@@ -46,6 +19,32 @@ MessageToolCallEntity sanitizeWorkspaceToolResult(MessageToolCallEntity call) {
   );
 }
 
+bool _isReadWithOutput(MessageToolCallEntity call) {
+  if (!isWorkspaceToolName(call.name)) return false;
+  if (!{
+    'read',
+    'readDirectory',
+  }.contains(workspaceActionForTool(call.name, call.arguments))) {
+    return false;
+  }
+
+  return call.responseRaw != null ||
+      call.responseContextRaw != null ||
+      call.appData != null;
+}
+
+String _safeResponse(MessageToolCallEntity call) {
+  if (call.resultStatus?.isFailure() ?? false) {
+    return jsonEncode(
+      workspaceFailureContext(call.responseContextRaw ?? call.responseRaw),
+    );
+  }
+
+  return call.name == workspaceReadTableToolName
+      ? _safeTableSchemaResult(call)
+      : _safeDirectoryResult(call);
+}
+
 String _safeTableSchemaResult(MessageToolCallEntity call) {
   try {
     final raw = call.responseContextRaw ?? call.responseRaw;
@@ -55,21 +54,21 @@ String _safeTableSchemaResult(MessageToolCallEntity call) {
       return '{"redacted":true}';
     }
 
-    return jsonEncode({
-      if (value['id'] is String) 'id': value['id'],
-      'kind': 'table',
-      if (value['name'] is String) 'name': value['name'],
-      if (value['revision'] is int) 'revision': value['revision'],
-      if (value['schemaRevision'] is int)
-        'schemaRevision': value['schemaRevision'],
-      if (value['labelColumnId'] is String)
-        'labelColumnId': value['labelColumnId'],
-      'columns': value['columns'],
-    });
+    return jsonEncode(_tableSchema(value));
   } on FormatException {
     return '{"redacted":true}';
   }
 }
+
+Map<String, Object?> _tableSchema(Map<dynamic, dynamic> value) => {
+  if (value['id'] is String) 'id': value['id'],
+  'kind': 'table',
+  if (value['name'] is String) 'name': value['name'],
+  if (value['revision'] is int) 'revision': value['revision'],
+  if (value['schemaRevision'] is int) 'schemaRevision': value['schemaRevision'],
+  if (value['labelColumnId'] is String) 'labelColumnId': value['labelColumnId'],
+  'columns': value['columns'],
+};
 
 String _safeDirectoryResult(MessageToolCallEntity call) {
   try {
@@ -104,21 +103,25 @@ MessageMetadataEntity redactInheritedWorkspaceToolMetadata(
     toolCalls: [
       for (final call in metadata.toolCalls)
         if (isWorkspaceToolName(call.name))
-          call.copyWith(
-            argumentsRaw: jsonEncode(
-              workspaceToolArgumentsForContext(call.name, call.arguments),
-            ),
-            responseRaw: call.isPending ? null : workspaceContextUnavailable,
-            responseContextRaw: call.isPending
-                ? null
-                : workspaceContextUnavailable,
-            appData: null,
-            outputTruncated: false,
-            originalResponseBytes: null,
-            fullOutputForContext: false,
-          )
+          _redactInheritedCall(call)
         else
           call,
     ],
+  );
+}
+
+MessageToolCallEntity _redactInheritedCall(MessageToolCallEntity call) {
+  final response = call.isPending ? null : workspaceContextUnavailable;
+
+  return call.copyWith(
+    argumentsRaw: jsonEncode(
+      workspaceToolArgumentsForContext(call.name, call.arguments),
+    ),
+    responseRaw: response,
+    responseContextRaw: response,
+    appData: null,
+    outputTruncated: false,
+    originalResponseBytes: null,
+    fullOutputForContext: false,
   );
 }

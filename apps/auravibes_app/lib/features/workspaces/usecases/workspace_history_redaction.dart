@@ -72,23 +72,31 @@ abstract final class _WorkspaceHistoryRedaction {
 
 MessageToolCallEntity _currentCall(MessageToolCallEntity call) {
   if (call.isPending) return workspaceToolCallForContext(call, '');
+  final projected = _currentResponse(call);
+
+  return call.copyWith(
+    argumentsRaw: _currentArguments(call),
+    responseRaw: projected,
+    responseContextRaw: projected,
+    appData: null,
+  );
+}
+
+String _currentResponse(MessageToolCallEntity call) {
   final response = call.resultStatus?.isSuccess() ?? false
       ? call.responseContextRaw ?? call.responseRaw ?? '{}'
       : jsonEncode(
           workspaceFailureContext(call.responseContextRaw ?? call.responseRaw),
         );
 
-  return call.copyWith(
-    argumentsRaw: jsonEncode(
-      workspaceToolArgumentsForContext(
-        call.name,
-        call.arguments,
-        preserveAction: true,
-        preserveTargetIdentifiers: true,
-      ),
-    ),
-    responseRaw: projectToolOutput(response).text,
-    responseContextRaw: projectToolOutput(response).text,
-    appData: null,
-  );
+  return projectToolOutput(response).text;
 }
+
+String _currentArguments(MessageToolCallEntity call) => jsonEncode(
+  workspaceToolArgumentsForContext(
+    call.name,
+    call.arguments,
+    preserveAction: true,
+    preserveTargetIdentifiers: true,
+  ),
+);
