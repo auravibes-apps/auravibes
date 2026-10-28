@@ -23,27 +23,46 @@ class const WorkspaceReferenceRecordDialog({
     WorkspaceReferenceRecordInput input,
   ) => showDialog<void>(
     context: context,
-    builder: (context) {
-      final size = MediaQuery.sizeOf(context);
-      final inset = size.width < 600 ? 8.0 : 40.0;
-
-      return Dialog(
-        insetPadding: .all(inset),
-        child: SizedBox(
-          width: (size.width - inset * 2).clamp(0.0, 680.0),
-          height: (size.height - inset * 2).clamp(0.0, 560.0),
-          child: WorkspaceReferenceRecordDialog(
-            workspaceId: workspaceId,
-            input: input,
-          ),
-        ),
-      );
-    },
+    builder: (_) =>
+        _ReferenceRecordModal(workspaceId: workspaceId, input: input),
   );
 
   @override
   Widget build(BuildContext context) =>
       _ReferenceEditor(workspaceId: workspaceId, input: input);
+}
+
+class const _ReferenceRecordModal({
+  required final String workspaceId,
+  required final WorkspaceReferenceRecordInput input,
+}) extends StatelessWidget {
+  static const _maximumWidth = 680.0;
+  static const _maximumHeight = 560.0;
+  static const _insetsPerAxis = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final inset = size.width < 600 ? 8.0 : 40.0;
+    final dimensions = _dimensions(size, inset);
+
+    return Dialog(
+      insetPadding: .all(inset),
+      child: SizedBox(
+        width: dimensions.width,
+        height: dimensions.height,
+        child: WorkspaceReferenceRecordDialog(
+          workspaceId: workspaceId,
+          input: input,
+        ),
+      ),
+    );
+  }
+
+  ({double width, double height}) _dimensions(Size size, double inset) => (
+    width: (size.width - inset * _insetsPerAxis).clamp(0.0, _maximumWidth),
+    height: (size.height - inset * _insetsPerAxis).clamp(0.0, _maximumHeight),
+  );
 }
 
 class const _ReferenceEditor({

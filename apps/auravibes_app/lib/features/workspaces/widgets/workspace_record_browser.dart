@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_record_que
 import 'package:auravibes_app/features/workspaces/providers/workspace_references_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_tables_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_bulk_record_dialog.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_column_type_label.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
@@ -989,27 +990,35 @@ class const _CheckboxCell(
     );
   }
 
-  void _change(bool value) => unawaited(() {
+  void _change(bool value) {
     cell.owner.draft.active.value = (
       record: cell.record.id,
       column: cell.column.id,
     );
+    unawaited(action.run(() => _persist(value)));
+  }
 
-    return action.run(() async {
-      final usecase = await ref.read(
-        workspaceTableUsecaseProvider(cell.owner.browser.workspaceId).future,
-      );
-      final _ = await usecase.updateRecord(
-        table: cell.owner.table,
-        record: cell.record,
-        values: {...cell.record.values, cell.column.id: value},
-      );
-      if (!ref.context.mounted) return;
-      ref.invalidate(
-        workspaceRecordQueryUsecaseProvider(cell.owner.browser.workspaceId),
-      );
-    });
-  }());
+  Future<void> _persist(bool value) async {
+    final workspaceId = cell.owner.browser.workspaceId;
+    final usecase = await ref.read(
+      workspaceTableUsecaseProvider(workspaceId).future,
+    );
+    await _update(usecase, value);
+    if (!ref.context.mounted) return;
+    ref.invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
+  }
+
+  Future<void> _update(
+    OrganizeWorkspaceTablesUsecase usecase,
+    bool value,
+  ) async {
+    final record = cell.record;
+    final _ = await usecase.updateRecord(
+      table: cell.owner.table,
+      record: record,
+      values: {...record.values, cell.column.id: value},
+    );
+  }
 }
 
 String _workspaceErrorText(Object error) => switch (error) {

@@ -202,18 +202,29 @@ class const _ItemRow(
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPressable(
-    child: ListTile(
-      leading: SizedBox(width: 48, child: Center(child: _Leading(this))),
-      title: Text(item.name),
-      trailing: SizedBox(width: 48, child: _Menu(this)),
-      mouseCursor: SystemMouseCursors.click,
-    ),
+    child: _DirectoryTile(row: this),
     color: context.auraColors.primary,
     key: ValueKey(item.key),
     onPressed: owner.selection == null ? onOpen : _select,
     onLongPress: _select,
   );
   void _select() => owner.onSelect?.call(item);
+}
+
+class const _DirectoryTile({required final _ItemRow row})
+    extends StatelessWidget {
+  static const _actionWidth = 48.0;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: SizedBox(
+      width: _actionWidth,
+      child: Center(child: _Leading(row)),
+    ),
+    title: Text(row.item.name),
+    trailing: SizedBox(width: _actionWidth, child: _Menu(row)),
+    mouseCursor: SystemMouseCursors.click,
+  );
 }
 
 class const _Leading(final _ItemRow row) extends StatelessWidget {

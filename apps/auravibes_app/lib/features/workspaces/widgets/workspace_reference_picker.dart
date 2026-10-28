@@ -98,8 +98,6 @@ class const _PickerState(
         record: null,
         onSaved: _created,
       ));
-  void done() => picker.onSelected(draft.selected.value.toList());
-  void clear() => draft.selected.value = {};
 
   void _created(WorkspaceRecord record) {
     select(record.id);
@@ -137,6 +135,18 @@ class const _PickerBody({
 }
 
 class const _PickerHeader({required final _PickerState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _PickerTargetTitle(state: state),
+      _PickerSearch(state: state),
+      _PickerCreate(state: state),
+    ],
+  );
+}
+
+class const _PickerTargetTitle({required final _PickerState state})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -146,22 +156,26 @@ class const _PickerHeader({required final _PickerState state})
         state.picker.column.targetTableId ?? '',
       ),
     );
-    final name = target.asData?.value.name ?? state.picker.column.name;
 
-    return Column(
-      children: [
-        TextLocale(
-          LocaleKeys.workspace_items_reference_picker_title,
-          args: [name],
-        ),
-        AuraInput(
-          label: const TextLocale(LocaleKeys.workspace_items_reference_search),
-          onChanged: state.search,
-        ),
-        _PickerCreate(state: state),
-      ],
-    );
+    return _PickerTitle(target.asData?.value.name ?? state.picker.column.name);
   }
+}
+
+class const _PickerTitle(final String name) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextLocale(
+    LocaleKeys.workspace_items_reference_picker_title,
+    args: [name],
+  );
+}
+
+class const _PickerSearch({required final _PickerState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    label: const TextLocale(LocaleKeys.workspace_items_reference_search),
+    onChanged: state.search,
+  );
 }
 
 class const _PickerCreate({required final _PickerState state})
@@ -203,30 +217,48 @@ class const _PickerPages({
     children: [
       _NextPage(state: state, nextId: nextId),
       _FirstPage(state: state),
-      Row(
-        children: [
-          if (state.draft.selected.value.isNotEmpty) ...[
-            TextLocale(
-              LocaleKeys.workspace_items_reference_selection_count,
-              args: ['${state.draft.selected.value.length}'],
-            ),
-            const Spacer(),
-            AuraButton(
-              onPressed: state.clear,
-              child: const TextLocale(
-                LocaleKeys.workspace_items_reference_remove,
-              ),
-            ),
-          ] else
-            const Spacer(),
-          AuraButton(
-            onPressed: state.done,
-            child: const TextLocale(LocaleKeys.workspace_items_reference_apply),
-          ),
-        ],
+      _PickerSelection(state: state),
+    ],
+  );
+}
+
+class const _PickerSelection({required final _PickerState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      _PickerSelectionCount(state: state),
+      const Spacer(),
+      _PickerClear(state: state),
+      AuraButton(
+        onPressed: () =>
+            state.picker.onSelected(state.draft.selected.value.toList()),
+        child: const TextLocale(LocaleKeys.workspace_items_reference_apply),
       ),
     ],
   );
+}
+
+class const _PickerSelectionCount({required final _PickerState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => state.draft.selected.value.isEmpty
+      ? const SizedBox.shrink()
+      : TextLocale(
+          LocaleKeys.workspace_items_reference_selection_count,
+          args: ['${state.draft.selected.value.length}'],
+        );
+}
+
+class const _PickerClear({required final _PickerState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => state.draft.selected.value.isEmpty
+      ? const SizedBox.shrink()
+      : AuraButton(
+          onPressed: () => state.draft.selected.value = {},
+          child: const TextLocale(LocaleKeys.workspace_items_reference_remove),
+        );
 }
 
 class const _ReferenceResults({
