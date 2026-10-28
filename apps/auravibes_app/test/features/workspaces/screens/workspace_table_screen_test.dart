@@ -866,6 +866,88 @@ void main() {
     expect(find.textContaining('2026-03-08T03:00:00'), findsOneWidget);
   });
 
+  testWidgets('numeric inline edit rejects invalid text and accepts empty', (
+    tester,
+  ) async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final tables = OrganizeWorkspaceTablesUsecase(
+      LocalWorkspaceTableRepository(database, 'one'),
+    );
+    final setup = await tester.runAsync(() async {
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final initial = await tables.create(name: 'Numbers', labelName: 'Name');
+      final table = await tables.saveColumn(
+        table: initial,
+        column: const WorkspaceColumn(id: '', name: 'Count', type: .number),
+      );
+      final record = await tables.createRecord(
+        table: table,
+        values: {table.labelColumnId: 'Row', table.columns.last.id: 42},
+      );
+      await tester.pumpWidget(
+        TestableApp(
+          child: WorkspaceRecordBrowser(
+            workspaceId: 'one',
+            table: table,
+            onRecord: (_) => fail('Unexpected record navigation'),
+          ),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            workspaceTableUsecaseProvider('one')
+                .overrideWith((ref) async => tables),
+            workspaceRecordQueryProvider.overrideWith(
+              (ref, arguments) async => WorkspaceRecordPage(
+                records: await tables.records(table.id),
+                hasMore: false,
+              ),
+            ),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+
+      return (table: table, record: record);
+    });
+    if (setup == null) throw StateError('Numeric test setup failed');
+    final table = setup.table;
+    final record = setup.record;
+    await _settleDatabase(tester);
+    final cell = find.byKey(
+      ValueKey('workspace_cell_${record.id}_${table.columns.last.id}'),
+    );
+    await tester.tap(cell);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(cell);
+    await _settleDatabase(tester);
+    final inline = find.byKey(const ValueKey('workspace_inline_record_value'));
+    expect(inline, findsOneWidget);
+    await tester.enterText(inline, 'invalid');
+    await tester.runAsync(() => tester.testTextInput.receiveAction(.done));
+    await _settleDatabase(tester);
+    expect(inline, findsOneWidget);
+    expect(
+      (await tables.record(table.id, record.id)).values[table.columns.last.id],
+      42,
+    );
+    await tester.enterText(inline, '');
+    await tester.runAsync(() => tester.testTextInput.receiveAction(.done));
+    await _settleDatabase(tester);
+    expect(
+      (await tables.record(table.id, record.id)).values[table.columns.last.id],
+      isNull,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('ordinary controls create tables and edit columns and records', (
     tester,
   ) async {

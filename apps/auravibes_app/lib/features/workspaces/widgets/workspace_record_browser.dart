@@ -1042,24 +1042,7 @@ class const _UrlCell(
         Expanded(child: Text(value, overflow: .ellipsis)),
         if (showMenu)
           PopupMenuButton<_UrlAction>(
-            itemBuilder: (_) => [
-              if (cell._canEdit)
-                PopupMenuItem(
-                  value: .edit,
-                  child: Text(LocaleKeys.common_edit.tr()),
-                ),
-              PopupMenuItem(
-                value: .copy,
-                child: Text(
-                  LocaleKeys.models_screens_add_provider_device_code_copy_link
-                      .tr(),
-                ),
-              ),
-              PopupMenuItem(
-                value: .open,
-                child: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
-              ),
-            ],
+            itemBuilder: _menuItems,
             onSelected: (action) => _select(context, action, value),
             tooltip: LocaleKeys.workspace_items_type_url.tr(),
             icon: const Icon(Icons.arrow_drop_down),
@@ -1068,6 +1051,21 @@ class const _UrlCell(
       ],
     );
   }
+
+  List<PopupMenuEntry<_UrlAction>> _menuItems(BuildContext _) => [
+    if (cell._canEdit)
+      PopupMenuItem(value: .edit, child: Text(LocaleKeys.common_edit.tr())),
+    PopupMenuItem(
+      value: .copy,
+      child: Text(
+        LocaleKeys.models_screens_add_provider_device_code_copy_link.tr(),
+      ),
+    ),
+    PopupMenuItem(
+      value: .open,
+      child: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
+    ),
+  ];
 
   void _select(BuildContext context, _UrlAction action, String value) {
     switch (action) {
@@ -1080,32 +1078,33 @@ class const _UrlCell(
           ConfirmedExternalLink.open(
             context: context,
             url: value,
-            confirm: (uri) => AuraDialogs.confirm(
-              context: context,
-              title: Text(LocaleKeys.markdown_editor_external_link_title.tr()),
-              message: AuraSelectableText(
-                LocaleKeys.markdown_editor_external_link_message.tr(
-                  namedArgs: {'host': uri.host, 'url': uri.toString()},
-                ),
-              ),
-              actions: .new(
-                confirmLabel: Text(
-                  LocaleKeys.markdown_editor_external_link_open.tr(),
-                ),
-                cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-              ),
-            ),
-            onLaunchFailure: () => ScaffoldMessenger.of(context).showSnackBar(
-              .new(
-                content: Text(
-                  LocaleKeys.markdown_editor_external_link_error.tr(),
-                ),
-              ),
-            ),
+            confirm: (uri) => _confirm(context, uri),
+            onLaunchFailure: () => _showFailure(context),
           ),
         );
     }
   }
+
+  Future<bool?> _confirm(BuildContext context, Uri uri) => AuraDialogs.confirm(
+    context: context,
+    title: Text(LocaleKeys.markdown_editor_external_link_title.tr()),
+    message: AuraSelectableText(
+      LocaleKeys.markdown_editor_external_link_message.tr(
+        namedArgs: {'host': uri.host, 'url': uri.toString()},
+      ),
+    ),
+    actions: .new(
+      confirmLabel: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+    ),
+  );
+
+  void _showFailure(BuildContext context) => ScaffoldMessenger.of(context)
+      .showSnackBar(
+        .new(
+          content: Text(LocaleKeys.markdown_editor_external_link_error.tr()),
+        ),
+      );
 }
 
 class const _SpreadsheetEditor(
@@ -1356,16 +1355,19 @@ class const _InlineScalarEditor(
   };
 
   void _change(String text) {
-    final value = switch ((empty: text.isEmpty, type: cell.column.type)) {
-      (empty: true, type: _) => null,
-      (empty: false, type: .number) => num.tryParse(text) ?? text,
-      _ => text,
-    };
-    cell.owner.draft.values.value = {
-      ...cell.owner.draft.values.value,
-      cell.column.id: value,
+    final values = cell.owner.draft.values;
+    values.value = {
+      ...values.value,
+      cell.column.id: _parseInlineValue(text, cell.column.type),
     };
   }
+}
+
+Object? _parseInlineValue(String text, WorkspaceColumnType type) {
+  if (text.isEmpty) return null;
+  if (type == .number) return num.tryParse(text) ?? text;
+
+  return text;
 }
 
 class const _Cell(

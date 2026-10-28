@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_revision.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_history_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_trash_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_history_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_trash_actions.dart';
@@ -14,15 +18,80 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
+
+class _DelayedHistory extends Mock implements WorkspaceHistoryRepository;
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+  });
+  testWidgets('delete all survives rows disappearing during confirmation', (
+    tester,
+  ) async {
+    const target = WorkspaceTrashTarget(
+      kind: .folder,
+      id: 'folder',
+      revision: 1,
+    );
+    const batch = WorkspaceTrashBatch(
+      id: 'batch',
+      target: target,
+      name: 'Deleted folder',
+      affectedCount: 1,
+    );
+    var rows = <WorkspaceTrashBatch>[batch];
+    final history = _DelayedHistory();
+    final delete = Completer<void>();
+    when(() => history.permanentlyDelete(target))
+        .thenAnswer((_) => delete.future);
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: const Scaffold(
+            body: WorkspaceTrashPanel(workspaceId: 'local'),
+          ),
+          overrides: [
+            workspaceTrashProvider('local').overrideWith((ref) async => rows),
+            workspaceHistoryUsecaseProvider('local').overrideWith(
+              (ref) async => ManageWorkspaceHistoryUsecase(history),
+            ),
+          ],
+          workspaceId: 'local',
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    final deleteAll = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraIconButton &&
+          widget.identifier == 'workspace_trash_delete_all',
+    );
+    await tester.tap(deleteAll);
+    final _ = await tester.pumpAndSettle();
+    rows = [];
+    ProviderScope.containerOf(tester.element(find.byType(WorkspaceTrashPanel)))
+        .invalidate(workspaceTrashProvider('local'));
+    await tester.pump();
+    final _ = await tester.pumpAndSettle();
+    expect(deleteAll, findsNothing);
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton &&
+            widget.identifier == 'workspace_history_confirm',
+      ),
+    );
+    await tester.pump();
+    verify(() => history.permanentlyDelete(target)).called(1);
+    delete.complete();
+    final _ = await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
   for (final width in [400.0, 1200.0]) {
     testWidgets(
