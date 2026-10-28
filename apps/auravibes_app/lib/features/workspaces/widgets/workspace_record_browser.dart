@@ -1014,44 +1014,20 @@ class const _CheckboxCell(
   final WorkspaceTableAction action,
   final WidgetRef ref,
 ) extends StatelessWidget {
+  bool get _checked => cell.record.values[cell.column.id] == true;
+  bool get _enabled => cell._canEdit && !action.pending;
+
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final checked = cell.record.values[cell.column.id] == true;
-    final enabled = cell._canEdit && !action.pending;
-    void toggle() => _change(!checked);
+    final checked = _checked;
+    final enabled = _enabled;
+    final toggle = enabled ? () => _change(!checked) : null;
 
-    return Center(
-      child: Semantics(
-        child: InkWell(
-          child: Row(
-            mainAxisSize: .min,
-            children: [
-              IgnorePointer(
-                child: Checkbox(
-                  value: checked,
-                  onChanged: null,
-                  fillColor: WidgetStatePropertyAll(colors.primary),
-                  checkColor: colors.onPrimary,
-                ),
-              ),
-              if (action.error case final error?)
-                Tooltip(
-                  message: _workspaceErrorText(error),
-                  child: Icon(
-                    Icons.error_outline,
-                    size: _columnIconSize,
-                    color: colors.error,
-                  ),
-                ),
-            ],
-          ),
-          onTap: enabled ? toggle : null,
-        ),
-        enabled: enabled,
-        checked: checked,
-        onTap: enabled ? toggle : null,
-      ),
+    return _CheckboxSemantics(
+      checked: checked,
+      enabled: enabled,
+      onTap: toggle,
+      error: action.error,
     );
   }
 
@@ -1084,6 +1060,70 @@ class const _CheckboxCell(
       values: {...record.values, cell.column.id: value},
     );
   }
+}
+
+class const _CheckboxSemantics({
+  required final bool checked,
+  required final bool enabled,
+  required final VoidCallback? onTap,
+  required final Object? error,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Semantics(
+      child: _CheckboxHitTarget(checked: checked, onTap: onTap, error: error),
+      enabled: enabled,
+      checked: checked,
+      onTap: onTap,
+    ),
+  );
+}
+
+class const _CheckboxHitTarget({
+  required final bool checked,
+  required final VoidCallback? onTap,
+  required final Object? error,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => InkWell(
+    child: Row(
+      mainAxisSize: .min,
+      children: [
+        _CheckboxIndicator(checked: checked),
+        if (error case final failure?) _CellErrorIndicator(failure),
+      ],
+    ),
+    onTap: onTap,
+  );
+}
+
+class const _CheckboxIndicator({required final bool checked})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return IgnorePointer(
+      child: Checkbox(
+        value: checked,
+        onChanged: null,
+        fillColor: WidgetStatePropertyAll(colors.primary),
+        checkColor: colors.onPrimary,
+      ),
+    );
+  }
+}
+
+class const _CellErrorIndicator(final Object error) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: _workspaceErrorText(error),
+    child: Icon(
+      Icons.error_outline,
+      size: _columnIconSize,
+      color: Theme.of(context).colorScheme.error,
+    ),
+  );
 }
 
 String _workspaceErrorText(Object error) => switch (error) {
