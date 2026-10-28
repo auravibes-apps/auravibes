@@ -1285,108 +1285,211 @@ class const _ComplexOverlayLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final cell = editor.cell;
-    final action = editor.action;
-    final ref = editor.ref;
-    final link = editor.link;
-    final owner = cell.owner;
-    final pending = action.pending;
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final box = anchorContext.findRenderObject() as RenderBox?;
-    final overlayBox =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
-    final origin = box?.localToGlobal(.zero) ?? .zero;
-    final overlayOrigin = overlayBox?.localToGlobal(.zero) ?? .zero;
-    final overlaySize = overlayBox?.size ?? MediaQuery.sizeOf(context);
-    final anchorLeft = origin.dx - overlayOrigin.dx;
-    final anchorTop = origin.dy - overlayOrigin.dy;
-    final anchorWidth = box?.size.width ?? 32;
-    final anchorHeight = box?.size.height ?? 32;
-    final anchorRight = anchorLeft + anchorWidth;
-    final anchorBottom = anchorTop + anchorHeight;
-    final overlayBottom = (overlaySize.height - keyboard).clamp(
-      0.0,
-      overlaySize.height,
-    );
-    final below = (overlayBottom - anchorBottom - 8).clamp(0.0, 240.0);
-    final above = (anchorTop - 8).clamp(0.0, 240.0);
-    final flipVertical = below < 240 && above > below;
-    final maxHeight = flipVertical ? above : below;
-    final rightSpace = (overlaySize.width - anchorRight - 8).clamp(0.0, 280.0);
-    final leftSpace = (anchorRight - 8).clamp(0.0, 280.0);
-    final flipHorizontal = rightSpace < 280 && leftSpace > rightSpace;
-    final width = (flipHorizontal ? leftSpace : rightSpace).clamp(0.0, 280.0);
-    final targetAlignment = Alignment(
-      flipHorizontal ? 1 : -1,
-      flipVertical ? -1 : 1,
+    final bounds = _overlayBounds(context, anchorContext);
+    final position = _overlayPosition(
+      bounds,
+      MediaQuery.viewInsetsOf(context).bottom,
     );
 
-    return TapRegion(
-      child: Align(
-        alignment: .topLeft,
-        child: CompositedTransformFollower(
-          link: link,
-          showWhenUnlinked: false,
-          targetAnchor: targetAlignment,
-          followerAnchor: .new(flipHorizontal ? 1 : -1, flipVertical ? 1 : -1),
-          child: Material(
-            elevation: 6,
-            child: SizedBox(
-              key: const ValueKey('workspace_cell_type_popup'),
-              width: width,
-              child: ConstrainedBox(
-                constraints: .new(maxHeight: maxHeight),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: .min,
-                    children: [
-                      WorkspaceRecordFields(
-                        table: owner.table,
-                        workspaceId: owner.browser.workspaceId,
-                        restricted: cell.record.restrictedReferenceColumns,
-                        draft: owner.draft.values,
-                        disabled: pending,
-                        columnId: cell.column.id,
-                      ),
-                      if (cell.column.type == .reference)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: TextLocale(
-                            LocaleKeys.workspace_items_reference_apply_row_hint,
-                          ),
-                        ),
-                      if (action.error case final error?)
-                        WorkspaceItemFailure(error: error),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: pending
-                                ? null
-                                : () => cell._submit(ref, action),
-                            tooltip: LocaleKeys.workspace_items_save_record
-                                .tr(),
-                            icon: const Icon(Icons.check),
-                          ),
-                          IconButton(
-                            onPressed: pending ? null : cell._cancel,
-                            tooltip: LocaleKeys.common_cancel.tr(),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+    return _OverlayFollower(editor, position);
+  }
+}
+
+typedef _OverlayPosition = ({
+  double width,
+  double height,
+  bool flipHorizontal,
+  bool flipVertical,
+});
+typedef _OverlayBounds = ({double right, double top, double bottom, Size size});
+
+_OverlayPosition _overlayPosition(_OverlayBounds bounds, double keyboard) {
+  final horizontal = _horizontalPlacement(bounds.right, bounds.size.width);
+  final vertical = _verticalPlacement(
+    bounds.top,
+    bounds.bottom,
+    bounds.size.height,
+    keyboard,
+  );
+
+  return (
+    width: horizontal.size,
+    height: vertical.size,
+    flipHorizontal: horizontal.flip,
+    flipVertical: vertical.flip,
+  );
+}
+
+_OverlayBounds _overlayBounds(
+  BuildContext context,
+  BuildContext anchorContext,
+) {
+  final box = anchorContext.findRenderObject() as RenderBox?;
+  final overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+  final topLeft = _overlayOffset(box, overlay);
+
+  return _boundsFromBox(
+    topLeft,
+    box?.size,
+    overlay?.size ?? MediaQuery.sizeOf(context),
+  );
+}
+
+Offset _overlayOffset(RenderBox? box, RenderBox? overlay) =>
+    (box?.localToGlobal(.zero) ?? .zero) -
+    (overlay?.localToGlobal(.zero) ?? .zero);
+
+_OverlayBounds _boundsFromBox(Offset offset, Size? anchorSize, Size size) {
+  const fallback = Size(32, 32);
+  final anchor = anchorSize ?? fallback;
+
+  return (
+    right: offset.dx + anchor.width,
+    top: offset.dy,
+    bottom: offset.dy + anchor.height,
+    size: size,
+  );
+}
+
+({double size, bool flip}) _horizontalPlacement(double right, double width) {
+  const maximumWidth = 280.0;
+  final after = (width - right - 8).clamp(0.0, maximumWidth);
+  final before = (right - 8).clamp(0.0, maximumWidth);
+  final flip = after < maximumWidth && before > after;
+
+  return (size: (flip ? before : after).clamp(0.0, maximumWidth), flip: flip);
+}
+
+({double size, bool flip}) _verticalPlacement(
+  double top,
+  double bottom,
+  double height,
+  double keyboard,
+) {
+  final availableBottom = (height - keyboard).clamp(0.0, height);
+  final after = (availableBottom - bottom - 8).clamp(0.0, 240.0);
+  final before = (top - 8).clamp(0.0, 240.0);
+  final flip = after < 240 && before > after;
+
+  return (size: flip ? before : after, flip: flip);
+}
+
+class const _OverlayFollower(
+  final _ComplexCellOverlay editor,
+  final _OverlayPosition position,
+) extends StatelessWidget {
+  Alignment get _target => Alignment(
+    position.flipHorizontal ? 1 : -1,
+    position.flipVertical ? -1 : 1,
+  );
+  Alignment get _follower => Alignment(
+    position.flipHorizontal ? 1 : -1,
+    position.flipVertical ? 1 : -1,
+  );
+
+  @override
+  Widget build(BuildContext context) => TapRegion(
+    child: Align(
+      alignment: .topLeft,
+      child: CompositedTransformFollower(
+        link: editor.link,
+        showWhenUnlinked: false,
+        targetAnchor: _target,
+        followerAnchor: _follower,
+        child: _OverlayContent(editor, position),
       ),
-      onTapOutside: (_) {
-        if (!action.pending && cell._editing) cell._submit(ref, action);
-      },
+    ),
+    onTapOutside: _dismiss,
+  );
+
+  void _dismiss(PointerDownEvent _) {
+    if (!editor.action.pending && editor.cell._editing) {
+      editor.cell._submit(editor.ref, editor.action);
+    }
+  }
+}
+
+class const _OverlayContent(
+  final _ComplexCellOverlay editor,
+  final _OverlayPosition position,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Material(
+    elevation: 6,
+    child: SizedBox(
+      key: const ValueKey('workspace_cell_type_popup'),
+      width: position.width,
+      child: ConstrainedBox(
+        constraints: .new(maxHeight: position.height),
+        child: SingleChildScrollView(child: _OverlayForm(editor)),
+      ),
+    ),
+  );
+}
+
+class const _OverlayForm(final _ComplexCellOverlay editor)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cell = editor.cell;
+    final action = editor.action;
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        _OverlayFields(editor),
+        if (cell.column.type == .reference) const _OverlayReferenceHint(),
+        if (action.error case final error?) WorkspaceItemFailure(error: error),
+        _OverlayActions(editor),
+      ],
     );
   }
+}
+
+class const _OverlayReferenceHint() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(horizontal: 12),
+    child: TextLocale(LocaleKeys.workspace_items_reference_apply_row_hint),
+  );
+}
+
+class const _OverlayFields(final _ComplexCellOverlay editor)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cell = editor.cell;
+    final owner = cell.owner;
+
+    return WorkspaceRecordFields(
+      table: owner.table,
+      workspaceId: owner.browser.workspaceId,
+      restricted: cell.record.restrictedReferenceColumns,
+      draft: owner.draft.values,
+      disabled: editor.action.pending,
+      columnId: cell.column.id,
+    );
+  }
+}
+
+class const _OverlayActions(final _ComplexCellOverlay editor)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      IconButton(
+        onPressed: editor.action.pending ? null : _submit,
+        tooltip: LocaleKeys.workspace_items_save_record.tr(),
+        icon: const Icon(Icons.check),
+      ),
+      IconButton(
+        onPressed: editor.action.pending ? null : editor.cell._cancel,
+        tooltip: LocaleKeys.common_cancel.tr(),
+        icon: const Icon(Icons.close),
+      ),
+    ],
+  );
+  void _submit() => editor.cell._submit(editor.ref, editor.action);
 }
 
 class const _InlineScalarEditor(
