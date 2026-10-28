@@ -1457,7 +1457,10 @@ void _applySidePanelPreferences(
     panel.widthPercent.value = stored.widthPercent;
   }
   if (flags.visibilityChanged) return;
-  final isOpen = stored.isOpenFor(conversationId);
+  _restoreSidePanelVisibility(panel, stored.isOpenFor(conversationId));
+}
+
+void _restoreSidePanelVisibility(_SidePanelHookValues panel, bool isOpen) {
   panel.mounted.value = isOpen;
   panel.visible.value = isOpen;
 }
@@ -1617,14 +1620,7 @@ class const _LoadedChatConversationScreen({
 
     return ChatPrimaryScrollController(
       child: AppScreen(
-        child: WorkspaceViewToolObserver(
-          workspaceId: data.workspaceId,
-          conversationId: data.conversation.id,
-          child: _LoadedChatConversationLayout(
-            data: data,
-            sidePanel: sidePanel,
-          ),
-        ),
+        child: _ObservedChatLayout(data: data, sidePanel: sidePanel),
         appBar: _ChatConversationAppBar(
           data: data,
           actions: _chatConversationAppBarActions(
@@ -1637,6 +1633,18 @@ class const _LoadedChatConversationScreen({
       ),
     );
   }
+}
+
+class const _ObservedChatLayout({
+  required final _LoadedChatConversationData data,
+  required final _LoadedConversationSidePanel sidePanel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceViewToolObserver(
+    workspaceId: data.workspaceId,
+    conversationId: data.conversation.id,
+    child: _LoadedChatConversationLayout(data: data, sidePanel: sidePanel),
+  );
 }
 
 _ChatConversationAppBarActions _chatConversationAppBarActions(
