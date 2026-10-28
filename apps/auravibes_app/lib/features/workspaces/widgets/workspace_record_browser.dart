@@ -479,7 +479,6 @@ String _columnWidthKey(String workspaceId, String tableId) =>
 class const _Grid(final _Rows owner) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TapRegion(
-    onTapOutside: _clearSelection,
     child: Align(
       alignment: .topLeft,
       child: SingleChildScrollView(
@@ -489,6 +488,7 @@ class const _Grid(final _Rows owner) extends StatelessWidget {
         ),
       ),
     ),
+    onTapOutside: _clearSelection,
   );
 
   List<DataColumn> _columns() => [
@@ -775,7 +775,9 @@ class const _SpreadsheetCell(
     nodes[key] = focus;
 
     return () {
-      if (identical(nodes[key], focus)) nodes.remove(key);
+      if (identical(nodes[key], focus)) {
+        final _ = nodes.remove(key);
+      }
     };
   }
 
@@ -1308,75 +1310,15 @@ class const _InlineScalarEditor(
   @override
   Widget build(BuildContext context) {
     final focus = useFocusNode();
-    final hadFocus = useRef(false);
     final controller = useTextEditingController(
       text: cell.owner.draft.values.value[cell.column.id]?.toString() ?? '',
     );
-    void Function()? effect() {
-      void onFocus() {
-        if (focus.hasFocus) {
-          if (!hadFocus.value) {
-            hadFocus.value = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!context.mounted || !focus.hasFocus || !cell._editing) {
-                return;
-              }
-              controller.selection = .new(
-                baseOffset: 0,
-                extentOffset: controller.text.length,
-              );
-            });
-          }
-        } else if (hadFocus.value && context.mounted && cell._editing) {
-          hadFocus.value = false;
-          cell._submit(ref, action);
-        }
-      }
-
-      focus
-        ..addListener(onFocus)
-        ..requestFocus();
-
-      return () => focus.removeListener(onFocus);
-    }
-
-    useEffect(effect, [focus]);
-
-    final colors = Theme.of(context).colorScheme;
-
-    return SizedBox(
-      height: _inlineEditorHeight,
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              child: TextField(
-                key: const ValueKey('workspace_inline_record_value'),
-                controller: controller,
-                focusNode: focus,
-                decoration: const .collapsed(hintText: ''),
-                style: .new(color: colors.onPrimaryContainer),
-                onChanged: _change,
-                onSubmitted: (_) => cell._submit(ref, action),
-                enabled: !action.pending,
-                cursorColor: colors.onPrimaryContainer,
-                onTapOutside: (_) => focus.unfocus(),
-              ),
-              label: cell.column.name,
-            ),
-          ),
-          if (action.error case final error?)
-            Tooltip(
-              message: _errorText(error),
-              child: Icon(
-                Icons.error_outline,
-                size: _columnIconSize,
-                color: colors.error,
-              ),
-            ),
-        ],
-      ),
+    useEffect(
+      () => _InlineEditorFocus(this, context, focus, controller).attach(),
+      [focus],
     );
+
+    return _InlineEditorForm(this, focus, controller);
   }
 
   String _errorText(Object error) => switch (error) {
@@ -1391,6 +1333,116 @@ class const _InlineScalarEditor(
       cell.column.id: _parseInlineValue(text, cell.column.type),
     };
   }
+}
+
+class _InlineEditorFocus(
+  final _InlineScalarEditor owner,
+  final BuildContext context,
+  final FocusNode focus,
+  final TextEditingController controller,
+) {
+  bool _hadFocus = false;
+
+  VoidCallback attach() {
+    focus
+      ..addListener(_onFocus)
+      ..requestFocus();
+
+    return () => focus.removeListener(_onFocus);
+  }
+
+  void _onFocus() {
+    if (focus.hasFocus) {
+      if (_hadFocus) return;
+      _hadFocus = true;
+      WidgetsBinding.instance.addPostFrameCallback(_selectText);
+
+      return;
+    }
+    if (_hadFocus && context.mounted && owner.cell._editing) {
+      _hadFocus = false;
+      owner.cell._submit(owner.ref, owner.action);
+    }
+  }
+
+  void _selectText(Duration _) {
+    if (!context.mounted || !focus.hasFocus || !owner.cell._editing) return;
+    controller.selection = .new(
+      baseOffset: 0,
+      extentOffset: controller.text.length,
+    );
+  }
+}
+
+class const _InlineEditorForm(
+  final _InlineScalarEditor owner,
+  final FocusNode focus,
+  final TextEditingController controller,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: _inlineEditorHeight,
+    child: Row(
+      children: [
+        Expanded(child: _InlineEditorInput(owner, focus, controller)),
+        if (owner.action.error case final error?)
+          _InlineEditorError(owner, error),
+      ],
+    ),
+  );
+}
+
+class const _InlineEditorInput(
+  final _InlineScalarEditor owner,
+  final FocusNode focus,
+  final TextEditingController controller,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: _InlineTextField(
+      this,
+      Theme.of(context).colorScheme.onPrimaryContainer,
+    ),
+    label: owner.cell.column.name,
+  );
+}
+
+class const _InlineTextField(final _InlineEditorInput editor, final Color color)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      key: const ValueKey('workspace_inline_record_value'),
+      controller: editor.controller,
+      focusNode: editor.focus,
+      decoration: const .collapsed(hintText: ''),
+      style: .new(color: color),
+      onChanged: editor.owner._change,
+      onSubmitted: _submit,
+      enabled: !editor.owner.action.pending,
+      cursorColor: color,
+      onTapOutside: _unfocus,
+    );
+  }
+
+  void _submit(String _) =>
+      editor.owner.cell._submit(editor.owner.ref, editor.owner.action);
+  void _unfocus(PointerDownEvent _) => editor.focus.unfocus();
+}
+
+class const _InlineEditorError(
+  final _InlineScalarEditor owner,
+  final Object error,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: owner._errorText(error),
+    child: Icon(
+      Icons.error_outline,
+      size: _columnIconSize,
+      color: Theme.of(context).colorScheme.error,
+    ),
+  );
 }
 
 Object? _parseInlineValue(String text, WorkspaceColumnType type) {
