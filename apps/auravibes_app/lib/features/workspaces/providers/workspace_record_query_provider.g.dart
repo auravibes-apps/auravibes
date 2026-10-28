@@ -69,7 +69,7 @@ final class WorkspaceRecordQueryUsecaseProvider
 }
 
 String _$workspaceRecordQueryUsecaseHash() =>
-    r'3f1e30c344daed2f1e5bfd16947d2dbda3977c05';
+    r'c8c9f473419fe0d7441dbd42a1eecb8fd1bea204';
 
 final class WorkspaceRecordQueryUsecaseFamily extends $Family
     with
