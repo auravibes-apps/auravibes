@@ -18,7 +18,12 @@ _DOCUMENTATION_FILES = (
     "license",
 )
 
-_CI_ROUTING_PATHS = {
+_CI_SELECTOR_TOOL_PATHS = {
+    "tool/changed_test_selector.dart",
+    "tool/changed_test_selector_test.dart",
+}
+
+_CI_ROUTING_PATHS = _CI_SELECTOR_TOOL_PATHS | {
     ".github/workflows/ci.yml",
     "tool/classify_ci_changes.py",
     "tool/classify_ci_changes_test.py",
@@ -356,6 +361,9 @@ def classify_paths(paths, generated_source_paths=()):
         ),
         "run_ci_tool_checks": any(
             _is_ci_routing_path(path) for path in normalized_paths
+        ),
+        "run_ci_selector_checks": any(
+            path in _CI_SELECTOR_TOOL_PATHS for path in normalized_paths
         ),
         "renovate_config_changes": "renovate.json" in normalized_paths,
         "run_ui_goldens": any(_requires_ui_goldens(path) for path in normalized_paths),

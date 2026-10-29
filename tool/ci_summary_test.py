@@ -252,6 +252,9 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("  ci-routing-tests:\n", workflow)
         self.assertIn("run_ci_tool_checks == 'true'", workflow)
         self.assertIn("run_code_checks != 'true'", workflow)
+        self.assertIn("run_ci_selector_checks == 'true'", workflow)
+        self.assertIn("dart analyze tool/changed_test_selector.dart", workflow)
+        self.assertIn("dart test tool/changed_test_selector_test.dart", workflow)
         block = workflow.split("      - name: Determine changed platforms\n", 1)[1]
         script = block.split("        run: |\n", 1)[1].split(
             "\n      - name: Resolve dependencies before validation fan-out", 1
@@ -260,6 +263,24 @@ class CiSummaryTest(unittest.TestCase):
         all_platforms = '["android","ios","macos","linux","windows","web"]'
         cases = [
             ("README.md", "pull_request", False, "[]", "false", "false", "false"),
+            (
+                "tool/changed_test_selector.dart",
+                "pull_request",
+                False,
+                "[]",
+                "false",
+                "false",
+                "false",
+            ),
+            (
+                "tool/changed_test_selector_test.dart",
+                "pull_request",
+                False,
+                "[]",
+                "false",
+                "false",
+                "false",
+            ),
             (
                 ".agents/skills/a/evals/evals.json",
                 "pull_request",
@@ -397,6 +418,12 @@ class CiSummaryTest(unittest.TestCase):
                 "tool/ci_summary.py",
                 "tool/ci_summary_test.py",
                 "tool/sonar_workflow_test.py",
+                "tool/changed_test_selector.dart",
+                "tool/changed_test_selector_test.dart",
+            }
+            ci_selector_paths = {
+                "tool/changed_test_selector.dart",
+                "tool/changed_test_selector_test.dart",
             }
             for path, event, unknown, platforms, code, server, renovate in cases:
                 with self.subTest(path=path, event=event, unknown=unknown):
@@ -454,6 +481,9 @@ class CiSummaryTest(unittest.TestCase):
                             "run_server_integration": server,
                             "run_ci_tool_checks": str(
                                 path in ci_tool_paths
+                            ).lower(),
+                            "run_ci_selector_checks": str(
+                                path in ci_selector_paths
                             ).lower(),
                             "renovate_config_changes": renovate,
                             "run_ui_goldens": str(
