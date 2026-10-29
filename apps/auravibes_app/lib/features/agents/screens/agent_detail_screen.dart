@@ -27,6 +27,7 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show activateSkillToolName, loadSkillResourceToolName;
@@ -132,6 +133,8 @@ abstract class _AgentDetailScreenStateBase
   AgentVisibility _visibility = .both;
   bool _loaded = false;
   bool _toolOverridesLoaded = false;
+  int _agentLoadAttempt = 0;
+  int _toolOverridesLoadAttempt = 0;
   final _exitGuard = DraftExitGuard();
   bool _saving = false;
   _AgentEditorSnapshot? _initialSnapshot;
@@ -241,6 +244,13 @@ class _AgentDetailScreenState extends _AgentDetailScreenStateBase
       ),
     );
   }
+
+  void _retryAgentLoad() => setState(() => _agentLoadAttempt++);
+
+  void _retryToolOverridesLoad() => setState(() => _toolOverridesLoadAttempt++);
+
+  void _returnToAgents() =>
+      AgentsRoute(workspaceId: widget.workspaceId).go(context);
 }
 
 mixin _AgentDetailDialogs on _AgentDetailScreenStateBase {
@@ -322,6 +332,7 @@ mixin _AgentDetailInitialization on _AgentDetailScreenStateBase {
   void initialize(AgentEntity agent) {
     _loaded = true;
     _initializeAgentFields(agent);
+    _markEditorSaved();
   }
 
   void _initializeAgentFields(AgentEntity agent) {
@@ -453,9 +464,20 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
     setState(() => _saving = true);
     try {
       await _completeSave(draft);
+    } on Object catch (_) {
+      _showSaveError();
     } finally {
       _finishSaving();
     }
+  }
+
+  void _showSaveError() {
+    if (!mounted) return;
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(LocaleKeys.agents_detail_save_error.tr(context: context)),
+      variant: .error,
+    );
   }
 
   Future<void> _completeSave(AgentToCreate draft) async {
@@ -629,11 +651,10 @@ class const _AgentInitialLoader({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _AgentLoader(
+      state: state,
       future: ref
           .read(agentRepositoryProvider(state.widget.workspaceId))
           .getAgentById(agentId),
-      onLoaded: state.initialize,
-      onInitialized: state._markAgentLoaded,
     );
   }
 }
@@ -645,11 +666,10 @@ class const _AgentToolOverridesGate({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _AgentToolOverridesLoader(
+      state: state,
       future: ref
           .read(listAgentToolOverridesUsecaseProvider(state.widget.workspaceId))
           .call(agentId),
-      onLoaded: state._initializeToolOverrides,
-      onInitialized: state._markToolOverridesLoaded,
     );
   }
 }
@@ -772,62 +792,134 @@ class _AgentReadyBody extends StatelessWidget {
 }
 
 class const _AgentLoader({
+  required final _AgentDetailScreenState state,
   required final Future<AgentEntity?> future,
-  required final ValueChanged<AgentEntity> onLoaded,
-  required final VoidCallback onInitialized,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FutureBuilder<AgentEntity?>(
+    key: ValueKey(state._agentLoadAttempt),
     future: future,
-    builder: (context, snapshot) =>
-        _AgentLoaderSnapshot(snapshot, onLoaded, onInitialized),
+    builder: (context, snapshot) => _AgentLoaderSnapshot(snapshot, state),
   );
 }
 
 class const _AgentLoaderSnapshot(
   final AsyncSnapshot<AgentEntity?> snapshot,
-  final ValueChanged<AgentEntity> onLoaded,
-  final VoidCallback onInitialized,
+  final _AgentDetailScreenState state,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final agent = snapshot.data;
-    if (agent == null) return const Center(child: AuraSpinner());
+    if (snapshot.hasError) {
+      return _AgentLoadRecoveryView(
+        state: state,
+        messageKey: LocaleKeys.agents_detail_load_error,
+        onRetry: state._retryAgentLoad,
+      );
+    }
 
-    onLoaded(agent);
-    WidgetsBinding.instance.addPostFrameCallback((_) => onInitialized());
+    return _AgentLoadSnapshotResult(snapshot: snapshot, state: state);
+  }
+}
+
+class const _AgentLoadSnapshotResult({
+  required final AsyncSnapshot<AgentEntity?> snapshot,
+  required final _AgentDetailScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (snapshot.data case final AgentEntity agent) {
+      return _AgentLoadProgress(agent: agent, state: state);
+    }
+
+    if (snapshot.connectionState == .done) {
+      return _AgentLoadRecoveryView(
+        state: state,
+        messageKey: LocaleKeys.agents_detail_not_found,
+      );
+    }
 
     return const Center(child: AuraSpinner());
   }
 }
 
+class const _AgentLoadProgress({
+  required final AgentEntity agent,
+  required final _AgentDetailScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    state.initialize(agent);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => state._markAgentLoaded(),
+    );
+
+    return const Center(child: AuraSpinner());
+  }
+}
+
+class const _AgentLoadRecoveryView({
+  required final _AgentDetailScreenState state,
+  required final String messageKey,
+  final VoidCallback? onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => RouteRecoveryView(
+    messageKey: messageKey,
+    onRetry: onRetry,
+    onReturn: state._returnToAgents,
+    returnLabelKey: LocaleKeys.agents_detail_return,
+  );
+}
+
 class const _AgentToolOverridesLoader({
+  required final _AgentDetailScreenState state,
   required final Future<List<AgentToolOverrideEntity>> future,
-  required final ValueChanged<List<AgentToolOverrideEntity>> onLoaded,
-  required final VoidCallback onInitialized,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       FutureBuilder<List<AgentToolOverrideEntity>>(
+        key: ValueKey(state._toolOverridesLoadAttempt),
         future: future,
         builder: (context, snapshot) =>
-            _AgentToolOverridesSnapshot(snapshot, onLoaded, onInitialized),
+            _AgentToolOverridesSnapshot(snapshot, state),
       );
 }
 
 class const _AgentToolOverridesSnapshot(
   final AsyncSnapshot<List<AgentToolOverrideEntity>> snapshot,
-  final ValueChanged<List<AgentToolOverrideEntity>> onLoaded,
-  final VoidCallback onInitialized,
+  final _AgentDetailScreenState state,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (snapshot.hasError) {
+      return _AgentLoadRecoveryView(
+        state: state,
+        messageKey: LocaleKeys.agents_detail_permissions_load_error,
+        onRetry: state._retryToolOverridesLoad,
+      );
+    }
+
     if (!snapshot.hasData) {
       return const AppScreen(child: Center(child: AuraSpinner()));
     }
 
-    onLoaded(snapshot.requireData);
-    WidgetsBinding.instance.addPostFrameCallback((_) => onInitialized());
+    return _AgentToolOverridesProgress(
+      overrides: snapshot.requireData,
+      state: state,
+    );
+  }
+}
+
+class const _AgentToolOverridesProgress({
+  required final List<AgentToolOverrideEntity> overrides,
+  required final _AgentDetailScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    state._initializeToolOverrides(overrides);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => state._markToolOverridesLoaded(),
+    );
 
     return const AppScreen(child: Center(child: AuraSpinner()));
   }
