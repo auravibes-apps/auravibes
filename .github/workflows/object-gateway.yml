@@ -1,10 +1,12 @@
 name: Object gateway
 on:
   pull_request:
+    branches: [main, dev, stage]
     paths:
       - 'services/object_gateway/**'
       - '.github/workflows/object-gateway.yml'
   push:
+    branches: [main, dev, stage]
     paths:
       - 'services/object_gateway/**'
       - '.github/workflows/object-gateway.yml'

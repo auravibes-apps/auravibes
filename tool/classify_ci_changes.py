@@ -24,6 +24,38 @@ _CI_ROUTING_PATHS = {
     "tool/classify_ci_changes_test.py",
     "tool/ci_summary.py",
     "tool/ci_summary_test.py",
+    "tool/sonar_workflow_test.py",
+}
+
+_STATIC_ASSET_SUFFIXES = (
+    ".aac",
+    ".avif",
+    ".bmp",
+    ".gif",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".mp3",
+    ".mp4",
+    ".ogg",
+    ".otf",
+    ".png",
+    ".svg",
+    ".ttf",
+    ".wav",
+    ".webm",
+    ".webp",
+    ".woff",
+    ".woff2",
+)
+
+_APP_NATIVE_PLATFORMS = {
+    "android",
+    "ios",
+    "linux",
+    "macos",
+    "web",
+    "windows",
 }
 
 _SERVER_INTEGRATION_SHARED_PATHS = {
@@ -84,9 +116,17 @@ def _requires_code_checks(path):
 
     if _is_ci_routing_path(normalized):
         return False
+    if _is_object_gateway_path(normalized):
+        return False
     if _is_skill_metadata(normalized):
         return False
     if normalized == "renovate.json":
+        return False
+    if (
+        _is_docs_media(normalized)
+        or _is_routed_non_dart_input(normalized)
+        or _is_docker_validation_path(normalized)
+    ):
         return False
     if (
         normalized.startswith(".github/")
@@ -121,12 +161,17 @@ def _requires_server_integration(path):
 
     if _is_ci_routing_path(normalized):
         return False
+    if _is_object_gateway_path(normalized):
+        return False
     if (
         filename.endswith((".md", ".mdx"))
         or filename in _DOCUMENTATION_FILES
         or _is_skill_metadata(normalized)
+        or _is_docs_media(normalized)
     ):
         return False
+    if _is_docker_validation_path(normalized):
+        return True
     if normalized.startswith(
         (
             "apps/auravibes_server/",
@@ -138,6 +183,74 @@ def _requires_server_integration(path):
         return True
 
     return normalized in _SERVER_INTEGRATION_SHARED_PATHS
+
+
+def _is_object_gateway_path(path):
+    return path == ".github/workflows/object-gateway.yml" or path.startswith(
+        "services/object_gateway/"
+    )
+
+
+def _is_static_asset(path):
+    return path.lower().endswith(_STATIC_ASSET_SUFFIXES)
+
+
+def _is_docs_media(path):
+    return _is_static_asset(path) and path.startswith(("doc/", "docs/"))
+
+
+def _is_ui_asset_directory(path):
+    return path.startswith(
+        (
+            "apps/auravibes_app/assets/",
+            "packages/auravibes_ui/assets/",
+        )
+    )
+
+
+def _is_ui_golden_media(path):
+    if not _is_static_asset(path):
+        return False
+    parts = path.split("/")
+    return (
+        path.startswith(("apps/auravibes_app/test/", "packages/auravibes_ui/test/"))
+        and ("goldens" in parts or "golden" in parts[-1].lower())
+    )
+
+
+def _is_app_native_path(path):
+    parts = path.split("/")
+    return (
+        len(parts) > 2
+        and parts[:2] == ["apps", "auravibes_app"]
+        and parts[2] in _APP_NATIVE_PLATFORMS
+    )
+
+
+def _is_routed_non_dart_input(path):
+    return (
+        _is_app_native_path(path)
+        or (_is_static_asset(path) and _is_ui_asset_directory(path))
+        or _is_ui_golden_media(path)
+    )
+
+
+def _is_docker_validation_path(path):
+    filename = path.rsplit("/", 1)[-1]
+    return (
+        filename == ".dockerignore"
+        or filename.startswith("Dockerfile")
+        or filename.endswith(".Dockerfile")
+        or (
+            filename.endswith((".yml", ".yaml"))
+            and filename.startswith(("compose", "docker-compose"))
+        )
+        or path in {
+            "scripts/start_server.sh",
+            "scripts/stop_server.sh",
+            "scripts/serverpod_worktree_env.sh",
+        }
+    )
 
 
 def _requires_ui_goldens(path):
@@ -153,6 +266,8 @@ def _requires_ui_goldens(path):
     ):
         return True
     if normalized in _UI_GOLDEN_TESTS:
+        return True
+    if _is_ui_golden_media(normalized):
         return True
     if normalized.startswith(("apps/auravibes_app/test/", "packages/auravibes_ui/test/")):
         filename = parts[-1].lower()

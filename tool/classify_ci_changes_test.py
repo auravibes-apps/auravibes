@@ -133,6 +133,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
             "tool/classify_ci_changes_test.py",
             "tool/ci_summary.py",
             "tool/ci_summary_test.py",
+            "tool/sonar_workflow_test.py",
         ):
             with self.subTest(path=path):
                 result = classify_paths([path])
