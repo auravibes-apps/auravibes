@@ -1148,6 +1148,109 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final component in ['Link', 'Button']) {
+    testWidgets('$component asks before opening an external URL', (
+      tester,
+    ) async {
+      const channel = MethodChannel('plugins.flutter.io/url_launcher');
+      final launched = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+        call,
+      ) async {
+        launched.add((call.arguments as Map)['url'] as String);
+        return true;
+      });
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        ),
+      );
+      final payloads = [
+        jsonEncode({
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'link-test',
+            'catalogId': auraChatCatalogId,
+          },
+        }),
+        jsonEncode({
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'link-test',
+            'components': [
+              {
+                'id': 'root',
+                'component': component,
+                'label': 'Visit site',
+                'href': 'https://example.com',
+              },
+            ],
+          },
+        }),
+      ];
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+          child: AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              builder: _legacyMaterialBuilder,
+              theme: ThemeData(),
+              home: Scaffold(
+                body: ChatA2uiSurfaceHost.historical(
+                  messageId: 'link-test',
+                  payloads: payloads,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      if (component == 'Button') {
+        expect(
+          tester.widget<AuraButton>(find.byType(AuraButton)).disabled,
+          isFalse,
+        );
+      }
+      if (component == 'Button') {
+        tester.widget<AuraButton>(find.byType(AuraButton)).onPressed();
+      } else {
+        await tester.tap(find.text('Visit site'));
+      }
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
+        ),
+        findsOneWidget,
+      );
+      expect(launched, isEmpty);
+      await tester.tap(find.text(LocaleKeys.common_cancel.tr()));
+      await tester.pumpAndSettle();
+      expect(launched, isEmpty);
+      if (component == 'Button') {
+        tester.widget<AuraButton>(find.byType(AuraButton)).onPressed();
+      } else {
+        await tester.tap(find.text('Visit site'));
+      }
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.text(
+          LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(launched, ['https://example.com']);
+    });
+  }
+
   testWidgets('renders the extended catalog components', (tester) async {
     final payloads = [
       engine.A2uiChatContract.encodeEnvelope({

@@ -35,6 +35,7 @@ import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.d
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
 import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
@@ -58,7 +59,6 @@ import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
-import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -2153,48 +2153,10 @@ Widget _chatMarkdown({
     child: GptMarkdown(
       content,
       style: style,
-      onLinkTap: (url, _) => unawaited(_openChatMarkdownLink(context, url)),
+      onLinkTap: (url, _) => unawaited(openChatExternalLink(context, url)),
     ),
   ),
 );
-
-Future<void> _openChatMarkdownLink(BuildContext context, String url) =>
-    ConfirmedExternalLink.open(
-      context: context,
-      url: url,
-      confirm: (uri) => _confirmChatExternalLink(context, uri),
-      onLaunchFailure: () => _showChatExternalLinkError(context),
-    );
-
-Future<bool?> _confirmChatExternalLink(BuildContext context, Uri uri) =>
-    AuraDialogs.confirm(
-      context: context,
-      title: Text(
-        LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
-      ),
-      message: AuraSelectableText(
-        LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
-          namedArgs: {'host': uri.host, 'url': uri.toString()},
-        ),
-      ),
-      actions: AuraConfirmDialogActions(
-        confirmLabel: Text(
-          LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
-        ),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-      ),
-    );
-
-void _showChatExternalLinkError(BuildContext context) {
-  unawaited(AuraHaptics.error());
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: TextLocale(
-        LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
-      ),
-    ),
-  );
-}
 
 class const _AiMessageContent({
   required final String content,
