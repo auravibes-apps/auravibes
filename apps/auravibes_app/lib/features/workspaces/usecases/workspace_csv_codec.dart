@@ -29,28 +29,80 @@ class const WorkspaceCsvCodec() {
 
   List<List<dynamic>> _decode(String source) {
     final normalized = source.replaceFirst(RegExp(r'^\uFEFF'), '');
-    try {
-      final rows = _decodeWith(normalized, '\r\n');
-      if (rows.length > 1) return rows;
-    } on FormatException {
-      // Retry strict LF parsing; quoted CRLF content remains untouched.
-    }
+    _validateQuotes(normalized);
 
-    return _decodeWith(normalized, '\n');
+    return Csv(autoDetect: false, skipEmptyLines: false).decode(normalized);
   }
-
-  List<List<dynamic>> _decodeWith(String source, String eol) =>
-      CsvToListConverter(
-        eol: eol,
-        shouldParseNumbers: false,
-        allowInvalid: false,
-      ).convert(source);
 
   void _validate(List<List<dynamic>> rows, int length) {
     if (rows.length < 2 || rows.skip(1).any((row) => row.length != length)) {
       throw const WorkspaceCsvException('workspace_csv.invalid_file');
     }
   }
+}
+
+void _validateQuotes(String source) {
+  var quoted = false;
+  var afterQuote = false;
+  var fieldStart = true;
+
+  for (var index = 0; index < source.length; index++) {
+    final character = source[index];
+    if (quoted) {
+      if (character != '"') continue;
+      if (index + 1 < source.length && source[index + 1] == '"') {
+        index++;
+      } else {
+        quoted = false;
+        afterQuote = true;
+      }
+      continue;
+    }
+
+    if (afterQuote) {
+      if (character == ',') {
+        afterQuote = false;
+        fieldStart = true;
+        continue;
+      }
+      if (character == '\r' || character == '\n') {
+        afterQuote = false;
+        fieldStart = true;
+        if (character == '\r' &&
+            index + 1 < source.length &&
+            source[index + 1] == '\n') {
+          index++;
+        }
+        continue;
+      }
+      throw const FormatException('Unexpected character after closing quote');
+    }
+
+    if (character == '"') {
+      if (!fieldStart) {
+        throw const FormatException('Quote inside unquoted field');
+      }
+      quoted = true;
+      fieldStart = false;
+      continue;
+    }
+    if (character == ',') {
+      fieldStart = true;
+      continue;
+    }
+    if (character == '\r' || character == '\n') {
+      fieldStart = true;
+      if (character == '\r' &&
+          index + 1 < source.length &&
+          source[index + 1] == '\n') {
+        index++;
+      }
+      continue;
+    }
+    fieldStart = false;
+  }
+
+  if (quoted) throw const FormatException('Unclosed quoted field');
 }
 
 void _sourceSize(String source) {
