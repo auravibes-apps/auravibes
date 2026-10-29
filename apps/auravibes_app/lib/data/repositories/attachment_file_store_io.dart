@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:auravibes_app/data/repositories/attachment_asset_key.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -8,24 +11,53 @@ import 'package:uuid/v7.dart';
 class const AttachmentFileStoreIo({
   final String storageNamespace = 'auravibes_app',
 }) {
+  _AttachmentPaths get _paths => .new(storageNamespace);
+
+  Future<void> writeAsset(String assetId, Uint8List bytes) async {
+    final file = await _paths._assetFile(assetId);
+    final _ = await file.parent.create(recursive: true);
+    final _ = await file.writeAsBytes(bytes, flush: true);
+  }
+
+  Future<Uint8List> readAsset(String assetId) async =>
+      await (await _paths._assetFile(assetId)).readAsBytes();
+
+  Future<void> deleteAsset(String assetId) async {
+    final file = await _paths._assetFile(assetId);
+    if (file.existsSync()) {
+      final _ = await file.delete();
+    }
+  }
+
   Future<String> persistDraftFile(String localPath) async {
-    if (!await _isDraftFile(localPath)) return localPath;
+    if (!await _paths._isDraftFile(localPath)) return localPath;
 
     final source = File(localPath);
     if (!source.existsSync()) return localPath;
 
-    final copied = await source.copy(await _persistedPath(localPath));
+    final copied = await source.copy(await _paths._persistedPath(localPath));
 
     return copied.path;
   }
 
   Future<void> deleteFile(String localPath) async {
-    if (!await _canDelete(localPath)) return;
+    if (!await _paths._canDelete(localPath)) return;
 
     final file = File(localPath);
     if (file.existsSync()) {
       final _ = await file.delete();
     }
+  }
+}
+
+class const _AttachmentPaths(final String storageNamespace) {
+  Future<File> _assetFile(String assetId) async {
+    AttachmentAssetKey.validate(assetId);
+    final support = await getApplicationSupportDirectory();
+
+    return File(
+      p.join(_storagePath(support.path, 'workspace_assets'), assetId),
+    );
   }
 
   Future<String> _persistedPath(String localPath) async {

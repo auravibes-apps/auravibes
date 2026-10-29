@@ -1,0 +1,21 @@
+class: WorkspaceContentReport
+table: workspace_content_report
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  reportId: String
+  resourceKind: WorkspaceResourceKind
+  resourceId: String
+  tableId: String?
+  revision: int
+  conversationId: String?
+  reporterUserId: String
+  status: String
+  submittedAt: DateTime
+  reviewerUserId: String?
+  reviewedAt: DateTime?
+indexes:
+  workspace_content_report_identity_idx:
+    fields: workspaceId, reportId
+    unique: true
+  workspace_content_report_status_idx:
+    fields: workspaceId, status, submittedAt

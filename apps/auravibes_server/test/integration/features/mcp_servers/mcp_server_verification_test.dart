@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_server/src/features/mcp_servers/mcp_server_probe.dart';
+import 'package:auravibes_server/src/features/mcp_servers/mcp_sse_session.dart';
 import 'package:auravibes_server/src/features/mcp_servers/mcp_oauth_token_resolver.dart';
 import 'package:auravibes_server/src/features/mcp_servers/mcp_server_repository.dart';
 import 'package:auravibes_server/src/features/mcp_servers/mcp_server_use_cases.dart';
@@ -11,6 +14,7 @@ import 'package:auravibes_server/src/features/workspaces/repositories/cloud_work
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
@@ -434,13 +438,21 @@ void main() {
 
     test('verify authorizes before probing', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
+      final nonMemberUserId = const Uuid().v4().toString();
+      await AuthUser.db.insertRow(
+        fixture.session,
+        AuthUser(
+          id: UuidValue.fromString(nonMemberUserId),
+          scopeNames: const {},
+        ),
+      );
       final probe = _FakeMcpServerProbe();
       final useCases = McpServerUseCases(McpServerRepository(), probe);
 
       await expectLater(
         useCases.verify(
           fixture.session,
-          userId: 'not-a-member',
+          userId: nonMemberUserId,
           request: _verifyRequest(fixture.workspaceId),
         ),
         throwsA(_cloudError(CloudWorkspaceErrorCode.membershipRequired)),
@@ -449,6 +461,76 @@ void main() {
       expect(probe.calls, 0);
       expect((await fixture.counts()).resources, 0);
     });
+
+    test('verify rejects probe results after membership is removed', () async {
+      final fixture = await _Fixture.create(sessionBuilder.build());
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final probe = _WaitingMcpServerProbe(entered, release);
+      final useCases = McpServerUseCases(McpServerRepository(), probe);
+      final pending = useCases.verify(
+        fixture.session,
+        userId: fixture.userId,
+        request: _verifyRequest(fixture.workspaceId),
+      );
+
+      await entered.future;
+      await _removeMembership(fixture);
+      release.complete();
+
+      await expectLater(
+        pending,
+        throwsA(_cloudError(CloudWorkspaceErrorCode.membershipRequired)),
+      );
+      expect(probe.calls, 1);
+    });
+
+    test(
+      'discoverAndCheck rejects probe results after membership is removed',
+      () async {
+        final fixture = await _Fixture.create(sessionBuilder.build());
+        await WorkspaceResource.db.insertRow(
+          fixture.session,
+          WorkspaceResource(
+            workspaceId: fixture.workspaceId,
+            resourceKind: WorkspaceResourceKind.mcpServer,
+            resourceId: 'server',
+            data: jsonEncode({
+              'url': 'https://mcp.example.com',
+              'transport': {'type': 'streamableHttp', 'useHttp2': false},
+              'authType': 'none',
+              'hasSecret': false,
+              'isEnabled': true,
+            }),
+            revision: 1,
+            createdAt: DateTime.now().toUtc(),
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final probe = _WaitingMcpServerProbe(entered, release);
+        final useCases = McpServerUseCases(McpServerRepository(), probe);
+        final pending = useCases.discoverAndCheck(
+          fixture.session,
+          userId: fixture.userId,
+          request: DiscoverMcpServerRequest(
+            workspaceId: fixture.workspaceId,
+            mcpServerId: 'server',
+          ),
+        );
+
+        await entered.future;
+        await _removeMembership(fixture);
+        release.complete();
+
+        await expectLater(
+          pending,
+          throwsA(_cloudError(CloudWorkspaceErrorCode.membershipRequired)),
+        );
+        expect(probe.calls, 1);
+      },
+    );
 
     test(
       'create rolls back all persistence when a resource insert fails',
@@ -487,7 +569,7 @@ void main() {
         expect((await fixture.counts()).receipts, 0);
       },
     );
-  });
+  }, rollbackDatabase: RollbackDatabase.disabled);
 }
 
 Matcher _cloudError(CloudWorkspaceErrorCode code) =>
@@ -569,18 +651,73 @@ class _FakeMcpServerProbe extends McpServerProbe {
   Map<String, String>? lastHeaders;
 
   @override
+  Future<List<InternetAddress>> resolveAddresses(Uri uri) async => [
+    InternetAddress('8.8.8.8'),
+  ];
+
+  @override
   Future<DiscoverMcpServerResult> call({
     required Uri uri,
     required String transport,
     required bool useHttp2,
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
+    List<InternetAddress>? resolvedAddresses,
+    McpOutboundRequestFence? dispatchFence,
   }) async {
     calls++;
     lastHeaders = httpHeaders;
 
     return _discovery();
   }
+}
+
+class _WaitingMcpServerProbe extends McpServerProbe {
+  _WaitingMcpServerProbe(this.entered, this.release);
+
+  final Completer<void> entered;
+  final Completer<void> release;
+  var calls = 0;
+
+  @override
+  Future<List<InternetAddress>> resolveAddresses(Uri uri) async => [
+    InternetAddress('8.8.8.8'),
+  ];
+
+  @override
+  Future<DiscoverMcpServerResult> call({
+    required Uri uri,
+    required String transport,
+    required bool useHttp2,
+    String? bearerToken,
+    Map<String, String> httpHeaders = const {},
+    List<InternetAddress>? resolvedAddresses,
+    McpOutboundRequestFence? dispatchFence,
+  }) async {
+    Future<DiscoverMcpServerResult> probe() async {
+      calls++;
+      entered.complete();
+      await release.future;
+
+      return _discovery();
+    }
+
+    final dispatch = dispatchFence;
+    return dispatch == null ? probe() : dispatch(probe);
+  }
+}
+
+Future<void> _removeMembership(_Fixture fixture) async {
+  final membership = await WorkspaceMember.db.findFirstRow(
+    fixture.session,
+    where: (row) =>
+        row.workspaceId.equals(fixture.workspaceId) &
+        row.userId.equals(fixture.userId),
+  );
+  await WorkspaceMember.db.updateRow(
+    fixture.session,
+    membership!.copyWith(removedAt: DateTime.now().toUtc()),
+  );
 }
 
 class _FailingMcpServerRepository extends McpServerRepository {
@@ -617,6 +754,10 @@ class _Fixture {
     session.passwords['workspaceSecretKey'] =
         'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
     final userId = const Uuid().v4().toString();
+    await AuthUser.db.insertRow(
+      session,
+      AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+    );
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(
           session,

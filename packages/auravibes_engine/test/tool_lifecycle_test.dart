@@ -15,7 +15,9 @@ void main() {
     const expectedFallbacks = {
       AgentToolResultStatus.success: '',
       AgentToolResultStatus.toolNotFound: 'Tool not found.',
-      AgentToolResultStatus.executionError: 'Tool execution failed.',
+      AgentToolResultStatus.executionError:
+          'Tool execution failed. Read the tool error and use a corrected '
+          'request or a different approach.',
       AgentToolResultStatus.disabledInConversation:
           'Tool is disabled for this conversation.',
       AgentToolResultStatus.disabledByAgent:

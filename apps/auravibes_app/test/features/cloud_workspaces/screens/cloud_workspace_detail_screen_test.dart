@@ -530,7 +530,7 @@ void main() {
           canManage ? findsOneWidget : findsNothing,
         );
         expect(
-          find.text('Delete cloud workspace'),
+          find.text('Erase workspace data'),
           isOwner ? findsOneWidget : findsNothing,
         );
         expect(

@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../workspace_state/repositories/workspace_state_repository.dart';
 import 'agent_catalog_cursor.dart';
 import 'agent_catalog_repository.dart';
@@ -78,18 +79,26 @@ extension AgentCatalogUseCasesOperations on AgentCatalogUseCases {
     required String userId,
     required ListAgentsRequest request,
   }) async {
-    await _authorize(session, workspaceId: request.workspaceId, userId: userId);
-    final validated = _validate(request);
-    final rows = await _repository.list(
-      session,
-      workspaceId: validated.workspaceId,
-      search: validated.search,
-      type: validated.type,
-      status: validated.status,
-      limit: validated.limit + 1,
-      cursor: validated.cursor,
-    );
-    return _AgentCatalogPageBuilder(_cursorCodec)(validated, rows);
+    return session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      final validated = _validate(request);
+      final rows = await _repository.list(
+        session,
+        workspaceId: validated.workspaceId,
+        search: validated.search,
+        type: validated.type,
+        status: validated.status,
+        limit: validated.limit + 1,
+        cursor: validated.cursor,
+        transaction: transaction,
+      );
+      return _AgentCatalogPageBuilder(_cursorCodec)(validated, rows);
+    });
   }
 
   Future<List<WorkspaceResource>> getResources(
@@ -97,25 +106,34 @@ extension AgentCatalogUseCasesOperations on AgentCatalogUseCases {
     required String userId,
     required GetAgentResourcesRequest request,
   }) async {
-    await _authorize(session, workspaceId: request.workspaceId, userId: userId);
-    if (request.agentId.trim().isEmpty || request.agentId.length > 200) {
-      _validationFailed();
-    }
-    final agent = await _repository.findAgent(
-      session,
-      workspaceId: request.workspaceId,
-      agentId: request.agentId,
-    );
-    if (agent == null) return const [];
-
-    return [
-      agent,
-      ...await _repository.findAssociations(
+    return session.db.transaction((transaction) async {
+      await _authorize(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (request.agentId.trim().isEmpty || request.agentId.length > 200) {
+        _validationFailed();
+      }
+      final agent = await _repository.findAgent(
         session,
         workspaceId: request.workspaceId,
         agentId: request.agentId,
-      ),
-    ];
+        transaction: transaction,
+      );
+      if (agent == null) return const [];
+
+      return [
+        agent,
+        ...await _repository.findAssociations(
+          session,
+          workspaceId: request.workspaceId,
+          agentId: request.agentId,
+          transaction: transaction,
+        ),
+      ];
+    });
   }
 
   _AgentCatalogRequest _validate(ListAgentsRequest request) {
@@ -157,17 +175,31 @@ extension AgentCatalogUseCasesOperations on AgentCatalogUseCases {
     Session session, {
     required int workspaceId,
     required String userId,
+    required Transaction transaction,
   }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await _workspaceRepository.findWorkspace(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lock: true,
+    );
     final member = await _workspaceRepository.findMember(
       session,
       workspaceId: workspaceId,
       userId: userId,
+      transaction: transaction,
     );
-    final workspace = await _workspaceRepository.findWorkspace(
-      session,
-      workspaceId,
-    );
-    if (member == null || workspace == null) {
+    if (workspace == null || member == null) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.membershipRequired,
       );

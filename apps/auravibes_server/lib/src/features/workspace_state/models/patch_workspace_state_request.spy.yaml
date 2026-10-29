@@ -3,3 +3,4 @@ fields:
   workspaceId: int
   requestId: String
   operations: List<WorkspacePatchOperation>
+  viewMoves: List<WorkspaceViewMove>?

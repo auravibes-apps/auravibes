@@ -26,6 +26,8 @@ class ConversationEventWriter {
     required ConversationEventType kind,
     required String payloadJson,
     String? eventId,
+    required Future<void> Function(Transaction transaction)
+    authorizeBeforeConversationLock,
     Future<void> Function(Transaction transaction)? guard,
     Future<void> Function(
       Transaction transaction,
@@ -36,6 +38,7 @@ class ConversationEventWriter {
     required Conversation Function(Conversation conversation) updateProjection,
   }) async {
     final result = await session.db.transaction((transaction) async {
+      await authorizeBeforeConversationLock(transaction);
       final conversation = await Conversation.db.findFirstRow(
         session,
         where: (table) =>

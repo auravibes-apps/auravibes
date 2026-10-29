@@ -16,6 +16,7 @@ class McpServerRepository {
         t.userId.equals(userId) &
         t.removedAt.equals(null),
     transaction: transaction,
+    lockMode: LockMode.forUpdate,
   );
 
   Future<CloudWorkspace?> findWorkspace(
@@ -24,7 +25,10 @@ class McpServerRepository {
     required Transaction transaction,
   }) => CloudWorkspace.db.findFirstRow(
     session,
-    where: (t) => t.id.equals(workspaceId) & t.deletedAt.equals(null),
+    where: (t) =>
+        t.id.equals(workspaceId) &
+        t.deletedAt.equals(null) &
+        t.erasureRequestedAt.equals(null),
     transaction: transaction,
     lockMode: LockMode.forUpdate,
   );
@@ -151,6 +155,7 @@ class McpServerRepository {
     required int workspaceId,
     required String userId,
     required String resourceId,
+    Transaction? transaction,
   }) => const WorkspaceSecretResolver().findForInitiator(
     session,
     workspaceId: workspaceId,
@@ -158,5 +163,6 @@ class McpServerRepository {
     initiatorUserId: userId,
     resourceId: resourceId,
     allowWorkspaceFallback: true,
+    transaction: transaction,
   );
 }

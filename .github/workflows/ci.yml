@@ -69,6 +69,7 @@ jobs:
         run: |
           python3 tool/classify_ci_changes_test.py
           python3 tool/ci_summary_test.py
+          python3 tool/sonar_workflow_test.py
           python3 tool/plan_test_shards_test.py
           python3 tool/validation_lease_test.py
           python3 tool/test_server_test.py
@@ -756,19 +757,32 @@ jobs:
             --expected-reports "${{ needs.test-plan.outputs.coverage-report-count }}"
 
       - name: Check Sonar token availability
-        if: ${{ github.event_name == 'push' }}
+        if: >-
+          ${{ github.event_name == 'push' ||
+              (github.event_name == 'pull_request' &&
+               github.event.pull_request.head.repo.full_name == github.repository) }}
         id: check-sonar-token
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           if [ -n "$SONAR_TOKEN" ]; then
             echo "token_available=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            echo "SONAR_TOKEN is required for same-repository pull requests." >&2
+            exit 1
           else
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set up Java for SonarCloud
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' }}
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: SonarCloud Scan
-        if: ${{ github.event_name == 'push' && steps.check-sonar-token.outputs.token_available == 'true' }}
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' }}
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -776,6 +790,48 @@ jobs:
           args: >
             -Dsonar.dart.lcov.reportPaths=coverage/lcov.info
             -Dsonar.scanner.skipJreProvisioning=true
+
+  sonar-without-coverage:
+    name: SonarCloud scan without coverage
+    needs: [change, test-plan, coverage]
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        needs.coverage.result == 'skipped' &&
+        (needs.change.outputs.run_code_checks == 'false' ||
+         needs.test-plan.outputs.mode == 'none')
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require Sonar token
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "SONAR_TOKEN is required for same-repository pull requests." >&2
+            exit 1
+          fi
+
+      - name: Set up Java for SonarCloud
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: -Dsonar.scanner.skipJreProvisioning=true
 
   server-compose:
     name: server-compose / Docker smoke
@@ -1065,7 +1121,7 @@ jobs:
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose, server-integration, renovate-validation]
+    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, sonar-without-coverage, platform-builds, server-compose, server-integration, renovate-validation]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks

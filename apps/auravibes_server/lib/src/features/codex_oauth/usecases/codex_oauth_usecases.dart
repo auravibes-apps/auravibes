@@ -6,6 +6,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../repositories/codex_oauth_repository.dart';
@@ -18,7 +19,7 @@ typedef CodexTokenExchange = Future<Map<String, Object?>> Function(
 
 class CodexOAuthUseCases(
   final CodexOAuthRepository _repository, {
-  final CodexTokenExchange? _exchange,
+  final CodexTokenExchange? exchange,
 }) {
   static const authorizationEndpoint =
       'https://auth.openai.com/oauth/authorize';
@@ -31,43 +32,70 @@ class CodexOAuthUseCases(
     required String userId,
     required StartCodexOAuthRequest request,
   }) async {
-    await _requireAdmin(session, request.workspaceId, userId);
     if (request.connectionId.isEmpty) return _invalid();
-    final clientId = _requiredPassword(session, 'openAICodexOAuthClientId');
-    final redirectUri = _requiredPassword(
-      session,
-      'openAICodexOAuthRedirectUri',
-    );
     final transactionId = randomUrlSafe(24);
     final state = randomUrlSafe(32);
     final verifier = randomUrlSafe(64);
     final challenge = base64UrlEncode(
       (await Sha256().hash(utf8.encode(verifier))).bytes,
     ).replaceAll('=', '');
-    final encrypted = await const WorkspaceSecretCipher().encrypt(
-      session,
-      verifier,
-      workspaceId: request.workspaceId,
-      resourceId: transactionId,
-    );
     final now = DateTime.now().toUtc();
     final expiresAt = now.add(lifetime);
-    await _repository.insertTransaction(
-      session,
-      CodexOAuthTransaction(
-        transactionId: transactionId,
-        workspaceId: request.workspaceId,
-        connectionId: request.connectionId,
+    late final String clientId;
+    late final String redirectUri;
+    await session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
         userId: userId,
-        stateHash: await hashValue(state),
-        verifierCiphertext: encrypted.ciphertext,
-        verifierNonce: encrypted.nonce,
-        verifierAuthenticationTag: encrypted.authenticationTag,
-        redirectUri: redirectUri,
-        expiresAt: expiresAt,
-        createdAt: now,
-      ),
-    );
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.authenticationRequired,
+        );
+      }
+      final workspace = await _repository.lockWorkspace(
+        session,
+        request.workspaceId,
+        transaction,
+      );
+      if (workspace == null ||
+          workspace.deletedAt != null ||
+          workspace.erasureRequestedAt != null) {
+        return _invalid();
+      }
+      await _requireAdmin(
+        session,
+        request.workspaceId,
+        userId,
+        transaction,
+      );
+      clientId = _requiredPassword(session, 'openAICodexOAuthClientId');
+      redirectUri = _requiredPassword(session, 'openAICodexOAuthRedirectUri');
+      final encrypted = await const WorkspaceSecretCipher().encrypt(
+        session,
+        verifier,
+        workspaceId: request.workspaceId,
+        resourceId: transactionId,
+      );
+      await _repository.insertTransaction(
+        session,
+        CodexOAuthTransaction(
+          transactionId: transactionId,
+          workspaceId: request.workspaceId,
+          connectionId: request.connectionId,
+          userId: userId,
+          stateHash: await hashValue(state),
+          verifierCiphertext: encrypted.ciphertext,
+          verifierNonce: encrypted.nonce,
+          verifierAuthenticationTag: encrypted.authenticationTag,
+          redirectUri: redirectUri,
+          expiresAt: expiresAt,
+          createdAt: now,
+        ),
+        transaction,
+      );
+    });
     final uri = Uri.parse(authorizationEndpoint).replace(
       queryParameters: {
         'response_type': 'code',
@@ -100,6 +128,32 @@ class CodexOAuthUseCases(
       return _invalid();
     }
     return session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.authenticationRequired,
+        );
+      }
+      final initial = await _repository.findByTransactionId(
+        session,
+        request.transactionId,
+        transaction,
+      );
+      if (initial == null || initial.userId != userId) return _invalid();
+      final workspace = await _repository.lockWorkspace(
+        session,
+        initial.workspaceId,
+        transaction,
+      );
+      if (workspace == null ||
+          workspace.deletedAt != null ||
+          workspace.erasureRequestedAt != null) {
+        return _invalid();
+      }
       final oauth = await _repository.lockTransaction(
         session,
         request.transactionId,
@@ -107,6 +161,8 @@ class CodexOAuthUseCases(
       );
       final now = DateTime.now().toUtc();
       if (oauth == null ||
+          oauth.workspaceId != workspace.id ||
+          oauth.workspaceId != initial.workspaceId ||
           oauth.userId != userId ||
           oauth.consumedAt != null ||
           !oauth.expiresAt.isAfter(now) ||
@@ -116,7 +172,7 @@ class CodexOAuthUseCases(
           )) {
         return _invalid();
       }
-      await _requireAdmin(session, oauth.workspaceId, userId);
+      await _requireAdmin(session, oauth.workspaceId, userId, transaction);
       final verifier = await const WorkspaceSecretCipher().decrypt(
         session,
         WorkspaceSecret(
@@ -135,8 +191,8 @@ class CodexOAuthUseCases(
           updatedAt: oauth.createdAt,
         ),
       );
-      final exchange =
-          _exchange ??
+      final tokenExchange =
+          exchange ??
           (code, redirectUri, verifier) => _exchangeToken(
             session,
             code: code,
@@ -144,7 +200,7 @@ class CodexOAuthUseCases(
             verifier: verifier,
           );
       final token = validateTokenResponse(
-        await exchange(request.code, oauth.redirectUri, verifier),
+        await tokenExchange(request.code, oauth.redirectUri, verifier),
       );
       final encrypted = await const WorkspaceSecretCipher().encrypt(
         session,
@@ -191,11 +247,13 @@ class CodexOAuthUseCases(
     Session session,
     int workspaceId,
     String userId,
+    Transaction transaction,
   ) async {
     final member = await _repository.findMember(
       session,
       workspaceId: workspaceId,
       userId: userId,
+      transaction: transaction,
     );
     if (member == null ||
         (member.role != WorkspaceRoles.owner &&

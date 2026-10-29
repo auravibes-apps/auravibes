@@ -4,6 +4,7 @@
 // ignore_for_file: number-of-methods, weight-of-class
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:drift/drift.dart';
 
 @DataClassName('MessageAttachmentsTable')
@@ -11,6 +12,8 @@ class MessageAttachments extends Table with TableMixin {
   TextColumn get messageId =>
       text().references(Messages, #id, onDelete: .cascade)();
   TextColumn get toolCallId => text().nullable()();
+  TextColumn get assetId =>
+      text().nullable().references(WorkspaceAssets, #id)();
   TextColumn get localPath => text()();
   TextColumn get fileName => text()();
   TextColumn get displayName => text().withDefault(const Constant(''))();

@@ -49,7 +49,7 @@ mixin _WorkspaceToolsDaoCoreApi {
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
-    String? config,
+    String config,
   ) =>
       WorkspaceToolsDaoCoreMethods(this as WorkspaceToolsDao)
           .patchWorkspaceToolConfig(workspaceId, toolId, config);
@@ -206,20 +206,20 @@ extension WorkspaceToolsDaoCoreMethods on WorkspaceToolsDao {
   }
 
   Future<List<ToolsTable>> resetWorkspaceToolPermissions(String workspaceId) =>
-      (update(
-        tools,
-      )..where((tbl) => tbl.workspaceId.equals(workspaceId))).writeReturning(
-        ToolsCompanion(
-          updatedAt: .new(DateTime.now()),
-          isEnabled: const .new(true),
-          permissions: const .new(PermissionAccess.ask),
-        ),
-      );
+      transaction(() async {
+        final rows = await _workspaceToolRows(workspaceId);
+        final mcpGroupIds = await _mcpGroupIds(workspaceId);
+        for (final row in rows) {
+          await _resetTool(row, mcpGroupIds);
+        }
+
+        return await _workspaceToolRows(workspaceId);
+      });
 
   Future<List<ToolsTable>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
-    String? config,
+    String config,
   ) => _patchWorkspaceToolConfig(workspaceId, toolId, config);
 
   Future<bool> deleteWorkspaceToolByToolId(
@@ -416,10 +416,10 @@ extension WorkspaceToolsDaoHelpers on WorkspaceToolsDao {
   Future<List<ToolsTable>> _patchWorkspaceToolConfig(
     String workspaceId,
     String toolId,
-    String? config,
+    String config,
   ) {
     final statement = update(tools)
-      ..where((tbl) => _nativeWorkspaceToolFilter(tbl, workspaceId, toolId));
+      ..where((tbl) => _toolConfigFilter(tbl, workspaceId, toolId));
 
     return statement.writeReturning(
       ToolsCompanion(updatedAt: .new(DateTime.now()), config: .new(config)),
@@ -533,4 +533,44 @@ extension WorkspaceToolsDaoFilterHelpers on WorkspaceToolsDao {
   ) =>
       _nativeWorkspaceToolFilter(tbl, workspaceId, toolId) &
       tbl.isEnabled.equals(true);
+}
+
+extension WorkspaceToolResetHelpers on WorkspaceToolsDao {
+  Future<List<ToolsTable>> _workspaceToolRows(String workspaceId) => (select(
+    tools,
+  )..where((table) => table.workspaceId.equals(workspaceId))).get();
+  Future<Set<String>> _mcpGroupIds(String workspaceId) async {
+    final groups = await attachedDatabase.toolsGroupsDao
+        .getToolsGroupsForWorkspace(workspaceId);
+
+    return groups
+        .where((group) => group.mcpServerId != null)
+        .map((group) => group.id)
+        .toSet();
+  }
+
+  Future<void> _resetTool(ToolsTable row, Set<String> mcpGroupIds) async {
+    final enabled =
+        !row.toolId.startsWith('connector/') &&
+        !mcpGroupIds.contains(row.workspaceToolsGroupId);
+    final _ = await (update(tools)..where((table) => table.id.equals(row.id)))
+        .write(_resetToolValues(enabled));
+  }
+
+  ToolsCompanion _resetToolValues(bool enabled) => ToolsCompanion(
+    updatedAt: .new(DateTime.now()),
+    isEnabled: .new(enabled),
+    permissions: const Value(PermissionAccess.ask),
+  );
+}
+
+extension WorkspaceToolConfigFilter on WorkspaceToolsDao {
+  Expression<bool> _toolConfigFilter(
+    $ToolsTable table,
+    String workspaceId,
+    String toolId,
+  ) =>
+      table.workspaceId.equals(workspaceId) &
+      (table.id.equals(toolId) |
+          _nativeWorkspaceToolFilter(table, workspaceId, toolId));
 }

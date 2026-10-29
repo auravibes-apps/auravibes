@@ -8,3 +8,4 @@ fields:
   createdAt: DateTime
   updatedAt: DateTime
   deletedAt: DateTime?
+  erasureRequestedAt: DateTime?

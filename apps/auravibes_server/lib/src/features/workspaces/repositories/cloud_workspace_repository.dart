@@ -1,6 +1,8 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../objects/object_workspace_erasure.dart';
+import '../../workspace_state/workspace_table_grant_cleanup.dart';
 import '../domain/workspace_roles.dart';
 
 class CloudWorkspaceRepository {
@@ -81,6 +83,24 @@ class CloudWorkspaceRepository {
     return summaries;
   }
 
+  Future<List<CloudWorkspaceSummary>> listOwnedDeletedWorkspacesForErasure(
+    Session session, {
+    required String userId,
+  }) async {
+    final workspaces = await CloudWorkspace.db.find(
+      session,
+      where: (row) =>
+          row.ownerUserId.equals(userId) &
+          row.deletedAt.notEquals(null) &
+          row.erasureRequestedAt.equals(null),
+      orderBy: (row) => row.id,
+      limit: maxOwnedWorkspaces,
+    );
+    return workspaces
+        .map((workspace) => toSummary(workspace, 'owner'))
+        .toList();
+  }
+
   Future<List<PendingWorkspaceInviteSummary>> listPendingInvites(
     Session session, {
     required String email,
@@ -126,7 +146,10 @@ class CloudWorkspaceRepository {
     final workspace = lock
         ? await CloudWorkspace.db.findFirstRow(
             session,
-            where: (t) => t.id.equals(id),
+            where: (t) =>
+                t.id.equals(id) &
+                t.deletedAt.equals(null) &
+                t.erasureRequestedAt.equals(null),
             transaction: transaction,
             lockMode: LockMode.forUpdate,
           )
@@ -135,8 +158,24 @@ class CloudWorkspaceRepository {
             id,
             transaction: transaction,
           );
-    return workspace?.deletedAt == null ? workspace : null;
+    return workspace?.deletedAt == null && workspace?.erasureRequestedAt == null
+        ? workspace
+        : null;
   }
+
+  Future<CloudWorkspace?> findWorkspace(
+    Session session,
+    int id, {
+    Transaction? transaction,
+    bool lock = false,
+  }) => lock
+      ? CloudWorkspace.db.findFirstRow(
+          session,
+          where: (table) => table.id.equals(id),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        )
+      : CloudWorkspace.db.findById(session, id, transaction: transaction);
 
   Future<WorkspaceMember?> findActiveMember(
     Session session, {
@@ -385,15 +424,18 @@ class CloudWorkspaceRepository {
     required WorkspaceMember member,
     required DateTime now,
     required Transaction transaction,
-  }) => WorkspaceMember.db.updateRow(
-    session,
-    member.copyWith(
-      revision: member.revision + 1,
-      updatedAt: now,
-      removedAt: now,
-    ),
-    transaction: transaction,
-  );
+  }) async {
+    final _ = await WorkspaceMember.db.updateRow(
+      session,
+      member.copyWith(
+        revision: member.revision + 1,
+        updatedAt: now,
+        removedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await WorkspaceTableGrantCleanup(session, transaction).remove(member, now);
+  }
 
   Future<CloudWorkspace> renameWorkspace(
     Session session, {
@@ -449,13 +491,27 @@ class CloudWorkspaceRepository {
     required CloudWorkspace workspace,
     required DateTime now,
     required Transaction transaction,
+    DateTime? erasureRequestedAt,
   }) async {
+    if (erasureRequestedAt != null) {
+      await ObjectWorkspaceErasure(
+        session,
+        workspace.id!,
+        transaction,
+      ).queue();
+      await WorkspaceSecret.db.deleteWhere(
+        session,
+        where: (row) => row.workspaceId.equals(workspace.id!),
+        transaction: transaction,
+      );
+    }
     await CloudWorkspace.db.updateRow(
       session,
       workspace.copyWith(
         revision: workspace.revision + 1,
         updatedAt: now,
         deletedAt: now,
+        erasureRequestedAt: erasureRequestedAt ?? workspace.erasureRequestedAt,
       ),
       transaction: transaction,
     );

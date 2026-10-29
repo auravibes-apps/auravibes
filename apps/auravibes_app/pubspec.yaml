@@ -23,6 +23,7 @@ dependencies:
   # Database dependencies
   crypto: ^3.0.7
   cryptography: ^2.9.0
+  csv: ^6.0.0
   dio: ^5.11.1
   drift: ^2.35.0
   drift_flutter: ^0.3.0
@@ -83,10 +84,12 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0
   stupid_simple_sheet: ^1.0.0-dev.4
   textf: ^2.0.0-dev.2
+  timezone: ^0.11.1
   toon_dart: ^1.0.0+4
   unorm_dart: ^0.3.2
   url_launcher: ^6.3.2
   uuid: ^4.5.3
+  web: ^1.1.1
 dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.16.1

@@ -1,27 +1,32 @@
 import 'package:async/async.dart';
+import 'package:auravibes_app/data/repositories/local_connector_write_journal.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/connector_http_client_adapter.dart';
 import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 
-typedef _ConnectorToolRequest = ({
+typedef ConnectorToolExecutionRequest = ({
   String workspaceId,
   String connectorId,
   String toolSlug,
   Map<String, dynamic> arguments,
+  String operationId,
 });
 
 typedef _ConnectorToolCredential = ({
   ConnectorDefinition connector,
   ConnectorToolDefinition tool,
   Map<String, String> attributes,
+  String connectionId,
 });
 
 typedef _ConnectorToolTarget = ({
@@ -34,30 +39,20 @@ class const RunConnectorToolUsecase(
   final ListConnectorConnectionCandidatesUsecase _connectionCandidates,
   final ConnectorToolTemplateExecutor _templateExecutor,
   final OAuthCredentialService? _oauthCredentialService,
-) {
-  Future<Object?> call({
-    required String workspaceId,
-    required String connectorId,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) => callCancelable(
-    workspaceId: workspaceId,
-    connectorId: connectorId,
-    toolSlug: toolSlug,
-    arguments: arguments,
-  ).valueOrCancellation();
+  final SyncConnectorToolPermissionsUsecase _toolPermissions, {
+  required final ConnectorWriteJournal Function(String workspaceId)
+  journalForWorkspace,
+}) {
+  Future<void> requireCurrent(ConnectorToolExecutionRequest request) async {
+    final _ = await _resolveCredential(request);
+  }
 
-  CancelableOperation<Object?> callCancelable({
-    required String workspaceId,
-    required String connectorId,
-    required String toolSlug,
-    required Map<String, dynamic> arguments,
-  }) => _ConnectorToolCall(this, (
-    workspaceId: workspaceId,
-    connectorId: connectorId,
-    toolSlug: toolSlug,
-    arguments: arguments,
-  )).start();
+  Future<Object?> call(ConnectorToolExecutionRequest request) =>
+      callCancelable(request).valueOrCancellation();
+
+  CancelableOperation<Object?> callCancelable(
+    ConnectorToolExecutionRequest request,
+  ) => _ConnectorToolCall(this, request).start();
 }
 
 extension on RunConnectorToolUsecase {
@@ -83,24 +78,21 @@ extension on RunConnectorToolUsecase {
       .firstOrNull;
 
   Future<_ConnectorToolCredential> _resolveCredential(
-    _ConnectorToolRequest request,
+    ConnectorToolExecutionRequest request,
   ) async {
     final target = _resolve(request.connectorId, request.toolSlug);
     final connector = target.connector;
     final tool = target.tool;
+    await _requireTarget(request.workspaceId, connector, tool);
     if (!tool.requiresConnection) {
-      return (
-        connector: connector,
-        tool: tool,
-        attributes: const <String, String>{},
-      );
+      return _publicCredential(target);
     }
 
     return await _resolveConnectedCredential(request, connector, tool);
   }
 
   Future<_ConnectorToolCredential> _resolveConnectedCredential(
-    _ConnectorToolRequest request,
+    ConnectorToolExecutionRequest request,
     ConnectorDefinition connector,
     ConnectorToolDefinition tool,
   ) async {
@@ -132,7 +124,12 @@ extension on RunConnectorToolUsecase {
       connection: connection,
     );
 
-    return (connector: connector, tool: tool, attributes: attributes);
+    return (
+      connector: connector,
+      tool: tool,
+      attributes: attributes,
+      connectionId: connectionId,
+    );
   }
 
   Future<ServiceConnectionEntity> _enabledConnection(
@@ -231,14 +228,11 @@ String _selectConnectionId(
 
 class _ConnectorToolCall(
   final RunConnectorToolUsecase _usecase,
-  final _ConnectorToolRequest _request,
+  final ConnectorToolExecutionRequest _request,
 ) {
-  CancelableOperation<UrlResponse>? _httpOperation;
-
   CancelableOperation<Object?> start() {
-    final completer = CancelableCompleter<Object?>(
-      onCancel: () => _httpOperation?.cancel(),
-    );
+    // Finish the durable receipt even if the conversation detaches.
+    final completer = CancelableCompleter<Object?>();
     _run(completer);
 
     return completer.operation;
@@ -255,17 +249,17 @@ class _ConnectorToolCall(
     }
   }
 
-  Future<Object?> _execute(_ConnectorToolCredential resolved) async {
-    final operation = _usecase._templateExecutor.call(
-      definition: resolved.tool.definition,
-      inputs: _toolInputs(_request.arguments),
-      credentials: resolved.attributes,
-      schema: resolved.tool.inputJsonSchema,
-    );
-    _httpOperation = operation;
-
-    return (await operation.valueOrCancellation())?.body;
-  }
+  Future<Object?> _execute(_ConnectorToolCredential resolved) =>
+      ConnectorRequestExecution(
+        executor: _usecase._templateExecutor,
+        connector: resolved.connector,
+        tool: resolved.tool,
+        inputs: _toolInputs(_request.arguments),
+        credentials: resolved.attributes,
+        connectionId: resolved.connectionId,
+        operationId: _request.operationId,
+        journal: _usecase.journalForWorkspace(_request.workspaceId),
+      ).call();
 
   Map<String, dynamic> _toolInputs(Map<String, dynamic> arguments) => {
     for (final entry in arguments.entries)
@@ -284,5 +278,26 @@ final runConnectorToolUsecaseProvider = Provider<RunConnectorToolUsecase>((
     ref.watch(listConnectorConnectionCandidatesUsecaseProvider),
     .new(const ResolveConnectorRequestTemplate(), httpClient.execute),
     ref.watch(oauthCredentialServiceProvider),
+    ref.watch(syncConnectorToolPermissionsUsecaseProvider),
+    journalForWorkspace: (workspaceId) =>
+        LocalConnectorWriteJournal(ref.read(appDatabaseProvider), workspaceId),
   );
 });
+
+extension ConnectorTargetAccess on RunConnectorToolUsecase {
+  Future<void> _requireTarget(
+    String workspaceId,
+    ConnectorDefinition connector,
+    ConnectorToolDefinition tool,
+  ) => _toolPermissions.requireEnabledTarget(
+    workspaceId: workspaceId,
+    toolId: connectorToolId(connector, tool),
+  );
+}
+
+_ConnectorToolCredential _publicCredential(_ConnectorToolTarget target) => (
+  connector: target.connector,
+  tool: target.tool,
+  attributes: const <String, String>{},
+  connectionId: '',
+);

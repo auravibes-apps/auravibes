@@ -384,5 +384,81 @@ void main() {
         );
       },
     );
+
+    test(
+      'bookmark listing rejects pending and completed workspace erasure',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final session = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final database = session.build();
+        await AuthUser.db.insertRow(
+          database,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              database,
+              name: 'Erasure status',
+              ownerUserId: userId,
+              now: DateTime.now().toUtc(),
+            );
+        final request = ListMessageBookmarksRequest(workspaceId: workspace.id!);
+
+        expect(
+          await endpoints.conversation.listMessageBookmarks(session, request),
+          isEmpty,
+        );
+
+        await CloudWorkspace.db.updateRow(
+          database,
+          workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
+        );
+        await expectLater(
+          endpoints.conversation.listMessageBookmarks(session, request),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.permissionDenied,
+            ),
+          ),
+        );
+
+        final pending = (await CloudWorkspace.db.findById(
+          database,
+          workspace.id!,
+        ))!;
+        await CloudWorkspace.db.updateRow(
+          database,
+          pending.copyWith(
+            erasureRequestedAt: null,
+            deletedAt: DateTime.now().toUtc(),
+          ),
+        );
+        await expectLater(
+          endpoints.conversation.listMessageBookmarks(session, request),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.notFound,
+            ),
+          ),
+        );
+      },
+    );
   });
 }

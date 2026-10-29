@@ -1,0 +1,3 @@
+exception: WorkspaceConnectedReadException
+fields:
+  code: String

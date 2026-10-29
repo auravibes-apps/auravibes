@@ -4,6 +4,7 @@
 
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/service_connections/usecases/sync_connector_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -36,6 +37,12 @@ WorkspaceToolEntity _tool({
     updatedAt: .new(2026),
     config: config,
   );
+}
+
+class _FakeConnectorSync extends Fake
+    implements SyncConnectorToolPermissionsUsecase {
+  @override
+  Future<void> call({required String workspaceId}) => Future.value();
 }
 
 class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
@@ -194,6 +201,9 @@ void main() {
       final repository = fixture.repository;
       final container2 = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ).overrideWithValue(
@@ -381,6 +391,9 @@ void main() {
 
       final failContainer = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           workspaceSessionForRouteProvider.overrideWith(
             (_, _) async => const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'ws1'),
@@ -414,6 +427,9 @@ void main() {
         ..tools = [_tool(id: 't1')];
       final container2 = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ).overrideWithValue(
@@ -441,6 +457,9 @@ void main() {
         ..tools = [_tool(id: 't1'), _tool(id: 't2')];
       final container2 = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           workspaceSessionForRouteProvider.overrideWith(
             (_, _) async => const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'ws1'),
@@ -467,6 +486,9 @@ void main() {
         ..tools = [_tool(id: 't1')];
       final container = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ).overrideWithValue(
@@ -495,6 +517,9 @@ void main() {
         ..tools = [_tool(id: 't1', toolId: 'search')];
       final container = ProviderContainer(
         overrides: [
+          syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+            _FakeConnectorSync(),
+          ),
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ).overrideWithValue(
@@ -537,6 +562,9 @@ class _WorkspaceToolsProviderFixture({
     _repository = repository;
     _container = .new(
       overrides: [
+        syncConnectorToolPermissionsUsecaseProvider.overrideWithValue(
+          _FakeConnectorSync(),
+        ),
         workspaceSessionForRouteProvider.overrideWith(
           (_, _) async => const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'ws1'),

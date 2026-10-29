@@ -5,13 +5,15 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
+import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
-import 'conversation_host_effects.dart';
-import 'server_agent_guidance.dart';
-import 'background_work_result_reader.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
-import '../../sync/stream/sync_wakeups.dart';
+import 'background_work_result_reader.dart';
+import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
+import 'workspace_result_privacy.dart';
 
 enum ServerToolDisposition {
   completed,
@@ -49,6 +51,9 @@ bool serverToolIsReplayableSkillKind(AgentResolvedToolKind? kind) =>
 
 bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     (descriptor.kind == AgentResolvedToolKind.builtIn &&
+        descriptor.tableId == workspaceCommandTableId &&
+        isWorkspaceToolName(descriptor.toolIdentifier)) ||
+    (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
         descriptor.toolIdentifier == backgroundWorkResultReaderToolName) ||
     descriptor.kind == AgentResolvedToolKind.mcp ||
@@ -65,6 +70,7 @@ bool serverToolCanRunInBackground(
 }) {
   if (!isTopLevelConversation) return false;
   final descriptor = tool.descriptor;
+
   return descriptor.kind == AgentResolvedToolKind.skillNative &&
       descriptor.skillSlug == agentsSkillSlug &&
       descriptor.toolIdentifier == runSubAgentToolName;
@@ -119,6 +125,7 @@ Set<String> cloudAuthorizedSkillIds({
         .map((data) => data['skillId'])
         .whereType<String>(),
   );
+
   return ids;
 }
 
@@ -198,6 +205,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
     instructions: instructions,
     connectorToolIds: connectorToolIds,
   );
+
   return SkillManifest(
     slug: slug,
     title: title,
@@ -246,6 +254,7 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   final descriptor = AgentResolvedToolName.skillControl(
     toolIdentifier: activateSkillToolName,
   );
+
   return [
     ServerResolvedTool(
       descriptor: descriptor,
@@ -288,6 +297,7 @@ List<String> _selectableCloudSkillSlugs({
         (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
       ..._selectableContentOnlyCloudSkillSlugs(),
   ];
+
   return selectable.toSet().toList()..sort();
 }
 
@@ -323,6 +333,7 @@ bool cloudUserSkillReady(
 ) {
   if (skill['id'] is! String || skill['isEnabled'] == false) return false;
   final connectorToolIds = skill['connectorToolIds'] as List? ?? const [];
+
   return connectorToolIds.every(
     (id) =>
         id is String &&
@@ -361,6 +372,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
       .where((tool) => serverToolIsExecutable(tool.descriptor))
       .fold(<String, ServerResolvedTool>{}, (unique, tool) {
         unique.putIfAbsent(tool.spec.name, () => tool);
+
         return unique;
       })
       .values
@@ -378,6 +390,7 @@ ServerResolvedTool _nativeTool({
     skillSlug: skillSlug,
     toolIdentifier: toolIdentifier,
   );
+
   return ServerResolvedTool(
     descriptor: descriptor,
     spec: ToolSpec(
@@ -395,6 +408,7 @@ bool cloudAppSkillEnabled(
   final setting = settings
       .where((candidate) => candidate['skillId'] == skillId)
       .lastOrNull;
+
   return setting?['isEnabled'] == true ||
       (setting == null && skillId == agentsSkillSlug);
 }
@@ -453,9 +467,6 @@ AgentToolPermissionResult resolveCloudToolPermission({
   String? agentPermissionMode,
   String? conversationPermissionMode,
 }) {
-  if (conversationPermissionMode == 'alwaysAllow') {
-    return AgentToolPermissionResult.granted;
-  }
   if (conversationPermissionMode == 'alwaysDeny') {
     return AgentToolPermissionResult.disabledInWorkspace;
   }
@@ -467,15 +478,41 @@ AgentToolPermissionResult resolveCloudToolPermission({
   if (agentPermissionMode == 'alwaysDeny') {
     return AgentToolPermissionResult.disabledInWorkspace;
   }
+  if (conversationPermissionMode == 'alwaysAllow') {
+    return AgentToolPermissionResult.granted;
+  }
   if (conversationPermissionMode == 'alwaysAsk') {
     return AgentToolPermissionResult.needsConfirmation;
   }
+
   return switch (agentPermissionMode) {
     'alwaysAllow' => AgentToolPermissionResult.granted,
     'alwaysAsk' => AgentToolPermissionResult.needsConfirmation,
     _ => workspacePermission,
   };
 }
+
+AgentToolPermissionResult connectorCommandApprovalPermission(
+  AgentToolPermissionResult permission,
+  AgentResolvedToolName descriptor,
+  Map<String, dynamic> arguments,
+) =>
+    descriptor.tableId == workspaceCommandTableId &&
+        isWorkspaceToolName(descriptor.toolIdentifier) &&
+        permission == AgentToolPermissionResult.granted &&
+        workspaceCommandNeedsApproval(
+          workspaceCommandArgumentsForTool(
+            descriptor.toolIdentifier,
+            arguments,
+          ),
+        )
+    ? AgentToolPermissionResult.needsConfirmation
+    : descriptor.kind == AgentResolvedToolKind.connectorCommand &&
+          descriptor.toolIdentifier == executeConnectorToolName &&
+          permission == AgentToolPermissionResult.granted &&
+          connectorCommandMayWrite(arguments, connectorDefinitions)
+    ? AgentToolPermissionResult.needsConfirmation
+    : permission;
 
 AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
@@ -486,6 +523,7 @@ AgentToolPermissionResult defaultCloudToolPermission(
       serverToolIsExecutable(descriptor)) {
     return AgentToolPermissionResult.needsConfirmation;
   }
+
   return AgentToolPermissionResult.notConfigured;
 }
 
@@ -606,6 +644,7 @@ class ServerToolRuntime({
         .where((resource) {
           final data = _data(resource);
           final toolGroupId = data['toolGroupId'];
+
           return isCloudToolEnabled(
             toolData: data,
             toolGroupData: toolGroupId is String
@@ -644,6 +683,24 @@ class ServerToolRuntime({
     return [
       ...genericTools,
       ...fixedCloudConnectorCommandTools(),
+      ...workspaceReadToolSpecs().map(
+        (spec) => ServerResolvedTool(
+          descriptor: AgentResolvedToolName.builtIn(
+            tableId: workspaceCommandTableId,
+            toolIdentifier: spec.name,
+          ),
+          spec: spec,
+        ),
+      ),
+      ...workspaceMutationToolSpecs().map(
+        (spec) => ServerResolvedTool(
+          descriptor: AgentResolvedToolName.builtIn(
+            tableId: workspaceCommandTableId,
+            toolIdentifier: spec.name,
+          ),
+          spec: spec,
+        ),
+      ),
       ...fixedCloudSkillCommandTools(),
       ...agentTools,
       ServerResolvedTool(
@@ -684,6 +741,7 @@ class ServerToolRuntime({
               resource.resourceKind == WorkspaceResourceKind.skillSetting,
         )
         .map(_data);
+
     return materializeCloudSkillTools(
       selectedSkillIds: selectedSkillIds,
       appSkillSettings: appSkillSettings,
@@ -741,6 +799,7 @@ class ServerToolRuntime({
         if (existing.status == 'running') {
           await _recoverStaleRunning(session, existing);
         }
+
         return ServerToolDisposition.completed;
       }
       request = ServerToolRequest(
@@ -777,6 +836,7 @@ class ServerToolRuntime({
           'executionError',
           _boundedJson({'error': '$error'}),
         );
+
         return ServerToolDisposition.completed;
       }
     }
@@ -789,6 +849,7 @@ class ServerToolRuntime({
           'toolNotFound',
           _boundedJson({'error': 'Tool is no longer available.'}),
         );
+
         return ServerToolDisposition.completed;
       }
       await _insertResolved(
@@ -800,6 +861,7 @@ class ServerToolRuntime({
         digest: digest,
         status: 'toolNotFound',
       );
+
       return ServerToolDisposition.completed;
     }
     var executionRequest = request;
@@ -812,6 +874,7 @@ class ServerToolRuntime({
           AgentToolPermissionResult.notConfigured.name,
           _boundedJson({'error': 'Tool is not configured for cloud use.'}),
         );
+
         return ServerToolDisposition.completed;
       }
       await _insertResolved(
@@ -823,6 +886,7 @@ class ServerToolRuntime({
         digest: digest,
         status: AgentToolPermissionResult.notConfigured.name,
       );
+
       return ServerToolDisposition.completed;
     }
     final configuredPermission = await _permission(
@@ -833,7 +897,11 @@ class ServerToolRuntime({
       conversation: conversation,
     );
     final permission = applyConversationToolAccessMode(
-      configuredPermission,
+      connectorCommandApprovalPermission(
+        configuredPermission,
+        permissionDescriptor,
+        request.arguments,
+      ),
       mode:
           existing == null &&
               conversation != null &&
@@ -860,6 +928,7 @@ class ServerToolRuntime({
               conversation.parentConversationStableId == null,
         ),
       );
+
       return ServerToolDisposition.awaitingApproval;
     }
     if (existing == null && permission != AgentToolPermissionResult.granted) {
@@ -872,6 +941,7 @@ class ServerToolRuntime({
         digest: digest,
         status: permission.name,
       );
+
       return ServerToolDisposition.completed;
     }
     if (!serverToolPermissionAllowsExecution(
@@ -886,6 +956,7 @@ class ServerToolRuntime({
           _boundedJson({'error': 'Tool permission is no longer granted.'}),
         );
       }
+
       return ServerToolDisposition.completed;
     }
 
@@ -962,6 +1033,7 @@ class ServerToolRuntime({
           call.id!,
         );
         if (waiting == null) return ServerToolDisposition.completed;
+
         return await _reconcileAwaitingSubAgents(session, waiting);
       }
       await _finish(session, call, 'success', _boundedJson(result));
@@ -969,7 +1041,7 @@ class ServerToolRuntime({
       await _finish(
         session,
         call,
-        'executionError',
+        _failureStatus(failure),
         _boundedRawJson(failure.responseRaw),
       );
       session.log(
@@ -990,6 +1062,7 @@ class ServerToolRuntime({
       );
       rethrow;
     }
+
     return ServerToolDisposition.completed;
   }
 
@@ -1030,6 +1103,7 @@ class ServerToolRuntime({
       completion.then<ServerToolDisposition?>((value) => value),
       detachment.then<ServerToolDisposition?>((_) => null),
     ]);
+
     return disposition ?? ServerToolDisposition.completed;
   }
 
@@ -1056,6 +1130,7 @@ class ServerToolRuntime({
           executionSession,
           call.id!,
         );
+
         return waiting == null
             ? ServerToolDisposition.completed
             : await _reconcileAwaitingSubAgents(executionSession, waiting);
@@ -1067,12 +1142,13 @@ class ServerToolRuntime({
         result: _boundedJson(result),
         languageCode: languageCode,
       );
+
       return ServerToolDisposition.completed;
     } on AgentToolExecutionFailure catch (failure) {
       await _completeCancellableToolRecord(
         executionSession,
         call,
-        status: 'executionError',
+        status: _failureStatus(failure),
         result: _boundedRawJson(failure.responseRaw),
         errorCode: serverToolExecutionFailureCode(failure),
         languageCode: languageCode,
@@ -1083,6 +1159,7 @@ class ServerToolRuntime({
         'phase=${failure.failurePhase}.',
         level: LogLevel.warning,
       );
+
       return ServerToolDisposition.completed;
     } on ConversationCancelledException {
       final detached = await _completeCancellableToolRecord(
@@ -1094,6 +1171,7 @@ class ServerToolRuntime({
         languageCode: languageCode,
       );
       if (!detached) rethrow;
+
       return ServerToolDisposition.completed;
     } on Object catch (error) {
       final detached = await _completeCancellableToolRecord(
@@ -1110,6 +1188,7 @@ class ServerToolRuntime({
         level: LogLevel.warning,
       );
       if (!detached) rethrow;
+
       return ServerToolDisposition.completed;
     } finally {
       await executionSession.close();
@@ -1123,11 +1202,42 @@ class ServerToolRuntime({
     required String? result,
     String? languageCode,
     String? errorCode,
+    String? actorUserId,
   }) async {
     var backgroundCompleted = false;
     var backgroundSubAgentStarted = false;
     final detached = await session.db.transaction((transaction) async {
-      final workspace = await CloudWorkspace.db.findFirstRow(
+      CloudWorkspace? workspace;
+      if (actorUserId != null) {
+        final authUser = await const AuthUserLock().lock(
+          session,
+          userId: actorUserId,
+          transaction: transaction,
+        );
+        if (authUser == null) return false;
+        workspace = await CloudWorkspace.db.findById(
+          session,
+          call.workspaceId,
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (workspace == null ||
+            workspace.deletedAt != null ||
+            workspace.erasureRequestedAt != null) {
+          return false;
+        }
+        final member = await WorkspaceMember.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(call.workspaceId) &
+              table.userId.equals(actorUserId) &
+              table.removedAt.equals(null),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (member == null) return false;
+      }
+      workspace ??= await CloudWorkspace.db.findFirstRow(
         session,
         where: (table) => table.id.equals(call.workspaceId),
         transaction: transaction,
@@ -1249,6 +1359,7 @@ class ServerToolRuntime({
             transaction: transaction,
           );
           backgroundSubAgentStarted = true;
+
           return true;
         }
         final projection = result == null ? null : projectToolOutput(result);
@@ -1332,6 +1443,7 @@ class ServerToolRuntime({
           transaction: transaction,
         );
         backgroundCompleted = true;
+
         return true;
       }
       if (!serverToolCallCanTransition(
@@ -1361,6 +1473,7 @@ class ServerToolRuntime({
         ),
         transaction: transaction,
       );
+
       return false;
     });
     if (backgroundSubAgentStarted) {
@@ -1380,6 +1493,7 @@ class ServerToolRuntime({
           conversationId: parent.stableId,
         );
       }
+
       return true;
     }
     if (backgroundCompleted) {
@@ -1408,6 +1522,7 @@ class ServerToolRuntime({
         }
       }
     }
+
     return detached;
   }
 
@@ -1524,6 +1639,9 @@ class ServerToolRuntime({
     required Map<String, Object?> result,
   }) async {
     if (call.backgroundWorkStableId == null) return;
+    final turn = await ConversationTurn.db.findById(session, call.turnId);
+    final actorUserId = turn?.initiatorUserId;
+    if (actorUserId == null) return;
     final status = switch (result['status']) {
       'success' => 'success',
       'cancelled' => 'cancelled',
@@ -1539,6 +1657,7 @@ class ServerToolRuntime({
         'cancelled' => 'cancelled',
         _ => 'sub_agent_failed',
       },
+      actorUserId: actorUserId,
     );
   }
 
@@ -1588,6 +1707,7 @@ class ServerToolRuntime({
           table.conversationId.equals(turn.conversationId) &
           table.stableId.equals(workStableId),
     );
+
     return work == null ||
         work.status == 'stopRequested' ||
         work.status == 'cancelled';
@@ -1601,11 +1721,29 @@ class ServerToolRuntime({
     required Conversation? conversation,
   }) async {
     if (descriptor.kind == AgentResolvedToolKind.builtIn &&
+        descriptor.tableId == workspaceCommandTableId &&
+        isWorkspaceToolName(descriptor.toolIdentifier)) {
+      return AgentToolPermissionResult.granted;
+    }
+    if (descriptor.kind == AgentResolvedToolKind.builtIn &&
         descriptor.tableId == backgroundWorkResultReaderTableId &&
         descriptor.toolIdentifier == backgroundWorkResultReaderToolName) {
       return AgentToolPermissionResult.granted;
     }
     final toolId = descriptor.tableId;
+    if (descriptor.kind == AgentResolvedToolKind.connectorCommand) {
+      final configured = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.resourceKind.equals(WorkspaceResourceKind.tool) &
+            table.resourceId.equals(toolId) &
+            table.deletedAt.equals(null),
+      );
+      if (configured != null && _data(configured)['isEnabled'] == false) {
+        return AgentToolPermissionResult.disabledInWorkspace;
+      }
+    }
     final permissions = await WorkspaceResource.db.find(
       session,
       where: (table) =>
@@ -1703,6 +1841,7 @@ class ServerToolRuntime({
         .map((association) => association['permissionMode'])
         .whereType<String>()
         .firstOrNull;
+
     return resolveCloudToolPermission(
       workspacePermission: workspacePermission,
       agentPermissionMode: agentPermissionMode,
@@ -1717,6 +1856,7 @@ class ServerToolRuntime({
     final descriptor = _resolver.resolve(name);
     if (descriptor == null) return null;
     final schema = data['inputSchema'] ?? data['inputJsonSchema'];
+
     return ServerResolvedTool(
       descriptor: descriptor,
       outputSchema: switch (data['outputSchema']) {
@@ -1746,6 +1886,7 @@ class ServerToolRuntime({
     bool backgroundEligible = false,
   }) {
     final now = DateTime.now().toUtc();
+
     return ConversationToolCall.db.insertRow(
       session,
       ConversationToolCall(
@@ -1792,6 +1933,7 @@ class ServerToolRuntime({
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) {
       return null;
     }
+
     return ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
@@ -1809,40 +1951,131 @@ class ServerToolRuntime({
     ConversationToolCall call,
     String status,
     String? result,
-  ) => session.db.transaction((transaction) async {
-    final projection = result == null ? null : projectToolOutput(result);
-    final current = await ConversationToolCall.db.findById(
+  ) async {
+    final projection = result == null
+        ? null
+        : projectToolOutput(safeWorkspaceResult(call, result));
+    final sourceTurn = await ConversationTurn.db.findById(
       session,
-      call.id!,
-      transaction: transaction,
-      lockMode: LockMode.forUpdate,
+      call.turnId,
     );
-    if (current == null ||
-        !serverToolCallCanTransition(
-          currentStatus: current.status,
-          currentRevision: current.revision,
-          expectedStatus: call.status,
-          expectedRevision: call.revision,
-        )) {
-      return;
-    }
-    final turn = await ConversationTurn.db.findById(
-      session,
-      current.turnId,
-      transaction: transaction,
-    );
-    if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
-    await ConversationToolCall.db.updateRow(
-      session,
-      current.copyWith(
-        status: status,
-        resultJson: projection?.persistedText,
-        revision: current.revision + 1,
-        updatedAt: DateTime.now().toUtc(),
-      ),
-      transaction: transaction,
-    );
-  });
+    final actorUserId = sourceTurn?.initiatorUserId;
+    if (actorUserId == null) return;
+
+    await session.db.transaction((transaction) async {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: actorUserId,
+        transaction: transaction,
+      );
+      if (authUser == null) return;
+      final workspace = await CloudWorkspace.db.findById(
+        session,
+        call.workspaceId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null ||
+          workspace.deletedAt != null ||
+          workspace.erasureRequestedAt != null) {
+        return;
+      }
+      final member = await WorkspaceMember.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(call.workspaceId) &
+            table.userId.equals(actorUserId) &
+            table.removedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (member == null) return;
+      final conversation = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(call.conversationId) &
+            table.workspaceId.equals(call.workspaceId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (conversation == null) return;
+      final turn = await ConversationTurn.db.findById(
+        session,
+        call.turnId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (turn == null ||
+          turn.initiatorUserId != actorUserId ||
+          turn.workspaceId != call.workspaceId ||
+          turn.conversationId != conversation.id ||
+          ConversationStatuses.isTerminal(turn.status)) {
+        return;
+      }
+      final current = await ConversationToolCall.db.findById(
+        session,
+        call.id!,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (current == null ||
+          current.workspaceId != call.workspaceId ||
+          current.conversationId != conversation.id ||
+          current.turnId != turn.id ||
+          !serverToolCallCanTransition(
+            currentStatus: current.status,
+            currentRevision: current.revision,
+            expectedStatus: call.status,
+            expectedRevision: call.revision,
+          )) {
+        return;
+      }
+      await ConversationToolCall.db.updateRow(
+        session,
+        current.copyWith(
+          status: status,
+          resultJson: projection?.persistedText,
+          revision: current.revision + 1,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+        transaction: transaction,
+      );
+    });
+  }
+
+  String _writeOperationId(ConversationToolCall call) =>
+      switch (_jsonMap(call.argumentsJson)['operationId']) {
+        final String id when id.isNotEmpty => id,
+        _ => call.stableId,
+      };
+
+  bool _isConnectorWrite(ConversationToolCall call) =>
+      call.name == executeConnectorToolName &&
+      connectorCommandMayWrite(call.argumentsJson, connectorDefinitions);
+
+  String _interruptedStatus(ConversationToolCall call) =>
+      _isConnectorWrite(call) ? 'uncertain' : 'executionError';
+
+  String _interruptedResult(ConversationToolCall call) => projectToolOutput(
+    _boundedJson({
+      'error': 'Tool execution was interrupted before completion.',
+      if (_isConnectorWrite(call)) ..._writeRecovery(call),
+    }),
+  ).persistedText;
+
+  Map<String, Object?> _writeRecovery(ConversationToolCall call) => {
+    'kind': 'connectorWrite',
+    'operationId': _writeOperationId(call),
+    'outcome': 'uncertain',
+    'retryBlocked': true,
+    'undoSupported': false,
+  };
+
+  String _failureStatus(AgentToolExecutionFailure failure) =>
+      failure.resultStatus == AgentToolResultStatus.uncertain
+      ? 'uncertain'
+      : 'executionError';
 
   Future<void> _recoverStaleRunning(
     Session session,
@@ -1871,16 +2104,11 @@ class ServerToolRuntime({
       transaction: transaction,
     );
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
-    final projection = projectToolOutput(
-      jsonEncode({
-        'error': 'Tool execution was interrupted before completion.',
-      }),
-    );
     await ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
-        status: 'executionError',
-        resultJson: projection.persistedText,
+        status: _interruptedStatus(current),
+        resultJson: _interruptedResult(current),
         revision: current.revision + 1,
         updatedAt: now,
       ),
@@ -1895,6 +2123,7 @@ class ServerToolRuntime({
         descriptor?.toolIdentifier == runSubAgentToolName) {
       return true;
     }
+
     return false;
   }
 
@@ -1948,6 +2177,7 @@ class ServerToolRuntime({
       session,
       call.id!,
     );
+
     return recovered == null
         ? ServerToolDisposition.completed
         : _reconcileAwaitingSubAgents(session, recovered);
@@ -1971,6 +2201,7 @@ class ServerToolRuntime({
         'executionError',
         _boundedJson({'content': _subAgentFailedMessage}),
       );
+
       return ServerToolDisposition.completed;
     }
     final results = <Map<String, Object?>>[];
@@ -1999,6 +2230,7 @@ class ServerToolRuntime({
         results.length == 1 ? results.single : {'children': results},
       ),
     );
+
     return ServerToolDisposition.completed;
   }
 
@@ -2047,6 +2279,7 @@ class ServerToolRuntime({
       ConversationStatuses.cancelled => 'cancelled',
       _ => 'error',
     };
+
     return {
       'conversationId': conversationId,
       'status': status,
@@ -2062,17 +2295,20 @@ class ServerToolRuntime({
   Map<String, dynamic> _data(WorkspaceResource resource) {
     final value = jsonDecode(resource.data);
     if (value is! Map<String, dynamic>) throw const FormatException();
+
     return value;
   }
 
   Future<String> _digest(String value) async {
     final hash = await Sha256().hash(utf8.encode(value));
+
     return base64UrlEncode(hash.bytes);
   }
 
   Map<String, dynamic> _jsonMap(String value) {
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) throw const FormatException();
+
     return decoded;
   }
 
@@ -2082,6 +2318,7 @@ class ServerToolRuntime({
       SkillResourceResult(:final value) => value,
       _ => null,
     };
+
     return specialResult ?? jsonEncode(value);
   }
 
@@ -2103,6 +2340,7 @@ String _backgroundWorkFollowupPrompt({
           'cancelled' => 'cancelled by the user',
           _ => 'failed or ended without a result',
         };
+
   return [
     'Background work `$workId` $outcome.',
     'This is a new conversation event. The original tool call remains '
@@ -2128,5 +2366,6 @@ String _truncateUtf8(String value, int maxBytes) {
   while (end > 0 && (bytes[end] & 0xc0) == 0x80) {
     end--;
   }
+
   return utf8.decode(bytes.sublist(0, end));
 }

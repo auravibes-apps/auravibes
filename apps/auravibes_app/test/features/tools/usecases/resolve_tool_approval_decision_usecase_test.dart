@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
@@ -17,6 +19,128 @@ void main() {
     final fixture = _ResolveToolApprovalDecisionFixture();
 
     setUp(fixture.setUp);
+    for (final mode in agent.ConversationToolAccessMode.values) {
+      test('workspace $mode access and structural previews', () async {
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          getToolAccessMode: (_) async => mode,
+          workspaceAccess: (_, _) async => true,
+        );
+        for (final name in agent.workspaceToolNames) {
+          final decision = await usecase.callForRequest((
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'call',
+            resolvedTool: ResolvedTool.workspaceAction(toolIdentifier: name),
+            argumentsRaw: '{}',
+          ));
+          expect(
+            decision.permissionResult,
+            isNot(ToolPermissionResult.notConfigured),
+            reason: name,
+          );
+          expect(decision.permissionTableId, agent.workspaceCommandTableId);
+        }
+        final dedicatedUpdate = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.workspaceAction(
+            toolIdentifier: agent.workspaceUpdateRecordToolName,
+          ),
+          argumentsRaw: jsonEncode({
+            'tableId': 'table-1',
+            'id': 'row-1',
+            'revision': 1,
+            'schemaRevision': 1,
+            'values': {'column-1': 'updated'},
+          }),
+        ));
+        expect(dedicatedUpdate.permissionResult, ToolPermissionResult.granted);
+        expect(
+          dedicatedUpdate.permissionTableId,
+          agent.workspaceCommandTableId,
+        );
+
+        final dedicatedFolder = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.workspaceAction(
+            toolIdentifier: agent.workspaceCreateFolderToolName,
+          ),
+          argumentsRaw: jsonEncode({'name': 'Group'}),
+        ));
+        expect(
+          dedicatedFolder.permissionResult,
+          mode == .allowAll
+              ? ToolPermissionResult.granted
+              : ToolPermissionResult.needsConfirmation,
+        );
+        expect(
+          dedicatedFolder.permissionTableId,
+          agent.workspaceCommandTableId,
+        );
+
+        for (final toolName in [
+          agent.workspaceRenameFolderToolName,
+          agent.workspaceCreateTableToolName,
+          agent.workspaceRenameTableToolName,
+          agent.workspaceSaveColumnToolName,
+          agent.workspaceCreateViewToolName,
+          agent.workspaceSaveViewToolName,
+        ]) {
+          final decision = await usecase.callForRequest((
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'call',
+            resolvedTool: ResolvedTool.workspaceAction(
+              toolIdentifier: toolName,
+            ),
+            argumentsRaw: '{}',
+          ));
+          expect(
+            decision.permissionResult,
+            mode == .allowAll
+                ? ToolPermissionResult.granted
+                : ToolPermissionResult.needsConfirmation,
+          );
+        }
+
+        final addRow = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.workspaceAction(
+            toolIdentifier: agent.workspaceAddRowToolName,
+          ),
+          argumentsRaw: '{}',
+        ));
+        expect(addRow.permissionResult, ToolPermissionResult.granted);
+
+        final denied = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          getToolAccessMode: (_) async => mode,
+          workspaceAccess: (_, _) async => false,
+        );
+        expect(
+          (await denied.callForRequest((
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'call',
+            resolvedTool: ResolvedTool.workspaceAction(
+              toolIdentifier: agent.workspaceReadDirectoryToolName,
+            ),
+            argumentsRaw: '{}',
+          ))).permissionResult,
+          ToolPermissionResult.disabledInWorkspace,
+        );
+      });
+    }
 
     for (final mode in agent.ConversationToolAccessMode.values) {
       for (final permission in ToolPermissionResult.values) {
@@ -136,6 +260,63 @@ void main() {
         ).called(1);
       },
     );
+
+    for (final mode in agent.ConversationToolAccessMode.values) {
+      test('Connector $mode asks in Default and keeps denials', () async {
+        final sync = _MockSyncConnectorToolPermissionsUsecase();
+        when(
+          () => sync.permissionTableIdFor(
+            workspaceId: 'ws-1',
+            toolName: agent.executeConnectorToolName,
+          ),
+        ).thenAnswer((_) async => 'execute');
+        var permission = ToolPermissionResult.granted;
+        when(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolId: 'execute',
+          ),
+        ).thenAnswer((_) async => permission);
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          syncConnectorToolPermissionsUsecase: sync,
+          getToolAccessMode: (_) async => mode,
+        );
+        Future<ToolApprovalDecision> decision() => usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'call',
+          resolvedTool: ResolvedTool.connectorCommand(
+            commandName: agent.executeConnectorToolName,
+          ),
+        );
+        expect(
+          (await decision()).permissionResult,
+          mode == agent.ConversationToolAccessMode.allowAll
+              ? ToolPermissionResult.granted
+              : ToolPermissionResult.needsConfirmation,
+        );
+        final read = await usecase.callForRequest((
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'read',
+          resolvedTool: ResolvedTool.connectorCommand(
+            commandName: agent.executeConnectorToolName,
+          ),
+          argumentsRaw:
+              '{"toolId":"connector/brave/web_search","args":{"query":"read"}}',
+        ));
+        expect(read.permissionResult, ToolPermissionResult.granted);
+        permission = ToolPermissionResult.disabledInWorkspace;
+        expect(
+          (await decision()).permissionResult,
+          ToolPermissionResult.disabledInWorkspace,
+        );
+      });
+    }
 
     group('built-in tools', () {
       test('returns granted for always-approved built-in tool', () async {

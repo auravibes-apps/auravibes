@@ -47,6 +47,8 @@ import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
@@ -308,6 +310,51 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
+    testWidgets('cloud attachment IDs render through authorized host preview', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        metadata: MessageMetadataEntity.fromJsonString(
+          '{"attachmentIds":[42]}',
+        ),
+      );
+      const asset = WorkspaceAsset(
+        id: '42',
+        name: 'notes.txt',
+        mimeType: 'text/plain',
+        sizeBytes: 15,
+        checksum: 'unused',
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          overrides: [
+            ..._messageOverrides({message.id: message}),
+            workspaceAssetDescriptorProvider(
+              'ws-1',
+              '42',
+            ).overrideWith((_) async => asset),
+            workspaceAssetPreviewProvider('ws-1', '42').overrideWith(
+              (_) async => WorkspaceAssetPreview(
+                asset: asset,
+                bytes: .fromList('shared contents'.codeUnits),
+                kind: .text,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('notes.txt'), findsOneWidget);
+      expect(find.text('42'), findsNothing);
+      await tester.tap(find.text('notes.txt'));
+      await tester.pumpAndSettle();
+      expect(find.text('shared contents'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('sizes the fork boundary action from Aura target updates', (
       tester,
     ) async {
@@ -2837,6 +2884,55 @@ void main() {
       final status = tester.getRect(find.text('Completed'));
       expect(status.right, greaterThan(row.center.dx));
       expect(row.right - status.right, lessThan(100));
+    });
+
+    testWidgets('shows guidance when a workspace tool fails without details', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        content: 'Final answer',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          thinking: 'Checking the workspace',
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tc-missing-error',
+              name: 'workspace_read_item',
+              argumentsRaw: '{"itemId":"file"}',
+              resultStatus: ToolCallResultStatus.executionError,
+            ),
+          ],
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('activity_tool_tc-missing-error')),
+      );
+      await tester.pump();
+      expect(
+        find.textContaining('No error details were provided.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('shared Directory location'), findsOneWidget);
     });
 
     testWidgets('reveals a finished activity run in three compact levels', (

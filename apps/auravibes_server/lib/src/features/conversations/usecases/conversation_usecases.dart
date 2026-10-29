@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:cryptography/cryptography.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentToolNameResolver,
@@ -9,18 +8,25 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         a2uiChatFormSubmitComponentId,
         ReasoningConfiguration,
         ReasoningOption,
+        isWorkspaceToolName,
+        workspaceActionForTool,
         projectToolOutput;
+import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
-import '../../workspaces/domain/workspace_roles.dart';
+import '../../accounts/auth_user_lock.dart';
+import '../../objects/object_retained_assets.dart';
 import '../../sync/stream/sync_wakeups.dart';
+import '../../workspaces/domain/workspace_roles.dart';
+import '../../workspace_state/workspace_table_access.dart';
+import '../../workspace_views/workspace_view_store.dart';
 import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
 import '../domain/message_bookmark_view_mapper.dart';
-import '../engine/conversation_host_effects.dart';
 import '../engine/a2ui_protocol.dart';
-
+import '../engine/conversation_host_effects.dart';
+import '../engine/workspace_result_privacy.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 
 typedef ConversationJobPublisher = Future<void> Function(
@@ -316,15 +322,16 @@ class ConversationUseCases {
     if (request.limit < 1 || request.limit > 100 || (request.offset ?? 0) < 0) {
       _fail(ConversationErrorCode.validationFailed);
     }
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      read: (transaction) async => (await _page(
+        session,
+        request: request,
+        transaction: transaction,
+      )).conversations,
     );
-    return (await _page(
-      session,
-      request: request,
-    )).conversations;
   }
 
   Future<ConversationPage> listPage(
@@ -335,12 +342,13 @@ class ConversationUseCases {
     if (request.limit < 1 || request.limit > 100 || (request.offset ?? 0) < 0) {
       _fail(ConversationErrorCode.validationFailed);
     }
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      read: (transaction) =>
+          _page(session, request: request, transaction: transaction),
     );
-    return _page(session, request: request);
   }
 
   Future<ConversationSummary> get(
@@ -348,16 +356,17 @@ class ConversationUseCases {
     required String userId,
     required GetConversationRequest request,
   }) async {
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
-    );
-    return _summary(
-      await _requireConversation(
-        session,
-        request.workspaceId,
-        request.conversationId,
+      read: (transaction) async => _summary(
+        await _requireConversation(
+          session,
+          request.workspaceId,
+          request.conversationId,
+          transaction: transaction,
+        ),
       ),
     );
   }
@@ -370,19 +379,35 @@ class ConversationUseCases {
     if (request.limit < 1 || request.limit > 500) {
       _fail(ConversationErrorCode.validationFailed);
     }
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      read: (transaction) => _listMessages(
+        session,
+        request,
+        userId: userId,
+        transaction: transaction,
+      ),
     );
+  }
+
+  Future<List<ConversationMessageView>> _listMessages(
+    Session session,
+    ListConversationMessagesRequest request, {
+    required Transaction transaction,
+    required String userId,
+  }) async {
     final conversation = await _requireConversation(
       session,
       request.workspaceId,
       request.conversationId,
+      transaction: transaction,
     );
     final allMessages = await _effectiveMessages(
       session,
       source: conversation,
+      transaction: transaction,
     );
     final targetMessageId = request.messageId;
     final messages = targetMessageId == null
@@ -396,6 +421,7 @@ class ConversationUseCases {
     final sourceConversations = await Conversation.db.find(
       session,
       where: (table) => table.id.inSet(sourceConversationIds),
+      transaction: transaction,
     );
     final sourceConversationsById = {
       for (final source in sourceConversations) source.id!: source,
@@ -407,6 +433,7 @@ class ConversationUseCases {
           messages: messages.where(
             (message) => message.conversationId != conversation.id,
           ),
+          transaction: transaction,
         );
     final turnIds = messages.map((message) => message.turnId).whereType<int>();
     final turns = {
@@ -414,6 +441,7 @@ class ConversationUseCases {
         session,
         workspaceId: request.workspaceId,
         turnIds: turnIds,
+        transaction: transaction,
       ))
         turn.id!: turn,
     };
@@ -426,6 +454,7 @@ class ConversationUseCases {
       session,
       workspaceId: request.workspaceId,
       turnIds: turns.keys,
+      transaction: transaction,
     )) {
       if (!messageIds.contains(call.messageId) ||
           detachedToolCallIdsByMessageId[call.messageId]?.contains(
@@ -437,6 +466,12 @@ class ConversationUseCases {
       final messageId = call.messageId;
       (calls[messageId] ??= []).add(call);
     }
+    final targets = await _visibleTableTargets(
+      session,
+      calls.values.expand((calls) => calls),
+      userId,
+      transaction,
+    );
     return messages.reversed.map((message) {
       final turn = turns[message.turnId];
       return ConversationMessageView(
@@ -465,7 +500,7 @@ class ConversationUseCases {
         ),
         toolCalls: [
           for (final call in calls[message.id] ?? const [])
-            _toolCallView(call, turn!, messages),
+            _toolCallView(call, turn!, messages, targets[call.stableId]),
         ],
         revision: message.revision,
         createdAt: message.createdAt,
@@ -502,17 +537,18 @@ class ConversationUseCases {
         request.offset > 10000) {
       _fail(ConversationErrorCode.validationFailed);
     }
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
-    );
-    return _repository.searchMessages(
-      session,
-      workspaceId: request.workspaceId,
-      query: query,
-      limit: request.limit,
-      offset: request.offset,
+      read: (transaction) => _repository.searchMessages(
+        session,
+        workspaceId: request.workspaceId,
+        query: query,
+        limit: request.limit,
+        offset: request.offset,
+        transaction: transaction,
+      ),
     );
   }
 
@@ -1272,45 +1308,66 @@ class ConversationUseCases {
     required String userId,
     required GetTurnRequest request,
   }) async {
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
-    );
-    final turn = await _repository.findTurnByStableId(
-      session,
-      workspaceId: request.workspaceId,
-      turnId: request.turnId,
-    );
-    if (turn == null) _fail(ConversationErrorCode.notFound);
-    final messages = await _repository.listMessages(session, turn: turn);
-    final conversation = await _repository.findConversation(
-      session,
-      workspaceId: request.workspaceId,
-      conversationId: turn.conversationId,
-    );
-    if (conversation == null) _fail(ConversationErrorCode.notFound);
-    final toolCalls = await _repository.listToolCalls(session, turn: turn);
-    return TurnSnapshot(
-      turn: _turnView(turn, conversation.stableId, messages),
-      messages: messages
-          .map(
-            (message) => _messageView(
-              message,
-              conversation.stableId,
-              turn.requestId,
-              a2uiSupportedComponents: cloudA2uiComponentsForClient(
-                request.a2uiSupportedComponents,
-                isChildConversation:
-                    conversation.parentConversationStableId != null,
-              ),
-            ),
-          )
-          .toList(),
-      toolCalls: toolCalls
-          .map((call) => _toolCallView(call, turn, messages))
-          .toList(),
-      terminal: ConversationStatuses.isTerminal(turn.status),
+      read: (transaction) async {
+        final turn = await _repository.findTurnByStableId(
+          session,
+          workspaceId: request.workspaceId,
+          turnId: request.turnId,
+          transaction: transaction,
+        );
+        if (turn == null) _fail(ConversationErrorCode.notFound);
+        final messages = await _repository.listMessages(
+          session,
+          turn: turn,
+          transaction: transaction,
+        );
+        final conversation = await _repository.findConversation(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: turn.conversationId,
+          transaction: transaction,
+        );
+        if (conversation == null) _fail(ConversationErrorCode.notFound);
+        final toolCalls = await _repository.listToolCalls(
+          session,
+          turn: turn,
+          transaction: transaction,
+        );
+        final targets = await _visibleTableTargets(
+          session,
+          toolCalls,
+          userId,
+          transaction,
+        );
+        return TurnSnapshot(
+          turn: _turnView(turn, conversation.stableId, messages),
+          messages: messages
+              .map(
+                (message) => _messageView(
+                  message,
+                  conversation.stableId,
+                  turn.requestId,
+                  a2uiSupportedComponents: cloudA2uiComponentsForClient(
+                    request.a2uiSupportedComponents,
+                    isChildConversation:
+                        conversation.parentConversationStableId != null,
+                  ),
+                ),
+              )
+              .toList(),
+          toolCalls: toolCalls
+              .map(
+                (call) =>
+                    _toolCallView(call, turn, messages, targets[call.stableId]),
+              )
+              .toList(),
+          terminal: ConversationStatuses.isTerminal(turn.status),
+        );
+      },
     );
   }
 
@@ -1319,31 +1376,48 @@ class ConversationUseCases {
     required String userId,
     required GetConversationRequest request,
   }) async {
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      read: (transaction) => _getConversationSnapshot(
+        session,
+        request,
+        userId: userId,
+        transaction: transaction,
+      ),
     );
+  }
+
+  Future<ConversationSnapshot> _getConversationSnapshot(
+    Session session,
+    GetConversationRequest request, {
+    required Transaction transaction,
+    required String userId,
+  }) async {
     final conversation = await _requireConversation(
       session,
       request.workspaceId,
       request.conversationId,
+      transaction: transaction,
     );
-    final messages = await listMessages(
+    final messages = await _listMessages(
       session,
-      userId: userId,
-      request: ListConversationMessagesRequest(
+      ListConversationMessagesRequest(
         a2uiSupportedComponents: request.a2uiSupportedComponents,
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
         limit: 500,
       ),
+      transaction: transaction,
+      userId: userId,
     );
     final pendingStoredMessages = await _repository.listConversationMessages(
       session,
       workspaceId: request.workspaceId,
       conversationId: conversation.id!,
       limit: 500,
+      transaction: transaction,
     );
     final messageViews = {for (final message in messages) message.id: message};
     final pendingMessages =
@@ -1358,16 +1432,19 @@ class ConversationUseCases {
         : await ConversationExecution.db.findById(
             session,
             conversation.activeExecutionId!,
+            transaction: transaction,
           );
     final assistant = execution?.assistantMessageId == null
         ? null
         : await ConversationMessage.db.findById(
             session,
             execution!.assistantMessageId!,
+            transaction: transaction,
           );
     final effectiveMessages = await _effectiveMessages(
       session,
       source: conversation,
+      transaction: transaction,
     );
     final turns = {
       for (final turn in await _repository.listTurns(
@@ -1376,6 +1453,7 @@ class ConversationUseCases {
         turnIds: effectiveMessages
             .map((message) => message.turnId)
             .whereType<int>(),
+        transaction: transaction,
       ))
         turn.id!: turn,
     };
@@ -1386,11 +1464,19 @@ class ConversationUseCases {
           messages: effectiveMessages.where(
             (message) => message.conversationId != conversation.id,
           ),
+          transaction: transaction,
         );
     final toolCalls = await _repository.listToolCallsByTurnIds(
       session,
       workspaceId: request.workspaceId,
       turnIds: turns.keys,
+      transaction: transaction,
+    );
+    final targets = await _visibleTableTargets(
+      session,
+      toolCalls,
+      userId,
+      transaction,
     );
     final effectiveMessageIds = effectiveMessages
         .map((message) => message.id)
@@ -1446,6 +1532,7 @@ class ConversationUseCases {
                   toolCall,
                   turn,
                   effectiveMessages,
+                  targets[toolCall.stableId],
                 ),
       ],
       sequence: conversation.eventSequence,
@@ -1461,21 +1548,12 @@ class ConversationUseCases {
     _requireId(request.conversationId);
     _requireId(request.toolCallId);
     return session.db.transaction((transaction) async {
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
         transaction: transaction,
       );
-      final workspace = await CloudWorkspace.db.findFirstRow(
-        session,
-        where: (table) => table.id.equals(request.workspaceId),
-        transaction: transaction,
-        lockMode: LockMode.forUpdate,
-      );
-      if (workspace == null || workspace.deletedAt != null) {
-        _fail(ConversationErrorCode.notFound);
-      }
       final conversation = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,
@@ -1731,85 +1809,102 @@ class ConversationUseCases {
     Session session, {
     required String userId,
     required ListMessageBookmarksRequest request,
-  }) async {
-    await _requireMember(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
-    );
-    final bookmarks = await MessageBookmark.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.userId.equals(userId),
-      orderBy: (table) => table.createdAt.desc(),
-    );
-    if (bookmarks.isEmpty) return const [];
-
-    final workspace = await CloudWorkspace.db.findById(
-      session,
-      request.workspaceId,
-    );
-    if (workspace == null || workspace.deletedAt != null) return const [];
-    final messages = await ConversationMessage.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.id.inSet(
-            bookmarks.map((bookmark) => bookmark.messageId).toSet(),
-          ),
-    );
-    final messagesById = {for (final message in messages) message.id!: message};
-    final conversations = await Conversation.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.id.inSet(
-            bookmarks.map((bookmark) => bookmark.conversationId).toSet(),
-          ),
-    );
-    final conversationsById = {
-      for (final conversation in conversations) conversation.id!: conversation,
-    };
-    final result = <MessageBookmarkView>[];
-    for (final bookmark in bookmarks) {
-      final conversation = conversationsById[bookmark.conversationId];
-      if (conversation == null || conversation.deletedAt != null) continue;
-      final targetMessage = messagesById[bookmark.messageId];
-      final message = targetMessage?.conversationId == conversation.id
-          ? targetMessage
-          : null;
-      final view = mapMessageBookmarkView(
-        conversationId: conversation.stableId,
-        messageId: bookmark.messageStableId,
-        contentSnapshot: bookmark.contentSnapshot,
-        roleSnapshot: bookmark.roleSnapshot,
-        messageCreatedAtSnapshot: bookmark.messageCreatedAt,
-        content: message?.content,
-        role: message?.role,
-        createdAt: message?.createdAt,
-        conversationTitle: conversation.title,
-        workspaceName: workspace.name,
+  }) => _withActiveWorkspaceRead(
+    session,
+    workspaceId: request.workspaceId,
+    userId: userId,
+    read: (transaction) async {
+      final bookmarks = await MessageBookmark.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.userId.equals(userId),
+        orderBy: (table) => table.createdAt.desc(),
+        transaction: transaction,
       );
-      result.add(view);
-    }
-    return result;
-  }
+      if (bookmarks.isEmpty) return const [];
+
+      final workspace = await CloudWorkspace.db.findById(
+        session,
+        request.workspaceId,
+        transaction: transaction,
+      );
+      if (workspace == null) _fail(ConversationErrorCode.permissionDenied);
+      final messages = await ConversationMessage.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.id.inSet(
+              bookmarks.map((bookmark) => bookmark.messageId).toSet(),
+            ),
+        transaction: transaction,
+      );
+      final messagesById = {
+        for (final message in messages) message.id!: message,
+      };
+      final conversations = await Conversation.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.id.inSet(
+              bookmarks.map((bookmark) => bookmark.conversationId).toSet(),
+            ),
+        transaction: transaction,
+      );
+      final conversationsById = {
+        for (final conversation in conversations)
+          conversation.id!: conversation,
+      };
+      final result = <MessageBookmarkView>[];
+      for (final bookmark in bookmarks) {
+        final conversation = conversationsById[bookmark.conversationId];
+        if (conversation == null || conversation.deletedAt != null) continue;
+        final targetMessage = messagesById[bookmark.messageId];
+        final message = targetMessage?.conversationId == conversation.id
+            ? targetMessage
+            : null;
+        final view = mapMessageBookmarkView(
+          conversationId: conversation.stableId,
+          messageId: bookmark.messageStableId,
+          contentSnapshot: bookmark.contentSnapshot,
+          roleSnapshot: bookmark.roleSnapshot,
+          messageCreatedAtSnapshot: bookmark.messageCreatedAt,
+          content: message?.content,
+          role: message?.role,
+          createdAt: message?.createdAt,
+          conversationTitle: conversation.title,
+          workspaceName: workspace.name,
+        );
+        result.add(view);
+      }
+      return result;
+    },
+  );
 
   Future<List<BackgroundWorkView>> listBackgroundWorks(
     Session session, {
     required String userId,
     required ListBackgroundWorksRequest request,
   }) async {
-    await _requireMember(
+    return _withActiveWorkspaceRead(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      read: (transaction) =>
+          _listBackgroundWorks(session, request, transaction: transaction),
     );
+  }
+
+  Future<List<BackgroundWorkView>> _listBackgroundWorks(
+    Session session,
+    ListBackgroundWorksRequest request, {
+    required Transaction transaction,
+  }) async {
     final conversation = await _requireConversation(
       session,
       request.workspaceId,
       request.conversationId,
+      transaction: transaction,
     );
     final recentRecords = await BackgroundWorkRecord.db.find(
       session,
@@ -1818,6 +1913,7 @@ class ConversationUseCases {
           table.conversationId.equals(conversation.id),
       orderBy: (table) => table.createdAt.desc(),
       limit: 100,
+      transaction: transaction,
     );
     final queuedRecords = await BackgroundWorkRecord.db.find(
       session,
@@ -1830,6 +1926,7 @@ class ConversationUseCases {
             BackgroundWorkPreviews.continuationFailed,
           }),
       orderBy: (table) => table.createdAt,
+      transaction: transaction,
     );
     final recordsById = {
       for (final record in [...recentRecords, ...queuedRecords])
@@ -1845,6 +1942,7 @@ class ConversationUseCases {
             .whereType<int>()
             .toSet(),
       ),
+      transaction: transaction,
     );
     final messagesById = {for (final message in messages) message.id: message};
     final calls = await ConversationToolCall.db.find(
@@ -1852,6 +1950,7 @@ class ConversationUseCases {
       where: (table) => table.id.inSet(
         records.map((record) => record.conversationToolCallId).toSet(),
       ),
+      transaction: transaction,
     );
     final callsById = {for (final call in calls) call.id: call};
     return [
@@ -1897,7 +1996,7 @@ class ConversationUseCases {
     _requireId(request.conversationId);
     _requireId(request.workId);
     final view = await session.db.transaction((transaction) async {
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -2094,6 +2193,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       eventId: 'user-message:${request.clientMessageId}',
       kind: ConversationEventType.messageQueued,
@@ -2176,6 +2283,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.messageEdited,
       payloadJson: jsonEncode({'messageId': request.messageId}),
@@ -2237,6 +2352,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.messageReordered,
       payloadJson: jsonEncode({
@@ -2362,6 +2485,14 @@ class ConversationUseCases {
         workspaceId: request.workspaceId,
         conversationId: request.conversationId,
         actorUserId: userId,
+        authorizeBeforeConversationLock: (transaction) async {
+          await _lockActorWorkspaceMember(
+            session,
+            workspaceId: request.workspaceId,
+            userId: userId,
+            transaction: transaction,
+          );
+        },
         requestId: request.requestId,
         kind: ConversationEventType.executionStarted,
         payloadJson: jsonEncode({
@@ -2620,6 +2751,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.executionStopped,
       payloadJson: jsonEncode({'requestId': request.requestId}),
@@ -2746,6 +2885,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.messageRemoved,
       payloadJson: jsonEncode({'messageId': request.messageId}),
@@ -2799,6 +2946,14 @@ class ConversationUseCases {
       workspaceId: request.workspaceId,
       conversationId: request.conversationId,
       actorUserId: userId,
+      authorizeBeforeConversationLock: (transaction) async {
+        await _lockActorWorkspaceMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+      },
       requestId: request.requestId,
       kind: ConversationEventType.settingsChanged,
       payloadJson: jsonEncode({
@@ -3545,7 +3700,7 @@ class ConversationUseCases {
     String? cancelledConversationId;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -4181,7 +4336,7 @@ class ConversationUseCases {
     late ConversationJob job;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -4342,6 +4497,52 @@ class ConversationUseCases {
     return member;
   }
 
+  Future<T> _withActiveWorkspaceRead<T>(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Future<T> Function(Transaction transaction) read,
+  }) => session.db.transaction((transaction) async {
+    await _lockActorWorkspaceMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    return await read(transaction);
+  });
+
+  Future<WorkspaceMember> _lockActorWorkspaceMember(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) _fail(ConversationErrorCode.permissionDenied);
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _fail(ConversationErrorCode.permissionDenied);
+    if (workspace.erasureRequestedAt != null) {
+      _fail(ConversationErrorCode.permissionDenied);
+    }
+    if (workspace.deletedAt != null) _fail(ConversationErrorCode.notFound);
+    return _requireMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+  }
+
   Future<ConversationJob> _insertJob(
     Session session, {
     required int workspaceId,
@@ -4419,12 +4620,14 @@ class ConversationUseCases {
   Future<Conversation> _requireConversation(
     Session session,
     int workspaceId,
-    String conversationId,
-  ) async {
+    String conversationId, {
+    Transaction? transaction,
+  }) async {
     final conversation = await _repository.findConversationByStableId(
       session,
       workspaceId: workspaceId,
       conversationId: conversationId,
+      transaction: transaction,
     );
     if (conversation == null) _fail(ConversationErrorCode.notFound);
     return conversation;
@@ -4433,6 +4636,7 @@ class ConversationUseCases {
   Future<ConversationPage> _page(
     Session session, {
     required ListConversationsRequest request,
+    Transaction? transaction,
   }) async {
     final cursor = _decodeCursor(request.cursor);
     final conversations = await _repository.listConversations(
@@ -4444,6 +4648,7 @@ class ConversationUseCases {
       beforeStableId: cursor?.stableId,
       limit: request.limit + 1,
       offset: request.offset ?? 0,
+      transaction: transaction,
     );
     final hasMore = conversations.length > request.limit;
     final page = conversations.take(request.limit).toList();
@@ -5210,7 +5415,14 @@ class ConversationUseCases {
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
-      if (liveReference != null) continue;
+      if (liveReference != null ||
+          await ObjectRetainedAssets(
+            session,
+            workspaceId,
+            transaction,
+          ).retained(objectId)) {
+        continue;
+      }
       final existingDeletion = await ObjectDeletion.db.findFirstRow(
         session,
         where: (table) => table.objectId.equals(objectId),
@@ -5762,6 +5974,14 @@ class ConversationUseCases {
     var publishWorkspaceWakeup = true;
     final result = await session.db.transaction((transaction) async {
       _requireId(requestId);
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        _fail(ConversationErrorCode.permissionDenied);
+      }
       final hash = base64UrlEncode(
         (await Sha256().hash(utf8.encode(jsonEncode(requestBody)))).bytes,
       );
@@ -5774,7 +5994,9 @@ class ConversationUseCases {
       final workspace = await CloudWorkspace.db.findFirstRow(
         session,
         where: (table) =>
-            table.id.equals(workspaceId) & table.deletedAt.equals(null),
+            table.id.equals(workspaceId) &
+            table.deletedAt.equals(null) &
+            table.erasureRequestedAt.equals(null),
         transaction: transaction,
         lockMode: LockMode.forUpdate,
       );
@@ -5953,12 +6175,123 @@ class ConversationUseCases {
     updatedAt: turn.updatedAt,
   );
 
+  Future<Map<String, String>> _visibleTableTargets(
+    Session session,
+    Iterable<ConversationToolCall> calls,
+    String userId,
+    Transaction transaction,
+  ) async {
+    final targets = <String, String>{};
+    final members = <int, WorkspaceMember>{};
+    final visibility = <(int, String, String), bool>{};
+    Future<bool> canReadTable(WorkspaceMember member, String id) async {
+      final key = (member.workspaceId, 'table', id);
+      if (!visibility.containsKey(key)) {
+        final table = await WorkspaceResource.db.findFirstRow(
+          session,
+          where: (row) =>
+              row.workspaceId.equals(member.workspaceId) &
+              row.resourceKind.equals(WorkspaceResourceKind.table) &
+              row.resourceId.equals(id),
+          transaction: transaction,
+        );
+        visibility[key] =
+            table != null &&
+            await WorkspaceTableAccess(transaction: transaction)
+                .canReadTable(session, member, table);
+      }
+      return visibility[key]!;
+    }
+
+    for (final call in calls) {
+      if (!isWorkspaceToolName(call.name) ||
+          call.status != 'success' ||
+          call.resultJson == null) {
+        continue;
+      }
+      final arguments = _tryJsonMap(call.argumentsJson);
+      final action = workspaceActionForTool(call.name, arguments);
+      if (!const {
+        'createTable',
+        'renameTable',
+        'saveColumn',
+        'createRecord',
+        'updateRecord',
+        'createView',
+        'saveView',
+      }.contains(action)) {
+        continue;
+      }
+      final result = _tryJsonMap(call.resultJson!);
+      if (action == 'createView' || action == 'saveView') {
+        final id = result['kind'] == 'view' ? result['id'] : null;
+        if (id is! String || id.isEmpty) continue;
+        final member = members[call.workspaceId] ??= await _requireMember(
+          session,
+          workspaceId: call.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        final key = (call.workspaceId, 'view', id);
+        if (!visibility.containsKey(key)) {
+          try {
+            final view = await WorkspaceViewStore(
+              session,
+              member,
+              transaction,
+            ).read(id);
+            final tableId = _tryJsonMap(view.data)['tableId'];
+            visibility[key] =
+                tableId is String &&
+                tableId.isNotEmpty &&
+                await canReadTable(member, tableId);
+          } on CloudWorkspaceException {
+            visibility[key] = false;
+          }
+        }
+        if (visibility[key]!) {
+          targets[call.stableId] = jsonEncode({
+            'kind': 'view',
+            'id': id,
+          });
+        }
+        continue;
+      }
+      final id = result['kind'] == 'table'
+          ? result['id']
+          : result['kind'] == 'record'
+          ? result['tableId']
+          : null;
+      if (id is! String || id.isEmpty) continue;
+      final member = members[call.workspaceId] ??= await _requireMember(
+        session,
+        workspaceId: call.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (await canReadTable(member, id)) {
+        targets[call.stableId] = jsonEncode({
+          'kind': 'table',
+          'id': id,
+        });
+      }
+    }
+    return targets;
+  }
+
   ConversationToolCallView _toolCallView(
     ConversationToolCall call,
     ConversationTurn turn,
     List<ConversationMessage> messages,
+    String? target,
   ) {
-    final result = call.resultJson;
+    final redact = isWorkspaceToolName(call.name) && call.status != 'pending';
+    final stored = call.resultJson;
+    final result = stored == null
+        ? null
+        : redact
+        ? target ?? '{}'
+        : safeWorkspaceResult(call, stored);
     final projection = result == null ? null : projectToolOutput(result);
     final truncated = projection?.truncated ?? false;
 
@@ -5972,7 +6305,7 @@ class ConversationUseCases {
               ?.stableId ??
           '',
       name: call.name,
-      argumentsJson: call.argumentsJson,
+      argumentsJson: redact ? '{}' : call.argumentsJson,
       argumentsDigest: call.argumentsDigest,
       userFacingDescription: call.userFacingDescription,
       backgroundEligible: call.backgroundEligible,

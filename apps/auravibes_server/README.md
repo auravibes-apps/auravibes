@@ -31,16 +31,57 @@ worktrees. Keep other application secrets in `passwords.yaml`, or provide them
 as `SERVERPOD_PASSWORD_<key>` environment variables. Do not commit either
 credentials file.
 
+## Private object storage
+
+Configure the registered storage gateway for new uploads with
+`OBJECT_STORE_GATEWAY_ENDPOINT` and `OBJECT_STORE_GATEWAY_BEARER_TOKEN`.
+Configure the old storage endpoint separately with
+`OBJECT_STORE_LEGACY_ENDPOINT` and, when required,
+`OBJECT_STORE_LEGACY_BEARER_TOKEN`. Keep endpoint credentials in the runtime's
+secret configuration, not in tracked files.
+
+The server persists a gateway registration ID and `pending` state before
+registering a new object key. It claims `registering` before the external call,
+then stores `registered` only after the gateway returns 204 and before
+requesting the first PUT signature. A concurrent retry cannot issue another
+registration while the row is `registering`; a crash or unknown result remains
+fail-closed without automatic recovery. Only a pending, never-signed key may be
+registered; registered keys are never registered again. HEAD, GET signing, and
+quiescence do not create registration records. Keep the ID and state in the
+database with its upload row; the client does not receive them.
+Existing upload rows without an ID remain legacy and are routed only to the
+explicitly configured legacy endpoint. Do not register legacy keys in the new
+gateway or use it as a fallback for missing legacy configuration. Legacy
+uploads without registration provenance remain blocked from cloud erasure.
+Gateway quiescence must confirm that registered-key reads and writes have
+drained before deletion: 409 `pending` is retryable, while 409 `conflict` for an
+unknown or mismatched registration is a durable blocker. Registered DELETE is
+confirmed only by 204; do not treat 404 as deletion proof. The exact 422 JSON
+code `replica_provenance_unavailable` is a durable provider blocker with no
+self-service Retry. HTTP 502 remains a transient cleanup failure, and unknown
+responses fail closed.
+
+Before enabling registration-aware signing or erasure, stop and drain every
+pre-fence app signer that can issue direct/legacy PUT URLs and every pre-fence
+object-cleanup worker. Account for all outstanding legacy URL expiries and
+verify in-flight writes/deletes have definitive outcomes; expiry alone is not
+proof that an in-flight upload ended. Do not deploy until the gateway/provider
+deletion proof and this drain are verified. This repository change does not
+authorize deployment.
+
 ## Integration tests
 
 Set `test.database` in `config/passwords.yaml` to the same value as
-`POSTGRES_PASSWORD` in `.env`. Start the test database from the server package:
+`POSTGRES_PASSWORD` in `.env`. Start the test database from the repository root:
 
 ```sh
+source scripts/serverpod_worktree_env.sh
 cd apps/auravibes_server
-source ../../scripts/serverpod_worktree_env.sh
-docker compose --project-name "$AURAVIBES_SERVER_PROJECT" up -d --remove-orphans postgres_test
+docker compose --project-name "$AURAVIBES_SERVER_PROJECT" up -d postgres_test
 ```
+
+Keep the explicit project name on every Compose command. Omitting it shares
+containers across worktrees even when their selected host ports differ.
 
 Run the suite from the repository root. The entrypoint owns the validation lease;
 do not add an outer lease. It checks Docker, the existing isolated database and
@@ -57,8 +98,8 @@ bash "$(git rev-parse --show-toplevel)/scripts/test_server.sh" test/integration/
 Stop the test database without deleting its volume:
 
 ```sh
+source scripts/serverpod_worktree_env.sh
 cd apps/auravibes_server
-source ../../scripts/serverpod_worktree_env.sh
 docker compose --project-name "$AURAVIBES_SERVER_PROJECT" stop postgres_test
 ```
 

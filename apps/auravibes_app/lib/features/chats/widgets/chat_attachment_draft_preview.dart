@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -328,7 +328,7 @@ class const _AttachmentDraftAvatar({
       borderRadius: BorderRadius.circular(
         context.auraTheme.fromBorderRadius(.sm),
       ),
-      child: ChatAttachmentImage(
+      child: SharedChatAttachmentImage(
         localPath: attachment.localPath,
         width: size,
         height: size,

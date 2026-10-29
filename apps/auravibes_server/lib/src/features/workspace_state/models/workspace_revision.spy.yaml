@@ -1,0 +1,17 @@
+class: WorkspaceRevision
+table: workspace_revision
+fields:
+  workspaceId: int
+  resourceKind: WorkspaceResourceKind
+  resourceId: String
+  revision: int
+  data: String
+  capturedAt: DateTime
+  actorUserId: String?
+  aiInvolved: bool?
+  operation: String?
+  conversationId: String?
+indexes:
+  workspace_revision_identity_idx:
+    fields: workspaceId, resourceKind, resourceId, revision
+    unique: true

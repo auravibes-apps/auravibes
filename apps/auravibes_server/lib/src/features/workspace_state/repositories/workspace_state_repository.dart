@@ -24,7 +24,10 @@ class WorkspaceStateRepository {
     bool lock = false,
   }) => CloudWorkspace.db.findFirstRow(
     session,
-    where: (t) => t.id.equals(workspaceId) & t.deletedAt.equals(null),
+    where: (t) =>
+        t.id.equals(workspaceId) &
+        t.deletedAt.equals(null) &
+        t.erasureRequestedAt.equals(null),
     transaction: transaction,
     lockMode: lock ? LockMode.forUpdate : null,
   );
@@ -35,6 +38,7 @@ class WorkspaceStateRepository {
     required WorkspaceResourceKind kind,
     required int limit,
     String? afterResourceId,
+    Transaction? transaction,
   }) => WorkspaceResource.db.find(
     session,
     where: (t) =>
@@ -46,6 +50,7 @@ class WorkspaceStateRepository {
             : t.resourceId > afterResourceId),
     orderBy: (t) => t.resourceId,
     limit: limit,
+    transaction: transaction,
   );
 
   Future<List<WorkspaceResource>> findActiveResources(
@@ -69,20 +74,26 @@ class WorkspaceStateRepository {
     required int workspaceId,
     required int afterSequence,
     required int limit,
+    required Transaction transaction,
   }) => WorkspaceEvent.db.find(
     session,
     where: (t) =>
         t.workspaceId.equals(workspaceId) & (t.sequence > afterSequence),
     orderBy: (t) => t.sequence,
     limit: limit,
+    transaction: transaction,
   );
 
-  Future<WorkspaceEvent?> firstEvent(Session session, int workspaceId) =>
-      WorkspaceEvent.db.findFirstRow(
-        session,
-        where: (t) => t.workspaceId.equals(workspaceId),
-        orderBy: (t) => t.sequence,
-      );
+  Future<WorkspaceEvent?> firstEvent(
+    Session session,
+    int workspaceId, {
+    required Transaction transaction,
+  }) => WorkspaceEvent.db.findFirstRow(
+    session,
+    where: (t) => t.workspaceId.equals(workspaceId),
+    orderBy: (t) => t.sequence,
+    transaction: transaction,
+  );
 
   Future<WorkspaceResource?> findResource(
     Session session, {

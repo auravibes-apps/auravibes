@@ -7,17 +7,19 @@ import 'package:genkit/plugin.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../model_connections/domain/virtual_workspace_model_selection.dart';
 import '../../model_connections/usecases/model_connection_usecases.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import '../domain/conversation_values.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
-import 'conversation_host_effects.dart';
 import 'a2ui_protocol.dart';
+import 'conversation_host_effects.dart';
+import 'server_agent_guidance.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
-import 'server_agent_guidance.dart';
+import 'workspace_prompt_projection.dart';
 
 class const ConversationEngineResult({
   required final String content,
@@ -58,7 +60,9 @@ String appendDurableSkillActivations(
 }
 
 String _toolResultForContext(ConversationToolCall call) {
+  if (isWorkspaceToolName(call.name)) return workspaceContextUnavailable;
   final result = call.resultJson ?? call.status;
+
   return projectToolOutput(result).text;
 }
 
@@ -89,6 +93,7 @@ String providerCredential(String providerId, String secret) {
   if (value is! Map || value['access_token'] is! String) {
     throw const ConversationEngineConfigurationException('provider_secret');
   }
+
   return value['access_token']! as String;
 }
 
@@ -194,6 +199,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
       ),
     );
   }
+
   return entries..sort((left, right) => left.slug.compareTo(right.slug));
 }
 
@@ -236,6 +242,7 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
           ),
     );
   }
+
   return candidates;
 }
 
@@ -359,9 +366,14 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
               ProviderToolCallRecord(
                 id: call.stableId,
                 name: call.name,
-                arguments: Map<String, Object?>.from(
-                  jsonDecode(call.argumentsJson) as Map,
-                ),
+                arguments: isWorkspaceToolName(call.name)
+                    ? workspaceToolArgumentsForContext(
+                        call.name,
+                        _jsonObject(call.argumentsJson),
+                      )
+                    : Map<String, Object?>.from(
+                        jsonDecode(call.argumentsJson) as Map,
+                      ),
               ),
           ],
           assistantContent: assistant['content'] as String?,
@@ -388,9 +400,14 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
             ProviderToolCallRecord(
               id: call.stableId,
               name: call.name,
-              arguments: Map<String, Object?>.from(
-                jsonDecode(call.argumentsJson) as Map,
-              ),
+              arguments: isWorkspaceToolName(call.name)
+                  ? workspaceToolArgumentsForContext(
+                      call.name,
+                      _jsonObject(call.argumentsJson),
+                    )
+                  : Map<String, Object?>.from(
+                      jsonDecode(call.argumentsJson) as Map,
+                    ),
             ),
         ],
         resultsByCallId: {
@@ -400,6 +417,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
       ).map((message) => Map<String, dynamic>.from(message)),
     );
   }
+
   return exchanges;
 }
 
@@ -432,6 +450,7 @@ List<AgentSkill> cloudAppSkillsForIds(
       }
     }
   }
+
   return appSkills;
 }
 
@@ -474,6 +493,9 @@ final class const ServerConversationEngineHost({
     Future<void>? leaseLost,
   }) async {
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
+      throw const ConversationCancelledException();
+    }
+    if (_actorUserId(job) != turn.initiatorUserId) {
       throw const ConversationCancelledException();
     }
     final config = await _loadConfig(session, job, messages);
@@ -718,19 +740,31 @@ final class const ServerConversationEngineHost({
             session,
             job: job,
             providerId: config.providerId,
-            body: (admissionLost) => codec.stream(
-              (body) =>
-                  providerTransport?.call(body) ??
-                  _transport(
-                    config,
-                    body,
-                    session: session,
-                    turnId: turn.id!,
-                    leaseLost: _first(leaseLost, admissionLost),
-                  ),
+            body: (admissionLost) async => codec.stream(
+              (body) => _startFencedProviderTransport(
+                session,
+                workspaceId: job.workspaceId,
+                userId: turn.initiatorUserId,
+                turnId: turn.id!,
+                start: () =>
+                    providerTransport?.call(body) ??
+                    _transport(
+                      config,
+                      body,
+                      session: session,
+                      workspaceId: job.workspaceId,
+                      userId: turn.initiatorUserId,
+                      turnId: turn.id!,
+                      leaseLost: _first(leaseLost, admissionLost),
+                    ),
+              ),
               {
                 'model': config.modelId,
-                'messages': requestMessages,
+                'messages': await const WorkspacePromptProjection().call(
+                  session,
+                  turn,
+                  requestMessages,
+                ),
                 if (tools.isNotEmpty) 'tools': toolSampling.definitions,
                 'stream': true,
                 'stream_options': {'include_usage': true},
@@ -793,6 +827,11 @@ final class const ServerConversationEngineHost({
             });
             Error.throwWithStackTrace(error, stackTrace);
           });
+      await _requireProviderDispatchAccess(
+        session,
+        workspaceId: job.workspaceId,
+        userId: turn.initiatorUserId,
+      );
       a2uiDecoder.close(
         onText: response.addText,
         onInvalid: (result) {
@@ -870,7 +909,13 @@ final class const ServerConversationEngineHost({
             entry.request.id,
       ];
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
+        await _requireProviderDispatchAccess(
+          session,
+          workspaceId: job.workspaceId,
+          userId: turn.initiatorUserId,
+        );
         await response.close();
+
         return ConversationEngineResult(
           content: response.content,
           finishReason: 'awaiting_sub_agents',
@@ -886,7 +931,13 @@ final class const ServerConversationEngineHost({
         );
       }
       if (paused) {
+        await _requireProviderDispatchAccess(
+          session,
+          workspaceId: job.workspaceId,
+          userId: turn.initiatorUserId,
+        );
         await response.close();
+
         return ConversationEngineResult(
           content: response.content,
           finishReason: 'stop',
@@ -940,10 +991,16 @@ final class const ServerConversationEngineHost({
       'messageIssues': response.a2uiMessageIssues,
       'textCharacters': response.content.length,
     });
+    await _requireProviderDispatchAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: turn.initiatorUserId,
+    );
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
       throw const ConversationCancelledException();
     }
     final usage = providerResponse.usage;
+
     return ConversationEngineResult(
       content: response.content,
       finishReason: providerResponse.finishReason.value,
@@ -1033,6 +1090,7 @@ final class const ServerConversationEngineHost({
               ],
       });
     }
+
     return result;
   }
 
@@ -1059,6 +1117,7 @@ final class const ServerConversationEngineHost({
         a2uiSupportedComponents: a2uiSupportedComponents,
       ),
     );
+
     return cloudRequestMessagesWithToolExchanges(
       baseMessages: baseMessages,
       toolExchanges: toolExchanges,
@@ -1120,6 +1179,7 @@ final class const ServerConversationEngineHost({
         ),
       ),
     ];
+
     return messages;
   }
 
@@ -1152,6 +1212,7 @@ final class const ServerConversationEngineHost({
           table.resourceKind.equals(WorkspaceResourceKind.agentAssociation) &
           table.deletedAt.equals(null),
     );
+
     return (
       content: switch (agentData['content']) {
         final String content => content,
@@ -1245,6 +1306,7 @@ final class const ServerConversationEngineHost({
                 candidate.identifier == skillId || candidate.slug == skillId,
           )
           .firstOrNull;
+
       return definition != null &&
           cloudServiceSkillReady(definition, serviceConnections);
     });
@@ -1289,6 +1351,7 @@ final class const ServerConversationEngineHost({
         ),
       );
     }
+
     return withManifests;
   }
 
@@ -1313,6 +1376,7 @@ final class const ServerConversationEngineHost({
     required List<ConversationMessage> messages,
     Future<void>? leaseLost,
   }) async {
+    final actorUserId = _actorUserId(job);
     final config = await _loadConfig(session, job, messages);
     final toolCalls = await ConversationToolCall.db.find(
       session,
@@ -1360,7 +1424,20 @@ final class const ServerConversationEngineHost({
       customize: (modelName, _) => (model: modelName, extraBody: const {}),
     );
     final response = await codec.complete(
-      (body) => _transport(config, body, leaseLost: leaseLost),
+      (body) => _startFencedProviderTransport(
+        session,
+        workspaceId: job.workspaceId,
+        userId: actorUserId,
+        turnId: null,
+        start: () => _transport(
+          config,
+          body,
+          session: session,
+          workspaceId: job.workspaceId,
+          userId: actorUserId,
+          leaseLost: leaseLost,
+        ),
+      ),
       {
         'model': config.modelId,
         'messages': [
@@ -1374,6 +1451,11 @@ final class const ServerConversationEngineHost({
         ],
         'stream': false,
       },
+    );
+    await _requireProviderDispatchAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: actorUserId,
     );
     final summaryText =
         response.message?.content
@@ -1389,6 +1471,7 @@ final class const ServerConversationEngineHost({
         'compaction_summary',
       );
     }
+
     return ConversationCompactionResult(
       summary: appendDurableSkillActivations(
         summary,
@@ -1461,6 +1544,7 @@ final class const ServerConversationEngineHost({
       if (messageId == null) continue;
       (toolCallIdsByMessageId[messageId] ??= <String>{}).add(work.toolCallId);
     }
+
     return toolCallIdsByMessageId;
   }
 
@@ -1584,6 +1668,7 @@ final class const ServerConversationEngineHost({
     final override = modelOverride is Map ? modelOverride : const {};
     int? nonNegativeInt(String key) {
       final value = override[key];
+
       return value is int && value >= 0 ? value : null;
     }
 
@@ -1606,6 +1691,7 @@ final class const ServerConversationEngineHost({
         : modelSupportsStrict
         ? ToolSamplingPolicy.prefer
         : ToolSamplingPolicy.off;
+
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
@@ -1633,13 +1719,15 @@ final class const ServerConversationEngineHost({
   Future<ProviderTransportResponse> _transport(
     _ProviderConfig config,
     Map<String, dynamic> body, {
-    Session? session,
+    required Session session,
+    required int workspaceId,
+    required String userId,
     int? turnId,
     Future<void>? leaseLost,
   }) async {
     final client = pinnedHttpClient(config.address);
     final transportDone = Completer<void>();
-    if (session != null && turnId != null) {
+    if (turnId != null) {
       unawaited(
         _closeOnAbort(client, session, turnId, leaseLost, transportDone),
       );
@@ -1649,16 +1737,30 @@ final class const ServerConversationEngineHost({
       config.headers.forEach(request.headers.set);
       request.headers.contentType = ContentType.json;
       request.write(jsonEncode(body));
-      final response = await request.close().timeout(
+      final dispatch = await session.db.transaction((transaction) async {
+        await _lockProviderDispatchAccess(
+          session,
+          workspaceId: workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        // Keep the Future nested in a record. Awaiting request.close here would
+        // hold the account/workspace locks for the provider response latency.
+        return (
+          response: request.close(),
+        );
+      });
+      final response = await dispatch.response.timeout(
         const Duration(seconds: 90),
       );
       final responseBody = response.timeout(const Duration(seconds: 90));
-      final providerStream = session == null || turnId == null
+      final providerStream = turnId == null
           ? _closeClientAfter(responseBody, client, transportDone)
           : cancellationCheckedStream(
               _closeClientAfter(responseBody, client, transportDone),
               () => cancellationProbe.isCancelled(session, turnId),
             );
+
       return ProviderTransportResponse(
         statusCode: response.statusCode,
         retryAfter: _providerRetryAfter(response.headers.value('retry-after')),
@@ -1684,6 +1786,124 @@ final class const ServerConversationEngineHost({
       rethrow;
     }
   }
+
+  Future<ProviderTransportResponse> _startFencedProviderTransport(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required int? turnId,
+    required Future<ProviderTransportResponse> Function() start,
+  }) async {
+    final dispatch = await session.db.transaction((transaction) async {
+      await _lockProviderDispatchAccess(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
+      // Start the callback under the fence but keep its Future nested so the
+      // transaction releases before provider or injected transport latency.
+      return (
+        response: start(),
+      );
+    });
+    final response = await dispatch.response;
+    return ProviderTransportResponse(
+      statusCode: response.statusCode,
+      contentLength: response.contentLength,
+      retryAfter: response.retryAfter,
+      body: cancellationCheckedStream(
+        response.body,
+        () => _providerDispatchIsCancelled(
+          session,
+          workspaceId: workspaceId,
+          userId: userId,
+          turnId: turnId,
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _providerDispatchIsCancelled(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required int? turnId,
+  }) async {
+    if (turnId != null &&
+        await cancellationProbe.isCancelled(session, turnId)) {
+      return true;
+    }
+    try {
+      await _requireProviderDispatchAccess(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+      );
+      return false;
+    } on ConversationCancelledException {
+      return true;
+    }
+  }
+
+  Future<void> _requireProviderDispatchAccess(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+  }) => session.db.transaction((transaction) async {
+    await _lockProviderDispatchAccess(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+  });
+
+  Future<void> _lockProviderDispatchAccess(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) throw const ConversationCancelledException();
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) throw const ConversationCancelledException();
+    final member = await WorkspaceMember.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.userId.equals(userId) &
+          table.removedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (member == null) throw const ConversationCancelledException();
+  }
+}
+
+String _actorUserId(ConversationJob job) {
+  final payload = job.payloadJson;
+  if (payload == null) {
+    throw const ConversationEngineConfigurationException('initiator');
+  }
+  final actorUserId = _jsonObject(payload)['actorUserId'];
+  if (actorUserId is! String) {
+    throw const ConversationEngineConfigurationException('initiator');
+  }
+  return actorUserId;
 }
 
 Stream<List<int>> _classifyProviderTransportStream(
@@ -1767,6 +1987,7 @@ Uri providerRequestUri(String providerId, Uri baseUri) {
     _ => 'chat/completions',
   };
   final path = baseUri.path.replaceFirst(RegExp(r'/$'), '');
+
   return baseUri.replace(path: '$path/$endpoint', query: null);
 }
 
@@ -1781,6 +2002,7 @@ List<ServerToolRequest> _toolRequests(
   final message = (choices.first as Map)['message'];
   final calls = message is Map ? message['tool_calls'] : null;
   if (calls is! List) return const [];
+
   return calls
       .map((value) {
         if (value is! Map ||
@@ -1793,6 +2015,7 @@ List<ServerToolRequest> _toolRequests(
         if (function['name'] is! String || arguments is! Map<String, dynamic>) {
           throw const FormatException('Invalid provider tool call.');
         }
+
         return ServerToolRequest(
           id: value['id']! as String,
           name: function['name']! as String,
@@ -1805,6 +2028,7 @@ List<ServerToolRequest> _toolRequests(
 
 Map<String, dynamic> _assistantToolMessage(Map<String, dynamic>? raw) {
   final message = ((raw!['choices'] as List).first as Map)['message'] as Map;
+
   return Map<String, dynamic>.from(message);
 }
 
@@ -1892,6 +2116,7 @@ String? conversationPromptCheckpointTranscriptId({
   for (final message in messages) {
     if (message.stableId == activeCheckpointStableId) return '${message.id}';
   }
+
   return null;
 }
 
@@ -1903,6 +2128,7 @@ AgentTranscriptMessageSnapshot _messageSnapshot(
     final String source => _jsonObject(source),
     null => const <String, dynamic>{},
   };
+
   return AgentTranscriptMessageSnapshot(
     id: '${message.id}',
     role: switch (message.role) {
@@ -1962,6 +2188,7 @@ Map<String, dynamic> _jsonObject(String source) {
   if (value is! Map<String, dynamic>) {
     throw const ConversationEngineConfigurationException('resource_data');
   }
+
   return value;
 }
 
@@ -1998,6 +2225,7 @@ List<ReasoningOption> _reasoningOptions(
     final options = [
       for (final item in decoded) ?ReasoningOption.fromJson(item),
     ];
+
     return options.isEmpty && supportsReasoning
         ? const [ReasoningOption.toggle()]
         : options;

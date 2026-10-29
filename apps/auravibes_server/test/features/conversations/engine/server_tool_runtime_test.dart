@@ -119,12 +119,37 @@ void main() {
         agentPermissionMode: 'alwaysDeny',
         conversationPermissionMode: 'alwaysAllow',
       ),
-      AgentToolPermissionResult.granted,
+      AgentToolPermissionResult.disabledInWorkspace,
     );
     expect(
       resolveCloudToolPermission(
         workspacePermission: AgentToolPermissionResult.granted,
         conversationPermissionMode: 'alwaysDeny',
+      ),
+      AgentToolPermissionResult.disabledInWorkspace,
+    );
+  });
+
+  test('conversation allow-all preserves each access denial and missing authorization', () {
+    for (final permission in [
+      AgentToolPermissionResult.disabledInWorkspace,
+      AgentToolPermissionResult.disabledInConversation,
+      AgentToolPermissionResult.disabledByAgent,
+      AgentToolPermissionResult.notConfigured,
+    ]) {
+      expect(
+        resolveCloudToolPermission(
+          workspacePermission: permission,
+          conversationPermissionMode: 'alwaysAllow',
+        ),
+        permission,
+      );
+    }
+    expect(
+      resolveCloudToolPermission(
+        workspacePermission: AgentToolPermissionResult.granted,
+        agentPermissionMode: 'alwaysDeny',
+        conversationPermissionMode: 'alwaysAllow',
       ),
       AgentToolPermissionResult.disabledInWorkspace,
     );

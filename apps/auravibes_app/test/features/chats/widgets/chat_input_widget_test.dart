@@ -10,7 +10,10 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
@@ -87,10 +90,25 @@ void main() {
     ValueListenable<String?>? activeConversation,
     VoidCallback? onSkillsPress,
     ConversationSkillSelectorState? skillSelectorState,
+    WorkspaceFile? sharedFile,
+    WorkspaceAssetRepository? sharedAssets,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
+          if (sharedFile != null) ...[
+            workspaceFilesProvider(
+              'ws-1',
+              null,
+            ).overrideWith((_) async => [sharedFile]),
+            workspaceFoldersProvider(
+              'ws-1',
+              null,
+            ).overrideWith((_) async => []),
+          ],
+          if (sharedAssets != null)
+            workspaceAssetRepositoryProvider('ws-1')
+                .overrideWith((_) async => sharedAssets),
           workspaceSessionForRouteProvider('ws-1').overrideWithValue(
             const AsyncData(
               WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -1465,13 +1483,16 @@ void main() {
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pump();
 
-    expect(
-      find.byTooltip(
-        '''The selected model doesn't support file input. '''
-        'Switch to a model that accepts files.',
-      ),
-      findsOneWidget,
+    final fileReason = find.byTooltip(
+      '''The selected model doesn't support file input. '''
+      'Switch to a model that accepts files.',
     );
+    for (final label in ['Attach file', 'Choose from Directory']) {
+      final row = find
+          .ancestor(of: find.text(label), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: row, matching: fileReason), findsOneWidget);
+    }
     expect(
       find.byTooltip(
         '''The selected model doesn't support image input. '''
@@ -1692,6 +1713,107 @@ void main() {
       find.byIcon(Icons.mic_none_outlined),
       kIsWeb ? findsNothing : findsOneWidget,
     );
+  });
+
+  testWidgets('selects an existing Directory File without copying bytes', (
+    tester,
+  ) async {
+    ChatDraft? sent;
+    const asset = WorkspaceAsset(
+      id: 'asset',
+      name: 'notes.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 5,
+      checksum: 'unused',
+    );
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (draft) => sent = draft,
+        modalitiesInput: const ['text', 'file'],
+        sharedFile: const WorkspaceFile(
+          id: 'file',
+          name: 'Stored notes',
+          assetId: 'asset',
+          revision: 1,
+          asset: asset,
+        ),
+        sharedAssets: const _SharedAssets(asset),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text(LocaleKeys.workspace_assets_existing.tr()));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Stored notes'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.bySemanticsIdentifier('chat_send_button').hitTestable(),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(sent?.attachments.single.assetId, 'asset');
+    expect(
+      sent?.attachments.single.localPath,
+      contains('workspace-asset://asset/'),
+    );
+    expect(sent?.attachments.single.localPath, contains('/ws-1/asset'));
+  });
+
+  testWidgets('discarding a Directory File draft leaves its asset available', (
+    tester,
+  ) async {
+    const asset = WorkspaceAsset(
+      id: 'asset',
+      name: 'notes.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 5,
+      checksum: 'unused',
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(
+      const MessageAttachmentToCreate(
+        localPath: 'workspace-asset://asset/ws-1/asset',
+        fileName: 'notes.txt',
+        displayName: 'Stored notes',
+        mimeType: 'text/plain',
+        modality: .file,
+        sizeBytes: 5,
+        assetId: 'asset',
+      ),
+    );
+    final activeConversation = ValueNotifier<String?>('conversation-1');
+    addTearDown(activeConversation.dispose);
+    const sharedAssets = _SharedAssets(asset);
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        modalitiesInput: const ['text', 'file'],
+        activeConversation: activeConversation,
+        attachmentService: attachmentService,
+        sharedFile: const WorkspaceFile(
+          id: 'file',
+          name: 'Stored notes',
+          assetId: 'asset',
+          revision: 1,
+          asset: asset,
+        ),
+        sharedAssets: sharedAssets,
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text(LocaleKeys.workspace_assets_existing.tr()));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Stored notes'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text('Discard draft'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(attachmentService.deletedPaths, isEmpty);
+    expect(find.text('Stored notes'), findsNothing);
+    expect(await sharedAssets.asset('asset'), same(asset));
   });
 
   testWidgets('shows file and hides photo attachment on macOS', (tester) async {
@@ -2419,4 +2541,16 @@ base class _FakePlatformFile({
 
   @override
   Never readAsByteStream() => throw UnimplementedError();
+}
+
+class const _SharedAssets(final WorkspaceAsset value)
+    implements WorkspaceAssetRepository {
+  @override
+  Future<WorkspaceAsset> asset(String id) async => value;
+  @override
+  Future<Uint8List> bytes(String id) =>
+      throw UnimplementedError('must not copy bytes');
+  @override
+  Future<WorkspaceAsset> upload(String name, Uint8List bytes) =>
+      throw UnimplementedError('must not upload');
 }

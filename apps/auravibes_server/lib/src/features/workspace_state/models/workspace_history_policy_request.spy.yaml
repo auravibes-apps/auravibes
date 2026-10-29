@@ -1,0 +1,6 @@
+class: WorkspaceHistoryPolicyRequest
+fields:
+  workspaceId: int
+  days: int?
+  expectedRevision: int
+  requestId: String

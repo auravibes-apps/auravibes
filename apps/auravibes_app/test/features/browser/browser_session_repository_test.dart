@@ -47,6 +47,31 @@ void main() {
     expect(restored.activeTab, isNull);
   });
 
+  test('restores workspace tabs and selection with its conversation', () async {
+    SharedPreferences.setMockInitialValues({});
+    final repository = BrowserSessionRepository(
+      await SharedPreferences.getInstance(),
+    );
+    const session = BrowserSessionState(
+      tabs: [],
+      activeTabId: '',
+      workspaceTabs: [
+        WorkspaceContentTab(id: 'table-1', kind: 'table'),
+        WorkspaceContentTab(id: '', kind: 'directory'),
+      ],
+      selectedWorkspaceTabId: 'table:table-1',
+    );
+
+    await repository.save('conversation', session);
+
+    final restored = await repository.load('conversation');
+    expect(
+      restored.workspaceTabs.map((tab) => tab.toJson()).toList(),
+      session.workspaceTabs.map((tab) => tab.toJson()).toList(),
+    );
+    expect(restored.selectedWorkspaceTabId, 'table:table-1');
+  });
+
   test('recovers from malformed persisted browser state', () async {
     SharedPreferences.setMockInitialValues({
       'browser_session_conversation': '{"tabs":[{"id":1}]}',

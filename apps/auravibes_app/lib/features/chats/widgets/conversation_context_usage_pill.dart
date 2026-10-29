@@ -94,7 +94,9 @@ class const _ConversationContextUsageRow({
       children: [
         _ConversationContextUsageIcon(data: data),
         if (data.hasLimit) _ConversationContextUsageProgress(data: data),
-        _ConversationContextUsageLabels(data: data, locale: locale),
+        Flexible(
+          child: _ConversationContextUsageLabels(data: data, locale: locale),
+        ),
       ],
       spacing: .xs,
       mainAxisSize: .min,

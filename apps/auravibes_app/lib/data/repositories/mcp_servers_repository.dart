@@ -644,7 +644,7 @@ extension on McpServersRepository {
       outputSchema: .new(
         tool.outputSchema == null ? null : jsonEncode(tool.outputSchema),
       ),
-      isEnabled: const Value(true),
+      isEnabled: const Value(false),
       permissions: const Value(PermissionAccess.ask),
     );
   }

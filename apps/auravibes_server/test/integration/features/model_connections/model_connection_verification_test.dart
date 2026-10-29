@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -10,6 +11,7 @@ import 'package:auravibes_server/src/features/workspaces/repositories/cloud_work
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
@@ -58,13 +60,109 @@ void main() {
       await expectLater(
         useCases.verifyDraft(
           fixture.session,
-          userId: 'not-a-member',
+          userId: const Uuid().v4().toString(),
           request: _verifyRequest(fixture),
         ),
         throwsA(isA<CloudWorkspaceException>()),
       );
       expect(fetchCalls, 0);
     });
+
+    test('connection and selection reads require active membership', () async {
+      final fixture = await _Fixture.create(sessionBuilder.build());
+      final nonMemberUserId = const Uuid().v4().toString();
+      await AuthUser.db.insertRow(
+        fixture.session,
+        AuthUser(
+          id: UuidValue.fromString(nonMemberUserId),
+          scopeNames: const {},
+        ),
+      );
+      final useCases = _useCases(fetch: (_, _, _) async => const {'data': []});
+
+      await expectLater(
+        useCases.list(
+          fixture.session,
+          userId: nonMemberUserId,
+          request: ListModelConnectionsRequest(
+            workspaceId: fixture.workspaceId,
+          ),
+        ),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      await expectLater(
+        useCases.listSelections(
+          fixture.session,
+          userId: nonMemberUserId,
+          request: ListWorkspaceModelSelectionsRequest(
+            workspaceId: fixture.workspaceId,
+          ),
+        ),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      await expectLater(
+        useCases.listRecentSelections(
+          fixture.session,
+          userId: nonMemberUserId,
+          request: ListRecentModelSelectionsRequest(
+            workspaceId: fixture.workspaceId,
+          ),
+        ),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+    });
+
+    for (final operation in ['testAndSync', 'verifyDraft']) {
+      test('$operation rechecks membership after provider dispatch', () async {
+        final fixture = await _Fixture.create(sessionBuilder.build());
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        var fetchCalls = 0;
+        final useCases = _useCases(
+          fetch: (_, _, _) async {
+            fetchCalls++;
+            entered.complete();
+            await release.future;
+
+            return const {
+              'data': [
+                {'id': 'gpt-4o'},
+              ],
+            };
+          },
+        );
+        final pending = operation == 'testAndSync'
+            ? useCases.testAndSync(
+                fixture.session,
+                userId: fixture.userId,
+                request: TestAndSyncModelConnectionRequest(
+                  workspaceId: fixture.workspaceId,
+                  connectionId: fixture.connectionId,
+                ),
+              )
+            : useCases.verifyDraft(
+                fixture.session,
+                userId: fixture.userId,
+                request: _verifyRequest(fixture),
+              );
+
+        await entered.future;
+        final membership = await WorkspaceMember.db.findFirstRow(
+          fixture.session,
+          where: (row) =>
+              row.workspaceId.equals(fixture.workspaceId) &
+              row.userId.equals(fixture.userId),
+        );
+        await WorkspaceMember.db.updateRow(
+          fixture.session,
+          membership!.copyWith(removedAt: DateTime.now().toUtc()),
+        );
+        release.complete();
+
+        await expectLater(pending, throwsA(isA<CloudWorkspaceException>()));
+        expect(fetchCalls, 1);
+      });
+    }
 
     test(
       'rejects invalid URLs, missing secrets, and revision mismatches',
@@ -165,7 +263,7 @@ void main() {
       expect(updated.url, 'https://new.example/v1');
       expect(updated.revision, 2);
     });
-  });
+  }, rollbackDatabase: RollbackDatabase.disabled);
 }
 
 ModelConnectionUseCases _useCases({required ModelCatalogFetcher fetch}) =>
@@ -253,6 +351,10 @@ class _Fixture {
     bool includeSecret = true,
   }) async {
     final userId = const Uuid().v4().toString();
+    await AuthUser.db.insertRow(
+      session,
+      AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+    );
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(
           session,

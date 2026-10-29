@@ -5,9 +5,12 @@ import 'dart:async';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_message_asset_references.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -973,6 +976,10 @@ extension on MessageRepository {
     Iterable<MessageAttachmentToCreate> attachments,
   ) async {
     for (final attachment in attachments) {
+      await LocalMessageAssetReferences(
+        _database,
+        _attachmentFileStore.storageNamespace,
+      ).validate(messageId, attachment);
       final _ = await _database
           .into(_database.messageAttachments)
           .insert(_mapToMessageAttachmentCompanion(messageId, attachment));
@@ -1606,9 +1613,10 @@ extension MessageRepositoryStateOperations on MessageRepository {
     final existing = await _database.messageDao.getMessageById(id);
     _validateDeleteOwnership(existing, conversationId);
 
-    final deleted = await _database.messageDao.deleteMessage(id);
+    final deleted = await LocalWorkspaceAssetMutation(_database)
+        .conversation(message.conversationId, () => _deleteMessageRows(id));
     if (deleted) {
-      await _deleteMessageAttachments(id, message.attachments);
+      await _deletePersistedAttachmentFiles(message.attachments);
     }
 
     return deleted;
@@ -1662,14 +1670,14 @@ extension MessageRepositoryStateOperations on MessageRepository {
       message.status == MessageStatus.sent &&
       message.metadata?.isCompactionSummary == true;
 
-  Future<void> _deleteMessageAttachments(
-    String messageId,
-    List<MessageAttachmentEntity> attachments,
-  ) async {
+  Future<bool> _deleteMessageRows(String messageId) async {
+    final deleted = await _database.messageDao.deleteMessage(messageId);
+    if (!deleted) return false;
     final _ = await (_database.delete(
       _database.messageAttachments,
     )..where((table) => table.messageId.equals(messageId))).go();
-    await _deletePersistedAttachmentFiles(attachments);
+
+    return true;
   }
 }
 
@@ -1825,6 +1833,7 @@ extension on MessageRepository {
       sizeBytes: row.sizeBytes,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      assetId: row.assetId,
       toolCallId: row.toolCallId,
     );
   }
@@ -1851,13 +1860,13 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
   MessagesCompanion _mapToMessagesCompanion(MessageToCreate message) {
     return MessagesCompanion(
       createdAt: .absentIfNull(message.createdAt),
-      updatedAt: .absentIfNull(message.updatedAt ?? message.createdAt),
+      updatedAt: .absentIfNull(_messageUpdatedAt(message)),
       conversationId: .new(message.conversationId),
       content: .new(message.content),
       messageType: .new(_messageTypeToTableType(message.messageType)),
       isUser: .new(message.isUser),
       status: .absentIfNull(_messageStatusToTableStatus(message.status)),
-      metadata: .new(message.metadata),
+      metadata: .new(_sanitizeMetadataJson(message.metadata)),
     );
   }
 
@@ -1868,6 +1877,7 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
     return MessageAttachmentsCompanion(
       messageId: .new(messageId),
       toolCallId: .absentIfNull(attachment.toolCallId),
+      assetId: .absentIfNull(attachment.assetId),
       localPath: .new(attachment.localPath),
       fileName: .new(attachment.fileName),
       displayName: .new(attachment.displayName),
@@ -1881,7 +1891,9 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
     return MessagesCompanion(
       content: .absentIfNull(message.content),
       status: .absentIfNull(_messageStatusToTableStatus(message.status)),
-      metadata: .absentIfNull(JsonCodec.encode(message.metadata?.toJson())),
+      metadata: .absentIfNull(
+        JsonCodec.encode(_sanitizeMetadata(message.metadata)?.toJson()),
+      ),
     );
   }
 }
@@ -2043,3 +2055,24 @@ int _searchExcerptStart(
       ? matchCharacterIndex - _conversationMessageSearchContextBefore
       : 0;
 }
+
+String? _sanitizeMetadataJson(String? raw) {
+  if (raw == null) return null;
+  final metadata = MessageMetadataEntity.fromJsonString(raw);
+  if (metadata == null) return raw;
+  final sanitized = sanitizeWorkspaceToolMetadata(metadata);
+  if (const ListEquality<MessageToolCallEntity>().equals(
+    sanitized.toolCalls,
+    metadata.toolCalls,
+  )) {
+    return raw;
+  }
+
+  return JsonCodec.encode(sanitized.toJson());
+}
+
+MessageMetadataEntity? _sanitizeMetadata(MessageMetadataEntity? metadata) =>
+    metadata == null ? null : sanitizeWorkspaceToolMetadata(metadata);
+
+DateTime? _messageUpdatedAt(MessageToCreate message) =>
+    message.updatedAt ?? message.createdAt;

@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
@@ -26,6 +27,9 @@ import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_u
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_conversation_tools_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
@@ -97,6 +101,7 @@ class ResolvedToolService {
     BrowserSkillToolRunner? browserSkillToolRunner,
     ConnectorCommandUsecase? connectorCommandUsecase,
     ConversationAgentLanguageRuntime? conversationLanguageRuntime,
+    this.workspaceConversationTools,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -117,8 +122,9 @@ class ResolvedToolService {
            conversationLanguageRuntime: conversationLanguageRuntime,
          ),
        );
-  new _cloud() : _delegate = null;
+  new _cloud() : _delegate = null, workspaceConversationTools = null;
 
+  final WorkspaceConversationToolsUsecase? workspaceConversationTools;
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
   final Map<({String conversationId, String toolCallId}), Map<String, Object?>>
   _mcpAppResultData = {};
@@ -145,6 +151,12 @@ class ResolvedToolService {
       throw StateError('Cloud tools execute on the server.');
     }
 
+    if (tool.isWorkspaceCommand) {
+      return await _workspaceCommand(conversationId, arguments, (
+        name: tool.toolIdentifier,
+        id: toolCallId,
+      ));
+    }
     final result = await delegate.call(
       conversationId: conversationId,
       toolCallId: toolCallId,
@@ -159,6 +171,65 @@ class ResolvedToolService {
       _mcpAppResultData,
     );
   }
+
+  Future<Object?> _workspaceCommand(
+    String conversationId,
+    Map<String, dynamic> arguments,
+    ({String name, String id}) tool,
+  ) async {
+    try {
+      return await _runWorkspaceCommand(conversationId, arguments, tool);
+    } on WorkspaceTableException catch (error, stackTrace) {
+      _throwWorkspaceFailure(error, stackTrace, _workspaceErrorCode(error));
+    } on FormatException catch (error, stackTrace) {
+      _throwWorkspaceFailure(error, stackTrace, 'invalid');
+    }
+  }
+
+  Future<Object?> _runWorkspaceCommand(
+    String conversationId,
+    Map<String, dynamic> arguments,
+    ({String name, String id}) tool,
+  ) async {
+    final commands = workspaceConversationTools;
+    if (commands == null) {
+      throw StateError('Workspace commands are not configured.');
+    }
+
+    return await commands.call(
+      conversationId: conversationId,
+      arguments: agent.workspaceToolArgumentsForExecution(tool.name, arguments),
+      operationId: tool.id,
+    );
+  }
+}
+
+String _workspaceErrorCode(WorkspaceTableException error) {
+  var code = 'invalid';
+  if (error.conflict) code = 'conflict';
+  if (error.denied) code = 'unavailable';
+  if (error.incompatibleRelationship) code = 'incompatible_relationship';
+  if (error.unsupportedCopy) code = 'unsupported';
+
+  return code;
+}
+
+Never _throwWorkspaceFailure(Object error, StackTrace stackTrace, String code) {
+  final response = agent.workspaceFailureContext(
+    jsonEncode({
+      'code': code,
+      if (error is FormatException) 'detail': error.message,
+    }),
+  );
+  Error.throwWithStackTrace(
+    agent.AgentToolExecutionFailure(
+      responseRaw: jsonEncode(response),
+      error: error,
+      stackTrace: stackTrace,
+      failurePhase: 'workspace.command',
+    ),
+    stackTrace,
+  );
 }
 
 Object? _modelToolResult(
@@ -266,6 +337,7 @@ class const AppResolvedToolProvider({
       workspaceId: request.workspaceId,
       commandName: request.toolIdentifier,
       arguments: request.arguments,
+      operationId: request.toolCallId,
     );
   }
 
@@ -1074,6 +1146,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     conversationLanguageRuntime: ref.watch(
       conversationAgentLanguageRuntimeProvider,
     ),
+    workspaceConversationTools: ref.watch(workspaceConversationToolsProvider),
   );
 });
 

@@ -15,6 +15,46 @@ void main() {
     const usecase = BuildPromptChatMessages();
 
     test(
+      'default prompt and compaction omit archived workspace payloads',
+      () async {
+        final result = await usecase.call([
+          MessageEntity(
+            id: 'assistant-workspace',
+            conversationId: 'conversation-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.sent,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'workspace-read',
+                  name: engine.workspaceUpdateRecordToolName,
+                  argumentsRaw: '{"tableId":"table","id":"row","revision":1,"schemaRevision":1,"values":{"secret":"old-input"}}',
+                  responseRaw: '{"secret":"old-response"}',
+                  responseContextRaw: '{"secret":"old-context"}',
+                  resultStatus: ToolCallResultStatus.success,
+                ),
+              ],
+            ),
+          ),
+        ]);
+        final output = result
+            .expand((message) => message.parts)
+            .whereType<ToolResponsePart>()
+            .single
+            .toolResponse
+            .output;
+        expect(output, engine.workspaceContextUnavailable);
+        expect(result.toString(), isNot(contains('old-input')));
+        expect(result.toString(), isNot(contains('old-response')));
+        expect(result.toString(), isNot(contains('old-context')));
+      },
+    );
+
+    test(
       'falls back to result status response when raw response is absent',
       () async {
         final messages = [

@@ -57,6 +57,11 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
           navigatorKey: WorkspaceFeatureBranchData.$navigatorKey,
           routes: [
             GoRouteData.$route(
+              path: 'items',
+              hasOverriddenOnExit: false,
+              factory: $WorkspaceItemsRoute._fromState,
+            ),
+            GoRouteData.$route(
               path: 'manage-workspaces',
               hasOverriddenOnExit: false,
               factory: $WorkspaceManagementRoute._fromState,
@@ -391,6 +396,31 @@ mixin $ConversationSearchRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/search',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $WorkspaceItemsRoute on GoRouteData {
+  static WorkspaceItemsRoute _fromState(GoRouterState state) =>
+      WorkspaceItemsRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  WorkspaceItemsRoute get _self => this as WorkspaceItemsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/items',
   );
 
   @override

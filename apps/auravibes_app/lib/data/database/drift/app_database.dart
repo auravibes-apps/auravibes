@@ -1,4 +1,3 @@
-// Required: Existing thresholds and limits use numeric values.
 import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
@@ -27,6 +26,7 @@ import 'package:auravibes_app/data/database/drift/tables/agents.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
+import 'package:auravibes_app/data/database/drift/tables/connector_writes.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -42,14 +42,30 @@ import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_attachment_deletions.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_compaction_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_content_reports.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_context_selections.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_credential_deletions.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_folders.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_history_policies.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_receipts.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_revisions.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_trash_batches.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
+import 'package:auravibes_app/data/database/drift/workspace_revision_capture.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
+
+// Required: Existing thresholds and limits use numeric values.
 
 export 'daos/agents_dao.dart';
 export 'daos/api_model_providers_dao.dart';
@@ -98,6 +114,23 @@ part 'app_database.g.dart';
     RecentModelSelections,
     ModelUsageRecords,
     BackgroundWorks,
+    WorkspaceFolders,
+    WorkspaceTables,
+    WorkspaceTableRecords,
+    ConnectorWrites,
+    WorkspaceViews,
+    WorkspaceTrashBatches,
+    WorkspaceRevisions,
+    WorkspaceHistoryPolicies,
+    WorkspaceRecordBatchReceipts,
+    WorkspaceAssets,
+    WorkspaceFiles,
+    WorkspaceAssetDeletions,
+    WorkspaceAttachmentDeletions,
+    WorkspaceCredentialDeletions,
+    WorkspaceCommandReceipts,
+    WorkspaceContextSelections,
+    WorkspaceContentReports,
   ],
   daos: [
     WorkspaceDao,
@@ -176,8 +209,34 @@ class AppDatabase extends _$AppDatabase {
       _connectorSkillToolReferencesSchemaVersion + 1;
   static const int _messageBookmarkSnapshotsSchemaVersion =
       _retireSkillOwnedStorageSchemaVersion + 1;
+  static const int _workspaceFoldersSchemaVersion =
+      _messageBookmarkSnapshotsSchemaVersion + 1;
+  static const int _workspaceTablesSchemaVersion =
+      _workspaceFoldersSchemaVersion + 1;
+  static const int _connectorWritesSchemaVersion =
+      _workspaceTablesSchemaVersion + 1;
+  static const int _workspaceViewsSchemaVersion =
+      _connectorWritesSchemaVersion + 1;
+  static const int _workspaceTrashSchemaVersion =
+      _workspaceViewsSchemaVersion + 1;
+  static const int _workspaceRecordBatchSchemaVersion =
+      _workspaceTrashSchemaVersion + 1;
+  static const int _workspaceHistorySchemaVersion =
+      _workspaceRecordBatchSchemaVersion + 1;
+  static const int _workspaceAssetsSchemaVersion =
+      _workspaceHistorySchemaVersion + 1;
+  static const int _workspaceCommandSchemaVersion =
+      _workspaceAssetsSchemaVersion + 1;
+  static const int _workspaceReportingSchemaVersion =
+      _workspaceCommandSchemaVersion + 1;
+  static const int _workspaceCredentialDeletionsSchemaVersion =
+      _workspaceReportingSchemaVersion + 1;
+  static const int _workspaceAttachmentDeletionsSchemaVersion =
+      _workspaceCredentialDeletionsSchemaVersion + 1;
+  static const int _workspaceAssetDeletionOwnerSchemaVersion =
+      _workspaceAttachmentDeletionsSchemaVersion + 1;
   static const int _currentSchemaVersion =
-      _messageBookmarkSnapshotsSchemaVersion;
+      _workspaceAssetDeletionOwnerSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -211,6 +270,7 @@ extension on AppDatabase {
       onUpgrade: _runUpgrades,
       beforeOpen: (_) async {
         await customStatement('PRAGMA foreign_keys = ON');
+        await WorkspaceRevisionCapture.install(this);
       },
     );
   }
@@ -220,13 +280,139 @@ extension on AppDatabase {
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
-    await _upgradeModelCapabilitiesSchema(m);
-    await _upgradeModelUsageSchema(m);
+    await _upgradeModelSchemas(m);
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
+    await _runWorkspaceUpgrades(m, from);
+  }
+
+  Future<void> _runWorkspaceUpgrades(Migrator m, int from) async {
+    await _upgradeWorkspaceContentSchema(m, from);
+    await _upgradeWorkspaceAttachmentDeletionsSchema(m, from);
+    await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {
+    await _upgradeWorkspaceItemsSchema(m, from);
+    await _upgradeWorkspaceViewsSchema(m, from);
+    await _upgradeWorkspaceTrashSchema(m, from);
+    await _upgradeWorkspaceRevisionSchema(m, from);
+    await _upgradeWorkspaceAssetsSchema(m, from);
+    await _upgradeWorkspaceCommandsSchema(m, from);
+    await _upgradeWorkspaceReportingSchema(m, from);
+    await _upgradeConnectorWritesSchema(m, from);
+    await _upgradeWorkspaceCredentialDeletionsSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceCredentialDeletionsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceCredentialDeletionsSchemaVersion) return;
+    await m.createTable(workspaceCredentialDeletions);
+  }
+
+  Future<void> _upgradeWorkspaceAttachmentDeletionsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceAttachmentDeletionsSchemaVersion) return;
+    await m.createTable(workspaceAttachmentDeletions);
+  }
+
+  Future<void> _upgradeWorkspaceAssetDeletionOwnerSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceAssetDeletionOwnerSchemaVersion) return;
+    if (await _columnExists('workspace_asset_deletions', 'workspace_id')) {
+      return;
+    }
+    await m.addColumn(
+      workspaceAssetDeletions,
+      workspaceAssetDeletions.workspaceId,
+    );
+  }
+
+  Future<void> _upgradeWorkspaceViewsSchema(Migrator m, int from) async {
+    if (from < AppDatabase._workspaceViewsSchemaVersion) {
+      await m.createTable(workspaceViews);
+    }
+  }
+
+  Future<void> _upgradeWorkspaceRevisionSchema(Migrator m, int from) async {
+    if (from < AppDatabase._workspaceHistorySchemaVersion) {
+      await m.createTable(workspaceRevisions);
+      await m.createTable(workspaceHistoryPolicies);
+    }
+    if (from < AppDatabase._workspaceRecordBatchSchemaVersion) {
+      await m.createTable(workspaceRecordBatchReceipts);
+    }
+  }
+
+  Future<void> _upgradeWorkspaceAssetsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceAssetsSchemaVersion) return;
+    await m.createTable(workspaceAssets);
+    await m.createTable(workspaceFiles);
+    await m.createTable(workspaceAssetDeletions);
+    await _upgradeMessageAssetReferences(m);
+  }
+
+  Future<void> _upgradeMessageAssetReferences(Migrator m) async {
+    if (!await _tableExists('message_attachments') ||
+        await _columnExists('message_attachments', 'asset_id')) {
+      return;
+    }
+    await m.addColumn(messageAttachments, messageAttachments.assetId);
+  }
+
+  Future<void> _upgradeWorkspaceCommandsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceCommandSchemaVersion) return;
+    await m.createTable(workspaceContextSelections);
+    await m.createTable(workspaceCommandReceipts);
+  }
+
+  Future<void> _upgradeWorkspaceReportingSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceReportingSchemaVersion) return;
+    if (from >= AppDatabase._workspaceHistorySchemaVersion) {
+      await m.addColumn(workspaceRevisions, workspaceRevisions.actorUserId);
+      await m.addColumn(workspaceRevisions, workspaceRevisions.aiInvolved);
+      await m.addColumn(workspaceRevisions, workspaceRevisions.operation);
+      await m.addColumn(workspaceRevisions, workspaceRevisions.conversationId);
+    }
+    await m.createTable(workspaceContentReports);
+  }
+
+  Future<void> _upgradeConnectorWritesSchema(Migrator m, int from) async {
+    if (from < AppDatabase._connectorWritesSchemaVersion) {
+      await m.createTable(connectorWrites);
+    }
+  }
+
+  Future<void> _upgradeWorkspaceTrashSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceTrashSchemaVersion) return;
+    await m.createTable(workspaceTrashBatches);
+    if (from >= AppDatabase._workspaceViewsSchemaVersion) {
+      await m.addColumn(workspaceViews, workspaceViews.deletedAt);
+    }
+  }
+
+  Future<void> _upgradeModelSchemas(Migrator m) async {
+    await _upgradeModelCapabilitiesSchema(m);
+    await _upgradeModelUsageSchema(m);
+  }
+
+  Future<void> _upgradeWorkspaceItemsSchema(Migrator m, int from) async {
+    if (from < AppDatabase._workspaceTablesSchemaVersion) {
+      await m.createTable(workspaceTables);
+      await m.createTable(workspaceTableRecords);
+    }
+    if (from < AppDatabase._workspaceFoldersSchemaVersion) {
+      await m.createTable(workspaceFolders);
+    }
   }
 
   Future<void> _upgradeMessageBookmarkSchema(Migrator m, int from) async {

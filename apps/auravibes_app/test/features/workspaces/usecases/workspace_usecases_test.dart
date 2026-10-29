@@ -3,6 +3,8 @@
 // Required: Test expectations use chaining on matchers which triggers.
 // Cascade_invocations lint. Not applicable in test assertions.
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -18,8 +20,10 @@ import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_u
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -371,7 +375,10 @@ void main() {
       fixture.repository.beforeDeleteWorkspace = (_) async =>
           fixture.calls.add('delete');
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-2');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-2',
+      );
 
       expect(fixture.calls, ['prepare', 'delete']);
       final remaining = await fixture.repository.getAllWorkspaces();
@@ -383,7 +390,10 @@ void main() {
         const WorkspaceToCreate(name: 'Only', type: .local),
       );
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'other');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'other',
+      );
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);
@@ -397,7 +407,10 @@ void main() {
         const WorkspaceToCreate(name: 'WS2', type: .local),
       );
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-1',
+      );
 
       expect(await fixture.repository.getWorkspaceCount(), 1);
     });
@@ -407,7 +420,10 @@ void main() {
         const WorkspaceToCreate(name: 'Only', type: .local),
       );
 
-      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
+      final _ = await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-1',
+      );
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);
@@ -422,8 +438,17 @@ void main() {
         const WorkspaceToCreate(name: 'Keep', type: .local),
       );
       final attachmentUsecase = _RecordingLocalChatAttachmentUsecase();
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
       final container = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          attachmentFileStoreProvider.overrideWithValue(
+            const AttachmentFileStore(
+              storageNamespace: 'workspace-delete-test',
+            ),
+          ),
+
           workspaceRepositoryProvider.overrideWithValue(repository),
           backgroundWorkCoordinatorProvider.overrideWithValue(
             .new(_UnusedBackgroundWorkStore(), .new(), (_) async => null),
@@ -468,7 +493,7 @@ void main() {
           .read(otherWorkspaceDraftProvider.notifier)
           .save(otherWorkspaceDraft);
 
-      await container
+      final _ = await container
           .read(deleteWorkspaceUseCaseProvider)
           .call(id: deletedWorkspace.id, activeWorkspaceId: otherWorkspace.id);
 
@@ -555,6 +580,7 @@ class const _DeleteWorkspaceUseCaseFixture._(
         prepareBackgroundWorkDeletion: (_) async => calls.add('prepare'),
         restoreBackgroundWorkAfterFailedDeletion: (_) => calls.add('restore'),
         clearWorkspaceDrafts: (_) => Future<void>.value(),
+        cleanupDeletedAssets: Future<void>.value,
       ),
       calls,
     );

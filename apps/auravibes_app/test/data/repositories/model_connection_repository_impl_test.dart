@@ -49,6 +49,8 @@ void main() {
       reset(mockConnectionsDao);
       reset(mockSelectionsDao);
       reset(mockEncryptionService);
+      when(() => mockEncryptionService.deleteCredential(any()))
+          .thenAnswer((_) => Future<void>.value());
       reset(mockLegacyApiKeyStorage);
       reset(mockModelProviderServices);
       if (isFirstTest) {
@@ -56,6 +58,30 @@ void main() {
       } else {
         await clearAppDatabase(database);
       }
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('ws-1'),
+              name: 'Workspace',
+              type: .local,
+            ),
+          );
+      final _ = await database
+          .into(database.serviceConnections)
+          .insert(
+            ServiceConnectionsCompanion.insert(
+              id: const .new('conn-1'),
+              name: 'My Connection',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .apiKey,
+              encryptedAuthValue: const .new('encrypted-key'),
+              workspaceId: 'ws-1',
+            ),
+          );
+      when(() => mockEncryptionService.isCredentialReference(any()))
+          .thenReturn(true);
       repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,
@@ -156,7 +182,7 @@ void main() {
         () async {
           when(() => mockProvidersDao.getProviderById('openai'))
               .thenAnswer((_) async => providerRow);
-          when(() => mockEncryptionService.encrypt(testKeyPayload))
+          when(() => mockEncryptionService.storeCredential(testKeyPayload))
               .thenAnswer((_) async => 'encrypted-key');
           when(
             () => mockModelProviderServices.getWorkspaceModelSelections(any()),
@@ -179,7 +205,7 @@ void main() {
       test('creates connection and model selections', () async {
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.encrypt(testKeyPayload))
+        when(() => mockEncryptionService.storeCredential(testKeyPayload))
             .thenAnswer((_) async => 'encrypted-key');
         when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
             .thenAnswer(
@@ -221,7 +247,7 @@ void main() {
         );
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.encrypt(any()))
+        when(() => mockEncryptionService.storeCredential(any()))
             .thenAnswer((_) async => 'encrypted-key');
         when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
             .thenAnswer((_) async => const []);
@@ -250,7 +276,7 @@ void main() {
       test('verified create reuses discovered model ids', () async {
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.encrypt(testKeyPayload))
+        when(() => mockEncryptionService.storeCredential(testKeyPayload))
             .thenAnswer((_) async => 'encrypted-key');
         when(() => mockConnectionsDao.insertModelConnection(any()))
             .thenAnswer((_) async => connectionRow);
@@ -299,7 +325,7 @@ void main() {
       test('rejects mismatched verification before persistence', () async {
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.encrypt(testKeyPayload))
+        when(() => mockEncryptionService.storeCredential(testKeyPayload))
             .thenAnswer((_) async => 'encrypted-key');
 
         final verification = ModelProviderVerification.fromRequest(
@@ -353,7 +379,7 @@ void main() {
           workspaceId: 'ws-1',
           isEnabled: true,
         );
-        when(() => mockEncryptionService.encrypt(any()))
+        when(() => mockEncryptionService.storeCredential(any()))
             .thenAnswer((_) async => 'encrypted-token');
         when(() => mockConnectionsDao.insertModelConnection(any()))
             .thenAnswer((_) async => oauthRow);
@@ -434,7 +460,7 @@ void main() {
           );
           when(() => mockProvidersDao.getProviderById('openrouter'))
               .thenAnswer((_) async => openRouterProvider);
-          when(() => mockEncryptionService.encrypt(testKeyPayload))
+          when(() => mockEncryptionService.storeCredential(testKeyPayload))
               .thenAnswer((_) async => 'encrypted-key');
           when(
             () => mockModelProviderServices.getWorkspaceModelSelections(
@@ -522,7 +548,7 @@ void main() {
             .thenAnswer((_) async => connectionRow);
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.decrypt('encrypted-key'))
+        when(() => mockEncryptionService.readCredential('encrypted-key'))
             .thenAnswer((_) async => existingKeyPayload);
         when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
             .thenAnswer((_) async => const []);
@@ -539,9 +565,12 @@ void main() {
 
         expect(result.name, 'Renamed Connection');
         expect(result.hasKey, isTrue);
-        final _ = verifyNever(() => mockEncryptionService.encrypt(any()));
-        final _ = verify(() => mockEncryptionService.decrypt('encrypted-key'))
-            .called(1);
+        final _ = verifyNever(
+          () => mockEncryptionService.storeCredential(any()),
+        );
+        final _ = verify(
+          () => mockEncryptionService.readCredential('encrypted-key'),
+        ).called(1);
       });
 
       test(
@@ -572,7 +601,12 @@ void main() {
                   as ServiceConnectionsCompanion;
           expect(companion.encryptedAuthValue.present, isFalse);
           expect(companion.keySuffix.present, isFalse);
-          final _ = verifyNever(() => mockEncryptionService.decrypt(any()));
+          final _ = verifyNever(
+            () => mockEncryptionService.deleteCredential(any()),
+          );
+          final _ = verifyNever(
+            () => mockEncryptionService.readCredential(any()),
+          );
           final _ = verifyNever(
             () => mockModelProviderServices.getWorkspaceModelSelections(any()),
           );
@@ -587,7 +621,7 @@ void main() {
             .thenAnswer((_) async => connectionRow);
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.decrypt('encrypted-key'))
+        when(() => mockEncryptionService.readCredential('encrypted-key'))
             .thenAnswer((_) async => existingKeyPayload);
         when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
             .thenAnswer(
@@ -631,7 +665,7 @@ void main() {
             .thenAnswer((_) async => connectionRow);
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.encrypt(newKeyPayload))
+        when(() => mockEncryptionService.storeCredential(newKeyPayload))
             .thenAnswer((_) async => 'encrypted-new-key');
         when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
             .thenAnswer((_) async => const []);
@@ -645,9 +679,12 @@ void main() {
 
         expect(result.hasKey, isTrue);
         expect(result.keySuffix, '123456');
-        final _ = verifyNever(() => mockEncryptionService.decrypt(any()));
-        final _ = verify(() => mockEncryptionService.encrypt(newKeyPayload))
-            .called(1);
+        final _ = verifyNever(
+          () => mockEncryptionService.readCredential(any()),
+        );
+        final _ = verify(
+          () => mockEncryptionService.storeCredential(newKeyPayload),
+        ).called(1);
       });
 
       test(
@@ -661,7 +698,7 @@ void main() {
               .thenAnswer((_) async => existingRow);
           when(() => mockProvidersDao.getProviderById('openai'))
               .thenAnswer((_) async => providerRow);
-          when(() => mockEncryptionService.decrypt('encrypted-key'))
+          when(() => mockEncryptionService.readCredential('encrypted-key'))
               .thenAnswer((_) async => existingKeyPayload);
           when(
             () => mockModelProviderServices.getWorkspaceModelSelections(any()),
@@ -717,7 +754,7 @@ void main() {
             .thenAnswer((_) async => existingRow);
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.decrypt('encrypted-key'))
+        when(() => mockEncryptionService.readCredential('encrypted-key'))
             .thenAnswer((_) async => existingKeyPayload);
         when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
             .thenAnswer(

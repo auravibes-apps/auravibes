@@ -23,6 +23,16 @@ class CloudWorkspaceEndpoint extends Endpoint {
     return _useCases.listPendingInvites(session, email: account.email);
   }
 
+  Future<List<CloudWorkspaceSummary>> listOwnedDeletedWorkspacesForErasure(
+    Session session,
+  ) async {
+    final account = await _requireAccount(session);
+    return _useCases.listOwnedDeletedWorkspacesForErasure(
+      session,
+      userId: account.userId,
+    );
+  }
+
   Future<CloudWorkspaceDetail> getWorkspaceDetail(
     Session session,
     GetCloudWorkspaceDetailRequest request,
@@ -199,6 +209,37 @@ class CloudWorkspaceEndpoint extends Endpoint {
   ) async {
     final account = await _requireAccount(session);
     await _useCases.deleteWorkspace(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<CloudWorkspaceErasureStatus> eraseWorkspace(
+    Session session,
+    EraseCloudWorkspaceRequest request,
+  ) async {
+    final account = await _requireAccount(session);
+    return _useCases.eraseWorkspace(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<List<CloudWorkspaceErasureStatus>> listWorkspaceErasures(
+    Session session,
+  ) async {
+    final account = await _requireAccount(session);
+    return _useCases.listWorkspaceErasures(session, userId: account.userId);
+  }
+
+  Future<CloudWorkspaceErasureStatus> retryWorkspaceErasure(
+    Session session,
+    RetryCloudWorkspaceErasureRequest request,
+  ) async {
+    final account = await _requireAccount(session);
+    return _useCases.retryWorkspaceErasure(
       session,
       userId: account.userId,
       request: request,

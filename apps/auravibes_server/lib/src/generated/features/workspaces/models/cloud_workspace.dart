@@ -23,6 +23,7 @@ abstract class CloudWorkspace
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.erasureRequestedAt,
   });
 
   factory CloudWorkspace({
@@ -34,6 +35,7 @@ abstract class CloudWorkspace
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    DateTime? erasureRequestedAt,
   }) = _CloudWorkspaceImpl;
 
   factory CloudWorkspace.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -52,6 +54,11 @@ abstract class CloudWorkspace
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+      erasureRequestedAt: jsonSerialization['erasureRequestedAt'] == null
+          ? null
+          : _is.DateTimeJsonExtension.fromJson(
+              jsonSerialization['erasureRequestedAt'],
+            ),
     );
   }
 
@@ -76,6 +83,8 @@ abstract class CloudWorkspace
 
   DateTime? deletedAt;
 
+  DateTime? erasureRequestedAt;
+
   @override
   _is.Table<int?> get table => t;
 
@@ -91,6 +100,7 @@ abstract class CloudWorkspace
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    DateTime? erasureRequestedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -104,6 +114,8 @@ abstract class CloudWorkspace
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (erasureRequestedAt != null)
+        'erasureRequestedAt': erasureRequestedAt?.toJson(),
     };
   }
 
@@ -119,6 +131,8 @@ abstract class CloudWorkspace
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (erasureRequestedAt != null)
+        'erasureRequestedAt': erasureRequestedAt?.toJson(),
     };
   }
 
@@ -162,6 +176,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    DateTime? erasureRequestedAt,
   }) : super._(
          id: id,
          name: name,
@@ -171,6 +186,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
+         erasureRequestedAt: erasureRequestedAt,
        );
 
   /// Returns a shallow copy of this [CloudWorkspace]
@@ -186,6 +202,7 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
+    Object? erasureRequestedAt = _Undefined,
   }) {
     return CloudWorkspace(
       id: id is int? ? id : this.id,
@@ -196,6 +213,9 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
+      erasureRequestedAt: erasureRequestedAt is DateTime?
+          ? erasureRequestedAt
+          : this.erasureRequestedAt,
     );
   }
 }
@@ -240,6 +260,12 @@ class CloudWorkspaceUpdateTable extends _is.UpdateTable<CloudWorkspaceTable> {
         table.deletedAt,
         value,
       );
+
+  _is.ColumnValue<DateTime, DateTime> erasureRequestedAt(DateTime? value) =>
+      _is.ColumnValue(
+        table.erasureRequestedAt,
+        value,
+      );
 }
 
 class CloudWorkspaceTable extends _is.Table<int?> {
@@ -274,6 +300,10 @@ class CloudWorkspaceTable extends _is.Table<int?> {
       'deletedAt',
       this,
     );
+    erasureRequestedAt = _is.ColumnDateTime(
+      'erasureRequestedAt',
+      this,
+    );
   }
 
   late final CloudWorkspaceUpdateTable updateTable;
@@ -292,6 +322,8 @@ class CloudWorkspaceTable extends _is.Table<int?> {
 
   late final _is.ColumnDateTime deletedAt;
 
+  late final _is.ColumnDateTime erasureRequestedAt;
+
   @override
   List<_is.Column> get columns => [
     id,
@@ -302,6 +334,7 @@ class CloudWorkspaceTable extends _is.Table<int?> {
     createdAt,
     updatedAt,
     deletedAt,
+    erasureRequestedAt,
   ];
 }
 

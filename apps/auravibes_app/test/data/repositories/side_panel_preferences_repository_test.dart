@@ -13,7 +13,7 @@ void main() {
       preferences.widthPercent,
       SidePanelPreferencesRepository.defaultWidthPercent,
     );
-    expect(preferences.isOpen, isFalse);
+    expect(preferences.isOpenFor('chat-one'), isFalse);
   });
 
   test('restores saved width percent and open state', () async {
@@ -22,19 +22,20 @@ void main() {
       await SharedPreferences.getInstance(),
     );
     await store.saveWidthPercent(0.37);
-    await store.saveIsOpen(isOpen: true);
+    await store.saveIsOpen(conversationId: 'chat-one', isOpen: true);
 
     final restored = SidePanelPreferencesRepository(
       await SharedPreferences.getInstance(),
     );
 
     expect(restored.widthPercent, 0.37);
-    expect(restored.isOpen, isTrue);
+    expect(restored.isOpenFor('chat-one'), isTrue);
+    expect(restored.isOpenFor('chat-two'), isFalse);
 
-    await store.saveIsOpen(isOpen: false);
+    await store.saveIsOpen(conversationId: 'chat-one', isOpen: false);
     expect(
       SidePanelPreferencesRepository(await SharedPreferences.getInstance())
-          .isOpen,
+          .isOpenFor('chat-one'),
       isFalse,
     );
   });

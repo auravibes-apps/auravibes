@@ -173,7 +173,11 @@ void main() {
         argumentsRaw: '{}',
         resultStatus: .executionError,
       );
-      expect(toolCall.getResponseForAI(), 'Tool execution failed.');
+      expect(
+        toolCall.getResponseForAI(),
+        'Tool execution failed. Read the tool error and use a corrected '
+        'request or a different approach.',
+      );
     });
 
     test('getResponseForAI returns empty when both are null', () {

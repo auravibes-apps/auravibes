@@ -7,6 +7,7 @@ import 'package:auravibes_server/src/features/workspaces/repositories/cloud_work
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
+import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
@@ -485,6 +486,10 @@ class _Fixture {
 
   static Future<_Fixture> create(Session session) async {
     final userId = const Uuid().v4().toString();
+    await AuthUser.db.insertRow(
+      session,
+      AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+    );
     final now = DateTime.now().toUtc();
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(
@@ -552,6 +557,10 @@ class _Fixture {
 
   Future<void> insertMember(String memberId) async {
     final now = DateTime.now().toUtc();
+    await AuthUser.db.insertRow(
+      session,
+      AuthUser(id: UuidValue.fromString(memberId), scopeNames: const {}),
+    );
     final _ = await WorkspaceMember.db.insertRow(
       session,
       WorkspaceMember(

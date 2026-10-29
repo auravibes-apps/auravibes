@@ -55,7 +55,7 @@ void main() {
       name: 'GitHub',
       serviceId: 'github',
       secretKind: .provider,
-      scope: .user,
+      scope: .workspace,
       secret: 'secret',
     );
 

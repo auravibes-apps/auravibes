@@ -23,3 +23,5 @@ values:
   - staleRevision
   - idempotencyConflict
   - conflict
+  - incompatibleRelationship
+  - workspaceErasurePending

@@ -21,7 +21,9 @@ import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manife
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_conversation_tools_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
@@ -37,6 +39,9 @@ import 'package:riverpod/riverpod.dart';
 
 import '../../../data/database/drift/database_test_utils.dart';
 import '../../../test_mocks.dart';
+
+class _MockWorkspaceConversationTools extends Mock
+    implements WorkspaceConversationToolsUsecase;
 
 class _MockLoadConversationSkillUsecase extends Mock
     implements LoadConversationSkillUsecase;
@@ -207,6 +212,236 @@ SubAgentRunner _subAgentRunner({
 }
 
 void main() {
+  test('workspace failures return safe actionable messages', () async {
+    final commands = _MockWorkspaceConversationTools();
+    final arguments = <String, dynamic>{'tableId': 'table'};
+    final service = ResolvedToolService(
+      agentCancellationRuntime: .new(),
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+        onElicitation,
+      }) async => null,
+      workspaceConversationTools: commands,
+    );
+    for (final failureCase
+        in <({WorkspaceTableException error, String message})>[
+          (
+            error: const WorkspaceTableException(denied: true),
+            message: 'unavailable',
+          ),
+          (
+            error: const WorkspaceTableException(conflict: true),
+            message: 'Read the item again',
+          ),
+          (error: const WorkspaceTableException(), message: 'invalid'),
+        ]) {
+      when(
+        () => commands.call(
+          conversationId: 'chat',
+          arguments: {'action': 'read', ...arguments},
+          operationId: 'call',
+        ),
+      ).thenThrow(failureCase.error);
+      await expectLater(
+        service(
+          conversationId: 'chat',
+          tool: ResolvedTool.workspaceAction(
+            toolIdentifier: workspaceReadTableToolName,
+          ),
+          arguments: arguments,
+          toolCallId: 'call',
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe message',
+            contains(failureCase.message),
+          ),
+        ),
+      );
+    }
+  });
+
+  test(
+    'workspace regex errors tell the model which argument to repair',
+    () async {
+      final commands = _MockWorkspaceConversationTools();
+      when(
+        () => commands.call(
+          conversationId: 'chat',
+          arguments: {'action': 'readDirectory', 'pathRegex': '(?i)('},
+          operationId: 'invalid-regex',
+        ),
+      ).thenThrow(const FormatException('Invalid pathRegex.'));
+      final service = ResolvedToolService(
+        agentCancellationRuntime: .new(),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+          onElicitation,
+        }) async => null,
+        workspaceConversationTools: commands,
+      );
+
+      await expectLater(
+        service(
+          conversationId: 'chat',
+          tool: ResolvedTool.workspaceAction(
+            toolIdentifier: workspaceReadDirectoryToolName,
+          ),
+          arguments: {'pathRegex': '(?i)('},
+          toolCallId: 'invalid-regex',
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'structured validation error',
+            allOf(
+              contains('invalid_regex'),
+              contains('pathRegex'),
+              contains('(?i)'),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'generic workspace tool rejects writes before command execution',
+    () async {
+      final commands = _MockWorkspaceConversationTools();
+      final service = ResolvedToolService(
+        agentCancellationRuntime: .new(),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+          onElicitation,
+        }) async => null,
+        workspaceConversationTools: commands,
+      );
+
+      await expectLater(
+        service(
+          conversationId: 'chat',
+          tool: ResolvedTool.workspaceAction(
+            toolIdentifier: workspaceReadTableToolName,
+          ),
+          arguments: {'action': 'createFolder', 'name': 'Rejected'},
+          toolCallId: 'write-through-read-tool',
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe error',
+            contains('Workspace request is invalid'),
+          ),
+        ),
+      );
+      final _ = verifyNever(
+        () => commands.call(
+          conversationId: 'chat',
+          arguments: any(named: 'arguments'),
+          operationId: 'write-through-read-tool',
+        ),
+      );
+    },
+  );
+  test(
+    'workspace mutation schema rejects empty IDs before execution',
+    () async {
+      final commands = _MockWorkspaceConversationTools();
+      final service = ResolvedToolService(
+        agentCancellationRuntime: .new(),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+          onElicitation,
+        }) async => null,
+        workspaceConversationTools: commands,
+      );
+
+      await expectLater(
+        service(
+          conversationId: 'chat',
+          tool: ResolvedTool.workspaceAction(
+            toolIdentifier: workspaceAddRowToolName,
+          ),
+          arguments: {
+            'tableId': '',
+            'revision': 1,
+            'schemaRevision': 1,
+            'values': <String, Object?>{},
+          },
+          toolCallId: 'empty-table-id',
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (failure) => failure.responseRaw,
+            'safe argument failure',
+            contains('Workspace request is invalid'),
+          ),
+        ),
+      );
+      final _ = verifyNever(
+        () => commands.call(
+          conversationId: 'chat',
+          arguments: any(named: 'arguments'),
+          operationId: 'empty-table-id',
+        ),
+      );
+    },
+  );
+
+  test(
+    'table schema reads reject row selection before local dispatch',
+    () async {
+      final commands = _MockWorkspaceConversationTools();
+      final service = ResolvedToolService(
+        agentCancellationRuntime: .new(),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+          onElicitation,
+        }) async => null,
+        workspaceConversationTools: commands,
+      );
+
+      for (final rowId in [')} }', ' ']) {
+        await expectLater(
+          service(
+            conversationId: 'chat',
+            tool: ResolvedTool.workspaceAction(
+              toolIdentifier: workspaceReadTableToolName,
+            ),
+            arguments: {'tableId': 'table-1', 'rowId': rowId},
+            toolCallId: 'invalid-row-id-$rowId',
+          ),
+          throwsA(
+            isA<AgentToolExecutionFailure>().having(
+              (failure) => failure.responseRaw,
+              'safe argument failure',
+              contains('Workspace request is invalid'),
+            ),
+          ),
+        );
+      }
+      final _ = verifyNever(
+        () => commands.call(
+          conversationId: 'chat',
+          arguments: any(named: 'arguments'),
+          operationId: any(named: 'operationId'),
+        ),
+      );
+    },
+  );
+
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),

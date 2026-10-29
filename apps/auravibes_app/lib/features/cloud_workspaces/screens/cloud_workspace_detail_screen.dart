@@ -299,8 +299,8 @@ class const _DetailBody({
           ),
         if (capabilities.canDelete)
           AuraButton(
-            onPressed: () => _delete(context, ref, workspace),
-            child: const TextLocale(LocaleKeys.cloud_workspaces_delete),
+            onPressed: () => _erase(context, ref, workspace),
+            child: const TextLocale(LocaleKeys.cloud_workspaces_erase),
             variant: AuraButtonVariant.outlined,
           ),
       ],
@@ -403,21 +403,33 @@ class const _DetailBody({
     });
   }
 
-  Future<void> _delete(
+  Future<void> _erase(
     BuildContext context,
     WidgetRef ref,
     CloudWorkspaceSummary workspace,
   ) async {
     final confirmation = await _prompt(
       context,
-      title: LocaleKeys.cloud_workspaces_delete_confirm.tr(
+      title: LocaleKeys.cloud_workspaces_erase_title.tr(
         namedArgs: {'name': workspace.name},
       ),
+      message: LocaleKeys.cloud_workspaces_erase_message.tr(),
     );
     if (confirmation != workspace.name) return;
     await _runCloudAction(context, ref, account, () async {
-      await (await _useCases(ref)).delete(workspace);
-      if (context.mounted) Navigator.of(context).pop();
+      final status = await (await _useCases(ref)).erase(workspace);
+      ref.invalidate(cloudWorkspaceStateProvider(account));
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: TextLocale(
+          status.state == 'complete'
+              ? LocaleKeys.cloud_workspaces_erasure_complete
+              : LocaleKeys.cloud_workspaces_erasure_pending,
+        ),
+        variant: status.state == 'complete' ? .success : .info,
+      );
     });
   }
 }
@@ -621,30 +633,43 @@ Future<String?> _prompt(
   BuildContext context, {
   required String title,
   String? initialValue,
+  String? message,
 }) {
   FocusManager.instance.primaryFocus?.unfocus();
   return showDialog<String>(
     context: context,
-    builder: (context) =>
-        _WorkspaceNamePrompt(title: title, initialValue: initialValue),
+    builder: (context) => _WorkspaceNamePrompt(
+      title: title,
+      initialValue: initialValue,
+      message: message,
+    ),
   );
 }
 
 class const _WorkspaceNamePrompt({
   required final String title,
   required final String? initialValue,
+  required final String? message,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController(text: initialValue);
+    final promptMessage = message;
     void submit() => Navigator.of(context).pop(controller.text);
     return AlertDialog(
       title: Text(title),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        textInputAction: .done,
-        onSubmitted: (_) => submit(),
+      content: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [
+          if (promptMessage != null) Text(promptMessage),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            textInputAction: .done,
+            onSubmitted: (_) => submit(),
+          ),
+        ],
       ),
       actions: [
         TextButton(
