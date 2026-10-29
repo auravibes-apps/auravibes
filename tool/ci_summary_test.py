@@ -314,7 +314,7 @@ class CiSummaryTest(unittest.TestCase):
                 "pull_request",
                 False,
                 '["ios"]',
-                "true",
+                "false",
                 "false",
                 "false",
             ),

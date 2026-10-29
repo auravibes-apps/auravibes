@@ -1765,6 +1765,7 @@ const _staticAssetSuffixes = {
 
 bool _isStaticAssetPath(String path) {
   final normalized = path.toLowerCase();
+
   return _staticAssetSuffixes.any(normalized.endsWith);
 }
 
@@ -1773,8 +1774,9 @@ bool _isAssetDirectoryPath(String path) =>
 
 bool _isAppNativePlatformPath(String path) {
   final parts = path.split('/');
+
   return parts.length > 2 &&
-      parts[0] == 'apps' &&
+      parts.firstOrNull == 'apps' &&
       parts[1] == 'auravibes_app' &&
       const {
         'android',
@@ -1788,6 +1790,7 @@ bool _isAppNativePlatformPath(String path) {
 
 bool _isDockerValidationPath(String path) {
   final filename = path.split('/').last;
+
   return filename == '.dockerignore' ||
       filename.startsWith('Dockerfile') ||
       filename.endsWith('.Dockerfile') ||
