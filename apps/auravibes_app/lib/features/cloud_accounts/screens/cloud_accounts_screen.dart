@@ -36,12 +36,13 @@ class const CloudAccountsScreen({required final String workspaceId, super.key})
         padding: const EdgeInsets.all(16)
             .copyWith(bottom: BottomPadding.of(context)),
         children: [
-          const TextLocale(LocaleKeys.navigation_accounts_scope),
+          const _AccountsScopeNotice(),
+          const SizedBox(height: 12),
           if (AppEnvConfig.auravibesServerUrl.isEmpty &&
-              accountsAsync.value?.isEmpty == true)
-            const AuraText(
-              child: TextLocale(LocaleKeys.cloud_accounts_not_configured),
-            ),
+              accountsAsync.value?.isEmpty == true) ...[
+            const _AccountsUnconfiguredNotice(),
+            const SizedBox(height: 12),
+          ],
           switch (accountsAsync) {
             AsyncData(:final value) => _AccountList(
               accounts: value,
@@ -61,73 +62,87 @@ class const CloudAccountsScreen({required final String workspaceId, super.key})
   }
 }
 
+class const _AccountsScopeNotice() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraCard(
+    style: .border,
+    padding: .medium,
+    child: AuraRow(
+      children: [
+        Icon(Icons.info_outline, size: 20),
+        Expanded(
+          child: AuraText(
+            child: TextLocale(LocaleKeys.navigation_accounts_scope),
+            style: .bodySmall,
+          ),
+        ),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: CrossAxisAlignment.start,
+    ),
+  );
+}
+
+class const _AccountsUnconfiguredNotice() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraCard(
+    style: .border,
+    tint: .warning,
+    padding: .medium,
+    child: AuraRow(
+      children: [
+        Icon(Icons.warning_amber_rounded, size: 20),
+        Expanded(
+          child: AuraText(
+            child: TextLocale(LocaleKeys.cloud_accounts_not_configured),
+            style: .bodySmall,
+          ),
+        ),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: CrossAxisAlignment.start,
+    ),
+  );
+}
+
+typedef _AccountConfirmCallback = Future<void> Function(
+  CloudAccountSession account, {
+  required bool deleteCloudAccount,
+});
+
 class const _AccountList({
   required final List<CloudAccountSession> accounts,
   required final String workspaceId,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (accounts.isEmpty) {
+      return _EmptyAccountState(workspaceId: workspaceId);
+    }
+
     return AuraColumn(
       children: [
-        if (accounts.isEmpty)
-          const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_empty)),
+        for (final account in accounts)
+          _AccountTile(
+            account: account,
+            workspaceId: workspaceId,
+            onConfirmAction: (account, {required deleteCloudAccount}) =>
+                _confirmAccountAction(
+                  context,
+                  ref,
+                  account,
+                  deleteCloudAccount: deleteCloudAccount,
+                ),
+          ),
         AuraButton(
           onPressed: () => context.go(
             CloudAccountAddRoute(workspaceId: workspaceId).location,
           ),
-          child: TextLocale(
-            accounts.isEmpty
-                ? LocaleKeys.cloud_accounts_add
-                : LocaleKeys.cloud_accounts_add_another,
-          ),
+          child: const TextLocale(LocaleKeys.cloud_accounts_add_another),
+          variant: .outlined,
         ),
-        for (final account in accounts)
-          AuraTile(
-            child: AuraColumn(
-              children: [
-                Text(account.email),
-                CloudAccountHealthStatus(
-                  account: account.key,
-                  workspaceId: workspaceId,
-                  returnPath: CloudAccountsRoute(workspaceId: workspaceId)
-                      .location,
-                  email: account.email,
-                ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    AuraButton(
-                      onPressed: () => _confirmAccountAction(
-                        context,
-                        ref,
-                        account,
-                        deleteCloudAccount: false,
-                      ),
-                      child: const TextLocale(LocaleKeys.cloud_accounts_remove),
-                      variant: AuraButtonVariant.outlined,
-                    ),
-                    AuraButton(
-                      onPressed: () => _confirmAccountAction(
-                        context,
-                        ref,
-                        account,
-                        deleteCloudAccount: true,
-                      ),
-                      child: const TextLocale(LocaleKeys.cloud_accounts_delete),
-                      variant: AuraButtonVariant.outlined,
-                      tint: .error,
-                    ),
-                  ],
-                ),
-              ],
-              spacing: .xs,
-              crossAxisAlignment: CrossAxisAlignment.start,
-            ),
-            variant: AuraTileVariant.ghost,
-          ),
       ],
-      spacing: .sm,
+      spacing: .md,
       crossAxisAlignment: CrossAxisAlignment.stretch,
     );
   }
@@ -255,4 +270,89 @@ class const _AccountList({
 
     NewChatRoute(workspaceId: workspaces.first.id).go(context);
   }
+}
+
+class const _EmptyAccountState({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    style: .border,
+    padding: .large,
+    child: AuraColumn(
+      children: [
+        const Icon(Icons.cloud_outlined, size: 48),
+        const AuraText(
+          child: TextLocale(LocaleKeys.cloud_accounts_empty),
+          style: .body,
+          textAlign: TextAlign.center,
+        ),
+        AuraButton(
+          onPressed: () => context.go(
+            CloudAccountAddRoute(workspaceId: workspaceId).location,
+          ),
+          child: const TextLocale(LocaleKeys.cloud_accounts_add),
+          variant: .primary,
+        ),
+      ],
+      spacing: .md,
+      crossAxisAlignment: CrossAxisAlignment.center,
+    ),
+  );
+}
+
+class const _AccountTile({
+  required final CloudAccountSession account,
+  required final String workspaceId,
+  required final _AccountConfirmCallback onConfirmAction,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    variant: .surface,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: AuraColumn(
+        children: [
+          AuraRow(
+            children: [
+              const Icon(Icons.account_circle_outlined, size: 28),
+              Expanded(
+                child: AuraText(child: Text(account.email), style: .heading6),
+              ),
+            ],
+            spacing: .sm,
+          ),
+          CloudAccountHealthStatus(
+            account: account.key,
+            workspaceId: workspaceId,
+            returnPath: CloudAccountsRoute(workspaceId: workspaceId).location,
+            email: account.email,
+          ),
+          const Divider(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              AuraButton(
+                onPressed: () =>
+                    onConfirmAction(account, deleteCloudAccount: false),
+                child: const TextLocale(LocaleKeys.cloud_accounts_remove),
+                variant: .outlined,
+                size: .small,
+              ),
+              AuraButton(
+                onPressed: () =>
+                    onConfirmAction(account, deleteCloudAccount: true),
+                child: const TextLocale(LocaleKeys.cloud_accounts_delete),
+                variant: .ghost,
+                tint: .error,
+                size: .small,
+              ),
+            ],
+          ),
+        ],
+        spacing: .sm,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+      ),
+    ),
+  );
 }
