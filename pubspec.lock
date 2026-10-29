@@ -453,10 +453,10 @@ packages:
     dependency: "direct dev"
     description:
       name: dart_code_linter
-      sha256: "2cf4c5188f31b3d9f4fcf277fababb4b34b7eb2ed96f74b7189cd68cea45088e"
+      sha256: be369207d25d4b83daa80339e57f86ac7c9dda7892812b2563b135706435eaf1
       url: "https://pub.dev"
     source: hosted
-    version: "4.4.1"
+    version: "4.4.3"
   dart_jsonwebtoken:
     dependency: transitive
     description:
