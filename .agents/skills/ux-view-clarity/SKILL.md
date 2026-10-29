@@ -64,6 +64,8 @@ Keep the screen surface full bleed when needed; apply safe insets to interactive
 
 Use deterministic route captures for each requested posture and theme, then inspect the captures for clipping, lost actions, and inconsistent alignment. Add native fold-region handling only after live-device evidence shows an occlusion that layout constraints and safe insets do not expose.
 
+For deterministic app screenshots, reuse the route fixture and command in the [UX audit procedure](../ux-task-audit/SKILL.md#audit-procedure), and keep its JSON sidecar with each PNG. For golden updates, follow the [responsive shell and UI goldens guide](../../../docs/testing/responsive-shell-goldens.md).
+
 For screenshot golden tests, capture each baseline on the same Flutter renderer and OS that will run it. If verified rasterization differences remain between platforms, keep platform-specific baselines and verify each on its target platform; do not replace one platform's image with another's.
 
 Use architecture guidance when ownership changes and accessibility guidance for dedicated compliance reviews. This skill owns the shared UI/UX decision process, including visual composition; specialists supplement it without competing styling systems.
@@ -73,6 +75,8 @@ Use architecture guidance when ownership changes and accessibility guidance for 
 Check the requested task end to end, not only its first rendered frame. For changed navigation, exercise entry, Back, and relevant browser history/deep-link behavior. For forms or menus, check open, edit, error, submit, cancel, and focus return. For selection, check entry/exit, primary versus secondary item actions, and the exact bulk target. For layout, inspect relevant compact and expanded constraints and the transition between them, keyboard visibility, enlarged text, and long localized content. Inspect the whole affected composition for attention order, grouping, alignment, readable type, and visual-state consistency in before/after captures using only user-approved controls; report unavailable visual checks instead of claiming visual success from code.
 
 Use the affected behavior test or Widgetbook example where appropriate. A screenshot cannot prove navigation, keyboard behavior, or user comprehension. Do not add generic tests for copy-only edits. Report what changed, evidence checked, and remaining gaps.
+
+When shared UI behavior changes, run regression tests for each affected direct consumer in addition to shared-widget tests. For changes spanning screens or packages, use the [local CI parity guide](../../../docs/agents/ci-local-parity.md) to choose broader checks; it describes which hosted gates remain separate.
 
 If approved rendering controls are unavailable, finish the scoped implementation and available code/behavior checks; explicitly mark visual verification pending and name the missing capture or interaction check. Do not claim visual success, invent screenshots, or require an extra design-approval round merely because rendering is unavailable. Report actual build or behavior failures separately; unavailable visual verification does not turn a failing check into a pass.
 
