@@ -506,25 +506,55 @@ class const _ServiceConnectionsAppBar({
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final isCompact = constraints.maxWidth < 600;
+    builder: (context, constraints) => _ServiceConnectionsAppBarContent(
+      onAddConnection: onAddConnection,
+      workspaceId: workspaceId,
+      view: view,
+      destinations: destinations,
+      selectedLocation: selectedLocation,
+      isCompact: constraints.maxWidth < 600,
+    ),
+  );
+}
 
-      return FeatureDestinationAppBar(
-        destinations: destinations,
-        selectedLocation: selectedLocation,
-        masterTitleKey: LocaleKeys.navigation_connections,
-        actions: [
-          if (view != .connectors) ...[
-            _SyncModelCatalogButton(workspaceId: workspaceId),
-            _BrowseMcpCatalogButton(workspaceId: workspaceId),
-            _ConnectionsAddButton(
-              onPressed: onAddConnection,
-              isCompact: isCompact,
-            ),
-          ],
-        ],
-      );
-    },
+class const _ServiceConnectionsAppBarContent({
+  required final VoidCallback? onAddConnection,
+  required final String workspaceId,
+  required final ConnectionDestination view,
+  required final List<FeatureNavigationDestination> destinations,
+  required final String selectedLocation,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FeatureDestinationAppBar(
+    destinations: destinations,
+    selectedLocation: selectedLocation,
+    masterTitleKey: LocaleKeys.navigation_connections,
+    actions: [
+      if (view != .connectors)
+        _ConnectionsAppBarActions(
+          workspaceId: workspaceId,
+          onAddConnection: onAddConnection,
+          isCompact: isCompact,
+        ),
+    ],
+  );
+}
+
+class const _ConnectionsAppBarActions({
+  required final String workspaceId,
+  required final VoidCallback? onAddConnection,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      _SyncModelCatalogButton(workspaceId: workspaceId),
+      _BrowseMcpCatalogButton(workspaceId: workspaceId),
+      _ConnectionsAddButton(onPressed: onAddConnection, isCompact: isCompact),
+    ],
+    spacing: .none,
+    mainAxisSize: .min,
   );
 }
 
