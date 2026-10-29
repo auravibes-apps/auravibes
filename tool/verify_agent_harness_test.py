@@ -117,7 +117,7 @@ class HarnessVerificationTest(unittest.TestCase):
             errors,
         )
 
-    def test_full_sha_and_local_action_references_are_accepted(self):
+    def test_accepts_full_sha_local_and_self_repository_action_references(self):
         workflow = self.root / ".github/workflows/actions.yml"
         workflow.parent.mkdir(parents=True)
         workflow.write_text(
@@ -126,6 +126,7 @@ class HarnessVerificationTest(unittest.TestCase):
             "    steps:\n"
             "      - uses: example-org/action@0123456789abcdef0123456789abcdef01234567 # v1\n"
             "      - uses: ./.github/actions/local-action\n"
+            "      - uses: $/.github/actions/local-action\n"
         )
 
         self.assertEqual(verify(self.root), [])
