@@ -299,6 +299,21 @@ def _requires_generated_checks(path):
     )
 
 
+def _requires_dependency_preflight(path):
+    normalized = path.replace("\\", "/")
+    filename = normalized.rsplit("/", 1)[-1].lower()
+
+    return normalized in {
+        ".fvmrc",
+        ".github/actions/setup-workspace/action.yml",
+        "melos.yaml",
+    } or filename in {
+        "pubspec.yaml",
+        "pubspec.lock",
+        "pubspec_overrides.yaml",
+    }
+
+
 def _is_ci_routing_path(path):
     return path.replace("\\", "/") in _CI_ROUTING_PATHS
 
@@ -344,6 +359,9 @@ def classify_paths(paths, generated_source_paths=()):
         ),
         "renovate_config_changes": "renovate.json" in normalized_paths,
         "run_ui_goldens": any(_requires_ui_goldens(path) for path in normalized_paths),
+        "run_dependency_preflight": any(
+            _requires_dependency_preflight(path) for path in normalized_paths
+        ),
         "run_generated_checks": any(
             _requires_generated_checks(path) or path in generated_sources
             for path in normalized_paths

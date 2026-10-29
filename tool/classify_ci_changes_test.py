@@ -22,6 +22,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "renovate_config_changes": False,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -46,6 +47,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "renovate_config_changes": True,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -63,6 +65,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "renovate_config_changes": False,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -78,6 +81,7 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "renovate_config_changes": True,
                 "run_ui_goldens": True,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -98,6 +102,28 @@ class ClassifyCiChangesTest(unittest.TestCase):
 
         self.assertFalse(result["run_code_checks"])
         self.assertFalse(result["run_server_integration"])
+
+
+    def test_dependency_changes_request_resolution_preflight(self):
+        for path in (
+            ".fvmrc",
+            "melos.yaml",
+            "pubspec.yaml",
+            "apps/auravibes_app/pubspec.yaml",
+            "packages/auravibes_engine/pubspec.lock",
+            "apps/auravibes_server/pubspec_overrides.yaml",
+            ".github/actions/setup-workspace/action.yml",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(classify_paths([path])["run_dependency_preflight"])
+
+        for path in (
+            "README.md",
+            "apps/auravibes_app/lib/main.dart",
+            "packages/auravibes_engine/lib/engine.dart",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(classify_paths([path])["run_dependency_preflight"])
 
     def test_server_integration_runs_for_server_engine_and_shared_ci_inputs(self):
         for path in (

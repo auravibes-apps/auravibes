@@ -22,6 +22,24 @@ class SonarWorkflowTest(unittest.TestCase):
         self.assertIn("needs.test-plan.outputs.mode == 'none'", fallback)
         self.assertIn('sonar-without-coverage, platform-builds', workflow)
 
+    def test_dependency_preflight_gates_validation_fanout(self):
+        workflow = (Path(__file__).resolve().parent.parent / '.github/workflows/ci.yml').read_text()
+        change = workflow.split('\n  change:\n', 1)[1].split('\n  renovate-validation:', 1)[0]
+
+        self.assertIn(
+            'run_dependency_preflight: ${{ steps.platforms.outputs.run_dependency_preflight }}',
+            change,
+        )
+        self.assertIn('run_dependency_preflight=true', change)
+        self.assertIn('run_dependency_preflight="$(jq -r', change)
+        self.assertIn('Resolve dependencies before validation fan-out', change)
+        self.assertIn(
+            'if: ${{ steps.platforms.outputs.run_dependency_preflight == \'true\' }}',
+            change,
+        )
+        self.assertIn('uses: ./.github/actions/setup-workspace', change)
+        self.assertIn('python3 tool/sonar_workflow_test.py', workflow)
+
 
 if __name__ == '__main__':
     unittest.main()

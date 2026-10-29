@@ -87,6 +87,7 @@ def routing_summary(paths, outputs, event, unknown_range):
     renovate = outputs["renovate_config_changes"] == "true"
     goldens = outputs["run_ui_goldens"] == "true"
     generated = outputs["run_generated_checks"] == "true"
+    dependency_preflight = outputs["run_dependency_preflight"] == "true"
     lines += [
         f'| Code checks | {"Scheduled" if code else skip} | {"Conservative or code-check policy applies" if code else "No Dart or workspace code input changed"} |',
         f'| Server integration | {"Scheduled" if server else skip} | {"Server integration policy applies" if server else "No server, engine, or shared integration inputs changed"} |',
@@ -95,6 +96,7 @@ def routing_summary(paths, outputs, event, unknown_range):
         f'| Renovate validation | {"Scheduled" if renovate else skip} | {"renovate.json changed" if renovate else "Comparison unavailable. Configuration changes not determined" if unknown_range else "renovate.json did not change"} |',
         f'| UI golden tests | {"Scheduled" if goldens else skip} | {"UI implementation, assets, or golden tests changed" if goldens else "No UI golden inputs changed"} |',
         f'| Generated artifact checks | {"Scheduled" if generated else skip} | {"Generator inputs or generated sources changed" if generated else "No generator inputs changed"} |',
+        f'| Dependency preflight | {"Scheduled" if dependency_preflight else skip} | {"Dependency manifests, toolchain, or workspace bootstrap changed" if dependency_preflight else "No dependency-resolution inputs changed"} |',
         "",
         "Scheduled checks do not yet have results. Skipped validators did not validate anything.",
     ]
