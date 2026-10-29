@@ -438,7 +438,7 @@ void main() {
     final result = await state.clearDevelopmentState();
 
     expect(result['deletedWorkspace'], isTrue);
-    expect(result['deletedRecentSelections'], 1);
+    expect(result['deletedRecentSelections'], 0);
     expect(result['clearedFeatureFlags'], 1);
     final repository = WorkspaceRepository(database);
     expect(

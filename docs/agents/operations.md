@@ -39,8 +39,8 @@ gh pr checks <number> --json name,bucket \
   gh pr merge <number> --match-head-commit <reviewed-head-sha>
   ```
 - Stop and report when `mergeStateStatus` is `BLOCKED`, `reviewDecision` is `REVIEW_REQUIRED`, required checks are pending or failing, or required approval is absent. Requested review is not approval.
-- On merge-queue branches, omit strategy flags. When requirements remain unmet, `gh pr merge` may enable auto-merge; do not use it to probe readiness.
-- Use `--admin` only when the user explicitly authorizes bypassing repository requirements.
+- On merge-queue branches, omit strategy flags and never use `--admin`; use the normal merge command so GitHub can queue the PR. A request to merge does not authorize bypassing the queue. When requirements remain unmet, `gh pr merge` may enable auto-merge; do not use it to probe readiness.
+- Outside merge queues, use `--admin` only when the user explicitly authorizes bypassing repository requirements.
 
 ## Codemagic release triage
 

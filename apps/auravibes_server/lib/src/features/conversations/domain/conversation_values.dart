@@ -35,6 +35,16 @@ abstract final class ConversationJobStatuses {
   static const failed = 'failed';
 }
 
+abstract final class ConversationSystemActorIds {
+  /// Audit actor for automatic cancellation after an account has been erased.
+  /// This stable sentinel records the cleanup action without attributing it to
+  /// the deleted user whose queued turn is being terminalized.
+  static const accountErasure = 'system:account-erasure';
+
+  /// Audit actor for cleanup when workspace membership is unavailable.
+  static const unavailableMembershipCleanup = 'system:conversation-cleanup';
+}
+
 abstract final class ConversationLimits {
   static const maxPinnedPerWorkspace = 10;
   static const maxPendingForksPerWorkspace = 32;

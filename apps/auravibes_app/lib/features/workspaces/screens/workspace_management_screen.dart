@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/cloud_workspaces/widgets/cloud_workspace_connect_list.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -20,6 +21,7 @@ import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_u
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_configuration_archive_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_deletion_result.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -669,7 +671,11 @@ bool _hasMatchingAvailableWorkspace(
   _WorkspaceListData data,
 ) =>
     _hasMatchingWorkspace(state, account, data) ||
-    _hasMatchingInvite(state, data.searchQuery);
+    _hasMatchingInvite(state, data.searchQuery) ||
+    _hasMatchingErasure(state, data.searchQuery) ||
+    state.deletedOwnedWorkspaces.any(
+      (workspace) => _matchesWorkspaceName(workspace.name, data.searchQuery),
+    );
 
 bool _hasMatchingWorkspace(
   CloudWorkspaceViewState state,
@@ -687,6 +693,10 @@ bool _hasMatchingWorkspace(
 bool _hasMatchingInvite(CloudWorkspaceViewState state, String query) => state
     .pendingInvites
     .any((invite) => _matchesWorkspaceName(invite.workspaceName, query));
+
+bool _hasMatchingErasure(CloudWorkspaceViewState state, String query) => state
+    .erasures
+    .any((erasure) => _matchesWorkspaceName(erasure.workspaceName, query));
 
 Set<CloudAccountKey> _matchingCloudAccountIds(
   List<_CloudAccountWorkspaceState> accountStates,
@@ -794,10 +804,10 @@ class const _WorkspaceListSections({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(16)
-        .copyWith(bottom: BottomPadding.of(context)),
+    padding: _workspaceListPadding(context),
     children: [
       _WorkspaceViewNavigation(data: data),
+      _LocalErasureRecoveryForList(workspaces: data.workspaces),
       _WorkspaceSearchInput(onChanged: onSearchChanged),
       _WorkspaceListControls(data: data, actions: actions),
       _WorkspaceSourceSections(
@@ -808,6 +818,94 @@ class const _WorkspaceListSections({
     ],
     keyboardDismissBehavior: .onDrag,
   );
+}
+
+EdgeInsets _workspaceListPadding(BuildContext context) =>
+    const EdgeInsets.all(16).copyWith(bottom: BottomPadding.of(context));
+
+ValueKey<String> _workspaceListKey(List<WorkspaceEntity> workspaces) =>
+    ValueKey(workspaces.map((workspace) => workspace.id).join('|'));
+
+class const _LocalErasureRecoveryForList({
+  required final List<WorkspaceEntity> workspaces,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _LocalErasureRecovery(key: _workspaceListKey(workspaces));
+}
+
+class _LocalErasureRecovery extends ConsumerStatefulWidget {
+  const new({super.key});
+
+  @override
+  ConsumerState<_LocalErasureRecovery> createState() =>
+      _LocalErasureRecoveryState();
+}
+
+class _LocalErasureRecoveryState extends ConsumerState<_LocalErasureRecovery> {
+  bool _pending = false;
+  bool _statusError = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_pending && !_statusError) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        if (_pending)
+          const TextLocale(
+            LocaleKeys.workspace_management_delete_cleanup_pending,
+          ),
+        if (_statusError)
+          const TextLocale(
+            LocaleKeys.workspace_management_delete_cleanup_status_error,
+          ),
+        TextButton(
+          onPressed: _busy ? null : () => unawaited(_retry()),
+          child: const TextLocale(LocaleKeys.cloud_workspaces_erasure_retry),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final pending = await ref
+          .read(workspaceAssetErasureProvider)
+          .hasPendingDeletedWorkspaceCleanup();
+      if (!mounted) return;
+      setState(() {
+        _pending = pending;
+        _statusError = false;
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() => _statusError = true);
+    }
+  }
+
+  Future<void> _retry() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final cleanup = ref.read(workspaceAssetErasureProvider);
+    try {
+      await cleanup.flush();
+    } on Object {
+      if (mounted) setState(() => _busy = false);
+
+      return;
+    }
+    await _refresh();
+    if (mounted) setState(() => _busy = false);
+  }
 }
 
 class const _WorkspaceViewNavigation({required final _WorkspaceListData data})
@@ -1631,23 +1729,46 @@ void _showWorkspaceIdCopyError(BuildContext context) {
   );
 }
 
+class _WorkspaceDeletionSummary {
+  final failed = <WorkspaceEntity>[];
+  bool removedActive = false;
+  bool cleanupPending = false;
+
+  void add(WorkspaceEntity workspace, _WorkspaceDeleteAttempt attempt) {
+    if (!attempt.succeeded) failed.add(workspace);
+    removedActive |= attempt.removedActive;
+    cleanupPending |= attempt.cleanupPending;
+  }
+}
+
+Future<_WorkspaceDeletionSummary> _deleteWorkspaceTargets(
+  _WorkspaceListActions actions,
+  List<WorkspaceEntity> workspaces,
+) async {
+  final summary = _WorkspaceDeletionSummary();
+  for (final workspace in workspaces) {
+    summary.add(workspace, await _deleteWorkspaceTarget(actions, workspace));
+  }
+
+  return summary;
+}
+
 extension on _WorkspaceListActions {
   Future<List<WorkspaceEntity>> deleteSelected(
     List<WorkspaceEntity> workspaces,
   ) async {
-    final failed = <WorkspaceEntity>[];
-    var removedActive = false;
-    for (final workspace in workspaces) {
-      final attempt = await _deleteWorkspaceTarget(this, workspace);
-      if (!attempt.succeeded) failed.add(workspace);
-      removedActive |= attempt.removedActive;
+    final result = await _deleteWorkspaceTargets(this, workspaces);
+    await _finishWorkspaceBulkDeletion(this, result.removedActive);
+    if (result.cleanupPending && context.mounted) {
+      _showCleanupPending(context);
     }
-    await _finishWorkspaceBulkDeletion(this, removedActive);
 
-    return failed;
+    return result.failed;
   }
 
-  Future<void> _deleteWithoutConfirmation(WorkspaceEntity workspace) async {
+  Future<WorkspaceDeletionResult> _deleteWithoutConfirmation(
+    WorkspaceEntity workspace,
+  ) async {
     final accountId = workspace.cloudAccountId;
     if (workspace.cloudWorkspaceId != null) {
       if (accountId == null) {
@@ -1655,10 +1776,10 @@ extension on _WorkspaceListActions {
       }
       await _detach(workspace, accountId);
 
-      return;
+      return WorkspaceDeletionResult.complete;
     }
 
-    await ref
+    return await ref
         .read(deleteWorkspaceUseCaseProvider)
         .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
   }
@@ -1717,7 +1838,7 @@ extension on _WorkspaceListActions {
   }
 
   Future<void> _deleteAndHandle(WorkspaceEntity workspace) async {
-    await _delete(workspace);
+    final result = await _delete(workspace);
     if (!context.mounted) return;
     if (ref.read(WorkspaceManagementMutations.delete) case MutationError(
       :final error,
@@ -1725,6 +1846,9 @@ extension on _WorkspaceListActions {
       _showError(context, error);
 
       return;
+    }
+    if (result == WorkspaceDeletionResult.cleanupPending) {
+      _showCleanupPending(context);
     }
     if (workspace.id == activeWorkspaceId) {
       await switchAfterActiveWorkspaceRemoval();
@@ -1735,20 +1859,24 @@ extension on _WorkspaceListActions {
     return _confirmDestructive(
       title: const TextLocale(LocaleKeys.workspace_management_delete_title),
       message: Text(
-        LocaleKeys.workspace_management_delete_confirm.tr(
-          namedArgs: {'name': workspace.name},
-        ),
+        (workspace.cloudWorkspaceId == null
+                ? LocaleKeys.workspace_management_delete_confirm
+                : LocaleKeys.workspace_management_delete_cloud_mirror_confirm)
+            .tr(namedArgs: {'name': workspace.name}),
       ),
       actions: _deleteConfirmationActions,
     );
   }
 
-  Future<void> _delete(WorkspaceEntity workspace) {
-    return WorkspaceManagementMutations.delete.run(ref, (_) {
-      return ref
+  Future<WorkspaceDeletionResult> _delete(WorkspaceEntity workspace) async {
+    var result = WorkspaceDeletionResult.complete;
+    await WorkspaceManagementMutations.delete.run(ref, (_) async {
+      result = await ref
           .read(deleteWorkspaceUseCaseProvider)
           .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
     });
+
+    return result;
   }
 
   Future<String?> _confirmedRemovalAccountId(WorkspaceEntity workspace) async {
@@ -1781,18 +1909,23 @@ extension on _WorkspaceListActions {
   }
 }
 
-typedef _WorkspaceDeleteAttempt = ({bool succeeded, bool removedActive});
+typedef _WorkspaceDeleteAttempt = ({
+  bool succeeded,
+  bool removedActive,
+  bool cleanupPending,
+});
 
 Future<_WorkspaceDeleteAttempt> _deleteWorkspaceTarget(
   _WorkspaceListActions actions,
   WorkspaceEntity workspace,
 ) async {
   try {
-    await actions._deleteWithoutConfirmation(workspace);
+    final result = await actions._deleteWithoutConfirmation(workspace);
 
     return (
       succeeded: true,
       removedActive: workspace.id == actions.activeWorkspaceId,
+      cleanupPending: result == WorkspaceDeletionResult.cleanupPending,
     );
   } on Object catch (error, stackTrace) {
     _logger.warning(
@@ -1801,8 +1934,18 @@ Future<_WorkspaceDeleteAttempt> _deleteWorkspaceTarget(
       stackTrace,
     );
 
-    return (succeeded: false, removedActive: false);
+    return (succeeded: false, removedActive: false, cleanupPending: false);
   }
+}
+
+void _showCleanupPending(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(
+      LocaleKeys.workspace_management_delete_cleanup_pending,
+    ),
+    variant: .info,
+  );
 }
 
 Future<void> _finishWorkspaceBulkDeletion(
@@ -1821,7 +1964,77 @@ Future<void> _finishWorkspaceBulkDeletion(
   }
 }
 
+Future<void> _performLegacyErasure(
+  _WorkspaceListActions actions,
+  CloudAccountKey key,
+  CloudWorkspaceSummary workspace,
+) async {
+  final useCases = await actions._requireCloudWorkspaceUseCases(key);
+  final status = await useCases.erase(workspace);
+  actions.ref
+    ..invalidate(cloudWorkspaceStateProvider(key))
+    ..invalidate(allWorkspacesProvider);
+  if (actions.context.mounted) {
+    _showErasureStatus(actions.context, status.state);
+  }
+}
+
+Future<bool?> _confirmLegacyErasure(
+  _WorkspaceListActions actions,
+  CloudWorkspaceSummary workspace,
+) => actions._confirmDestructive(
+  title: Text(
+    LocaleKeys.cloud_workspaces_erase_legacy_title.tr(
+      namedArgs: {'name': workspace.name},
+    ),
+  ),
+  message: const TextLocale(LocaleKeys.cloud_workspaces_erase_message),
+  actions: const AuraConfirmDialogActions(
+    confirmLabel: TextLocale(LocaleKeys.cloud_workspaces_erase),
+    cancelLabel: TextLocale(LocaleKeys.common_cancel),
+  ),
+);
+
+void _showErasureStatus(BuildContext context, String state) {
+  final complete = state == 'complete';
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: TextLocale(
+      complete
+          ? LocaleKeys.cloud_workspaces_erasure_complete
+          : LocaleKeys.cloud_workspaces_erasure_pending,
+    ),
+    variant: complete ? .success : .info,
+  );
+}
+
 extension on _WorkspaceListActions {
+  Future<void> eraseDeletedWorkspace(
+    CloudAccountKey key,
+    CloudWorkspaceSummary workspace,
+  ) async {
+    final confirmed = await _confirmLegacyErasure(this, workspace);
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await _performLegacyErasure(this, key, workspace);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
+  Future<void> retryWorkspaceErasure(
+    CloudAccountKey key,
+    String requestId,
+  ) async {
+    try {
+      final useCases = await _requireCloudWorkspaceUseCases(key);
+      final _ = await useCases.retryErasure(requestId);
+      ref.invalidate(cloudWorkspaceStateProvider(key));
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
   void retryCloudAccount(CloudAccountKey key) {
     ref
       ..invalidate(cloudAccountHealthProvider(key))
@@ -2389,12 +2602,7 @@ class const _AvailableCloudDataContent({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
-      _PendingWorkspaceInvites(
-        account: account,
-        invites: value.pendingInvites,
-        searchQuery: searchQuery,
-        actions: actions,
-      ),
+      _CloudPendingItems(data: this),
       _AvailableCloudWorkspaceList(
         account: account,
         accounts: accounts,
@@ -2407,6 +2615,182 @@ class const _AvailableCloudDataContent({
     ],
   );
 }
+
+class const _CloudPendingItems({required final _AvailableCloudDataContent data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _WorkspaceErasureStatuses(
+        account: data.account,
+        statuses: data.value.erasures,
+        deletedOwnedWorkspaces: data.value.deletedOwnedWorkspaces,
+        searchQuery: data.searchQuery,
+        actions: data.actions,
+      ),
+      _PendingWorkspaceInvites(
+        account: data.account,
+        invites: data.value.pendingInvites,
+        searchQuery: data.searchQuery,
+        actions: data.actions,
+      ),
+    ],
+  );
+}
+
+String _cloudErasureStatusAttentionKey(
+  String? failureReason,
+) => switch (failureReason) {
+  'uploadSigningOutcomeUnresolved' =>
+    LocaleKeys.cloud_workspaces_erasure_status_upload_signing_unresolved,
+  'uploadQuiescenceUnverified' =>
+    LocaleKeys.cloud_workspaces_erasure_status_upload_quiescence_unverified,
+  'legacyUploadUnverifiable' =>
+    LocaleKeys.cloud_workspaces_erasure_status_legacy_upload_unverifiable,
+  'gatewayRegistrationUnverified' =>
+    LocaleKeys.cloud_workspaces_erasure_status_gateway_registration_unverified,
+  'workspaceErasureStateUnverified' =>
+    LocaleKeys.cloud_workspaces_erasure_status_state_unverified,
+  'providerDeletionUnverified' =>
+    LocaleKeys.cloud_workspaces_erasure_status_provider_deletion_unverified,
+  _ => LocaleKeys.cloud_workspaces_erasure_status_attention,
+};
+
+class const _WorkspaceErasureStatuses({
+  required final CloudAccountSession account,
+  required final List<CloudWorkspaceErasureStatus> statuses,
+  required final List<CloudWorkspaceSummary> deletedOwnedWorkspaces,
+  required final String searchQuery,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _ActiveErasureStatuses(owner: this),
+      _DeletedOwnedWorkspaces(owner: this),
+    ],
+  );
+}
+
+class const _ActiveErasureStatuses({
+  required final _WorkspaceErasureStatuses owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      if (owner.statuses.isNotEmpty)
+        const TextLocale(LocaleKeys.cloud_workspaces_erasure_status_title),
+      for (final status in owner.statuses)
+        if (_matchesWorkspaceName(status.workspaceName, owner.searchQuery))
+          _ErasureStatusTile(
+            status: status,
+            account: owner.account,
+            actions: owner.actions,
+          ),
+    ],
+  );
+}
+
+class const _DeletedOwnedWorkspaces({
+  required final _WorkspaceErasureStatuses owner,
+}) extends StatelessWidget {
+  bool get _hasMatches => owner.deletedOwnedWorkspaces.any(_matches);
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      if (_hasMatches)
+        const TextLocale(
+          LocaleKeys.cloud_workspaces_deleted_owned_requires_erasure,
+        ),
+      for (final workspace in owner.deletedOwnedWorkspaces)
+        if (_matches(workspace))
+          _DeletedWorkspaceErasureTile(
+            workspace: workspace,
+            account: owner.account,
+            actions: owner.actions,
+          ),
+    ],
+  );
+  bool _matches(CloudWorkspaceSummary workspace) =>
+      _matchesWorkspaceName(workspace.name, owner.searchQuery);
+}
+
+class const _ErasureStatusTile({
+  required final CloudWorkspaceErasureStatus status,
+  required final CloudAccountSession account,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: AuraColumn(
+      children: [
+        Text(status.workspaceName),
+        TextLocale(_erasureStatusKey(status)),
+      ],
+      crossAxisAlignment: .start,
+    ),
+    trailing: _canRetryCloudErasure(status)
+        ? _ErasureRetryButton(
+            status: status,
+            account: account,
+            actions: actions,
+          )
+        : null,
+  );
+}
+
+class const _ErasureRetryButton({
+  required final CloudWorkspaceErasureStatus status,
+  required final CloudAccountSession account,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () =>
+        actions.retryWorkspaceErasure(account.key, status.requestId),
+    child: const TextLocale(LocaleKeys.cloud_workspaces_erasure_retry),
+  );
+}
+
+String _erasureStatusKey(CloudWorkspaceErasureStatus status) =>
+    switch (status.state) {
+      'complete' => LocaleKeys.cloud_workspaces_erasure_status_complete,
+      'needsAttention' => _cloudErasureStatusAttentionKey(status.failureReason),
+      _ => LocaleKeys.cloud_workspaces_erasure_status_pending,
+    };
+
+class const _DeletedWorkspaceErasureTile({
+  required final CloudWorkspaceSummary workspace,
+  required final CloudAccountSession account,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: AuraColumn(
+      children: [
+        Text(workspace.name),
+        const TextLocale(LocaleKeys.cloud_workspaces_deleted_owned_description),
+      ],
+      crossAxisAlignment: .start,
+    ),
+    trailing: AuraButton(
+      onPressed: () => actions.eraseDeletedWorkspace(account.key, workspace),
+      child: const TextLocale(LocaleKeys.cloud_workspaces_erase),
+    ),
+  );
+}
+
+bool _canRetryCloudErasure(CloudWorkspaceErasureStatus status) =>
+    status.state == 'needsAttention' &&
+    status.failureReason != 'uploadSigningOutcomeUnresolved' &&
+    status.failureReason != 'legacyUploadUnverifiable' &&
+    status.failureReason != 'gatewayRegistrationUnverified' &&
+    status.failureReason != 'providerDeletionUnverified' &&
+    status.failureReason != 'workspaceErasureStateUnverified';
 
 class const _PendingWorkspaceInvites({
   required final CloudAccountSession account,

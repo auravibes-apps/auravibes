@@ -35,6 +35,11 @@ export 'app_with_responsive_drawer.dart';
 /// from the auravibes_ui package.
 
 List<AuraNavigationData> _navigationItems(BuildContext context) => [
+  ..._conversationNavigationItems(context),
+  ..._workspaceNavigationItems(context),
+];
+
+List<AuraNavigationData> _conversationNavigationItems(BuildContext context) => [
   _navigationItem(
     context,
     LocaleKeys.menu_new_chat,
@@ -50,6 +55,9 @@ List<AuraNavigationData> _navigationItems(BuildContext context) => [
     LocaleKeys.navigation_connections,
     const Icon(Icons.link),
   ),
+];
+
+List<AuraNavigationData> _workspaceNavigationItems(BuildContext context) => [
   _navigationItem(
     context,
     LocaleKeys.workflows_screen_title,
@@ -66,6 +74,11 @@ List<AuraNavigationData> _navigationItems(BuildContext context) => [
     LocaleKeys.cloud_accounts_title,
     const Icon(Icons.cloud_outlined),
     footer: true,
+  ),
+  _navigationItem(
+    context,
+    LocaleKeys.workspace_items_title,
+    const Icon(Icons.folder_outlined),
   ),
 ];
 
@@ -299,22 +312,25 @@ String _navigationTarget(_NavigationTap tap) {
 
 abstract final class _NavigationTargets {
   static String forTap(_NavigationTap tap) {
-    final destination = WorkspaceDestination.values[tap.index];
     final workspaceId = tap.workspaceId;
     final navigation = _workspaceNavigation(tap);
 
-    return switch (destination) {
+    return switch (WorkspaceDestination.values[tap.index]) {
       .chats => _newChatLocation(workspaceId),
       .agentsAndSkills => _featureLocation(navigation.agentsLocation),
       .connections => _featureLocation(navigation.connectionsLocation),
       .workflows => WorkflowsRoute(workspaceId: workspaceId).location,
       .appSettings => _settingsLocation(workspaceId),
       .cloudAccounts => _cloudAccountsLocation(workspaceId),
+      .items => _itemsLocation(workspaceId),
     };
   }
 
   static String _newChatLocation(String workspaceId) =>
       NewChatRoute(workspaceId: workspaceId).location;
+
+  static String _itemsLocation(String workspaceId) =>
+      WorkspaceItemsRoute(workspaceId: workspaceId).location;
 
   static String _settingsLocation(String workspaceId) =>
       SettingsRoute(workspaceId: workspaceId).location;

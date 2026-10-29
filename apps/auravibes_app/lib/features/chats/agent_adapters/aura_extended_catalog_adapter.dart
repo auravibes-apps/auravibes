@@ -5,12 +5,12 @@ import 'dart:convert';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Adds domain-neutral Aura components implemented by the chat feature.
 List<CatalogItem> auraExtendedCatalogItems({
@@ -59,12 +59,12 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     icon: _resolveIcon(icon, data['icon']),
     tint: _tone(data['tone']),
   ),
-  'Link': (_, data) => AuraLink(
+  'Link': (context, data) => AuraLink(
     label: _string(data['label']),
     semanticLabel: _nullableString(data['semanticLabel']),
     onPressed: switch (_httpsUri(data['href'])) {
       final uri? => () => unawaited(
-        launchUrl(uri, mode: LaunchMode.externalApplication),
+        openChatExternalLink(context.buildContext, uri.toString()),
       ),
       null => null,
     },

@@ -1,8 +1,10 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing argument values intentionally repeat.
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 /// Parses a tool's composite ID and provides display-friendly formatting.
 ///
@@ -53,6 +55,9 @@ class const ToolNameFormatter._() {
     String rawName = '',
     String? mcpServerName,
   }) {
+    if (isWorkspaceToolName(rawName)) {
+      return _ResolvedToolNameFormatter.formatWorkspaceToolName(rawName);
+    }
     if (parsedId == null) return rawName.toHumanReadable();
 
     return _ResolvedToolNameFormatter.format(parsedId, mcpServerName);
@@ -70,6 +75,24 @@ class const ToolNameFormatter._() {
 }
 
 abstract final class _ResolvedToolNameFormatter {
+  static const Map<String, String> _workspaceNames = {
+    'workspace_read_directory': LocaleKeys.workspace_tool_names_read_directory,
+    'workspace_read_item': LocaleKeys.workspace_tool_names_open_file_or_view,
+    'workspace_read_table': LocaleKeys.workspace_tool_names_read_table,
+    'workspace_create_folder': LocaleKeys.workspace_tool_names_create_folder,
+    'workspace_rename_folder': LocaleKeys.workspace_tool_names_rename_folder,
+    'workspace_create_table': LocaleKeys.workspace_tool_names_create_table,
+    'workspace_rename_table': LocaleKeys.workspace_tool_names_rename_table,
+    'workspace_add_row': LocaleKeys.workspace_tool_names_add_row,
+    'workspace_update_record': LocaleKeys.workspace_tool_names_update_row,
+    'workspace_save_column': LocaleKeys.workspace_tool_names_edit_column,
+    'workspace_create_view': LocaleKeys.workspace_tool_names_create_view,
+    'workspace_save_view': LocaleKeys.workspace_tool_names_edit_view,
+  };
+
+  static String formatWorkspaceToolName(String toolIdentifier) =>
+      _formatToolName(toolIdentifier);
+
   static String format(AgentResolvedToolName parsedId, String? mcpServerName) {
     final toolIdentifier = parsedId.toolIdentifier;
     final kind = parsedId.kind;
@@ -117,5 +140,5 @@ abstract final class _ResolvedToolNameFormatter {
       '${skillSlug.toHumanReadable()}: ${_formatToolName(toolIdentifier)}';
 
   static String _formatToolName(String toolIdentifier) =>
-      toolIdentifier.toHumanReadable();
+      _workspaceNames[toolIdentifier]?.tr() ?? toolIdentifier.toHumanReadable();
 }

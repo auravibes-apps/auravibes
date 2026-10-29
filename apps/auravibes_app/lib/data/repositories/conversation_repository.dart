@@ -6,8 +6,10 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 
@@ -270,13 +272,19 @@ extension on ConversationRepository {
       id,
       includeDescendantAttachmentPaths,
     );
-    final deleted = await _database.transaction(
+    final deleted = await _deleteWithAssetRetention(
+      id,
       () => _materializeAndDelete(id, frozenForkBoundaries),
     );
     if (deleted) await _deleteUnusedAttachments(attachmentPaths);
 
     return deleted;
   }
+
+  Future<bool> _deleteWithAssetRetention(
+    String id,
+    Future<bool> Function() action,
+  ) => LocalWorkspaceAssetMutation(_database).conversation(id, action);
 
   Future<Set<String>> _attachmentPathsForDeletionMode(
     String id,
@@ -883,9 +891,8 @@ extension on ConversationRepository {
     Map<String, Set<String>> detachedToolCallIds,
   ) async {
     final messageId = const UuidV7().generate();
-    final metadata = _metadataWithoutDetachedBackgroundCalls(
-      row.table,
-      detachedToolCallIds,
+    final metadata = _redactForkWorkspaceMetadata(
+      _metadataWithoutDetachedBackgroundCalls(row.table, detachedToolCallIds),
     );
     final _ = await _database
         .into(_database.messages)
@@ -893,6 +900,15 @@ extension on ConversationRepository {
     await _copyForkAttachments(row.table.id, messageId);
 
     return messageId;
+  }
+
+  String? _redactForkWorkspaceMetadata(String? raw) {
+    if (raw == null) return null;
+    final metadata = MessageMetadataEntity.fromJsonString(raw);
+    if (metadata == null) return raw;
+    final redacted = redactInheritedWorkspaceToolMetadata(metadata);
+
+    return identical(redacted, metadata) ? raw : jsonEncode(redacted.toJson());
   }
 
   Future<Map<String, Set<String>>> _detachedForkToolCallIds(
@@ -1011,17 +1027,13 @@ extension on ConversationRepository {
   MessageAttachmentsCompanion _forkAttachmentCompanion(
     MessageAttachmentsTable attachment,
     String messageId,
-  ) => MessageAttachmentsCompanion.insert(
-    createdAt: .new(attachment.createdAt),
-    updatedAt: .new(attachment.updatedAt),
-    messageId: messageId,
-    localPath: attachment.localPath,
-    fileName: attachment.fileName,
-    displayName: .new(attachment.displayName),
-    mimeType: attachment.mimeType,
-    modality: attachment.modality,
-    sizeBytes: attachment.sizeBytes,
-  ).copyWith(id: .new(const UuidV7().generate()));
+  ) => attachment
+      .toCompanion(true)
+      .copyWith(
+        id: .new(const UuidV7().generate()),
+        messageId: .new(messageId),
+        toolCallId: const .new(null),
+      );
 
   void _validateMaterializedBoundary(String? boundary, String? mappedBoundary) {
     if (boundary != null && mappedBoundary == null) _throwInvalidForkBoundary();

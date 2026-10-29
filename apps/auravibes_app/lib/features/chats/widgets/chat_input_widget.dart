@@ -1,7 +1,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: UI callbacks stay local to their widgets.
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -11,8 +10,12 @@ import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usec
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_asset_chooser.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -21,21 +24,15 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_file_drop/flutter_file_drop.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
-import 'package:super_clipboard/super_clipboard.dart';
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 final _logger = Logger('chat_input_widget');
-
-final List<DataFormat<Object>> _chatInputDropFormats = [
-  Formats.fileUri,
-  ...Formats.standardFormats.whereType<FileFormat>(),
-];
 
 const double _chatInputHorizontalPadding = 16;
 const double _chatInputVerticalPadding = 8;
@@ -392,6 +389,7 @@ Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {
 }
 
 typedef _ChatInputAttachmentCapabilities = ({
+  bool supportsExisting,
   bool supportsLocalAttachments,
   bool supportsAudio,
   bool supportsImage,
@@ -443,6 +441,14 @@ abstract final class _ChatInputCapabilitiesFactory {
   static _ChatInputAttachmentCapabilities _createAttachmentCapabilitiesFrom(
     _ChatInputAttachmentCapabilitiesRequest request,
   ) => (
+    supportsExisting:
+        request.supportsAttachments == true &&
+        MessageAttachmentModality.values.any(
+          (modality) => ChatAttachmentModality.supports(
+            modality,
+            request.modalitiesInput,
+          ),
+        ),
     supportsLocalAttachments: request.supportsLocalAttachments,
     supportsAudio: _supportsChatInputAudio(request),
     supportsImage: _supportsChatInputImage(request),
@@ -624,15 +630,14 @@ class const _ChatInputDropStack({
   );
 }
 
-void _handleChatInputDropOver(
-  _ChatInputState state,
+void _handleChatInputDropPreview(
   ValueNotifier<bool> isActive,
   ValueNotifier<bool> isHovered,
-  MonitorDropOverEvent event,
+  DropPreview preview,
 ) {
-  final canAccept = _canAcceptChatInputDrop(state, event.session);
-  isActive.value = canAccept;
-  isHovered.value = canAccept && event.isInside;
+  final hasFiles = preview.items.any((item) => item.kind == DropItemKind.file);
+  isActive.value = hasFiles;
+  isHovered.value = hasFiles;
 }
 
 void _clearChatInputDropState(
@@ -643,143 +648,64 @@ void _clearChatInputDropState(
   isHovered.value = false;
 }
 
-DropOperation _chatInputDropOperation(
-  _ChatInputState state,
-  DropOverEvent event,
-) => _canAcceptChatInputDrop(state, event.session)
-    ? DropOperation.copy
-    : DropOperation.none;
-
-bool _canAcceptChatInputDrop(_ChatInputState state, DropSession session) =>
-    (!state.input.disabled || state.input.acceptDroppedFilesWhenDisabled) &&
-    session.allowedOperations.contains(DropOperation.copy) &&
-    session.items.any((item) => _chatInputDropFormats.any(item.canProvide));
-
 Future<void> _handleChatInputDrop(
   _ChatInputState state,
-  PerformDropEvent event,
+  DropResult result,
 ) async {
-  for (final item in event.session.items) {
-    if (!_chatInputDropFormats.any(item.canProvide)) continue;
+  if (!state.capabilities.supportsDrop ||
+      (state.input.disabled && !state.input.acceptDroppedFilesWhenDisabled)) {
+    return;
+  }
+
+  for (final resultItem in result.items) {
+    final item = resultItem.item;
+    if (!resultItem.accepted || item is! DropFile) continue;
 
     await _addDroppedChatFile(state, item);
   }
 }
 
-Future<void> _addDroppedChatFile(_ChatInputState state, DropItem item) async {
+Future<void> _addDroppedChatFile(_ChatInputState state, DropFile file) async {
   try {
-    final file = await _readDroppedChatFile(item);
-    if (file == null || !state.actions.ref.context.mounted) return;
-
-    await state.actions.addDroppedFile(file.bytes, fileName: file.fileName);
+    await _readAndAttachDroppedChatFile(state, file);
+  } on DropFileReadException catch (error, stackTrace) {
+    _handleDroppedChatFileReadError(state, error, stackTrace);
   } on Object catch (error, stackTrace) {
-    _handleDroppedChatFileError(state, error, stackTrace);
+    _logger.warning('Failed to attach dropped file', error, stackTrace);
   }
 }
 
-void _handleDroppedChatFileError(
+Future<void> _readAndAttachDroppedChatFile(
   _ChatInputState state,
-  Object error,
+  DropFile file,
+) async {
+  final bytes = await file.readAsBytes(
+    maxBytes: ChatAttachmentModality.maxChatAttachmentBytes,
+  );
+  if (!state.actions.ref.context.mounted) return;
+
+  await state.actions.addDroppedFile(
+    bytes,
+    fileName: file.name ?? 'attachment',
+  );
+}
+
+void _handleDroppedChatFileReadError(
+  _ChatInputState state,
+  DropFileReadException error,
   StackTrace stackTrace,
 ) {
-  if (error case ChatAttachmentTooLargeException()) {
-    state.actions._showAttachmentError(error.localizationKey);
+  if (error.reason == DropFileReadFailure.maxBytesExceeded) {
+    if (state.actions.ref.context.mounted) {
+      state.actions._showAttachmentError(
+        const ChatAttachmentTooLargeException().localizationKey,
+      );
+    }
 
     return;
   }
 
-  _logger.warning('Failed to attach dropped file', error, stackTrace);
-}
-
-typedef _DroppedChatFile = ({String fileName, Uint8List bytes});
-
-Future<_DroppedChatFile?> _readDroppedChatFile(DropItem item) {
-  final reader = item.dataReader;
-  if (reader == null) return Future.value();
-
-  return _readDroppedChatFileFromReader(reader);
-}
-
-Future<_DroppedChatFile?> _readDroppedChatFileFromReader(DataReader reader) {
-  final completer = Completer<_DroppedChatFile?>();
-  final progress = reader.getFile(
-    null,
-    (file) => _completeDroppedChatFile(reader, file, completer),
-    onError: (error) => _completeDroppedChatFileError(completer, error),
-  );
-  if (progress == null) return Future.value();
-
-  return completer.future;
-}
-
-Future<void> _completeDroppedChatFile(
-  DataReader reader,
-  DataReaderFile file,
-  Completer<_DroppedChatFile?> completer,
-) async {
-  try {
-    final bytes = await _readDroppedChatFileBytes(file);
-    final fileName = await _droppedChatFileName(reader, file);
-    completer.complete((fileName: fileName, bytes: bytes));
-  } on Object catch (error, stackTrace) {
-    _completeDroppedChatFileError(completer, error, stackTrace);
-  }
-}
-
-Future<Uint8List> _readDroppedChatFileBytes(DataReaderFile file) async {
-  _ensureDroppedChatFileFits(file);
-
-  final builder = BytesBuilder(copy: false);
-  await for (final chunk in file.getStream()) {
-    _addDroppedChatFileChunk(file, builder, chunk);
-  }
-
-  return builder.takeBytes();
-}
-
-void _ensureDroppedChatFileFits(DataReaderFile file) {
-  final fileSize = file.fileSize;
-  if (fileSize == null ||
-      fileSize <= ChatAttachmentModality.maxChatAttachmentBytes) {
-    return;
-  }
-
-  final _ = file.close();
-  throw const ChatAttachmentTooLargeException();
-}
-
-void _addDroppedChatFileChunk(
-  DataReaderFile file,
-  BytesBuilder builder,
-  Uint8List chunk,
-) {
-  if (builder.length + chunk.length >
-      ChatAttachmentModality.maxChatAttachmentBytes) {
-    final _ = file.close();
-    throw const ChatAttachmentTooLargeException();
-  }
-
-  builder.add(chunk);
-}
-
-Future<String> _droppedChatFileName(
-  DataReader reader,
-  DataReaderFile file,
-) async {
-  final suggestedName =
-      file.fileName ?? await reader.getSuggestedName() ?? 'attachment';
-  final baseName = p.posix.basename(suggestedName.replaceAll(r'\', '/'));
-
-  return baseName.isEmpty || baseName == '.' ? 'attachment' : baseName;
-}
-
-void _completeDroppedChatFileError(
-  Completer<_DroppedChatFile?> completer,
-  Object error, [
-  StackTrace? stackTrace,
-]) {
-  if (completer.isCompleted) return;
-  completer.completeError(error, stackTrace);
+  _logger.warning('Failed to read dropped file', error, stackTrace);
 }
 
 class const _ChatInputGestureDetector({required final _ChatInputState state})
@@ -1050,38 +976,34 @@ class const _ChatInputDropTarget({
     final isActive = useState(false);
     final isHovered = useState(false);
 
-    return _ChatInputDropMonitor(
+    return _ChatInputDropRegion(
       state: state,
       child: _ChatInputDropStack(
         child: child,
         isActive: isActive.value,
         isHighlighted: isHovered.value,
       ),
-      onDropOver: (event) =>
-          _handleChatInputDropOver(state, isActive, isHovered, event),
-      onDropEnd: () => _clearChatInputDropState(isActive, isHovered),
+      onPreview: (preview) =>
+          _handleChatInputDropPreview(isActive, isHovered, preview),
+      onLeave: () => _clearChatInputDropState(isActive, isHovered),
     );
   }
 }
 
-class const _ChatInputDropMonitor({
+class const _ChatInputDropRegion({
   required final _ChatInputState state,
   required final Widget child,
-  required final ValueChanged<MonitorDropOverEvent> onDropOver,
-  required final VoidCallback onDropEnd,
+  required final ValueChanged<DropPreview> onPreview,
+  required final VoidCallback onLeave,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => DropMonitor(
-    child: DropRegion(
-      child: child,
-      formats: _chatInputDropFormats,
-      onDropOver: (event) => _chatInputDropOperation(state, event),
-      onPerformDrop: (event) => _handleChatInputDrop(state, event),
-    ),
-    formats: _chatInputDropFormats,
-    onDropOver: onDropOver,
-    onDropLeave: (_) => onDropEnd(),
-    onDropEnded: (_) => onDropEnd(),
+  Widget build(BuildContext context) => DropTarget(
+    child: child,
+    constraints: .new(allowedKinds: const {.file}),
+    onEnter: onPreview,
+    onMove: onPreview,
+    onLeave: onLeave,
+    onDrop: (result) => _handleChatInputDrop(state, result),
   );
 }
 
@@ -1291,6 +1213,7 @@ extension _ChatInputDraftActions on _ChatInputActions {
   }
 
   void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
+    if (attachment.assetId != null) return;
     unawaited(_attachmentUsecase.deleteAttachment(attachment.localPath));
   }
 
@@ -1364,15 +1287,29 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
 
   Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
     if (!ref.context.mounted) {
-      await _attachmentUsecase.deleteAttachment(attachment.localPath);
+      await _discardDetachedAttachment(attachment);
 
       return;
     }
 
     if (!_canAddAttachment(attachment)) return;
+    if (_alreadySelectedAsset(attachment)) return;
 
     _draft.attachments.value = [..._draft.attachments.value, attachment];
   }
+
+  Future<void> _discardDetachedAttachment(
+    MessageAttachmentToCreate attachment,
+  ) async {
+    if (attachment.assetId != null) return;
+    await _attachmentUsecase.deleteAttachment(attachment.localPath);
+  }
+
+  bool _alreadySelectedAsset(MessageAttachmentToCreate attachment) =>
+      attachment.assetId != null &&
+      _draft.attachments.value.any(
+        (value) => value.assetId == attachment.assetId,
+      );
 
   bool _canAddAttachment(MessageAttachmentToCreate attachment) {
     if (input.acceptDroppedFilesWhenDisabled ||
@@ -1479,6 +1416,41 @@ extension _ChatInputFileActions on _ChatInputActions {
       input.modalitiesInput,
       mimeType: attachment.mimeType,
     );
+  }
+}
+
+extension _ChatInputExistingAssets on _ChatInputActions {
+  void selectExistingAsset() => unawaited(_selectExistingAsset());
+
+  Future<void> _selectExistingAsset() async {
+    final context = ref.context;
+    try {
+      final asset = await _chooseExistingAsset(context);
+      if (asset == null || !context.mounted) return;
+      await _addExistingAsset(asset, context);
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Existing asset selection failed', error, stackTrace);
+      if (!context.mounted) return;
+      _showAttachmentError(_existingAssetError(error));
+    }
+  }
+
+  Future<WorkspaceAsset?> _chooseExistingAsset(BuildContext context) =>
+      showDialog<WorkspaceAsset>(
+        context: context,
+        builder: (_) => WorkspaceAssetChooser(workspaceId: input.workspaceId),
+      );
+
+  Future<void> _addExistingAsset(
+    WorkspaceAsset asset,
+    BuildContext context,
+  ) async {
+    final select = await ref.read(
+      selectWorkspaceAssetAttachmentProvider(input.workspaceId).future,
+    );
+    final attachment = await select(asset.id);
+    if (!context.mounted) return;
+    await _addAttachment(attachment);
   }
 }
 
@@ -1943,10 +1915,20 @@ List<AuraPopupMenuItem> _attachmentMenuItems(_ChatInputState state) => [
 ];
 
 List<AuraPopupMenuItem> _attachmentPickerItems(_ChatInputState state) => [
+  _existingAssetMenuItem(state),
   _fileMenuItem(state),
   ..._photoMenuItems(state),
   ..._cameraMenuItems(state),
 ];
+
+AuraPopupMenuItem _existingAssetMenuItem(_ChatInputState state) =>
+    _ChatInputAttachmentMenuFactory.item((
+      titleKey: LocaleKeys.workspace_assets_existing,
+      icon: Icons.folder_outlined,
+      enabled: state.capabilities.attachments.supportsExisting,
+      reasonKey: _modelAttachmentReasonKey(.file),
+      onTap: state.actions.selectExistingAsset,
+    ));
 
 AuraPopupMenuItem _fileMenuItem(_ChatInputState state) =>
     _ChatInputAttachmentMenuFactory.item((
@@ -2806,3 +2788,8 @@ String _findAvailableAttachmentName(
     index += 1;
   }
 }
+
+String _existingAssetError(Object error) => switch (error) {
+  final WorkspaceAssetException error => error.localizationKey,
+  _ => CloudAppErrors.localizationKey(error),
+};

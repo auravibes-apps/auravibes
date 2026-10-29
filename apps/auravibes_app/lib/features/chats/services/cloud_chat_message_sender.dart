@@ -154,9 +154,7 @@ extension on CloudChatMessageSender {
 
 extension on CloudChatMessageSender {
   Future<void> _deleteUploaded(_QueueMessageInput input) async {
-    await input.payload.attachments?.deleteUploaded(
-      input.payload.uploadedObjects,
-    );
+    await input.payload.attachments?.deleteUploaded(_ownedUploads(input));
   }
 
   Future<ConversationSnapshot> _queueMessageWithoutCleanup(
@@ -246,4 +244,15 @@ extension on CloudChatMessageSender {
       'activeExecutionId=${execution.activeExecution?.id}.',
     );
   }
+}
+
+List<ObjectResult> _ownedUploads(_QueueMessageInput input) {
+  final existing = input.payload.draft.attachments
+      .map((attachment) => attachment.assetId)
+      .whereType<String>()
+      .toSet();
+
+  return input.payload.uploadedObjects
+      .where((object) => !existing.contains('${object.objectId}'))
+      .toList();
 }

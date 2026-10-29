@@ -6,12 +6,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
   desktop_webview_window
   file_selector_linux
+  flutter_file_drop_linux
   flutter_inappwebview_linux_fx
   flutter_secure_storage_linux
-  irondash_engine_context
   media_kit_libs_linux
   record_linux
-  super_native_extensions
   url_launcher_linux
   window_to_front
 )

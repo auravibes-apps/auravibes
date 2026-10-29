@@ -31,7 +31,7 @@ void main() {
                         children: [
                           WorkspaceSetupContent(
                             taskId: task,
-                            onCreated: (_) =>
+                            onCompleted: (_) =>
                                 fail('auth must not create a workspace'),
                             key: ValueKey<int>(mounts),
                           ),

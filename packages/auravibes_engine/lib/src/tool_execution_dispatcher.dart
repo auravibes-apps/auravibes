@@ -8,6 +8,7 @@ enum AgentToolResultStatus {
   success,
   toolNotFound,
   executionError,
+  uncertain,
   disabledInConversation,
   disabledByAgent,
   disabledInWorkspace,
@@ -25,7 +26,11 @@ extension AgentToolResultStatusX on AgentToolResultStatus {
   String get modelFallback => switch (this) {
     .success => '',
     .toolNotFound => 'Tool not found.',
-    .executionError => 'Tool execution failed.',
+    .executionError =>
+      'Tool execution failed. Read the tool error and use a corrected request '
+          'or a different approach.',
+    .uncertain =>
+      'Write outcome is uncertain. Do not retry before reconciliation.',
     .disabledInConversation => 'Tool is disabled for this conversation.',
     .disabledByAgent => 'Tool is denied by the selected agent.',
     .disabledInWorkspace => 'Tool is disabled in workspace.',
@@ -60,6 +65,8 @@ class const AgentToolExecutionFailure({
   required final Object error,
   required final StackTrace stackTrace,
   required final String failurePhase,
+  final AgentToolResultStatus resultStatus =
+      AgentToolResultStatus.executionError,
 }) implements Exception;
 
 typedef AgentToolExecutionErrorRequest<TTool extends Object> = ({
@@ -172,7 +179,10 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
 
       return const AgentToolExecutionResult(
         resultStatus: .executionError,
-        responseRaw: 'Tool execution failed.',
+        responseRaw:
+            '{"outcome":"failed","code":"invalid_request","error":"Tool '
+            'rejected the request format.","nextAction":"Check this tool\'s '
+            'schema and send a corrected request."}',
       );
     } on AgentToolExecutionFailure catch (failure) {
       logToolExecutionError((
@@ -191,7 +201,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
               outputPolicyForTool?.call(tool) ?? const AgentToolOutputPolicy(),
         );
         return AgentToolExecutionResult(
-          resultStatus: .executionError,
+          resultStatus: failure.resultStatus,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
           outputTruncated: projection.truncated,
@@ -201,7 +211,13 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
           fullOutputForContext: projection.fullOutputForContext,
         );
       } on Object {
-        return const AgentToolExecutionResult(resultStatus: .executionError);
+        return const AgentToolExecutionResult(
+          resultStatus: .executionError,
+          responseRaw:
+              '{"outcome":"failed","code":"execution_error","error":"Tool '
+              'returned an unreadable error result.","nextAction":"Use a '
+              'different approach; do not repeat the unchanged request."}',
+        );
       }
     } on Object catch (error, stackTrace) {
       logToolExecutionError((
@@ -213,7 +229,14 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: null,
       ));
 
-      return const AgentToolExecutionResult(resultStatus: .executionError);
+      return const AgentToolExecutionResult(
+        resultStatus: .executionError,
+        responseRaw:
+            '{"outcome":"failed","code":"execution_error","error":"Tool '
+            'could not complete the request.","nextAction":"Check the tool '
+            'result and try a different approach; '
+            'do not repeat the unchanged request."}',
+      );
     }
   }
 }

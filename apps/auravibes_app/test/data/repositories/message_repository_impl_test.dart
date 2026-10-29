@@ -608,6 +608,103 @@ void main() {
       },
     );
 
+    Future<void> verifyWorkspaceReadRedaction() async {
+      for (final arguments in [
+        '{"action":"read","id":"file"}',
+        '{}',
+        'not-json',
+      ]) {
+        final created = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: .text,
+            isUser: false,
+            status: .unfinished,
+            metadata: jsonEncode(
+              MessageMetadataEntity(
+                toolCalls: [
+                  MessageToolCallEntity(
+                    id: 'file-read',
+                    name: 'workspace_read_item',
+                    argumentsRaw: arguments,
+                    resultStatus: .running,
+                  ),
+                ],
+              ).toJson(),
+            ),
+          ),
+        );
+        await repository.persistToolCallBatchResults([
+          ToolCallExecutionBatchUpdate(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'file-read',
+            resultStatus: .success,
+            responseRaw: '{"content":"private bytes"}',
+            responseContextRaw: '{"content":"private bytes"}',
+          ),
+        ]);
+        final saved = await repository.getMessageById(created.id);
+        expect(
+          saved?.metadata?.toolCalls.single.responseRaw,
+          '{"redacted":true}',
+        );
+        expect(
+          saved?.metadata?.toolCalls.single.responseContextRaw,
+          '{"redacted":true}',
+        );
+        expect(
+          jsonEncode(saved?.metadata?.toJson()),
+          isNot(contains('private bytes')),
+        );
+      }
+    }
+
+    test(
+      'batch persistence redacts workspace read output with missing or '
+      'malformed actions',
+      verifyWorkspaceReadRedaction,
+    );
+
+    test('message create and patch redact workspace read results', () async {
+      const metadata = MessageMetadataEntity(
+        toolCalls: [
+          MessageToolCallEntity(
+            id: 'read',
+            name: 'workspace_read_item',
+            argumentsRaw: '{"action":"read","id":"file"}',
+            responseRaw: '{"content":"private bytes"}',
+          ),
+        ],
+      );
+      final created = await repository.createMessage(
+        .new(
+          conversationId: 'conv-1',
+          content: 'tool result',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          metadata: jsonEncode(metadata.toJson()),
+        ),
+      );
+      final first = await repository.getMessageById(created.id);
+      expect(
+        jsonEncode(first?.metadata?.toJson()),
+        isNot(contains('private bytes')),
+      );
+      final _ = await repository.patchMessage(
+        created.id,
+        const .new(metadata: metadata),
+        conversationId: 'conv-1',
+      );
+      final second = await repository.getMessageById(created.id);
+      expect(
+        jsonEncode(second?.metadata?.toJson()),
+        isNot(contains('private bytes')),
+      );
+    });
+
     test('claimToolCallBatch is idempotent for repeated submissions', () async {
       const toolCall = MessageToolCallEntity(
         id: 'tool-1',

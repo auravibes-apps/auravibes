@@ -39,6 +39,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | Workspace bootstrap     | `python3 tool/validation_lease.py -- fvm dart run melos bootstrap` |
 | App/UI focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm flutter test test/path/to/file_test.dart --no-pub` from target package |
 | App fatal analyzer      | `python3 tool/validation_lease.py -- fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
+| Local server integration | `fvm dart run melos run test:integration` (entrypoint owns the lease; no outer lease) |
 | Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
 | Changed Dart preflight  | `python3 tool/validation_lease.py -- fvm dart run melos run validate:changed` |
 | Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
@@ -48,7 +49,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 - Script definitions and package filters live in root `pubspec.yaml`.
 - For a new checkout or worktree, use the `fvm use` command above, then bootstrap before running `--no-pub` checks.
-- Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
+- Run local test, analyzer, code generation, bootstrap, and workspace validation commands through `tool/validation_lease.py`. Use the table’s self-leasing form for local server integration. From a package directory, use its absolute path via `$(git rev-parse --show-toplevel)`.
 - The lease serializes validation only within the current worktree. Other worktrees and clones run independently. `python3 tool/agent_worktree.py status` reports worktrees and the current worktree's active lease owner.
 - Temp-volume stats are advisory; quotas and container limits may still reject writes.
 
@@ -99,7 +100,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 
 ## Skill routing
 - When verified feedback exposes a reusable guidance gap, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing instructions, skills, or harness checks. Routine tasks need no guidance audit.
-- UX clarity: for new views, changed task flows, or visual regression work, load `.agents/skills/ux-view-clarity/SKILL.md`; for an existing-flow audit, load `.agents/skills/ux-task-audit/SKILL.md`. For local spacing or copy edits, check purpose, next action, recovery, and localization directly without loading a flow skill.
+- UI/UX is automatic: before implementing any user-visible surface in app, shared UI, or Widgetbook work, load `.agents/skills/ux-view-clarity/SKILL.md`, even when the request only names a feature and never says design or UX. Apply its visual-quality baseline; use its short path for local edits. No explicit skill invocation is needed. For review-only visual or task-flow critiques, load `.agents/skills/ux-task-audit/SKILL.md`; use both only for an audit followed by requested UI changes. Use Aura defaults, but propose shared-UI or identity improvements when they better serve the task; avoid marketing-site styling by default.
 - UI automation: use only browser/desktop controls the user named or approved. If unavailable or unclear, ask or give manual steps instead of substituting another tool.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
@@ -113,7 +114,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
 - Local commits do not publish changes and need no separate user authorization; `git push` and `gh pr merge` require explicit user authorization.
 - If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
-- Before pushing code changes for review, run `python3 tool/validation_lease.py -- fvm dart run melos run validate:pr`. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
+- Before pushing code changes for review, run the smallest scope-appropriate local checks from the validation policy. Report checks that ran and any gaps. GitHub's required checks remain mandatory.
 
 ## Agent skills
 

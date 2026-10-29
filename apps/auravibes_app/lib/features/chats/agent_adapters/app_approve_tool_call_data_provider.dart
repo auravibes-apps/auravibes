@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
@@ -503,9 +504,11 @@ List<MessageToolCallEntity> _updatedToolCalls(
 MessageToolCallEntity _updatedToolCall(
   MessageToolCallEntity toolCall,
   _ToolCallPatchRequest request,
-) => _applyToolCallPatch(
-  toolCall.copyWith(resultStatus: request.resultStatus),
-  request,
+) => sanitizeWorkspaceToolResult(
+  _applyToolCallPatch(
+    toolCall.copyWith(resultStatus: request.resultStatus),
+    request,
+  ),
 );
 
 MessageToolCallEntity _applyToolCallPatch(

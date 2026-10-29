@@ -130,6 +130,7 @@ abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
     required int sizeBytes,
     required DateTime createdAt,
     required DateTime updatedAt,
+    String? assetId,
     String? toolCallId,
   }) = _MessageAttachmentEntity;
 }
@@ -146,6 +147,7 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
     required String mimeType,
     required MessageAttachmentModality modality,
     required int sizeBytes,
+    String? assetId,
     String? toolCallId,
   }) = _MessageAttachmentToCreate;
 }
@@ -167,6 +169,14 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     int? totalTokens,
     String? thinking,
     @Default(<String, Object?>{}) Map<String, Object?> modelMetadata,
+    // Read-only cloud projection. ObjectReference remains authoritative.
+    @JsonKey(
+      name: 'attachmentIds',
+      fromJson: _readCloudAttachmentAssetIds,
+      includeToJson: false,
+    )
+    @Default(<String>[])
+    List<String> cloudAssetIds,
     @Default(<String>[]) List<String> a2uiMessages,
     @Default(<String, List<String>>{})
     Map<String, List<String>> a2uiIssuesBySurface,
@@ -216,8 +226,21 @@ MessageMetadataEntity _metadataFromDecodedJson(Map<String, dynamic> json) {
 
   return MessageMetadataEntity(
     modelMetadata: {a2uiChatActionMetadataKey: action.toJson()},
+    cloudAssetIds: _readCloudAttachmentAssetIds(json['attachmentIds']),
   );
 }
+
+List<String> _readCloudAttachmentAssetIds(Object? value) {
+  if (value is! List) return [];
+
+  return value.where(_cloudAssetId).map((id) => '$id').toSet().toList();
+}
+
+bool _cloudAssetId(Object? id) => switch (id) {
+  final int value => value > 0,
+  final String value => RegExp(r'^[1-9][0-9]*$').hasMatch(value),
+  _ => false,
+};
 
 /// Entity representing a message in a conversation.
 ///

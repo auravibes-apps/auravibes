@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -41,8 +43,297 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 34);
+      expect(fixture.database.schemaVersion, 47);
     });
+
+    test('schema41 assets survive context and reporting migrations', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 41
+        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+        ..execute('''
+          CREATE TABLE workspace_revisions (
+            workspace_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            resource_id TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            captured_at INTEGER NOT NULL,
+            PRIMARY KEY (workspace_id, kind, resource_id, revision)
+          )
+        ''')
+        ..execute('INSERT INTO workspace_revisions VALUES (?,?,?,?,?,?)', [
+          'existing',
+          'table',
+          'older',
+          1,
+          '{"name":"Kept"}',
+          1,
+        ])
+        ..execute('''
+          CREATE TABLE workspace_history_policies (
+            workspace_id TEXT NOT NULL PRIMARY KEY,
+            days INTEGER,
+            revision INTEGER NOT NULL DEFAULT 1
+          )
+        ''')
+        ..execute(
+          'CREATE TABLE conversations '
+          '(id TEXT PRIMARY KEY, workspace_id TEXT)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?,?)', [
+          'chat',
+          'existing',
+        ])
+        ..execute(
+          'CREATE TABLE workspace_assets '
+          '(id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT)',
+        )
+        ..execute('INSERT INTO workspace_assets VALUES (?,?,?)', [
+          'asset',
+          'existing',
+          'Retained',
+        ])
+        ..execute(
+          'CREATE TABLE workspace_files '
+          '(id TEXT PRIMARY KEY, asset_id TEXT)',
+        )
+        ..execute('INSERT INTO workspace_files VALUES (?,?)', ['file', 'asset'])
+        ..execute(
+          'CREATE TABLE workspace_asset_deletions '
+          '(asset_id TEXT PRIMARY KEY)',
+        )
+        ..execute('INSERT INTO workspace_asset_deletions VALUES (?)', [
+          'retry',
+        ]);
+      _createHistorySources(sqliteDb);
+      sqliteDb
+        ..execute('ALTER TABLE message_attachments ADD COLUMN asset_id TEXT')
+        ..execute('INSERT INTO message_attachments VALUES (?,?)', [
+          'attachment',
+          'asset',
+        ]);
+      final database = AppDatabase(connection: NativeDatabase.opened(sqliteDb));
+      addTearDown(database.close);
+      final retained = await database
+          .customSelect(
+            'SELECT a.name, f.asset_id FROM workspace_assets a '
+            'JOIN workspace_files f ON f.asset_id = a.id',
+          )
+          .getSingle();
+      expect(retained.read<String>('name'), 'Retained');
+      expect(retained.read<String>('asset_id'), 'asset');
+      expect(sqliteDb.userVersion, 46);
+      final revision = await database
+          .customSelect(
+            '''
+        SELECT data, actor_user_id, ai_involved, operation, conversation_id
+        FROM workspace_revisions
+        WHERE workspace_id = ? AND kind = ? AND resource_id = ? AND revision = ?
+      ''',
+            variables: [
+              const Variable<String>('existing'),
+              const Variable<String>('table'),
+              const Variable<String>('older'),
+              const Variable<int>(1),
+            ],
+          )
+          .getSingle();
+      expect(revision.read<String>('data'), '{"name":"Kept"}');
+      expect(revision.read<String?>('actor_user_id'), isNull);
+      expect(revision.read<bool?>('ai_involved'), isNull);
+      expect(revision.read<String?>('operation'), isNull);
+      expect(revision.read<String?>('conversation_id'), isNull);
+      expect(
+        (await database.select(database.workspaceAssetDeletions).get())
+            .single
+            .assetId,
+        'retry',
+      );
+      expect(
+        (await database.select(database.workspaceAssetDeletions).get())
+            .single
+            .workspaceId,
+        isNull,
+      );
+      expect(
+        await database.select(database.workspaceContextSelections).get(),
+        isEmpty,
+      );
+      expect(
+        await database.select(database.workspaceCommandReceipts).get(),
+        isEmpty,
+      );
+      expect(
+        await database.select(database.workspaceAttachmentDeletions).get(),
+        isEmpty,
+      );
+      final attachment = await database
+          .customSelect(
+            'SELECT asset_id FROM message_attachments WHERE id = ?',
+            variables: [const Variable<String>('attachment')],
+          )
+          .getSingle();
+      expect(attachment.read<String>('asset_id'), 'asset');
+    });
+
+    test(
+      'schema39 migration preserves records and captures later revisions',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 39
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        _createHistorySources(sqliteDb);
+        sqliteDb
+          ..execute('INSERT INTO message_attachments VALUES (?)', ['legacy'])
+          ..execute(
+            'INSERT INTO workspace_tables VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            [
+              'table',
+              'existing',
+              'Data',
+              null,
+              'label',
+              '[]',
+              1,
+              1,
+              null,
+              0,
+              0,
+            ],
+          )
+          ..execute(
+            'INSERT INTO workspace_table_records VALUES (?,?,?,?,?,?,?,?)',
+            ['record', 'existing', 'table', '{}', 1, null, 0, 0],
+          );
+        final database = _MigrationAppDatabase<_MigrationCaseHistory>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final legacyAttachment = await database
+            .customSelect(
+              'SELECT id, asset_id FROM message_attachments WHERE id = ?',
+              variables: [const Variable<String>('legacy')],
+            )
+            .getSingle();
+        expect(legacyAttachment.read<String>('id'), 'legacy');
+        expect(legacyAttachment.data['asset_id'], isNull);
+
+        expect(
+          await database.select(database.workspaceRevisions).get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.workspaceHistoryPolicies).get(),
+          isEmpty,
+        );
+        await database.customStatement(
+          'UPDATE workspace_table_records '
+          'SET values_json = ?, revision = 2 WHERE id = ?',
+          [
+            jsonEncode({'label': 'Changed'}),
+            'record',
+          ],
+        );
+        final rows = await database.select(database.workspaceRevisions).get();
+        expect(rows.map((row) => row.revision), [1, 2]);
+        expect(rows.map((row) => row.workspaceId), everyElement('existing'));
+        expect(rows.lastOrNull?.data, contains('Changed'));
+      },
+    );
+
+    test(
+      'schema38 migration preserves stored data and adds batch receipts',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 38
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        _createHistorySources(sqliteDb);
+        final database = _MigrationAppDatabase<_MigrationCaseRecordBatch>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        expect(
+          await database.select(database.workspaceRecordBatchReceipts).get(),
+          isEmpty,
+        );
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
+        );
+      },
+    );
+
+    test(
+      'migration from schema37 preserves Views and adds recoverable trash',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 37
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+          ..execute(
+            'CREATE TABLE workspace_views (id TEXT PRIMARY KEY, '
+            'workspace_id TEXT NOT NULL, data TEXT NOT NULL, '
+            'revision INTEGER NOT NULL, mutations TEXT NOT NULL, '
+            'history TEXT NOT NULL, created_at INTEGER NOT NULL, '
+            'updated_at INTEGER NOT NULL)',
+          )
+          ..execute(
+            'INSERT INTO workspace_views VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              'view',
+              'existing',
+              '{"name":"Retained"}',
+              5,
+              '{"op":5}',
+              '[{"revision":5}]',
+              1,
+              1,
+            ],
+          );
+        _createHistorySources(sqliteDb);
+        final database = _MigrationAppDatabase<_MigrationCaseTrash>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final view =
+            (await database.select(database.workspaceViews).get()).single;
+        expect(view.id, 'view');
+        expect(view.data, '{"name":"Retained"}');
+        expect(view.history, '[{"revision":5}]');
+        expect(view.mutations, '{"op":5}');
+        expect(view.revision, 5);
+        expect(view.deletedAt, isNull);
+        expect(
+          await database.select(database.workspaceTrashBatches).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'migration from schema36 preserves data and creates View storage',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 36
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        _createHistorySources(sqliteDb);
+        final database = _MigrationAppDatabase<_MigrationCaseViews>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        expect(await database.select(database.workspaceViews).get(), isEmpty);
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
+        );
+      },
+    );
 
     test(
       'migration from schema 32 keeps existing bookmark snapshots',
@@ -92,6 +383,61 @@ void main() {
         expect(
           bookmark.read<DateTime>('message_created_at').millisecondsSinceEpoch,
           1767225600000,
+        );
+      },
+    );
+
+    test(
+      'migration from schema 34 preserves workspace and creates table storage',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 34
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        expect(await database.select(database.workspaceTables).get(), isEmpty);
+        expect(
+          await database.select(database.workspaceTableRecords).get(),
+          isEmpty,
+        );
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
+        );
+      },
+    );
+
+    test(
+      'migration from schema 33 preserves data and creates folders',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 33
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing']);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final _ = await database
+            .into(database.workspaceFolders)
+            .insert(
+              WorkspaceFoldersCompanion.insert(
+                workspaceId: 'existing',
+                name: 'Documents',
+              ),
+            );
+        expect(
+          (await database.select(database.workspaceFolders).get()).single.name,
+          'Documents',
+        );
+        expect(
+          (await database.customSelect('SELECT id FROM workspaces').getSingle())
+              .read<String>('id'),
+          'existing',
         );
       },
     );
@@ -1207,4 +1553,32 @@ final class _RecreatedDatabase extends AppDatabase {
 
 final class _DatabaseBeforeRecreation extends AppDatabase {
   new(QueryExecutor connection) : super(connection: connection);
+}
+
+final class _MigrationCaseViews;
+
+final class _MigrationCaseTrash;
+
+final class _MigrationCaseRecordBatch;
+
+final class _MigrationCaseHistory;
+
+void _createHistorySources(sqlite.Database database) {
+  database
+    ..execute('CREATE TABLE message_attachments (id TEXT PRIMARY KEY)')
+    ..execute(
+      'CREATE TABLE workspace_tables ( '
+      'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, '
+      'name TEXT NOT NULL, parent_id TEXT, label_column_id TEXT NOT NULL, '
+      'columns_json TEXT NOT NULL, schema_revision INTEGER NOT NULL, '
+      'revision INTEGER NOT NULL, deleted_at INTEGER, '
+      'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
+    )
+    ..execute(
+      'CREATE TABLE workspace_table_records ( '
+      'id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, '
+      'table_id TEXT NOT NULL, values_json TEXT NOT NULL, '
+      'revision INTEGER NOT NULL, deleted_at INTEGER, '
+      'created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)',
+    );
 }

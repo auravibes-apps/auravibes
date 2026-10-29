@@ -64,7 +64,7 @@ final class WorkspaceCreationDraftNotifierProvider
 }
 
 String _$workspaceCreationDraftNotifierHash() =>
-    r'4f1de3ec74f13191f0416ea6dcfb3322733b191c';
+    r'fec48b369a29c23bbe0cf0892e6631d58640a426';
 
 final class WorkspaceCreationDraftNotifierFamily extends $Family
     with

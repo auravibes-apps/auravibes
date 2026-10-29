@@ -1,3 +1,4 @@
 exception: CloudWorkspaceException
 fields:
   code: CloudWorkspaceErrorCode
+  blockingResourcesJson: String?

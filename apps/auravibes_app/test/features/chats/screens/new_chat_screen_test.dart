@@ -119,28 +119,34 @@ class _FailOnceWorkspaceSelectionRepository
   }
 }
 
-GoRouter _newChatRouter([String workspaceId = 'test-ws']) => GoRouter(
-  routes: [
-    GoRoute(
-      path: '/workspaces/:workspaceId/chat/new',
-      builder: (context, state) {
-        final id = state.pathParameters['workspaceId']!;
+GoRouter _newChatRouter([String workspaceId = 'test-ws', String? handoff]) =>
+    GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId/chat/new',
+          builder: (context, state) {
+            final id = state.pathParameters['workspaceId']!;
 
-        return Column(
-          children: [
-            WorkspaceSelector(workspaceId: id),
-            Expanded(child: NewChatScreen(workspaceId: id)),
-          ],
-        );
-      },
-      onExit: (context, state) => ProviderScope.containerOf(
-        context,
-        listen: false,
-      ).read(draftExitRegistryProvider).canExitRoute(state.uri),
-    ),
-  ],
-  initialLocation: '/workspaces/$workspaceId/chat/new',
-);
+            return Column(
+              children: [
+                WorkspaceSelector(workspaceId: id),
+                Expanded(
+                  child: NewChatScreen(
+                    workspaceId: id,
+                    initialModelSelectionId: handoff,
+                  ),
+                ),
+              ],
+            );
+          },
+          onExit: (context, state) => ProviderScope.containerOf(
+            context,
+            listen: false,
+          ).read(draftExitRegistryProvider).canExitRoute(state.uri),
+        ),
+      ],
+      initialLocation: '/workspaces/$workspaceId/chat/new',
+    );
 
 class _MediaDraftAttachmentService(
   final File draftFile,
@@ -270,17 +276,25 @@ List<Object> _newChatOverrides({
   NewChatState state = const NewChatState(),
   List<WorkspaceEntity>? workspaces,
   WorkspaceModelSelectionWithConnectionEntity? modelSelection,
+  bool freshChat = false,
+  List<WorkspaceModelSelectionWithConnectionEntity>? handoffModels,
+  Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>?
+  handoffStream,
 }) => [
-  newChatProvider('test-ws').overrideWithValue(state),
+  if (!freshChat) newChatProvider('test-ws').overrideWithValue(state),
   chatModelConnectionsProvider.overrideWith(
-    (ref, workspaceId) => Stream.value([]),
+    (ref, workspaceId) => Stream.value(
+      handoffModels?.map((model) => model.modelConnection).toList() ?? [],
+    ),
   ),
   workspaceModelSelectionByIdProvider(
     'test-ws',
     'model',
   ).overrideWithValue(AsyncData(modelSelection ?? _mediaModelSelection())),
   listModelsGroupedByProviderProvider.overrideWith(
-    (ref, workspaceId) => Stream.value({}),
+    (ref, workspaceId) =>
+        handoffStream ??
+        Stream.value(handoffModels == null ? {} : {'provider': handoffModels}),
   ),
   agentsProvider('test-ws').overrideWith((ref) => Stream.value(const [])),
   allWorkspacesProvider.overrideWithValue(
@@ -289,6 +303,93 @@ List<Object> _newChatOverrides({
 ];
 
 void main() {
+  testWidgets('fresh chat handoff waits through empty model results', (
+    tester,
+  ) async {
+    final model = _mediaModelSelection();
+    final updates =
+        StreamController<
+            Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+          >()
+          ..add({});
+    addTearDown(updates.close);
+    final router = _newChatRouter('test-ws', 'model');
+    addTearDown(router.dispose);
+    await _pumpNewChatWithinPausedBranch(
+      tester,
+      overrides: _newChatOverrides(
+        freshChat: true,
+        handoffModels: [model],
+        handoffStream: updates.stream,
+      ),
+      tickerEnabled: true,
+      router: router,
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(NewChatScreen)),
+    );
+    expect(container.read(newChatProvider('test-ws')).modelId, isNull);
+    updates.add({
+      'provider': [model],
+    });
+    final _ = await tester.pumpAndSettle();
+    expect(container.read(newChatProvider('test-ws')).modelId, 'model');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  for (final scenario in [
+    'available',
+    'other-workspace',
+    'missing-key',
+    'stale',
+  ]) {
+    testWidgets(
+      'fresh chat handoff validates model $scenario and applies once',
+      (tester) async {
+        final base = _mediaModelSelection();
+        final model = base.copyWith(
+          modelConnection: base.modelConnection.copyWith(
+            workspaceId: scenario == 'other-workspace' ? 'other' : 'test-ws',
+            hasKey: scenario != 'missing-key',
+          ),
+        );
+        final router = _newChatRouter(
+          'test-ws',
+          scenario == 'stale' ? 'deleted' : 'model',
+        );
+        addTearDown(router.dispose);
+        await _pumpNewChatWithinPausedBranch(
+          tester,
+          overrides: _newChatOverrides(
+            modelSelection: model,
+            freshChat: true,
+            handoffModels: [model],
+          ),
+          tickerEnabled: true,
+          router: router,
+        );
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(NewChatScreen)),
+        );
+        expect(
+          container.read(newChatProvider('test-ws')).modelId,
+          scenario == 'available' ? 'model' : null,
+        );
+        if (scenario == 'available') {
+          container.read(newChatProvider('test-ws').notifier).setModelId(null);
+          container.invalidate(
+            listModelsGroupedByProviderProvider(workspaceId: 'test-ws'),
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(container.read(newChatProvider('test-ws')).modelId, isNull);
+        }
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
   test('constructor sets workspaceId', () {
     const screen = NewChatScreen(workspaceId: 'test-ws');
     expect(screen.workspaceId, 'test-ws');
@@ -743,7 +844,7 @@ void main() {
         expect(sourceFile.existsSync(), isTrue);
       },
     );
-    testWidgets('keeps New Chat listeners active in a paused branch', (
+    testWidgets('keeps New Chat consumers inside its ticker boundary', (
       tester,
     ) async {
       await _pumpNewChatWithinPausedBranch(
@@ -756,7 +857,7 @@ void main() {
           (widget) =>
               widget is TickerMode &&
               widget.enabled &&
-              widget.child is ConsumerWidget,
+              widget.child is ConsumerStatefulWidget,
         ),
         findsOneWidget,
       );
@@ -794,7 +895,7 @@ void main() {
             (widget) =>
                 widget is TickerMode &&
                 widget.enabled &&
-                widget.child is ConsumerWidget,
+                widget.child is ConsumerStatefulWidget,
           ),
           findsOneWidget,
         );

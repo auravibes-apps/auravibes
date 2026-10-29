@@ -42,6 +42,11 @@ abstract class LocaleKeys {
   static const quick_switcher_settings = 'quick_switcher.settings';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
+  static const intro_flow_welcome_ai_title = 'intro_flow.welcome.ai_title';
+  static const intro_flow_welcome_ai_body = 'intro_flow.welcome.ai_body';
+  static const intro_flow_welcome_page = 'intro_flow.welcome.page';
+  static const intro_flow_welcome_start = 'intro_flow.welcome.start';
+  static const intro_flow_welcome_skip = 'intro_flow.welcome.skip';
   static const intro_flow_choice_title = 'intro_flow.choice.title';
   static const intro_flow_choice_body = 'intro_flow.choice.body';
   static const intro_flow_choice_local_title = 'intro_flow.choice.local_title';
@@ -54,6 +59,7 @@ abstract class LocaleKeys {
       'intro_flow.choice.cloud_connect_title';
   static const intro_flow_choice_cloud_connect_body =
       'intro_flow.choice.cloud_connect_body';
+  static const intro_flow_choice_select_hint = 'intro_flow.choice.select_hint';
   static const intro_flow_workspace_context_title =
       'intro_flow.workspace_context.title';
   static const intro_flow_workspace_context_body =
@@ -65,12 +71,31 @@ abstract class LocaleKeys {
   static const intro_flow_workspace_name_helper =
       'intro_flow.workspace.name_helper';
   static const intro_flow_workspace_create = 'intro_flow.workspace.create';
+  static const intro_flow_workspace_local_title =
+      'intro_flow.workspace.local_title';
+  static const intro_flow_workspace_cloud_title =
+      'intro_flow.workspace.cloud_title';
   static const intro_flow_ready_title = 'intro_flow.ready.title';
   static const intro_flow_ready_body = 'intro_flow.ready.body';
+  static const intro_flow_ready_connected_title =
+      'intro_flow.ready.connected_title';
+  static const intro_flow_ready_joined_title = 'intro_flow.ready.joined_title';
   static const intro_flow_continue = 'intro_flow.continue';
   static const intro_flow_back = 'intro_flow.back';
   static const intro_flow_connect_primary = 'intro_flow.connect_primary';
   static const intro_flow_connect_skip = 'intro_flow.connect_skip';
+  static const intro_flow_preview_chat = 'intro_flow.preview.chat';
+  static const intro_flow_preview_request = 'intro_flow.preview.request';
+  static const intro_flow_preview_tools = 'intro_flow.preview.tools';
+  static const intro_flow_preview_project_a = 'intro_flow.preview.project_a';
+  static const intro_flow_preview_project_b = 'intro_flow.preview.project_b';
+  static const intro_flow_preview_provider = 'intro_flow.preview.provider';
+  static const intro_flow_preview_model = 'intro_flow.preview.model';
+  static const intro_flow_ai_choose_provider = 'intro_flow.ai.choose_provider';
+  static const intro_flow_ai_start_chat = 'intro_flow.ai.start_chat';
+  static const intro_flow_ai_explore = 'intro_flow.ai.explore';
+  static const intro_flow_ai_explore_hint = 'intro_flow.ai.explore_hint';
+  static const intro_flow_ai_review_hint = 'intro_flow.ai.review_hint';
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
@@ -363,6 +388,14 @@ abstract class LocaleKeys {
       'service_connections.secret_saved';
   static const service_connections_clear_secret =
       'service_connections.clear_secret';
+  static const service_connections_member_tool_access_title =
+      'service_connections.member_tool_access.title';
+  static const service_connections_member_tool_access_none =
+      'service_connections.member_tool_access.none';
+  static const service_connections_member_tool_access_read =
+      'service_connections.member_tool_access.read';
+  static const service_connections_member_tool_access_read_write =
+      'service_connections.member_tool_access.read_write';
   static const connector_catalog_filter_label =
       'connector_catalog.filter_label';
   static const connector_catalog_filter_all = 'connector_catalog.filter_all';
@@ -860,6 +893,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_arguments';
   static const chats_screens_chat_conversation_activity_result =
       'chats_screens.chat_conversation.activity_result';
+  static const chats_screens_chat_conversation_activity_failure_no_details =
+      'chats_screens.chat_conversation.activity_failure_no_details';
+  static const chats_screens_chat_conversation_activity_workspace_failure_no_details =
+      'chats_screens.chat_conversation.activity_workspace_failure_no_details';
   static const chats_screens_chat_conversation_activity_context_truncated =
       'chats_screens.chat_conversation.activity_context_truncated';
   static const chats_screens_chat_conversation_activity_persisted_truncated =
@@ -1573,6 +1610,11 @@ abstract class LocaleKeys {
       'tool_approval.errors.approve_conversation';
   static const tool_approval_errors_skip = 'tool_approval.errors.skip';
   static const tool_approval_errors_stop_all = 'tool_approval.errors.stop_all';
+  static const connector_write_approval = 'connector_write.approval';
+  static const connector_write_completed = 'connector_write.completed';
+  static const connector_write_failed = 'connector_write.failed';
+  static const connector_write_uncertain = 'connector_write.uncertain';
+  static const tool_call_status_uncertain = 'tool_call_status.uncertain';
   static const tool_call_status_success = 'tool_call_status.success';
   static const tool_call_status_skipped_by_user =
       'tool_call_status.skipped_by_user';
@@ -2146,6 +2188,12 @@ abstract class LocaleKeys {
       'workspace_management.delete_title';
   static const workspace_management_delete_confirm =
       'workspace_management.delete_confirm';
+  static const workspace_management_delete_cleanup_pending =
+      'workspace_management.delete_cleanup_pending';
+  static const workspace_management_delete_cleanup_status_error =
+      'workspace_management.delete_cleanup_status_error';
+  static const workspace_management_delete_cloud_mirror_confirm =
+      'workspace_management.delete_cloud_mirror_confirm';
   static const workspace_management_delete_active_error =
       'workspace_management.delete_active_error';
   static const workspace_management_delete_last_error =
@@ -2291,6 +2339,8 @@ abstract class LocaleKeys {
   static const cloud_errors_malformed_resource =
       'cloud_errors.malformed_resource';
   static const cloud_errors_unavailable = 'cloud_errors.unavailable';
+  static const cloud_errors_upload_provenance_unavailable =
+      'cloud_errors.upload_provenance_unavailable';
   static const cloud_workspaces_title = 'cloud_workspaces.title';
   static const cloud_workspaces_subtitle = 'cloud_workspaces.subtitle';
   static const cloud_workspaces_detail_title = 'cloud_workspaces.detail_title';
@@ -2303,6 +2353,42 @@ abstract class LocaleKeys {
   static const cloud_workspaces_delete = 'cloud_workspaces.delete';
   static const cloud_workspaces_delete_confirm =
       'cloud_workspaces.delete_confirm';
+  static const cloud_workspaces_erase = 'cloud_workspaces.erase';
+  static const cloud_workspaces_erase_title = 'cloud_workspaces.erase_title';
+  static const cloud_workspaces_erase_message =
+      'cloud_workspaces.erase_message';
+  static const cloud_workspaces_erasure_status_title =
+      'cloud_workspaces.erasure_status_title';
+  static const cloud_workspaces_erasure_status_pending =
+      'cloud_workspaces.erasure_status_pending';
+  static const cloud_workspaces_erasure_status_attention =
+      'cloud_workspaces.erasure_status_attention';
+  static const cloud_workspaces_erasure_status_upload_signing_unresolved =
+      'cloud_workspaces.erasure_status_upload_signing_unresolved';
+  static const cloud_workspaces_erasure_status_upload_quiescence_unverified =
+      'cloud_workspaces.erasure_status_upload_quiescence_unverified';
+  static const cloud_workspaces_erasure_status_legacy_upload_unverifiable =
+      'cloud_workspaces.erasure_status_legacy_upload_unverifiable';
+  static const cloud_workspaces_erasure_status_state_unverified =
+      'cloud_workspaces.erasure_status_state_unverified';
+  static const cloud_workspaces_erasure_status_provider_deletion_unverified =
+      'cloud_workspaces.erasure_status_provider_deletion_unverified';
+  static const cloud_workspaces_erasure_status_gateway_registration_unverified =
+      'cloud_workspaces.erasure_status_gateway_registration_unverified';
+  static const cloud_workspaces_erasure_status_complete =
+      'cloud_workspaces.erasure_status_complete';
+  static const cloud_workspaces_erasure_pending =
+      'cloud_workspaces.erasure_pending';
+  static const cloud_workspaces_erasure_complete =
+      'cloud_workspaces.erasure_complete';
+  static const cloud_workspaces_erasure_retry =
+      'cloud_workspaces.erasure_retry';
+  static const cloud_workspaces_deleted_owned_requires_erasure =
+      'cloud_workspaces.deleted_owned_requires_erasure';
+  static const cloud_workspaces_deleted_owned_description =
+      'cloud_workspaces.deleted_owned_description';
+  static const cloud_workspaces_erase_legacy_title =
+      'cloud_workspaces.erase_legacy_title';
   static const cloud_workspaces_transfer_ownership =
       'cloud_workspaces.transfer_ownership';
   static const cloud_workspaces_transfer_confirm =
@@ -2391,6 +2477,18 @@ abstract class LocaleKeys {
   static const cloud_accounts_delete_message = 'cloud_accounts.delete_message';
   static const cloud_accounts_delete_owned_workspaces_error =
       'cloud_accounts.delete_owned_workspaces_error';
+  static const cloud_accounts_workspace_erasure_pending_error =
+      'cloud_accounts.workspace_erasure_pending_error';
+  static const cloud_accounts_delete_data_notice =
+      'cloud_accounts.delete_data_notice';
+  static const cloud_accounts_delete_retained_actor_ids_notice =
+      'cloud_accounts.delete_retained_actor_ids_notice';
+  static const cloud_accounts_delete_result_title =
+      'cloud_accounts.delete_result_title';
+  static const cloud_accounts_delete_result_notice =
+      'cloud_accounts.delete_result_notice';
+  static const cloud_accounts_delete_result_dismiss =
+      'cloud_accounts.delete_result_dismiss';
   static const cloud_accounts_delete_local_cleanup_failed =
       'cloud_accounts.delete_local_cleanup_failed';
   static const cloud_accounts_delete_failed = 'cloud_accounts.delete_failed';
@@ -2412,6 +2510,8 @@ abstract class LocaleKeys {
       'cloud_accounts.password_changed';
   static const cloud_accounts_cancel_auth = 'cloud_accounts.cancel_auth';
   static const cloud_accounts_return_to_task = 'cloud_accounts.return_to_task';
+  static const cloud_accounts_connect_workspace_action =
+      'cloud_accounts.connect_workspace_action';
   static const route_state_workspace_loading = 'route_state.workspace_loading';
   static const route_state_workspace_error = 'route_state.workspace_error';
   static const route_state_child_loading = 'route_state.child_loading';
@@ -2456,9 +2556,13 @@ abstract class LocaleKeys {
   static const workspace_setup_cloud = 'workspace_setup.cloud';
   static const workspace_setup_connect = 'workspace_setup.connect';
   static const workspace_setup_add_account = 'workspace_setup.add_account';
+  static const workspace_setup_back_to_creation =
+      'workspace_setup.back_to_creation';
   static const workspace_setup_local_body = 'workspace_setup.local_body';
   static const workspace_setup_sign_in_connect =
       'workspace_setup.sign_in_connect';
+  static const workspace_setup_sign_in_continue =
+      'workspace_setup.sign_in_continue';
   static const chat_readiness_saved = 'chat_readiness.saved';
   static const chat_readiness_continue_chat = 'chat_readiness.continue_chat';
   static const chat_readiness_loading = 'chat_readiness.loading';
@@ -2577,4 +2681,441 @@ abstract class LocaleKeys {
   static const mcp_elicitation_cancel = 'mcp.elicitation.cancel';
   static const mcp_elicitation_invalid = 'mcp.elicitation.invalid';
   static const mcp_elicitation_open_error = 'mcp.elicitation.open_error';
+  static const workspace_assets_saved = 'workspace_assets.saved';
+  static const workspace_assets_title = 'workspace_assets.title';
+  static const workspace_assets_file = 'workspace_assets.file';
+  static const workspace_assets_name = 'workspace_assets.name';
+  static const workspace_assets_choose = 'workspace_assets.choose';
+  static const workspace_assets_create = 'workspace_assets.create';
+  static const workspace_assets_attachments = 'workspace_assets.attachments';
+  static const workspace_assets_add = 'workspace_assets.add';
+  static const workspace_assets_existing = 'workspace_assets.existing';
+  static const workspace_assets_upload = 'workspace_assets.upload';
+  static const workspace_assets_preview = 'workspace_assets.preview';
+  static const workspace_assets_save = 'workspace_assets.save';
+  static const workspace_assets_unavailable = 'workspace_assets.unavailable';
+  static const workspace_assets_invalid = 'workspace_assets.invalid';
+  static const workspace_assets_referenced = 'workspace_assets.referenced';
+  static const workspace_assets_download_only =
+      'workspace_assets.download_only';
+  static const workspace_assets_text_truncated =
+      'workspace_assets.text_truncated';
+  static const workspace_assets_uploaded_retry =
+      'workspace_assets.uploaded_retry';
+  static const workspace_assets_share_title = 'workspace_assets.share_title';
+  static const workspace_assets_share_body = 'workspace_assets.share_body';
+  static const workspace_assets_share = 'workspace_assets.share';
+  static const workspace_assets_count = 'workspace_assets.count';
+  static const workspace_assets_remove = 'workspace_assets.remove';
+  static const workspace_assets_selected = 'workspace_assets.selected';
+  static const workspace_assets_workspace_readable =
+      'workspace_assets.workspace_readable';
+  static const workspace_items_history_blocked =
+      'workspace_items.history.blocked';
+  static const workspace_items_history_title = 'workspace_items.history.title';
+  static const workspace_items_history_retention =
+      'workspace_items.history.retention';
+  static const workspace_items_history_empty = 'workspace_items.history.empty';
+  static const workspace_items_history_restore =
+      'workspace_items.history.restore';
+  static const workspace_items_history_restore_notice =
+      'workspace_items.history.restore_notice';
+  static const workspace_items_history_purge = 'workspace_items.history.purge';
+  static const workspace_items_history_purge_notice =
+      'workspace_items.history.purge_notice';
+  static const workspace_items_history_policy_title =
+      'workspace_items.history.policy_title';
+  static const workspace_items_history_policy_hint =
+      'workspace_items.history.policy_hint';
+  static const workspace_items_history_policy_days =
+      'workspace_items.history.policy_days';
+  static const workspace_items_history_policy_summary =
+      'workspace_items.history.policy_summary';
+  static const workspace_items_history_policy_notice =
+      'workspace_items.history.policy_notice';
+  static const workspace_items_history_policy_invalid =
+      'workspace_items.history.policy_invalid';
+  static const workspace_items_history_actor = 'workspace_items.history.actor';
+  static const workspace_items_history_actor_unknown =
+      'workspace_items.history.actor_unknown';
+  static const workspace_items_history_operation =
+      'workspace_items.history.operation';
+  static const workspace_items_history_ai_involved =
+      'workspace_items.history.ai_involved';
+  static const workspace_items_history_conversation =
+      'workspace_items.history.conversation';
+  static const workspace_items_history_captured_at =
+      'workspace_items.history.captured_at';
+  static const workspace_items_history_record_revision =
+      'workspace_items.history.record_revision';
+  static const workspace_items_history_table_revision =
+      'workspace_items.history.table_revision';
+  static const workspace_items_history_report =
+      'workspace_items.history.report';
+  static const workspace_items_history_report_receipt =
+      'workspace_items.history.report_receipt';
+  static const workspace_items_history_reports =
+      'workspace_items.history.reports';
+  static const workspace_items_history_reports_title =
+      'workspace_items.history.reports_title';
+  static const workspace_items_history_reports_empty =
+      'workspace_items.history.reports_empty';
+  static const workspace_items_history_report_target =
+      'workspace_items.history.report_target';
+  static const workspace_items_history_report_submitted =
+      'workspace_items.history.report_submitted';
+  static const workspace_items_history_report_dismissed =
+      'workspace_items.history.report_dismissed';
+  static const workspace_items_history_report_removed =
+      'workspace_items.history.report_removed';
+  static const workspace_items_history_report_dismiss =
+      'workspace_items.history.report_dismiss';
+  static const workspace_items_history_report_remove =
+      'workspace_items.history.report_remove';
+  static const workspace_items_history_report_remove_notice =
+      'workspace_items.history.report_remove_notice';
+  static const workspace_items_history_report_action_created =
+      'workspace_items.history.report_action_created';
+  static const workspace_items_history_report_action_updated =
+      'workspace_items.history.report_action_updated';
+  static const workspace_items_history_report_action_deleted =
+      'workspace_items.history.report_action_deleted';
+  static const workspace_items_history_report_action_unknown =
+      'workspace_items.history.report_action_unknown';
+  static const workspace_items_edit_item = 'workspace_items.edit_item';
+  static const workspace_items_item_name = 'workspace_items.item_name';
+  static const workspace_items_destination = 'workspace_items.destination';
+  static const workspace_items_root = 'workspace_items.root';
+  static const workspace_items_table_access = 'workspace_items.table_access';
+  static const workspace_items_access_read = 'workspace_items.access_read';
+  static const workspace_items_access_edit = 'workspace_items.access_edit';
+  static const workspace_items_access_none = 'workspace_items.access_none';
+  static const workspace_items_title = 'workspace_items.title';
+  static const workspace_items_folder_name = 'workspace_items.folder_name';
+  static const workspace_items_create_folder = 'workspace_items.create_folder';
+  static const workspace_items_empty = 'workspace_items.empty';
+  static const workspace_items_invalid_folder =
+      'workspace_items.invalid_folder';
+  static const workspace_items_table = 'workspace_items.table';
+  static const workspace_items_table_name = 'workspace_items.table_name';
+  static const workspace_items_create_table = 'workspace_items.create_table';
+  static const workspace_items_default_label = 'workspace_items.default_label';
+  static const workspace_items_label_column = 'workspace_items.label_column';
+  static const workspace_items_save_column = 'workspace_items.save_column';
+  static const workspace_items_create_record = 'workspace_items.create_record';
+  static const workspace_items_no_records = 'workspace_items.no_records';
+  static const workspace_items_save_record = 'workspace_items.save_record';
+  static const workspace_items_invalid_table = 'workspace_items.invalid_table';
+  static const workspace_items_create_column = 'workspace_items.create_column';
+  static const workspace_items_column_name = 'workspace_items.column_name';
+  static const workspace_items_column_type = 'workspace_items.column_type';
+  static const workspace_items_column_options =
+      'workspace_items.column_options';
+  static const workspace_items_options_hint = 'workspace_items.options_hint';
+  static const workspace_items_save_typed_column =
+      'workspace_items.save_typed_column';
+  static const workspace_items_has_value = 'workspace_items.has_value';
+  static const workspace_items_checked = 'workspace_items.checked';
+  static const workspace_items_type_text = 'workspace_items.type_text';
+  static const workspace_items_type_number = 'workspace_items.type_number';
+  static const workspace_items_type_checkbox = 'workspace_items.type_checkbox';
+  static const workspace_items_type_single_select =
+      'workspace_items.type_single_select';
+  static const workspace_items_type_multi_select =
+      'workspace_items.type_multi_select';
+  static const workspace_items_type_url = 'workspace_items.type_url';
+  static const workspace_items_type_email = 'workspace_items.type_email';
+  static const workspace_items_type_phone = 'workspace_items.type_phone';
+  static const workspace_items_folder = 'workspace_items.folder';
+  static const workspace_items_settings = 'workspace_items.settings';
+  static const workspace_items_search = 'workspace_items.search';
+  static const workspace_items_query_controls =
+      'workspace_items.query_controls';
+  static const workspace_items_filter_value = 'workspace_items.filter_value';
+  static const workspace_items_all_columns = 'workspace_items.all_columns';
+  static const workspace_items_ascending = 'workspace_items.ascending';
+  static const workspace_items_descending = 'workspace_items.descending';
+  static const workspace_items_next_page = 'workspace_items.next_page';
+  static const workspace_items_previous_page = 'workspace_items.previous_page';
+  static const workspace_items_select = 'workspace_items.select';
+  static const workspace_items_done = 'workspace_items.done';
+  static const workspace_items_selected = 'workspace_items.selected';
+  static const workspace_items_query_type_unavailable =
+      'workspace_items.query_type_unavailable';
+  static const workspace_items_location_recovered =
+      'workspace_items.location_recovered';
+  static const workspace_items_type_date_only =
+      'workspace_items.type_date_only';
+  static const workspace_items_type_timestamp =
+      'workspace_items.type_timestamp';
+  static const workspace_items_type_money = 'workspace_items.type_money';
+  static const workspace_items_amount = 'workspace_items.amount';
+  static const workspace_items_currency = 'workspace_items.currency';
+  static const workspace_items_timezone = 'workspace_items.timezone';
+  static const workspace_items_select_date_time =
+      'workspace_items.select_date_time';
+  static const workspace_items_select_date = 'workspace_items.select_date';
+  static const workspace_items_select_time = 'workspace_items.select_time';
+  static const workspace_items_date_and_time = 'workspace_items.date_and_time';
+  static const workspace_items_date = 'workspace_items.date';
+  static const workspace_items_time = 'workspace_items.time';
+  static const workspace_items_cancel = 'workspace_items.cancel';
+  static const workspace_items_previous_month =
+      'workspace_items.previous_month';
+  static const workspace_items_next_month = 'workspace_items.next_month';
+  static const workspace_items_decrease_hour = 'workspace_items.decrease_hour';
+  static const workspace_items_increase_hour = 'workspace_items.increase_hour';
+  static const workspace_items_decrease_minute =
+      'workspace_items.decrease_minute';
+  static const workspace_items_increase_minute =
+      'workspace_items.increase_minute';
+  static const workspace_items_advanced_value =
+      'workspace_items.advanced_value';
+  static const workspace_items_utc_time = 'workspace_items.utc_time';
+  static const workspace_items_weekdays = 'workspace_items.weekdays';
+  static const workspace_items_missing_value = 'workspace_items.missing_value';
+  static const workspace_items_required = 'workspace_items.required';
+  static const workspace_items_unique = 'workspace_items.unique';
+  static const workspace_items_default_value = 'workspace_items.default_value';
+  static const workspace_items_constraint_violations =
+      'workspace_items.constraint_violations';
+  static const workspace_items_correct_records =
+      'workspace_items.correct_records';
+  static const workspace_items_replacement_column =
+      'workspace_items.replacement_column';
+  static const workspace_items_type_reference =
+      'workspace_items.type_reference';
+  static const workspace_items_reference_table =
+      'workspace_items.reference_table';
+  static const workspace_items_reference_multiple =
+      'workspace_items.reference_multiple';
+  static const workspace_items_reference_choose =
+      'workspace_items.reference_choose';
+  static const workspace_items_reference_picker_title =
+      'workspace_items.reference_picker_title';
+  static const workspace_items_reference_search =
+      'workspace_items.reference_search';
+  static const workspace_items_reference_details =
+      'workspace_items.reference_details';
+  static const workspace_items_reference_unnamed =
+      'workspace_items.reference_unnamed';
+  static const workspace_items_reference_candidate_details =
+      'workspace_items.reference_candidate_details';
+  static const workspace_items_reference_record_id =
+      'workspace_items.reference_record_id';
+  static const workspace_items_reference_selection_count =
+      'workspace_items.reference_selection_count';
+  static const workspace_items_reference_apply =
+      'workspace_items.reference_apply';
+  static const workspace_items_reference_apply_row_hint =
+      'workspace_items.reference_apply_row_hint';
+  static const workspace_items_reference_reverse =
+      'workspace_items.reference_reverse';
+  static const workspace_items_reference_unavailable =
+      'workspace_items.reference_unavailable';
+  static const workspace_items_reference_next =
+      'workspace_items.reference_next';
+  static const workspace_items_reference_previous =
+      'workspace_items.reference_previous';
+  static const workspace_items_reference_empty =
+      'workspace_items.reference_empty';
+  static const workspace_items_reference_remove =
+      'workspace_items.reference_remove';
+  static const workspace_items_reference_choose_target =
+      'workspace_items.reference_choose_target';
+  static const workspace_items_filter_operator =
+      'workspace_items.filter_operator';
+  static const workspace_items_filter_equals = 'workspace_items.filter_equals';
+  static const workspace_items_filter_contains =
+      'workspace_items.filter_contains';
+  static const workspace_items_filter_apply = 'workspace_items.filter_apply';
+  static const workspace_items_filter_clear = 'workspace_items.filter_clear';
+  static const workspace_items_filter_invalid_value =
+      'workspace_items.filter_invalid_value';
+  static const workspace_items_reference_parent =
+      'workspace_items.reference_parent';
+  static const workspace_items_reference_match =
+      'workspace_items.reference_match';
+  static const workspace_items_reference_no_dependency =
+      'workspace_items.reference_no_dependency';
+  static const workspace_items_reference_dependency_hint =
+      'workspace_items.reference_dependency_hint';
+  static const workspace_items_reference_incompatible =
+      'workspace_items.reference_incompatible';
+  static const workspace_items_reference_select_parent =
+      'workspace_items.reference_select_parent';
+  static const workspace_items_move = 'workspace_items.move';
+  static const workspace_items_move_here = 'workspace_items.move_here';
+  static const workspace_items_selection_move_limit =
+      'workspace_items.selection_move_limit';
+  static const workspace_items_selection_move_denied =
+      'workspace_items.selection_move_denied';
+  static const workspace_items_trash = 'workspace_items.trash';
+  static const workspace_items_trash_action = 'workspace_items.trash_action';
+  static const workspace_items_trash_impact = 'workspace_items.trash_impact';
+  static const workspace_items_trash_delete_all =
+      'workspace_items.trash_delete_all';
+  static const workspace_items_trash_delete_all_notice =
+      'workspace_items.trash_delete_all_notice';
+  static const workspace_items_trash_restore_notice =
+      'workspace_items.trash_restore_notice';
+  static const workspace_items_trash_empty = 'workspace_items.trash_empty';
+  static const workspace_items_trash_restore = 'workspace_items.trash_restore';
+  static const workspace_items_trash_restored =
+      'workspace_items.trash_restored';
+  static const workspace_items_trash_root_fallback =
+      'workspace_items.trash_root_fallback';
+  static const workspace_items_trash_unresolved =
+      'workspace_items.trash_unresolved';
+  static const workspace_items_reference_deleted =
+      'workspace_items.reference_deleted';
+  static const workspace_items_trash_cancel = 'workspace_items.trash_cancel';
+  static const workspace_items_trash_close = 'workspace_items.trash_close';
+  static const workspace_items_trash_refresh = 'workspace_items.trash_refresh';
+  static const workspace_items_bulk_edit = 'workspace_items.bulk_edit';
+  static const workspace_items_bulk_scope = 'workspace_items.bulk_scope';
+  static const workspace_items_bulk_approval = 'workspace_items.bulk_approval';
+  static const workspace_items_bulk_selected = 'workspace_items.bulk_selected';
+  static const workspace_items_bulk_select = 'workspace_items.bulk_select';
+  static const workspace_items_bulk_limit = 'workspace_items.bulk_limit';
+  static const workspace_items_duplicate = 'workspace_items.duplicate';
+  static const workspace_items_duplicate_name =
+      'workspace_items.duplicate_name';
+  static const workspace_items_duplicate_records =
+      'workspace_items.duplicate_records';
+  static const workspace_items_duplicate_relationships =
+      'workspace_items.duplicate_relationships';
+  static const workspace_items_duplicate_view_binding =
+      'workspace_items.duplicate_view_binding';
+  static const workspace_items_duplicate_created =
+      'workspace_items.duplicate_created';
+  static const workspace_items_duplicate_hint =
+      'workspace_items.duplicate_hint';
+  static const workspace_items_duplicate_unsupported =
+      'workspace_items.duplicate_unsupported';
+  static const workspace_views_title = 'workspace_views.title';
+  static const workspace_views_create = 'workspace_views.create';
+  static const workspace_views_name = 'workspace_views.name';
+  static const workspace_views_bindings = 'workspace_views.bindings';
+  static const workspace_views_repair = 'workspace_views.repair';
+  static const workspace_views_edit = 'workspace_views.edit';
+  static const workspace_views_history = 'workspace_views.history';
+  static const workspace_views_restore = 'workspace_views.restore';
+  static const workspace_views_empty = 'workspace_views.empty';
+  static const workspace_views_definition = 'workspace_views.definition';
+  static const workspace_views_unavailable = 'workspace_views.unavailable';
+  static const workspace_views_limit = 'workspace_views.limit';
+  static const workspace_views_save = 'workspace_views.save';
+  static const workspace_views_action_submit = 'workspace_views.action_submit';
+  static const workspace_views_action_submitting =
+      'workspace_views.action_submitting';
+  static const workspace_views_action_completed =
+      'workspace_views.action_completed';
+  static const workspace_views_action_approval =
+      'workspace_views.action_approval';
+  static const workspace_views_action_review = 'workspace_views.action_review';
+  static const workspace_views_action_invalid =
+      'workspace_views.action_invalid';
+  static const workspace_views_action_changed =
+      'workspace_views.action_changed';
+  static const workspace_views_action_completed_changed =
+      'workspace_views.action_completed_changed';
+  static const workspace_views_action_partial =
+      'workspace_views.action_partial';
+  static const workspace_views_action_uncertain =
+      'workspace_views.action_uncertain';
+  static const workspace_views_no_tables = 'workspace_views.no_tables';
+  static const workspace_views_no_views = 'workspace_views.no_views';
+  static const workspace_csv_import = 'workspace_csv.import';
+  static const workspace_csv_export = 'workspace_csv.export';
+  static const workspace_csv_help = 'workspace_csv.help';
+  static const workspace_csv_skip = 'workspace_csv.skip';
+  static const workspace_csv_choose = 'workspace_csv.choose';
+  static const workspace_csv_validate = 'workspace_csv.validate';
+  static const workspace_csv_commit = 'workspace_csv.commit';
+  static const workspace_csv_save = 'workspace_csv.save';
+  static const workspace_csv_rows = 'workspace_csv.rows';
+  static const workspace_csv_validated = 'workspace_csv.validated';
+  static const workspace_csv_completed = 'workspace_csv.completed';
+  static const workspace_csv_invalid_value = 'workspace_csv.invalid_value';
+  static const workspace_csv_validation_failed =
+      'workspace_csv.validation_failed';
+  static const workspace_csv_row = 'workspace_csv.row';
+  static const workspace_csv_format = 'workspace_csv.format';
+  static const workspace_csv_invalid_file = 'workspace_csv.invalid_file';
+  static const workspace_csv_too_large = 'workspace_csv.too_large';
+  static const workspace_csv_invalid_mapping = 'workspace_csv.invalid_mapping';
+  static const workspace_relational_next = 'workspace_relational.next';
+  static const workspace_relational_summary = 'workspace_relational.summary';
+  static const workspace_relational_count = 'workspace_relational.count';
+  static const workspace_relational_present = 'workspace_relational.present';
+  static const workspace_relational_sum = 'workspace_relational.sum';
+  static const workspace_relational_minimum = 'workspace_relational.minimum';
+  static const workspace_relational_maximum = 'workspace_relational.maximum';
+  static const workspace_relational_query = 'workspace_relational.query';
+  static const workspace_relational_chart = 'workspace_relational.chart';
+  static const workspace_relational_detail = 'workspace_relational.detail';
+  static const workspace_relational_list = 'workspace_relational.list';
+  static const workspace_relational_sort = 'workspace_relational.sort';
+  static const workspace_relational_page_size =
+      'workspace_relational.page_size';
+  static const workspace_relational_descending =
+      'workspace_relational.descending';
+  static const workspace_relational_record = 'workspace_relational.record';
+  static const workspace_relational_no_numbers =
+      'workspace_relational.no_numbers';
+  static const workspace_relational_chart_scope =
+      'workspace_relational.chart_scope';
+  static const workspace_relational_previous = 'workspace_relational.previous';
+  static const workspace_relational_stale = 'workspace_relational.stale';
+  static const workspace_relational_loading = 'workspace_relational.loading';
+  static const workspace_connected_title = 'workspace_connected.title';
+  static const workspace_connected_configure = 'workspace_connected.configure';
+  static const workspace_connected_tool = 'workspace_connected.tool';
+  static const workspace_connected_inputs = 'workspace_connected.inputs';
+  static const workspace_connected_connection =
+      'workspace_connected.connection';
+  static const workspace_connected_freshness = 'workspace_connected.freshness';
+  static const workspace_connected_disclosure =
+      'workspace_connected.disclosure';
+  static const workspace_connected_failed = 'workspace_connected.failed';
+  static const workspace_connected_remove = 'workspace_connected.remove';
+  static const workspace_connected_denied = 'workspace_connected.denied';
+  static const workspace_connected_disconnected =
+      'workspace_connected.disconnected';
+  static const workspace_connected_repair = 'workspace_connected.repair';
+  static const workspace_connected_empty = 'workspace_connected.empty';
+  static const workspace_connected_changed = 'workspace_connected.changed';
+  static const workspace_connected_no_reads = 'workspace_connected.no_reads';
+  static const workspace_connected_options = 'workspace_connected.options';
+  static const workspace_connected_advanced_inputs =
+      'workspace_connected.advanced_inputs';
+  static const workspace_connected_yes = 'workspace_connected.yes';
+  static const workspace_connected_no = 'workspace_connected.no';
+  static const workspace_connected_unset = 'workspace_connected.unset';
+  static const workspace_connected_remove_extra_inputs =
+      'workspace_connected.remove_extra_inputs';
+  static const workspace_tool_names_read_directory =
+      'workspace_tool_names.read_directory';
+  static const workspace_tool_names_open_file_or_view =
+      'workspace_tool_names.open_file_or_view';
+  static const workspace_tool_names_read_table =
+      'workspace_tool_names.read_table';
+  static const workspace_tool_names_create_folder =
+      'workspace_tool_names.create_folder';
+  static const workspace_tool_names_rename_folder =
+      'workspace_tool_names.rename_folder';
+  static const workspace_tool_names_create_table =
+      'workspace_tool_names.create_table';
+  static const workspace_tool_names_rename_table =
+      'workspace_tool_names.rename_table';
+  static const workspace_tool_names_add_row = 'workspace_tool_names.add_row';
+  static const workspace_tool_names_update_row =
+      'workspace_tool_names.update_row';
+  static const workspace_tool_names_edit_column =
+      'workspace_tool_names.edit_column';
+  static const workspace_tool_names_create_view =
+      'workspace_tool_names.create_view';
+  static const workspace_tool_names_edit_view =
+      'workspace_tool_names.edit_view';
 }

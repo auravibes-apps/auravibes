@@ -67,7 +67,7 @@ jobs:
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
-          java-version: '25.0.4+101.0.LTS'
+          java-version: '25.0.5+8.0.LTS'
           cache: gradle
           cache-dependency-path: |
             apps/auravibes_app/android/**/*.gradle*
@@ -249,7 +249,7 @@ jobs:
             debian:trixie-slim bash -euc '
               apt-get update
               apt-get install -y --no-install-recommends \
-                build-essential ca-certificates clang cmake git ninja-build pkgconf rustup \
+                build-essential ca-certificates clang cmake git ninja-build pkgconf \
                 libgtk-3-dev liblzma-dev libsqlite3-dev libepoxy-dev libwayland-dev \
                 libwebkit2gtk-4.1-dev libwpewebkit-2.0-dev libwpe-1.0-dev libwpebackend-fdo-1.0-dev \
                 libsecret-1-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \

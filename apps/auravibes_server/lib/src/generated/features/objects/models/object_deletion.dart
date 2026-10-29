@@ -23,10 +23,15 @@ abstract class ObjectDeletion
     required this.expectedRevision,
     required this.requestedAt,
     this.completedAt,
+    int? cleanupGeneration,
+    this.uploadCleanupVerifiedAt,
+    this.uploadCleanupVerifiedGeneration,
+    this.uploadCleanupVerifiedExpiresAt,
+    this.uploadCleanupVerifiedRegistrationId,
     required this.attempts,
     required this.availableAt,
     this.lastError,
-  });
+  }) : cleanupGeneration = cleanupGeneration ?? 0;
 
   factory ObjectDeletion({
     int? id,
@@ -37,6 +42,11 @@ abstract class ObjectDeletion
     required int expectedRevision,
     required DateTime requestedAt,
     DateTime? completedAt,
+    int? cleanupGeneration,
+    DateTime? uploadCleanupVerifiedAt,
+    int? uploadCleanupVerifiedGeneration,
+    DateTime? uploadCleanupVerifiedExpiresAt,
+    String? uploadCleanupVerifiedRegistrationId,
     required int attempts,
     required DateTime availableAt,
     String? lastError,
@@ -58,6 +68,23 @@ abstract class ObjectDeletion
           : _is.DateTimeJsonExtension.fromJson(
               jsonSerialization['completedAt'],
             ),
+      cleanupGeneration: jsonSerialization['cleanupGeneration'] as int?,
+      uploadCleanupVerifiedAt:
+          jsonSerialization['uploadCleanupVerifiedAt'] == null
+          ? null
+          : _is.DateTimeJsonExtension.fromJson(
+              jsonSerialization['uploadCleanupVerifiedAt'],
+            ),
+      uploadCleanupVerifiedGeneration:
+          jsonSerialization['uploadCleanupVerifiedGeneration'] as int?,
+      uploadCleanupVerifiedExpiresAt:
+          jsonSerialization['uploadCleanupVerifiedExpiresAt'] == null
+          ? null
+          : _is.DateTimeJsonExtension.fromJson(
+              jsonSerialization['uploadCleanupVerifiedExpiresAt'],
+            ),
+      uploadCleanupVerifiedRegistrationId:
+          jsonSerialization['uploadCleanupVerifiedRegistrationId'] as String?,
       attempts: jsonSerialization['attempts'] as int,
       availableAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['availableAt'],
@@ -87,6 +114,16 @@ abstract class ObjectDeletion
 
   DateTime? completedAt;
 
+  int cleanupGeneration;
+
+  DateTime? uploadCleanupVerifiedAt;
+
+  int? uploadCleanupVerifiedGeneration;
+
+  DateTime? uploadCleanupVerifiedExpiresAt;
+
+  String? uploadCleanupVerifiedRegistrationId;
+
   int attempts;
 
   DateTime availableAt;
@@ -108,6 +145,11 @@ abstract class ObjectDeletion
     int? expectedRevision,
     DateTime? requestedAt,
     DateTime? completedAt,
+    int? cleanupGeneration,
+    DateTime? uploadCleanupVerifiedAt,
+    int? uploadCleanupVerifiedGeneration,
+    DateTime? uploadCleanupVerifiedExpiresAt,
+    String? uploadCleanupVerifiedRegistrationId,
     int? attempts,
     DateTime? availableAt,
     String? lastError,
@@ -124,6 +166,17 @@ abstract class ObjectDeletion
       'expectedRevision': expectedRevision,
       'requestedAt': requestedAt.toJson(),
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
+      'cleanupGeneration': cleanupGeneration,
+      if (uploadCleanupVerifiedAt != null)
+        'uploadCleanupVerifiedAt': uploadCleanupVerifiedAt?.toJson(),
+      if (uploadCleanupVerifiedGeneration != null)
+        'uploadCleanupVerifiedGeneration': uploadCleanupVerifiedGeneration,
+      if (uploadCleanupVerifiedExpiresAt != null)
+        'uploadCleanupVerifiedExpiresAt': uploadCleanupVerifiedExpiresAt
+            ?.toJson(),
+      if (uploadCleanupVerifiedRegistrationId != null)
+        'uploadCleanupVerifiedRegistrationId':
+            uploadCleanupVerifiedRegistrationId,
       'attempts': attempts,
       'availableAt': availableAt.toJson(),
       if (lastError != null) 'lastError': lastError,
@@ -142,6 +195,17 @@ abstract class ObjectDeletion
       'expectedRevision': expectedRevision,
       'requestedAt': requestedAt.toJson(),
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
+      'cleanupGeneration': cleanupGeneration,
+      if (uploadCleanupVerifiedAt != null)
+        'uploadCleanupVerifiedAt': uploadCleanupVerifiedAt?.toJson(),
+      if (uploadCleanupVerifiedGeneration != null)
+        'uploadCleanupVerifiedGeneration': uploadCleanupVerifiedGeneration,
+      if (uploadCleanupVerifiedExpiresAt != null)
+        'uploadCleanupVerifiedExpiresAt': uploadCleanupVerifiedExpiresAt
+            ?.toJson(),
+      if (uploadCleanupVerifiedRegistrationId != null)
+        'uploadCleanupVerifiedRegistrationId':
+            uploadCleanupVerifiedRegistrationId,
       'attempts': attempts,
       'availableAt': availableAt.toJson(),
       if (lastError != null) 'lastError': lastError,
@@ -188,6 +252,11 @@ class _ObjectDeletionImpl extends ObjectDeletion {
     required int expectedRevision,
     required DateTime requestedAt,
     DateTime? completedAt,
+    int? cleanupGeneration,
+    DateTime? uploadCleanupVerifiedAt,
+    int? uploadCleanupVerifiedGeneration,
+    DateTime? uploadCleanupVerifiedExpiresAt,
+    String? uploadCleanupVerifiedRegistrationId,
     required int attempts,
     required DateTime availableAt,
     String? lastError,
@@ -200,6 +269,12 @@ class _ObjectDeletionImpl extends ObjectDeletion {
          expectedRevision: expectedRevision,
          requestedAt: requestedAt,
          completedAt: completedAt,
+         cleanupGeneration: cleanupGeneration,
+         uploadCleanupVerifiedAt: uploadCleanupVerifiedAt,
+         uploadCleanupVerifiedGeneration: uploadCleanupVerifiedGeneration,
+         uploadCleanupVerifiedExpiresAt: uploadCleanupVerifiedExpiresAt,
+         uploadCleanupVerifiedRegistrationId:
+             uploadCleanupVerifiedRegistrationId,
          attempts: attempts,
          availableAt: availableAt,
          lastError: lastError,
@@ -218,6 +293,11 @@ class _ObjectDeletionImpl extends ObjectDeletion {
     int? expectedRevision,
     DateTime? requestedAt,
     Object? completedAt = _Undefined,
+    int? cleanupGeneration,
+    Object? uploadCleanupVerifiedAt = _Undefined,
+    Object? uploadCleanupVerifiedGeneration = _Undefined,
+    Object? uploadCleanupVerifiedExpiresAt = _Undefined,
+    Object? uploadCleanupVerifiedRegistrationId = _Undefined,
     int? attempts,
     DateTime? availableAt,
     Object? lastError = _Undefined,
@@ -231,6 +311,21 @@ class _ObjectDeletionImpl extends ObjectDeletion {
       expectedRevision: expectedRevision ?? this.expectedRevision,
       requestedAt: requestedAt ?? this.requestedAt,
       completedAt: completedAt is DateTime? ? completedAt : this.completedAt,
+      cleanupGeneration: cleanupGeneration ?? this.cleanupGeneration,
+      uploadCleanupVerifiedAt: uploadCleanupVerifiedAt is DateTime?
+          ? uploadCleanupVerifiedAt
+          : this.uploadCleanupVerifiedAt,
+      uploadCleanupVerifiedGeneration: uploadCleanupVerifiedGeneration is int?
+          ? uploadCleanupVerifiedGeneration
+          : this.uploadCleanupVerifiedGeneration,
+      uploadCleanupVerifiedExpiresAt:
+          uploadCleanupVerifiedExpiresAt is DateTime?
+          ? uploadCleanupVerifiedExpiresAt
+          : this.uploadCleanupVerifiedExpiresAt,
+      uploadCleanupVerifiedRegistrationId:
+          uploadCleanupVerifiedRegistrationId is String?
+          ? uploadCleanupVerifiedRegistrationId
+          : this.uploadCleanupVerifiedRegistrationId,
       attempts: attempts ?? this.attempts,
       availableAt: availableAt ?? this.availableAt,
       lastError: lastError is String? ? lastError : this.lastError,
@@ -277,6 +372,38 @@ class ObjectDeletionUpdateTable extends _is.UpdateTable<ObjectDeletionTable> {
         table.completedAt,
         value,
       );
+
+  _is.ColumnValue<int, int> cleanupGeneration(int value) => _is.ColumnValue(
+    table.cleanupGeneration,
+    value,
+  );
+
+  _is.ColumnValue<DateTime, DateTime> uploadCleanupVerifiedAt(
+    DateTime? value,
+  ) => _is.ColumnValue(
+    table.uploadCleanupVerifiedAt,
+    value,
+  );
+
+  _is.ColumnValue<int, int> uploadCleanupVerifiedGeneration(int? value) =>
+      _is.ColumnValue(
+        table.uploadCleanupVerifiedGeneration,
+        value,
+      );
+
+  _is.ColumnValue<DateTime, DateTime> uploadCleanupVerifiedExpiresAt(
+    DateTime? value,
+  ) => _is.ColumnValue(
+    table.uploadCleanupVerifiedExpiresAt,
+    value,
+  );
+
+  _is.ColumnValue<String, String> uploadCleanupVerifiedRegistrationId(
+    String? value,
+  ) => _is.ColumnValue(
+    table.uploadCleanupVerifiedRegistrationId,
+    value,
+  );
 
   _is.ColumnValue<int, int> attempts(int value) => _is.ColumnValue(
     table.attempts,
@@ -327,6 +454,27 @@ class ObjectDeletionTable extends _is.Table<int?> {
       'completedAt',
       this,
     );
+    cleanupGeneration = _is.ColumnInt(
+      'cleanupGeneration',
+      this,
+      hasDefault: true,
+    );
+    uploadCleanupVerifiedAt = _is.ColumnDateTime(
+      'uploadCleanupVerifiedAt',
+      this,
+    );
+    uploadCleanupVerifiedGeneration = _is.ColumnInt(
+      'uploadCleanupVerifiedGeneration',
+      this,
+    );
+    uploadCleanupVerifiedExpiresAt = _is.ColumnDateTime(
+      'uploadCleanupVerifiedExpiresAt',
+      this,
+    );
+    uploadCleanupVerifiedRegistrationId = _is.ColumnString(
+      'uploadCleanupVerifiedRegistrationId',
+      this,
+    );
     attempts = _is.ColumnInt(
       'attempts',
       this,
@@ -357,6 +505,16 @@ class ObjectDeletionTable extends _is.Table<int?> {
 
   late final _is.ColumnDateTime completedAt;
 
+  late final _is.ColumnInt cleanupGeneration;
+
+  late final _is.ColumnDateTime uploadCleanupVerifiedAt;
+
+  late final _is.ColumnInt uploadCleanupVerifiedGeneration;
+
+  late final _is.ColumnDateTime uploadCleanupVerifiedExpiresAt;
+
+  late final _is.ColumnString uploadCleanupVerifiedRegistrationId;
+
   late final _is.ColumnInt attempts;
 
   late final _is.ColumnDateTime availableAt;
@@ -373,6 +531,11 @@ class ObjectDeletionTable extends _is.Table<int?> {
     expectedRevision,
     requestedAt,
     completedAt,
+    cleanupGeneration,
+    uploadCleanupVerifiedAt,
+    uploadCleanupVerifiedGeneration,
+    uploadCleanupVerifiedExpiresAt,
+    uploadCleanupVerifiedRegistrationId,
     attempts,
     availableAt,
     lastError,

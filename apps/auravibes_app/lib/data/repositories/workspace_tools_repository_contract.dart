@@ -35,7 +35,7 @@ abstract interface class WorkspaceToolsRepositoryWriteContract {
   Future<List<WorkspaceToolEntity>> patchWorkspaceToolConfig(
     String workspaceId,
     String toolType,
-    String? config,
+    String config,
   );
   Future<WorkspaceToolEntity> setToolPermissionMode(
     String id, {

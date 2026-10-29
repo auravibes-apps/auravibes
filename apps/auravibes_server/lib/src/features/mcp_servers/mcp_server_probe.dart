@@ -27,12 +27,21 @@ class McpServerProbe {
   final McpAddressLookup _lookup;
   final McpProbeHttpClientFactory _httpClientFactory;
 
+  Future<List<InternetAddress>> resolveAddresses(Uri uri) async {
+    final addresses = await _lookup(uri.host).timeout(_timeout);
+    McpServerPolicy.validateAddresses(addresses);
+
+    return addresses;
+  }
+
   Future<DiscoverMcpServerResult> call({
     required Uri uri,
     required String transport,
     required bool useHttp2,
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
+    List<InternetAddress>? resolvedAddresses,
+    McpOutboundRequestFence? dispatchFence,
   }) async {
     if (!{'streamableHttp', 'sse'}.contains(transport)) {
       throw const FormatException('Unsupported MCP transport.');
@@ -40,7 +49,7 @@ class McpServerProbe {
     if (useHttp2) {
       throw const FormatException('HTTP/2 MCP discovery is not supported.');
     }
-    final addresses = await _lookup(uri.host).timeout(_timeout);
+    final addresses = resolvedAddresses ?? await resolveAddresses(uri);
     McpServerPolicy.validateAddresses(addresses);
     if (transport == 'sse') {
       return _discoverSse(
@@ -49,6 +58,7 @@ class McpServerProbe {
         bearerToken,
         httpHeaders,
         _httpClientFactory,
+        dispatchFence,
       );
     }
     final client = _httpClientFactory(uri, addresses.first)
@@ -70,6 +80,7 @@ class McpServerProbe {
             'capabilities': <String, Object?>{},
             'clientInfo': {'name': 'AuraVibes Server', 'version': '1.0.0'},
           },
+          dispatchFence: dispatchFence,
         );
       } on _McpHttpResponseException catch (error) {
         client.close(force: true);
@@ -83,6 +94,7 @@ class McpServerProbe {
           bearerToken,
           httpHeaders,
           _httpClientFactory,
+          dispatchFence,
         );
       }
       await _rpc(
@@ -95,6 +107,7 @@ class McpServerProbe {
         const <String, Object?>{},
         sessionId: initialized.sessionId,
         notification: true,
+        dispatchFence: dispatchFence,
       );
       var requestId = 2;
       final tools = await collectCloudMcpTools((cursor) async {
@@ -107,6 +120,7 @@ class McpServerProbe {
           'tools/list',
           {'cursor': ?cursor},
           sessionId: initialized.sessionId,
+          dispatchFence: dispatchFence,
         );
         return page.result;
       }).timeout(const Duration(seconds: 30));
@@ -134,6 +148,7 @@ class McpServerProbe {
     String? bearerToken,
     Map<String, String> httpHeaders,
     McpProbeHttpClientFactory httpClientFactory,
+    McpOutboundRequestFence? dispatchFence,
   ) async {
     final session = await McpSseSession.connect(
       uri,
@@ -141,6 +156,7 @@ class McpServerProbe {
       bearerToken: bearerToken,
       httpHeaders: httpHeaders,
       httpClient: httpClientFactory(uri, address),
+      dispatchFence: dispatchFence,
     );
     try {
       final initialized = await session.request(1, 'initialize', {
@@ -185,6 +201,7 @@ class McpServerProbe {
     Map<String, Object?> params, {
     String? sessionId,
     bool notification = false,
+    McpOutboundRequestFence? dispatchFence,
   }) async {
     final request = await client.postUrl(uri).timeout(_timeout);
     request
@@ -203,7 +220,10 @@ class McpServerProbe {
         'params': params,
       }),
     );
-    final response = await request.close().timeout(_timeout);
+    final response = await _sendRequest(
+      dispatchFence,
+      request.close,
+    ).timeout(_timeout);
     if (response.isRedirect ||
         response.statusCode != HttpStatus.ok &&
             (!notification || response.statusCode != HttpStatus.accepted)) {
@@ -267,6 +287,11 @@ class McpServerProbe {
     }
   }
 }
+
+Future<T> _sendRequest<T>(
+  McpOutboundRequestFence? dispatchFence,
+  Future<T> Function() start,
+) => dispatchFence == null ? start() : dispatchFence(start);
 
 final class _McpHttpResponseException implements Exception {
   const _McpHttpResponseException({required this.isJsonRpcError});

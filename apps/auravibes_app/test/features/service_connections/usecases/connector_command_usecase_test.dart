@@ -5,6 +5,45 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ConnectorCommandUsecase', () {
+    test('rejects an empty explicit operation ID before execution', () async {
+      var ran = false;
+      final usecase = _usecase(
+        connections: const [
+          ConnectorConnectionCandidate(id: 'service:one', name: 'Work'),
+        ],
+        onRun:
+            ({
+              required workspaceId,
+              required connector,
+              required tool,
+              required arguments,
+            }) async {
+              ran = true;
+
+              return 'done';
+            },
+      );
+      await expectLater(
+        () => usecase.call(
+          workspaceId: 'workspace-current',
+          commandName: executeConnectorToolName,
+          operationId: 'generated-id',
+          arguments: {
+            'toolId': 'connector/example/search',
+            'args': {'query': 'record'},
+            'operationId': '',
+          },
+        ),
+        throwsA(
+          isA<AgentToolExecutionFailure>().having(
+            (error) => error.responseRaw,
+            'message',
+            contains('operationId must be a non-empty string'),
+          ),
+        ),
+      );
+      expect(ran, isFalse);
+    });
     test('executes a known tool ID without a discovery call', () async {
       final loadedWorkspaceIds = <String>[];
       final calls =
@@ -410,7 +449,7 @@ void main() {
                 .having(
                   (failure) => failure.responseRaw,
                   'responseRaw',
-                  contains('Connector tool failed'),
+                  contains('Connector command failed'),
                 )
                 .having(
                   (failure) => failure.responseRaw,

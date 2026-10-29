@@ -1,0 +1,9 @@
+class: CloudWorkspaceErasureStatus
+fields:
+  workspaceId: int
+  workspaceName: String
+  requestId: String
+  state: String
+  requestedAt: DateTime
+  completedAt: DateTime?
+  failureReason: String?

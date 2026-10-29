@@ -168,7 +168,7 @@ void main() {
         provider.updates
             .singleWhere((update) => update.toolCallId == 'tool-3')
             .responseRaw,
-        'Tool execution failed.',
+        contains('"code":"invalid_request"'),
       );
       expect(provider.loggedErrors, ['tool-3']);
     },

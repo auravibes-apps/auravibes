@@ -1,0 +1,523 @@
+import 'dart:async';
+
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_views_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_data.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_duplication_actions.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_assets.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_chart.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_detail.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_history.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_summary.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+
+typedef _Selection = ({String mode, WorkspaceViewData data});
+const _refreshInterval = Duration(seconds: 10);
+
+class const WorkspaceViewScreen({
+  required final String workspaceId,
+  required final String viewId,
+  required final VoidCallback onBack,
+  final bool compact = false,
+  super.key,
+}) extends StatelessWidget {
+  void refresh(WidgetRef ref, int offset) {
+    ref
+      ..invalidate(workspaceConnectedViewProvider(workspaceId, viewId))
+      ..invalidate(
+        workspaceViewDataProvider(workspaceId, viewId, offset: offset),
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) => _ViewSession(
+    this,
+    key: ValueKey((workspaceId: workspaceId, viewId: viewId)),
+  );
+}
+
+class const _ViewSession(final WorkspaceViewScreen owner, {super.key})
+    extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = useState<_Selection?>(null);
+    final offset = useState(0);
+    final active = TickerMode.valuesOf(context).enabled;
+    _useRefresh(ref, selected, offset, active);
+
+    return _SessionContent(owner, selected, offset, active: active);
+  }
+
+  void _useRefresh(
+    WidgetRef ref,
+    ValueNotifier<_Selection?> selected,
+    ValueNotifier<int> offset,
+    bool active,
+  ) => useEffect(() => active ? _subscribe(ref, selected, offset) : null, [
+    owner.workspaceId,
+    owner.viewId,
+    active,
+  ]);
+
+  VoidCallback _subscribe(
+    WidgetRef ref,
+    ValueNotifier<_Selection?> selected,
+    ValueNotifier<int> offset,
+  ) {
+    final timer = Timer.periodic(_refreshInterval, (_) {
+      if (selected.value == null) owner.refresh(ref, offset.value);
+    });
+
+    return timer.cancel;
+  }
+}
+
+class const _SessionContent(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      if (active && !owner.compact) _Toolbar(owner, selected, offset),
+      Expanded(child: _Contents(owner, selected, offset, active: active)),
+    ],
+  );
+}
+
+class const _Toolbar(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+  final ValueNotifier<int> offset,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Row(
+    children: [
+      _BackButton(owner),
+      const Expanded(child: TextLocale(LocaleKeys.workspace_views_title)),
+      _RefreshButton(owner, offset),
+      _Menu(owner, selected),
+    ],
+  );
+}
+
+class const _BackButton(final WorkspaceViewScreen owner)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.arrow_back,
+    onPressed: owner.onBack,
+    identifier: 'workspace_view_back',
+    tooltip: LocaleKeys.common_back.tr(),
+  );
+}
+
+class const _RefreshButton(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<int> offset,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
+    icon: Icons.refresh,
+    onPressed: () => owner.refresh(ref, offset.value),
+    identifier: 'workspace_view_refresh',
+    tooltip: LocaleKeys.common_reload.tr(),
+  );
+}
+
+class const _Menu(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final data = _data(ref);
+    if (data == null || !data.table.canManage) return const SizedBox.shrink();
+
+    return _Popup(owner.workspaceId, data, selected);
+  }
+
+  WorkspaceViewData? _data(WidgetRef ref) => ref
+      .watch(workspaceViewDataProvider(owner.workspaceId, owner.viewId))
+      .value;
+}
+
+class const _Popup(
+  final String workspaceId,
+  final WorkspaceViewData data,
+  final ValueNotifier<_Selection?> selected,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<String>(
+    itemBuilder: _items,
+    onSelected: (mode) => _select(context, mode),
+  );
+
+  void _select(BuildContext context, String mode) {
+    if (mode == 'duplicate') {
+      unawaited(
+        WorkspaceItemDuplicationActions.open(context, workspaceId, data.view),
+      );
+    } else {
+      selected.value = (mode: mode, data: data);
+    }
+  }
+
+  List<PopupMenuEntry<String>> _items(BuildContext _) => [
+    const PopupMenuItem(
+      value: 'connected',
+      child: TextLocale(LocaleKeys.workspace_connected_configure),
+    ),
+    if (!data.view.isConnectedOnly)
+      const PopupMenuItem(
+        value: 'edit',
+        child: TextLocale(LocaleKeys.workspace_views_edit),
+      ),
+    const PopupMenuItem(
+      value: 'duplicate',
+      child: TextLocale(LocaleKeys.workspace_items_duplicate),
+    ),
+    const PopupMenuItem(
+      value: 'history',
+      child: TextLocale(LocaleKeys.workspace_views_history),
+    ),
+  ];
+}
+
+class const _Contents(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<_Selection?> selected,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selection = selected.value;
+    if (selection != null) return _Selected(owner, selection, () => _done(ref));
+
+    return _LoadState(owner, offset, active: active);
+  }
+
+  void _done(WidgetRef ref) {
+    selected.value = null;
+    owner.refresh(ref, offset.value);
+  }
+}
+
+class const _LoadState(
+  final WorkspaceViewScreen owner,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cached = useRef<AsyncValue<WorkspaceViewData>?>(null);
+    final state = _watch(ref, cached.value);
+    if (state == null) return const SizedBox.shrink();
+    _updateCache(cached, state);
+
+    return _CachedContent(owner, state, cached.value, offset, active: active);
+  }
+
+  AsyncValue<WorkspaceViewData>? _watch(
+    WidgetRef ref,
+    AsyncValue<WorkspaceViewData>? cached,
+  ) => active
+      ? ref.watch(
+          workspaceViewDataProvider(
+            owner.workspaceId,
+            owner.viewId,
+            offset: offset.value,
+          ),
+        )
+      : cached;
+
+  void _updateCache(
+    ObjectRef<AsyncValue<WorkspaceViewData>?> cached,
+    AsyncValue<WorkspaceViewData> state,
+  ) {
+    if (state is AsyncError<WorkspaceViewData>) cached.value = null;
+    if (state is AsyncData<WorkspaceViewData>) cached.value = state;
+  }
+}
+
+class const _CachedContent(
+  final WorkspaceViewScreen owner,
+  final AsyncValue<WorkspaceViewData> state,
+  final AsyncValue<WorkspaceViewData>? retained,
+  final ValueNotifier<int> offset, {
+  required final bool active,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final waiting = active && state.isLoading && retained != null;
+    final display = waiting ? retained ?? state : state;
+
+    return Stack(
+      children: [
+        Offstage(
+          offstage: waiting,
+          child: _LoadedContent(owner, display, offset),
+        ),
+        if (waiting) const Center(child: CircularProgressIndicator()),
+      ],
+    );
+  }
+}
+
+class const _LoadedContent(
+  final WorkspaceViewScreen owner,
+  final AsyncValue<WorkspaceViewData> state,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = state.value;
+
+    return Column(
+      children: [
+        if (data?.view.isConnectedOnly != true)
+          Expanded(child: _PageState(state, offset, owner.workspaceId)),
+        if (data?.view.connected != null) _ConnectedContent(owner, data),
+      ],
+    );
+  }
+}
+
+class _ConnectedContent extends Flexible {
+  new(WorkspaceViewScreen owner, WorkspaceViewData? data)
+    : super(
+        child: SingleChildScrollView(
+          child: WorkspaceConnectedData(
+            workspaceId: owner.workspaceId,
+            viewId: owner.viewId,
+            data: data,
+          ),
+        ),
+      );
+}
+
+class const _PageState(
+  final AsyncValue<WorkspaceViewData> state,
+  final ValueNotifier<int> offset,
+  final String workspaceId,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoading) return _Waiting(stale: state.hasValue);
+
+    return switch (state) {
+      AsyncData(:final value) => _Page(value, offset, workspaceId),
+      AsyncError(:final error) => Center(
+        child: WorkspaceItemFailure(error: error),
+      ),
+      AsyncLoading() => const _Waiting(stale: false),
+    };
+  }
+}
+
+class const _Waiting({required final bool stale}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        const CircularProgressIndicator(),
+        TextLocale(
+          stale
+              ? LocaleKeys.workspace_relational_stale
+              : LocaleKeys.workspace_relational_loading,
+        ),
+      ],
+    ),
+  );
+}
+
+class const _Page(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+  final String workspaceId,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Expanded(child: _Content(data, workspaceId)),
+      _Pages(data, offset),
+    ],
+  );
+}
+
+class const _Pages(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => data.needsRepair
+      ? const SizedBox.shrink()
+      : Wrap(
+          spacing: 8,
+          children: [
+            _Previous(data, offset),
+            _PageRange(data),
+            _Next(data, offset),
+          ],
+        );
+}
+
+class const _PageRange(final WorkspaceViewData data) extends StatelessWidget {
+  int get _start => data.records.isEmpty ? 0 : data.offset + 1;
+  int get _end => data.records.isEmpty ? 0 : data.offset + data.records.length;
+  @override
+  Widget build(BuildContext context) => Text('$_start - $_end');
+}
+
+class const _Previous(
+  final WorkspaceViewData data,
+  final ValueNotifier<int> offset,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: _previous,
+    child: const TextLocale(LocaleKeys.workspace_relational_previous),
+    disabled: offset.value == 0,
+    identifier: 'workspace_view_previous',
+  );
+  void _previous() => offset.value = (offset.value - data.view.query.limit)
+      .clamp(0, offset.value);
+}
+
+class const _Next(final WorkspaceViewData data, final ValueNotifier<int> offset)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: _next,
+    child: const TextLocale(LocaleKeys.workspace_relational_next),
+    disabled: !data.hasMore,
+    identifier: 'workspace_view_next',
+  );
+  void _next() => offset.value += data.view.query.limit;
+}
+
+class const _Selected(
+  final WorkspaceViewScreen owner,
+  final _Selection selection,
+  final VoidCallback done,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final data = selection.data;
+    if (selection.mode == 'history') {
+      return WorkspaceViewHistory(
+        workspaceId: owner.workspaceId,
+        current: data.view,
+        onDone: done,
+      );
+    }
+
+    return _SelectedEditor(owner, data, selection.mode, done);
+  }
+}
+
+class const _SelectedEditor(
+  final WorkspaceViewScreen owner,
+  final WorkspaceViewData data,
+  final String mode,
+  final VoidCallback done,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final view = data.view;
+    if (mode == 'connected' || view.isConnectedOnly) {
+      return WorkspaceConnectedEditor(
+        workspaceId: owner.workspaceId,
+        view: view,
+        onDone: done,
+      );
+    }
+
+    return WorkspaceViewEditor(
+      workspaceId: owner.workspaceId,
+      data: data,
+      onDone: done,
+    );
+  }
+}
+
+class const _Content(final WorkspaceViewData data, final String workspaceId)
+    extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final selected = useState<String?>(null);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(data.view.name),
+        _DataSurface(data, selected, workspaceId),
+        WorkspaceViewSummary(data: data),
+        WorkspaceViewAssets(workspaceId: workspaceId, data: data),
+      ],
+    );
+  }
+}
+
+class const _DataSurface(
+  final WorkspaceViewData data,
+  final ValueNotifier<String?> selected,
+  final String workspaceId,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _isDetail(data) && !data.needsRepair
+      ? WorkspaceViewDetail(
+          data: data,
+          selected: selected,
+          workspaceId: workspaceId,
+        )
+      : _Surface(data, workspaceId);
+}
+
+class const _Surface(final WorkspaceViewData data, final String workspaceId)
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (data.needsRepair) {
+      return const TextLocale(LocaleKeys.workspace_views_repair);
+    }
+    if (data.records.isEmpty) {
+      return const TextLocale(LocaleKeys.workspace_views_empty);
+    }
+
+    if (data.view.definition.components.any(_boundChart)) {
+      return WorkspaceViewChart(data: data, workspaceId: workspaceId);
+    }
+
+    return WorkspaceViewSurface(data: data, workspaceId: workspaceId);
+  }
+}
+
+bool _isDetail(WorkspaceViewData data) => data.view.definition.components.any(
+  (component) => component['id'].toString().startsWith('detail_'),
+);
+
+bool _boundChart(Map<String, Object?> component) => switch (component) {
+  {
+    'component': 'Chart',
+    'labels': {'path': '/chartLabels'},
+    'series': {'path': '/chartSeries'},
+  } =>
+    true,
+  _ => false,
+};

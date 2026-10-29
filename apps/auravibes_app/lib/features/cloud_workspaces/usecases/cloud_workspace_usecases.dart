@@ -34,9 +34,14 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
   Future<CloudWorkspaceViewState> load() async {
     final workspacesFuture = _cloudRepository.listWorkspaces();
     final pendingInvitesFuture = _cloudRepository.listPendingInvites();
+    final erasuresFuture = _cloudRepository.listWorkspaceErasures();
+    final deletedOwnedFuture = _cloudRepository
+        .listOwnedDeletedWorkspacesForErasure();
     final results = await Future.wait<Object?>([
       workspacesFuture,
       pendingInvitesFuture,
+      erasuresFuture,
+      deletedOwnedFuture,
     ]);
 
     return _viewState(results);
@@ -298,6 +303,23 @@ extension CloudWorkspaceUseCasesInvites on CloudWorkspaceUseCases {
     );
     await detach(workspace);
   }
+
+  Future<CloudWorkspaceErasureStatus> erase(
+    CloudWorkspaceSummary workspace,
+  ) async {
+    final mirror = await _existingMirror(workspace);
+    final status = await _cloudRepository.eraseWorkspace(
+      workspaceId: workspace.id,
+      confirmationName: workspace.name,
+      expectedWorkspaceRevision: workspace.revision,
+    );
+    if (mirror != null) await detachMirror(mirror);
+
+    return status;
+  }
+
+  Future<CloudWorkspaceErasureStatus> retryErasure(String requestId) =>
+      _cloudRepository.retryWorkspaceErasure(requestId);
 }
 
 extension on CloudWorkspaceUseCases {
@@ -306,10 +328,14 @@ extension on CloudWorkspaceUseCases {
         [
           final List<CloudWorkspaceSummary> workspaces,
           final List<PendingWorkspaceInviteSummary> pendingInvites,
+          final List<CloudWorkspaceErasureStatus> erasures,
+          final List<CloudWorkspaceSummary> deletedOwnedWorkspaces,
         ] =>
           CloudWorkspaceViewState(
             workspaces: workspaces,
             pendingInvites: pendingInvites,
+            erasures: erasures,
+            deletedOwnedWorkspaces: deletedOwnedWorkspaces,
           ),
         _ => const CloudWorkspaceViewState(workspaces: [], pendingInvites: []),
       };

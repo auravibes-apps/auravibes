@@ -1,29 +1,50 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
+import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
+import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_auth_failure.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_email_delivery_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_add_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_forgot_password_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_login_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_register_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
-import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
+import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
+import 'package:auravibes_app/features/models/models/model_connection_store.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
+import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -45,24 +66,38 @@ import 'package:auravibes_app/features/workspaces/models/workspace_route_failure
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/cloud_auth_protocol.dart';
+import 'package:auravibes_app/services/codex_oauth_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:crypto/crypto.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../helpers/ux_validation_fixture.dart';
+
+part '../helpers/intro_journey_capture.dart';
 
 final _captureFontMetadata = <Map<String, String>>[];
 
 void main() {
+  _registerIntroJourneyCaptures();
   tearDownAll(UxValidationFixture.closeDatabase);
   setUpAll(() async {
     for (final font in const {

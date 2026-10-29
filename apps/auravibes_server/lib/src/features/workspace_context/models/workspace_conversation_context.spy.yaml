@@ -1,0 +1,15 @@
+class: WorkspaceConversationContext
+table: workspace_conversation_context
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  conversationId: int, relation(parent=conversation, onDelete=Cascade)
+  stableId: String
+  actorUserId: String
+  selectionJson: String?
+  createdAt: DateTime
+indexes:
+  workspace_conversation_context_request_idx:
+    fields: workspaceId, stableId
+    unique: true
+  workspace_conversation_context_order_idx:
+    fields: workspaceId, conversationId, actorUserId, id

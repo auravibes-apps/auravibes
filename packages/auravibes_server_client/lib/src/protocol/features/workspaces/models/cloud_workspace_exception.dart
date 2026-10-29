@@ -20,10 +20,14 @@ abstract class CloudWorkspaceException
         _isc.SerializableException,
         _isc.SerializableModel,
         _isc.ProtocolSerialization {
-  CloudWorkspaceException._({required this.code});
+  CloudWorkspaceException._({
+    required this.code,
+    this.blockingResourcesJson,
+  });
 
   factory CloudWorkspaceException({
     required _ipvhvodq.CloudWorkspaceErrorCode code,
+    String? blockingResourcesJson,
   }) = _CloudWorkspaceExceptionImpl;
 
   factory CloudWorkspaceException.fromJson(
@@ -33,20 +37,29 @@ abstract class CloudWorkspaceException
       code: _ipvhvodq.CloudWorkspaceErrorCode.fromJson(
         (jsonSerialization['code'] as String),
       ),
+      blockingResourcesJson:
+          jsonSerialization['blockingResourcesJson'] as String?,
     );
   }
 
   _ipvhvodq.CloudWorkspaceErrorCode code;
 
+  String? blockingResourcesJson;
+
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
-  CloudWorkspaceException copyWith({_ipvhvodq.CloudWorkspaceErrorCode? code});
+  CloudWorkspaceException copyWith({
+    _ipvhvodq.CloudWorkspaceErrorCode? code,
+    String? blockingResourcesJson,
+  });
   @override
   Map<String, dynamic> toJson() {
     return {
       '__className__': 'CloudWorkspaceException',
       'code': code.toJson(),
+      if (blockingResourcesJson != null)
+        'blockingResourcesJson': blockingResourcesJson,
     };
   }
 
@@ -55,25 +68,41 @@ abstract class CloudWorkspaceException
     return {
       '__className__': 'CloudWorkspaceException',
       'code': code.toJson(),
+      if (blockingResourcesJson != null)
+        'blockingResourcesJson': blockingResourcesJson,
     };
   }
 
   @override
   String toString() {
-    return 'CloudWorkspaceException(code: $code)';
+    return 'CloudWorkspaceException(code: $code, blockingResourcesJson: $blockingResourcesJson)';
   }
 }
+
+class _Undefined {}
 
 class _CloudWorkspaceExceptionImpl extends CloudWorkspaceException {
   _CloudWorkspaceExceptionImpl({
     required _ipvhvodq.CloudWorkspaceErrorCode code,
-  }) : super._(code: code);
+    String? blockingResourcesJson,
+  }) : super._(
+         code: code,
+         blockingResourcesJson: blockingResourcesJson,
+       );
 
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
   @override
-  CloudWorkspaceException copyWith({_ipvhvodq.CloudWorkspaceErrorCode? code}) {
-    return CloudWorkspaceException(code: code ?? this.code);
+  CloudWorkspaceException copyWith({
+    _ipvhvodq.CloudWorkspaceErrorCode? code,
+    Object? blockingResourcesJson = _Undefined,
+  }) {
+    return CloudWorkspaceException(
+      code: code ?? this.code,
+      blockingResourcesJson: blockingResourcesJson is String?
+          ? blockingResourcesJson
+          : this.blockingResourcesJson,
+    );
   }
 }

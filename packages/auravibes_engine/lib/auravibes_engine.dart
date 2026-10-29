@@ -1,7 +1,10 @@
 export 'src/a2ui/a2ui_action.dart';
 export 'src/a2ui/a2ui_catalog.dart';
 export 'src/a2ui/a2ui_chat_contract.dart';
+export 'src/a2ui/a2ui_data_summary.dart';
 export 'src/a2ui/a2ui_form_validation.dart';
+export 'src/a2ui/a2ui_saved_action.dart';
+export 'src/a2ui/a2ui_saved_definition.dart';
 export 'src/a2ui/a2ui_skill_definition.dart';
 export 'src/a2ui/a2ui_stream_decoder.dart';
 export 'src/a2ui/a2ui_validation.dart';
@@ -29,9 +32,11 @@ export 'src/connector_command.dart';
 export 'src/connectors/connector_definition.dart';
 export 'src/connectors/connector_tool_definition.dart';
 export 'src/connectors/execution/connector_http_client.dart';
+export 'src/connectors/execution/connector_request_execution.dart';
 export 'src/connectors/execution/connector_response_decoder.dart'
     show ConnectorStreamFailure;
 export 'src/connectors/execution/connector_tool_request_preview.dart';
+export 'src/connectors/execution/connector_write_executor.dart';
 export 'src/connectors/execution/resolve_connector_request_template.dart';
 export 'src/connectors/execution/run_connector_tool_template.dart';
 export 'src/connectors/models/connector_credential_attribute_definition.dart';
@@ -112,3 +117,6 @@ export 'src/transcript_selection.dart';
 export 'src/url_content_format.dart';
 export 'src/url_content_transformer.dart';
 export 'src/url_tool.dart';
+
+export 'src/workspace_command.dart';
+export 'src/workspace_reference_scope.dart';

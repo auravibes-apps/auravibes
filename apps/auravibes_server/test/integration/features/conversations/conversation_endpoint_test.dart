@@ -60,6 +60,160 @@ void main() {
     }
 
     test(
+      'all conversation reads reject erasure-pending and deleted workspaces',
+      () async {
+        for (final tombstone in ['erasure requested', 'soft deleted']) {
+          final fixture = await prepare();
+          final conversation = await endpoints.conversation.create(
+            fixture.session,
+            CreateConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'create-$tombstone',
+              conversationId: 'conversation-$tombstone',
+              title: 'Retained during erasure',
+              isPinned: false,
+            ),
+          );
+          expect(
+            (await endpoints.conversation.get(
+              fixture.session,
+              GetConversationRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            )).id,
+            conversation.id,
+          );
+
+          final workspace = (await CloudWorkspace.db.findById(
+            fixture.database,
+            fixture.workspaceId,
+          ))!;
+          final now = DateTime.now().toUtc();
+          await CloudWorkspace.db.updateRow(
+            fixture.database,
+            tombstone == 'erasure requested'
+                ? workspace.copyWith(erasureRequestedAt: now)
+                : workspace.copyWith(deletedAt: now),
+          );
+
+          final denied = throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              tombstone == 'erasure requested'
+                  ? ConversationErrorCode.permissionDenied
+                  : ConversationErrorCode.notFound,
+            ),
+          );
+          await expectLater(
+            endpoints.conversation.list(
+              fixture.session,
+              ListConversationsRequest(
+                workspaceId: fixture.workspaceId,
+                limit: 10,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.listPage(
+              fixture.session,
+              ListConversationsRequest(
+                workspaceId: fixture.workspaceId,
+                limit: 10,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.get(
+              fixture.session,
+              GetConversationRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.listMessages(
+              fixture.session,
+              ListConversationMessagesRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+                limit: 20,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.searchMessages(
+              fixture.session,
+              SearchConversationMessagesRequest(
+                workspaceId: fixture.workspaceId,
+                query: 'retained',
+                limit: 10,
+                offset: 0,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.getTurn(
+              fixture.session,
+              GetTurnRequest(
+                workspaceId: fixture.workspaceId,
+                turnId: 'missing-turn',
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.getConversationSnapshot(
+              fixture.session,
+              GetConversationRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            ),
+            denied,
+          );
+          await expectLater(
+            endpoints.conversation.listBackgroundWorks(
+              fixture.session,
+              ListBackgroundWorksRequest(
+                workspaceId: fixture.workspaceId,
+                conversationId: conversation.id,
+              ),
+            ),
+            denied,
+          );
+
+          expect(
+            await Conversation.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.stableId.equals(conversation.id),
+            ),
+            isNotNull,
+          );
+          expect(
+            await WorkspaceMember.db.findFirstRow(
+              fixture.database,
+              where: (table) =>
+                  table.workspaceId.equals(fixture.workspaceId) &
+                  table.userId.equals(fixture.userId) &
+                  table.removedAt.equals(null),
+            ),
+            isNotNull,
+          );
+        }
+      },
+    );
+
+    test(
       'persists mode through create, update, projection and root/child forks',
       () async {
         final fixture = await prepare();
@@ -378,6 +532,27 @@ void main() {
               'conversationId': child.stableId,
               'toolId': listConnectorConnectionsToolName,
               'permissionMode': 'alwaysAllow',
+            }),
+          ),
+        );
+        expect(
+          await call('explicit-conversation-grant-agent-deny'),
+          'disabledInWorkspace',
+        );
+        expect(executions, 1);
+        final deniedAgentPolicy = (await WorkspaceResource.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals('deny-agent'),
+        ))!;
+        await WorkspaceResource.db.updateRow(
+          fixture.database,
+          deniedAgentPolicy.copyWith(
+            data: jsonEncode({
+              'agentId': 'agent',
+              'toolId': listConnectorConnectionsToolName,
+              'permissionMode': 'alwaysAsk',
             }),
           ),
         );
@@ -1168,6 +1343,111 @@ void main() {
           await ObjectReference.db.find(
             databaseSession,
             where: (table) => table.objectId.equals(object.id),
+          ),
+          isEmpty,
+        );
+        final originalUpload = await ObjectUpload.db.findFirstRow(
+          databaseSession,
+          where: (row) => row.objectId.equals(object.id),
+        );
+        await ObjectUpload.db.updateRow(
+          databaseSession,
+          originalUpload!.copyWith(actorUserId: ownerId),
+        );
+        await WorkspaceResource.db.insertRow(
+          databaseSession,
+          WorkspaceResource(
+            workspaceId: workspaceId,
+            resourceKind: .table,
+            resourceId: 'private-source',
+            data: jsonEncode({
+              'name': 'Private',
+              'columns': [
+                {
+                  'id': 'asset',
+                  'name': 'File',
+                  'type': 'attachment',
+                  'defaultValue': ['${object.id}'],
+                },
+              ],
+            }),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await expectLater(
+          endpoints.conversation.startTurn(
+            ownerSession,
+            StartTurnRequest(
+              workspaceId: workspaceId,
+              requestId: 'private-source-turn',
+              conversationId: conversation.id,
+              expectedConversationRevision: conversation.revision,
+              clientMessageId: 'private-source-message',
+              content: 'Do not broaden privately retained bytes',
+              attachmentIds: ['${object.id}'],
+            ),
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'private source',
+              ConversationErrorCode.validationFailed,
+            ),
+          ),
+        );
+        await ObjectUpload.db.updateRow(databaseSession, originalUpload);
+        await WorkspaceResource.db.insertRow(
+          databaseSession,
+          WorkspaceResource(
+            workspaceId: workspaceId,
+            resourceKind: .file,
+            resourceId: 'shared-file',
+            data: jsonEncode({'name': 'Shared', 'assetId': '${object.id}'}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        final _ = await endpoints.conversation.startTurn(
+          ownerSession,
+          StartTurnRequest(
+            workspaceId: workspaceId,
+            requestId: 'shared-attachment-turn',
+            conversationId: conversation.id,
+            expectedConversationRevision: conversation.revision,
+            clientMessageId: 'shared-attachment-message',
+            content: 'Use shared File',
+            attachmentIds: [object.id!.toString()],
+          ),
+        );
+        final current = await Conversation.db.findFirstRow(
+          databaseSession,
+          where: (row) =>
+              row.workspaceId.equals(workspaceId) &
+              row.stableId.equals(conversation.id),
+        );
+        await endpoints.conversation.delete(
+          ownerSession,
+          DeleteConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'remove-shared-conversation',
+            conversationId: conversation.id,
+            expectedRevision: current!.revision,
+          ),
+        );
+        expect(
+          (await WorkspaceObject.db.findById(
+            databaseSession,
+            object.id!,
+          ))?.status,
+          'active',
+        );
+        expect(
+          await ObjectDeletion.db.find(
+            databaseSession,
+            where: (row) => row.objectId.equals(object.id),
           ),
           isEmpty,
         );

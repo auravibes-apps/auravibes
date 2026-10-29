@@ -65,6 +65,9 @@ _MessageMetadataEntity _$MessageMetadataEntityFromJson(
   modelMetadata:
       json['modelMetadata'] as Map<String, dynamic>? ??
       const <String, Object?>{},
+  cloudAssetIds: json['attachmentIds'] == null
+      ? const <String>[]
+      : _readCloudAttachmentAssetIds(json['attachmentIds']),
   a2uiMessages:
       (json['a2uiMessages'] as List<dynamic>?)
           ?.map((e) => e as String)

@@ -6,6 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../domain/virtual_workspace_model_selection.dart';
 import '../../workspaces/domain/workspace_roles.dart';
@@ -24,6 +25,7 @@ class ModelConnectionUseCases {
     ModelCatalogFetcher? fetch,
     Future<List<InternetAddress>> Function(String host)? lookup,
   }) : _fetch = fetch ?? _fetchJson,
+       _usesDefaultFetcher = fetch == null,
        _lookup = lookup ?? InternetAddress.lookup;
 
   static const maxModels = 500;
@@ -31,6 +33,7 @@ class ModelConnectionUseCases {
   static const _draftVerificationLifetime = Duration(minutes: 5);
   final ModelConnectionRepository _repository;
   final ModelCatalogFetcher _fetch;
+  final bool _usesDefaultFetcher;
   final Future<List<InternetAddress>> Function(String host) _lookup;
 
   Future<ModelConnectionView> create(
@@ -39,7 +42,7 @@ class ModelConnectionUseCases {
     required CreateModelConnectionRequest request,
   }) => session.db.transaction((transaction) async {
     _requireManager(
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -90,21 +93,31 @@ class ModelConnectionUseCases {
     Session session, {
     required String userId,
     required ListModelConnectionsRequest request,
-  }) async {
-    await _requireMember(
+  }) => session.db.transaction((transaction) async {
+    await _lockActorWorkspaceMember(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      transaction: transaction,
     );
     final connections = await _repository.listConnections(
       session,
       workspaceId: request.workspaceId,
+      transaction: transaction,
     );
-    return Future.wait([
-      for (final connection in connections)
-        _connectionViewForUser(session, connection, userId),
-    ]);
-  }
+    final views = <ModelConnectionView>[];
+    for (final connection in connections) {
+      views.add(
+        await _connectionViewForUser(
+          session,
+          connection,
+          userId,
+          transaction: transaction,
+        ),
+      );
+    }
+    return views;
+  });
 
   Future<ModelConnectionView> update(
     Session session, {
@@ -112,7 +125,7 @@ class ModelConnectionUseCases {
     required UpdateModelConnectionRequest request,
   }) => session.db.transaction((transaction) async {
     _requireManager(
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -177,7 +190,7 @@ class ModelConnectionUseCases {
     required DeleteModelConnectionRequest request,
   }) => session.db.transaction((transaction) async {
     _requireManager(
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -223,7 +236,9 @@ class ModelConnectionUseCases {
     final workspace = await CloudWorkspace.db.findFirstRow(
       session,
       where: (table) =>
-          table.id.equals(workspaceId) & table.deletedAt.equals(null),
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
@@ -255,19 +270,22 @@ class ModelConnectionUseCases {
     Session session, {
     required String userId,
     required ListWorkspaceModelSelectionsRequest request,
-  }) async {
-    await _requireMember(
+  }) => session.db.transaction((transaction) async {
+    await _lockActorWorkspaceMember(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      transaction: transaction,
     );
     final connections = await _repository.listConnections(
       session,
       workspaceId: request.workspaceId,
+      transaction: transaction,
     );
     final policyRows = await _repository.listToolSamplingPolicies(
       session,
       workspaceId: request.workspaceId,
+      transaction: transaction,
     );
     final policies = {
       for (final row in policyRows)
@@ -280,10 +298,12 @@ class ModelConnectionUseCases {
         workspaceId: request.workspaceId,
         userId: userId,
         connectionId: connection.connectionId,
+        transaction: transaction,
       );
       final models = await _repository.listCatalogModels(
         session,
         providerId: connection.providerId,
+        transaction: transaction,
       );
       views.addAll(
         models.map(
@@ -298,7 +318,7 @@ class ModelConnectionUseCases {
       );
     }
     return views;
-  }
+  });
 
   Future<void> updateToolSamplingPolicy(
     Session session, {
@@ -312,7 +332,7 @@ class ModelConnectionUseCases {
       _invalid();
     }
     await session.db.transaction((transaction) async {
-      final member = await _requireMember(
+      final member = await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -382,21 +402,23 @@ class ModelConnectionUseCases {
     Session session, {
     required String userId,
     required ListRecentModelSelectionsRequest request,
-  }) async {
-    await _requireMember(
+  }) => session.db.transaction((transaction) async {
+    await _lockActorWorkspaceMember(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
+      transaction: transaction,
     );
     final selections = await _repository.listRecentSelections(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
       limit: maxRecentSelections,
+      transaction: transaction,
     );
 
     return selections.map((selection) => selection.selectionId).toList();
-  }
+  });
 
   Future<void> recordRecentSelection(
     Session session, {
@@ -407,7 +429,7 @@ class ModelConnectionUseCases {
     if (selectionId.trim().isEmpty || selectionId.length > 500) _invalid();
 
     await session.db.transaction((transaction) async {
-      await _requireMember(
+      await _lockActorWorkspaceMember(
         session,
         workspaceId: request.workspaceId,
         userId: userId,
@@ -482,41 +504,25 @@ class ModelConnectionUseCases {
     required String userId,
     required TestAndSyncModelConnectionRequest request,
   }) async {
-    final member = await _repository.findMember(
+    final snapshot = await _authorizedConnection(
       session,
-      workspaceId: request.workspaceId,
       userId: userId,
-    );
-    if (member == null) _permissionDenied();
-    _requireManager(member);
-    final connection = await _repository.findConnection(
-      session,
       workspaceId: request.workspaceId,
       connectionId: request.connectionId,
     );
-    final secret = await _repository.findSecret(
+    final modelIds = await _fetchConnectionCatalog(
       session,
-      workspaceId: request.workspaceId,
       userId: userId,
-      connectionId: request.connectionId,
+      workspaceId: request.workspaceId,
+      snapshot: snapshot,
+      url:
+          snapshot.connection.url ??
+          defaultProviderUrl(snapshot.connection.providerId),
     );
-    if (connection == null || secret == null) return _invalid();
-
-    final providerId = connection.providerId;
-    final validated = await validatePublicHttpsUri(
-      connection.url ?? defaultProviderUrl(providerId),
-      lookup: _lookup,
+    return ModelSyncResult(
+      providerId: snapshot.connection.providerId,
+      modelIds: modelIds,
     );
-    final apiKey = await const WorkspaceSecretCipher().decrypt(session, secret);
-    final headers = providerHeaders(providerId, apiKey);
-    final response = await _fetch(
-      modelCatalogUri(providerId, validated.uri),
-      headers,
-      validated.address,
-    );
-    final modelIds = parseModelIds(response, maxModels: maxModels);
-    if (modelIds.isEmpty) return _invalid();
-    return ModelSyncResult(providerId: providerId, modelIds: modelIds);
   }
 
   Future<VerifyModelConnectionResult> verifyDraft(
@@ -528,73 +534,233 @@ class ModelConnectionUseCases {
         request.connectionId.trim().isEmpty) {
       _invalid();
     }
-    final member = await _requireMember(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
-    );
-    _requireManager(member);
-    final connection = await _repository.findConnection(
-      session,
-      workspaceId: request.workspaceId,
-      connectionId: request.connectionId,
-    );
-    if (connection == null || connection.revision != request.expectedRevision) {
-      _invalid();
-    }
-    final secret = await _repository.findSecret(
+    final snapshot = await _authorizedConnection(
       session,
       workspaceId: request.workspaceId,
       userId: userId,
       connectionId: request.connectionId,
+      expectedRevision: request.expectedRevision,
     );
-    if (secret == null) _invalid();
-
-    final providerId = connection.providerId;
+    final providerId = snapshot.connection.providerId;
     final url =
         request.url?.trim() ??
-        connection.url ??
-        defaultProviderUrl(
-          providerId,
-        );
-    final validated = await validatePublicHttpsUri(url, lookup: _lookup);
-    final apiKey = await const WorkspaceSecretCipher().decrypt(session, secret);
-    final response = await _fetch(
-      modelCatalogUri(providerId, validated.uri),
-      providerHeaders(providerId, apiKey),
-      validated.address,
+        snapshot.connection.url ??
+        defaultProviderUrl(providerId);
+    final modelIds = await _fetchConnectionCatalog(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      snapshot: snapshot,
+      url: url,
     );
-    final modelIds = parseModelIds(response, maxModels: maxModels);
-    if (modelIds.isEmpty) _invalid();
-
     final expiresAt = DateTime.now().toUtc().add(_draftVerificationLifetime);
-    return VerifyModelConnectionResult(
-      providerId: providerId,
-      modelIds: modelIds,
-      verificationReceipt: await _createDraftVerificationReceipt(
+    return session.db.transaction((transaction) async {
+      await _requireCurrentConnection(
         session,
         userId: userId,
-        request: request,
+        workspaceId: request.workspaceId,
+        snapshot: snapshot,
+        transaction: transaction,
+      );
+      return VerifyModelConnectionResult(
         providerId: providerId,
-        url: url,
         modelIds: modelIds,
+        verificationReceipt: await _createDraftVerificationReceipt(
+          session,
+          userId: userId,
+          request: request,
+          providerId: providerId,
+          url: url,
+          modelIds: modelIds,
+          expiresAt: expiresAt,
+        ),
         expiresAt: expiresAt,
-      ),
-      expiresAt: expiresAt,
-    );
+      );
+    });
   }
 
-  Future<WorkspaceMember> _requireMember(
+  Future<({WorkspaceModelConnection connection, WorkspaceSecret secret})>
+  _authorizedConnection(
     Session session, {
-    required int workspaceId,
     required String userId,
-    Transaction? transaction,
-  }) async {
-    final member = await _repository.findMember(
+    required int workspaceId,
+    required String connectionId,
+    int? expectedRevision,
+  }) => session.db.transaction((transaction) async {
+    final member = await _lockActorWorkspaceMember(
       session,
       workspaceId: workspaceId,
       userId: userId,
       transaction: transaction,
+    );
+    _requireManager(member);
+    final connection = await _repository.findConnection(
+      session,
+      workspaceId: workspaceId,
+      connectionId: connectionId,
+      transaction: transaction,
+    );
+    if (connection == null ||
+        expectedRevision != null && connection.revision != expectedRevision) {
+      _invalid();
+    }
+    final secret = await _repository.findSecret(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      connectionId: connectionId,
+      transaction: transaction,
+    );
+    if (secret == null) _invalid();
+    return (connection: connection, secret: secret);
+  });
+
+  Future<List<String>> _fetchConnectionCatalog(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required ({WorkspaceModelConnection connection, WorkspaceSecret secret})
+    snapshot,
+    required String url,
+  }) async {
+    final providerId = snapshot.connection.providerId;
+    final validated = await validatePublicHttpsUri(url, lookup: _lookup);
+    final apiKey = await const WorkspaceSecretCipher().decrypt(
+      session,
+      snapshot.secret,
+    );
+    final headers = providerHeaders(providerId, apiKey);
+    late Future<Object?> responseFuture;
+    await session.db.transaction((transaction) async {
+      await _requireCurrentConnection(
+        session,
+        userId: userId,
+        workspaceId: workspaceId,
+        snapshot: snapshot,
+        transaction: transaction,
+      );
+      final uri = modelCatalogUri(providerId, validated.uri);
+      responseFuture = _usesDefaultFetcher
+          ? _fetchJson(
+              uri,
+              headers,
+              validated.address,
+              dispatchFence: <T>(start) => _dispatchConnectionRequest<T>(
+                session,
+                userId: userId,
+                workspaceId: workspaceId,
+                snapshot: snapshot,
+                start: start,
+              ),
+            )
+          : _fetch(uri, headers, validated.address);
+    });
+    final modelIds = parseModelIds(await responseFuture, maxModels: maxModels);
+    if (modelIds.isEmpty) _invalid();
+    await session.db.transaction((transaction) async {
+      await _requireCurrentConnection(
+        session,
+        userId: userId,
+        workspaceId: workspaceId,
+        snapshot: snapshot,
+        transaction: transaction,
+      );
+    });
+    return modelIds;
+  }
+
+  Future<T> _dispatchConnectionRequest<T>(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required ({WorkspaceModelConnection connection, WorkspaceSecret secret})
+    snapshot,
+    required Future<T> Function() start,
+  }) async {
+    final dispatch = await session.db.transaction((transaction) async {
+      await _requireCurrentConnection(
+        session,
+        userId: userId,
+        workspaceId: workspaceId,
+        snapshot: snapshot,
+        transaction: transaction,
+      );
+      return (
+        response: start(),
+      );
+    });
+    return dispatch.response;
+  }
+
+  Future<void> _requireCurrentConnection(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required ({WorkspaceModelConnection connection, WorkspaceSecret secret})
+    snapshot,
+    required Transaction transaction,
+  }) async {
+    final member = await _lockActorWorkspaceMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    _requireManager(member);
+    final connection = await _repository.findConnection(
+      session,
+      workspaceId: workspaceId,
+      connectionId: snapshot.connection.connectionId,
+      transaction: transaction,
+    );
+    final secret = await _repository.findSecret(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      connectionId: snapshot.connection.connectionId,
+      transaction: transaction,
+    );
+    if (connection?.revision != snapshot.connection.revision ||
+        secret?.id != snapshot.secret.id ||
+        secret?.revision != snapshot.secret.revision) {
+      _invalid();
+    }
+  }
+
+  Future<WorkspaceMember> _lockActorWorkspaceMember(
+    Session session, {
+    required int workspaceId,
+    required String userId,
+    required Transaction transaction,
+  }) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await CloudWorkspace.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(workspaceId) &
+          table.deletedAt.equals(null) &
+          table.erasureRequestedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) _permissionDenied();
+    final member = await WorkspaceMember.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.userId.equals(userId) &
+          table.removedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
     );
     if (member == null) _permissionDenied();
     return member;
@@ -885,14 +1051,18 @@ bool _isPublic(InternetAddress address) {
 Future<Object?> _fetchJson(
   Uri uri,
   Map<String, String> headers,
-  InternetAddress address,
-) async {
+  InternetAddress address, {
+  Future<T> Function<T>(Future<T> Function() start)? dispatchFence,
+}) async {
   final client = pinnedHttpClient(address);
   try {
     final request = await client.getUrl(uri);
     headers.forEach(request.headers.set);
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-    final response = await request.close().timeout(const Duration(seconds: 10));
+    final responseFuture = dispatchFence == null
+        ? request.close()
+        : dispatchFence(request.close);
+    final response = await responseFuture.timeout(const Duration(seconds: 10));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       return _invalid();
     }

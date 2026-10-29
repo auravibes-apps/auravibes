@@ -20,6 +20,7 @@ enum ObjectErrorCode implements _is.SerializableModel {
   objectNotFound,
   uploadExpired,
   uploadMismatch,
+  uploadProvenanceUnavailable,
   scanInfected,
   scanFailed,
   staleRevision,
@@ -42,6 +43,8 @@ enum ObjectErrorCode implements _is.SerializableModel {
         return ObjectErrorCode.uploadExpired;
       case 'uploadMismatch':
         return ObjectErrorCode.uploadMismatch;
+      case 'uploadProvenanceUnavailable':
+        return ObjectErrorCode.uploadProvenanceUnavailable;
       case 'scanInfected':
         return ObjectErrorCode.scanInfected;
       case 'scanFailed':

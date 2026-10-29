@@ -21,6 +21,7 @@ import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -81,6 +82,7 @@ class const AddModelProviderWidget({
   final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
+  final SetupPageBuilder? pageBuilder,
   final bool showHeader = true,
   final String? initialModelProviderId,
 }) extends HookConsumerWidget {
@@ -93,6 +95,7 @@ class const AddModelProviderWidget({
       routeExitGuard: routeExitGuard,
       onCreated: onCreated,
       onCancel: onCancel,
+      pageBuilder: pageBuilder,
     );
     if (routeExitGuard != null) return content;
 
@@ -166,6 +169,7 @@ class const _AddModelProviderContent({
   final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
+  final SetupPageBuilder? pageBuilder,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -183,6 +187,7 @@ class const _AddModelProviderContent({
       routeExitGuard: routeExitGuard,
       onCreated: onCreated,
       onCancel: onCancel,
+      pageBuilder: pageBuilder,
     );
   }
 }
@@ -228,68 +233,180 @@ void _applyInitialModelProviderSelection(
   initialModelApplied.value = true;
 }
 
-class const _AddModelProviderContentView({
-  required final _AddModelProviderRuntime runtime,
-  required final AsyncValue<WorkspaceSession> session,
-  required final BuildContext context,
-  required final WidgetRef ref,
-  required final String workspaceId,
-  required final bool showHeader,
-  final DraftExitGuard? routeExitGuard,
-  final VoidCallback? onCreated,
-  final VoidCallback? onCancel,
-}) extends StatelessWidget {
+class _AddModelProviderContentView extends StatelessWidget {
+  new({
+    required _AddModelProviderRuntime runtime,
+    required AsyncValue<WorkspaceSession> session,
+    required this.context,
+    required WidgetRef ref,
+    required String workspaceId,
+    required bool showHeader,
+    DraftExitGuard? routeExitGuard,
+    VoidCallback? onCreated,
+    VoidCallback? onCancel,
+    SetupPageBuilder? pageBuilder,
+  }) : _child = runtime.selection.hasModel
+           ? _AddModelProviderSessionContent(
+               session: session,
+               context: context,
+               ref: ref,
+               runtime: runtime,
+               workspaceId: workspaceId,
+               showHeader: showHeader,
+               routeExitGuard: routeExitGuard,
+               onCreated: onCreated,
+               onCancel: onCancel,
+               pageBuilder: pageBuilder,
+             )
+           : _AddModelProviderChoice(
+               request: (
+                 context: context,
+                 ref: ref,
+                 workspaceId: workspaceId,
+                 onCancel: onCancel,
+                 routeExitGuard: routeExitGuard,
+               ),
+               pageBuilder: pageBuilder,
+             );
+
+  final BuildContext context;
+  final Widget _child;
+
   @override
-  Widget build(BuildContext _) => runtime.selection.hasModel
-      ? _AddModelProviderSessionContent(
-          session: session,
-          context: context,
-          ref: ref,
-          runtime: runtime,
-          workspaceId: workspaceId,
-          showHeader: showHeader,
-          routeExitGuard: routeExitGuard,
-          onCreated: onCreated,
-          onCancel: onCancel,
-        )
-      : _SelectModelProvider(workspaceId: workspaceId);
+  Widget build(BuildContext context) => _child;
 }
 
-class const _AddModelProviderSessionContent({
-  required final AsyncValue<WorkspaceSession> session,
-  required final BuildContext context,
-  required final WidgetRef ref,
-  required final _AddModelProviderRuntime runtime,
-  required final String workspaceId,
-  required final bool showHeader,
-  final DraftExitGuard? routeExitGuard,
-  final VoidCallback? onCreated,
-  final VoidCallback? onCancel,
+class const _AddModelProviderChoice({
+  required final _CloseModelProviderFormRequest request,
+  final SetupPageBuilder? pageBuilder,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => switch (session) {
-    AsyncLoading() => const Center(child: AuraSpinner()),
-    AsyncError() => _AddModelProviderLoadError(
-      ref: ref,
-      workspaceId: workspaceId,
-      onCancel: onCancel,
-    ),
-    AsyncData(:final value) => _AddModelProviderForm(
-      data: _addModelProviderFormData(_request(value)),
-    ),
-  };
+  Widget build(BuildContext context) {
+    final choice = _SelectModelProvider(
+      workspaceId: request.workspaceId,
+      showHeading: pageBuilder == null,
+    );
+    final builder = pageBuilder;
+    if (builder == null) return choice;
 
-  _AddModelProviderFormRequest _request(WorkspaceSession value) => (
-    context: context,
-    ref: ref,
-    runtime: runtime,
-    capabilities: value.capabilities,
-    workspaceId: workspaceId,
-    showHeader: showHeader,
-    routeExitGuard: routeExitGuard,
-    onCreated: onCreated,
-    onCancel: onCancel,
+    return builder(
+      .new(
+        key: const Key('intro_ai_provider_choice'),
+        heading: const _IntroAIHeading(),
+        description: const TextLocale('intro_flow.ai.choose_provider'),
+        body: choice,
+        scrollBody: false,
+        actions: _ModelProviderChoiceCancel(request: request),
+      ),
+    );
+  }
+}
+
+class const _IntroAIHeading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale('connection_setup.connect_ai'),
+    style: .heading4,
   );
+}
+
+class const _ModelProviderChoiceCancel({
+  required final _CloseModelProviderFormRequest request,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(_closeModelProviderForm(request)),
+    child: const TextLocale('common.cancel'),
+    variant: .ghost,
+  );
+}
+
+class _AddModelProviderSessionContent extends StatelessWidget {
+  new({
+    required AsyncValue<WorkspaceSession> session,
+    required BuildContext context,
+    required WidgetRef ref,
+    required _AddModelProviderRuntime runtime,
+    required String workspaceId,
+    required bool showHeader,
+    DraftExitGuard? routeExitGuard,
+    VoidCallback? onCreated,
+    VoidCallback? onCancel,
+    SetupPageBuilder? pageBuilder,
+  }) : _child = pageBuilder != null && session is! AsyncData<WorkspaceSession>
+           ? _AddModelProviderPendingPage(
+               view: (
+                 session: session,
+                 ref: ref,
+                 workspaceId: workspaceId,
+                 onCancel: onCancel,
+               ),
+               builder: pageBuilder,
+             )
+           : switch (session) {
+               AsyncLoading() => const Center(child: AuraSpinner()),
+               AsyncError() => _AddModelProviderLoadError(
+                 ref: ref,
+                 workspaceId: workspaceId,
+                 onCancel: onCancel,
+               ),
+               AsyncData(:final value) => _AddModelProviderForm(
+                 data: _addModelProviderFormData((
+                   context: context,
+                   ref: ref,
+                   runtime: runtime,
+                   capabilities: value.capabilities,
+                   workspaceId: workspaceId,
+                   showHeader: showHeader,
+                   routeExitGuard: routeExitGuard,
+                   onCreated: onCreated,
+                   onCancel: onCancel,
+                   pageBuilder: pageBuilder,
+                 )),
+               ),
+             };
+  final Widget _child;
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+typedef _AddModelProviderPendingData = ({
+  AsyncValue<WorkspaceSession> session,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCancel,
+});
+
+class _AddModelProviderPendingPage extends StatelessWidget {
+  new({
+    required _AddModelProviderPendingData view,
+    required SetupPageBuilder builder,
+  }) : _child = builder(
+         .new(
+           key: const Key('intro_ai_provider_loading'),
+           heading: const _IntroAIHeading(),
+           body: view.session is AsyncLoading<WorkspaceSession>
+               ? const Center(child: AuraSpinner())
+               : _AddModelProviderLoadError(
+                   ref: view.ref,
+                   workspaceId: view.workspaceId,
+                   onCancel: view.onCancel,
+                 ),
+           actions: view.session is AsyncLoading<WorkspaceSession>
+               ? AuraButton(
+                   onPressed: () => view.onCancel?.call(),
+                   child: const TextLocale('common.cancel'),
+                   variant: .ghost,
+                   disabled: view.onCancel == null,
+                 )
+               : null,
+         ),
+       );
+
+  final Widget _child;
+
+  @override
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AddModelProviderLoadError({
@@ -325,6 +442,7 @@ typedef _AddModelProviderFormRequest = ({
   DraftExitGuard? routeExitGuard,
   VoidCallback? onCreated,
   VoidCallback? onCancel,
+  SetupPageBuilder? pageBuilder,
 });
 
 typedef _AddModelProviderSubmission = ({
@@ -887,32 +1005,104 @@ Future<ModelConnectionEntity?> _addModelProviderFromTransaction(
   );
 }
 
-class const _AddModelProviderForm({
+class _AddModelProviderForm extends StatelessWidget {
+  new({required _AddModelProviderFormData data})
+    : this._(data, data.values.request, data.callbacks);
+  new _(
+    _AddModelProviderFormData data,
+    _AddModelProviderFormRequest request,
+    _AddModelProviderFormCallbacks callbacks,
+  ) : _child = switch (request.pageBuilder) {
+        final builder? => _AddModelProviderEmbeddedForm(
+          data: data,
+          builder: builder,
+        ),
+        null => Column(
+          mainAxisSize: .min,
+          children: [
+            _AddModelProviderFormHeader(
+              showHeader: request.showHeader,
+              onClose: callbacks.onClose,
+            ),
+            _SelectedModelHeader(
+              workspaceId: request.workspaceId,
+              onBack: callbacks.onModelBack,
+            ),
+            Flexible(child: _AddModelProviderFormScroll(data: data)),
+            _AddModelProviderEmbeddedCancel(
+              showHeader: request.showHeader,
+              routeExitGuard: request.routeExitGuard,
+              onCancel: callbacks.onClose,
+            ),
+          ],
+        ),
+      };
+  final Widget _child;
+  @override
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AddModelProviderEmbeddedForm({
   required final _AddModelProviderFormData data,
+  required final SetupPageBuilder builder,
 }) extends StatelessWidget {
-  _AddModelProviderFormValues get _values => data.values;
-  _AddModelProviderFormRequest get _request => _values.request;
-  _AddModelProviderFormCallbacks get _callbacks => data.callbacks;
+  @override
+  Widget build(BuildContext context) => builder(
+    .new(
+      key: const Key('intro_ai_provider_credentials'),
+      heading: const _IntroAIHeading(),
+      body: _AddModelProviderEmbeddedBody(data: data),
+      actions: _AddModelProviderEmbeddedActions(data: data),
+      pending: data.values.request.runtime.controls.isSubmitting,
+    ),
+  );
+}
+
+class _AddModelProviderEmbeddedBody extends StatelessWidget {
+  new({required _AddModelProviderFormData data})
+    : _child = Form(
+        key: data.values.request.runtime.controls.formKey,
+        child: AuraColumn(
+          children: [
+            _SelectedModelHeader(
+              workspaceId: data.values.request.workspaceId,
+              onBack: data.callbacks.onModelBack,
+            ),
+            _ModelProviderCredentialFields(
+              values: data.values,
+              onSubmit: data.callbacks.onSubmit,
+            ),
+            _CodexDeviceCodeSection(
+              values: data.values,
+              callbacks: data.callbacks,
+            ),
+          ],
+          spacing: .md,
+          crossAxisAlignment: .stretch,
+        ),
+      );
+
+  final Widget _child;
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: .min,
+  Widget build(BuildContext context) => _child;
+}
+
+class const _AddModelProviderEmbeddedActions({
+  required final _AddModelProviderFormData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
     children: [
-      _AddModelProviderFormHeader(
-        showHeader: _request.showHeader,
-        onClose: _callbacks.onClose,
-      ),
-      _SelectedModelHeader(
-        workspaceId: _request.workspaceId,
-        onBack: _callbacks.onModelBack,
-      ),
-      Flexible(child: _AddModelProviderFormScroll(data: data)),
+      _CodexOAuthActions(values: data.values, callbacks: data.callbacks),
       _AddModelProviderEmbeddedCancel(
-        showHeader: _request.showHeader,
-        routeExitGuard: _request.routeExitGuard,
-        onCancel: _callbacks.onClose,
+        showHeader: false,
+        routeExitGuard: data.values.request.routeExitGuard,
+        onCancel: data.callbacks.onClose,
       ),
     ],
+    spacing: .sm,
+    crossAxisAlignment: .stretch,
   );
 }
 
@@ -1011,6 +1201,7 @@ class const _ModelProviderCredentialFieldsView({
     crossAxisAlignment: .start,
     children: [
       _ModelProviderNameField(workspaceId: values.request.workspaceId),
+      if (values.request.pageBuilder != null) const SizedBox(height: 16),
       _ModelProviderSecretFieldsVisibility(values: values, onSubmit: onSubmit),
     ],
   );
@@ -1513,28 +1704,38 @@ class const _CreateButtonActions({
   @override
   Widget build(BuildContext _) {
     if (!values.request.runtime.selection.isOAuth) {
-      return _ApiKeyCreateActions(callbacks: callbacks, state: _state);
+      return _ApiKeyCreateActions(
+        callbacks: callbacks,
+        size: values.request.pageBuilder == null ? .large : .medium,
+        state: _state,
+      );
     }
 
-    return Column(
-      children: [
-        _CodexBrowserAction(
-          values: values,
-          state: _oauthState,
-          callbacks: callbacks,
-        ),
-        _CodexDeviceAction(
-          values: values,
-          state: _oauthState,
-          callbacks: callbacks,
-        ),
-      ],
+    return _CodexCreateActions(
+      values: values,
+      callbacks: callbacks,
+      state: _oauthState,
     );
   }
 }
 
+class const _CodexCreateActions({
+  required final _AddModelProviderFormValues values,
+  required final _AddModelProviderFormCallbacks callbacks,
+  required final ({bool isSubmitting, bool disabled}) state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _CodexBrowserAction(values: values, state: state, callbacks: callbacks),
+      _CodexDeviceAction(values: values, state: state, callbacks: callbacks),
+    ],
+  );
+}
+
 class const _ApiKeyCreateActions({
   required final _AddModelProviderFormCallbacks callbacks,
+  required final AuraButtonSize size,
   required final ({
     bool isSubmitting,
     bool isTesting,
@@ -1550,6 +1751,7 @@ class const _ApiKeyCreateActions({
         onPressed: callbacks.onVerify,
         isTesting: state.isTesting,
         disabled: state.disabled,
+        size: size,
       ),
       const AuraSizedBox(height: .md),
       _AddProviderButton(
@@ -1558,6 +1760,7 @@ class const _ApiKeyCreateActions({
         isTesting: state.isTesting,
         isVerified: state.isVerified,
         disabled: state.disabled,
+        size: size,
       ),
     ],
   );
@@ -1567,6 +1770,7 @@ class const _VerifyProviderButton({
   required final VoidCallback onPressed,
   required final bool isTesting,
   required final bool disabled,
+  required final AuraButtonSize size,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -1576,7 +1780,7 @@ class const _VerifyProviderButton({
       onPressed: onPressed,
       child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
       variant: .outlined,
-      size: .large,
+      size: size,
       isLoading: isTesting,
       isFullWidth: true,
       disabled: disabled || isTesting,
@@ -1590,6 +1794,7 @@ class const _AddProviderButton({
   required final bool isTesting,
   required final bool isVerified,
   required final bool disabled,
+  required final AuraButtonSize size,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -1601,7 +1806,7 @@ class const _AddProviderButton({
       child: const TextLocale(
         LocaleKeys.models_screens_add_provider_open_button,
       ),
-      size: .large,
+      size: size,
       isLoading: isSubmitting,
       isFullWidth: true,
       disabled: disabled || isTesting || !isVerified,
@@ -2198,8 +2403,10 @@ class const _CopyVerificationUrlButton({required final VoidCallback onPressed})
   );
 }
 
-class const _SelectModelProvider({required final String workspaceId})
-    extends HookConsumerWidget {
+class const _SelectModelProvider({
+  required final String workspaceId,
+  required final bool showHeading,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = _useModelProviderSelection(ref, workspaceId);
@@ -2208,6 +2415,7 @@ class const _SelectModelProvider({required final String workspaceId})
       workspaceId: workspaceId,
       ref: ref,
       state: state,
+      showHeading: showHeading,
     );
   }
 }
@@ -2216,6 +2424,7 @@ class const _ModelProviderSelectionContent({
   required final String workspaceId,
   required final WidgetRef ref,
   required final _ModelProviderSelectionState state,
+  required final bool showHeading,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => state.models == null
@@ -2227,6 +2436,7 @@ class const _ModelProviderSelectionContent({
           filteredModels: state.filteredModels,
           onSearchChanged: state.onSearchChanged,
           onModelSelected: state.onModelSelected,
+          showHeading: showHeading,
         );
 }
 
@@ -2319,6 +2529,7 @@ class const _SelectModelProviderView({
   required final List<ApiModelProviderEntity> filteredModels,
   required final ValueChanged<String> onSearchChanged,
   required final ValueChanged<String> onModelSelected,
+  required final bool showHeading,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraColumn(
@@ -2326,6 +2537,7 @@ class const _SelectModelProviderView({
       _ModelProviderSearchControls(
         searchQuery: searchQuery,
         onSearchChanged: onSearchChanged,
+        showHeading: showHeading,
       ),
       Expanded(
         child: _ModelProviderResults(
@@ -2340,12 +2552,15 @@ class const _SelectModelProviderView({
 class const _ModelProviderSearchControls({
   required final String searchQuery,
   required final ValueChanged<String> onSearchChanged,
+  required final bool showHeading,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      const _ModelProviderSearchLabel(),
-      const AuraSizedBox(height: .md),
+      if (showHeading) ...[
+        const _ModelProviderSearchLabel(),
+        const AuraSizedBox(height: .md),
+      ],
       _ModelProviderSearchInput(
         searchQuery: searchQuery,
         onSearchChanged: onSearchChanged,

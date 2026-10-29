@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -33,14 +34,106 @@ import 'package:material_ui/material_ui.dart';
 
 final _logger = Logger('new_chat_screen');
 
-class const NewChatScreen({required final String workspaceId, super.key})
-    extends StatelessWidget {
+class const NewChatScreen({
+  required final String workspaceId,
+  final String? initialModelSelectionId,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TickerMode(
     enabled: true,
-    child: _NewChatContent(workspaceId: workspaceId),
+    child: _NewChatHandoff(
+      workspaceId: workspaceId,
+      initialModelSelectionId: initialModelSelectionId,
+    ),
   );
 }
+
+class const _NewChatHandoff({
+  required final String workspaceId,
+  final String? initialModelSelectionId,
+}) extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_NewChatHandoff> createState() => _NewChatHandoffState();
+}
+
+class _NewChatHandoffState extends ConsumerState<_NewChatHandoff> {
+  bool _applied = false;
+  bool _applying = false;
+
+  @override
+  void didUpdateWidget(covariant _NewChatHandoff oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId != widget.workspaceId ||
+        oldWidget.initialModelSelectionId != widget.initialModelSelectionId) {
+      _applied = false;
+      _applying = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.initialModelSelectionId != null) {
+      final _ = ref.watch(newChatProvider(widget.workspaceId));
+      if (_modelAvailable()) _scheduleHandoff();
+    }
+
+    return _NewChatContent(workspaceId: widget.workspaceId);
+  }
+
+  bool _modelAvailable() => _handoffModelAvailable(
+    ref.watch(
+      listModelsGroupedByProviderProvider(workspaceId: widget.workspaceId),
+    ),
+    widget.workspaceId,
+    widget.initialModelSelectionId,
+  );
+
+  void _scheduleHandoff() {
+    if (_applied || _applying) return;
+    _applying = true;
+    final task = widget;
+    unawaited(Future<void>.microtask(() => _apply(task)));
+  }
+
+  void _apply(_NewChatHandoff task) {
+    _applying = false;
+    if (!_canApply(task)) return;
+    _applied = true;
+    ref
+        .read(newChatProvider(task.workspaceId).notifier)
+        .setModelId(task.initialModelSelectionId);
+  }
+
+  bool _canApply(_NewChatHandoff task) =>
+      mounted &&
+      !_applied &&
+      task.workspaceId == widget.workspaceId &&
+      task.initialModelSelectionId == widget.initialModelSelectionId;
+}
+
+bool _handoffModelAvailable(
+  AsyncValue<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>
+  models,
+  String workspaceId,
+  String? selection,
+) {
+  if (models.isLoading || models.hasError) return false;
+
+  return models.value?.values
+          .expand((group) => group)
+          .any((model) => _handoffMatches(model, workspaceId, selection)) ??
+      false;
+}
+
+bool _handoffMatches(
+  WorkspaceModelSelectionWithConnectionEntity model,
+  String workspaceId,
+  String? selection,
+) =>
+    model.workspaceModelSelection.id == selection &&
+    model.modelConnection.workspaceId == workspaceId &&
+    model.modelConnection.hasKey;
 
 class const _NewChatContent({required final String workspaceId})
     extends ConsumerWidget {

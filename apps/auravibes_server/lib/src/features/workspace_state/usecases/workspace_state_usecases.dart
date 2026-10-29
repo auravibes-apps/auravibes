@@ -5,18 +5,30 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
+import '../../objects/object_file_mutation.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
+import '../workspace_directory_move_batch.dart';
+import '../workspace_record_mutation_batch.dart';
+import '../workspace_revision_capture.dart';
+import '../workspace_history_receipts.dart';
 import '../workspace_secret_cipher.dart';
+import '../workspace_table_access.dart';
+import '../workspace_table_mutation_validation.dart';
+import '../workspace_table_page_reader.dart';
+import '../workspace_table_duplication.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
   String endpoint,
   String requestId,
   String hash,
+  bool aiInvolved,
+  String? conversationId,
 });
 
 class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
@@ -30,13 +42,40 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     Session session, {
     required String userId,
     required ReadWorkspaceStateRequest request,
-  }) async {
-    await _authorize(session, request.workspaceId, userId);
-    final workspace = await _repository.findWorkspace(
+  }) => session.db.transaction((transaction) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.authenticationRequired,
+      );
+    }
+    final workspace = await CloudWorkspace.db.findById(
       session,
       request.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
     );
-    if (workspace == null) {
+    if (workspace == null || workspace.deletedAt != null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.membershipRequired,
+      );
+    }
+    if (workspace.erasureRequestedAt != null) {
+      throw CloudWorkspaceException(
+        code: CloudWorkspaceErrorCode.permissionDenied,
+      );
+    }
+    final member = await _repository.findMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (member == null) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
@@ -52,29 +91,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
     }
 
-    final pages = <WorkspaceResourcePage>[];
-    for (final selector in request.pages) {
-      final rows = await _repository.readPage(
-        session,
-        workspaceId: request.workspaceId,
-        kind: selector.resourceKind,
-        limit: selector.limit + 1,
-        afterResourceId: selector.afterResourceId,
-      );
-      final hasMore = rows.length > selector.limit;
-      if (hasMore) rows.removeLast();
-      pages.add(
-        WorkspaceResourcePage(
-          resourceKind: selector.resourceKind,
-          resources: rows,
-          nextResourceId: hasMore ? rows.last.resourceId : null,
-        ),
-      );
-    }
+    final pageReader = WorkspaceTablePageReader(
+      _repository,
+      session,
+      member,
+      transaction,
+    );
+    final pages = [
+      for (final selector in request.pages) await pageReader.page(selector),
+    ];
 
     final firstEvent = await _repository.firstEvent(
       session,
       request.workspaceId,
+      transaction: transaction,
     );
     final earliest = firstEvent?.sequence;
     final after = request.afterSequence;
@@ -87,29 +117,44 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             workspaceId: request.workspaceId,
             afterSequence: after,
             limit: request.eventLimit,
+            transaction: transaction,
           );
+
     return ReadWorkspaceStateResponse(
       pages: pages,
       currentSequence: workspace.sequence,
-      events: events,
+      events: [
+        for (final event in events)
+          await WorkspaceTableAccess(transaction: transaction).visibleEvent(
+            session,
+            member,
+            event,
+          ),
+      ],
       earliestRetainedSequence: earliest,
       requiresSnapshot: requiresSnapshot,
     );
-  }
+  });
 
   Future<PatchWorkspaceStateResponse> patch(
     Session session, {
     required String userId,
     required PatchWorkspaceStateRequest request,
     Future<void> Function(Transaction transaction)? guard,
+    bool previewOnly = false,
+    bool aiInvolved = false,
+    String? conversationId,
   }) async {
-    if (request.requestId.isEmpty ||
-        request.operations.isEmpty ||
-        request.operations.length > _maxOperations) {
+    if (aiInvolved &&
+            (conversationId == null ||
+                conversationId.isEmpty ||
+                conversationId.length > 200) ||
+        !aiInvolved && conversationId != null) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
+    final moves = WorkspaceDirectoryMoveBatch(request)..validate();
     try {
       for (final operation in request.operations) {
         final data = operation.data;
@@ -120,53 +165,116 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
-    final requestJson = jsonEncode(request.toJson());
+    if (request.operations.any(
+      (operation) =>
+          operation.operation == .delete &&
+          {
+            WorkspaceResourceKind.folder,
+            WorkspaceResourceKind.table,
+            WorkspaceResourceKind.tableRecord,
+            WorkspaceResourceKind.file,
+          }.contains(operation.resourceKind),
+    )) {
+      throw CloudWorkspaceException(code: .validationFailed);
+    }
+    final requestJson = jsonEncode(moves.canonicalRequest());
     final requestHash = (await Sha256().hash(utf8.encode(requestJson))).bytes;
     final hash = base64UrlEncode(requestHash);
 
-    return session.db.transaction((transaction) async {
-      final member = await _authorize(
-        session,
-        request.workspaceId,
-        userId,
-        transaction: transaction,
-      );
-      _requirePatchRole(member.role, request.operations);
-      final receipt = await _findReceipt(
-        session,
-        request.workspaceId,
-        userId,
-        _endpointPatch,
-        request.requestId,
-        transaction,
-      );
-      if (receipt != null) {
-        if (receipt.requestHash != hash) _idempotencyConflict();
-        return PatchWorkspaceStateResponse.fromJson(
-          jsonDecode(receipt.responseJson) as Map<String, dynamic>,
+    try {
+      return await session.db.transaction((transaction) async {
+        await _authorize(
+          session,
+          request.workspaceId,
+          userId,
+          transaction: transaction,
         );
-      }
+        final workspace = await _requireLockedWorkspace(
+          session,
+          request.workspaceId,
+          transaction,
+        );
+        final member = await _authorize(
+          session,
+          request.workspaceId,
+          userId,
+          transaction: transaction,
+        );
+        _requirePatchRole(member.role, request.operations);
+        for (final operation in request.operations) {
+          await WorkspaceTableAccess(transaction: transaction).requireWrite(
+            session,
+            member,
+            operation,
+          );
+        }
+        await moves.authorize(session, member, transaction);
+        await WorkspaceRevisionCapture(
+          session,
+          transaction,
+        ).requirePatch(request);
+        await guard?.call(transaction);
+        final receipt = await _findReceipt(
+          session,
+          request.workspaceId,
+          userId,
+          _endpointPatch,
+          request.requestId,
+          transaction,
+        );
+        if (!previewOnly && receipt != null) {
+          if (receipt.requestHash != hash) _idempotencyConflict();
 
-      final workspace = await _requireLockedWorkspace(
-        session,
-        request.workspaceId,
-        transaction,
-      );
-      await guard?.call(transaction);
-      return _commitOperations(
-        session,
-        workspace: workspace,
-        workspaceId: request.workspaceId,
-        metadata: (
-          userId: userId,
-          endpoint: _endpointPatch,
-          requestId: request.requestId,
-          hash: hash,
-        ),
-        operations: request.operations,
-        transaction: transaction,
-      );
-    });
+          return await _visiblePatch(
+            session,
+            member,
+            transaction,
+            PatchWorkspaceStateResponse.fromJson(
+              jsonDecode(receipt.responseJson) as Map<String, dynamic>,
+            ),
+          );
+        }
+
+        await moves.apply(session, member, transaction);
+        final response = await _commitOperations(
+          session,
+          workspace: workspace,
+          workspaceId: request.workspaceId,
+          metadata: (
+            userId: userId,
+            endpoint: _endpointPatch,
+            requestId: request.requestId,
+            hash: hash,
+            aiInvolved: aiInvolved,
+            conversationId: conversationId,
+          ),
+          operations: request.operations,
+          transaction: transaction,
+        );
+        if (previewOnly) throw _WorkspacePreviewComplete(response);
+
+        return response;
+      });
+    } on _WorkspacePreviewComplete catch (preview) {
+      return preview.response;
+    }
+  }
+
+  Future<PatchWorkspaceStateResponse> duplicateTable(
+    Session session, {
+    required String userId,
+    required DuplicateWorkspaceItemRequest request,
+  }) async {
+    WorkspaceTableDuplication.validate(request);
+    final input = (
+      request: request,
+      userId: userId,
+      hash: await _tableCopyHash(request),
+    );
+
+    return session.db.transaction(
+      (transaction) => _duplicateTable(session, input, transaction),
+    );
   }
 
   Future<PatchWorkspaceStateResponse> duplicateAgent(
@@ -208,6 +316,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return PatchWorkspaceStateResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -218,6 +327,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request,
         transaction,
       );
+
       return _commitOperations(
         session,
         workspace: workspace,
@@ -227,6 +337,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           endpoint: _endpointDuplicateAgent,
           requestId: request.requestId,
           hash: hash,
+          aiInvolved: false,
+          conversationId: null,
         ),
         operations: operations,
         transaction: transaction,
@@ -242,55 +354,176 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     required Iterable<WorkspacePatchOperation> operations,
     required Transaction transaction,
   }) async {
-    final now = DateTime.now().toUtc();
+    return await _commitPrepared(
+      (
+        session: session,
+        workspace: workspace,
+        workspaceId: workspaceId,
+        metadata: metadata,
+        transaction: transaction,
+        now: DateTime.now().toUtc(),
+      ),
+      operations,
+    );
+  }
+
+  Future<PatchWorkspaceStateResponse> _commitPrepared(
+    _OperationCommitContext context,
+    Iterable<WorkspacePatchOperation> operations,
+  ) async {
+    final changed = await _applyBatch(context, operations);
+    final response = await _emitBatch(context, changed);
+    await _saveBatchReceipt(context, response);
+
+    return await _projectBatch(context, response);
+  }
+
+  // Copying preserves missing cells rather than applying defaults added later.
+  WorkspaceRecordMutationBatch _recordBatch(_OperationCommitContext context) =>
+      WorkspaceRecordMutationBatch(
+        _repository,
+        context.session,
+        context.workspaceId,
+        context.transaction,
+        context.metadata.userId,
+        applyDefaults: context.metadata.endpoint != _tableCopyEndpoint,
+      );
+
+  Future<List<WorkspaceResource>> _applyBatch(
+    _OperationCommitContext context,
+    Iterable<WorkspacePatchOperation> operations,
+  ) async {
+    final records = _recordBatch(context);
     final changed = <WorkspaceResource>[];
     for (final operation in operations) {
-      changed.add(
-        await _applyOperation(
-          session,
-          operation,
-          workspaceId,
-          now,
-          transaction,
-        ),
-      );
+      await records.remember(operation);
+      changed.add(await _applyBatchOperation(context, operation));
     }
-    var sequence = workspace.sequence;
+    await records.validate(changed);
+
+    return changed;
+  }
+
+  Future<WorkspaceResource> _applyBatchOperation(
+    _OperationCommitContext context,
+    WorkspacePatchOperation operation,
+  ) => _applyOperation(
+    context.session,
+    operation,
+    context.workspaceId,
+    context.now,
+    context.transaction,
+    userId: context.metadata.userId,
+    aiInvolved: context.metadata.aiInvolved,
+    conversationId: context.metadata.conversationId,
+    deferRecordState: true,
+    applyRecordDefaults: context.metadata.endpoint != _tableCopyEndpoint,
+  );
+
+  Future<PatchWorkspaceStateResponse> _emitBatch(
+    _OperationCommitContext context,
+    List<WorkspaceResource> changed,
+  ) async {
+    final sequence = await _recordBatchEvents(context, changed);
+    await _updateBatchWorkspace(context, sequence);
+
+    return PatchWorkspaceStateResponse(resources: changed, sequence: sequence);
+  }
+
+  Future<int> _recordBatchEvents(
+    _OperationCommitContext context,
+    List<WorkspaceResource> changed,
+  ) async {
+    var sequence = context.workspace.sequence;
     for (final resource in changed) {
       sequence++;
-      final event = WorkspaceResourceValidation.eventFor(resource);
-      await _recordEvent(
-        session,
-        workspaceId: workspaceId,
-        sequence: sequence,
-        userId: metadata.userId,
-        kind: event.kind,
-        resourceKind: event.resourceKind,
-        resourceId: event.resourceId,
-        transaction: transaction,
-      );
+      await _recordBatchEvent(context, resource, sequence);
     }
-    await CloudWorkspace.db.updateRow(
-      session,
-      workspace.copyWith(sequence: sequence, updatedAt: now),
-      transaction: transaction,
-    );
-    final response = PatchWorkspaceStateResponse(
-      resources: changed,
+
+    return sequence;
+  }
+
+  Future<void> _recordBatchEvent(
+    _OperationCommitContext context,
+    WorkspaceResource resource,
+    int sequence,
+  ) async {
+    final event = WorkspaceResourceValidation.eventFor(resource);
+    await _recordEvent(
+      context.session,
+      workspaceId: context.workspaceId,
       sequence: sequence,
+      userId: context.metadata.userId,
+      kind: event.kind,
+      resourceKind: event.resourceKind,
+      resourceId: event.resourceId,
+      transaction: context.transaction,
     );
+  }
+
+  Future<void> _updateBatchWorkspace(
+    _OperationCommitContext context,
+    int sequence,
+  ) async {
+    final _ = await CloudWorkspace.db.updateRow(
+      context.session,
+      context.workspace.copyWith(sequence: sequence, updatedAt: context.now),
+      transaction: context.transaction,
+    );
+  }
+
+  Future<void> _saveBatchReceipt(
+    _OperationCommitContext context,
+    PatchWorkspaceStateResponse response,
+  ) async {
+    final metadata = context.metadata;
     await _saveReceipt(
-      session,
-      workspaceId: workspaceId,
+      context.session,
+      workspaceId: context.workspaceId,
       userId: metadata.userId,
       endpoint: metadata.endpoint,
       requestId: metadata.requestId,
       hash: metadata.hash,
       responseJson: jsonEncode(response.toJson()),
-      now: now,
-      transaction: transaction,
+      now: context.now,
+      transaction: context.transaction,
     );
-    return response;
+  }
+
+  Future<PatchWorkspaceStateResponse> _projectBatch(
+    _OperationCommitContext context,
+    PatchWorkspaceStateResponse response,
+  ) async {
+    final member = await _repository.findMember(
+      context.session,
+      workspaceId: context.workspaceId,
+      userId: context.metadata.userId,
+      transaction: context.transaction,
+    );
+    if (member == null) throw CloudWorkspaceException(code: .permissionDenied);
+
+    return await _visiblePatch(
+      context.session,
+      member,
+      context.transaction,
+      response,
+    );
+  }
+
+  Future<PatchWorkspaceStateResponse> _visiblePatch(
+    Session session,
+    WorkspaceMember member,
+    Transaction transaction,
+    PatchWorkspaceStateResponse response,
+  ) async {
+    final resources = <WorkspaceResource>[];
+    for (final row in response.resources) {
+      final visible = await WorkspaceTableAccess(transaction: transaction)
+          .visible(session, member, row);
+      if (visible != null) resources.add(visible);
+    }
+
+    return response.copyWith(resources: resources);
   }
 
   Future<PutWorkspaceSecretResponse> putSecret(
@@ -307,6 +540,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
+
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -334,11 +568,25 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return PutWorkspaceSecretResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
       }
 
+      if (request.scope == WorkspaceSecretScope.user &&
+          request.secretKind == WorkspaceSecretKind.provider) {
+        final connection = await _repository.findResource(
+          session,
+          workspaceId: request.workspaceId,
+          kind: WorkspaceResourceKind.serviceConnection,
+          resourceId: request.resourceId,
+          transaction: transaction,
+        );
+        if (connection != null && connection.deletedAt == null) {
+          _validationFailed();
+        }
+      }
       final owner = WorkspaceResourceValidation.secretOwnerKey(
         request.scope,
         userId,
@@ -425,6 +673,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
+
       return response;
     });
   }
@@ -440,7 +689,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     }
     final isServiceConnection =
         operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
-        request.secretKind == WorkspaceSecretKind.provider;
+        request.secretKind == WorkspaceSecretKind.provider &&
+        request.scope == WorkspaceSecretScope.workspace;
     final deletesServiceConnection =
         isServiceConnection &&
         operation.operation == WorkspacePatchOperationKind.delete;
@@ -465,6 +715,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
+
     return session.db.transaction((transaction) async {
       final member = await _authorize(
         session,
@@ -493,6 +744,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       );
       if (receipt != null) {
         if (receipt.requestHash != hash) _idempotencyConflict();
+
         return MutateWorkspaceCredentialResponse.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
@@ -576,6 +828,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request.workspaceId,
         now,
         transaction,
+        userId: userId,
         credentialSecret: (value: secret),
       );
       final resetResources = resetMcpPermissions
@@ -636,6 +889,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           now: now,
           transaction: transaction,
         );
+
         return response;
       }
       final box = secret == null
@@ -734,6 +988,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now: now,
         transaction: transaction,
       );
+
       return response;
     });
   }
@@ -763,6 +1018,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ..['hasSecret'] = configured;
     if (displaySuffix != null) decoded['keySuffix'] = displaySuffix;
     if (secretRevision != null) decoded['secretRevision'] = secretRevision;
+
     return WorkspacePatchOperation(
       operation: operation.operation,
       resourceKind: operation.resourceKind,
@@ -960,6 +1216,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (value is List) return value.any(_containsSecretData);
     if (value is! Map) return false;
     const secretKeys = {'secret', 'token', 'apiKey', 'password', 'credential'};
+
     return value.entries.any(
       (entry) =>
           (entry.key is String && secretKeys.contains(entry.key)) ||
@@ -973,6 +1230,18 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String userId, {
     Transaction? transaction,
   }) async {
+    if (transaction != null) {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: userId,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        throw CloudWorkspaceException(
+          code: CloudWorkspaceErrorCode.authenticationRequired,
+        );
+      }
+    }
     final member = await _repository.findMember(
       session,
       workspaceId: workspaceId,
@@ -990,6 +1259,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.membershipRequired,
       );
     }
+
     return member;
   }
 
@@ -998,6 +1268,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     List<WorkspacePatchOperation> operations,
   ) {
     const memberKinds = {
+      WorkspaceResourceKind.tableRecord,
       WorkspaceResourceKind.conversation,
       WorkspaceResourceKind.conversationToolSelection,
       WorkspaceResourceKind.conversationSkillSelection,
@@ -1064,6 +1335,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       ),
     ];
     if (operations.length > _maxOperations) _validationFailed();
+
     return operations;
   }
 
@@ -1140,13 +1412,44 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     fieldMask: const [],
   );
 
+  Future<void> _validateFolderParent(
+    Session session,
+    int workspaceId,
+    String folderId,
+    String? parentId,
+    Transaction transaction,
+  ) async {
+    final visited = {folderId};
+    var current = parentId;
+    while (current != null) {
+      if (!visited.add(current)) throw const FormatException();
+      final parent = await _repository.findResource(
+        session,
+        workspaceId: workspaceId,
+        kind: WorkspaceResourceKind.folder,
+        resourceId: current,
+        transaction: transaction,
+      );
+      if (parent == null || parent.deletedAt != null) {
+        throw const FormatException();
+      }
+      final data = jsonDecode(parent.data) as Map<String, dynamic>;
+      current = data['parentId'] as String?;
+    }
+  }
+
   Future<WorkspaceResource> _applyOperation(
     Session session,
     WorkspacePatchOperation operation,
     int workspaceId,
     DateTime now,
     Transaction transaction, {
+    required String userId,
+    bool aiInvolved = false,
+    String? conversationId,
     ({String? value})? credentialSecret,
+    bool deferRecordState = false,
+    bool applyRecordDefaults = true,
   }) async {
     if (operation.resourceId.isEmpty) {
       throw CloudWorkspaceException(
@@ -1167,6 +1470,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       resourceId: operation.resourceId,
       transaction: transaction,
     );
+    var validatedData = operation.data;
     if (operation.operation != WorkspacePatchOperationKind.delete) {
       final data = operation.data;
       if (data == null) {
@@ -1192,6 +1496,39 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             transaction: transaction,
           ),
         );
+        await WorkspaceTableMutationValidation(
+          _repository,
+          session,
+          workspaceId,
+          transaction,
+          userId,
+          deferRecordState: deferRecordState,
+          applyDefaults: applyRecordDefaults,
+        ).validate(operation, decoded, existing);
+        if (operation.resourceKind == WorkspaceResourceKind.file) {
+          await ObjectFileMutation(
+            session,
+            workspaceId,
+            userId,
+            transaction,
+          ).validate(decoded, existing);
+          validatedData = jsonEncode(decoded);
+        }
+        if ({
+          WorkspaceResourceKind.table,
+          WorkspaceResourceKind.tableRecord,
+        }.contains(operation.resourceKind)) {
+          validatedData = jsonEncode(decoded);
+        }
+        if (operation.resourceKind == WorkspaceResourceKind.folder) {
+          await _validateFolderParent(
+            session,
+            workspaceId,
+            operation.resourceId,
+            decoded['parentId'] as String?,
+            transaction,
+          );
+        }
         if (operation.resourceKind == WorkspaceResourceKind.workflow) {
           await _validateWorkflowDependencyAcyclicity(
             session,
@@ -1213,19 +1550,27 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           operation.expectedRevision != null) {
         throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
       }
-      return WorkspaceResource.db.insertRow(
+      final created = await WorkspaceResource.db.insertRow(
         session,
         WorkspaceResource(
           workspaceId: workspaceId,
           resourceKind: operation.resourceKind,
           resourceId: operation.resourceId,
-          data: operation.data!,
+          data: validatedData!,
           revision: 1,
           createdAt: now,
           updatedAt: now,
         ),
         transaction: transaction,
       );
+      await WorkspaceRevisionCapture(session, transaction).save(
+        created,
+        actorUserId: userId,
+        aiInvolved: aiInvolved,
+        operation: operation.operation.name,
+        conversationId: conversationId,
+      );
+      return created;
     }
     if (existing == null || existing.deletedAt != null) {
       throw CloudWorkspaceException(code: CloudWorkspaceErrorCode.conflict);
@@ -1234,7 +1579,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     final updated = existing.copyWith(
       data: operation.operation == WorkspacePatchOperationKind.delete
           ? existing.data
-          : operation.data ?? existing.data,
+          : validatedData ?? existing.data,
       revision: existing.revision + 1,
       updatedAt: now,
       deletedAt: operation.operation == WorkspacePatchOperationKind.delete
@@ -1264,11 +1609,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
-    return WorkspaceResource.db.updateRow(
+    await WorkspaceRevisionCapture(session, transaction).save(existing);
+    final written = await WorkspaceResource.db.updateRow(
       session,
       updated,
       transaction: transaction,
     );
+    await WorkspaceRevisionCapture(session, transaction).save(
+      written,
+      actorUserId: userId,
+      aiInvolved: aiInvolved,
+      operation: operation.operation.name,
+      conversationId: conversationId,
+    );
+    return written;
   }
 
   Future<void> _validateWorkflowDependencyAcyclicity(
@@ -1340,19 +1694,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     String endpoint,
     String requestId,
     Transaction transaction,
-  ) => WorkspaceMutationReceipt.db.findFirstRow(
-    session,
-    where: (t) =>
-        t.workspaceId.equals(workspaceId) &
-        t.actorUserId.equals(userId) &
-        t.scopeKey.equals(
-          WorkspaceResourceValidation.receiptScopeKey(workspaceId),
-        ) &
-        t.endpoint.equals(endpoint) &
-        t.requestId.equals(requestId),
-    transaction: transaction,
-  );
-
+  ) => WorkspaceMutationReceipt.db
+      .findFirstRow(
+        session,
+        where: (t) =>
+            t.workspaceId.equals(workspaceId) &
+            t.actorUserId.equals(userId) &
+            t.scopeKey.equals(
+              WorkspaceResourceValidation.receiptScopeKey(workspaceId),
+            ) &
+            t.endpoint.equals(endpoint) &
+            t.requestId.equals(requestId),
+        transaction: transaction,
+      )
+      .then(WorkspaceHistoryReceipts.available);
   Future<void> _saveReceipt(
     Session session, {
     required int workspaceId,
@@ -1368,8 +1723,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       session,
       WorkspaceMutationReceipt(
         workspaceId: workspaceId,
-        actorUserId: userId,
         scopeKey: WorkspaceResourceValidation.receiptScopeKey(workspaceId),
+        actorUserId: userId,
         endpoint: endpoint,
         requestId: requestId,
         requestHash: hash,
@@ -1406,6 +1761,115 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     );
   }
 
+  Future<PatchWorkspaceStateResponse> _duplicateTable(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) async {
+    final context = await _tableCopyContext(session, input, transaction);
+    final copy = context.copy;
+    final source = await copy.source();
+    await copy.requireTarget();
+    final replay = await _tableCopyReplay(session, input, context);
+    if (replay != null) return replay;
+
+    final operations = await copy.operations(source);
+    await copy.requireOperations(operations);
+
+    return await _commitTableCopy(session, input, context, operations);
+  }
+
+  Future<_TableCopyContext> _tableCopyContext(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) async {
+    final _ = await _tableCopyMember(session, input, transaction);
+    final workspace = await _requireLockedWorkspace(
+      session,
+      input.request.workspaceId,
+      transaction,
+    );
+    final member = await _tableCopyMember(session, input, transaction);
+
+    return (
+      workspace: workspace,
+      member: member,
+      transaction: transaction,
+      copy: _tableCopyHelper(session, input, transaction),
+    );
+  }
+
+  WorkspaceTableDuplication _tableCopyHelper(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) => .new(_repository, session, input.request, transaction);
+
+  Future<WorkspaceMember> _tableCopyMember(
+    Session session,
+    _TableCopyInput input,
+    Transaction transaction,
+  ) async {
+    final member = await _authorize(
+      session,
+      input.request.workspaceId,
+      input.userId,
+      transaction: transaction,
+    );
+    if (member.role != WorkspaceRoles.owner) {
+      throw CloudWorkspaceException(code: .permissionDenied);
+    }
+
+    return member;
+  }
+
+  Future<PatchWorkspaceStateResponse?> _tableCopyReplay(
+    Session session,
+    _TableCopyInput input,
+    _TableCopyContext context,
+  ) async {
+    final receipt = await _tableCopyReceipt(session, input, context);
+    if (receipt == null) return null;
+    if (receipt.requestHash != input.hash) _idempotencyConflict();
+    final response = _copyResponse(receipt);
+    await context.copy.requireLiveTargets(response.resources);
+
+    return await _visiblePatch(
+      session,
+      context.member,
+      context.transaction,
+      response,
+    );
+  }
+
+  Future<WorkspaceMutationReceipt?> _tableCopyReceipt(
+    Session session,
+    _TableCopyInput input,
+    _TableCopyContext context,
+  ) => _findReceipt(
+    session,
+    input.request.workspaceId,
+    input.userId,
+    _tableCopyEndpoint,
+    input.request.requestId,
+    context.transaction,
+  );
+
+  Future<PatchWorkspaceStateResponse> _commitTableCopy(
+    Session session,
+    _TableCopyInput input,
+    _TableCopyContext context,
+    List<WorkspacePatchOperation> operations,
+  ) => _commitOperations(
+    session,
+    workspace: context.workspace,
+    workspaceId: input.request.workspaceId,
+    metadata: _tableCopyMetadata(input),
+    operations: operations,
+    transaction: context.transaction,
+  );
+
   String _suffix(String secret) =>
       secret.length <= 4 ? '••••' : secret.substring(secret.length - 4);
 
@@ -1421,3 +1885,43 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     code: CloudWorkspaceErrorCode.idempotencyConflict,
   );
 }
+
+class const _WorkspacePreviewComplete(
+  final PatchWorkspaceStateResponse response,
+) implements Exception;
+
+typedef _OperationCommitContext = ({
+  Session session,
+  CloudWorkspace workspace,
+  int workspaceId,
+  _OperationCommitMetadata metadata,
+  Transaction transaction,
+  DateTime now,
+});
+
+const _tableCopyEndpoint = 'workspaceState.duplicateTable';
+typedef _TableCopyInput = ({
+  DuplicateWorkspaceItemRequest request,
+  String userId,
+  String hash,
+});
+typedef _TableCopyContext = ({
+  CloudWorkspace workspace,
+  WorkspaceMember member,
+  Transaction transaction,
+  WorkspaceTableDuplication copy,
+});
+Future<String> _tableCopyHash(DuplicateWorkspaceItemRequest request) async =>
+    base64UrlEncode(
+      (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
+    );
+PatchWorkspaceStateResponse _copyResponse(WorkspaceMutationReceipt receipt) =>
+    .fromJson(jsonDecode(receipt.responseJson) as Map<String, dynamic>);
+_OperationCommitMetadata _tableCopyMetadata(_TableCopyInput input) => (
+  userId: input.userId,
+  endpoint: _tableCopyEndpoint,
+  requestId: input.request.requestId,
+  hash: input.hash,
+  aiInvolved: false,
+  conversationId: null,
+);

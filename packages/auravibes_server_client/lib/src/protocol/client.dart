@@ -192,6 +192,8 @@ import 'package:auravibes_server_client/src/protocol/features/sync/stream/models
     as _ihte0iyb;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/duplicate_workspace_agent_request.dart'
     as _ipz1c0ew;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/duplicate_workspace_item_request.dart'
+    as _itjnussb;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i2aip5sd;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_response.dart'
@@ -208,12 +210,34 @@ import 'package:auravibes_server_client/src/protocol/features/workspace_state/mo
     as _i7oqzoiv;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i3s0ysat;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_history_policy_request.dart'
+    as _if7x0ut8;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_history_restore_request.dart'
+    as _ih19x2zu;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_record_summary_request.dart'
+    as _i3t1q87g;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_record_request.dart'
+    as _iic7z6j2;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_table_request.dart'
+    as _i6klb7x8;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_reference_target_request.dart'
+    as _ikdp8816;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
     as _iar0fwau;
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_trash_request.dart'
+    as _i35hgjx1;
+import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view.dart'
+    as _i3ruzhns;
+import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view_list_request.dart'
+    as _iyht06fi;
+import 'package:auravibes_server_client/src/protocol/features/workspace_views/models/workspace_view_save_request.dart'
+    as _i9r20p9w;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i0tihsii;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
     as _i91wh5vy;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_erasure_status.dart'
+    as _im4ecs98;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _iin9r2cd;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_member_summary.dart'
@@ -226,6 +250,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspaces/models/
     as _iieqdqzc;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/delete_cloud_workspace_request.dart'
     as _ied6jb7p;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/erase_cloud_workspace_request.dart'
+    as _ijrepm58;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _ic69zisf;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/invite_workspace_member_request.dart'
@@ -244,6 +270,8 @@ import 'package:auravibes_server_client/src/protocol/features/workspaces/models/
     as _idlpsnny;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/renew_workspace_invite_request.dart'
     as _i6br37rg;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/retry_cloud_workspace_erasure_request.dart'
+    as _imaulmtf;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _ic8yezfe;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
@@ -1008,6 +1036,14 @@ class EndpointObject extends _isc.EndpointRef {
     {'request': request},
   );
 
+  _ida.Future<_iw6nkrbk.ObjectResult> describe(
+    _ijxvxgh5.GetDownloadRequest request,
+  ) => caller.callServerEndpoint<_iw6nkrbk.ObjectResult>(
+    'object',
+    'describe',
+    {'request': request},
+  );
+
   _ida.Future<void> delete(_i65avykf.DeleteObjectRequest request) =>
       caller.callServerEndpoint<void>(
         'object',
@@ -1084,6 +1120,196 @@ class EndpointWorkspaceStream extends _isc.EndpointRef {
       );
 }
 
+/// Explicit host UI consent. This endpoint is never exposed as an agent tool.
+/// {@category Endpoint}
+class EndpointWorkspaceContext extends _isc.EndpointRef {
+  EndpointWorkspaceContext(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceContext';
+
+  _ida.Future<String> read(
+    int workspaceId,
+    String conversationId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContext',
+    'read',
+    {
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+    },
+  );
+
+  _ida.Future<String> save(
+    int workspaceId,
+    String conversationId,
+    String requestId,
+    String? selectionJson,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContext',
+    'save',
+    {
+      'workspaceId': workspaceId,
+      'conversationId': conversationId,
+      'requestId': requestId,
+      'selectionJson': selectionJson,
+    },
+  );
+}
+
+/// {@category Endpoint}
+class EndpointWorkspaceContentReport extends _isc.EndpointRef {
+  EndpointWorkspaceContentReport(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceContentReport';
+
+  _ida.Future<String> submit(
+    int workspaceId,
+    String targetJson,
+    String reportId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContentReport',
+    'submit',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+      'reportId': reportId,
+    },
+  );
+
+  _ida.Future<List<String>> list(int workspaceId) =>
+      caller.callServerEndpoint<List<String>>(
+        'workspaceContentReport',
+        'list',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<String> resolve(
+    int workspaceId,
+    String reportId,
+    String action,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceContentReport',
+    'resolve',
+    {
+      'workspaceId': workspaceId,
+      'reportId': reportId,
+      'action': action,
+    },
+  );
+}
+
+/// {@category Endpoint}
+class EndpointWorkspaceCsv extends _isc.EndpointRef {
+  EndpointWorkspaceCsv(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceCsv';
+
+  _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> preview(
+    _i4jm10bd.PatchWorkspaceStateRequest request,
+  ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
+    'workspaceCsv',
+    'preview',
+    {'request': request},
+  );
+}
+
+/// {@category Endpoint}
+class EndpointWorkspaceHistory extends _isc.EndpointRef {
+  EndpointWorkspaceHistory(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceHistory';
+
+  _ida.Future<String> policy(int workspaceId) =>
+      caller.callServerEndpoint<String>(
+        'workspaceHistory',
+        'policy',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<void> configurePolicy(
+    _if7x0ut8.WorkspaceHistoryPolicyRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'configurePolicy',
+    {'request': request},
+  );
+
+  _ida.Future<void> permanentlyDelete(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<void>(
+    'workspaceHistory',
+    'permanentlyDelete',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<List<String>> history(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<List<String>>(
+    'workspaceHistory',
+    'history',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<void> restore(_ih19x2zu.WorkspaceHistoryRestoreRequest request) =>
+      caller.callServerEndpoint<void>(
+        'workspaceHistory',
+        'restore',
+        {'request': request},
+      );
+}
+
+/// {@category Endpoint}
+class EndpointWorkspaceReference extends _isc.EndpointRef {
+  EndpointWorkspaceReference(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceReference';
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> targets(
+    _ikdp8816.WorkspaceReferenceTargetRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'targets',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> tableTargets(
+    _i6klb7x8.WorkspaceReferenceTableRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'tableTargets',
+    {'request': request},
+  );
+
+  _ida.Future<_iar0fwau.WorkspaceResource> record(
+    _iic7z6j2.WorkspaceReferenceRecordRequest request,
+  ) => caller.callServerEndpoint<_iar0fwau.WorkspaceResource>(
+    'workspaceReference',
+    'record',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> reverse(
+    _iic7z6j2.WorkspaceReferenceRecordRequest request,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceReference',
+    'reverse',
+    {'request': request},
+  );
+}
+
 /// {@category Endpoint}
 class EndpointWorkspaceSecret extends _isc.EndpointRef {
   EndpointWorkspaceSecret(_isc.EndpointCaller caller) : super(caller);
@@ -1107,6 +1333,28 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
   @override
   String get name => 'workspaceState';
 
+  _ida.Future<String> summarizeRecords(
+    _i3t1q87g.WorkspaceRecordSummaryRequest request,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceState',
+    'summarizeRecords',
+    {'request': request},
+  );
+
+  _ida.Future<List<_iar0fwau.WorkspaceResource>> queryRecords(
+    int workspaceId,
+    String tableId,
+    String queryJson,
+  ) => caller.callServerEndpoint<List<_iar0fwau.WorkspaceResource>>(
+    'workspaceState',
+    'queryRecords',
+    {
+      'workspaceId': workspaceId,
+      'tableId': tableId,
+      'queryJson': queryJson,
+    },
+  );
+
   _ida.Future<_i3s0ysat.ReadWorkspaceStateResponse> read(
     _i7oqzoiv.ReadWorkspaceStateRequest request,
   ) => caller.callServerEndpoint<_i3s0ysat.ReadWorkspaceStateResponse>(
@@ -1123,6 +1371,14 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
     {'request': request},
   );
 
+  _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> duplicateTable(
+    _itjnussb.DuplicateWorkspaceItemRequest request,
+  ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
+    'workspaceState',
+    'duplicateTable',
+    {'request': request},
+  );
+
   _ida.Future<_inzhu3sh.PatchWorkspaceStateResponse> duplicateAgent(
     _ipz1c0ew.DuplicateWorkspaceAgentRequest request,
   ) => caller.callServerEndpoint<_inzhu3sh.PatchWorkspaceStateResponse>(
@@ -1136,6 +1392,152 @@ class EndpointWorkspaceState extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_i6eu5eia.MutateWorkspaceCredentialResponse>(
     'workspaceState',
     'mutateCredential',
+    {'request': request},
+  );
+}
+
+/// {@category Endpoint}
+class EndpointWorkspaceTrash extends _isc.EndpointRef {
+  EndpointWorkspaceTrash(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceTrash';
+
+  _ida.Future<String> deletedReference(
+    int workspaceId,
+    String tableId,
+    String recordId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceTrash',
+    'deletedReference',
+    {
+      'workspaceId': workspaceId,
+      'tableId': tableId,
+      'recordId': recordId,
+    },
+  );
+
+  _ida.Future<String> preview(
+    int workspaceId,
+    String targetJson,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceTrash',
+    'preview',
+    {
+      'workspaceId': workspaceId,
+      'targetJson': targetJson,
+    },
+  );
+
+  _ida.Future<String> trash(_i35hgjx1.WorkspaceTrashRequest request) =>
+      caller.callServerEndpoint<String>(
+        'workspaceTrash',
+        'trash',
+        {'request': request},
+      );
+
+  _ida.Future<List<String>> list(int workspaceId) =>
+      caller.callServerEndpoint<List<String>>(
+        'workspaceTrash',
+        'list',
+        {'workspaceId': workspaceId},
+      );
+
+  _ida.Future<String> restore(
+    int workspaceId,
+    String batchId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceTrash',
+    'restore',
+    {
+      'workspaceId': workspaceId,
+      'batchId': batchId,
+    },
+  );
+}
+
+/// {@category Endpoint}
+class EndpointWorkspaceView extends _isc.EndpointRef {
+  EndpointWorkspaceView(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'workspaceView';
+
+  _ida.Future<String> readConnected(
+    int workspaceId,
+    String id,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceView',
+    'readConnected',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+    },
+  );
+
+  _ida.Future<String> submitAction(
+    int workspaceId,
+    String id,
+    int expectedRevision,
+    String formValuesJson,
+    String operationId,
+  ) => caller.callServerEndpoint<String>(
+    'workspaceView',
+    'submitAction',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+      'expectedRevision': expectedRevision,
+      'formValuesJson': formValuesJson,
+      'operationId': operationId,
+    },
+  );
+
+  _ida.Future<_i3ruzhns.WorkspaceView> duplicate(
+    _itjnussb.DuplicateWorkspaceItemRequest request,
+  ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
+    'workspaceView',
+    'duplicate',
+    {'request': request},
+  );
+
+  _ida.Future<List<_i3ruzhns.WorkspaceView>> list(
+    _iyht06fi.WorkspaceViewListRequest request,
+  ) => caller.callServerEndpoint<List<_i3ruzhns.WorkspaceView>>(
+    'workspaceView',
+    'list',
+    {'request': request},
+  );
+
+  _ida.Future<_i3ruzhns.WorkspaceView> read(
+    int workspaceId,
+    String id,
+  ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
+    'workspaceView',
+    'read',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+    },
+  );
+
+  _ida.Future<List<String>> history(
+    int workspaceId,
+    String id,
+  ) => caller.callServerEndpoint<List<String>>(
+    'workspaceView',
+    'history',
+    {
+      'workspaceId': workspaceId,
+      'id': id,
+    },
+  );
+
+  _ida.Future<_i3ruzhns.WorkspaceView> save(
+    _i9r20p9w.WorkspaceViewSaveRequest request,
+  ) => caller.callServerEndpoint<_i3ruzhns.WorkspaceView>(
+    'workspaceView',
+    'save',
     {'request': request},
   );
 }
@@ -1160,6 +1562,14 @@ class EndpointCloudWorkspace extends _isc.EndpointRef {
       caller.callServerEndpoint<List<_ieuc8ihm.PendingWorkspaceInviteSummary>>(
         'cloudWorkspace',
         'listPendingInvites',
+        {},
+      );
+
+  _ida.Future<List<_ib73r5sl.CloudWorkspaceSummary>>
+  listOwnedDeletedWorkspacesForErasure() =>
+      caller.callServerEndpoint<List<_ib73r5sl.CloudWorkspaceSummary>>(
+        'cloudWorkspace',
+        'listOwnedDeletedWorkspacesForErasure',
         {},
       );
 
@@ -1282,6 +1692,30 @@ class EndpointCloudWorkspace extends _isc.EndpointRef {
     'deleteWorkspace',
     {'request': request},
   );
+
+  _ida.Future<_im4ecs98.CloudWorkspaceErasureStatus> eraseWorkspace(
+    _ijrepm58.EraseCloudWorkspaceRequest request,
+  ) => caller.callServerEndpoint<_im4ecs98.CloudWorkspaceErasureStatus>(
+    'cloudWorkspace',
+    'eraseWorkspace',
+    {'request': request},
+  );
+
+  _ida.Future<List<_im4ecs98.CloudWorkspaceErasureStatus>>
+  listWorkspaceErasures() =>
+      caller.callServerEndpoint<List<_im4ecs98.CloudWorkspaceErasureStatus>>(
+        'cloudWorkspace',
+        'listWorkspaceErasures',
+        {},
+      );
+
+  _ida.Future<_im4ecs98.CloudWorkspaceErasureStatus> retryWorkspaceErasure(
+    _imaulmtf.RetryCloudWorkspaceErasureRequest request,
+  ) => caller.callServerEndpoint<_im4ecs98.CloudWorkspaceErasureStatus>(
+    'cloudWorkspace',
+    'retryWorkspaceErasure',
+    {'request': request},
+  );
 }
 
 class Modules {
@@ -1334,8 +1768,15 @@ class Client extends _isc.ServerpodClientShared {
     object = EndpointObject(this);
     skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
+    workspaceContext = EndpointWorkspaceContext(this);
+    workspaceContentReport = EndpointWorkspaceContentReport(this);
+    workspaceCsv = EndpointWorkspaceCsv(this);
+    workspaceHistory = EndpointWorkspaceHistory(this);
+    workspaceReference = EndpointWorkspaceReference(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
+    workspaceTrash = EndpointWorkspaceTrash(this);
+    workspaceView = EndpointWorkspaceView(this);
     cloudWorkspace = EndpointCloudWorkspace(this);
     modules = Modules(this);
   }
@@ -1364,9 +1805,23 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointWorkspaceStream workspaceStream;
 
+  late final EndpointWorkspaceContext workspaceContext;
+
+  late final EndpointWorkspaceContentReport workspaceContentReport;
+
+  late final EndpointWorkspaceCsv workspaceCsv;
+
+  late final EndpointWorkspaceHistory workspaceHistory;
+
+  late final EndpointWorkspaceReference workspaceReference;
+
   late final EndpointWorkspaceSecret workspaceSecret;
 
   late final EndpointWorkspaceState workspaceState;
+
+  late final EndpointWorkspaceTrash workspaceTrash;
+
+  late final EndpointWorkspaceView workspaceView;
 
   late final EndpointCloudWorkspace cloudWorkspace;
 
@@ -1386,8 +1841,15 @@ class Client extends _isc.ServerpodClientShared {
     'object': object,
     'skillResource': skillResource,
     'workspaceStream': workspaceStream,
+    'workspaceContext': workspaceContext,
+    'workspaceContentReport': workspaceContentReport,
+    'workspaceCsv': workspaceCsv,
+    'workspaceHistory': workspaceHistory,
+    'workspaceReference': workspaceReference,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,
+    'workspaceTrash': workspaceTrash,
+    'workspaceView': workspaceView,
     'cloudWorkspace': cloudWorkspace,
   };
 

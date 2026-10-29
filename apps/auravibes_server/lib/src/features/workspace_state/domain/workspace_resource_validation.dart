@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import '../../../generated/protocol.dart';
+import 'workspace_history_retention_validation.dart';
+import 'workspace_table_validation.dart';
 
 class const WorkspaceResourceReference(
   final WorkspaceResourceKind kind,
@@ -15,6 +17,7 @@ class WorkspaceResourceValidation {
   static const _maxWorkflowNodePosition = 10000;
 
   static const dedicatedKinds = {
+    WorkspaceResourceKind.view,
     WorkspaceResourceKind.conversation,
     WorkspaceResourceKind.message,
     WorkspaceResourceKind.attachment,
@@ -24,7 +27,9 @@ class WorkspaceResourceValidation {
   };
 
   static void validateFieldMask(List<String> fieldMask) {
-    if (fieldMask.isNotEmpty) throw const FormatException();
+    if (fieldMask.isNotEmpty) {
+      throw const FormatException();
+    }
   }
 
   static ({String kind, String resourceKind, String resourceId}) eventFor(
@@ -41,7 +46,9 @@ class WorkspaceResourceValidation {
     required int workspaceId,
     required String data,
   }) {
-    if (dedicatedKinds.contains(kind)) throw const FormatException();
+    if (dedicatedKinds.contains(kind)) {
+      throw const FormatException();
+    }
     validateDataSize(data);
 
     final Object? decoded;
@@ -50,7 +57,9 @@ class WorkspaceResourceValidation {
     } on FormatException {
       throw const FormatException();
     }
-    if (decoded is! Map<String, dynamic>) throw const FormatException();
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException();
+    }
     _validateJson(decoded, 0);
     final id = decoded['id'];
     final payloadWorkspaceId = decoded['workspaceId'];
@@ -59,6 +68,15 @@ class WorkspaceResourceValidation {
       throw const FormatException();
     }
     _validateKind(kind, decoded);
+    if (kind == .table) {
+      for (final column
+          in (decoded['columns'] as List).cast<Map<String, dynamic>>()) {
+        column['required'] = false;
+      }
+    }
+    if (kind == .workspaceSetting && resourceId == 'history-retention') {
+      WorkspaceHistoryRetentionValidation.data(decoded);
+    }
 
     return decoded;
   }
@@ -72,7 +90,72 @@ class WorkspaceResourceValidation {
 
       return;
     }
-    if (kind != WorkspaceResourceKind.agent) return;
+    if (kind == WorkspaceResourceKind.folder ||
+        kind == WorkspaceResourceKind.table ||
+        kind == WorkspaceResourceKind.file) {
+      final name = data['name'];
+      final parentId = data['parentId'];
+      if (name is! String ||
+          name.trim().isEmpty ||
+          name.length > 200 ||
+          (parentId != null && (parentId is! String || parentId.isEmpty))) {
+        throw const FormatException();
+      }
+    }
+    if (kind == WorkspaceResourceKind.serviceConnection) {
+      const fields = {
+        'id',
+        'workspaceId',
+        'name',
+        'serviceId',
+        'scope',
+        'kind',
+        'isEnabled',
+        'hasSecret',
+        'keySuffix',
+        'secretRevision',
+      };
+      if (data.keys.any((key) => !fields.contains(key)) ||
+          (data['scope'] != null && data['scope'] != 'workspace')) {
+        throw const FormatException();
+      }
+    }
+    if (kind == WorkspaceResourceKind.tool &&
+        ((data['toolId'] as String? ?? '').startsWith('connector/') ||
+            data['mcpServerId'] != null)) {
+      final rawConfig = data['config'];
+      if (rawConfig != null) {
+        if (rawConfig is! String) throw const FormatException();
+        final config = jsonDecode(rawConfig);
+        if (config is! Map ||
+            !const {
+              'none',
+              'read',
+              'readWrite',
+            }.contains(config['memberAccess'])) {
+          throw const FormatException();
+        }
+      }
+      if (data['isEnabled'] is! bool) throw const FormatException();
+    }
+    if (kind == WorkspaceResourceKind.table) {
+      WorkspaceTableValidation.schema(data);
+    }
+    if (kind == WorkspaceResourceKind.file) {
+      _FileValidation.validate(data);
+    }
+    if (kind == WorkspaceResourceKind.tableRecord) {
+      final values = data['values'];
+      if (data['tableId'] is! String ||
+          (data['tableId'] as String).isEmpty ||
+          data['schemaRevision'] is! int ||
+          values is! Map) {
+        throw const FormatException();
+      }
+    }
+    if (kind != WorkspaceResourceKind.agent) {
+      return;
+    }
 
     final name = data['name'];
     final description = data['description'];
@@ -128,7 +211,13 @@ class WorkspaceResourceValidation {
           id.isEmpty ||
           nodes.containsKey(id) ||
           kind is! String ||
-          !const {'systemTool', 'agent', 'skill', 'workflow'}.contains(kind) ||
+          !const {
+            'systemTool',
+            'agent',
+            'connectorTool',
+            'skill',
+            'workflow',
+          }.contains(kind) ||
           targetId is! String ||
           targetId.isEmpty ||
           label is! String ||
@@ -296,7 +385,9 @@ class WorkspaceResourceValidation {
   }
 
   static void _validateJson(Object? value, int depth) {
-    if (depth > _maxJsonDepth) throw const FormatException();
+    if (depth > _maxJsonDepth) {
+      throw const FormatException();
+    }
     switch (value) {
       case String() when value.length > _maxStringLength:
         throw const FormatException();
@@ -328,6 +419,14 @@ class WorkspaceResourceValidation {
     Map<String, Object?> data,
   ) {
     final fields = switch (kind) {
+      WorkspaceResourceKind.folder ||
+      WorkspaceResourceKind.table ||
+      WorkspaceResourceKind.file => const {
+        'parentId': WorkspaceResourceKind.folder,
+      },
+      WorkspaceResourceKind.tableRecord => const {
+        'tableId': WorkspaceResourceKind.table,
+      },
       WorkspaceResourceKind.agentAssociation => const {
         'agentId': WorkspaceResourceKind.agent,
         'skillId': WorkspaceResourceKind.skill,
@@ -359,6 +458,7 @@ class WorkspaceResourceValidation {
       WorkspaceResourceKind.compactionSetting ||
       WorkspaceResourceKind.workspaceSetting ||
       WorkspaceResourceKind.workflow => const {},
+      WorkspaceResourceKind.view ||
       WorkspaceResourceKind.conversation ||
       WorkspaceResourceKind.message ||
       WorkspaceResourceKind.attachment ||
@@ -385,7 +485,9 @@ class WorkspaceResourceValidation {
     for (final MapEntry(key: field, value: targetKind) in fields.entries) {
       final value = data[field];
       if (value == null) continue;
-      if (value is! String || value.isEmpty) throw const FormatException();
+      if (value is! String || value.isEmpty) {
+        throw const FormatException();
+      }
       references.add(WorkspaceResourceReference(targetKind, value));
     }
     if (kind == WorkspaceResourceKind.workflow) {
@@ -400,6 +502,7 @@ class WorkspaceResourceValidation {
         if (kind == 'skill' && node['targetSource'] == 'app') continue;
         final targetKind = switch (kind) {
           'systemTool' => WorkspaceResourceKind.tool,
+          'connectorTool' => WorkspaceResourceKind.tool,
           'agent' => WorkspaceResourceKind.agent,
           'skill' => WorkspaceResourceKind.skill,
           'workflow' => WorkspaceResourceKind.workflow,
@@ -422,7 +525,9 @@ class WorkspaceResourceValidation {
     Future<bool> Function(WorkspaceResourceReference reference) exists,
   ) async {
     for (final reference in references(kind, data)) {
-      if (!await exists(reference)) throw const FormatException();
+      if (!await exists(reference)) {
+        throw const FormatException();
+      }
     }
   }
 
@@ -430,4 +535,26 @@ class WorkspaceResourceValidation {
       scope == WorkspaceSecretScope.user ? userId : 'workspace';
 
   static String receiptScopeKey(int workspaceId) => 'workspace:$workspaceId';
+}
+
+abstract final class _FileValidation {
+  static const _fields = {
+    'id',
+    'workspaceId',
+    'name',
+    'parentId',
+    'assetId',
+    'sharingApproved',
+  };
+
+  static void validate(Map<String, Object?> data) {
+    final id = data['assetId'];
+    if (id is! String ||
+        int.tryParse(id) == null ||
+        data.keys.any(_unknownField)) {
+      throw const FormatException();
+    }
+  }
+
+  static bool _unknownField(String key) => !_fields.contains(key);
 }

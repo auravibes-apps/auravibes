@@ -1,0 +1,18 @@
+class: WorkspaceErasureRequest
+table: workspace_erasure_request
+fields:
+  workspaceId: int
+  workspaceName: String
+  ownerUserId: String
+  requestId: String
+  requestHash: String
+  state: String
+  requestedAt: DateTime
+  completedAt: DateTime?
+  failureReason: String?
+indexes:
+  workspace_erasure_owner_request_idx:
+    fields: ownerUserId, requestId
+    unique: true
+  workspace_erasure_workspace_state_idx:
+    fields: workspaceId, state

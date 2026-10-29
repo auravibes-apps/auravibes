@@ -1,0 +1,1 @@
+enum WorkspaceDeletionResult { complete, cleanupPending }

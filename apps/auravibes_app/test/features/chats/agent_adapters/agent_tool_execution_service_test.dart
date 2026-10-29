@@ -14,6 +14,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentIterationDecision,
         AgentToolPermissionResult,
+        AgentToolResultUpdate,
         AgentToolToCall,
         LoadLatestMessageToolCallsResult,
         activateSkillToolName;
@@ -107,6 +108,64 @@ void main() {
         resolveToolApprovalDecision: resolveToolApprovalDecision,
       );
     });
+
+    test(
+      'workspace read result is redacted before message persistence',
+      () async {
+        const call = MessageToolCallEntity(
+          id: 'read-file',
+          name: 'workspace_read_item',
+          argumentsRaw: '{"itemId":"file"}',
+        );
+        toolMessage = toolMessage.copyWith(
+          metadata: const .new(toolCalls: [call]),
+        );
+        final provider = AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolvedToolService: .new(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller: ({
+              required mcpServerId,
+              required toolIdentifier,
+              required arguments,
+              onElicitation,
+            }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+        );
+        await provider.updateToolResults(
+          conversationId: 'conversation-1',
+          messageId: toolMessage.id,
+          updates: [
+            const AgentToolResultUpdate(
+              toolCallId: 'read-file',
+              resultStatus: .success,
+              responseRaw: '{"kind":"file","content":"private bytes"}',
+              responseContextRaw: '{"kind":"file","content":"private bytes"}',
+            ),
+          ],
+        );
+        final patch =
+            verify(
+                  () => messageRepository.patchMessage(
+                    any(),
+                    captureAny(),
+                    conversationId: 'conversation-1',
+                  ),
+                ).captured.single
+                as MessagePatch;
+        final saved = patch.metadata?.toolCalls.single;
+        expect(saved?.responseRaw, '{"redacted":true}');
+        expect(saved?.responseContextRaw, '{"redacted":true}');
+        expect(
+          jsonEncode(patch.metadata?.toJson()),
+          isNot(contains('private bytes')),
+        );
+      },
+    );
 
     test('uses a workspace resolver without a legacy fallback', () async {
       final workspaceResolver = MockResolveToolApprovalDecisionUsecase();

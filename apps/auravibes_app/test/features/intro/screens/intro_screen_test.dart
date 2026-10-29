@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
+import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_auth_content.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_creation_draft_notifier.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -16,14 +20,13 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../../data/database/drift/database_test_utils.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
@@ -33,36 +36,398 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  var isFirstTest = true;
-  setUp(() async {
-    if (isFirstTest) {
-      isFirstTest = false;
-
-      return;
+  for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
+    for (final reducedMotion in [false, true]) {
+      testWidgets('reversible pager kind=$kind reducedMotion=$reducedMotion', (
+        tester,
+      ) async {
+        await tester.binding.setSurfaceSize(const Size(520, 640));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final fixture = _IntroFixture();
+        addTearDown(fixture.dispose);
+        await tester.runAsync(
+          () =>
+              tester.pumpWidget(fixture.buildApp(reducedMotion: reducedMotion)),
+        );
+        await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
+        final semantics = tester.ensureSemantics();
+        try {
+          final pager = find.byKey(const Key('intro_welcome_pages'));
+          await tester.drag(pager, const Offset(-400, 0), kind: kind);
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('2 of 4'), findsOneWidget);
+          await tester.drag(pager, const Offset(400, 0), kind: kind);
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('1 of 4'), findsOneWidget);
+          final gesture = await tester.startGesture(
+            tester.getCenter(pager),
+            kind: kind,
+          );
+          await gesture.moveBy(const Offset(-25, 0));
+          await tester.pump(const Duration(milliseconds: 400));
+          await gesture.up();
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('1 of 4'), findsOneWidget);
+          for (var position = 0; position < 4; position++) {
+            final dot = find.byKey(.new('intro_progress_$position'));
+            expect(tester.getSize(dot).width, greaterThanOrEqualTo(48));
+            expect(tester.getSize(dot).height, greaterThanOrEqualTo(48));
+          }
+          final _ = await tester.sendKeyEvent(.arrowRight);
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('2 of 4'), findsOneWidget);
+          final dot = find.byKey(const Key('intro_progress_1'));
+          expect(
+            tester.getSemantics(dot).flagsCollection.isSelected,
+            ui.Tristate.isTrue,
+          );
+          await _tapVisible(
+            tester,
+            find.byKey(const Key('intro_welcome_skip_button')),
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('4 of 4'), findsOneWidget);
+          await _chooseIntroRoute(tester, 'local');
+          await tester.enterText(find.byType(AuraInput), 'Keep offscreen');
+          await tester.drag(pager, const Offset(400, 0), kind: kind);
+          final _ = await tester.pumpAndSettle();
+          expect(find.byKey(_backToRouteChooserKey), findsOneWidget);
+          await _tapVisible(tester, find.byKey(_backToRouteChooserKey));
+          await _tapVisible(tester, find.byKey(const Key('intro_progress_0')));
+          final _ = await tester.pumpAndSettle();
+          await _tapVisible(
+            tester,
+            find.byKey(const Key('intro_welcome_skip_button')),
+          );
+          await _chooseIntroRoute(tester, 'local');
+          expect(find.text('Keep offscreen'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        } finally {
+          semantics.dispose();
+        }
+      });
     }
-    await clearAppDatabase(_IntroFixture._sharedDatabase);
-  });
-  tearDownAll(_IntroFixture._sharedDatabase.close);
+  }
 
-  testWidgets('intro uses side-by-side content on medium displays', (
+  testWidgets('outgoing forms lose focus and completion slides to readiness', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
     final fixture = _IntroFixture();
     addTearDown(fixture.dispose);
-
     await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-    await _pumpUntilFound(tester, find.text('Welcome to AuraVibes'));
+    await _chooseIntroRoute(tester, 'local');
+    await tester.enterText(find.byType(AuraInput), 'Motion draft');
+    expect(tester.testTextInput.hasAnyClients, isTrue);
+    await tester.tap(find.byKey(_backToRouteChooserKey));
+    await tester.pump();
+    await tester.pump();
+    expect(tester.testTextInput.hasAnyClients, isFalse);
+    expect(await fixture.database.workspaceDao.getAllWorkspaces(), isEmpty);
+    final _ = await tester.pumpAndSettle();
+    await _chooseIntroRoute(tester, 'local');
+    expect(find.text('Motion draft'), findsOneWidget);
+    await tester.tap(find.byKey(_createWorkspaceKey));
+    await _pumpUntilFound(tester, find.text('Workspace created'));
+    expect(
+      tester
+          .widgetList<SlideTransition>(find.byType(SlideTransition))
+          .any((slide) => slide.position.value.dx != 0),
+      isTrue,
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(CreateWorkspaceForm), findsNothing);
+    expect((await fixture.database.workspaceDao.getAllWorkspaces()).length, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  for (final failing in [false, true]) {
+    for (final management in [false, true]) {
+      final testName =
+          'local creation ignores cloud accounts '
+          'failing=$failing management=$management';
+      testWidgets(testName, (tester) async {
+        final loading = Completer<List<CloudAccountSession>>();
+        final fixture = _IntroFixture(
+          accountsLoad: () => failing
+              ? Future.error(StateError('account store unavailable'))
+              : loading.future,
+          management: management,
+        );
+        addTearDown(fixture.dispose);
+        await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+        if (!management) {
+          await _chooseIntroRoute(tester, 'local');
+        }
+        await _pumpUntilFound(tester, find.byType(AuraInput));
+        await tester.enterText(find.byType(AuraInput), 'Local only');
+        await tester.testTextInput.receiveAction(.done);
+        await _pumpUntilFound(
+          tester,
+          management
+              ? find.textContaining('new chat:')
+              : find.text('Workspace created'),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(
+          (await fixture.database.workspaceDao.getAllWorkspaces()).single.name,
+          'Local only',
+        );
+        expect(
+          find.byKey(const Key('workspace_operation_error')),
+          findsNothing,
+        );
+        expect(find.byKey(_backToRouteChooserKey), findsNothing);
+        if (!management) {
+          expect(
+            tester
+                .widget<AuraButton>(
+                  find.byKey(const Key('intro_start_chat_button')),
+                )
+                .disabled,
+            isTrue,
+          );
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
+
+  testWidgets(
+    'Enter validates cloud name then opens sign-in without creating',
+    (tester) async {
+      final fixture = _IntroFixture();
+      addTearDown(fixture.dispose);
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _chooseIntroRoute(tester, 'cloud');
+      await tester.enterText(find.byType(AuraInput), 'ab');
+      await tester.testTextInput.receiveAction(.done);
+      await tester.pump();
+      expect(
+        find.text('Workspace name must be at least 3 characters'),
+        findsOneWidget,
+      );
+      expect(find.byType(CloudAccountAuthContent), findsNothing);
+      await tester.enterText(find.byType(AuraInput), 'Cloud project');
+      await tester.testTextInput.receiveAction(.done);
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(CloudAccountAuthContent), findsOneWidget);
+      expect(await fixture.database.workspaceDao.getAllWorkspaces(), isEmpty);
+      final _ = await tester.binding.handlePopRoute();
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Cloud project'), findsOneWidget);
+      expect(find.text('Discard unsaved changes?'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  for (final reducedMotion in [false, true]) {
+    testWidgets('welcome finishes before setup reducedMotion=$reducedMotion', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(360, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final fixture = _IntroFixture();
+      addTearDown(fixture.dispose);
+      await tester.runAsync(
+        () => tester.pumpWidget(fixture.buildApp(reducedMotion: reducedMotion)),
+      );
+      await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
+      expect(find.text('Welcome to AuraVibes'), findsOneWidget);
+      expect(find.text('1 of 4'), findsOneWidget);
+      expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
+      expect(find.byKey(_welcomeBackKey), findsNothing);
+
+      await tester.tap(find.byKey(_welcomeNextKey));
+      await tester.pump();
+      final pager = tester.widget<PageView>(
+        find.byKey(const Key('intro_welcome_pages')),
+      );
+      expect(
+        pager.controller?.position.isScrollingNotifier.value,
+        !reducedMotion,
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('2 of 4'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('intro_progress_0')));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('1 of 4'), findsOneWidget);
+
+      if (reducedMotion) {
+        await tester.tap(find.byKey(_welcomeNextKey));
+      } else {
+        await tester.drag(
+          find.byKey(const Key('intro_welcome_pages')),
+          const Offset(-300, 0),
+        );
+      }
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('2 of 4'), findsOneWidget);
+      await tester.tap(find.byKey(_welcomeNextKey));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('3 of 4'), findsOneWidget);
+      expect(find.text('Choose a workspace'), findsOneWidget);
+      expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
+      await tester.tap(find.byKey(_welcomeNextKey));
+      final _ = await tester.pumpAndSettle();
+      await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+      expect(find.byKey(_cloudRouteKey), findsOneWidget);
+      expect(find.byKey(_welcomeNextKey), findsNothing);
+      expect(find.text('Welcome to AuraVibes'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  testWidgets('Intro asks a route before showing its locked form', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = _IntroFixture(accounts: [_account]);
+    addTearDown(fixture.dispose);
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _completeWelcome(tester);
+    await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+
+    expect(find.byKey(_cloudRouteKey), findsOneWidget);
+    expect(find.text('Create local'), findsOneWidget);
+    expect(find.text('Create cloud'), findsOneWidget);
+    expect(find.byType(AuraInput), findsNothing);
+    expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    expect(find.byKey(_connectExistingKey), findsOneWidget);
+
+    await _chooseIntroRoute(tester, 'local');
+    expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    expect(find.text('Add cloud account'), findsNothing);
+    expect(find.byKey(_connectExistingKey), findsNothing);
+
+    await tester.enterText(find.byType(AuraInput), 'Retained workspace');
+    await _tapVisible(tester, find.byKey(_backToRouteChooserKey));
+    expect(find.byType(AuraInput), findsNothing);
+    final draft = fixture.container.read(
+      workspaceCreationDraftProvider('intro'),
+    );
+    expect(draft.name, 'Retained workspace');
+    expect(draft.intent.name, 'local');
+
+    await _chooseIntroRoute(tester, 'cloud');
+    expect(find.text('Retained workspace'), findsOneWidget);
+    expect(find.byType(AuraDropdownSelector<String>), findsOneWidget);
+    expect(
+      tester
+          .widget<AuraDropdownSelector<String>>(
+            find.byType(AuraDropdownSelector<String>),
+          )
+          .value,
+      CloudAccountIdentity.accountIdentity(_account.serverUrl, _account.userId),
+    );
+    await _tapVisible(tester, find.byKey(_backToRouteChooserKey));
+    await _chooseIntroRoute(tester, 'local');
+    expect(find.text('Retained workspace'), findsOneWidget);
+    expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('cloud draft and account survive chooser and connect returns', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = _IntroFixture(accounts: [_account, _secondAccount]);
+    addTearDown(fixture.dispose);
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _chooseIntroRoute(tester, 'cloud');
+    await _selectCloudAccount(tester, _secondAccount);
+    await tester.enterText(find.byType(AuraInput), 'Retained workspace');
+    final target = CloudAccountIdentity.accountIdentity(
+      _secondAccount.serverUrl,
+      _secondAccount.userId,
+    );
+
+    expect(
+      fixture.container.read(workspaceCreationDraftProvider('intro')).name,
+      'Retained workspace',
+    );
+    expect(
+      fixture.container.read(workspaceCreationDraftProvider('intro')).target,
+      target,
+    );
+    await _tapVisible(tester, find.byKey(_backToRouteChooserKey));
+    expect(find.byType(AuraInput), findsNothing);
+    await _chooseIntroRoute(tester, 'cloud');
+    expect(find.text('Retained workspace'), findsOneWidget);
+
+    await _openConnectExisting(tester);
+    expect(find.byKey(_backToCreationKey), findsOneWidget);
+    expect(
+      fixture.container.read(workspaceCreationDraftProvider('intro')).target,
+      target,
+    );
+    await _tapVisible(tester, find.byKey(_backToCreationKey));
+    final _ = await tester.pumpAndSettle();
+    await _chooseIntroRoute(tester, 'cloud');
+    final selector = tester.widget<AuraDropdownSelector<String>>(
+      find.byType(AuraDropdownSelector<String>),
+    );
+    expect(selector.value, target);
+    expect(find.text('Retained workspace'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('management setup keeps intent selector by default', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = _IntroFixture(management: true);
+    addTearDown(fixture.dispose);
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
     await _pumpUntilFound(
       tester,
       find.byKey(const Key('workspace_intent_local')),
     );
+    await _pumpUntilFound(tester, find.text('Add another account'));
 
-    expect(
-      tester.getTopLeft(find.byKey(const Key('workspace_intent_local'))).dx,
-      greaterThan(tester.getTopLeft(find.text('Welcome to AuraVibes')).dx),
+    for (final intent in ['local', 'cloud', 'connect']) {
+      expect(find.byKey(.new('workspace_intent_$intent')), findsOneWidget);
+    }
+    expect(find.text('Add another account'), findsOneWidget);
+    expect(find.text('Add cloud account'), findsNothing);
+    expect(find.byKey(_connectExistingKey), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('canceling connect account auth returns to discovery unchanged', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = _IntroFixture();
+    addTearDown(fixture.dispose);
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _chooseIntroRoute(tester, 'local');
+    await tester.enterText(find.byType(AuraInput), 'Keep local draft');
+    await _openConnectExisting(tester);
+    await _tapVisible(
+      tester,
+      find.widgetWithText(AuraButton, 'Add cloud account'),
     );
+    await _pumpUntilFound(tester, find.byType(CloudAccountAuthContent));
+
+    tester
+        .widget<CloudAccountAuthContent>(find.byType(CloudAccountAuthContent))
+        .onCancel();
+    final _ = await tester.pumpAndSettle();
+
+    final draft = fixture.container.read(
+      workspaceCreationDraftProvider('intro'),
+    );
+    expect(draft.name, 'Keep local draft');
+    expect(draft.intent.name, 'local');
+    expect(draft.target, isEmpty);
+    expect(find.byKey(_backToCreationKey), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   for (final management in [false, true]) {
@@ -92,38 +457,58 @@ void main() {
           );
           addTearDown(fixture.dispose);
           await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-          await _pumpUntilFound(tester, find.byType(AuraInput));
+          if (management) {
+            await _pumpUntilFound(tester, find.byType(AuraInput));
+          } else {
+            await _chooseIntroRoute(tester, 'cloud');
+          }
           await tester.enterText(find.byType(AuraInput), 'Cloud draft');
-          await _tapVisible(
-            tester,
-            find.byKey(const Key('workspace_intent_cloud')),
-          );
+          if (management) {
+            await _tapVisible(
+              tester,
+              find.byKey(const Key('workspace_intent_cloud')),
+            );
+          } else {
+            await _selectCloudAccount(tester, _account);
+          }
           final _ = await tester.pumpAndSettle();
           final create = tester.widget<AuraButton>(
             find.byKey(_createWorkspaceKey),
           );
-          final local = tester.widget<AuraButton>(
-            find.byKey(const Key('workspace_intent_local')),
-          );
+          final local = management
+              ? tester.widget<AuraButton>(
+                  find.byKey(const Key('workspace_intent_local')),
+                )
+              : null;
           final addAccount = tester.widget<AuraButton>(
             find.widgetWithText(AuraButton, 'Add another account'),
           );
           create.onPressed();
           // Retained callbacks model a second event before the disabled frame.
-          local.onPressed();
+          local?.onPressed();
+          // Creation branch cannot select discovery.
           addAccount.onPressed();
           create.onPressed();
           await tester.pump(const Duration(milliseconds: 100));
           expect(requests, 1);
           expect(find.byType(CloudAccountAuthContent), findsNothing);
-          for (final intent in ['local', 'cloud', 'connect']) {
+          if (management) {
+            for (final intent in ['local', 'cloud', 'connect']) {
+              expect(
+                tester
+                    .widget<AuraButton>(
+                      find.byKey(.new('workspace_intent_$intent')),
+                    )
+                    .disabled,
+                isTrue,
+              );
+            }
+          } else {
             expect(
               tester
-                  .widget<AuraButton>(
-                    find.byKey(.new('workspace_intent_$intent')),
-                  )
-                  .disabled,
-              isTrue,
+                  .widget<AuraIconButton>(find.byKey(_backToRouteChooserKey))
+                  .onPressed,
+              isNull,
             );
           }
           expect(
@@ -158,14 +543,16 @@ void main() {
                   .disabled,
               isFalse,
             );
-            expect(
-              tester
-                  .widget<AuraButton>(
-                    find.byKey(const Key('workspace_intent_cloud')),
-                  )
-                  .variant,
-              AuraButtonVariant.primary,
-            );
+            if (management) {
+              expect(
+                tester
+                    .widget<AuraButton>(
+                      find.byKey(const Key('workspace_intent_cloud')),
+                    )
+                    .variant,
+                AuraButtonVariant.primary,
+              );
+            }
             await tester.tap(find.text('Add another account'));
             final _ = await tester.pumpAndSettle();
             tester
@@ -221,12 +608,9 @@ void main() {
     );
     addTearDown(fixture.dispose);
     await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-    await _pumpUntilFound(tester, find.byType(AuraInput));
+    await _chooseIntroRoute(tester, 'local');
     await tester.enterText(find.byType(AuraInput), 'Keep through retry');
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('workspace_intent_connect')),
-    );
+    await _openConnectExisting(tester);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Retry'));
     final _ = await tester.pumpAndSettle();
@@ -245,11 +629,16 @@ void main() {
       'Keep through retry',
     );
     expect(
+      fixture.container.read(workspaceCreationDraftProvider('intro')).target,
+      isEmpty,
+    );
+    expect(find.byKey(_backToCreationKey), findsOneWidget);
+    expect(
       fixture.container
           .read(workspaceCreationDraftProvider('intro'))
           .intent
           .name,
-      'connect',
+      'local',
     );
     expect(await fixture.database.workspaceDao.getAllWorkspaces(), isEmpty);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -311,11 +700,8 @@ void main() {
       );
       addTearDown(fixture.dispose);
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-      await _pumpUntilFound(tester, find.byType(AuraInput));
-      await _tapVisible(
-        tester,
-        find.byKey(const Key('workspace_intent_connect')),
-      );
+      await _chooseIntroRoute(tester, 'local');
+      await _openConnectExisting(tester);
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text(accept ? 'Accept' : 'Decline'));
       final _ = await tester.pumpAndSettle();
@@ -325,7 +711,7 @@ void main() {
         expect(rows, hasLength(1));
         expect(rows.single.cloudWorkspaceId, '11');
         expect(rows.single.cloudAccountId, _account.userId);
-        expect(find.text('Workspace created'), findsOneWidget);
+        expect(find.text('Workspace joined'), findsOneWidget);
       } else {
         expect(rows, isEmpty);
         expect(find.text('Invited project'), findsNothing);
@@ -352,9 +738,20 @@ void main() {
       final fixture = _IntroFixture(accounts: accounts, client: client);
       addTearDown(fixture.dispose);
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-      await _pumpUntilFound(tester, find.byType(AuraInput));
+      await _chooseIntroRoute(tester, intent == 'cloud' ? 'cloud' : 'local');
       await tester.enterText(find.byType(AuraInput), 'Cloud draft');
-      await _tapVisible(tester, find.byKey(.new('workspace_intent_$intent')));
+      if (intent == 'cloud') {
+        await _tapVisible(
+          tester,
+          find.widgetWithText(AuraButton, 'Sign in to continue'),
+        );
+      } else {
+        await _openConnectExisting(tester);
+        await _tapVisible(
+          tester,
+          find.widgetWithText(AuraButton, 'Add cloud account'),
+        );
+      }
       await _pumpUntilFound(tester, find.byType(CloudAccountAuthContent));
       expect(await fixture.database.workspaceDao.getAllWorkspaces(), isEmpty);
       expect(
@@ -370,13 +767,33 @@ void main() {
       final _ = await tester.pumpAndSettle();
       if (intent == 'cloud') {
         expect(find.text('Cloud draft'), findsOneWidget);
+        expect(
+          tester
+              .widget<AuraDropdownSelector<String>>(
+                find.byType(AuraDropdownSelector<String>),
+              )
+              .value,
+          CloudAccountIdentity.accountIdentity(
+            _account.serverUrl,
+            _account.userId,
+          ),
+        );
+        expect(find.text('Add another account'), findsOneWidget);
         await _tapVisible(tester, find.byKey(_createWorkspaceKey));
       } else {
-        await tester.tap(find.byType(AuraPopupMenuButton));
-        final _ = await tester.pumpAndSettle();
-        await tester.tap(find.text('Connect to this app'));
+        final draft = fixture.container.read(
+          workspaceCreationDraftProvider('intro'),
+        );
+        expect(draft.intent.name, 'local');
+        expect(draft.target, isEmpty);
+        await _tapVisible(tester, find.widgetWithText(AuraButton, 'Connect'));
       }
-      await _pumpUntilFound(tester, find.text('Workspace created'));
+      await _pumpUntilFound(
+        tester,
+        find.text(
+          intent == 'cloud' ? 'Workspace created' : 'Workspace connected',
+        ),
+      );
       final rows = await fixture.database.workspaceDao.getAllWorkspaces();
       expect(rows, hasLength(1));
       expect(rows.single.cloudWorkspaceId, '11');
@@ -399,11 +816,11 @@ void main() {
       final fixture = _IntroFixture();
       addTearDown(fixture.dispose);
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-      await _pumpUntilFound(tester, find.byType(AuraInput));
+      await _chooseIntroRoute(tester, 'cloud');
       await tester.enterText(find.byType(AuraInput), 'Retained name');
       await _tapVisible(
         tester,
-        find.byKey(const Key('workspace_intent_cloud')),
+        find.widgetWithText(AuraButton, 'Sign in to continue'),
       );
       await _pumpUntilFound(tester, find.byType(CloudAccountAuthContent));
       if (mode != 'Sign in') {
@@ -434,9 +851,9 @@ void main() {
     addTearDown(fixture.dispose);
 
     await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-    await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+    await _chooseIntroRoute(tester, 'local');
 
-    expect(find.text('Welcome to AuraVibes'), findsOneWidget);
+    expect(find.text('Name your local workspace'), findsOneWidget);
 
     await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
@@ -465,25 +882,28 @@ void main() {
     await _tapVisible(tester, find.byKey(_skipAiKey));
     await _pumpUntilFound(tester, find.textContaining('new chat:'));
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    await clearAppDatabase(_IntroFixture._sharedDatabase);
     final connectFixture = _IntroFixture();
     addTearDown(connectFixture.dispose);
 
     await tester.runAsync(() => tester.pumpWidget(connectFixture.buildApp()));
     await _createWorkspace(tester, 'Connect');
     await _tapVisible(tester, find.byKey(_connectAiKey));
-    await _pumpUntilFound(
-      tester,
-      find.text('service connection: modelProvider'),
-    );
+    await _pumpUntilFound(tester, find.text('Connect AI'));
+    expect(find.text('Select Model'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }
 
-const _connectAiKey = Key('intro_connect_ai_button');
+const _connectAiKey = Key('workspace_add_model_provider');
 const _createWorkspaceKey = Key('intro_create_workspace_button');
+const _localRouteKey = Key('intro_route_local_button');
+const _cloudRouteKey = Key('intro_route_cloud_button');
+const _backToRouteChooserKey = Key('intro_back_to_route_chooser_button');
+const _connectExistingKey = Key('intro_connect_existing_button');
+const _backToCreationKey = Key('workspace_setup_back_to_creation_button');
 const _skipAiKey = Key('intro_skip_ai_button');
+const _welcomeNextKey = Key('intro_welcome_next_button');
+const _welcomeBackKey = Key('intro_welcome_back_button');
 
 Future<void> _pumpFrame(WidgetTester tester) async {
   await tester.pump();
@@ -500,18 +920,63 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    100,
-    scrollable: find.byType(Scrollable).first,
-  );
+  if (finder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(finder);
+  } else {
+    await tester.scrollUntilVisible(
+      finder,
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
   final _ = await tester.pumpAndSettle();
   await tester.tap(finder);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
+}
+
+Future<void> _openConnectExisting(WidgetTester tester) async {
+  if (find.byKey(_backToRouteChooserKey).evaluate().isNotEmpty) {
+    await _tapVisible(tester, find.byKey(_backToRouteChooserKey));
+    final _ = await tester.pumpAndSettle();
+  }
+  await _tapVisible(tester, find.byKey(_connectExistingKey));
+  final _ = await tester.pumpAndSettle();
+}
+
+Future<void> _chooseIntroRoute(WidgetTester tester, String route) async {
+  await _pumpFrame(tester);
+  if (find.byKey(_welcomeNextKey).evaluate().isNotEmpty) {
+    await _completeWelcome(tester);
+  }
+  final button = find.byKey(route == 'local' ? _localRouteKey : _cloudRouteKey);
+  await _pumpUntilFound(tester, button);
+  await _tapVisible(tester, button);
+  await _pumpUntilFound(tester, find.byType(AuraInput));
+}
+
+Future<void> _completeWelcome(WidgetTester tester) async {
+  await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
+  for (var page = 0; page < 3; page++) {
+    await tester.tap(find.byKey(_welcomeNextKey));
+    final _ = await tester.pumpAndSettle();
+  }
+}
+
+Future<void> _selectCloudAccount(
+  WidgetTester tester,
+  CloudAccountSession account,
+) async {
+  await _tapVisible(tester, find.byType(AuraDropdownSelector<String>));
+  final _ = await tester.pumpAndSettle();
+  await tester.tap(find.text('${account.email} (${account.serverUrl})').last);
+  final _ = await tester.pumpAndSettle();
 }
 
 Future<void> _createWorkspace(WidgetTester tester, String name) async {
+  await _chooseIntroRoute(tester, 'local');
   await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
-  expect(find.text('Welcome to AuraVibes'), findsOneWidget);
+  expect(find.text('Name your local workspace'), findsOneWidget);
 
   await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
   await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
@@ -522,27 +987,44 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
 }
 
 class _IntroFixture {
-  static final AppDatabase _sharedDatabase = .new(
-    connection: NativeDatabase.memory(),
-  );
-
   new({
     List<CloudAccountSession> accounts = const [],
     Client? client,
     Future<CloudWorkspaceViewState?> Function()? load,
+    Future<List<CloudAccountSession>> Function()? accountsLoad,
     bool management = false,
-  }) : this._(_sharedDatabase, accounts, client, load, management);
+  }) : this._(
+         .new(connection: NativeDatabase.memory()),
+         accounts,
+         client,
+         load,
+         accountsLoad,
+         management,
+       );
 
   new _(
     this.database,
     List<CloudAccountSession> accounts,
     Client? client,
     Future<CloudWorkspaceViewState?> Function()? load,
+    Future<List<CloudAccountSession>> Function()? accountsLoad,
     bool management,
   ) : container = .new(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
-          cloudAccountsProvider.overrideWith((ref) async => accounts),
+          chatModelConnectionsProvider.overrideWith(
+            (ref, workspaceId) => Stream.value([]),
+          ),
+          listModelsGroupedByProviderProvider.overrideWith(
+            (ref, workspaceId) => Stream.value({}),
+          ),
+          apiModelProvidersProvider.overrideWith(
+            (ref, workspaceId) async => [],
+          ),
+          cloudAccountsProvider.overrideWith(
+            (ref) async =>
+                accountsLoad != null ? await accountsLoad() : accounts,
+          ),
           cloudWorkspaceStateProvider.overrideWith(
             (ref, key) async => load != null
                 ? await load()
@@ -577,7 +1059,7 @@ class _IntroFixture {
             },
           ),
           GoRoute(
-            path: '/workspaces/:workspaceId/service-connections/new',
+            path: '/workspaces/:workspaceId/more/service-connections/new',
             builder: (context, state) {
               return Text(
                 'service connection: ${state.uri.queryParameters['type']}',
@@ -592,7 +1074,7 @@ class _IntroFixture {
   final ProviderContainer container;
   final GoRouter router;
 
-  Widget buildApp() {
+  Widget buildApp({bool reducedMotion = false}) {
     return EasyLocalization(
       key: UniqueKey(),
       child: Builder(
@@ -601,8 +1083,12 @@ class _IntroFixture {
             container: container,
             child: MaterialApp.router(
               routerConfig: router,
-              builder: (_, child) => AuraLegacyMaterialBridge(
-                child: Portal(child: child ?? const SizedBox.shrink()),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(disableAnimations: reducedMotion),
+                child: AuraLegacyMaterialBridge(
+                  child: Portal(child: child ?? const SizedBox.shrink()),
+                ),
               ),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
@@ -620,9 +1106,10 @@ class _IntroFixture {
     );
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     router.dispose();
     container.dispose();
+    await database.close();
   }
 }
 
@@ -630,6 +1117,11 @@ const _account = CloudAccountSession(
   serverUrl: 'https://cloud.example',
   userId: 'account',
   email: 'cloud@example.com',
+);
+const _secondAccount = CloudAccountSession(
+  serverUrl: 'https://another-cloud.example',
+  userId: 'another-account',
+  email: 'another@example.com',
 );
 class _Client extends Mock implements Client;
 class _CloudEndpoint extends Mock implements EndpointCloudWorkspace;

@@ -5,6 +5,10 @@ import 'dart:io';
 import 'mcp_server_policy.dart';
 import 'pinned_http_client.dart';
 
+typedef McpOutboundRequestFence = Future<T> Function<T>(
+  Future<T> Function() start,
+);
+
 /// Legacy HTTP+SSE MCP session, bound to one validated origin and IP.
 class McpSseSession {
   McpSseSession._(
@@ -12,6 +16,7 @@ class McpSseSession {
     this._events,
     this._bearerToken,
     this._headers,
+    this._dispatchFence,
   );
 
   static const _timeout = Duration(seconds: 10);
@@ -20,6 +25,7 @@ class McpSseSession {
   final StreamIterator<List<int>> _events;
   final String? _bearerToken;
   final Map<String, String> _headers;
+  final McpOutboundRequestFence? _dispatchFence;
   Uri? _endpoint;
   List<int> _chunk = const [];
   int _chunkOffset = 0;
@@ -32,6 +38,7 @@ class McpSseSession {
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
     HttpClient? httpClient,
+    McpOutboundRequestFence? dispatchFence,
   }) async {
     final client = (httpClient ?? pinnedHttpClient(uri, address))
       ..connectionTimeout = _timeout
@@ -44,7 +51,10 @@ class McpSseSession {
         ..headers.set(HttpHeaders.acceptHeader, 'text/event-stream')
         ..headers.set(HttpHeaders.acceptEncodingHeader, 'identity');
       _applyAuth(request, bearerToken, httpHeaders);
-      final response = await request.close().timeout(_timeout);
+      final response = await _sendRequest(
+        dispatchFence,
+        request.close,
+      ).timeout(_timeout);
       if (response.isRedirect ||
           response.statusCode != HttpStatus.ok ||
           response.headers.contentType?.mimeType != 'text/event-stream') {
@@ -55,6 +65,7 @@ class McpSseSession {
         StreamIterator(response),
         bearerToken,
         Map.unmodifiable(httpHeaders),
+        dispatchFence,
       );
       await (() async {
         while (session._endpoint == null) {
@@ -141,7 +152,10 @@ class McpSseSession {
       ..headers.set(HttpHeaders.acceptEncodingHeader, 'identity');
     _applyAuth(request, _bearerToken, _headers);
     request.write(jsonEncode(body));
-    final response = await request.close().timeout(_timeout);
+    final response = await _sendRequest(
+      _dispatchFence,
+      request.close,
+    ).timeout(_timeout);
     if (response.isRedirect ||
         response.statusCode != HttpStatus.accepted &&
             response.statusCode != HttpStatus.ok) {
@@ -205,6 +219,11 @@ class McpSseSession {
     _client.close(force: true);
   }
 }
+
+Future<T> _sendRequest<T>(
+  McpOutboundRequestFence? dispatchFence,
+  Future<T> Function() start,
+) => dispatchFence == null ? start() : dispatchFence(start);
 
 void _applyAuth(
   HttpClientRequest request,

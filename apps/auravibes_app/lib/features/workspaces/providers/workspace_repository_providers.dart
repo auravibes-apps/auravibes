@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_repository_providers.g.dart';
@@ -15,6 +16,7 @@ WorkspaceRepository workspaceRepository(Ref ref) {
   return WorkspaceRepository(
     appDatabase,
     attachmentFileStore: attachmentFileStore,
+    credentialErasure: .new(appDatabase, ref.watch(encryptionServiceProvider)),
   );
 }
 

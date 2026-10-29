@@ -36,6 +36,15 @@ void main() {
       );
     });
 
+    test('formats workspace tool IDs without their internal prefix', () {
+      final name = ToolNameFormatter.formatDisplayName(
+        null,
+        rawName: 'workspace_read_directory',
+      );
+
+      expect(name, isNot(startsWith('Workspace ')));
+    });
+
     test('formats skill display name', () {
       final parsed = ToolNameFormatter.parse(
         'skill__app_native__research_tools__search_web',

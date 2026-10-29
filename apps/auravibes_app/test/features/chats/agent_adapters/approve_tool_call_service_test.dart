@@ -394,6 +394,61 @@ void main() {
       ).called(0);
     });
 
+    test(
+      'approved workspace read result is redacted before persistence',
+      () async {
+        final fileMessage = message.copyWith(
+          metadata: const .new(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-1',
+                name: 'workspace_read_item',
+                argumentsRaw: '{"itemId":"file"}',
+              ),
+            ],
+          ),
+        );
+        when(() => messageRepository.getMessageById(messageId))
+            .thenAnswer((_) async => fileMessage);
+        when(
+          () => messageRepository.patchMessage(
+            messageId,
+            any(),
+            conversationId: conversationId,
+          ),
+        ).thenAnswer((_) async => fileMessage);
+        await provider.updateToolCallResult((
+          messageId: messageId,
+          toolCallId: 'tool-1',
+          conversationId: conversationId,
+          resultStatus: .success,
+          responseRaw: '{"content":"private bytes"}',
+          responseContextRaw: '{"content":"private bytes"}',
+          media: const [],
+          outputTruncated: false,
+          originalResponseBytes: null,
+          fullOutputForContext: false,
+        ));
+        final patch =
+            verify(
+                  () => messageRepository.patchMessage(
+                    messageId,
+                    captureAny(),
+                    conversationId: conversationId,
+                  ),
+                ).captured.single
+                as MessagePatch;
+        expect(
+          patch.metadata?.toolCalls.single.responseRaw,
+          '{"redacted":true}',
+        );
+        expect(
+          patch.metadata?.toolCalls.single.responseContextRaw,
+          '{"redacted":true}',
+        );
+      },
+    );
+
     test('updates tool call result status in message metadata', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);

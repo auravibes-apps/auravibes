@@ -1,14 +1,49 @@
+import 'dart:convert';
+
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../accounts/authenticated_account_resolver.dart';
 import '../sync/stream/sync_wakeups.dart';
-import 'repositories/workspace_state_repository.dart';
 import 'usecases/workspace_state_usecases.dart';
+import 'workspace_record_query.dart';
 
 class WorkspaceStateEndpoint extends Endpoint {
-  WorkspaceStateUseCases get _useCases =>
-      WorkspaceStateUseCases(WorkspaceStateRepository());
+  WorkspaceStateUseCases get _useCases => WorkspaceStateUseCases(.new());
+
+  Future<String> summarizeRecords(
+    Session session,
+    WorkspaceRecordSummaryRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    final summary = await const WorkspaceRecordQuery().summarize(
+      session,
+      account.userId,
+      (
+        workspaceId: request.workspaceId,
+        tableId: request.tableId,
+        encoded: request.queryJson,
+      ),
+      request.columnIds,
+    );
+
+    return jsonEncode(summary);
+  }
+
+  Future<List<WorkspaceResource>> queryRecords(
+    Session session,
+    int workspaceId,
+    String tableId,
+    String queryJson,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+
+    return await const WorkspaceRecordQuery()(
+      session,
+      account.userId,
+      (workspaceId: workspaceId, tableId: tableId, encoded: queryJson),
+    );
+  }
 
   Future<ReadWorkspaceStateResponse> read(
     Session session,
@@ -51,6 +86,21 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
+    return response;
+  }
+
+  Future<PatchWorkspaceStateResponse> duplicateTable(
+    Session session,
+    DuplicateWorkspaceItemRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    final response = await _useCases.duplicateTable(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+    await SyncWakeups.publishWorkspace(session, request.workspaceId);
     return response;
   }
 
@@ -65,6 +115,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 
@@ -79,6 +130,7 @@ class WorkspaceStateEndpoint extends Endpoint {
       request: request,
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
+
     return response;
   }
 }

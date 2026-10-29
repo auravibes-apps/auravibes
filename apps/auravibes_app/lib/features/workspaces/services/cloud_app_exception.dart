@@ -101,12 +101,15 @@ const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
   .permissionDenied: LocaleKeys.cloud_errors_permission_denied,
   .ownerRequired: LocaleKeys.cloud_errors_permission_denied,
   .validationFailed: LocaleKeys.cloud_errors_validation,
+  .incompatibleRelationship: LocaleKeys.workspace_items_reference_incompatible,
   .invalidRole: LocaleKeys.cloud_errors_validation,
   .confirmationNameMismatch: LocaleKeys.cloud_errors_validation,
   .invalidCursor: LocaleKeys.cloud_errors_validation,
   .ownerCannotLeave: LocaleKeys.cloud_errors_conflict,
   .ownerCannotBeRemoved: LocaleKeys.cloud_errors_conflict,
   .ownershipTransferRequired: LocaleKeys.cloud_errors_conflict,
+  .workspaceErasurePending:
+      LocaleKeys.cloud_accounts_workspace_erasure_pending_error,
   .inviteExpired: LocaleKeys.cloud_errors_conflict,
   .inviteRevoked: LocaleKeys.cloud_errors_conflict,
   .inviteEmailMismatch: LocaleKeys.cloud_errors_conflict,
@@ -144,6 +147,8 @@ const _objectLocalizationKeys = <ObjectErrorCode, String>{
   .idempotencyConflict: LocaleKeys.cloud_errors_conflict,
   .objectReferenced: LocaleKeys.cloud_errors_conflict,
   .configurationMissing: LocaleKeys.cloud_errors_unavailable,
+  .uploadProvenanceUnavailable:
+      LocaleKeys.cloud_errors_upload_provenance_unavailable,
   .scanFailed: LocaleKeys.cloud_errors_unavailable,
 };
 

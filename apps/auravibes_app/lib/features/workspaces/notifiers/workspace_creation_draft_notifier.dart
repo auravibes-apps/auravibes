@@ -12,6 +12,9 @@ class WorkspaceCreationDraftNotifier extends _$WorkspaceCreationDraftNotifier {
     state = WorkspaceCreationDraft(
       name: name ?? state.name,
       target: target ?? state.target,
+      cloudTarget: target != null && target.isNotEmpty
+          ? target
+          : state.cloudTarget,
       intent: intent ?? state.intent,
     );
   }

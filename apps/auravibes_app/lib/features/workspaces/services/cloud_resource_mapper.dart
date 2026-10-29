@@ -10,6 +10,10 @@ import 'package:logging/logging.dart';
 final _logger = Logger('cloud_resource_mapper');
 
 const _requiredResourceFields = <WorkspaceResourceKind, Map<String, Type>>{
+  .folder: {'name': String},
+  .file: {'name': String, 'assetId': String},
+  .table: {'name': String, 'labelColumnId': String},
+  .tableRecord: {'tableId': String, 'values': Map},
   .agent: {'name': String, 'content': String, 'visibility': String},
   .agentAssociation: {'agentId': String},
   .serviceConnection: {'name': String, 'serviceId': String},
@@ -157,6 +161,9 @@ void _validateResourceSpecificFields(
   WorkspaceResourceKind kind,
   Map<String, dynamic> data,
 ) {
+  if (kind == WorkspaceResourceKind.folder) {
+    _validateFolderParent(data['parentId']);
+  }
   _validateVisibility(kind, data);
   _validatePermissionMode(kind, data);
   _validateAssociation(kind, data);
@@ -196,6 +203,11 @@ void _validateWorkflowDefinition(
   if (definition is! Map || definition['version'] != 1) {
     throw const FormatException();
   }
+}
+
+void _validateFolderParent(Object? parentId) {
+  if (parentId == null) return;
+  if (parentId is! String || parentId.isEmpty) throw const FormatException();
 }
 
 bool _requiresPermission(WorkspaceResourceKind kind) => switch (kind) {

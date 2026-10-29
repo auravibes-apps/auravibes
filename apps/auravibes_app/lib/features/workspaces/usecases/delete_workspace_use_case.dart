@@ -1,7 +1,9 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_deletion_result.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_workspace_use_case.g.dart';
@@ -12,14 +14,18 @@ class DeleteWorkspaceUseCase {
     required this._prepareBackgroundWorkDeletion,
     required this._restoreBackgroundWorkAfterFailedDeletion,
     required this._clearWorkspaceDrafts,
+    required this._cleanupDeletedAssets,
+    this.hasPendingCleanup = _noPendingCleanup,
   });
 
+  final Future<bool> Function(String workspaceId) hasPendingCleanup;
   final WorkspaceRepository _repository;
   final Future<void> Function(String workspaceId)
   _prepareBackgroundWorkDeletion;
   final void Function(String workspaceId)
   _restoreBackgroundWorkAfterFailedDeletion;
   final Future<void> Function(String workspaceId) _clearWorkspaceDrafts;
+  final Future<void> Function() _cleanupDeletedAssets;
 
   // Null active workspace ID means there is no active workspace to protect.
   // ignore: unnecessary-nullable
@@ -27,7 +33,7 @@ class DeleteWorkspaceUseCase {
   ///
   /// [activeWorkspaceId] is the ID of the currently active workspace.
   ///
-  Future<void> call({
+  Future<WorkspaceDeletionResult> call({
     required String id,
     required String? activeWorkspaceId,
   }) async {
@@ -46,10 +52,25 @@ class DeleteWorkspaceUseCase {
     if (!deletedWorkspace) {
       _restoreBackgroundWorkAfterFailedDeletion(id);
     }
-    if (deletedWorkspace) await _clearWorkspaceDrafts(id);
+    if (deletedWorkspace) {
+      if (await _cleanup(id)) {
+        return WorkspaceDeletionResult.cleanupPending;
+      }
+    }
     assert(deletedWorkspace, 'Workspace must be deleted.');
+
+    return WorkspaceDeletionResult.complete;
+  }
+
+  Future<bool> _cleanup(String id) async {
+    await _clearWorkspaceDrafts(id);
+    await _cleanupDeletedAssets();
+
+    return await hasPendingCleanup(id);
   }
 }
+
+Future<bool> _noPendingCleanup(String _) async => false;
 
 /// Provides a [DeleteWorkspaceUseCase] instance.
 @riverpod
@@ -57,6 +78,7 @@ DeleteWorkspaceUseCase deleteWorkspaceUseCase(Ref ref) {
   final backgroundWorkCoordinator = ref.watch(
     backgroundWorkCoordinatorProvider,
   );
+  final assetErasure = ref.watch(workspaceAssetErasureProvider);
 
   return DeleteWorkspaceUseCase(
     repository: ref.watch(workspaceRepositoryProvider),
@@ -67,5 +89,7 @@ DeleteWorkspaceUseCase deleteWorkspaceUseCase(Ref ref) {
     clearWorkspaceDrafts: ref
         .watch(conversationDraftCleanupUsecaseProvider)
         .clearWorkspace,
+    cleanupDeletedAssets: assetErasure.flush,
+    hasPendingCleanup: assetErasure.hasPendingCleanup,
   );
 }

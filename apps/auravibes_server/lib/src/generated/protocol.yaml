@@ -75,6 +75,7 @@ object:
   - beginUpload:
   - completeUpload:
   - getDownload:
+  - describe:
   - delete:
 skillResource:
   - list:
@@ -84,16 +85,54 @@ skillResource:
   - delete:
 workspaceStream:
   - subscribe:
+workspaceContext:
+  - read:
+  - save:
+workspaceContentReport:
+  - submit:
+  - list:
+  - resolve:
+workspaceCsv:
+  - preview:
+workspaceHistory:
+  - policy:
+  - configurePolicy:
+  - permanentlyDelete:
+  - history:
+  - restore:
+workspaceReference:
+  - targets:
+  - tableTargets:
+  - record:
+  - reverse:
 workspaceSecret:
   - put:
 workspaceState:
+  - summarizeRecords:
+  - queryRecords:
   - read:
   - patch:
+  - duplicateTable:
   - duplicateAgent:
   - mutateCredential:
+workspaceTrash:
+  - deletedReference:
+  - preview:
+  - trash:
+  - list:
+  - restore:
+workspaceView:
+  - readConnected:
+  - submitAction:
+  - duplicate:
+  - list:
+  - read:
+  - history:
+  - save:
 cloudWorkspace:
   - listAuthorizedWorkspaces:
   - listPendingInvites:
+  - listOwnedDeletedWorkspacesForErasure:
   - getWorkspaceDetail:
   - listMembers:
   - listWorkspaceInvites:
@@ -109,3 +148,6 @@ cloudWorkspace:
   - updateMemberRole:
   - removeMember:
   - deleteWorkspace:
+  - eraseWorkspace:
+  - listWorkspaceErasures:
+  - retryWorkspaceErasure:

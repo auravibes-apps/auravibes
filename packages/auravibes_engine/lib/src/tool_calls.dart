@@ -45,7 +45,9 @@ extension AgentToolCallLifecycleX on AgentToolCallLifecycle {
     AgentToolCallLifecycle.pending || AgentToolCallLifecycle.success => '',
     .skippedByUser => 'Tool was skipped by the user.',
     .stoppedByUser => 'Tool execution was stopped by the user.',
-    .failed => 'Tool execution failed.',
+    .failed =>
+      'Tool execution failed. Read the tool error and use a corrected request '
+          'or a different approach.',
   };
 
   bool canTransitionTo(AgentToolCallLifecycle next) => switch (this) {

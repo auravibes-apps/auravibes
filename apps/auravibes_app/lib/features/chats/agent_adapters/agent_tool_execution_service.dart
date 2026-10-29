@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
@@ -28,6 +29,7 @@ typedef _ToolApprovalRequest = ({
   String workspaceId,
   String toolCallId,
   ResolvedTool resolvedTool,
+  String? argumentsRaw,
 });
 
 typedef _ToolExecutionErrorRequest = ({
@@ -118,6 +120,7 @@ class const AppAllowedToolsDataProvider({
     workspaceId: request.workspaceId,
     toolCallId: request.toolCallId,
     resolvedTool: request.resolvedTool,
+    argumentsRaw: request.argumentsRaw,
   ));
 
   @override
@@ -241,12 +244,24 @@ Future<ToolApprovalDecision> _resolvePermission(
   ResolveToolApprovalDecisionUsecase resolver,
   _ToolApprovalRequest request,
   ResolvedTool approvalTool,
-) => resolver.call(
-  conversationId: request.conversationId,
-  workspaceId: request.workspaceId,
-  toolCallId: request.toolCallId,
-  resolvedTool: approvalTool,
-);
+) {
+  if (approvalTool.isConnectorCommand || approvalTool.isWorkspaceCommand) {
+    return resolver.callForRequest((
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      toolCallId: request.toolCallId,
+      resolvedTool: approvalTool,
+      argumentsRaw: request.argumentsRaw,
+    ));
+  }
+
+  return resolver.call(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    toolCallId: request.toolCallId,
+    resolvedTool: approvalTool,
+  );
+}
 
 agent.AgentToolApprovalDecision _toApprovalDecision(
   ToolApprovalDecision decision,
@@ -447,10 +462,12 @@ MessageToolCallEntity _toolCallWithResultStatus(
     resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
-  return _applyToolExecutionOutput(
-    withStatus,
-    update,
-  ).copyWith(appData: appDataByToolCallId[update.toolCallId]);
+  return sanitizeWorkspaceToolResult(
+    _applyToolExecutionOutput(
+      withStatus,
+      update,
+    ).copyWith(appData: appDataByToolCallId[update.toolCallId]),
+  );
 }
 
 MessageToolCallEntity _applyToolExecutionOutput(

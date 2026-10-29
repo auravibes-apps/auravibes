@@ -19,6 +19,7 @@ abstract final class WorkspaceNavigation {
     ['more', 'workflows', ...] => .workflows,
     ['settings'] => .appSettings,
     ['cloud-accounts', ...] => .cloudAccounts,
+    ['items'] => .items,
     _ => null,
   };
 
@@ -55,6 +56,7 @@ enum WorkspaceDestination {
   workflows,
   appSettings,
   cloudAccounts,
+  items,
 }
 
 enum AgentDestination { agents, skills }

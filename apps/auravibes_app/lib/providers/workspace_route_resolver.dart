@@ -20,7 +20,9 @@ abstract final class WorkspaceRouteResolver {
     Uri currentUri,
     List<WorkspaceEntity> workspaces, {
     String? savedWorkspaceId,
+    bool activeIntro = false,
   }) {
+    if (currentUri.path == introPath && activeIntro) return null;
     final firstWorkspaceId = workspaces.firstOrNull?.id;
     if (firstWorkspaceId == null) {
       return _redirectWithoutWorkspace(currentUri);

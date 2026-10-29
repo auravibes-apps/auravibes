@@ -4,7 +4,14 @@ import 'package:auravibes_app/features/browser/models/browser_session_state.dart
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_providers.dart';
+import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
+import 'package:auravibes_app/features/browser/screens/sidebar_directory.dart';
 import 'package:auravibes_app/features/browser/services/browser_web_view_service.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_file_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -20,6 +27,7 @@ class const BrowserPanel({
   required final String? selectedToolResultTabId,
   required final ValueChanged<String?> onSelectToolResultTab,
   required final ValueChanged<String> onCloseToolResultTab,
+  required final VoidCallback onCloseSidebar,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -31,6 +39,10 @@ class const BrowserPanel({
     return switch (sessionAsync) {
       AsyncData(:final value) => _BrowserSessionView(
         request: _request(ref, value),
+        key: ValueKey((
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        )),
       ),
       AsyncError() => const Center(
         child: TextLocale(LocaleKeys.browser_load_error),
@@ -43,6 +55,7 @@ class const BrowserPanel({
     WidgetRef ref,
     BrowserSessionState session,
   ) => (
+    workspaceId: workspaceId,
     conversationId: conversationId,
     session: session,
     notifier: ref.read(
@@ -52,10 +65,12 @@ class const BrowserPanel({
     selectedToolResultTabId: selectedToolResultTabId,
     onSelectToolResultTab: onSelectToolResultTab,
     onCloseToolResultTab: onCloseToolResultTab,
+    onCloseSidebar: onCloseSidebar,
   );
 }
 
 typedef _BrowserSessionViewRequest = ({
+  String workspaceId,
   String conversationId,
   BrowserSessionState session,
   BrowserSessionNotifier notifier,
@@ -63,6 +78,7 @@ typedef _BrowserSessionViewRequest = ({
   String? selectedToolResultTabId,
   ValueChanged<String?> onSelectToolResultTab,
   ValueChanged<String> onCloseToolResultTab,
+  VoidCallback onCloseSidebar,
 });
 
 typedef _BrowserPanelData = ({
@@ -72,6 +88,8 @@ typedef _BrowserPanelData = ({
   SidebarToolResultTab? selectedToolResultTab,
   TextEditingController addressController,
   GlobalKey activeTabKey,
+  _WorkspaceTabs workspaceTabs,
+  VoidCallback onCloseSidebar,
 });
 
 typedef _BrowserPanelTabState = ({
@@ -91,14 +109,28 @@ typedef _BrowserPageStateUpdate = ({
 
 class const _BrowserSessionView({
   required final _BrowserSessionViewRequest request,
+  super.key,
 }) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _BrowserSessionColumn(
-    data: _createPanelData(ref, request, _usePanelTabState(request)),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tabs = _WorkspaceTabs.use(request);
+    _useTabCount(ref, tabs);
+    _useSelectedTool(context, tabs);
+    _useRequestedView(context, ref, tabs);
+
+    return _BrowserSessionColumn(
+      data: _createPanelData(
+        ref,
+        request,
+        _usePanelTabState(request, tabs.selected.value),
+        tabs,
+      ),
+    );
+  }
 
   static _BrowserPanelTabState _usePanelTabState(
     _BrowserSessionViewRequest request,
+    String? selectedWorkspace,
   ) {
     final activeTab = request.session.activeTab;
     final selectedToolResultTab = request.toolResultTabs
@@ -109,7 +141,11 @@ class const _BrowserSessionView({
       activeTab: activeTab,
       selectedToolResultTab: selectedToolResultTab,
       addressController: _useAddressController(activeTab),
-      activeTabKey: _useActiveTabKey(activeTab, selectedToolResultTab),
+      activeTabKey: _useActiveTabKey(
+        activeTab,
+        selectedToolResultTab,
+        selectedWorkspace,
+      ),
     );
   }
 
@@ -122,10 +158,11 @@ class const _BrowserSessionView({
   static GlobalKey _useActiveTabKey(
     BrowserTab? activeTab,
     SidebarToolResultTab? selectedToolResultTab,
+    String? selectedWorkspace,
   ) {
     final activeTabKey = useMemoized(GlobalKey.new, const []);
     useEffect(() => _scrollToActiveBrowserTab(activeTabKey), [
-      selectedToolResultTab?.id ?? activeTab?.id,
+      selectedWorkspace ?? selectedToolResultTab?.id ?? activeTab?.id,
     ]);
 
     return activeTabKey;
@@ -135,6 +172,7 @@ class const _BrowserSessionView({
     WidgetRef ref,
     _BrowserSessionViewRequest request,
     _BrowserPanelTabState state,
+    _WorkspaceTabs tabs,
   ) => (
     request: request,
     webViewService: ref.read(browserWebViewServiceProvider),
@@ -142,8 +180,103 @@ class const _BrowserSessionView({
     selectedToolResultTab: state.selectedToolResultTab,
     addressController: state.addressController,
     activeTabKey: state.activeTabKey,
+    workspaceTabs: tabs,
+    onCloseSidebar: request.onCloseSidebar,
   );
 }
+
+extension _BrowserWorkspaceHooks on _BrowserSessionView {
+  void _useTabCount(WidgetRef ref, _WorkspaceTabs tabs) {
+    final count = ref.watch(
+      sidebarWorkspaceTabCountProvider((
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      )),
+    );
+    useEffect(
+      () =>
+          () => count.value = 0,
+      [count],
+    );
+    final tabCount = _workspaceTabCount(tabs);
+    useEffect(
+      () => _trackTabCount(count, tabCount),
+      [count, tabCount], // Update the badge when tabs change.
+    );
+  }
+
+  void _useSelectedTool(BuildContext context, _WorkspaceTabs tabs) {
+    final resultKeys = [request.selectedToolResultTabId];
+    useEffect(
+      () => _selectToolAfterFrame(context, tabs),
+      resultKeys, // Follow the selected tool result.
+    );
+  }
+
+  void _useRequestedView(
+    BuildContext context,
+    WidgetRef ref,
+    _WorkspaceTabs tabs,
+  ) {
+    final provider = workspaceOpenViewProvider(
+      request.workspaceId,
+      request.conversationId,
+    );
+    final requested = ref.watch(provider);
+    useEffect(
+      () => _openViewAfterFrame(context, tabs, requested),
+      [requested], // Open workspace requests in their own tab.
+    );
+    ref.listen(provider, (previous, next) => _openRequestedView(tabs, next));
+  }
+
+  VoidCallback _trackTabCount(ValueNotifier<int> count, int tabCount) {
+    var mounted = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) count.value = tabCount;
+    });
+
+    return () => mounted = false;
+  }
+
+  VoidCallback? _selectToolAfterFrame(
+    BuildContext context,
+    _WorkspaceTabs tabs,
+  ) {
+    if (request.selectedToolResultTabId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) tabs.select(null);
+      });
+    }
+
+    return null;
+  }
+
+  VoidCallback? _openViewAfterFrame(
+    BuildContext context,
+    _WorkspaceTabs tabs,
+    WorkspaceChatItem? requested,
+  ) {
+    if (requested != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) _openRequestedView(tabs, requested);
+      });
+    }
+
+    return null;
+  }
+
+  void _openRequestedView(_WorkspaceTabs tabs, WorkspaceChatItem? requested) {
+    if (requested == null) return;
+    request.onSelectToolResultTab(null);
+    tabs.open(requested);
+  }
+}
+
+int _workspaceTabCount(_WorkspaceTabs tabs) =>
+    tabs.items.value.length +
+    (tabs.directoryOpen.value ? 1 : 0) +
+    (tabs.selected.value == 'chooser' ? 1 : 0);
 
 class const _BrowserSessionColumn({required final _BrowserPanelData data})
     extends StatelessWidget {
@@ -179,6 +312,7 @@ class const _BrowserPanelBody({required final _BrowserPanelData data})
       _BrowserActiveTabSlot(data: data),
       _BrowserEmptyStateSlot(data: data),
       _BrowserToolResultSlot(data: data),
+      _WorkspaceTabSlot(data: data),
     ],
   );
 }
@@ -188,7 +322,10 @@ class const _BrowserSuspendedSessionSlot({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (!data.request.session.isSuspended) return const SizedBox.shrink();
+    if (!data.request.session.isSuspended ||
+        data.workspaceTabs.selected.value != null) {
+      return const SizedBox.shrink();
+    }
 
     return _BrowserSuspendedSession(notifier: data.request.notifier);
   }
@@ -203,7 +340,9 @@ class const _BrowserActiveTabSlot({required final _BrowserPanelData data})
     if (activeTab == null) return const SizedBox.shrink();
 
     return Offstage(
-      offstage: data.selectedToolResultTab != null,
+      offstage:
+          data.selectedToolResultTab != null ||
+          data.workspaceTabs.selected.value != null,
       child: _BrowserActiveTab(data: data, activeTab: activeTab),
     );
   }
@@ -211,15 +350,18 @@ class const _BrowserActiveTabSlot({required final _BrowserPanelData data})
 
 class const _BrowserEmptyStateSlot({required final _BrowserPanelData data})
     extends StatelessWidget {
-  bool get _shouldShow =>
-      data.activeTab == null &&
-      data.selectedToolResultTab == null &&
-      !data.request.session.isSuspended;
+  bool get _shouldShow {
+    final selected = data.workspaceTabs.selected.value;
+
+    return ((data.activeTab == null && selected == null) ||
+            selected == 'chooser') &&
+        data.selectedToolResultTab == null &&
+        (!data.request.session.isSuspended || selected == 'chooser');
+  }
 
   @override
-  Widget build(BuildContext context) => _shouldShow
-      ? const Center(child: TextLocale(LocaleKeys.browser_empty_state))
-      : const SizedBox.shrink();
+  Widget build(BuildContext context) =>
+      _shouldShow ? _SidebarChooser(data: data) : const SizedBox.shrink();
 }
 
 class const _BrowserToolResultSlot({required final _BrowserPanelData data})
@@ -227,7 +369,9 @@ class const _BrowserToolResultSlot({required final _BrowserPanelData data})
   @override
   Widget build(BuildContext context) {
     final tab = data.selectedToolResultTab;
-    if (tab == null) return const SizedBox.shrink();
+    if (tab == null || data.workspaceTabs.selected.value != null) {
+      return const SizedBox.shrink();
+    }
 
     return Positioned.fill(child: _SidebarToolResultContent(tab: tab));
   }
@@ -549,6 +693,7 @@ class const _BrowserTabList({required final _BrowserPanelData data})
     children: [
       _BrowserTabChipRow(data: data),
       _ToolResultTabChipRow(data: data),
+      _WorkspaceTabChipRow(data: data),
     ],
   );
 }
@@ -592,7 +737,12 @@ class const _BrowserNewTabButton({required final _BrowserPanelData data})
     );
   }
 
-  void _openTab() => unawaited(data.request.notifier.openTab());
+  void _openTab() {
+    if (data.selectedToolResultTab != null) {
+      data.request.onSelectToolResultTab(null);
+    }
+    data.workspaceTabs.select('chooser');
+  }
 }
 
 class const _SidebarTabChip({
@@ -626,6 +776,105 @@ typedef _SidebarTabTileData = ({
 });
 typedef _SidebarTabIdentifiers = ({String tile, String closeButton});
 typedef _SidebarTabActions = ({VoidCallback onSelect, VoidCallback onClose});
+typedef _SidebarTabRef = ({String kind, String id});
+
+List<_SidebarTabRef> _sidebarTabs(_BrowserPanelData data) => [
+  for (final tab in data.request.session.tabs) (kind: 'browser', id: tab.id),
+  for (final tab in data.request.toolResultTabs) (kind: 'tool', id: tab.id),
+  ..._workspaceSidebarTabs(data.workspaceTabs),
+];
+
+List<_SidebarTabRef> _workspaceSidebarTabs(_WorkspaceTabs tabs) => [
+  if (tabs.selected.value == 'chooser') (kind: 'workspace', id: 'chooser'),
+  if (tabs.directoryOpen.value) (kind: 'workspace', id: 'directory'),
+  for (final item in tabs.items.value)
+    (kind: 'workspace', id: _WorkspaceTabs.key(item)),
+];
+
+_SidebarTabRef? _activeSidebarTab(_BrowserPanelData data) {
+  final selectedWorkspace = data.workspaceTabs.selected.value;
+  final selectedToolResult = data.selectedToolResultTab;
+  if (selectedToolResult != null) {
+    return (kind: 'tool', id: selectedToolResult.id);
+  }
+  if (selectedWorkspace != null) {
+    return (kind: 'workspace', id: selectedWorkspace);
+  }
+  final activeBrowser = data.activeTab;
+
+  return activeBrowser == null ? null : (kind: 'browser', id: activeBrowser.id);
+}
+
+Future<void> _closeSidebarTab(
+  _BrowserPanelData data,
+  _SidebarTabRef closing,
+) async {
+  final isActive = _activeSidebarTab(data) == closing;
+  final next = isActive ? _nextSidebarTab(_sidebarTabs(data), closing) : null;
+
+  await _removeSidebarTab(data, closing, isActive, next);
+
+  if (!isActive) return;
+
+  await _selectNextSidebarTab(data, next);
+}
+
+Future<void> _removeSidebarTab(
+  _BrowserPanelData data,
+  _SidebarTabRef closing,
+  bool isActive,
+  _SidebarTabRef? next,
+) async {
+  switch (closing.kind) {
+    case 'browser':
+      await data.request.notifier.closeTab(closing.id);
+    case 'tool':
+      data.request.onCloseToolResultTab(closing.id);
+    case 'workspace':
+      final selectAfterClose = isActive && next?.kind == 'workspace'
+          ? next?.id
+          : null;
+      data.workspaceTabs.close(closing.id, selectAfterClose: selectAfterClose);
+  }
+}
+
+Future<void> _selectNextSidebarTab(
+  _BrowserPanelData data,
+  _SidebarTabRef? next,
+) async {
+  if (next == null) {
+    _closeEmptySidebar(data);
+
+    return;
+  }
+
+  switch (next.kind) {
+    case 'browser':
+      data.workspaceTabs.select(null);
+      data.request.onSelectToolResultTab(null);
+      await data.request.notifier.selectTab(next.id);
+    case 'tool':
+      data.workspaceTabs.select(null);
+      data.request.onSelectToolResultTab(next.id);
+    case 'workspace':
+      data.request.onSelectToolResultTab(null);
+      data.workspaceTabs.select(next.id);
+  }
+}
+
+void _closeEmptySidebar(_BrowserPanelData data) {
+  data.workspaceTabs.select(null);
+  data.request.onSelectToolResultTab(null);
+  data.onCloseSidebar();
+}
+
+_SidebarTabRef? _nextSidebarTab(List<_SidebarTabRef> tabs, _SidebarTabRef tab) {
+  final index = tabs.indexOf(tab);
+  if (index > 0) return tabs[index - 1];
+  if (index == 0 && tabs.length > 1) return tabs[1];
+
+  return null;
+}
 
 class const _SidebarTabTile({required final _SidebarTabTileData data})
     extends StatelessWidget {
@@ -665,6 +914,7 @@ class const _SidebarBrowserTabChip({
     final tabId = tab.id;
     final isSelected =
         data.selectedToolResultTab == null &&
+        data.workspaceTabs.selected.value == null &&
         tabId == data.request.session.activeTabId;
 
     return _SidebarTabChip(
@@ -691,11 +941,13 @@ class const _SidebarBrowserTabChip({
 
   _SidebarTabActions _tabActions(String tabId) => (
     onSelect: () => _selectTab(tabId),
-    onClose: () => unawaited(data.request.notifier.closeTab(tabId)),
+    onClose: () =>
+        unawaited(_closeSidebarTab(data, (kind: 'browser', id: tabId))),
   );
 
   void _selectTab(String tabId) {
     data.request.onSelectToolResultTab(null);
+    data.workspaceTabs.select(null);
     unawaited(data.request.notifier.selectTab(tabId));
   }
 }
@@ -716,7 +968,9 @@ class const _SidebarToolResultTabChip({
   @override
   Widget build(BuildContext context) {
     final tabId = tab.id;
-    final isSelected = data.selectedToolResultTab?.id == tabId;
+    final isSelected =
+        data.workspaceTabs.selected.value == null &&
+        data.selectedToolResultTab?.id == tabId;
 
     return _SidebarTabChip(
       data: _tileData(tabId, isSelected),
@@ -731,9 +985,17 @@ class const _SidebarToolResultTabChip({
     title: tab.title,
     child: Text(tab.title, overflow: .ellipsis, maxLines: 1),
     selected: isSelected,
-    onSelect: () => data.request.onSelectToolResultTab(tabId),
-    onClose: () => data.request.onCloseToolResultTab(tabId),
+    onSelect: _select,
+    onClose: _close,
   );
+
+  void _select() {
+    data.workspaceTabs.select(null);
+    data.request.onSelectToolResultTab(tab.id);
+  }
+
+  void _close() =>
+      unawaited(_closeSidebarTab(data, (kind: 'tool', id: tab.id)));
 }
 
 class const _SidebarTabCloseButton({
@@ -873,4 +1135,342 @@ Future<void> _runBrowserCommand(
       variant: .error,
     );
   }
+}
+
+class _WorkspaceTabs {
+  const new(
+    this.items,
+    this.selected,
+    this.directoryOpen,
+    this.names,
+    this.notifier,
+  );
+  factory use(_BrowserSessionViewRequest request) => .new(
+    useState([
+      for (final tab in request.session.workspaceTabs)
+        WorkspaceChatItem(id: tab.id, kind: tab.kind),
+    ]),
+    useState(request.session.selectedWorkspaceTabId),
+    useState(
+      request.session.workspaceTabs.any((tab) => tab.kind == 'directory'),
+    ),
+    useState({}),
+    request.notifier,
+  );
+
+  final ValueNotifier<List<WorkspaceChatItem>> items;
+  final ValueNotifier<String?> selected;
+  final ValueNotifier<bool> directoryOpen;
+  final ValueNotifier<Map<String, String>> names;
+  final BrowserSessionNotifier notifier;
+  static String key(WorkspaceChatItem item) => '${item.kind}:${item.id}';
+  void select(String? id) {
+    selected.value = id;
+    _persist();
+  }
+
+  void open(WorkspaceChatItem item, [String? name]) {
+    if (item.kind == 'directory') {
+      directoryOpen.value = true;
+      selected.value = 'directory';
+      _persist();
+
+      return;
+    }
+    _openItem(item, name);
+    _persist();
+  }
+
+  void close(String id, {String? selectAfterClose}) {
+    items.value = items.value.where((item) => key(item) != id).toList();
+    if (id == 'directory') directoryOpen.value = false;
+    if (selected.value == id) selected.value = selectAfterClose;
+    _persist();
+  }
+
+  void _openItem(WorkspaceChatItem item, String? name) {
+    final id = key(item);
+    if (name != null) names.value = {...names.value, id: name};
+    items.value = [
+      ...items.value.where((existing) => key(existing) != id),
+      item,
+    ];
+    selected.value = id;
+  }
+
+  void _persist() => unawaited(
+    notifier.saveWorkspaceTabs(
+      tabs: [
+        for (final item in items.value)
+          WorkspaceContentTab(id: item.id, kind: item.kind),
+        if (directoryOpen.value)
+          const WorkspaceContentTab(id: '', kind: 'directory'),
+      ],
+      selectedTabId: selected.value,
+    ),
+  );
+}
+
+const _sidebarChooserSpacing = 12.0;
+
+class const _SidebarChooser({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Wrap(
+      spacing: _sidebarChooserSpacing,
+      runSpacing: _sidebarChooserSpacing,
+      children: [
+        AuraButton(
+          onPressed: _openDirectory,
+          child: const TextLocale(LocaleKeys.workspace_items_title),
+          identifier: 'sidebar_open_directory',
+        ),
+        AuraButton(
+          onPressed: _openBrowser,
+          child: const TextLocale(LocaleKeys.app_skills_browser_title),
+          identifier: 'sidebar_open_browser',
+        ),
+      ],
+    ),
+  );
+
+  void _openDirectory() {
+    data.workspaceTabs.open(const WorkspaceChatItem(id: '', kind: 'directory'));
+  }
+
+  void _openBrowser() {
+    data.workspaceTabs.select(null);
+    unawaited(data.request.notifier.openTab());
+  }
+}
+
+class const _WorkspaceTabChipRow({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final workspaceTabs = data.workspaceTabs;
+
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        if (workspaceTabs.selected.value == 'chooser')
+          _WorkspaceChooserChip(data: data),
+        if (workspaceTabs.directoryOpen.value)
+          _WorkspaceDirectoryChip(data: data),
+        for (final item in workspaceTabs.items.value)
+          _WorkspaceItemChip(data: data, item: item),
+      ],
+    );
+  }
+}
+
+class const _WorkspaceChooserChip({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceChip(
+    data: data,
+    id: 'chooser',
+    title: LocaleKeys.browser_new_tab.tr(),
+  );
+}
+
+class const _WorkspaceDirectoryChip({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceChip(
+    data: data,
+    id: 'directory',
+    title: LocaleKeys.workspace_items_title.tr(),
+  );
+}
+
+class const _WorkspaceItemChip({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _WorkspaceChip(
+    data: data,
+    id: _WorkspaceTabs.key(item),
+    title:
+        data.workspaceTabs.names.value[_WorkspaceTabs.key(item)] ??
+        _title(item.kind),
+    tableId: item.kind == 'table' ? item.id : null,
+  );
+
+  String _title(String kind) => switch (kind) {
+    'table' => LocaleKeys.workspace_items_table.tr(),
+    'file' => LocaleKeys.workspace_assets_file.tr(),
+    'view' => LocaleKeys.workspace_views_title.tr(),
+    _ => LocaleKeys.workspace_items_title.tr(),
+  };
+}
+
+class const _WorkspaceChip({
+  required final _BrowserPanelData data,
+  required final String id,
+  required final String title,
+  final String? tableId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final label = _label(ref);
+    final selected = data.workspaceTabs.selected.value == id;
+
+    return _SidebarTabChip(
+      data: _tileData(label, selected),
+      key: selected ? data.activeTabKey : null,
+    );
+  }
+
+  String _label(WidgetRef ref) {
+    final tableIdentifier = tableId;
+    final table = tableIdentifier == null
+        ? null
+        : ref.watch(
+            workspaceTableProvider(data.request.workspaceId, tableIdentifier),
+          );
+
+    return switch (table) {
+      AsyncData(:final value) => value.name,
+      AsyncLoading() || AsyncError() || null => title,
+    };
+  }
+
+  _SidebarTabTileData _tileData(String label, bool selected) => (
+    identifiers: (
+      tile: 'sidebar_workspace_$id',
+      closeButton: 'sidebar_close_workspace_$id',
+    ),
+    title: label,
+    child: Text(label, overflow: .ellipsis, maxLines: 1),
+    selected: selected,
+    onSelect: _select,
+    onClose: _close,
+  );
+
+  void _select() {
+    data.request.onSelectToolResultTab(null);
+    data.workspaceTabs.select(id);
+  }
+
+  void _close() =>
+      unawaited(_closeSidebarTab(data, (kind: 'workspace', id: id)));
+}
+
+class const _WorkspaceTabSlot({required final _BrowserPanelData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final workspaceTabs = data.workspaceTabs;
+    final selected = workspaceTabs.selected.value;
+
+    return Stack(
+      children: [
+        if (workspaceTabs.directoryOpen.value)
+          _WorkspaceDirectorySlot(data: data, selected: selected),
+        for (final item in workspaceTabs.items.value)
+          _WorkspaceTabEntry(data: data, item: item, selected: selected),
+      ],
+    );
+  }
+}
+
+class const _WorkspaceDirectorySlot({
+  required final _BrowserPanelData data,
+  required final String? selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Offstage(
+    offstage: selected != 'directory',
+    child: SidebarDirectory(
+      workspaceId: data.request.workspaceId,
+      onOpen: data.workspaceTabs.open,
+    ),
+  );
+}
+
+class const _WorkspaceTabEntry({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+  required final String? selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final id = _WorkspaceTabs.key(item);
+    final active = id == selected;
+
+    return Positioned.fill(
+      child: Offstage(
+        offstage: !active,
+        child: TickerMode(
+          enabled: active,
+          child: KeyedSubtree(
+            key: ValueKey(id),
+            child: _WorkspaceTabContent(data: data, item: item),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class const _WorkspaceTabContent({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return switch (item.kind) {
+      'view' => _WorkspaceViewTab(data: data, item: item),
+      'table' => _WorkspaceTableTab(data: data, item: item),
+      'file' => _WorkspaceFileTab(data: data, item: item),
+      _ => const SizedBox.shrink(),
+    };
+  }
+}
+
+void _closeWorkspaceContent(_BrowserPanelData data, WorkspaceChatItem item) =>
+    unawaited(
+      _closeSidebarTab(data, (kind: 'workspace', id: _WorkspaceTabs.key(item))),
+    );
+
+class const _WorkspaceViewTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceViewScreen(
+    workspaceId: data.request.workspaceId,
+    viewId: item.id,
+    onBack: () => _closeWorkspaceContent(data, item),
+    compact: true,
+  );
+}
+
+class const _WorkspaceTableTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceTableScreen(
+    workspaceId: data.request.workspaceId,
+    tableId: item.id,
+    onBack: () => _closeWorkspaceContent(data, item),
+    compact: true,
+  );
+}
+
+class const _WorkspaceFileTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceFileScreen(
+    workspaceId: data.request.workspaceId,
+    fileId: item.id,
+    onBack: () => _closeWorkspaceContent(data, item),
+    compact: true,
+  );
 }

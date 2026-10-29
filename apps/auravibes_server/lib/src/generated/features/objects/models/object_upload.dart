@@ -22,9 +22,12 @@ abstract class ObjectUpload
     required this.requestId,
     required this.requestHash,
     required this.expiresAt,
+    this.gatewayRegistrationId,
+    String? gatewayRegistrationState,
+    this.signingReservationCount,
     this.completedAt,
     required this.createdAt,
-  });
+  }) : gatewayRegistrationState = gatewayRegistrationState ?? 'registered';
 
   factory ObjectUpload({
     int? id,
@@ -34,6 +37,9 @@ abstract class ObjectUpload
     required String requestId,
     required String requestHash,
     required DateTime expiresAt,
+    String? gatewayRegistrationId,
+    String? gatewayRegistrationState,
+    int? signingReservationCount,
     DateTime? completedAt,
     required DateTime createdAt,
   }) = _ObjectUploadImpl;
@@ -49,6 +55,12 @@ abstract class ObjectUpload
       expiresAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
+      gatewayRegistrationId:
+          jsonSerialization['gatewayRegistrationId'] as String?,
+      gatewayRegistrationState:
+          jsonSerialization['gatewayRegistrationState'] as String?,
+      signingReservationCount:
+          jsonSerialization['signingReservationCount'] as int?,
       completedAt: jsonSerialization['completedAt'] == null
           ? null
           : _is.DateTimeJsonExtension.fromJson(
@@ -79,6 +91,12 @@ abstract class ObjectUpload
 
   DateTime expiresAt;
 
+  String? gatewayRegistrationId;
+
+  String gatewayRegistrationState;
+
+  int? signingReservationCount;
+
   DateTime? completedAt;
 
   DateTime createdAt;
@@ -97,6 +115,9 @@ abstract class ObjectUpload
     String? requestId,
     String? requestHash,
     DateTime? expiresAt,
+    String? gatewayRegistrationId,
+    String? gatewayRegistrationState,
+    int? signingReservationCount,
     DateTime? completedAt,
     DateTime? createdAt,
   });
@@ -111,6 +132,11 @@ abstract class ObjectUpload
       'requestId': requestId,
       'requestHash': requestHash,
       'expiresAt': expiresAt.toJson(),
+      if (gatewayRegistrationId != null)
+        'gatewayRegistrationId': gatewayRegistrationId,
+      'gatewayRegistrationState': gatewayRegistrationState,
+      if (signingReservationCount != null)
+        'signingReservationCount': signingReservationCount,
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
       'createdAt': createdAt.toJson(),
     };
@@ -127,6 +153,11 @@ abstract class ObjectUpload
       'requestId': requestId,
       'requestHash': requestHash,
       'expiresAt': expiresAt.toJson(),
+      if (gatewayRegistrationId != null)
+        'gatewayRegistrationId': gatewayRegistrationId,
+      'gatewayRegistrationState': gatewayRegistrationState,
+      if (signingReservationCount != null)
+        'signingReservationCount': signingReservationCount,
       if (completedAt != null) 'completedAt': completedAt?.toJson(),
       'createdAt': createdAt.toJson(),
     };
@@ -171,6 +202,9 @@ class _ObjectUploadImpl extends ObjectUpload {
     required String requestId,
     required String requestHash,
     required DateTime expiresAt,
+    String? gatewayRegistrationId,
+    String? gatewayRegistrationState,
+    int? signingReservationCount,
     DateTime? completedAt,
     required DateTime createdAt,
   }) : super._(
@@ -181,6 +215,9 @@ class _ObjectUploadImpl extends ObjectUpload {
          requestId: requestId,
          requestHash: requestHash,
          expiresAt: expiresAt,
+         gatewayRegistrationId: gatewayRegistrationId,
+         gatewayRegistrationState: gatewayRegistrationState,
+         signingReservationCount: signingReservationCount,
          completedAt: completedAt,
          createdAt: createdAt,
        );
@@ -197,6 +234,9 @@ class _ObjectUploadImpl extends ObjectUpload {
     String? requestId,
     String? requestHash,
     DateTime? expiresAt,
+    Object? gatewayRegistrationId = _Undefined,
+    String? gatewayRegistrationState,
+    Object? signingReservationCount = _Undefined,
     Object? completedAt = _Undefined,
     DateTime? createdAt,
   }) {
@@ -208,6 +248,14 @@ class _ObjectUploadImpl extends ObjectUpload {
       requestId: requestId ?? this.requestId,
       requestHash: requestHash ?? this.requestHash,
       expiresAt: expiresAt ?? this.expiresAt,
+      gatewayRegistrationId: gatewayRegistrationId is String?
+          ? gatewayRegistrationId
+          : this.gatewayRegistrationId,
+      gatewayRegistrationState:
+          gatewayRegistrationState ?? this.gatewayRegistrationState,
+      signingReservationCount: signingReservationCount is int?
+          ? signingReservationCount
+          : this.signingReservationCount,
       completedAt: completedAt is DateTime? ? completedAt : this.completedAt,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -245,6 +293,24 @@ class ObjectUploadUpdateTable extends _is.UpdateTable<ObjectUploadTable> {
   _is.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
       _is.ColumnValue(
         table.expiresAt,
+        value,
+      );
+
+  _is.ColumnValue<String, String> gatewayRegistrationId(String? value) =>
+      _is.ColumnValue(
+        table.gatewayRegistrationId,
+        value,
+      );
+
+  _is.ColumnValue<String, String> gatewayRegistrationState(String value) =>
+      _is.ColumnValue(
+        table.gatewayRegistrationState,
+        value,
+      );
+
+  _is.ColumnValue<int, int> signingReservationCount(int? value) =>
+      _is.ColumnValue(
+        table.signingReservationCount,
         value,
       );
 
@@ -288,6 +354,19 @@ class ObjectUploadTable extends _is.Table<int?> {
       'expiresAt',
       this,
     );
+    gatewayRegistrationId = _is.ColumnString(
+      'gatewayRegistrationId',
+      this,
+    );
+    gatewayRegistrationState = _is.ColumnString(
+      'gatewayRegistrationState',
+      this,
+      hasDefault: true,
+    );
+    signingReservationCount = _is.ColumnInt(
+      'signingReservationCount',
+      this,
+    );
     completedAt = _is.ColumnDateTime(
       'completedAt',
       this,
@@ -312,6 +391,12 @@ class ObjectUploadTable extends _is.Table<int?> {
 
   late final _is.ColumnDateTime expiresAt;
 
+  late final _is.ColumnString gatewayRegistrationId;
+
+  late final _is.ColumnString gatewayRegistrationState;
+
+  late final _is.ColumnInt signingReservationCount;
+
   late final _is.ColumnDateTime completedAt;
 
   late final _is.ColumnDateTime createdAt;
@@ -325,6 +410,9 @@ class ObjectUploadTable extends _is.Table<int?> {
     requestId,
     requestHash,
     expiresAt,
+    gatewayRegistrationId,
+    gatewayRegistrationState,
+    signingReservationCount,
     completedAt,
     createdAt,
   ];

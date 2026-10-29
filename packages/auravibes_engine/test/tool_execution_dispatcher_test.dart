@@ -283,7 +283,10 @@ void main() {
             argumentsRaw: '{}',
           );
           expect(result.resultStatus, AgentToolResultStatus.executionError);
-          expect(result.responseRaw, isNull);
+          expect(
+            jsonDecode(result.responseRaw!),
+            containsPair('code', 'execution_error'),
+          );
         },
       );
     }
@@ -384,7 +387,12 @@ void main() {
       expect(executed, isFalse);
       expect(loggedError, isA<FormatException>());
       expect(result.resultStatus, AgentToolResultStatus.executionError);
-      expect(result.responseRaw, 'Tool execution failed.');
+      expect(jsonDecode(result.responseRaw!), {
+        'outcome': 'failed',
+        'code': 'invalid_request',
+        'error': 'Tool rejected the request format.',
+        'nextAction': "Check this tool's schema and send a corrected request.",
+      });
     });
   }
 

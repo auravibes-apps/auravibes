@@ -85,8 +85,7 @@ class const LoadConversationToolSpecsUsecase({
     final input = await _loadCatalogInput(conversationId, workspaceId);
 
     return _buildCatalog(
-      toolCandidates: input.toolCandidates,
-      skillControlSpecs: input.skillControlSpecs,
+      input: input,
       includeRunSubAgent: await _includeRunSubAgent(conversationId),
       languageCode: languageCode,
     );
@@ -117,16 +116,27 @@ class const LoadConversationToolSpecsUsecase({
 }
 
 agent.ToolCatalog<ResolvedTool> _buildCatalog({
-  required List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
-  required List<ToolSpec> skillControlSpecs,
+  required ({
+    List<agent.ToolCatalogCandidate<ResolvedTool>> toolCandidates,
+    List<ToolSpec> skillControlSpecs,
+  })
+  input,
   required bool includeRunSubAgent,
   String? languageCode,
 }) => agent.buildToolCatalog([
-  ...toolCandidates,
+  ...input.toolCandidates,
+  ...agent.workspaceReadToolSpecs().map(_workspaceCandidate),
+  ...agent.workspaceMutationToolSpecs().map(_workspaceCandidate),
   ...agent.buildConnectorCommandToolSpecs().map(_connectorCommandCandidate),
-  ...skillControlSpecs.map(_skillControlCandidate),
+  ...input.skillControlSpecs.map(_skillControlCandidate),
   if (includeRunSubAgent) _runSubAgentCandidate(languageCode),
 ]);
+
+agent.ToolCatalogCandidate<ResolvedTool> _workspaceCandidate(ToolSpec spec) =>
+    agent.ToolCatalogCandidate.reserved(
+      spec: spec,
+      target: ResolvedTool.workspaceAction(toolIdentifier: spec.name),
+    );
 
 agent.ToolCatalogCandidate<ResolvedTool> _connectorCommandCandidate(
   ToolSpec spec,

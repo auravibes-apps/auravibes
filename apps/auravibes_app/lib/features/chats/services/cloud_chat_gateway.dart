@@ -702,6 +702,14 @@ extension CloudChatGatewayTurnOperations on CloudChatGateway {
         ),
       );
 
+  Future<ObjectResult> describeObject({required int objectId}) =>
+      CloudAppErrors.guardCall(
+        .object,
+        () => _client.object.describe(
+          .new(workspaceId: _workspaceId, objectId: objectId),
+        ),
+      );
+
   Future<void> deleteObject({
     required int objectId,
     required String requestId,

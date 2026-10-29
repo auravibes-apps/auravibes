@@ -1,0 +1,6 @@
+class: WorkspaceReferenceTableRequest
+fields:
+  workspaceId: int
+  tableId: String
+  search: String, default=''
+  afterId: String?

@@ -1,11 +1,14 @@
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../domain/workspace_roles.dart';
 import '../repositories/cloud_workspace_repository.dart' as workspace_repo;
+import '../workspace_erasure_cleanup.dart';
 
 class CloudWorkspaceUseCases(
   final workspace_repo.CloudWorkspaceRepository _repository,
@@ -18,76 +21,221 @@ class CloudWorkspaceUseCases(
   Future<List<CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     Session session, {
     required String userId,
-  }) => _repository.listAuthorizedWorkspaces(session, userId: userId);
+  }) => session.db.transaction((transaction) async {
+    await _requireActor(session, userId, transaction);
+    final memberships = await WorkspaceMember.db.find(
+      session,
+      where: (row) => row.userId.equals(userId) & row.removedAt.equals(null),
+      orderBy: (row) => row.id,
+      limit: workspace_repo.CloudWorkspaceRepository.maxReadRows,
+      transaction: transaction,
+    );
+    final summaries = <int, CloudWorkspaceSummary>{};
+    final workspaceIds =
+        memberships.map((row) => row.workspaceId).toSet().toList()..sort();
+    for (final workspaceId in workspaceIds) {
+      final workspace = await _repository.findActiveWorkspace(
+        session,
+        workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (workspace == null) continue;
+      final member = await _repository.findActiveMember(
+        session,
+        workspaceId: workspaceId,
+        userId: userId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (member != null) {
+        summaries[workspaceId] = _repository.toSummary(workspace, member.role);
+      }
+    }
+    return [
+      for (final member in memberships) ?summaries[member.workspaceId],
+    ];
+  });
 
   Future<List<PendingWorkspaceInviteSummary>> listPendingInvites(
     Session session, {
     required String email,
-  }) => _repository.listPendingInvites(
+  }) => session.db.transaction((transaction) async {
+    final userId = session.authenticated?.authUserId.uuid;
+    if (userId == null) _fail(CloudWorkspaceErrorCode.authenticationRequired);
+    await _requireActor(session, userId, transaction);
+    final normalizedEmail = _normalizeEmail(email);
+    final now = DateTime.now().toUtc();
+    final candidates = await WorkspaceInvite.db.find(
+      session,
+      where: (row) =>
+          row.email.equals(normalizedEmail) &
+          (row.expiresAt.equals(null) | (row.expiresAt > now)) &
+          row.acceptedAt.equals(null) &
+          row.declinedAt.equals(null) &
+          row.revokedAt.equals(null),
+      orderBy: (row) => row.id,
+      limit: workspace_repo.CloudWorkspaceRepository.maxReadRows,
+      transaction: transaction,
+    );
+    final workspaceIds =
+        candidates.map((row) => row.workspaceId).toSet().toList()..sort();
+    final workspaces = <int, CloudWorkspace>{};
+    for (final workspaceId in workspaceIds) {
+      final workspace = await _repository.findActiveWorkspace(
+        session,
+        workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (workspace != null) workspaces[workspaceId] = workspace;
+    }
+    if (workspaces.isEmpty) return const [];
+    final invites = await WorkspaceInvite.db.find(
+      session,
+      where: (row) =>
+          row.workspaceId.inSet(workspaces.keys.toSet()) &
+          row.email.equals(normalizedEmail) &
+          (row.expiresAt.equals(null) | (row.expiresAt > now)) &
+          row.acceptedAt.equals(null) &
+          row.declinedAt.equals(null) &
+          row.revokedAt.equals(null),
+      orderBy: (row) => row.id,
+      limit: workspace_repo.CloudWorkspaceRepository.maxReadRows,
+      transaction: transaction,
+    );
+    return [
+      for (final invite in invites)
+        PendingWorkspaceInviteSummary(
+          id: invite.id!,
+          workspaceId: invite.workspaceId,
+          workspaceName: workspaces[invite.workspaceId]!.name,
+          email: invite.email,
+          role: invite.role,
+          revision: invite.revision,
+          createdAt: invite.createdAt,
+        ),
+    ];
+  });
+
+  Future<List<CloudWorkspaceSummary>> listOwnedDeletedWorkspacesForErasure(
+    Session session, {
+    required String userId,
+  }) => _repository.listOwnedDeletedWorkspacesForErasure(
     session,
-    email: _normalizeEmail(email),
-    now: DateTime.now().toUtc(),
+    userId: userId,
   );
 
   Future<CloudWorkspaceDetail> getWorkspaceDetail(
     Session session, {
     required String userId,
     required GetCloudWorkspaceDetailRequest request,
-  }) async {
-    final workspace = await _requireWorkspace(session, request.workspaceId);
-    final actor = await _requireMember(session, workspace.id!, userId);
+  }) => session.db.transaction((transaction) async {
+    await _requireActor(session, userId, transaction);
+    final workspace = await _requireWorkspace(
+      session,
+      request.workspaceId,
+      transaction: transaction,
+    );
+    final actor = await _requireMember(
+      session,
+      workspace.id!,
+      userId,
+      transaction: transaction,
+    );
     return CloudWorkspaceDetail(
       workspace: _repository.toSummary(workspace, actor.role),
       ownerUserId: workspace.ownerUserId,
-      ownerEmail: await _findEmail(session, workspace.ownerUserId),
+      ownerEmail: await _findEmail(
+        session,
+        workspace.ownerUserId,
+        transaction: transaction,
+      ),
       capabilities: capabilitiesForRole(actor.role),
     );
-  }
+  });
 
   Future<List<CloudWorkspaceMemberSummary>> listMembers(
     Session session, {
     required String userId,
     required ListWorkspaceMembersRequest request,
-  }) async {
-    await _requireWorkspace(session, request.workspaceId);
-    final actor = await _requireMember(session, request.workspaceId, userId);
+  }) => session.db.transaction((transaction) async {
+    await _requireActor(session, userId, transaction);
+    await _requireWorkspace(
+      session,
+      request.workspaceId,
+      transaction: transaction,
+    );
+    final actor = await _requireMember(
+      session,
+      request.workspaceId,
+      userId,
+      transaction: transaction,
+    );
     if (!WorkspaceRoles.canViewRoster(actor.role)) {
       _fail(CloudWorkspaceErrorCode.permissionDenied);
     }
-    final members = await _repository.listActiveMembers(
+    final members = await WorkspaceMember.db.find(
       session,
-      workspaceId: request.workspaceId,
+      where: (row) =>
+          row.workspaceId.equals(request.workspaceId) &
+          row.removedAt.equals(null),
+      orderBy: (row) => row.id,
+      limit: workspace_repo.CloudWorkspaceRepository.maxReadRows,
+      transaction: transaction,
     );
     return Future.wait(
       members.map(
         (member) async => CloudWorkspaceMemberSummary(
           userId: member.userId,
-          email: await _findEmail(session, member.userId),
+          email: await _findEmail(
+            session,
+            member.userId,
+            transaction: transaction,
+          ),
           role: member.role,
           revision: member.revision,
           createdAt: member.createdAt,
         ),
       ),
     );
-  }
+  });
 
   Future<List<CloudWorkspaceInviteSummary>> listWorkspaceInvites(
     Session session, {
     required String userId,
     required ListCloudWorkspaceInvitesRequest request,
-  }) async {
-    await _requireWorkspace(session, request.workspaceId);
-    final actor = await _requireMember(session, request.workspaceId, userId);
+  }) => session.db.transaction((transaction) async {
+    await _requireActor(session, userId, transaction);
+    await _requireWorkspace(
+      session,
+      request.workspaceId,
+      transaction: transaction,
+    );
+    final actor = await _requireMember(
+      session,
+      request.workspaceId,
+      userId,
+      transaction: transaction,
+    );
     if (!WorkspaceRoles.canViewRoster(actor.role)) {
       _fail(CloudWorkspaceErrorCode.permissionDenied);
     }
-    final invites = await _repository.listActiveInvites(
+    final now = DateTime.now().toUtc();
+    final invites = await WorkspaceInvite.db.find(
       session,
-      workspaceId: request.workspaceId,
-      now: DateTime.now().toUtc(),
+      where: (row) =>
+          row.workspaceId.equals(request.workspaceId) &
+          (row.expiresAt.equals(null) | (row.expiresAt > now)) &
+          row.acceptedAt.equals(null) &
+          row.declinedAt.equals(null) &
+          row.revokedAt.equals(null),
+      orderBy: (row) => row.id,
+      limit: workspace_repo.CloudWorkspaceRepository.maxReadRows,
+      transaction: transaction,
     );
     return invites.map(_inviteSummary).toList();
-  }
+  });
 
   Future<CloudWorkspaceSummary> createWorkspace(
     Session session, {
@@ -99,19 +247,19 @@ class CloudWorkspaceUseCases(
     return session.db.transaction((transaction) async {
       const endpoint = 'cloudWorkspace.createWorkspace';
       final requestHash = jsonEncode({'name': name});
-      await _repository.lockWorkspaceCreation(
+      final authUser = await const AuthUserLock().lock(
         session,
-        ownerUserId: userId,
-        transaction: transaction,
-      );
-      final authUser = await AuthUser.db.findById(
-        session,
-        UuidValue.fromString(userId),
+        userId: userId,
         transaction: transaction,
       );
       if (authUser == null) {
         _fail(CloudWorkspaceErrorCode.authenticationRequired);
       }
+      await _repository.lockWorkspaceCreation(
+        session,
+        ownerUserId: userId,
+        transaction: transaction,
+      );
       final receipt = await _repository.findReceipt(
         session,
         actorUserId: userId,
@@ -569,6 +717,7 @@ class CloudWorkspaceUseCases(
   }) => _mutate(
     session,
     userId: userId,
+    additionalUserIds: [request.newOwnerUserId],
     workspaceId: request.workspaceId,
     endpoint: 'cloudWorkspace.transferOwnership',
     requestId: request.requestId,
@@ -762,6 +911,243 @@ class CloudWorkspaceUseCases(
     },
   );
 
+  Future<CloudWorkspaceErasureStatus> eraseWorkspace(
+    Session session, {
+    required String userId,
+    required EraseCloudWorkspaceRequest request,
+  }) async {
+    final requestHash = base64UrlEncode(
+      (await Sha256().hash(
+        utf8.encode(
+          jsonEncode({
+            'workspaceId': request.workspaceId,
+            'confirmationName': request.confirmationName,
+            'expectedWorkspaceRevision': request.expectedWorkspaceRevision,
+          }),
+        ),
+      )).bytes,
+    );
+    final erasure = await session.db.transaction((transaction) async {
+      final replayCandidate = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+      );
+      final priorCandidate = replayCandidate == null
+          ? await WorkspaceErasureRequest.db.findFirstRow(
+              session,
+              where: (row) =>
+                  row.ownerUserId.equals(userId) &
+                  row.workspaceId.equals(request.workspaceId),
+              transaction: transaction,
+            )
+          : null;
+      final workspaceId =
+          replayCandidate?.workspaceId ??
+          priorCandidate?.workspaceId ??
+          request.workspaceId;
+      final workspace = await _repository.findWorkspace(
+        session,
+        workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      final replay = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (replay != null) {
+        if (replay.requestHash != requestHash) {
+          _fail(CloudWorkspaceErrorCode.idempotencyConflict);
+        }
+        return replay;
+      }
+      if (workspaceId != request.workspaceId) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+      final priorWorkspaceErasure = await WorkspaceErasureRequest.db
+          .findFirstRow(
+            session,
+            where: (row) =>
+                row.ownerUserId.equals(userId) &
+                row.workspaceId.equals(request.workspaceId),
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+      if (priorWorkspaceErasure != null) return priorWorkspaceErasure;
+      if (workspace == null) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+
+      _requireOwner(workspace, userId);
+      _requireRevision(workspace.revision, request.expectedWorkspaceRevision);
+      if (request.confirmationName != workspace.name) {
+        _fail(CloudWorkspaceErrorCode.confirmationNameMismatch);
+      }
+      if (workspace.erasureRequestedAt != null) {
+        _fail(CloudWorkspaceErrorCode.workspaceErasurePending);
+      }
+      final now = DateTime.now().toUtc();
+      final created = await WorkspaceErasureRequest.db.insertRow(
+        session,
+        WorkspaceErasureRequest(
+          workspaceId: workspace.id!,
+          workspaceName: workspace.name,
+          ownerUserId: userId,
+          requestId: request.requestId,
+          requestHash: requestHash,
+          state: 'pending',
+          requestedAt: now,
+        ),
+        transaction: transaction,
+      );
+      await _repository.softDeleteWorkspace(
+        session,
+        workspace: workspace,
+        now: now,
+        transaction: transaction,
+        erasureRequestedAt: now,
+      );
+      return created;
+    });
+    await WorkspaceErasureCleanup(session).purgeAfterRequest(
+      erasure.workspaceId,
+    );
+    final status = await WorkspaceErasureRequest.db.findFirstRow(
+      session,
+      where: (row) =>
+          row.ownerUserId.equals(userId) &
+          row.requestId.equals(erasure.requestId),
+    );
+    return _status(status ?? erasure);
+  }
+
+  Future<List<CloudWorkspaceErasureStatus>> listWorkspaceErasures(
+    Session session, {
+    required String userId,
+  }) async {
+    final unresolved = await WorkspaceErasureRequest.db.find(
+      session,
+      where: (row) =>
+          row.ownerUserId.equals(userId) & row.state.notEquals('complete'),
+      orderBy: (row) => row.requestedAt.desc(),
+    );
+    final completed = await WorkspaceErasureRequest.db.find(
+      session,
+      where: (row) =>
+          row.ownerUserId.equals(userId) & row.state.equals('complete'),
+      orderBy: (row) => row.requestedAt.desc(),
+      limit: 100,
+    );
+    return [...unresolved, ...completed].map(_status).toList();
+  }
+
+  Future<CloudWorkspaceErasureStatus> retryWorkspaceErasure(
+    Session session, {
+    required String userId,
+    required RetryCloudWorkspaceErasureRequest request,
+  }) async {
+    final status = await session.db.transaction((transaction) async {
+      final candidate = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+      );
+      if (candidate == null) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+      final workspace = await _repository.findWorkspace(
+        session,
+        candidate.workspaceId,
+        transaction: transaction,
+        lock: true,
+      );
+      final erasure = await WorkspaceErasureRequest.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.ownerUserId.equals(userId) &
+            row.requestId.equals(request.requestId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (erasure == null) {
+        _fail(CloudWorkspaceErrorCode.workspaceNotFound);
+      }
+      if (erasure.state != 'needsAttention') return erasure;
+      if (workspace == null ||
+          workspace.deletedAt == null ||
+          workspace.erasureRequestedAt == null) {
+        return await WorkspaceErasureRequest.db.updateRow(
+          session,
+          erasure.copyWith(
+            state: 'needsAttention',
+            failureReason: 'workspaceErasureStateUnverified',
+            completedAt: null,
+          ),
+          transaction: transaction,
+        );
+      }
+      final pendingDeletions = await ObjectDeletion.db.find(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(erasure.workspaceId) &
+            row.completedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (pendingDeletions.any(
+        (row) =>
+            row.lastError == 'legacyUploadUnverifiable' ||
+            row.lastError == 'providerDeletionUnverified' ||
+            row.lastError == 'gatewayRegistrationUnverified',
+      )) {
+        return erasure;
+      }
+      final now = DateTime.now().toUtc();
+      for (final deletion in pendingDeletions) {
+        await ObjectDeletion.db.updateRow(
+          session,
+          deletion.copyWith(
+            cleanupGeneration: deletion.cleanupGeneration + 1,
+            uploadCleanupVerifiedAt: null,
+            uploadCleanupVerifiedGeneration: null,
+            uploadCleanupVerifiedExpiresAt: null,
+            uploadCleanupVerifiedRegistrationId: null,
+            attempts: 0,
+            availableAt: now,
+            lastError: null,
+          ),
+          transaction: transaction,
+        );
+      }
+      return await WorkspaceErasureRequest.db.updateRow(
+        session,
+        erasure.copyWith(state: 'pending', failureReason: null),
+        transaction: transaction,
+      );
+    });
+    return _status(status);
+  }
+
+  CloudWorkspaceErasureStatus _status(WorkspaceErasureRequest erasure) =>
+      CloudWorkspaceErasureStatus(
+        workspaceId: erasure.workspaceId,
+        workspaceName: erasure.workspaceName,
+        requestId: erasure.requestId,
+        state: erasure.state,
+        requestedAt: erasure.requestedAt,
+        completedAt: erasure.completedAt,
+        failureReason: erasure.failureReason,
+      );
+
   Future<CloudWorkspace> _requireWorkspace(
     Session session,
     int id, {
@@ -792,6 +1178,19 @@ class CloudWorkspaceUseCases(
     );
     if (member == null) _fail(CloudWorkspaceErrorCode.membershipRequired);
     return member;
+  }
+
+  Future<void> _requireActor(
+    Session session,
+    String userId,
+    Transaction transaction,
+  ) async {
+    final authUser = await const AuthUserLock().lock(
+      session,
+      userId: userId,
+      transaction: transaction,
+    );
+    if (authUser == null) _fail(CloudWorkspaceErrorCode.authenticationRequired);
   }
 
   Future<WorkspaceInvite> _requireInvite(
@@ -852,11 +1251,16 @@ class CloudWorkspaceUseCases(
     if (actual != expected) _fail(CloudWorkspaceErrorCode.staleRevision);
   }
 
-  Future<String?> _findEmail(Session session, String userId) async {
+  Future<String?> _findEmail(
+    Session session,
+    String userId, {
+    Transaction? transaction,
+  }) async {
     try {
       final account = await EmailAccount.db.findFirstRow(
         session,
         where: (t) => t.authUserId.equals(UuidValue.fromString(userId)),
+        transaction: transaction,
       );
       return account?.email;
     } on FormatException {
@@ -867,6 +1271,7 @@ class CloudWorkspaceUseCases(
   Future<T> _mutate<T>(
     Session session, {
     required String userId,
+    List<String> additionalUserIds = const [],
     required int workspaceId,
     required String endpoint,
     required String requestId,
@@ -879,6 +1284,17 @@ class CloudWorkspaceUseCases(
     )
     run,
   }) => session.db.transaction((transaction) async {
+    final userIds = {userId, ...additionalUserIds}.toList()..sort();
+    for (final id in userIds) {
+      final authUser = await const AuthUserLock().lock(
+        session,
+        userId: id,
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        _fail(CloudWorkspaceErrorCode.authenticationRequired);
+      }
+    }
     final requestHash = jsonEncode(requestBody);
     final receipt = await _repository.findReceipt(
       session,

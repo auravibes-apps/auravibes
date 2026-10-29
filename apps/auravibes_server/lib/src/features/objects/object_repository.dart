@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import 'object_deletion_guard.dart';
 
 class ObjectRepository {
   Future<WorkspaceObject?> findObject(
@@ -21,11 +22,13 @@ class ObjectRepository {
     required int workspaceId,
     required int objectId,
     Transaction? transaction,
+    bool lock = false,
   }) => ObjectUpload.db.findFirstRow(
     session,
     where: (t) =>
         t.workspaceId.equals(workspaceId) & t.objectId.equals(objectId),
     transaction: transaction,
+    lockMode: lock ? LockMode.forUpdate : null,
   );
 
   Future<ObjectUpload?> findUploadByRequest(
@@ -33,12 +36,16 @@ class ObjectRepository {
     required int workspaceId,
     required String actorUserId,
     required String requestId,
+    Transaction? transaction,
+    bool lock = false,
   }) => ObjectUpload.db.findFirstRow(
     session,
     where: (t) =>
         t.workspaceId.equals(workspaceId) &
         t.actorUserId.equals(actorUserId) &
         t.requestId.equals(requestId),
+    transaction: transaction,
+    lockMode: lock ? LockMode.forUpdate : null,
   );
 
   Future<bool> hasLiveReference(
@@ -57,18 +64,16 @@ class ObjectRepository {
       transaction: transaction,
       lockMode: lock ? LockMode.forUpdate : null,
     );
-    if (reference == null) return false;
-    final message = await ConversationMessage.db.findFirstRow(
-      session,
-      where: (t) =>
-          t.id.equals(reference.messageId) &
-          t.workspaceId.equals(workspaceId) &
-          t.status.notEquals('deleted'),
-      transaction: transaction,
-      lockMode: lock ? LockMode.forUpdate : null,
-    );
-    return message != null;
+    return reference != null;
   }
+
+  Future<bool> hasReadableMessageReference(
+    Session session, {
+    required int workspaceId,
+    required int objectId,
+    Transaction? transaction,
+  }) =>
+      _MessageReferences(session, transaction).contains(workspaceId, objectId);
 
   Future<ObjectDeletion?> findDeletionByRequest(
     Session session, {
@@ -91,31 +96,86 @@ class ObjectRepository {
     session,
     where: (t) =>
         t.completedAt.equals(null) &
+        (t.lastError.equals(null) |
+            (t.lastError.notEquals('legacyUploadUnverifiable') &
+                t.lastError.notEquals('providerDeletionUnverified') &
+                t.lastError.notEquals('gatewayRegistrationUnverified'))) &
         (t.availableAt <= now) &
         (t.attempts < maxAttempts),
     orderBy: (t) => t.availableAt,
     limit: limit,
   );
 
-  Future<void> completeDeletion(
+  Future<bool> completeDeletion(
     Session session, {
     required ObjectDeletion deletion,
     required WorkerCoordinatorLease coordinator,
     required DateTime now,
+    required DateTime? expectedUploadExpiresAt,
+    required String? expectedUploadRegistrationId,
   }) => session.db.transaction((transaction) async {
-    if (!await _ownsCoordinator(session, transaction, coordinator)) return;
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return false;
+    }
+    final workspace = await CloudWorkspace.db.findById(
+      session,
+      deletion.workspaceId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (workspace == null) return false;
     final current = await ObjectDeletion.db.findById(
       session,
       deletion.id!,
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (current == null || current.completedAt != null) return;
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return false;
+    }
+    final currentUpload = await findUpload(
+      session,
+      workspaceId: deletion.workspaceId,
+      objectId: deletion.objectId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (expectedUploadExpiresAt != null) {
+      if (currentUpload == null ||
+          currentUpload.expiresAt != expectedUploadExpiresAt ||
+          currentUpload.gatewayRegistrationId != expectedUploadRegistrationId ||
+          expectedUploadRegistrationId == null) {
+        return false;
+      }
+      await ObjectUpload.db.updateRow(
+        session,
+        currentUpload.copyWith(signingReservationCount: 0),
+        transaction: transaction,
+      );
+    } else if (currentUpload != null) {
+      return false;
+    }
     await ObjectDeletion.db.updateRow(
       session,
-      current.copyWith(completedAt: now, lastError: null),
+      current.copyWith(
+        completedAt: now,
+        lastError: null,
+        uploadCleanupVerifiedAt: expectedUploadExpiresAt == null ? null : now,
+        uploadCleanupVerifiedGeneration: expectedUploadExpiresAt == null
+            ? null
+            : current.cleanupGeneration,
+        uploadCleanupVerifiedExpiresAt: expectedUploadExpiresAt,
+        uploadCleanupVerifiedRegistrationId: expectedUploadRegistrationId,
+      ),
       transaction: transaction,
     );
+    return true;
   });
 
   Future<void> failDeletion(
@@ -125,19 +185,34 @@ class ObjectRepository {
     required DateTime now,
     required String error,
   }) => session.db.transaction((transaction) async {
-    if (!await _ownsCoordinator(session, transaction, coordinator)) return;
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
     final current = await ObjectDeletion.db.findById(
       session,
       deletion.id!,
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (current == null || current.completedAt != null) return;
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return;
+    }
     final attempts = current.attempts + 1;
     final delayMinutes = 1 << (attempts - 1).clamp(0, 6);
     await ObjectDeletion.db.updateRow(
       session,
       current.copyWith(
+        cleanupGeneration: current.cleanupGeneration + 1,
+        uploadCleanupVerifiedAt: null,
+        uploadCleanupVerifiedGeneration: null,
+        uploadCleanupVerifiedExpiresAt: null,
+        uploadCleanupVerifiedRegistrationId: null,
         attempts: attempts,
         availableAt: now.add(Duration(minutes: delayMinutes)),
         lastError: error,
@@ -146,25 +221,153 @@ class ObjectRepository {
     );
   });
 
-  Future<bool> _ownsCoordinator(
-    Session session,
-    Transaction transaction,
-    WorkerCoordinatorLease coordinator,
-  ) async {
-    final lease = await WorkerCoordinatorLease.db.findFirstRow(
+  Future<void> deferDeletionUntilUploadExpiry(
+    Session session, {
+    required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
+    required DateTime expiresAt,
+  }) => session.db.transaction((transaction) async {
+    if (!await ObjectDeletionGuard.ownsCoordinator(
       session,
-      where: (table) => table.key.equals('global'),
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
+    final current = await ObjectDeletion.db.findById(
+      session,
+      deletion.id!,
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    final result = await session.db.unsafeQuery(
-      'SELECT clock_timestamp() AS "now"',
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return;
+    }
+    await ObjectDeletion.db.updateRow(
+      session,
+      current.copyWith(
+        cleanupGeneration: current.cleanupGeneration + 1,
+        uploadCleanupVerifiedAt: null,
+        uploadCleanupVerifiedGeneration: null,
+        uploadCleanupVerifiedExpiresAt: null,
+        uploadCleanupVerifiedRegistrationId: null,
+        availableAt: expiresAt,
+        lastError: null,
+      ),
       transaction: transaction,
     );
-    final now = result.first.toColumnMap()['now']! as DateTime;
-    return lease != null &&
-        lease.ownerId == coordinator.ownerId &&
-        lease.fencingToken == coordinator.fencingToken &&
-        lease.expiresAt.isAfter(now);
+  });
+
+  Future<void> markDeletionBlocked(
+    Session session, {
+    required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
+    required DateTime? retryAt,
+    required String reason,
+  }) => session.db.transaction((transaction) async {
+    if (!await ObjectDeletionGuard.ownsCoordinator(
+      session,
+      transaction,
+      coordinator,
+    )) {
+      return;
+    }
+    final current = await ObjectDeletion.db.findById(
+      session,
+      deletion.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        current.completedAt != null ||
+        current.cleanupGeneration != deletion.cleanupGeneration) {
+      return;
+    }
+    await ObjectDeletion.db.updateRow(
+      session,
+      current.copyWith(
+        cleanupGeneration: current.cleanupGeneration + 1,
+        uploadCleanupVerifiedAt: null,
+        uploadCleanupVerifiedGeneration: null,
+        uploadCleanupVerifiedExpiresAt: null,
+        uploadCleanupVerifiedRegistrationId: null,
+        availableAt: retryAt ?? current.availableAt,
+        lastError: reason,
+      ),
+      transaction: transaction,
+    );
+  });
+}
+
+class const _MessageReferences(
+  final Session session,
+  final Transaction? transaction,
+) {
+  Future<bool> contains(int workspaceId, int objectId) async {
+    for (final reference in await _rows(workspaceId, objectId)) {
+      if (await _readable(reference)) return true;
+    }
+
+    return false;
   }
+
+  Future<List<ObjectReference>> _rows(int workspaceId, int objectId) =>
+      ObjectReference.db.find(
+        session,
+        where: (row) => _liveReference(row, workspaceId, objectId),
+        transaction: transaction,
+      );
+
+  Expression _liveReference(
+    ObjectReferenceTable row,
+    int workspaceId,
+    int objectId,
+  ) =>
+      row.workspaceId.equals(workspaceId) &
+      row.objectId.equals(objectId) &
+      row.deletedAt.equals(null);
+
+  Future<bool> _readable(ObjectReference reference) async {
+    final message = await _message(reference);
+    if (message == null) return false;
+    final conversation = await _conversation(
+      reference.workspaceId,
+      message.conversationId,
+    );
+
+    return conversation != null;
+  }
+
+  Future<ConversationMessage?> _message(ObjectReference reference) =>
+      ConversationMessage.db.findFirstRow(
+        session,
+        where: (row) => _messageScope(row, reference),
+        transaction: transaction,
+      );
+
+  Expression _messageScope(
+    ConversationMessageTable row,
+    ObjectReference reference,
+  ) =>
+      row.id.equals(reference.messageId) &
+      row.workspaceId.equals(reference.workspaceId) &
+      row.status.notEquals('deleted');
+
+  Future<Conversation?> _conversation(int workspaceId, int conversationId) =>
+      Conversation.db.findFirstRow(
+        session,
+        where: (row) => _conversationScope(row, workspaceId, conversationId),
+        transaction: transaction,
+      );
+
+  Expression _conversationScope(
+    ConversationTable row,
+    int workspaceId,
+    int conversationId,
+  ) =>
+      row.id.equals(conversationId) &
+      row.workspaceId.equals(workspaceId) &
+      row.deletedAt.equals(null);
 }

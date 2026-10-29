@@ -23,6 +23,7 @@ dependencies:
   # Database dependencies
   crypto: ^3.0.7
   cryptography: ^2.9.0
+  csv: ^6.0.0
   dio: ^5.11.1
   drift: ^2.35.0
   drift_flutter: ^0.3.0
@@ -33,6 +34,7 @@ dependencies:
     sdk: flutter
   flutter_driver:
     sdk: flutter
+  flutter_file_drop: ^0.1.0
   flutter_hooks: ^0.21.3+1
   flutter_localizations:
     sdk: flutter
@@ -81,13 +83,13 @@ dependencies:
   shared_preferences: ^2.5.4
   sqlite3_flutter_libs: ^0.6.0
   stupid_simple_sheet: ^1.0.0-dev.4
-  super_clipboard: ^0.10.0-dev.2
-  super_drag_and_drop: ^0.10.0-dev.2
   textf: ^2.0.0-dev.2
+  timezone: ^0.11.1
   toon_dart: ^1.0.0+4
   unorm_dart: ^0.3.2
   url_launcher: ^6.3.2
   uuid: ^4.5.3
+  web: ^1.1.1
 dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.16.1
@@ -101,14 +103,12 @@ dev_dependencies:
     sdk: flutter
   freezed: ^4.0.2
   go_router_builder: ^4.5.0
-  irondash_message_channel: ^0.8.0-dev.0
   json_serializable: ^6.14.0
   just_audio_platform_interface: ^4.6.0
   mocktail: ^1.0.4
   nock: ^1.2.3
   riverpod_generator: ^4.0.9
   sqlite3: ^3.5.2
-  super_native_extensions: ^0.10.0-dev.2
   test: ^1.32.0
 flutter:
   config:

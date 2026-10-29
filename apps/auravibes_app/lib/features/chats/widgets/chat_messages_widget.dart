@@ -7,19 +7,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-
-import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
-import 'package:material_ui/material_ui.dart';
-
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -28,6 +15,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_shared_asset.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -36,23 +24,24 @@ import 'package:auravibes_app/features/chats/providers/background_work_providers
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
-import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
-import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_assistant_response_announcement.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
+import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
@@ -70,8 +59,18 @@ import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
-import 'package:auravibes_app/widgets/confirmed_external_link.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
@@ -1548,7 +1547,9 @@ List<Widget> _messageContentChildren({
         showMetadata:
             message.isUser || (showResponseActions && !hasA2uiResponse),
       ),
-    if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
+    if (message.attachments.isNotEmpty ||
+        message.metadata?.cloudAssetIds.isNotEmpty == true)
+      _MessageAttachments(message: message, workspaceId: workspaceId),
     if (!message.isUser && !message.isForkReference && a2uiRuntime != null)
       ChatA2uiSurfaceHost.message(
         key: ValueKey('a2ui_${message.id}'),
@@ -1683,8 +1684,10 @@ bool _hasA2uiMessageState(MessageEntity? message) {
       metadata.a2uiMessageIssues.isNotEmpty;
 }
 
-class const _MessageAttachments({required final MessageEntity message})
-    extends StatelessWidget {
+class const _MessageAttachments({
+  required final MessageEntity message,
+  required final String workspaceId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -1694,7 +1697,12 @@ class const _MessageAttachments({required final MessageEntity message})
         runSpacing: context.auraTheme.fromSpacing(.xs),
         children: [
           for (final attachment in message.attachments)
-            _AttachmentPreview(attachment: attachment),
+            if (attachment.assetId case final id?)
+              ChatSharedAsset(workspaceId: workspaceId, assetId: id)
+            else
+              _AttachmentPreview(attachment: attachment),
+          for (final id in message.metadata?.cloudAssetIds ?? const <String>[])
+            ChatSharedAsset(workspaceId: workspaceId, assetId: id),
         ],
       ),
     );
@@ -1742,7 +1750,7 @@ class const _AttachmentPreview({
     if (attachment.modality == MessageAttachmentModality.image) {
       return ClipRRect(
         borderRadius: const BorderRadius.all(Radius.circular(12)),
-        child: ChatAttachmentImage(localPath: attachment.localPath),
+        child: SharedChatAttachmentImage(localPath: attachment.localPath),
       );
     }
 
@@ -2145,48 +2153,10 @@ Widget _chatMarkdown({
     child: GptMarkdown(
       content,
       style: style,
-      onLinkTap: (url, _) => unawaited(_openChatMarkdownLink(context, url)),
+      onLinkTap: (url, _) => unawaited(openChatExternalLink(context, url)),
     ),
   ),
 );
-
-Future<void> _openChatMarkdownLink(BuildContext context, String url) =>
-    ConfirmedExternalLink.open(
-      context: context,
-      url: url,
-      confirm: (uri) => _confirmChatExternalLink(context, uri),
-      onLaunchFailure: () => _showChatExternalLinkError(context),
-    );
-
-Future<bool?> _confirmChatExternalLink(BuildContext context, Uri uri) =>
-    AuraDialogs.confirm(
-      context: context,
-      title: Text(
-        LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
-      ),
-      message: AuraSelectableText(
-        LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
-          namedArgs: {'host': uri.host, 'url': uri.toString()},
-        ),
-      ),
-      actions: AuraConfirmDialogActions(
-        confirmLabel: Text(
-          LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
-        ),
-        cancelLabel: Text(LocaleKeys.common_cancel.tr()),
-      ),
-    );
-
-void _showChatExternalLinkError(BuildContext context) {
-  unawaited(AuraHaptics.error());
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: TextLocale(
-        LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
-      ),
-    ),
-  );
-}
 
 class const _AiMessageContent({
   required final String content,
@@ -3122,7 +3092,11 @@ class const _ActivityToolCallRow({
         ? ToolMetadataDecoder.decode(toolCall.argumentsRaw)
         : null;
     final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
+    final hasFailureWithoutDetails =
+        toolCall.resultStatus == ToolCallResultStatus.executionError &&
+        (decodedResponse == null || decodedResponse.isEmpty);
     final hasDetails =
+        hasFailureWithoutDetails ||
         decodedArgs?.isNotEmpty == true ||
         decodedResponse?.isNotEmpty == true ||
         toolCall.appData?.isNotEmpty == true;
@@ -3291,6 +3265,7 @@ class const _ActivityToolCallRow({
       ToolCallResultStatus.disabledByAgent => Icons.block,
       ToolCallResultStatus.notConfigured => Icons.settings,
       ToolCallResultStatus.executionError => Icons.warning_amber,
+      ToolCallResultStatus.uncertain => Icons.help_outline,
     };
   }
 
@@ -3312,6 +3287,7 @@ class const _ActivityToolCallRow({
       ToolCallResultStatus.disabledByAgent => colors.warning,
       ToolCallResultStatus.notConfigured => colors.warning,
       ToolCallResultStatus.executionError => colors.error,
+      ToolCallResultStatus.uncertain => colors.warning,
     };
   }
 }
@@ -3424,6 +3400,15 @@ class const _ActivityToolCallDetails({
                 container: true,
                 excludeSemantics: true,
                 label: value,
+              ),
+            if (toolCall.resultStatus == ToolCallResultStatus.executionError &&
+                (decodedResponse == null || decodedResponse!.isEmpty))
+              TextLocale(
+                isWorkspaceToolName(toolCall.name)
+                    ? LocaleKeys
+                          .chats_screens_chat_conversation_activity_workspace_failure_no_details
+                    : LocaleKeys
+                          .chats_screens_chat_conversation_activity_failure_no_details,
               ),
             if (decodedResponse case final value? when value.isNotEmpty)
               Padding(

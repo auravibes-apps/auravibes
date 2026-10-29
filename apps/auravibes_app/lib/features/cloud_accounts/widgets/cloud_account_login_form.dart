@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client
 import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -20,6 +21,7 @@ class const CloudAccountLoginForm({
   final CloudAuthTarget target = const CloudAuthTarget(),
   final ValueChanged<bool>? onPendingChanged,
   final ValueChanged<String>? onEmailChanged,
+  final SetupFormBuilder? contentBuilder,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -64,7 +66,13 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    final action = AuraButton(
+      onPressed: _login,
+      child: const TextLocale(LocaleKeys.workspace_management_cloud_login),
+      isLoading: _isSubmitting,
+      disabled: _isSubmitting,
+    );
+    final fields = AuraColumn(
       children: [
         AuraInput(
           controller: _email,
@@ -89,16 +97,12 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
           Semantics(liveRegion: true, child: TextLocale(statusKey)),
         if (_errorKey case final errorKey?)
           AuraText(child: TextLocale(errorKey), style: AuraTextStyle.bodySmall),
-        AuraButton(
-          onPressed: _login,
-          child: const TextLocale(LocaleKeys.workspace_management_cloud_login),
-          isLoading: _isSubmitting,
-          disabled: _isSubmitting,
-        ),
+        if (widget.contentBuilder == null) action,
       ],
       spacing: .sm,
       crossAxisAlignment: CrossAxisAlignment.stretch,
     );
+    return widget.contentBuilder?.call(fields, action) ?? fields;
   }
 
   Future<void> _login() async {

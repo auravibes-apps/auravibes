@@ -1,0 +1,5 @@
+class: WorkspaceViewListRequest
+fields:
+  workspaceId: int
+  parentId: String?
+  allFolders: bool

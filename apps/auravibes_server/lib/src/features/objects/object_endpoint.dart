@@ -23,14 +23,7 @@ class ObjectEndpoint extends Endpoint {
     );
   }
 
-  ObjectStore get _objectStore {
-    final endpoint = Platform.environment['OBJECT_STORE_ENDPOINT'];
-    if (endpoint == null) return const UnconfiguredObjectStore();
-    return HttpObjectStore(
-      endpoint: Uri.parse(endpoint),
-      bearerToken: Platform.environment['OBJECT_STORE_BEARER_TOKEN'],
-    );
-  }
+  ObjectStore get _objectStore => HttpObjectStore.fromEnvironment();
 
   Future<BeginUploadResult> beginUpload(
     Session session,
@@ -62,6 +55,18 @@ class ObjectEndpoint extends Endpoint {
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.getDownload(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ObjectResult> describe(
+    Session session,
+    GetDownloadRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.describe(
       session,
       userId: account.userId,
       request: request,

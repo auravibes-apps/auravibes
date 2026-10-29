@@ -8,6 +8,7 @@ values:
   - objectNotFound
   - uploadExpired
   - uploadMismatch
+  - uploadProvenanceUnavailable
   - scanInfected
   - scanFailed
   - staleRevision

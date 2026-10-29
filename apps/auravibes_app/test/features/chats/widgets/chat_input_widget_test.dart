@@ -10,7 +10,10 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
@@ -19,14 +22,14 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_file_drop/flutter_file_drop.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:super_clipboard/super_clipboard.dart';
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -87,10 +90,25 @@ void main() {
     ValueListenable<String?>? activeConversation,
     VoidCallback? onSkillsPress,
     ConversationSkillSelectorState? skillSelectorState,
+    WorkspaceFile? sharedFile,
+    WorkspaceAssetRepository? sharedAssets,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
+          if (sharedFile != null) ...[
+            workspaceFilesProvider(
+              'ws-1',
+              null,
+            ).overrideWith((_) async => [sharedFile]),
+            workspaceFoldersProvider(
+              'ws-1',
+              null,
+            ).overrideWith((_) async => []),
+          ],
+          if (sharedAssets != null)
+            workspaceAssetRepositoryProvider('ws-1')
+                .overrideWith((_) async => sharedAssets),
           workspaceSessionForRouteProvider('ws-1').overrideWithValue(
             const AsyncData(
               WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -197,13 +215,19 @@ void main() {
     );
   }
 
-  Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
+  Future<_TestFlutterFileDropChannel> pumpAndInit(
+    WidgetTester tester,
+    Widget widget,
+  ) async {
+    final dropChannel = _TestFlutterFileDropChannel();
     await tester.runAsync(() async {
       await tester.pumpWidget(widget);
     });
     await tester.pump();
     await tester.pump();
     await tester.pump();
+
+    return dropChannel;
   }
 
   void overridePlatform(TargetPlatform platform) {
@@ -212,7 +236,10 @@ void main() {
   }
 
   testWidgets('tool access control requires callback', (tester) async {
-    await pumpAndInit(tester, buildSubject(onSendMessage: (_) => _noop()));
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(onSendMessage: (_) => _noop()),
+    );
     expect(
       find.byKey(const ValueKey<String>('chat_tool_access_mode')),
       findsNothing,
@@ -223,7 +250,7 @@ void main() {
     'tool access supports keyboard focus, open, selection and escape',
     (tester) async {
       ConversationToolAccessMode? changed;
-      await pumpAndInit(
+      final _ = await pumpAndInit(
         tester,
         buildSubject(
           onSendMessage: (_) => _noop(),
@@ -277,7 +304,7 @@ void main() {
       ConversationToolAccessMode? changed;
       final semantics = tester.ensureSemantics();
       try {
-        await pumpAndInit(
+        final _ = await pumpAndInit(
           tester,
           buildSubject(
             onSendMessage: (_) => _noop(),
@@ -346,7 +373,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final semantics = tester.ensureSemantics();
       try {
-        await pumpAndInit(
+        final _ = await pumpAndInit(
           tester,
           buildSubject(
             onSendMessage: (_) => _noop(),
@@ -393,7 +420,7 @@ void main() {
   testWidgets('reports text draft changes', (tester) async {
     final draftStatuses = <bool>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -418,7 +445,7 @@ void main() {
     var opened = false;
     final semantics = tester.ensureSemantics();
     try {
-      await pumpAndInit(
+      final _ = await pumpAndInit(
         tester,
         buildSubject(
           onSendMessage: (_) => Future<void>.value(),
@@ -450,7 +477,7 @@ void main() {
     final conversation = ValueNotifier<String?>('conversation-1');
     addTearDown(conversation.dispose);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -474,7 +501,7 @@ void main() {
     );
     final draftStatuses = <bool>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -499,7 +526,7 @@ void main() {
     );
     final draftStatuses = <bool>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => Future<void>.value(),
@@ -543,7 +570,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         activeConversation: activeConversation,
@@ -613,7 +640,7 @@ void main() {
     addTearDown(activeConversation.dispose);
     var attempts = 0;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         activeConversation: activeConversation,
@@ -665,7 +692,7 @@ void main() {
   });
 
   testWidgets('renders without error', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -675,14 +702,14 @@ void main() {
     );
 
     expect(find.byType(ChatInputWidget), findsOneWidget);
-    expect(find.byType(DropRegion), findsOneWidget);
+    expect(find.byType(DropTarget), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
   });
 
-  testWidgets('shows hint outside and highlights inside drop target', (
+  testWidgets('shows and clears the drop overlay for file previews', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         disabled: true,
@@ -691,20 +718,23 @@ void main() {
       ),
     );
 
-    final dropMonitor = tester.widget<DropMonitor>(find.byType(DropMonitor));
-    expect(
-      tester.getRect(find.byType(DropRegion)),
-      tester.getRect(find.byType(AuraInput)),
-    );
-    final session = _TestFileDropSession();
-    dropMonitor.onDropOver?.call(
+    final dropTarget = tester.widget<DropTarget>(find.byType(DropTarget));
+    dropTarget.onEnter?.call(
       .new(
-        session: session,
-        position: .new(
-          local: const Offset(-10, -10),
-          global: const Offset(10, 10),
-        ),
-        isInside: false,
+        globalPosition: .zero,
+        localPosition: .zero,
+        items: const [.new(kind: .string)],
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Drop files to attach'), findsNothing);
+
+    dropTarget.onMove?.call(
+      .new(
+        globalPosition: .zero,
+        localPosition: .zero,
+        items: const [.new(kind: .file)],
       ),
     );
     await tester.pump();
@@ -713,47 +743,13 @@ void main() {
     expect(find.text('Drop files to attach'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('chat_input_drop_highlight')),
-      findsNothing,
-    );
-
-    dropMonitor.onDropOver?.call(
-      .new(
-        session: session,
-        position: .new(
-          local: .zero,
-          global: tester.getCenter(find.byType(AuraInput)),
-        ),
-        isInside: true,
-      ),
-    );
-    await tester.pump();
-
-    expect(
-      find.byKey(const ValueKey('chat_input_drop_highlight')),
       findsOneWidget,
     );
 
-    dropMonitor.onDropOver?.call(
-      .new(
-        session: session,
-        position: .new(
-          local: const Offset(-10, -10),
-          global: const Offset(10, 10),
-        ),
-        isInside: false,
-      ),
-    );
+    dropTarget.onLeave?.call();
     await tester.pump();
 
-    expect(
-      find.byKey(const ValueKey('chat_input_drop_highlight')),
-      findsNothing,
-    );
-    expect(find.text('Drop files to attach'), findsOneWidget);
-
-    dropMonitor.onDropLeave?.call(.new(session: session));
-    await tester.pump();
-
+    expect(find.byIcon(Icons.file_upload_outlined), findsNothing);
     expect(find.text('Drop files to attach'), findsNothing);
   });
 
@@ -768,9 +764,8 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(attachment);
     final bytes = Uint8List.fromList('report!!'.codeUnits);
-    final dropFile = _TestDataReaderFile('report.pdf', bytes);
 
-    await pumpAndInit(
+    final dropChannel = await pumpAndInit(
       tester,
       buildSubject(
         disabled: true,
@@ -780,21 +775,52 @@ void main() {
       ),
     );
 
-    final dropRegion = tester.widget<DropRegion>(find.byType(DropRegion));
-    final session = _TestFileDropSession(dataReader: _TestDataReader(dropFile));
-    final _ = await dropRegion.onPerformDrop(
-      .new(
-        session: session,
-        position: .new(local: .zero, global: .zero),
-        acceptedOperation: .copy,
-      ),
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: bytes,
     );
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('report.pdf'), findsOneWidget);
     expect(attachmentService.copiedBytes, bytes);
     expect(attachmentService.copiedFileName, 'report.pdf');
-    expect(dropFile.wasClosed, isTrue);
+  });
+
+  testWidgets('rejects a dropped file after the streamed byte limit', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        disabled: true,
+        acceptDroppedFilesWhenDisabled: true,
+        attachmentService: attachmentService,
+        onSendMessage: (_) => _noop(),
+      ),
+    );
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: .new(0),
+      fileSize: ChatAttachmentModality.maxChatAttachmentBytes + 1,
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Attachment must be 25 MB or smaller.'), findsOneWidget);
+    expect(attachmentService.copiedBytes, isNull);
   });
 
   testWidgets('blocks send when draft attachment is unsupported', (
@@ -810,7 +836,7 @@ void main() {
     );
     final sentDrafts = <ChatDraft>[];
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text'],
@@ -842,7 +868,7 @@ void main() {
     );
     ChatDraft? sentDraft;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -874,7 +900,7 @@ void main() {
 
   testWidgets('exposes stable selectors for composer controls', (tester) async {
     final semantics = tester.ensureSemantics();
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'audio'],
@@ -939,7 +965,7 @@ void main() {
     final sendCompleter = Completer<void>();
     ChatDraft? sentDraft;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (draft) {
@@ -985,7 +1011,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -1056,7 +1082,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -1098,7 +1124,7 @@ void main() {
       ),
     ]);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'file'],
@@ -1144,7 +1170,7 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(first);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['file'],
@@ -1179,7 +1205,7 @@ void main() {
   testWidgets('does not update sending state after unmount', (tester) async {
     final sendCompleter = Completer<void>();
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(onSendMessage: (_) => sendCompleter.future),
     );
@@ -1195,7 +1221,7 @@ void main() {
   });
 
   testWidgets('shows tools button when onToolsPress provided', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1214,7 +1240,7 @@ void main() {
   });
 
   testWidgets('shows tools button by default', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1232,7 +1258,7 @@ void main() {
   testWidgets('shows manual compaction when conversation can compact', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1253,7 +1279,7 @@ void main() {
   ) async {
     var wasTapped = false;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1290,7 +1316,7 @@ void main() {
   testWidgets('blocks sending and shows disabled hint', (tester) async {
     var wasSent = false;
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) => wasSent = true,
@@ -1309,7 +1335,7 @@ void main() {
   });
 
   testWidgets('shows disabled Continue with reason', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1341,7 +1367,7 @@ void main() {
   testWidgets('disables manual compaction while compaction is running', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1372,7 +1398,7 @@ void main() {
   testWidgets('shows disabled mic button with an audio support reason', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1422,7 +1448,7 @@ void main() {
       startError: const ChatMicrophonePermissionDeniedException(),
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1449,7 +1475,7 @@ void main() {
   testWidgets('explains unsupported file and image inputs', (tester) async {
     overridePlatform(.linux);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(onSendMessage: (_) => Future.value()),
     );
@@ -1457,13 +1483,16 @@ void main() {
     await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pump();
 
-    expect(
-      find.byTooltip(
-        '''The selected model doesn't support file input. '''
-        'Switch to a model that accepts files.',
-      ),
-      findsOneWidget,
+    final fileReason = find.byTooltip(
+      '''The selected model doesn't support file input. '''
+      'Switch to a model that accepts files.',
     );
+    for (final label in ['Attach file', 'Choose from Directory']) {
+      final row = find
+          .ancestor(of: find.text(label), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: row, matching: fileReason), findsOneWidget);
+    }
     expect(
       find.byTooltip(
         '''The selected model doesn't support image input. '''
@@ -1492,7 +1521,7 @@ void main() {
       recordingResult: attachment,
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1532,7 +1561,7 @@ void main() {
       stopCompleter: stopCompleter,
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1575,7 +1604,7 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(attachment);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['audio'],
@@ -1604,7 +1633,7 @@ void main() {
     addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
     ImagePickerPlatform.instance = _FakeImagePickerPlatform();
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['image'],
@@ -1635,7 +1664,7 @@ void main() {
       error: .new('Camera unavailable'),
     );
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['image'],
@@ -1661,7 +1690,7 @@ void main() {
   testWidgets('shows mic button outside menu when audio is supported', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'audio'],
@@ -1686,10 +1715,111 @@ void main() {
     );
   });
 
+  testWidgets('selects an existing Directory File without copying bytes', (
+    tester,
+  ) async {
+    ChatDraft? sent;
+    const asset = WorkspaceAsset(
+      id: 'asset',
+      name: 'notes.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 5,
+      checksum: 'unused',
+    );
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (draft) => sent = draft,
+        modalitiesInput: const ['text', 'file'],
+        sharedFile: const WorkspaceFile(
+          id: 'file',
+          name: 'Stored notes',
+          assetId: 'asset',
+          revision: 1,
+          asset: asset,
+        ),
+        sharedAssets: const _SharedAssets(asset),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text(LocaleKeys.workspace_assets_existing.tr()));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Stored notes'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.bySemanticsIdentifier('chat_send_button').hitTestable(),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(sent?.attachments.single.assetId, 'asset');
+    expect(
+      sent?.attachments.single.localPath,
+      contains('workspace-asset://asset/'),
+    );
+    expect(sent?.attachments.single.localPath, contains('/ws-1/asset'));
+  });
+
+  testWidgets('discarding a Directory File draft leaves its asset available', (
+    tester,
+  ) async {
+    const asset = WorkspaceAsset(
+      id: 'asset',
+      name: 'notes.txt',
+      mimeType: 'text/plain',
+      sizeBytes: 5,
+      checksum: 'unused',
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(
+      const MessageAttachmentToCreate(
+        localPath: 'workspace-asset://asset/ws-1/asset',
+        fileName: 'notes.txt',
+        displayName: 'Stored notes',
+        mimeType: 'text/plain',
+        modality: .file,
+        sizeBytes: 5,
+        assetId: 'asset',
+      ),
+    );
+    final activeConversation = ValueNotifier<String?>('conversation-1');
+    addTearDown(activeConversation.dispose);
+    const sharedAssets = _SharedAssets(asset);
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        modalitiesInput: const ['text', 'file'],
+        activeConversation: activeConversation,
+        attachmentService: attachmentService,
+        sharedFile: const WorkspaceFile(
+          id: 'file',
+          name: 'Stored notes',
+          assetId: 'asset',
+          revision: 1,
+          asset: asset,
+        ),
+        sharedAssets: sharedAssets,
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text(LocaleKeys.workspace_assets_existing.tr()));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Stored notes'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    final _ = await tester.pump();
+    await tester.tap(find.text('Discard draft'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(attachmentService.deletedPaths, isEmpty);
+    expect(find.text('Stored notes'), findsNothing);
+    expect(await sharedAssets.asset('asset'), same(asset));
+  });
+
   testWidgets('shows file and hides photo attachment on macOS', (tester) async {
     overridePlatform(.macOS);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'image'],
@@ -1711,7 +1841,7 @@ void main() {
   testWidgets('shows file attachment for audio on macOS', (tester) async {
     overridePlatform(.macOS);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'audio'],
@@ -1732,7 +1862,7 @@ void main() {
   testWidgets('keeps photo attachment visible outside macOS', (tester) async {
     overridePlatform(.linux);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         modalitiesInput: const ['text', 'image'],
@@ -1754,7 +1884,7 @@ void main() {
   testWidgets('shows stop button when isBusy and onStop provided', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1782,7 +1912,7 @@ void main() {
   ) async {
     ChatDraft? sentDraft;
     var stopCount = 0;
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (draft) => sentDraft = draft,
@@ -1819,7 +1949,7 @@ void main() {
   testWidgets('does not expose stop button when isBusy is false', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1835,7 +1965,7 @@ void main() {
   });
 
   testWidgets('hides stop button while keeping input busy', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1862,7 +1992,7 @@ void main() {
   });
 
   testWidgets('hides stop button when onStop is null', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1885,7 +2015,7 @@ void main() {
   testWidgets('tabs through composer controls to model and effort selector', (
     tester,
   ) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1924,7 +2054,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -1986,7 +2116,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2015,7 +2145,7 @@ void main() {
   });
 
   testWidgets('desktop uses menu model agent layout', (tester) async {
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2044,7 +2174,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2068,7 +2198,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2100,7 +2230,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAndInit(
+    final _ = await pumpAndInit(
       tester,
       buildSubject(
         onSendMessage: (_) {
@@ -2176,85 +2306,99 @@ void _noop() {
   final _ = Object();
 }
 
-class _TestFileDropSession({final DataReader? dataReader}) extends DropSession {
-  @override
-  final List<DropItem> items = [_TestFileDropItem(dataReader)];
+class _TestFlutterFileDropChannel {
+  static const _readFileChunkChannel =
+      'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
+      'DropFileHostApi.readFileChunk';
+  static const _releaseFileReadStreamChannel =
+      'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
+      'DropFileHostApi.releaseFileReadStream';
+  static const _releaseSessionChannel =
+      'dev.flutter.pigeon.flutter_file_drop_platform_interface.'
+      'DropFileHostApi.releaseSession';
 
-  @override
-  Listenable get onDisposed => const _TestListenable();
-
-  @override
-  Set<DropOperation> get allowedOperations => {DropOperation.copy};
-}
-
-class _TestFileDropItem(final DataReader? _dataReader) extends DropItem {
-  @override
-  DataReader? get dataReader => _dataReader;
-
-  @override
-  Null get localData => null;
-
-  @override
-  List<PlatformFormat> get platformFormats => const [];
-
-  @override
-  bool canProvide(DataFormat format) => true;
-}
-
-class const _TestListenable() implements Listenable {
-  @override
-  void addListener(VoidCallback listener) {
-    final _ = listener;
+  new() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      ..setMockStreamHandler(
+        const .new('flutter_file_drop/events'),
+        .inline(
+          onListen: (_, events) {
+            _eventSink = events;
+          },
+          onCancel: (_) => _eventSink = null,
+        ),
+      )
+      ..setMockMessageHandler(_readFileChunkChannel, _readFileChunk)
+      ..setMockMessageHandler(_releaseFileReadStreamChannel, _emptyReply)
+      ..setMockMessageHandler(_releaseSessionChannel, _emptyReply);
   }
 
-  @override
-  void removeListener(VoidCallback listener) {
-    final _ = listener;
-  }
-}
+  final StandardMessageCodec _codec = const .new();
+  final _files = <String, ({Uint8List bytes, int size})>{};
+  MockStreamHandlerEventSink? _eventSink;
+  var _nextHandle = 0;
 
-class _TestDataReader(final DataReaderFile file) implements DataReader {
-  @override
-  ReadProgress? getFile(
-    FileFormat? format,
-    AsyncValueChanged<DataReaderFile> onFile, {
-    ValueChanged<Object>? onError,
-    bool allowVirtualFiles = true,
-    bool synthesizeFilesFromURIs = true,
+  void dropFile({
+    required Offset position,
+    required String fileName,
+    required String mimeType,
+    required Uint8List bytes,
+    int? fileSize,
   }) {
-    unawaited(Future<void>.sync(() => onFile(file)).whenComplete(file.close));
+    final handle = 'file-${_nextHandle++}';
+    final size = fileSize ?? bytes.length;
+    _files[handle] = (bytes: bytes, size: size);
+    final eventSink = _eventSink;
+    if (eventSink == null) throw StateError('Drop event channel is not ready.');
 
-    return _TestReadProgress();
+    eventSink.success({
+      'type': 'drop',
+      'sessionId': 'chat-input-test',
+      'globalX': position.dx,
+      'globalY': position.dy,
+      'items': [
+        {
+          'type': 'file',
+          'handle': handle,
+          'name': fileName,
+          'mimeType': mimeType,
+          'size': size,
+        },
+      ],
+    });
   }
 
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
+  Future<ByteData?> _readFileChunk(ByteData? message) async {
+    if (message == null) {
+      throw const FormatException('Missing file chunk request.');
+    }
+    final decoded = _codec.decodeMessage(message);
+    if (decoded is! List<Object?> || decoded.length < 5) {
+      throw const FormatException('Invalid file chunk request.');
+    }
+    final handle = decoded[1];
+    final offset = decoded[3];
+    final maxBytes = decoded[4];
+    if (handle is! String || offset is! int || maxBytes is! int) {
+      throw const FormatException('Invalid file chunk request fields.');
+    }
+    final file = _files[handle];
+    if (file == null) throw StateError('Unknown dropped file handle.');
+    final start = offset < file.size ? offset : file.size;
+    final remaining = file.size - start;
+    final length = remaining < maxBytes ? remaining : maxBytes;
+    final chunk = Uint8List(length);
+    final availableBytes = file.bytes.length - start;
+    final copyLength = availableBytes < length ? availableBytes : length;
+    if (copyLength > 0) {
+      chunk.setRange(0, copyLength, file.bytes, start);
+    }
 
-class _TestReadProgress implements ReadProgress {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _TestDataReaderFile(
-  @override final String? fileName,
-  final Uint8List bytes,
-) implements DataReaderFile {
-  bool wasClosed = false;
-
-  @override
-  int get fileSize => bytes.length;
-
-  @override
-  void close() {
-    wasClosed = true;
+    return _codec.encodeMessage(<Object?>[chunk]);
   }
 
-  @override
-  Stream<Uint8List> getStream() => Stream.value(bytes);
-
-  @override
-  Future<Uint8List> readAll() async => bytes;
+  Future<ByteData?> _emptyReply(ByteData? _) async =>
+      _codec.encodeMessage(<Object?>[null]);
 }
 
 class _FakeLocalChatAttachmentService(
@@ -2397,4 +2541,16 @@ base class _FakePlatformFile({
 
   @override
   Never readAsByteStream() => throw UnimplementedError();
+}
+
+class const _SharedAssets(final WorkspaceAsset value)
+    implements WorkspaceAssetRepository {
+  @override
+  Future<WorkspaceAsset> asset(String id) async => value;
+  @override
+  Future<Uint8List> bytes(String id) =>
+      throw UnimplementedError('must not copy bytes');
+  @override
+  Future<WorkspaceAsset> upload(String name, Uint8List bytes) =>
+      throw UnimplementedError('must not upload');
 }
