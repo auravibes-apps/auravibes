@@ -481,11 +481,8 @@ const _serviceConnectionsDynamicKeys = <String>{
 };
 
 const _settingsScreenDynamicKeys = <String>{
-  'settings_screen.accent_color.dialog_title',
-  'settings_screen.accent_color.subtitle',
   'settings_screen.accent_color.title',
   'settings_screen.actions.cancel',
-  'settings_screen.actions.reset_defaults',
   'settings_screen.actions.save',
   'settings_screen.app_settings.subtitle',
   'settings_screen.app_settings.title',
@@ -496,7 +493,6 @@ const _settingsScreenDynamicKeys = <String>{
   'settings_screen.theme.dark',
   'settings_screen.theme.light',
   'settings_screen.theme.system',
-  'settings_screen.theme.system_default',
   'settings_screen.theme.title',
   'settings_screen.title',
 };
