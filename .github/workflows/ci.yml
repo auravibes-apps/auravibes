@@ -428,15 +428,27 @@ jobs:
 
       - name: Set up Flutter workspace for selector checks
         if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
-        uses: ./.github/actions/setup-workspace
+        uses: $/.github/actions/setup-workspace
 
       - name: Analyze changed test selector
         if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
-        run: dart analyze tool/changed_test_selector.dart --fatal-infos --fatal-warnings
+        run: >-
+          dart analyze
+          tool/changed_test_selector.dart
+          tool/changed_test_selector_test.dart
+          --fatal-infos
+          --fatal-warnings
 
       - name: Test changed test selector
         if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
         run: dart test tool/changed_test_selector_test.dart
+
+      - name: Check changed test selector formatting
+        if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
+        run: >-
+          dart format --line-length 80 -o none --set-exit-if-changed
+          tool/changed_test_selector.dart
+          tool/changed_test_selector_test.dart
 
   platform-builds:
     name: platform builds

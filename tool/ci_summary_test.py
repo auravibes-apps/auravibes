@@ -252,9 +252,30 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("  ci-routing-tests:\n", workflow)
         self.assertIn("run_ci_tool_checks == 'true'", workflow)
         self.assertIn("run_code_checks != 'true'", workflow)
-        self.assertIn("run_ci_selector_checks == 'true'", workflow)
-        self.assertIn("dart analyze tool/changed_test_selector.dart", workflow)
-        self.assertIn("dart test tool/changed_test_selector_test.dart", workflow)
+        selector_lane = workflow.split("  ci-routing-tests:\n", 1)[1].split(
+            "\n  platform-builds:", 1
+        )[0]
+        self.assertIn("run_ci_selector_checks == 'true'", selector_lane)
+        self.assertIn("uses: $/.github/actions/setup-workspace", selector_lane)
+        analysis_step = selector_lane.split(
+            "      - name: Analyze changed test selector\n", 1
+        )[1].split("\n      - name: Test changed test selector", 1)[0]
+        self.assertIn("tool/changed_test_selector.dart", analysis_step)
+        self.assertIn("tool/changed_test_selector_test.dart", analysis_step)
+        self.assertIn("--fatal-infos", analysis_step)
+        self.assertIn("--fatal-warnings", analysis_step)
+        self.assertIn("dart test tool/changed_test_selector_test.dart", selector_lane)
+        format_step = selector_lane.split(
+            "      - name: Check changed test selector formatting\n", 1
+        )[1].split("\n      - name:", 1)[0]
+        self.assertIn(
+            "if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}",
+            format_step,
+        )
+        self.assertIn(
+            "dart format --line-length 80 -o none --set-exit-if-changed",
+            selector_lane,
+        )
         block = workflow.split("      - name: Determine changed platforms\n", 1)[1]
         script = block.split("        run: |\n", 1)[1].split(
             "\n      - name: Resolve dependencies before validation fan-out", 1
