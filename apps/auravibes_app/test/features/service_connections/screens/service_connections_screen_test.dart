@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
@@ -53,6 +54,13 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
+    await (FontLoader(
+      'Inter',
+    )..addFont(rootBundle.load('assets/fonts/Inter.ttf'))).load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    await (FontLoader('Roboto')..addFont(_sdkRoboto())).load();
   });
 
   testWidgets('shows warning actions for risky connections', (tester) async {
@@ -1342,6 +1350,7 @@ Future<void> _pumpScreen(
                   ),
                   builder: (context, child) =>
                       AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                  theme: .new(fontFamily: 'Inter'),
                   locale: context.locale,
                   localizationsDelegates: [
                     ...GlobalMaterialLocalizations.delegates,
@@ -1375,6 +1384,20 @@ Future<void> _openConnectionMenu(WidgetTester tester, String name) async {
     ),
   );
   final _ = await tester.pumpAndSettle();
+}
+
+Future<ByteData> _sdkRoboto() async {
+  for (
+    var directory = File(Platform.resolvedExecutable).parent;
+    directory.path != directory.parent.path;
+    directory = directory.parent
+  ) {
+    final font = File('${directory.path}/material_fonts/Roboto-Regular.ttf');
+    if (font.existsSync()) {
+      return (await font.readAsBytes()).buffer.asByteData();
+    }
+  }
+  throw StateError('Flutter SDK Roboto font unavailable for capture');
 }
 
 void _addWidgetTearDown(WidgetTester tester) {
