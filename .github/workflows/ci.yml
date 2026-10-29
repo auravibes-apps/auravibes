@@ -774,6 +774,13 @@ jobs:
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set up Java for SonarCloud
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' }}
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' }}
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
@@ -812,6 +819,12 @@ jobs:
             echo "SONAR_TOKEN is required for same-repository pull requests." >&2
             exit 1
           fi
+
+      - name: Set up Java for SonarCloud
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
