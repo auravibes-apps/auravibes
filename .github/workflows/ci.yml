@@ -276,6 +276,12 @@ jobs:
             fi
           fi
 
+          if [[ "$EVENT_NAME" == "pull_request" ]] && \
+            git cat-file -e "${base_sha}^{commit}" 2>/dev/null && \
+            git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+            base_sha="$(git merge-base "$base_sha" "$head_sha" 2>/dev/null || true)"
+          fi
+
           if [[ "$base_sha" == "" || "$base_sha" =~ ^0+$ ]] || \
             ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null || \
             [[ "$head_sha" == "" ]] || \
@@ -335,7 +341,7 @@ jobs:
               apps/auravibes_app/linux/*) add_platform linux ;;
               apps/auravibes_app/windows/*) add_platform windows ;;
               apps/auravibes_app/web/*) add_platform web ;;
-              apps/auravibes_app/lib/*|apps/auravibes_app/assets/*|packages/*/lib/*|packages/*/assets/*) full_build=true ;;
+              apps/auravibes_app/lib/*|apps/auravibes_app/assets/*|packages/*/lib/*|packages/*/assets/*) add_platform linux ;;
               apps/auravibes_app/pubspec.yaml|apps/auravibes_app/pubspec.lock|apps/auravibes_app/pubspec_overrides.yaml) full_build=true ;;
               packages/*/pubspec.yaml|packages/*/pubspec.lock|packages/*/pubspec_overrides.yaml) full_build=true ;;
               pubspec.yaml|pubspec.lock|pubspec_overrides.yaml|melos.yaml) full_build=true ;;
@@ -402,6 +408,7 @@ jobs:
         run: |
           python3 tool/classify_ci_changes_test.py
           python3 tool/ci_summary_test.py
+          python3 tool/sonar_workflow_test.py
 
   platform-builds:
     name: platform builds
@@ -800,8 +807,8 @@ jobs:
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         needs.coverage.result == 'skipped' &&
-        (needs.change.outputs.run_code_checks == 'false' ||
-         needs.test-plan.outputs.mode == 'none')
+        needs.change.outputs.run_code_checks == 'true' &&
+        needs.test-plan.outputs.mode == 'none'
       }}
     runs-on: ubuntu-latest
     steps:
@@ -835,6 +842,8 @@ jobs:
 
   server-compose:
     name: server-compose / Docker smoke
+    needs: change
+    if: ${{ needs.change.outputs.run_server_integration == 'true' }}
     runs-on: ubuntu-latest
     env:
       POSTGRES_PASSWORD: ci-postgres-password
@@ -928,6 +937,11 @@ jobs:
             pull_request)
               base="$PR_BASE_SHA"
               head="$PR_HEAD_SHA"
+              if [ -n "$base" ] && [ -n "$head" ] \
+                && git cat-file -e "$base^{commit}" 2>/dev/null \
+                && git cat-file -e "$head^{commit}" 2>/dev/null; then
+                base="$(git merge-base "$base" "$head" 2>/dev/null || true)"
+              fi
               ;;
             push)
               base="$BEFORE_SHA"
@@ -1121,7 +1135,7 @@ jobs:
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, sonar-without-coverage, platform-builds, server-compose, server-integration, renovate-validation]
+    needs: [change, format, analysis, localization-audit, code-health, integrity, ci-routing-tests, test-plan, test, responsive-shell-goldens, coverage, sonar-without-coverage, platform-builds, server-compose, server-integration, renovate-validation]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks

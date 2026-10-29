@@ -1737,7 +1737,89 @@ bool _isNonExecutablePath(String path) =>
     _isDocumentation(path) ||
     _isSkillMetadataPath(path) ||
     path.startsWith('.pi/') ||
-    path == 'sonar-project.properties';
+    path == 'sonar-project.properties' ||
+    _isRoutedNonExecutableInput(path) ||
+    _isDockerValidationPath(path);
+
+const _staticAssetSuffixes = {
+  '.aac',
+  '.avif',
+  '.bmp',
+  '.gif',
+  '.ico',
+  '.jpeg',
+  '.jpg',
+  '.mp3',
+  '.mp4',
+  '.ogg',
+  '.otf',
+  '.png',
+  '.svg',
+  '.ttf',
+  '.wav',
+  '.webm',
+  '.webp',
+  '.woff',
+  '.woff2',
+};
+
+bool _isStaticAssetPath(String path) {
+  final normalized = path.toLowerCase();
+  return _staticAssetSuffixes.any(normalized.endsWith);
+}
+
+bool _isAssetDirectoryPath(String path) =>
+    path.startsWith('assets/') || path.contains('/assets/');
+
+bool _isAppNativePlatformPath(String path) {
+  final parts = path.split('/');
+  return parts.length > 2 &&
+      parts[0] == 'apps' &&
+      parts[1] == 'auravibes_app' &&
+      const {
+        'android',
+        'ios',
+        'linux',
+        'macos',
+        'web',
+        'windows',
+      }.contains(parts[2]);
+}
+
+bool _isDockerValidationPath(String path) {
+  final filename = path.split('/').last;
+  return filename == '.dockerignore' ||
+      filename.startsWith('Dockerfile') ||
+      filename.endsWith('.Dockerfile') ||
+      (filename.endsWith('.yml') || filename.endsWith('.yaml')) &&
+          (filename.startsWith('compose') ||
+              filename.startsWith('docker-compose')) ||
+      const {
+        'scripts/start_server.sh',
+        'scripts/stop_server.sh',
+        'scripts/serverpod_worktree_env.sh',
+      }.contains(path);
+}
+
+bool _isRoutedNonExecutableInput(String path) {
+  final normalized = path.replaceAll(r'\', '/');
+  if (_isAppNativePlatformPath(normalized)) return true;
+  if (!_isStaticAssetPath(normalized)) return false;
+
+  final parts = normalized.split('/');
+  final isDocumentationAsset =
+      normalized.startsWith('doc/') || normalized.startsWith('docs/');
+  final isGoldenAsset =
+      (normalized.startsWith('apps/auravibes_app/test/') ||
+          normalized.startsWith('packages/auravibes_ui/test/')) &&
+      (parts.contains('golden') ||
+          parts.contains('goldens') ||
+          parts.last.toLowerCase().contains('golden'));
+
+  return isDocumentationAsset ||
+      _isAssetDirectoryPath(normalized) ||
+      isGoldenAsset;
+}
 
 bool _isSkillMetadataPath(String path) {
   if (!path.startsWith('.agents/skills/')) return false;
@@ -1768,8 +1850,7 @@ bool _isGlobal(String path) {
       file.endsWith('locale_keys.dart') ||
       normalized.contains('/generated/') ||
       file.endsWith('drift_worker.js') ||
-      normalized.startsWith('assets/') ||
-      normalized.contains('/assets/') ||
+      (_isAssetDirectoryPath(normalized) && !_isStaticAssetPath(normalized)) ||
       normalized.startsWith('android/') ||
       normalized.startsWith('ios/') ||
       normalized.startsWith('macos/') ||

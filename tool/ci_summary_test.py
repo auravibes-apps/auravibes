@@ -304,7 +304,7 @@ class CiSummaryTest(unittest.TestCase):
                 "apps/auravibes_app/lib/features/models/generated_input.dart",
                 "pull_request",
                 False,
-                all_platforms,
+                '["linux"]',
                 "true",
                 "false",
                 "false",

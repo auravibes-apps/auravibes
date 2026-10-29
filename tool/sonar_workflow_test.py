@@ -18,7 +18,7 @@ class SonarWorkflowTest(unittest.TestCase):
             self.assertIn("java-version: '25'", job)
         self.assertIn("steps.check-sonar-token.outputs.token_available == 'true'", coverage)
         self.assertIn("needs.coverage.result == 'skipped'", fallback)
-        self.assertIn("needs.change.outputs.run_code_checks == 'false'", fallback)
+        self.assertIn("needs.change.outputs.run_code_checks == 'true'", fallback)
         self.assertIn("needs.test-plan.outputs.mode == 'none'", fallback)
         self.assertIn('sonar-without-coverage, platform-builds', workflow)
 
