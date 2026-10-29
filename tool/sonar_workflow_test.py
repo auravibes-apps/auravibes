@@ -15,7 +15,7 @@ class SonarWorkflowTest(unittest.TestCase):
             self.assertIn('SONAR_TOKEN is required for same-repository pull requests.', job)
             self.assertIn('exit 1', job)
             self.assertIn('SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304', job)
-            self.assertIn("java-version: '21'", job)
+            self.assertIn("java-version: '25'", job)
         self.assertIn("steps.check-sonar-token.outputs.token_available == 'true'", coverage)
         self.assertIn("needs.coverage.result == 'skipped'", fallback)
         self.assertIn("needs.change.outputs.run_code_checks == 'false'", fallback)
