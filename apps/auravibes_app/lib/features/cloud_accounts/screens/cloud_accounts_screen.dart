@@ -69,7 +69,7 @@ class const _AccountsScopeNotice() extends StatelessWidget {
     padding: .medium,
     child: AuraRow(
       children: [
-        Icon(Icons.info_outline, size: 20),
+        ExcludeSemantics(child: Icon(Icons.info_outline, size: 20)),
         Expanded(
           child: AuraText(
             child: TextLocale(LocaleKeys.navigation_accounts_scope),
@@ -91,7 +91,7 @@ class const _AccountsUnconfiguredNotice() extends StatelessWidget {
     padding: .medium,
     child: AuraRow(
       children: [
-        Icon(Icons.warning_amber_rounded, size: 20),
+        ExcludeSemantics(child: Icon(Icons.warning_amber_rounded, size: 20)),
         Expanded(
           child: AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_not_configured),
@@ -280,7 +280,7 @@ class const _EmptyAccountState({required final String workspaceId})
     padding: .large,
     child: AuraColumn(
       children: [
-        const Icon(Icons.cloud_outlined, size: 48),
+        const ExcludeSemantics(child: Icon(Icons.cloud_outlined, size: 48)),
         const AuraText(
           child: TextLocale(LocaleKeys.cloud_accounts_empty),
           style: .body,
@@ -314,7 +314,9 @@ class const _AccountTile({
         children: [
           AuraRow(
             children: [
-              const Icon(Icons.account_circle_outlined, size: 28),
+              const ExcludeSemantics(
+                child: Icon(Icons.account_circle_outlined, size: 28),
+              ),
               Expanded(
                 child: AuraText(child: Text(account.email), style: .heading6),
               ),
