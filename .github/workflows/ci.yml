@@ -779,7 +779,7 @@ jobs:
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
 
       - name: SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' }}
@@ -824,7 +824,7 @@ jobs:
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
