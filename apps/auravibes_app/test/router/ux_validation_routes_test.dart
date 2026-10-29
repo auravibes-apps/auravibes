@@ -300,7 +300,7 @@ void main() {
         find.byType(TextFormField),
         'Use the shared research notes.',
       );
-      await tester.tap(find.byIcon(Icons.save_outlined));
+      await tester.tap(find.text('Apply'));
       await f.settle(tester);
       await tester.ensureVisible(find.text('Advanced settings'));
       await tester.tap(find.text('Advanced settings'));
@@ -893,7 +893,7 @@ void main() {
         find.byType(TextFormField).last,
         'Shared research instructions.',
       );
-      await tester.tap(find.byTooltip('Apply changes'));
+      await tester.tap(find.text('Apply'));
       await f.settle(tester);
     }
     await tester.ensureVisible(find.text('Create and configure'));
@@ -934,7 +934,7 @@ void main() {
       find.byType(EditableText).last,
       'Exact saved reference content.',
     );
-    await tester.tap(find.byTooltip('Apply changes'));
+    await tester.tap(find.text('Apply'));
     await f.settle(tester);
     await tester.ensureVisible(find.text('Save resource'));
     await tester.tap(find.text('Save resource'));

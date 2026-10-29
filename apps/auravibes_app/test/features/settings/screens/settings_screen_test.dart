@@ -87,13 +87,22 @@ void main() {
         find.byKey(const ValueKey<String>('settings_accent_color')),
         findsOneWidget,
       );
+      final appearanceCard = find
+          .ancestor(
+            of: find.byKey(const ValueKey<String>('settings_theme')),
+            matching: find.byType(AuraCard),
+          )
+          .first;
       expect(
-        find.byKey(const ValueKey<String>('settings_theme_reset')),
+        find.descendant(
+          of: appearanceCard,
+          matching: find.byKey(const ValueKey<String>('settings_accent_color')),
+        ),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('settings_accent_color_reset')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('settings_appearance_reset')),
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('settings_compaction_reset')),
@@ -106,9 +115,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('reset actions restore theme and accent defaults', (
-      tester,
-    ) async {
+    testWidgets('reset restores theme and accent defaults', (tester) async {
       final semantics = tester.ensureSemantics();
       SharedPreferences.setMockInitialValues({
         'app_theme': AppTheme.dark.index,
@@ -137,12 +144,9 @@ void main() {
       });
       final _ = await tester.pumpAndSettle();
 
-      await tester.tap(find.bySemanticsIdentifier('settings_theme_reset'));
-      final accentReset = find.bySemanticsIdentifier(
-        'settings_accent_color_reset',
-      );
-      await tester.ensureVisible(accentReset);
-      await tester.tap(accentReset);
+      final reset = find.bySemanticsIdentifier('settings_appearance_reset');
+      await tester.ensureVisible(reset);
+      await tester.tap(reset);
       final _ = await tester.pumpAndSettle();
       await tester.runAsync(() async {
         await Future<void>.delayed(.zero);
@@ -151,6 +155,93 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getInt('app_theme'), AppTheme.system.index);
       expect(prefs.getDouble('app_accent_hue'), AccentHue.defaultValue);
+      semantics.dispose();
+    });
+
+    testWidgets('theme tile shows the label chosen in the picker', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      SharedPreferences.setMockInitialValues({
+        'app_theme': AppTheme.dark.index,
+      });
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
+            ),
+            overrides: [
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.bySemanticsIdentifier('settings_theme'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('System'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.bySemanticsIdentifier('settings_theme'),
+          matching: find.text('System'),
+        ),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('accent dialog explains what the color changes', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      SharedPreferences.setMockInitialValues({});
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
+            ),
+            overrides: [
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.bySemanticsIdentifier('settings_accent_color'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Drag to change the main color for buttons, links, and highlights.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Accent Hue'), findsNothing);
+      expect(tester.takeException(), isNull);
       semantics.dispose();
     });
 

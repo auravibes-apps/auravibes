@@ -2981,13 +2981,20 @@ class _DisclosureScrollController extends ScrollController {
 class _DisclosureScrollPosition extends ScrollPositionWithSingleContext {
   _DisclosureScrollPosition({
     required this.controller,
-    required super.physics,
-    required super.context,
-    super.initialPixels,
-    super.keepScrollOffset,
-    super.oldPosition,
-    super.debugLabel,
-  });
+    required ScrollPhysics physics,
+    required ScrollContext context,
+    required double initialPixels,
+    bool keepScrollOffset = true,
+    ScrollPosition? oldPosition,
+    String? debugLabel,
+  }) : super(
+         physics: physics,
+         context: context,
+         initialPixels: initialPixels,
+         keepScrollOffset: keepScrollOffset,
+         oldPosition: oldPosition,
+         debugLabel: debugLabel,
+       );
 
   final _DisclosureScrollController controller;
 

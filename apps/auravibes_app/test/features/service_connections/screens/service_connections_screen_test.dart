@@ -616,16 +616,15 @@ void main() {
           );
           await tester.binding.setSurfaceSize(.new(width, 1200));
           final _ = await tester.pumpAndSettle();
-          if (width < 600) {
+          final filterSheet = find.byKey(const ValueKey('app_filter_sheet'));
+          if (filterSheet.evaluate().isNotEmpty) {
             expect(
               tester.widgetList<AuraDropdownSelector<ConnectionFilter>>(
                 find.byType(AuraDropdownSelector<ConnectionFilter>),
               ),
               isEmpty,
             );
-            await tester.tap(
-              find.byKey(const ValueKey('app_filter_sheet')).first,
-            );
+            await tester.tap(filterSheet.first);
             final _ = await tester.pumpAndSettle();
           }
           tester
@@ -1030,8 +1029,15 @@ void main() {
 
     await _pumpScreen(tester, container, _syncWorkspaceId);
 
+    final appBarAddButton = find.byKey(
+      const ValueKey<String>('service_connections_add'),
+    );
+    expect(appBarAddButton, findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('service_connections_add')),
+      find.descendant(
+        of: appBarAddButton,
+        matching: find.text('Add connection'),
+      ),
       findsOneWidget,
     );
     expect(
@@ -1147,8 +1153,9 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Notion'), findsOneWidget);
-    expect(find.textContaining('MCP - oauth2/Needs reconnect'), findsOneWidget);
+    expect(find.text('Needs reconnect'), findsOneWidget);
     expect(find.textContaining('mcp.notion.com'), findsOneWidget);
+    expect(find.textContaining('oauth2'), findsNothing);
     expect(find.textContaining('notion-client-id'), findsOneWidget);
     expect(find.textContaining('read, write'), findsOneWidget);
     expect(find.textContaining('secret-token'), findsNothing);

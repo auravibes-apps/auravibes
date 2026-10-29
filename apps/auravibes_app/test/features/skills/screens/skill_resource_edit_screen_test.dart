@@ -281,7 +281,7 @@ void main() {
         ),
         '  Exact **Markdown**\n',
       );
-      await tester.tap(find.byTooltip('Apply changes'));
+      await tester.tap(find.text('Apply'));
       final _ = await tester.pumpAndSettle();
       expect(find.byType(SkillResourceEditScreen), findsOneWidget);
       expect(

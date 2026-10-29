@@ -26,7 +26,7 @@ void main() {
     );
     tester.widget<EditableText>(_markdownEditorInput).focusNode.unfocus();
     final _ = await tester.pumpAndSettle();
-    expect(find.text('37/80'), findsOneWidget);
+    expect(find.text('37 of 80 characters'), findsOneWidget);
 
     await expectLater(
       find.byType(MarkdownEditorScreen),
@@ -40,7 +40,9 @@ void main() {
     tags: ['golden'],
   );
 
-  testWidgets('field context and limits govern Apply changes', (tester) async {
+  testWidgets('field context and limits govern Apply', (tester) async {
+    await tester.binding.setSurfaceSize(const ui.Size(360, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     String? result;
     await _openMarkdownEditor(
       tester,
@@ -55,14 +57,20 @@ void main() {
     );
     await tester.enterText(_markdownEditorInput, 'abc');
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Apply changes'));
+    await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
     expect(find.byType(MarkdownEditorScreen), findsOneWidget);
     expect(result, isNull);
-    expect(find.text('3/2'), findsOneWidget);
+    expect(find.text('3 of 2 characters: Limit exceeded'), findsOneWidget);
+    final limitFeedbackRect = tester.getRect(
+      find.text('3 of 2 characters: Limit exceeded'),
+    );
+    expect(limitFeedbackRect.left, greaterThanOrEqualTo(0));
+    expect(limitFeedbackRect.right, lessThanOrEqualTo(360));
+    expect(tester.takeException(), isNull);
     await tester.enterText(_markdownEditorInput, 'ab');
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Apply changes'));
+    await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
     expect(result, 'ab');
     expect(find.byType(MarkdownEditorScreen), findsNothing);
@@ -247,7 +255,7 @@ void main() {
     String? result;
     await _openMarkdownEditor(tester, onResult: (value) => result = value);
     await tester.enterText(_markdownEditorInput, _editedMarkdown);
-    await tester.tap(find.byIcon(Icons.save_outlined));
+    await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraConfirmDialog), findsNothing);
@@ -276,7 +284,7 @@ void main() {
     );
     expect(_markdownEditorInput.hitTestable(), findsNothing);
 
-    await tester.tap(find.bySemanticsLabel('Preview'));
+    await tester.tap(find.bySemanticsLabel('Edit Markdown'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(_markdownEditorInput, '');
     final _ = await tester.pumpAndSettle();
@@ -357,16 +365,16 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       final previewToggle = tester
-          .getSemantics(find.bySemanticsLabel('Preview'))
+          .getSemantics(find.bySemanticsLabel('Edit Markdown'))
           .getSemanticsData();
       expect(previewToggle.flagsCollection.isToggled, ui.Tristate.isTrue);
-      expect(find.byTooltip('Markdown'), findsOneWidget);
+      expect(find.byTooltip('Edit Markdown'), findsOneWidget);
       expect(controller.value, sourceValue);
       expect(focusNode.hasFocus, isFalse);
       await _sendControlShortcut(tester, .keyB);
       expect(controller.value, sourceValue);
 
-      await tester.tap(find.bySemanticsLabel('Preview'));
+      await tester.tap(find.bySemanticsLabel('Edit Markdown'));
       final _ = await tester.pumpAndSettle();
 
       expect(controller.value, sourceValue);
@@ -407,7 +415,7 @@ void main() {
       expect(find.byIcon(Icons.format_bold).hitTestable(), findsNothing);
       expect(find.bySemanticsLabel('Bold'), findsNothing);
 
-      await tester.tap(find.bySemanticsLabel('Preview'));
+      await tester.tap(find.bySemanticsLabel('Edit Markdown'));
       final _ = await tester.pumpAndSettle();
       expect(controller.value, boldValue);
       expect(focusNode.hasFocus, isTrue);
@@ -451,9 +459,9 @@ void main() {
 
     await _sendControlShortcut(tester, .keyB);
     expect(controller.value, formattedValue);
-    expect(find.bySemanticsLabel('Preview'), findsOneWidget);
+    expect(find.bySemanticsLabel('Edit Markdown'), findsOneWidget);
 
-    await tester.tap(find.bySemanticsLabel('Preview'));
+    await tester.tap(find.bySemanticsLabel('Edit Markdown'));
     final _ = await tester.pumpAndSettle();
     expect(focusNode.hasFocus, isTrue);
     expect(controller.value, formattedValue);
@@ -474,9 +482,9 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel('Preview'));
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Preview'));
+    await tester.tap(find.bySemanticsLabel('Edit Markdown'));
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.save_outlined));
+    await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(MarkdownEditorScreen), findsNothing);

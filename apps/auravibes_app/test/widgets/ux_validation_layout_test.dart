@@ -341,7 +341,14 @@ void main() {
           await tester.tap(apply);
           final _ = await tester.pumpAndSettle();
           expect(find.byType(MarkdownEditorScreen), findsOneWidget);
-          expect(find.text('${cap + 1}/$cap'), findsOneWidget);
+          final overLimitCount = 'markdown_editor.character_count'.tr(
+            context: editorContext,
+            namedArgs: {'count': '${cap + 1}', 'limit': '$cap'},
+          );
+          final limitExceeded = 'markdown_editor.limit_exceeded'.tr(
+            context: editorContext,
+          );
+          expect(find.text('$overLimitCount: $limitExceeded'), findsOneWidget);
         }
         final legal = 'x' * (field.cap ?? 60000);
         await tester.enterText(find.byType(EditableText).last, legal);

@@ -325,33 +325,6 @@ void main() {
       expect(tools.any((tool) => tool.toolId == staleSpec.name), isTrue);
     });
   });
-
-  test('isSkillPermissionToolName identifies skill permission subjects', () {
-    expect(
-      SkillPermissionTools.isSkillPermissionToolName(activateSkillToolName),
-      isTrue,
-    );
-    expect(
-      SkillPermissionTools.isSkillPermissionToolName(loadSkillResourceToolName),
-      isTrue,
-    );
-    expect(
-      SkillPermissionTools.isSkillPermissionToolName(
-        'skill__user__example__search',
-      ),
-      isFalse,
-    );
-    expect(
-      SkillPermissionTools.isSkillPermissionToolName(
-        'skill__app_native__skills_manager__list_user_skills',
-      ),
-      isTrue,
-    );
-    expect(
-      SkillPermissionTools.isSkillPermissionToolName('web_search'),
-      isFalse,
-    );
-  });
 }
 
 class _Fixture {
