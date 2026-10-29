@@ -506,23 +506,20 @@ class const _MarkdownPreviewToggle({
         child: AuraIconButton(
           icon: isPreview ? Icons.edit_outlined : Icons.visibility_outlined,
           onPressed: onToggle,
-          tooltip: _markdownPreviewTooltip(context, isPreview),
+          tooltip: _markdownPreviewActionLabel(context, isPreview),
         ),
       ),
       toggled: isPreview,
       button: true,
-      label: _markdownPreviewLabel(context),
+      label: _markdownPreviewActionLabel(context, isPreview),
       onTap: onToggle,
     );
   }
 }
 
-String _markdownPreviewLabel(BuildContext context) =>
-    LocaleKeys.markdown_editor_preview_label.tr(context: context);
-
-String _markdownPreviewTooltip(BuildContext context, bool isPreview) =>
+String _markdownPreviewActionLabel(BuildContext context, bool isPreview) =>
     (isPreview
-            ? LocaleKeys.markdown_editor_editor_label
+            ? LocaleKeys.markdown_editor_return_to_edit
             : LocaleKeys.markdown_editor_preview_label)
         .tr(context: context);
 
@@ -547,7 +544,7 @@ class const _MarkdownSaveListener({
   @override
   Widget build(BuildContext _) => ValueListenableBuilder<TextEditingValue>(
     valueListenable: controller,
-    builder: (_, value, _) => _MarkdownSaveIcon(
+    builder: (_, value, _) => _MarkdownApplyAction(
       disabled: _markdownIsOverLimit(value, maxCharacters),
       onSave: onSave,
     ),
@@ -586,18 +583,20 @@ class const _MarkdownEditorCancelButton({required final VoidCallback onCancel})
   }
 }
 
-class const _MarkdownSaveIcon({
+class const _MarkdownApplyAction({
   required final bool disabled,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraIconButton(
-      icon: Icons.save_outlined,
-      onPressed: disabled ? null : onSave,
-      tooltip: LocaleKeys.markdown_editor_apply.tr(context: context),
-    );
-  }
+  Widget build(BuildContext context) => Tooltip(
+    message: LocaleKeys.markdown_editor_apply.tr(context: context),
+    child: AuraButton(
+      onPressed: onSave,
+      child: const TextLocale(LocaleKeys.markdown_editor_apply),
+      disabled: disabled,
+      semanticLabel: LocaleKeys.markdown_editor_apply.tr(context: context),
+    ),
+  );
 }
 
 class const _MarkdownLimitCounter({
@@ -658,12 +657,22 @@ class const _MarkdownLimitText({
   required final int maxCharacters,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext context) {
+    final countText = LocaleKeys.markdown_editor_character_count.tr(
+      context: context,
+      namedArgs: {'count': '$characterCount', 'limit': '$maxCharacters'},
+    );
+    final isOverLimit = characterCount > maxCharacters;
+    final limitExceededText = LocaleKeys.markdown_editor_limit_exceeded.tr(
+      context: context,
+    );
+    final text = isOverLimit ? '$countText: $limitExceededText' : countText;
+
     return Center(
       child: AuraText(
-        child: Text('$characterCount/$maxCharacters'),
+        child: Text(text),
         style: .caption,
-        tint: characterCount > maxCharacters ? AuraTint.error : null,
+        tint: isOverLimit ? AuraTint.error : null,
       ),
     );
   }
