@@ -29,22 +29,10 @@ class const WorkspaceCsvCodec() {
 
   List<List<dynamic>> _decode(String source) {
     final normalized = source.replaceFirst(RegExp(r'^\uFEFF'), '');
-    try {
-      final rows = _decodeWith(normalized, '\r\n');
-      if (rows.length > 1) return rows;
-    } on FormatException {
-      // Retry strict LF parsing; quoted CRLF content remains untouched.
-    }
+    _validateQuotes(normalized);
 
-    return _decodeWith(normalized, '\n');
+    return Csv(autoDetect: false, skipEmptyLines: false).decode(normalized);
   }
-
-  List<List<dynamic>> _decodeWith(String source, String eol) =>
-      CsvToListConverter(
-        eol: eol,
-        shouldParseNumbers: false,
-        allowInvalid: false,
-      ).convert(source);
 
   void _validate(List<List<dynamic>> rows, int length) {
     if (rows.length < 2 || rows.skip(1).any((row) => row.length != length)) {
@@ -52,6 +40,83 @@ class const WorkspaceCsvCodec() {
     }
   }
 }
+
+enum _CsvQuoteState { fieldStart, unquoted, quoted, afterQuote }
+
+typedef _CsvQuoteStep = ({_CsvQuoteState state, int skipped});
+
+void _validateQuotes(String source) {
+  var state = _CsvQuoteState.fieldStart;
+
+  for (var index = 0; index < source.length; index++) {
+    final step = _consumeQuoteCharacter(source, index, state);
+    state = step.state;
+    index += step.skipped;
+  }
+
+  if (state == _CsvQuoteState.quoted) {
+    throw const FormatException('Unclosed quoted field');
+  }
+}
+
+_CsvQuoteStep _consumeQuoteCharacter(
+  String source,
+  int index,
+  _CsvQuoteState state,
+) => switch (state) {
+  .fieldStart => _consumeFieldStart(source[index]),
+  .unquoted => _consumeUnquoted(source[index]),
+  .quoted => _consumeQuoted(source, index),
+  .afterQuote => _consumeAfterQuote(source[index]),
+};
+
+_CsvQuoteStep _consumeFieldStart(String character) {
+  if (character == '"') {
+    return (state: _CsvQuoteState.quoted, skipped: 0);
+  }
+
+  return _nextUnquotedField(character);
+}
+
+_CsvQuoteStep _consumeUnquoted(String character) {
+  if (character == '"') {
+    throw const FormatException('Quote inside unquoted field');
+  }
+
+  return _nextUnquotedField(character);
+}
+
+_CsvQuoteStep _consumeQuoted(String source, int index) {
+  if (source[index] != '"') {
+    return (state: _CsvQuoteState.quoted, skipped: 0);
+  }
+  if (!_isEscapedQuote(source, index)) {
+    return (state: _CsvQuoteState.afterQuote, skipped: 0);
+  }
+
+  return (state: _CsvQuoteState.quoted, skipped: 1);
+}
+
+_CsvQuoteStep _consumeAfterQuote(String character) {
+  if (!_isFieldSeparator(character)) {
+    throw const FormatException('Unexpected character after closing quote');
+  }
+
+  return (state: _CsvQuoteState.fieldStart, skipped: 0);
+}
+
+_CsvQuoteStep _nextUnquotedField(String character) => (
+  state: _isFieldSeparator(character)
+      ? _CsvQuoteState.fieldStart
+      : _CsvQuoteState.unquoted,
+  skipped: 0,
+);
+
+bool _isFieldSeparator(String character) =>
+    character == ',' || character == '\r' || character == '\n';
+
+bool _isEscapedQuote(String source, int index) =>
+    index + 1 < source.length && source[index + 1] == '"';
 
 void _sourceSize(String source) {
   if (utf8.encode(source).length > WorkspaceCsvInput.maxSourceBytes) {

@@ -91,7 +91,7 @@ void main() {
     );
     await tester.enterText(find.byType(TextField).first, 'missing');
     await tester.pump();
-    expect(find.text('No entries match these filters.'), findsOneWidget);
+    expect(find.text('No services match these filters.'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'pages');
     await tester.pump();
     await tester.tap(find.text('Search ${String.fromCharCode(183)} Team'));
