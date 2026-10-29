@@ -73,9 +73,9 @@ melos:
       description: Fail when production unused declarations are detected
 
     unnecessary:nullable:
-      # Excluded callbacks/entities use null as behavior: fallback close flow,
-      # disabled icon buttons, patch fields, and context revocation.
-      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{packages/auravibes_ui/lib/src/atoms/aura_icon_button.dart,apps/auravibes_app/lib/features/chats/services/cloud_chat_gateway.dart,apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart,packages/auravibes_engine/lib/src/provider_tool_exchange.dart,apps/auravibes_app/lib/data/repositories/local_workspace_context_repository.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
+      # Null selects behavior: disabled buttons, omitted history cursors,
+      # cloud-client fallback, missing-ID normalization, and context revocation.
+      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{packages/auravibes_ui/lib/src/atoms/aura_icon_button.dart,apps/auravibes_app/lib/features/chats/services/cloud_chat_gateway.dart,packages/auravibes_engine/lib/src/provider_tool_exchange.dart,apps/auravibes_app/lib/data/repositories/local_workspace_context_repository.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
       description: Fail when unnecessary nullable parameters are detected
 
     format:check:
