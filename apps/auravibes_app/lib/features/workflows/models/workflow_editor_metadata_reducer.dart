@@ -62,6 +62,16 @@ abstract final class WorkflowEditorNodeReducer {
     (node) => node.copyWith(label: label),
   );
 
+  static WorkflowEditorState inferOutputs(
+    WorkflowEditorState state,
+    String nodeId,
+    List<WorkflowPort> outputs,
+  ) => WorkflowEditorStateReducer.updateNode(
+    state,
+    nodeId,
+    (node) => node.copyWith(outputs: outputs, hasSampledOutputs: true),
+  );
+
   static WorkflowEditorState remove(WorkflowEditorState state, String nodeId) {
     final updatedState = WorkflowEditorStateReducer.updateWorkflow(
       state,
@@ -625,7 +635,6 @@ abstract final class WorkflowEditorNodeFactory {
       label: draft.label,
       x: position.x,
       y: position.y,
-      targetSource: draft.targetSource,
       inputs: _inputs(draft),
       outputs: _outputs(draft),
     );
@@ -642,7 +651,10 @@ abstract final class WorkflowEditorNodeFactory {
       draft.inputs ?? [_defaultPort(draft.defaultInputLabel)];
 
   static List<WorkflowPort> _outputs(WorkflowNodeDraft draft) =>
-      draft.outputs ?? [_defaultOutputPort(draft.defaultOutputLabel)];
+      draft.outputs ??
+      (draft.kind == .connectorTool
+          ? const []
+          : [_defaultOutputPort(draft.defaultOutputLabel)]);
 
   static WorkflowPort _defaultPort(String name) =>
       WorkflowPort(id: newId(), name: name, type: .any);

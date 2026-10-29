@@ -55,7 +55,6 @@ typedef _WorkflowNodeDraftFields = ({
   WorkflowNodeKind kind,
   String targetId,
   String label,
-  String? targetSource,
   List<WorkflowPort>? inputs,
   List<WorkflowPort>? outputs,
 });
@@ -102,7 +101,6 @@ abstract final class WorkflowNodePickerCatalog {
     label: fields.label,
     defaultInputLabel: LocaleKeys.workflow_editor_input.tr(context: context),
     defaultOutputLabel: LocaleKeys.workflow_editor_result.tr(context: context),
-    targetSource: fields.targetSource,
     inputs: fields.inputs,
     outputs: fields.outputs,
   );
@@ -262,7 +260,6 @@ class const _WorkflowToolPickerItem({required final WorkspaceToolEntity tool})
         kind: .systemTool,
         targetId: tool.id,
         label: tool.toolId,
-        targetSource: null,
         inputs: WorkflowSchemaPortParser.parse(tool.inputSchema, isInput: true),
         outputs: WorkflowSchemaPortParser.parse(
           tool.outputSchemaJson,
@@ -293,7 +290,6 @@ class const _WorkflowAgentPickerItem({required final AgentEntity agent})
       kind: .agent,
       targetId: agent.id,
       label: agent.name,
-      targetSource: null,
       inputs: null,
       outputs: null,
     )),
@@ -329,7 +325,6 @@ class const _WorkflowConnectorToolPickerItem({
         kind: .connectorTool,
         targetId: connectorTool.toolId,
         label: label,
-        targetSource: connectorTool.connectorName,
         inputs: WorkflowSchemaPortParser.parse(
           jsonEncode(connectorTool.inputJsonSchema),
           isInput: true,
@@ -376,7 +371,6 @@ class const _WorkflowDefinitionPickerItem({
       kind: .workflow,
       targetId: workflow.id,
       label: workflow.name,
-      targetSource: null,
       inputs: WorkflowNodePickerCatalog.copyPorts(workflow.inputs),
       outputs: WorkflowNodePickerCatalog.copyPorts(workflow.outputs),
     )),

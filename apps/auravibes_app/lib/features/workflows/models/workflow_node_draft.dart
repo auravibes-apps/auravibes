@@ -6,7 +6,6 @@ class const WorkflowNodeDraft({
   required final String label,
   required final String defaultInputLabel,
   required final String defaultOutputLabel,
-  final String? targetSource,
   final List<WorkflowPort>? inputs,
   final List<WorkflowPort>? outputs,
 });

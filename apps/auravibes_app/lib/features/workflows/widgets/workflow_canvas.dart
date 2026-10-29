@@ -1003,7 +1003,6 @@ abstract final class WorkflowNodeIcon {
     .systemTool => Icons.build_outlined,
     .agent => Icons.smart_toy_outlined,
     .connectorTool => Icons.extension_outlined,
-    .skill => Icons.psychology_alt_outlined,
     .workflow => Icons.account_tree_outlined,
   };
 }

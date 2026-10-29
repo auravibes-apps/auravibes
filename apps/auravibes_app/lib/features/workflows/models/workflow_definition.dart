@@ -44,8 +44,8 @@ typedef _WorkflowNodeIdentity = ({
   String id,
   WorkflowNodeKind kind,
   String targetId,
-  String? targetSource,
   String label,
+  bool hasSampledOutputs,
 });
 typedef _WorkflowNodePorts = ({
   List<WorkflowPort> inputs,
@@ -165,7 +165,7 @@ class WorkflowNode {
     required this.label,
     required this.x,
     required this.y,
-    this.targetSource,
+    this.hasSampledOutputs = false,
     this.inputs = const [],
     this.outputs = const [],
   });
@@ -176,7 +176,7 @@ class WorkflowNode {
   final String id;
   final WorkflowNodeKind kind;
   final String targetId;
-  final String? targetSource;
+  final bool hasSampledOutputs;
   final String label;
   final double x;
   final double y;
@@ -189,7 +189,7 @@ class WorkflowNode {
     String? id,
     WorkflowNodeKind? kind,
     String? targetId,
-    String? targetSource,
+    bool? hasSampledOutputs,
     String? label,
     double? x,
     double? y,
@@ -202,7 +202,7 @@ class WorkflowNode {
     label: label ?? this.label,
     x: x ?? this.x,
     y: y ?? this.y,
-    targetSource: targetSource ?? this.targetSource,
+    hasSampledOutputs: hasSampledOutputs ?? this.hasSampledOutputs,
     inputs: inputs ?? this.inputs,
     outputs: outputs ?? this.outputs,
   );
@@ -415,7 +415,7 @@ abstract final class WorkflowNodeCodec {
     'id': node.id,
     'kind': node.kind.name,
     'targetId': node.targetId,
-    'targetSource': node.targetSource,
+    'hasSampledOutputs': node.hasSampledOutputs,
     'label': node.label,
     'x': node.x,
     'y': node.y,
@@ -437,7 +437,7 @@ abstract final class WorkflowNodeCodec {
     id: json['id']! as String,
     kind: WorkflowNodeKind.values.byName(json['kind']! as String),
     targetId: json['targetId']! as String,
-    targetSource: json['targetSource'] as String?,
+    hasSampledOutputs: json['hasSampledOutputs']! as bool,
     label: json['label']! as String,
   );
 
@@ -454,7 +454,7 @@ abstract final class WorkflowNodeCodec {
     final ports = fields.ports;
 
     return _baseNode(identity, fields.position).copyWith(
-      targetSource: identity.targetSource,
+      hasSampledOutputs: identity.hasSampledOutputs,
       inputs: ports.inputs,
       outputs: ports.outputs,
     );

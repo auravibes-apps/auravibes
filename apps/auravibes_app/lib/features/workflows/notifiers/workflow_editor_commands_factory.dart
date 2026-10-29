@@ -25,6 +25,7 @@ typedef WorkflowEditorNodeCommands = ({
   void Function() clearSelection,
   void Function(String nodeId, double x, double y) move,
   void Function(String nodeId, String label) setLabel,
+  void Function(String nodeId, List<WorkflowPort> outputs) inferOutputs,
   void Function(String nodeId) remove,
 });
 
@@ -108,6 +109,7 @@ abstract final class WorkflowEditorNodeCommandFactory {
         clearSelection: _clearSelection(update),
         move: _move(update),
         setLabel: _setLabel(update),
+        inferOutputs: _inferOutputs(update),
         remove: _remove(update),
       );
 
@@ -135,6 +137,14 @@ abstract final class WorkflowEditorNodeCommandFactory {
   ) =>
       (nodeId, label) => update(
         (state) => WorkflowEditorNodeReducer.setLabel(state, nodeId, label),
+      );
+
+  static void Function(String, List<WorkflowPort>) _inferOutputs(
+    _WorkflowEditorStateUpdate update,
+  ) =>
+      (nodeId, outputs) => update(
+        (state) =>
+            WorkflowEditorNodeReducer.inferOutputs(state, nodeId, outputs),
       );
 
   static void Function(String) _remove(_WorkflowEditorStateUpdate update) =>

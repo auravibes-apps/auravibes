@@ -16,6 +16,8 @@ Outputs include localized views, persisted app state, engine requests, and authe
 - **Cloud mirror**: a remote workspace linked through both cloud workspace and account identifiers.
 - **Conversation**: a workspace-owned transcript with optional model, agent, fork, and subagent metadata.
 - **Agent**: workspace configuration with instructions, visibility, enabled state, and skill references.
+- **Workflow**: reusable sequence of connected steps with named inputs and outputs.
+- **Connector tool node**: Workflow step that references one stable Connector tool ID; Workspace Connections are resolved separately.
 - **Cloud account session**: authentication state scoped to a server origin and account identity.
 
 ## Invariants
@@ -25,6 +27,7 @@ Outputs include localized views, persisted app state, engine requests, and authe
 - Remote workspace creation needs a nonempty URL or two nonempty cloud mirror identifiers.
 - Cloud clients use account-scoped authentication storage. Provider disposal closes their connections.
 - App adapters own persistence, permissions, and localization. Engine code does not own these concerns.
+- Workflow nodes store Connector tool IDs, not Connection IDs. Connector output ports store inferred names and types, never sample values.
 - User-facing text uses localization keys. Shared UI components receive content from their host.
 
 ## Relationships and evidence

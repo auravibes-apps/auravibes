@@ -26,6 +26,7 @@ Outputs include conversation updates, tool calls, approval requests, model reque
 - Conversation data access uses provider contracts instead of app database implementations.
 - Cancellation uses stop controls and registered cleanup callbacks.
 - Public consumers use the package entrypoint. Internal helpers can remain outside public exports.
+- Connector sample shaping preserves value types and field names while dropping sample values.
 
 ## Relationships and evidence
 

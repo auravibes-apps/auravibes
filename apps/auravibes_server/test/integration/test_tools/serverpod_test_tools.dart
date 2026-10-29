@@ -428,6 +428,8 @@ class TestEndpoints {
 
   late final _CodexOAuthEndpoint codexOAuth;
 
+  late final _ConnectorToolEndpoint connectorTool;
+
   late final _ConversationEndpoint conversation;
 
   late final _McpCatalogEndpoint mcpCatalog;
@@ -487,6 +489,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     codexOAuth = _CodexOAuthEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    connectorTool = _ConnectorToolEndpoint(
       endpoints,
       serializationManager,
     );
@@ -1058,6 +1064,56 @@ class _CodexOAuthEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_isldeyi3.CompleteCodexOAuthResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _ConnectorToolEndpoint {
+  _ConnectorToolEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<String> sampleRead(
+    _ist.TestSessionBuilder sessionBuilder,
+    int workspaceId,
+    String toolId,
+    String revision,
+    String argumentsJson,
+    String? connectionId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'connectorTool',
+            method: 'sampleRead',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'connectorTool',
+          methodName: 'sampleRead',
+          parameters: _ist.testObjectToJson({
+            'workspaceId': workspaceId,
+            'toolId': toolId,
+            'revision': revision,
+            'argumentsJson': argumentsJson,
+            'connectionId': connectionId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<String>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

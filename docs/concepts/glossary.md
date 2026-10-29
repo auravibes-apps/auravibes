@@ -34,6 +34,16 @@ A reusable operation offered by a Connector, such as reading a Notion page.
 Tool definitions, templates, and execution belong to the Connector, not to a
 Skill. Any Skill can reference a Connector tool by ID.
 
+## Workflow
+
+A reusable sequence of connected steps that transforms supplied inputs into
+outputs.
+
+## Connector tool node
+
+A Workflow step that invokes one Connector tool. The node describes the
+operation; its Connection belongs to the Workspace.
+
 ## Skill
 
 Use-case guidance, such as “use Notion for CRM.” A Skill can reference one or

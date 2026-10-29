@@ -205,6 +205,7 @@ class WorkspaceResourceValidation {
       final kind = value['kind'];
       final targetId = value['targetId'];
       final label = value['label'];
+      final hasSampledOutputs = value['hasSampledOutputs'];
       final x = value['x'];
       final y = value['y'];
       if (id is! String ||
@@ -215,13 +216,14 @@ class WorkspaceResourceValidation {
             'systemTool',
             'agent',
             'connectorTool',
-            'skill',
             'workflow',
           }.contains(kind) ||
           targetId is! String ||
           targetId.isEmpty ||
           label is! String ||
           label.trim().isEmpty ||
+          hasSampledOutputs is! bool ||
+          (hasSampledOutputs && kind != 'connectorTool') ||
           x is! num ||
           !x.isFinite ||
           x < 0 ||
@@ -230,10 +232,6 @@ class WorkspaceResourceValidation {
           !y.isFinite ||
           y < 0 ||
           y > _maxWorkflowNodePosition) {
-        throw const FormatException();
-      }
-      if (kind == 'skill' &&
-          !const {null, 'user', 'app'}.contains(value['targetSource'])) {
         throw const FormatException();
       }
       _validateWorkflowPorts(value['inputs']);
@@ -499,12 +497,10 @@ class WorkspaceResourceValidation {
       for (final node in definition['nodes']! as List<Object?>) {
         if (node is! Map<String, Object?>) throw const FormatException();
         final kind = node['kind'];
-        if (kind == 'skill' && node['targetSource'] == 'app') continue;
         final targetKind = switch (kind) {
           'systemTool' => WorkspaceResourceKind.tool,
           'connectorTool' => WorkspaceResourceKind.tool,
           'agent' => WorkspaceResourceKind.agent,
-          'skill' => WorkspaceResourceKind.skill,
           'workflow' => WorkspaceResourceKind.workflow,
           _ => throw const FormatException(),
         };

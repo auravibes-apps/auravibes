@@ -2,6 +2,9 @@
 
 The language people use to organize and open reusable content within a workspace.
 
+For terms about connected services and workflows, see the
+[Connectors and workflows glossary](docs/concepts/glossary.md).
+
 ## Language
 
 **Directory**:

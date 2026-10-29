@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_editor_state.dart';
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
+import 'package:auravibes_app/features/workflows/widgets/workflow_connector_tool_sample.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_port_group.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_signature_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -69,6 +70,13 @@ class const _WorkflowNodeInspector({
       _WorkflowNodePortGroup(node: node, editor: editor, isInput: true),
       const SizedBox(height: 12),
       _WorkflowNodePortGroup(node: node, editor: editor, isInput: false),
+      if (node.kind == .connectorTool)
+        WorkflowConnectorToolSample(
+          workspaceId: workflow.workspaceId,
+          node: node,
+          editor: editor,
+          key: ValueKey(node.id),
+        ),
       const SizedBox(height: 16),
       _NodeConnections(workflow: workflow, node: node, editor: editor),
     ],
@@ -319,7 +327,6 @@ abstract final class WorkflowInspectorText {
         .connectorTool => LocaleKeys.workflow_editor_connector_tool.tr(
           context: context,
         ),
-        .skill => LocaleKeys.workflow_editor_skill.tr(context: context),
         .workflow => LocaleKeys.workflow_editor_workflow.tr(context: context),
       };
 }

@@ -72,6 +72,7 @@ void main() {
             'kind': 'agent',
             'targetId': 'agent-1',
             'label': 'Agent',
+            'hasSampledOutputs': false,
             'x': 300,
             'y': 100,
             'inputs': [
@@ -133,6 +134,7 @@ void main() {
               'kind': 'agent',
               'targetId': '$id-agent',
               'label': id,
+              'hasSampledOutputs': false,
               'x': 0,
               'y': 0,
               'inputs': [
@@ -196,6 +198,7 @@ void main() {
             'kind': 'agent',
             'targetId': 'agent-1',
             'label': 'Agent',
+            'hasSampledOutputs': false,
             'x': 10001,
             'y': 0,
             'inputs': [],
@@ -416,6 +419,55 @@ void main() {
         () => WorkspaceResourceValidation.references(kind, data),
         returnsNormally,
       );
+    }
+  });
+
+  test('requires current workflow node state and rejects Skill nodes', () {
+    Map<String, Object?> workflowNode({
+      String kind = 'connectorTool',
+      bool? hasSampledOutputs = false,
+    }) => {
+      'name': 'Workflow',
+      'description': '',
+      'definition': {
+        'version': 1,
+        'inputs': const [],
+        'outputs': const [],
+        'nodes': [
+          {
+            'id': 'node-1',
+            'kind': kind,
+            'targetId': 'connector/example/tool',
+            'label': 'Connector tool',
+            'hasSampledOutputs': ?hasSampledOutputs,
+            'x': 0,
+            'y': 0,
+            'inputs': const [],
+            'outputs': const [],
+          },
+        ],
+        'connections': const [],
+      },
+    };
+
+    void validate(Map<String, Object?> data) =>
+        WorkspaceResourceValidation.decode(
+          kind: WorkspaceResourceKind.workflow,
+          resourceId: 'workflow-1',
+          workspaceId: 1,
+          data: jsonEncode(data),
+        );
+
+    expect(
+      () => validate(workflowNode(hasSampledOutputs: true)),
+      returnsNormally,
+    );
+    for (final data in [
+      workflowNode(hasSampledOutputs: null),
+      workflowNode(kind: 'skill'),
+      workflowNode(kind: 'systemTool', hasSampledOutputs: true),
+    ]) {
+      expect(() => validate(data), throwsFormatException);
     }
   });
 

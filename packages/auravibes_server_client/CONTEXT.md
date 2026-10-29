@@ -24,6 +24,7 @@ Outputs include remote endpoint calls, typed responses, protocol exceptions, and
 - This package transports requests. The server enforces workspace authorization and mutation rules.
 - Hosts configure account sessions and close client connections. This package does not own app session storage.
 - Protocol models remain separate from app domain entities. App adapters map between those representations.
+- Connector sample calls return value-free shapes; workspace authorization and read-only enforcement remain server-owned.
 
 ## Relationships and evidence
 

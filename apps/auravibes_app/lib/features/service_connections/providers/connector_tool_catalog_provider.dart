@@ -24,6 +24,8 @@ List<ConnectorToolCatalogItem> _connectorTools(ConnectorDefinition connector) =>
             connectorName: connector.title,
             title: tool.title,
             description: tool.description,
+            connectorId: connector.identifier,
+            toolDefinition: tool,
             inputJsonSchema: tool.inputJsonSchema,
             requiresConnection: tool.requiresConnection,
           ),

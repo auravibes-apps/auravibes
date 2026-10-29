@@ -22,6 +22,7 @@ Outputs include typed responses, workspace streams, conversation events, and mod
 ## Invariants
 
 - Cloud workspace and conversation endpoints resolve authenticated account identity before use-case calls.
+- Connector sample endpoints accept read tools only, recheck access around execution, and return value-free shapes.
 - Workspace use cases enforce active membership and role capabilities before protected operations.
 - Repeated mutation identities cannot carry different request content.
 - Semantic conversation changes and their events share a transaction.

@@ -1787,7 +1787,6 @@ abstract class LocaleKeys {
   static const workflow_editor_agent = 'workflow_editor.agent';
   static const workflow_editor_connector_tool =
       'workflow_editor.connector_tool';
-  static const workflow_editor_skill = 'workflow_editor.skill';
   static const workflow_editor_workflow = 'workflow_editor.workflow';
   static const workflow_editor_available_tools =
       'workflow_editor.available_tools';
@@ -1795,8 +1794,6 @@ abstract class LocaleKeys {
       'workflow_editor.available_agents';
   static const workflow_editor_available_connector_tools =
       'workflow_editor.available_connector_tools';
-  static const workflow_editor_available_skills =
-      'workflow_editor.available_skills';
   static const workflow_editor_available_workflows =
       'workflow_editor.available_workflows';
   static const workflow_editor_empty_group = 'workflow_editor.empty_group';
@@ -1806,6 +1803,31 @@ abstract class LocaleKeys {
   static const workflow_editor_result = 'workflow_editor.result';
   static const workflow_editor_connector_tool_requires_connection =
       'workflow_editor.connector_tool_requires_connection';
+  static const workflow_editor_tool_unavailable =
+      'workflow_editor.tool_unavailable';
+  static const workflow_editor_sample_outputs =
+      'workflow_editor.sample_outputs';
+  static const workflow_editor_samples_not_saved =
+      'workflow_editor.samples_not_saved';
+  static const workflow_editor_sample_inputs = 'workflow_editor.sample_inputs';
+  static const workflow_editor_run_read_sample =
+      'workflow_editor.run_read_sample';
+  static const workflow_editor_output_sample_json =
+      'workflow_editor.output_sample_json';
+  static const workflow_editor_infer_outputs = 'workflow_editor.infer_outputs';
+  static const workflow_editor_invalid_json_sample =
+      'workflow_editor.invalid_json_sample';
+  static const workflow_editor_invalid_sample_inputs =
+      'workflow_editor.invalid_sample_inputs';
+  static const workflow_editor_sample_failed = 'workflow_editor.sample_failed';
+  static const workflow_editor_sample_requires_tool_access =
+      'workflow_editor.sample_requires_tool_access';
+  static const workflow_editor_sample_needs_connection =
+      'workflow_editor.sample_needs_connection';
+  static const workflow_editor_sample_connection =
+      'workflow_editor.sample_connection';
+  static const workflow_editor_sample_using_connection =
+      'workflow_editor.sample_using_connection';
   static const workflow_editor_connection_hint =
       'workflow_editor.connection_hint';
   static const workflow_editor_connection_label =

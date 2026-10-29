@@ -582,6 +582,32 @@ class EndpointCodexOAuth extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointConnectorTool extends _isc.EndpointRef {
+  EndpointConnectorTool(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'connectorTool';
+
+  _ida.Future<String> sampleRead(
+    int workspaceId,
+    String toolId,
+    String revision,
+    String argumentsJson,
+    String? connectionId,
+  ) => caller.callServerEndpoint<String>(
+    'connectorTool',
+    'sampleRead',
+    {
+      'workspaceId': workspaceId,
+      'toolId': toolId,
+      'revision': revision,
+      'argumentsJson': argumentsJson,
+      'connectionId': connectionId,
+    },
+  );
+}
+
+/// {@category Endpoint}
 class EndpointConversation extends _isc.EndpointRef {
   EndpointConversation(_isc.EndpointCaller caller) : super(caller);
 
@@ -1761,6 +1787,7 @@ class Client extends _isc.ServerpodClientShared {
     account = EndpointAccount(this);
     agentCatalog = EndpointAgentCatalog(this);
     codexOAuth = EndpointCodexOAuth(this);
+    connectorTool = EndpointConnectorTool(this);
     conversation = EndpointConversation(this);
     mcpCatalog = EndpointMcpCatalog(this);
     mcpServer = EndpointMcpServer(this);
@@ -1790,6 +1817,8 @@ class Client extends _isc.ServerpodClientShared {
   late final EndpointAgentCatalog agentCatalog;
 
   late final EndpointCodexOAuth codexOAuth;
+
+  late final EndpointConnectorTool connectorTool;
 
   late final EndpointConversation conversation;
 
@@ -1834,6 +1863,7 @@ class Client extends _isc.ServerpodClientShared {
     'account': account,
     'agentCatalog': agentCatalog,
     'codexOAuth': codexOAuth,
+    'connectorTool': connectorTool,
     'conversation': conversation,
     'mcpCatalog': mcpCatalog,
     'mcpServer': mcpServer,
