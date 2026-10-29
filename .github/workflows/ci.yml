@@ -203,6 +203,7 @@ jobs:
       renovate_config_changes: ${{ steps.platforms.outputs.renovate_config_changes }}
       run_ui_goldens: ${{ steps.platforms.outputs.run_ui_goldens }}
       run_generated_checks: ${{ steps.platforms.outputs.run_generated_checks }}
+      run_dependency_preflight: ${{ steps.platforms.outputs.run_dependency_preflight }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -227,6 +228,7 @@ jobs:
           run_ci_tool_checks=false
           run_ui_goldens=false
           run_generated_checks=false
+          run_dependency_preflight=false
           force_optional_checks=false
           base_sha=''
           head_sha="$GITHUB_SHA"
@@ -293,6 +295,7 @@ jobs:
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             printf 'run_ui_goldens=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_generated_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_dependency_preflight=true\n' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -305,6 +308,7 @@ jobs:
           renovate_config_changes="$(jq -r '.renovate_config_changes' <<< "$classification")"
           run_ui_goldens="$(jq -r '.run_ui_goldens' <<< "$classification")"
           run_generated_checks="$(jq -r '.run_generated_checks' <<< "$classification")"
+          run_dependency_preflight="$(jq -r '.run_dependency_preflight' <<< "$classification")"
           platforms=()
 
           if [[ "$full_build" == true ]]; then
@@ -322,6 +326,7 @@ jobs:
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             printf 'run_ui_goldens=%s\n' "$run_ui_goldens" >> "$GITHUB_OUTPUT"
             printf 'run_generated_checks=%s\n' "$run_generated_checks" >> "$GITHUB_OUTPUT"
+            printf 'run_dependency_preflight=%s\n' "$run_dependency_preflight" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -365,6 +370,11 @@ jobs:
           printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
           printf 'run_ui_goldens=%s\n' "$run_ui_goldens" >> "$GITHUB_OUTPUT"
           printf 'run_generated_checks=%s\n' "$run_generated_checks" >> "$GITHUB_OUTPUT"
+          printf 'run_dependency_preflight=%s\n' "$run_dependency_preflight" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve dependencies before validation fan-out
+        if: ${{ steps.platforms.outputs.run_dependency_preflight == 'true' }}
+        uses: ./.github/actions/setup-workspace
 
   renovate-validation:
     name: validate Renovate configuration
