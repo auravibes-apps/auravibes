@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_image_a
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -20,7 +21,6 @@ import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 const String auraChatCatalogId = a2uiChatCatalogId;
 const String auraChatFormCatalogId = a2uiChatFormCatalogId;
@@ -956,7 +956,7 @@ Widget _button(CatalogItemContext context) {
       onPressed: href == null
           ? () {}
           : () => unawaited(
-              launchUrl(href, mode: LaunchMode.externalApplication),
+              openChatExternalLink(context.buildContext, href.toString()),
             ),
       child: label != null
           ? AuraRow(
