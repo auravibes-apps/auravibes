@@ -75,4 +75,48 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('applyPatch updates, appends, and removes components safely', () {
+    final base = A2uiSavedDefinition.fromJson({
+      'version': 1,
+      'components': [
+        {
+          'id': 'root',
+          'component': 'Column',
+          'children': ['header', 'legacy'],
+        },
+        {'id': 'header', 'component': 'Text', 'text': 'Before'},
+        {'id': 'legacy', 'component': 'Text', 'text': 'Remove me'},
+      ],
+    });
+    final patched = base.applyPatch(
+      updateComponents: [
+        {
+          'id': 'root',
+          'component': 'Column',
+          'children': ['header', 'chart'],
+        },
+        {'id': 'header', 'component': 'Text', 'text': 'After'},
+        {
+          'id': 'chart',
+          'component': 'Chart',
+          'variant': 'bar',
+          'labels': {'path': '/chartLabels'},
+          'series': {'path': '/chartSeries'},
+        },
+      ],
+      removeComponentIds: const ['legacy'],
+    );
+
+    expect(patched.components.map((component) => component['id']), [
+      'root',
+      'header',
+      'chart',
+    ]);
+    expect(patched.components[1]['text'], 'After');
+    expect(
+      () => base.applyPatch(removeComponentIds: const ['header']),
+      throwsFormatException,
+    );
+  });
 }

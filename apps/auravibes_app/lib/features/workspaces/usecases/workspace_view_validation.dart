@@ -38,7 +38,7 @@ abstract final class WorkspaceViewValidation {
     if (view.connected case final connected?) {
       final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
     }
-    final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
+    _checkDefinition(view);
   }
 }
 
@@ -51,7 +51,14 @@ void _checkConnected(WorkspaceView view) {
   }
   final _ = ReadConnectedWorkspaceViewUsecase.validate(connected);
   ProjectConnectedWorkspaceViewUsecase.validate(view.bindings);
-  final _ = A2uiSavedDefinition.fromJson(view.definition.toJson());
+  _checkDefinition(view);
+}
+
+void _checkDefinition(WorkspaceView view) {
+  final _ = A2uiSavedDefinition.fromJson(
+    view.definition.toJson(),
+    requiresUserAction: view.action != null,
+  );
 }
 
 bool _typeMatches(WorkspaceView view, String id, WorkspaceTable table) {

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_record_query.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table_constraints.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
@@ -338,7 +339,12 @@ class const _ViewEdit(
 ) {
   Future<Map<String, Object?>> save() async {
     _current();
-    final saved = await manager.save(_edited());
+    if (!_hasViewEditArguments(arguments)) {
+      throw const WorkspaceTableException();
+    }
+    final saved = await manager.save(
+      _ViewMutation(data.view, data.table, arguments).apply(),
+    );
 
     return _Snapshots.view(saved);
   }
@@ -350,25 +356,162 @@ class const _ViewEdit(
       _Arguments.conflict();
     }
   }
+}
 
-  WorkspaceView _edited() {
-    final bindings = _Arguments.map(
-      arguments,
-      'bindings',
-    ).cast<String, String>();
+class const _ViewMutation(
+  final WorkspaceView view,
+  final WorkspaceTable table,
+  final Map<String, dynamic> arguments,
+) {
+  WorkspaceView apply() => _withFilters().edited(
+    name: _name(),
+    definition: _definition(),
+    bindings: _bindings(),
+    columnTypes: _columnTypes(),
+  );
 
-    return data.view.edited(
-      name: _Arguments.string(arguments, 'name'),
-      definition: .fromJson(_Arguments.map(arguments, 'definition')),
-      bindings: bindings,
-      columnTypes: _types(bindings),
+  WorkspaceView _withFilters() => view
+      .withQuery(_resolvedViewQuery(view.query, arguments))
+      .withSummaryColumns(_summary())
+      .withAction(_action());
+
+  String _name() => arguments.containsKey('name')
+      ? _Arguments.string(arguments, 'name')
+      : view.name;
+
+  Map<String, String> _bindings() => arguments.containsKey('bindings')
+      ? _stringMap(arguments['bindings'])
+      : view.bindings;
+
+  List<String> _summary() => arguments.containsKey('summaryColumnIds')
+      ? _stringList(arguments['summaryColumnIds'])
+      : view.summaryColumnIds;
+
+  A2uiSavedAction? _action() => _resolvedViewAction(view.action, arguments);
+
+  A2uiSavedDefinition _definition() => _resolvedViewDefinition(
+    view.definition,
+    arguments,
+    requiresUserAction: _action() != null,
+  );
+
+  Map<String, String> _columnTypes() {
+    final query = _resolvedViewQuery(view.query, arguments);
+    final dependencies = <String>{
+      ..._bindings().values,
+      ..._summary(),
+      ?query.filterColumnId,
+      ?query.sortColumnId,
+    };
+
+    return {
+      for (final column in table.columns)
+        if (dependencies.contains(column.id)) column.id: column.type.name,
+    };
+  }
+}
+
+bool _hasViewEditArguments(Map<String, dynamic> arguments) => const [
+  'name',
+  'bindings',
+  'definition',
+  'updateComponents',
+  'removeComponentIds',
+  'query',
+  'summaryColumnIds',
+  'viewAction',
+].any(arguments.containsKey);
+
+WorkspaceRecordQuery _resolvedViewQuery(
+  WorkspaceRecordQuery current,
+  Map<String, dynamic> arguments,
+) {
+  final raw = arguments['query'];
+  if (raw == null) return current;
+  final merged = <String, Object?>{
+    ...current.toJson(),
+    ..._Arguments.map(arguments, 'query'),
+  };
+
+  return WorkspaceRecordQuery.fromJson(merged);
+}
+
+A2uiSavedAction? _resolvedViewAction(
+  A2uiSavedAction? current,
+  Map<String, dynamic> arguments,
+) {
+  if (!arguments.containsKey('viewAction')) return current;
+  if (arguments['viewAction'] == null) return null;
+
+  return A2uiSavedAction.fromJson(_Arguments.map(arguments, 'viewAction'));
+}
+
+A2uiSavedDefinition _resolvedViewDefinition(
+  A2uiSavedDefinition current,
+  Map<String, dynamic> arguments, {
+  required bool requiresUserAction,
+}) {
+  final hasDefinition = arguments.containsKey('definition');
+  final hasPatch = _hasDefinitionPatch(arguments);
+  if (hasDefinition && hasPatch) throw const WorkspaceTableException();
+  if (hasDefinition) {
+    return .fromJson(
+      _Arguments.map(arguments, 'definition'),
+      requiresUserAction: requiresUserAction,
     );
   }
+  if (hasPatch) {
+    return _patchDefinition(current, arguments, requiresUserAction);
+  }
 
-  Map<String, String> _types(Map<String, String> bindings) => {
-    for (final column in data.table.columns)
-      if (bindings.values.contains(column.id)) column.id: column.type.name,
-  };
+  return .fromJson(current.toJson(), requiresUserAction: requiresUserAction);
+}
+
+bool _hasDefinitionPatch(Map<String, dynamic> arguments) =>
+    arguments.containsKey('updateComponents') ||
+    arguments.containsKey('removeComponentIds');
+
+A2uiSavedDefinition _patchDefinition(
+  A2uiSavedDefinition current,
+  Map<String, dynamic> arguments,
+  bool requiresUserAction,
+) => current.applyPatch(
+  updateComponents: _componentMaps(arguments['updateComponents']),
+  removeComponentIds: arguments.containsKey('removeComponentIds')
+      ? _stringList(arguments['removeComponentIds'])
+      : null,
+  requiresUserAction: requiresUserAction,
+);
+
+Map<String, String> _stringMap(Object? value) {
+  if (value is! Map ||
+      value.entries.any(
+        (entry) => entry.key is! String || entry.value is! String,
+      )) {
+    throw const WorkspaceTableException();
+  }
+
+  return value.cast<String, String>();
+}
+
+List<String> _stringList(Object? value) {
+  if (value is! List || value.any((item) => item is! String)) {
+    throw const WorkspaceTableException();
+  }
+
+  return value.cast<String>();
+}
+
+List<Map<String, Object?>>? _componentMaps(Object? value) {
+  if (value == null) return null;
+  if (value is! List || value.any((item) => item is! Map)) {
+    throw const WorkspaceTableException();
+  }
+
+  return [
+    for (final item in value.cast<Map<Object?, Object?>>())
+      Map<String, Object?>.from(item),
+  ];
 }
 
 class const _ItemCreation(
@@ -578,21 +721,37 @@ class const _ViewCreation(
     return _Snapshots.view(await _create());
   }
 
-  Future<WorkspaceView> _create() => manager.create(
-    name: _Arguments.string(command.input.arguments, 'name'),
+  Future<WorkspaceView> _create() {
+    final arguments = command.input.arguments;
+    final name = _Arguments.string(arguments, 'name');
+    if (!_hasCustomCreationArgs(arguments)) {
+      return manager.create(
+        name: name,
+        table: table,
+        columnIds: _ids(),
+        parentId: table.parentId,
+      );
+    }
+
+    return manager.save(_ViewMutation(_draft(name), table, arguments).apply());
+  }
+
+  WorkspaceView _draft(String name) => WorkspaceView.create(
+    name: name,
     table: table,
     columnIds: _ids(),
     parentId: table.parentId,
   );
 
-  List<String> _ids() {
-    final ids = command.input.arguments['columnIds'];
-    if (ids is! List<Object?> || ids.any((id) => id is! String)) {
-      throw const WorkspaceTableException();
-    }
+  bool _hasCustomCreationArgs(Map<String, dynamic> arguments) => const [
+    'bindings',
+    'definition',
+    'query',
+    'summaryColumnIds',
+    'viewAction',
+  ].any(arguments.containsKey);
 
-    return ids.cast<String>();
-  }
+  List<String> _ids() => _stringList(command.input.arguments['columnIds']);
 }
 
 class const _TableRead(

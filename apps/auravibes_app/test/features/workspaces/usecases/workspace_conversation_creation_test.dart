@@ -377,7 +377,7 @@ void main() {
     final invalid = {
       'id': view['id'],
       'revision': 2,
-      'schemaRevision': 2,
+      'schemaRevision': renamed['schemaRevision'],
       'name': 'Unsafe',
       'bindings': {'title': label},
       'definition': {
@@ -400,6 +400,55 @@ void main() {
         view['id'] as String? ?? (throw StateError('Expected string')),
       )).view.revision,
       2,
+    );
+
+    final patchedViewArguments = {
+      'id': view['id'],
+      'revision': 2,
+      'schemaRevision': renamed['schemaRevision'],
+      'bindings': {'title': label, 'total': amount},
+      'summaryColumnIds': [amount],
+      'query': {
+        'search': 'One',
+        'sortColumnId': label,
+        'descending': true,
+        'limit': 10,
+      },
+      'viewAction': {
+        'version': 1,
+        'type': 'updateSelectedRecord',
+        'inputs': {label: '/title'},
+      },
+      'updateComponents': [
+        {
+          'id': 'root',
+          'component': 'Column',
+          'children': ['title_input'],
+        },
+        {
+          'id': 'title_input',
+          'component': 'TextField',
+          'label': {'path': '/fieldLabels/title'},
+          'value': {'path': '/title'},
+        },
+      ],
+    };
+    final patched = await fixture.run(
+      'patch-view',
+      patchedViewArguments,
+      toolName: workspaceSaveViewToolName,
+    );
+    expect(patched['revision'], 3);
+    final patchedData = await fixture.views.open(
+      view['id'] as String? ?? (throw StateError('Expected string')),
+    );
+    expect(patchedData.view.name, 'Updated overview');
+    expect(patchedData.view.summaryColumnIds, [amount]);
+    expect(patchedData.view.query.search, 'One');
+    expect(patchedData.view.query.limit, 10);
+    expect(
+      patchedData.view.action?.type,
+      A2uiSavedActionType.updateSelectedRecord,
     );
   });
 

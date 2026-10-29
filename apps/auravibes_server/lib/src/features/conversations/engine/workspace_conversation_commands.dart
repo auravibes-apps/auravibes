@@ -709,7 +709,23 @@ class _WorkspaceConversationViewCommands {
   ) {
     _current(table, arguments);
     final ids = _viewColumnIds(arguments);
-    final bindings = _viewBindings(ids);
+    final bindings = arguments.containsKey('bindings')
+        ? _map(arguments, 'bindings')
+        : _viewBindings(ids);
+    final action = arguments['viewAction'] == null
+        ? null
+        : _map(arguments, 'viewAction');
+    final query = arguments['query'] == null
+        ? null
+        : {..._defaultViewQuery, ..._map(arguments, 'query')};
+    final summary = arguments.containsKey('summaryColumnIds')
+        ? _stringList(arguments['summaryColumnIds'])
+        : null;
+    final definition = _resolvedServerDefinition(
+      _defaultViewDefinition,
+      arguments,
+      requiresUserAction: action != null,
+    );
 
     return {
       'id': _stableId(operationId, 'view'),
@@ -718,18 +734,16 @@ class _WorkspaceConversationViewCommands {
       'parentId': _data(table)['parentId'],
       'revision': 0,
       'bindings': bindings,
-      'columnTypes': _viewColumnTypes(table, bindings),
-      'definition': {
-        'version': 1,
-        'components': [
-          {
-            'id': 'root',
-            'component': 'Table',
-            'columns': {'path': '/columns'},
-            'rows': {'path': '/rows'},
-          },
-        ],
-      },
+      'columnTypes': _viewColumnTypes(
+        table,
+        bindings,
+        summaryColumnIds: summary ?? const [],
+        query: query,
+      ),
+      'definition': definition,
+      'query': ?query,
+      'summaryColumnIds': ?summary,
+      'action': ?action,
     };
   }
 }
@@ -1410,13 +1424,147 @@ Map<String, Object?> _updatedView(
   WorkspaceResource table,
   WorkspaceView current,
   Map<String, dynamic> arguments,
-) => {
-  ...jsonDecode(current.data) as Map<String, dynamic>,
-  'name': _string(arguments, 'name'),
-  'bindings': _map(arguments, 'bindings'),
-  'columnTypes': _viewColumnTypes(table, _map(arguments, 'bindings')),
-  'definition': _map(arguments, 'definition'),
+) {
+  if (!const [
+    'name',
+    'bindings',
+    'definition',
+    'updateComponents',
+    'removeComponentIds',
+    'query',
+    'summaryColumnIds',
+    'viewAction',
+  ].any(arguments.containsKey)) {
+    throw const FormatException('Invalid workspace request.');
+  }
+  final previous = jsonDecode(current.data) as Map<String, dynamic>;
+  final name = arguments.containsKey('name')
+      ? _string(arguments, 'name')
+      : previous['name'] as String;
+  final bindings = arguments.containsKey('bindings')
+      ? _map(arguments, 'bindings')
+      : Map<String, dynamic>.from(previous['bindings'] as Map);
+  final previousQuery = Map<String, Object?>.from(
+    previous['query'] as Map? ?? _defaultViewQuery,
+  );
+  final query = arguments.containsKey('query')
+      ? (arguments['query'] == null
+            ? null
+            : {...previousQuery, ..._map(arguments, 'query')})
+      : (previous['query'] == null ? null : previousQuery);
+  final summary = arguments.containsKey('summaryColumnIds')
+      ? _stringList(arguments['summaryColumnIds'])
+      : (previous['summaryColumnIds'] as List?)?.cast<String>();
+  final action = arguments.containsKey('viewAction')
+      ? (arguments['viewAction'] == null ? null : _map(arguments, 'viewAction'))
+      : (previous['action'] as Map?)?.cast<String, Object?>();
+  final definition = _resolvedServerDefinition(
+    Map<String, Object?>.from(previous['definition'] as Map),
+    arguments,
+    requiresUserAction: action != null,
+  );
+  final updated = <String, Object?>{
+    ...previous,
+    'name': name,
+    'bindings': bindings,
+    'columnTypes': _viewColumnTypes(
+      table,
+      bindings,
+      summaryColumnIds: summary ?? const [],
+      query: query,
+    ),
+    'definition': definition,
+  };
+  if (query != null) updated['query'] = query;
+  if (summary != null) updated['summaryColumnIds'] = summary;
+  if (action != null) {
+    updated['action'] = action;
+  } else {
+    updated.remove('action');
+  }
+
+  return updated;
+}
+
+const _defaultViewDefinition = <String, Object?>{
+  'version': 1,
+  'components': [
+    {
+      'id': 'root',
+      'component': 'Table',
+      'columns': {'path': '/columns'},
+      'rows': {'path': '/rows'},
+    },
+  ],
 };
+
+const _defaultViewQuery = <String, Object?>{
+  'search': '',
+  'filterColumnId': null,
+  'filterValue': null,
+  'filterOperator': 'equals',
+  'sortColumnId': null,
+  'descending': false,
+  'offset': 0,
+  'limit': 50,
+};
+
+Map<String, Object?> _resolvedServerDefinition(
+  Map<String, Object?> current,
+  Map<String, dynamic> arguments, {
+  required bool requiresUserAction,
+}) {
+  final hasDefinition = arguments.containsKey('definition');
+  final hasPatch =
+      arguments.containsKey('updateComponents') ||
+      arguments.containsKey('removeComponentIds');
+  if (hasDefinition && hasPatch) {
+    throw const FormatException('Invalid workspace request.');
+  }
+  if (hasDefinition) {
+    return A2uiSavedDefinition.fromJson(
+      _map(arguments, 'definition'),
+      requiresUserAction: requiresUserAction,
+    ).toJson();
+  }
+  if (hasPatch) {
+    final existing = A2uiSavedDefinition.fromJson(
+      current,
+      requiresUserAction: true,
+    );
+    return existing
+        .applyPatch(
+          updateComponents: _serverComponentList(arguments['updateComponents']),
+          removeComponentIds: arguments.containsKey('removeComponentIds')
+              ? _stringList(arguments['removeComponentIds'])
+              : null,
+          requiresUserAction: requiresUserAction,
+        )
+        .toJson();
+  }
+
+  return current;
+}
+
+List<String> _stringList(Object? value) {
+  if (value is! List || value.any((item) => item is! String)) {
+    throw const FormatException('Invalid workspace request.');
+  }
+
+  return value.cast<String>();
+}
+
+List<Map<String, Object?>>? _serverComponentList(Object? value) {
+  if (value == null) return null;
+  if (value is! List || value.any((item) => item is! Map)) {
+    throw const FormatException('Invalid workspace request.');
+  }
+
+  return [
+    for (final item in value.cast<Map<Object?, Object?>>())
+      Map<String, Object?>.from(item),
+  ];
+}
 
 bool _createsItem(Object? action) =>
     action == 'createFolder' || action == 'createTable';
@@ -1555,14 +1703,22 @@ Map<String, dynamic> _tableData(WorkspaceResource table) {
 
 Map<String, Object?> _viewColumnTypes(
   WorkspaceResource table,
-  Map<String, dynamic> bindings,
-) {
+  Map<String, dynamic> bindings, {
+  List<String> summaryColumnIds = const [],
+  Map<String, Object?>? query,
+}) {
   final columns = (_data(table)['columns'] as List<Object?>)
       .cast<Map<String, dynamic>>();
+  final dependencies = <Object?>{
+    ...bindings.values,
+    ...summaryColumnIds,
+    ?query?['filterColumnId'],
+    ?query?['sortColumnId'],
+  };
 
   return {
     for (final column in columns)
-      if (bindings.values.contains(column['id']))
+      if (dependencies.contains(column['id']))
         column['id'] as String: column['type'],
   };
 }
