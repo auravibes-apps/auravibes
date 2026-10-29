@@ -1354,19 +1354,7 @@
     "agents": {
       "title": "Agents",
       "subtitle": "Manage reusable prompts and skill sets"
-    },
-    "workflows": {
-      "title": "Workflows",
-      "subtitle": "Compose reusable workflows with tools, agents and connector tools"
     }
-  },
-  "workflows_screen": {
-    "title": "Workflows",
-    "create": "New workflow",
-    "empty_title": "No workflows yet",
-    "empty_subtitle": "Compose tools, agents and connector tools into reusable workflows",
-    "load_error": "Could not load workflows",
-    "summary": "{steps} steps · {inputs} inputs · {outputs} outputs"
   },
   "workflow_editor": {
     "title": "Workflow editor",
@@ -1380,7 +1368,6 @@
     "not_found": "Workflow not found",
     "load_error": "Could not load workflow",
     "retry": "Try again",
-    "back_to_list": "Back to workflows",
     "add_node": "Add step",
     "add_input": "Add input",
     "add_output": "Add output",
@@ -1394,13 +1381,29 @@
     "available_tools": "Workspace tools",
     "available_agents": "Workspace agents",
     "available_connector_tools": "Connector tools",
+    "picker_search": "Search tools, connectors, and workflows...",
+    "picker_no_results": "No matching items",
     "available_workflows": "Saved workflows",
+    "no_connector_tools": "No Connector tools available",
+    "read_operation": "Read operation",
+    "write_operation": "Write operation",
+    "referenced_workflow_unavailable": "This workflow is unavailable. Restore it from Trash or choose another workflow.",
     "empty_group": "No available items",
     "node_label": "Step name",
     "input": "Input",
     "output": "Output",
     "result": "Result",
     "connector_tool_requires_connection": "Requires a connection",
+    "connector_tool_access_checking": "Checking workspace access",
+    "connector_tool_access_unavailable": "Workspace access unavailable",
+    "connector_tool_access_disabled": "Not enabled in workspace Tools",
+    "connector_tool_access_denied": "Blocked by workspace access",
+    "connector_tool_access_enabled": "Workspace access enabled",
+    "connector_tool_no_connection_required": "No connection required",
+    "connector_tool_connection_checking": "Checking connections",
+    "connector_tool_connection_unavailable": "Connection status unavailable",
+    "connector_tool_connection_missing": "No connection available",
+    "connector_tool_connection_available": "Connection available",
     "tool_unavailable": "Connector tool is unavailable",
     "sample_outputs": "Sample outputs",
     "samples_not_saved": "Sample data is used only to infer output fields and is never saved.",
@@ -1436,6 +1439,7 @@
     "unsaved_message": "You have unsaved changes. Discard them and leave?",
     "discard": "Discard",
     "continue": "Continue",
+    "read_only": "Read only: only workspace owners and admins can edit this workflow.",
     "execution_notice": "This editor saves workflow definitions. Running workflows is not available yet."
   },
   "sidebar": {
@@ -2284,6 +2288,7 @@
     "duplicate_records": "Include records",
     "duplicate_relationships": "References still use existing tables and records. Related items are not copied.",
     "duplicate_view_binding": "Keeps the same table and saved settings. Each person still needs access.",
+    "duplicate_workflow_hint": "The copy keeps Connector tools and linked workflows.",
     "duplicate_created": "Copy created",
     "duplicate_hint": "Copies columns and settings. Include records also copies the current records.",
     "duplicate_unsupported": "This copy cannot be completed with the current schema, references or record count. Resolve unavailable references or copy only the schema."

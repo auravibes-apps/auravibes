@@ -178,6 +178,96 @@ void main() {
           updatedAt: now,
         ),
       );
+      await patch([
+        WorkspacePatchOperation(
+          operation: .create,
+          resourceKind: .folder,
+          resourceId: 'workflow-folder',
+          data: jsonEncode({'name': 'Sales'}),
+          fieldMask: [],
+        ),
+      ]);
+      await patch([
+        WorkspacePatchOperation(
+          operation: .create,
+          resourceKind: .workflow,
+          resourceId: 'workflow-one',
+          data: jsonEncode({
+            'name': 'Summarize',
+            'description': 'Summarize sales records',
+            'parentId': 'workflow-folder',
+            'definition': {
+              'version': 1,
+              'inputs': const <Object?>[],
+              'outputs': const <Object?>[],
+              'nodes': const <Object?>[],
+              'connections': const <Object?>[],
+            },
+          }),
+          fieldMask: [],
+        ),
+      ]);
+      await select(null);
+      final workflowSearch = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'workflow-directory-search',
+        {'action': 'readDirectory', 'nameRegex': '^Summarize\$'},
+      ) as Map;
+      final workflowMatches = workflowSearch['entries'] as List;
+      expect(workflowMatches, hasLength(1));
+      expect(workflowMatches.single, containsPair('path', 'Sales/Summarize'));
+      expect(workflowMatches.single, containsPair('kind', 'workflow'));
+      final workflowSelection = WorkspaceContextSelection(
+        workspaceId: '${workspace.id}',
+        conversationId: conversation.stableId,
+        itemId: 'workflow-one',
+        kind: 'workflow',
+      );
+      await select(workflowSelection);
+      final workflowRead = await const WorkspaceConversationCommands().call(
+        session,
+        turn,
+        'read-workflow-item',
+        {'action': 'read', 'id': 'workflow-one'},
+      ) as Map;
+      expect(workflowRead['kind'], 'workflow');
+      expect(workflowRead['name'], 'Summarize');
+      expect(workflowRead['parentId'], 'workflow-folder');
+      expect(workflowRead['definition'], isA<Map>());
+      final workflowResource = await WorkspaceResource.db.findFirstRow(
+        session,
+        where: (row) =>
+            row.workspaceId.equals(workspace.id!) &
+            row.resourceKind.equals(.workflow) &
+            row.resourceId.equals('workflow-one'),
+      );
+      if (workflowResource == null) throw StateError('Missing workflow');
+      await WorkspaceResource.db.updateRow(
+        session,
+        workflowResource.copyWith(
+          deletedAt: DateTime.now().toUtc(),
+          revision: workflowResource.revision + 1,
+        ),
+      );
+      await expectLater(
+        const WorkspaceConversationCommands().call(
+          session,
+          turn,
+          'read-deleted-workflow',
+          {'action': 'read', 'id': 'workflow-one'},
+        ),
+        throwsA(isA<CloudWorkspaceException>()),
+      );
+      await select(null);
+      final deletedWorkflowSearch =
+          await const WorkspaceConversationCommands().call(
+            session,
+            turn,
+            'workflow-directory-search-deleted',
+            {'action': 'readDirectory', 'nameRegex': '^Summarize\$'},
+          ) as Map;
+      expect(deletedWorkflowSearch['entries'], isEmpty);
       final defaultRoot = await const WorkspaceConversationCommands().call(
         session,
         turn,

@@ -57,6 +57,7 @@ class const LocalWorkspaceTrashStore(
       WorkspaceTrashKind.record,
       WorkspaceTrashKind.view,
       WorkspaceTrashKind.file,
+      WorkspaceTrashKind.workflow,
     ])
       ...await _nodes(kind),
   ];
@@ -102,6 +103,7 @@ class const LocalWorkspaceTrashStore(
       database.workspaceTables,
       database.workspaceTableRecords,
       database.workspaceFiles,
+      database.workspaceWorkflows,
     },
     updateKind: .update,
   );
@@ -113,6 +115,7 @@ String _table(WorkspaceTrashKind kind) => switch (kind) {
   .record => 'workspace_table_records',
   .view => 'workspace_views',
   .file => 'workspace_files',
+  .workflow => 'workspace_workflows',
 };
 LocalTrashNode _node(WorkspaceTrashKind kind, QueryRow row) =>
     .fromJson({..._identity(kind, row), ..._content(row)});
@@ -137,7 +140,8 @@ String _nodeColumns(WorkspaceTrashKind kind) => switch (kind) {
         r'''json_extract(data, '$.tableId') AS table_id''',
   .file ||
   .folder ||
-  .table => 'id, revision, deleted_at, name, parent_id, NULL AS table_id',
+  .table ||
+  .workflow => 'id, revision, deleted_at, name, parent_id, NULL AS table_id',
 };
 String _tombstoneSql(WorkspaceTrashKind kind) {
   final parent = kind == .record ? '' : ', parent_id = ?';

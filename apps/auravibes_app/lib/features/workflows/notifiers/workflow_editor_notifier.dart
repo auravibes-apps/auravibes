@@ -29,7 +29,7 @@ class WorkflowEditorNotifier extends _$WorkflowEditorNotifier {
   WorkflowEditorCommands commands() =>
       WorkflowEditorCommandsFactory.create(_changeState);
 
-  void markSaved(WorkflowDefinition workflow) => _changeState(
+  void markSaved(WorkspaceWorkflow workflow) => _changeState(
     (current) => WorkflowEditorStateReducer.markSaved(current, workflow),
   );
 

@@ -269,6 +269,12 @@ class const WorkspaceConversationCommands({
         selection.itemId,
       );
     }
+    if (selection.kind == 'workflow') {
+      if (action != 'read' || command.arguments['id'] != selection.itemId) {
+        _denied();
+      }
+      return _readWorkflow(command);
+    }
     if (selection.kind == 'directory' &&
         (action == 'read' || action == 'readDirectory')) {
       if (action == 'readDirectory') return _readDirectory(command);
@@ -287,6 +293,38 @@ class const WorkspaceConversationCommands({
 
     return _executeTable(command);
   }
+
+  Future<Map<String, Object?>> _readWorkflow(
+    _CommandExecution command,
+  ) => command.session.db.transaction((transaction) async {
+    await command.authority.guard(transaction);
+    await _authorizedWorkspace(command, transaction);
+    final member = await _transactionMember(command, transaction);
+    final resource = await WorkspaceResource.db.findFirstRow(
+      command.session,
+      where: (row) =>
+          row.workspaceId.equals(member.workspaceId) &
+          row.resourceKind.equals(.workflow) &
+          row.resourceId.equals(command.selection.itemId) &
+          row.deletedAt.equals(null),
+      transaction: transaction,
+    );
+    if (resource == null) _denied();
+    final visible = await WorkspaceTableAccess(transaction: transaction)
+        .visible(command.session, member, resource);
+    if (visible == null) _denied();
+    final data = _data(visible);
+
+    return {
+      'kind': 'workflow',
+      'id': visible.resourceId,
+      'name': data['name'],
+      'description': data['description'],
+      'parentId': data['parentId'],
+      'revision': visible.revision,
+      'definition': data['definition'],
+    };
+  });
 
   Future<Map<String, Object?>> _readDirectory(
     _CommandExecution command,
@@ -333,7 +371,7 @@ class const WorkspaceConversationCommands({
       command.session,
       where: (row) =>
           row.workspaceId.equals(member.workspaceId) &
-          row.resourceKind.inSet({.folder, .table, .file}) &
+          row.resourceKind.inSet({.folder, .table, .file, .workflow}) &
           row.deletedAt.equals(null),
       transaction: transaction,
     );

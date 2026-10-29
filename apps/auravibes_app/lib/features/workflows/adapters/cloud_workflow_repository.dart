@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/workflows/adapters/workflow_repository.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -12,39 +13,56 @@ class CloudWorkflowRepository implements WorkflowRepository {
   final CloudWorkspaceResourceStore store;
 
   @override
-  Stream<List<WorkflowDefinition>> watchWorkflows(String _) => store
+  Stream<List<WorkspaceWorkflow>> watchWorkflows(String _) => store
       .watch(.workflow)
       .map((resources) => _activeWorkflows(resources, workspaceId));
 
   @override
-  Future<List<WorkflowDefinition>> getWorkflows(String _) async =>
+  Stream<List<WorkspaceWorkflow>> watchDirectory(String _, String? parentId) =>
+      store
+          .watch(.workflow)
+          .map(
+            (resources) => [
+              for (final workflow in _activeWorkflows(resources, workspaceId))
+                if (workflow.parentId == parentId) workflow,
+            ],
+          );
+
+  @override
+  Future<List<WorkspaceWorkflow>> getWorkflows(String _) async =>
       _activeWorkflows(await store.watch(.workflow).first, workspaceId);
 
   @override
-  Future<WorkflowDefinition?> getWorkflow(String id) async => _findResource(
+  Future<WorkspaceWorkflow?> getWorkflow(String id) async => _findResource(
     await store.watch(.workflow).first,
     id,
   )?._workflow(workspaceId);
 
   @override
-  Future<void> saveWorkflow(WorkflowDefinition workflow) =>
+  Future<WorkspaceWorkflow> saveWorkflow(WorkspaceWorkflow workflow) =>
       CloudWorkflowWriter.save(store, workflow);
 }
 
 abstract final class CloudWorkflowWriter {
-  static Future<void> save(
+  static Future<WorkspaceWorkflow> save(
     CloudWorkspaceResourceStore store,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) async {
+    if (!workflow.canManage) throw const WorkspaceTableException(denied: true);
     final resources = await store.watch(.workflow).first;
-    final current = _findResource(resources, workflow.id);
+    final current = _findResource(resources, workflow.id, includeDeleted: true);
+    if (current?.deletedAt != null) {
+      throw const WorkspaceTableException(denied: true);
+    }
     final data = workflow.toResourceData();
     await _write(store, workflow, current, data);
+
+    return workflow.copyWith(revision: (current?.revision ?? 0) + 1);
   }
 
   static Future<void> _write(
     CloudWorkspaceResourceStore store,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkspaceResource? current,
     Map<String, Object?> data,
   ) async {
@@ -56,13 +74,13 @@ abstract final class CloudWorkflowWriter {
     await store.update(
       kind: .workflow,
       id: workflow.id,
-      revision: current.revision,
+      revision: workflow.revision,
       data: data,
     );
   }
 }
 
-List<WorkflowDefinition> _activeWorkflows(
+List<WorkspaceWorkflow> _activeWorkflows(
   List<WorkspaceResource> resources,
   String workspaceId,
 ) => [
@@ -72,20 +90,29 @@ List<WorkflowDefinition> _activeWorkflows(
 
 WorkspaceResource? _findResource(
   List<WorkspaceResource> resources,
-  String id,
-) => resources
+  String id, {
+  bool includeDeleted = false,
+}) => resources
     .where(
-      (resource) => resource.resourceId == id && resource.deletedAt == null,
+      (resource) =>
+          resource.resourceId == id &&
+          (includeDeleted || resource.deletedAt == null),
     )
     .firstOrNull;
 
 extension on WorkspaceResource {
-  WorkflowDefinition _workflow(String workspaceId) =>
-      WorkflowDefinition.fromResource((
-        id: resourceId,
-        workspaceId: workspaceId,
-        data: CloudResourceMapper.decode(this),
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      ));
+  WorkspaceWorkflow _workflow(String workspaceId) {
+    final data = CloudResourceMapper.decode(this);
+
+    return WorkspaceWorkflow.fromResource((
+      id: resourceId,
+      workspaceId: workspaceId,
+      revision: revision,
+      deletedAt: deletedAt,
+      canManage: data['canManageWorkflow'] == true,
+      data: data,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    ));
+  }
 }

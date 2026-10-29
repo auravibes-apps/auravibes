@@ -4,13 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('canvas bounds include distant nodes and their ports', () {
-    final workflow = WorkflowDefinition(
+    final workflow = WorkspaceWorkflow.create(
       id: 'workflow-1',
       workspaceId: 'workspace-1',
       name: 'Workflow',
       description: '',
-      inputs: const [],
-      outputs: const [],
       nodes: [
         const WorkflowNode(
           id: 'node-1',
@@ -25,7 +23,6 @@ void main() {
           ],
         ),
       ],
-      connections: const [],
       createdAt: .utc(2026),
       updatedAt: .utc(2026),
     );

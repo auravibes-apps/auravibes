@@ -1530,6 +1530,13 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           );
         }
         if (operation.resourceKind == WorkspaceResourceKind.workflow) {
+          await _validateFolderParent(
+            session,
+            workspaceId,
+            operation.resourceId,
+            decoded['parentId'] as String?,
+            transaction,
+          );
           await _validateWorkflowDependencyAcyclicity(
             session,
             workspaceId: workspaceId,
@@ -1652,7 +1659,9 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           transaction: transaction,
         );
         if (resource == null || resource.deletedAt != null) {
-          throw const FormatException();
+          visitState[id] = 2;
+
+          return;
         }
         data = _decodeResource(resource);
       }

@@ -17,15 +17,12 @@ void main() {
     );
     final repository = WorkflowsRepository(database);
     final now = DateTime.utc(2026, 10, 12);
-    final workflow = WorkflowDefinition(
+    final workflow = WorkspaceWorkflow.create(
       id: 'workflow-1',
       workspaceId: workspace.id,
       name: 'Summarize',
       description: 'Compose a response',
       inputs: const [WorkflowPort(id: 'query', name: 'Query', type: .string)],
-      outputs: const [],
-      nodes: const [],
-      connections: const [],
       createdAt: now,
       updatedAt: now,
     );

@@ -23,7 +23,6 @@ void main() {
         'skills',
         'tools',
         'service-connections',
-        'more/workflows',
         'cloud-accounts',
         'items',
         'manage-workspaces',
@@ -55,7 +54,6 @@ void main() {
           WorkspaceDestination.connections,
       'models': WorkspaceDestination.connections,
       'tools': WorkspaceDestination.connections,
-      'more/workflows': WorkspaceDestination.workflows,
       'settings': WorkspaceDestination.appSettings,
       'cloud-accounts/login': WorkspaceDestination.cloudAccounts,
       'items': WorkspaceDestination.items,
@@ -67,6 +65,10 @@ void main() {
         reason: entry.key,
       );
     }
+    expect(
+      WorkspaceNavigation.classify(.parse('/workspaces/A/more/workflows')),
+      isNull,
+    );
     expect(
       WorkspaceNavigation.classify(.parse('/workspaces/A/workspace-settings')),
       isNull,

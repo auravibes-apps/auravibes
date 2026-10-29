@@ -2101,7 +2101,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'navigation.agents_skills',
       'navigation.connections',
       'settings_screen.title',
-      'workflows_screen.title',
     },
   ),
 

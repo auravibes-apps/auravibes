@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
+import 'package:auravibes_app/features/workflows/adapters/workflow_repository.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -25,6 +27,8 @@ class const WorkspaceConversationCommandUsecase({
   required final OrganizeWorkspaceTablesUsecase tables,
   final OrganizeWorkspaceFoldersUsecase? folders,
   final ManageWorkspaceViewsUsecase? views,
+  final WorkflowRepository? workflows,
+  final String? workspaceId,
   final OrganizeWorkspaceFilesUsecase? files,
   final ManageWorkspaceAssetsUsecase? assets,
 }) {
@@ -62,6 +66,7 @@ class const _ItemCommand(
     'folder' => _FolderCommand(owner, input).call(),
     'file' => _FileCommand(owner, input).call(),
     'view' => _ViewCommand(owner, input).call(),
+    'workflow' => _WorkflowCommand(owner, input).call(),
     _ => _TableCommand(owner, input).call(),
   };
 
@@ -108,6 +113,12 @@ Future<List<Map<String, Object?>>> _directoryItems(
   WorkspaceConversationCommandUsecase owner,
   String? parentId,
 ) async {
+  final workflowRepository = owner.workflows;
+  final workspaceId = owner.workspaceId;
+  final workflows = workflowRepository == null || workspaceId == null
+      ? const <WorkspaceWorkflow>[]
+      : await workflowRepository.getWorkflows(workspaceId);
+
   return [
     ..._folderEntries(
       await owner.folders?.list(parentId: parentId) ?? const [],
@@ -115,6 +126,7 @@ Future<List<Map<String, Object?>>> _directoryItems(
     ..._tableEntries(await owner.tables.list(parentId: parentId)),
     ..._viewEntries(await owner.views?.list(parentId: parentId) ?? const []),
     ..._fileEntries(await owner.files?.list(parentId: parentId) ?? const []),
+    ..._workflowEntries(workflows, parentId),
   ];
 }
 
@@ -133,6 +145,15 @@ Iterable<Map<String, Object?>> _viewEntries(List<WorkspaceView> views) => views
 
 Iterable<Map<String, Object?>> _fileEntries(List<WorkspaceFile> files) => files
     .map((item) => _directoryEntry('file', item.id, item.name, item.revision));
+
+Iterable<Map<String, Object?>> _workflowEntries(
+  List<WorkspaceWorkflow> workflows,
+  String? parentId,
+) => workflows
+    .where((item) => item.parentId == parentId && item.deletedAt == null)
+    .map(
+      (item) => _directoryEntry('workflow', item.id, item.name, item.revision),
+    );
 
 Map<String, Object?> _directoryEntry(
   String kind,
@@ -328,6 +349,36 @@ class const _ViewCommand(
     }
 
     return await _ViewEdit(manager, data, arguments).save();
+  }
+}
+
+class const _WorkflowCommand(
+  final WorkspaceConversationCommandUsecase owner,
+  final _CommandInput input,
+) {
+  Future<Map<String, Object?>> call() async {
+    _Arguments.action(input.arguments, 'read');
+    final id = input.selection.itemId;
+    if (input.arguments['id'] != id) _Arguments.denied();
+    final repository = owner.workflows;
+    final workspaceId = owner.workspaceId;
+    if (repository == null || workspaceId == null) _Arguments.denied();
+    final workflow = await repository.getWorkflow(id);
+    if (workflow == null ||
+        workflow.deletedAt != null ||
+        workflow.workspaceId != workspaceId) {
+      _Arguments.denied();
+    }
+
+    return {
+      'kind': 'workflow',
+      'id': workflow.id,
+      'name': workflow.name,
+      'description': workflow.description,
+      'parentId': workflow.parentId,
+      'revision': workflow.revision,
+      'definition': workflow.definition.toJson(),
+    };
   }
 }
 

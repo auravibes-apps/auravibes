@@ -36,8 +36,13 @@ Skill. Any Skill can reference a Connector tool by ID.
 
 ## Workflow
 
-A reusable sequence of connected steps that transforms supplied inputs into
-outputs.
+A reusable item in a Workspace Directory. It has its own name, description and
+folder location, and contains a Workflow definition.
+
+## Workflow definition
+
+The graph of inputs, outputs, nodes and connections that describes the steps in
+a Workflow. A definition does not have a separate Directory identity.
 
 ## Connector tool node
 

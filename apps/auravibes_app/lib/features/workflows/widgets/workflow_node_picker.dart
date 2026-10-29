@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
@@ -10,10 +11,14 @@ import 'package:auravibes_app/features/workflows/models/workflow_definition.dart
 import 'package:auravibes_app/features/workflows/models/workflow_graph_validation.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_node_draft.dart';
 import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:uuid/v7.dart';
@@ -39,7 +44,7 @@ typedef _WorkflowNodePickerItems = ({
   List<WorkspaceToolEntity> tools,
   List<AgentEntity> agents,
   List<ConnectorToolCatalogItem> connectorTools,
-  List<WorkflowDefinition> workflows,
+  List<WorkspaceWorkflow> workflows,
   bool isLoading,
 });
 
@@ -47,7 +52,7 @@ typedef _WorkflowNodePickerSources = ({
   AsyncValue<List<WorkspaceToolEntity>> tools,
   AsyncValue<List<AgentEntity>> agents,
   List<ConnectorToolCatalogItem> connectorTools,
-  AsyncValue<List<WorkflowDefinition>> workflows,
+  AsyncValue<List<WorkspaceWorkflow>> workflows,
   String? currentWorkflowId,
 });
 
@@ -73,7 +78,10 @@ class const _WorkflowNodePicker({
       currentWorkflowId: currentWorkflowId,
     ));
 
-    return _WorkflowNodePickerContent(catalog: catalog);
+    return _WorkflowNodePickerContent(
+      workspaceId: workspaceId,
+      catalog: catalog,
+    );
   }
 }
 
@@ -141,8 +149,8 @@ abstract final class WorkflowNodePickerCatalog {
     return candidates.where(include).toList();
   }
 
-  static List<WorkflowDefinition> _eligibleWorkflows(
-    List<WorkflowDefinition> workflows,
+  static List<WorkspaceWorkflow> _eligibleWorkflows(
+    List<WorkspaceWorkflow> workflows,
     String? currentWorkflowId,
   ) {
     if (currentWorkflowId == null) return workflows;
@@ -157,24 +165,84 @@ abstract final class WorkflowNodePickerCatalog {
 }
 
 class const _WorkflowNodePickerContent({
+  required final String workspaceId,
   required final _WorkflowNodePickerItems catalog,
-}) extends StatelessWidget {
+}) extends HookWidget {
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SizedBox(
-      height:
-          MediaQuery.sizeOf(context).height *
-          WorkflowNodePicker._sheetHeightFactor,
-      child: Column(
-        crossAxisAlignment: .stretch,
-        children: [
-          const _WorkflowPickerHeader(),
-          _WorkflowPickerBody(catalog: catalog),
-        ],
+  Widget build(BuildContext context) {
+    final query = useState('');
+    final filtered = _filterPickerItems(catalog, query.value);
+
+    return SafeArea(
+      child: SizedBox(
+        height:
+            MediaQuery.sizeOf(context).height *
+            WorkflowNodePicker._sheetHeightFactor,
+        child: Column(
+          crossAxisAlignment: .stretch,
+          children: [
+            const _WorkflowPickerHeader(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                onChanged: (value) => query.value = value,
+                decoration: InputDecoration(
+                  hintText: LocaleKeys.workflow_editor_picker_search.tr(),
+                  prefixIcon: const Icon(Icons.search),
+                ),
+              ),
+            ),
+            _WorkflowPickerBody(
+              workspaceId: workspaceId,
+              catalog: filtered,
+              noResults:
+                  query.value.trim().isNotEmpty && _pickerIsEmpty(filtered),
+            ),
+          ],
+        ),
       ),
-    ),
+    );
+  }
+}
+
+_WorkflowNodePickerItems _filterPickerItems(
+  _WorkflowNodePickerItems catalog,
+  String query,
+) {
+  final normalized = query.trim().toLowerCase();
+  if (normalized.isEmpty) return catalog;
+  bool matches(Iterable<String?> values) =>
+      values.any((value) => value?.toLowerCase().contains(normalized) ?? false);
+
+  return (
+    tools: catalog.tools
+        .where((item) => matches([item.toolId, item.description]))
+        .toList(),
+    agents: catalog.agents
+        .where((item) => matches([item.name, item.description]))
+        .toList(),
+    connectorTools: catalog.connectorTools
+        .where(
+          (item) => matches([
+            item.connectorName,
+            item.title,
+            item.description,
+            item.toolId,
+          ]),
+        )
+        .toList(),
+    workflows: catalog.workflows
+        .where((item) => matches([item.name, item.description]))
+        .toList(),
+    isLoading: catalog.isLoading,
   );
 }
+
+bool _pickerIsEmpty(_WorkflowNodePickerItems items) =>
+    items.tools.isEmpty &&
+    items.agents.isEmpty &&
+    items.connectorTools.isEmpty &&
+    items.workflows.isEmpty;
 
 class const _WorkflowPickerHeader() extends StatelessWidget {
   @override
@@ -202,7 +270,9 @@ class const _WorkflowPickerTitle() extends StatelessWidget {
 }
 
 class const _WorkflowPickerBody({
+  required final String workspaceId,
   required final _WorkflowNodePickerItems catalog,
+  required final bool noResults,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -210,7 +280,13 @@ class const _WorkflowPickerBody({
       return const Expanded(child: Center(child: AuraSpinner()));
     }
 
-    return Expanded(child: _WorkflowPickerList(catalog: catalog));
+    return Expanded(
+      child: noResults
+          ? const Center(
+              child: TextLocale(LocaleKeys.workflow_editor_picker_no_results),
+            )
+          : _WorkflowPickerList(workspaceId: workspaceId, catalog: catalog),
+    );
   }
 
   bool _hasNoSimpleItems(_WorkflowNodePickerItems items) =>
@@ -220,6 +296,7 @@ class const _WorkflowPickerBody({
 }
 
 class const _WorkflowPickerList({
+  required final String workspaceId,
   required final _WorkflowNodePickerItems catalog,
 }) extends StatelessWidget {
   @override
@@ -228,7 +305,10 @@ class const _WorkflowPickerList({
     children: [
       _WorkflowToolSection(tools: catalog.tools),
       _WorkflowAgentSection(agents: catalog.agents),
-      _WorkflowConnectorToolSection(connectorTools: catalog.connectorTools),
+      _WorkflowConnectorToolSection(
+        workspaceId: workspaceId,
+        connectorTools: catalog.connectorTools,
+      ),
       _WorkflowDefinitionSection(workflows: catalog.workflows),
     ],
   );
@@ -298,25 +378,88 @@ class const _WorkflowAgentPickerItem({required final AgentEntity agent})
 }
 
 class const _WorkflowConnectorToolSection({
+  required final String workspaceId,
   required final List<ConnectorToolCatalogItem> connectorTools,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _WorkflowLibrarySection(
-    titleKey: LocaleKeys.workflow_editor_available_connector_tools,
-    isEmpty: connectorTools.isEmpty,
-    children: [
-      for (final connectorTool in connectorTools)
-        _WorkflowConnectorToolPickerItem(connectorTool: connectorTool),
-    ],
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        const _WorkflowLibraryHeading(
+          titleKey: LocaleKeys.workflow_editor_available_connector_tools,
+        ),
+        if (connectorTools.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: TextLocale(LocaleKeys.workflow_editor_no_connector_tools),
+          )
+        else
+          ..._groups(),
+      ],
+    ),
+  );
+
+  List<Widget> _groups() {
+    final grouped = <String, List<ConnectorToolCatalogItem>>{};
+    for (final tool in connectorTools) {
+      grouped.putIfAbsent(tool.connectorName, () => []).add(tool);
+    }
+    final names = grouped.keys.toList()..sort();
+
+    return [
+      for (final name in names)
+        _WorkflowConnectorGroup(
+          workspaceId: workspaceId,
+          name: name,
+          tools: grouped[name]!,
+        ),
+    ];
+  }
+}
+
+class const _WorkflowConnectorGroup({
+  required final String workspaceId,
+  required final String name,
+  required final List<ConnectorToolCatalogItem> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: .stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            child: Text(name, style: Theme.of(context).textTheme.titleSmall),
+          ),
+          for (final tool in tools)
+            _WorkflowConnectorToolPickerItem(
+              workspaceId: workspaceId,
+              connectorTool: tool,
+            ),
+        ],
+      ),
+    ),
   );
 }
 
 class const _WorkflowConnectorToolPickerItem({
+  required final String workspaceId,
   required final ConnectorToolCatalogItem connectorTool,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final label = '${connectorTool.connectorName}: ${connectorTool.title}';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final label = connectorTool.title;
+    final tools = ref.watch(workspaceToolsProvider(workspaceId));
+    final connectorId = connectorTool.connectorId;
+    final connections = connectorTool.requiresConnection && connectorId != null
+        ? ref.watch(
+            workspaceConnectedConnectionsProvider(workspaceId, connectorId),
+          )
+        : null;
 
     return _WorkflowLibraryTile(
       title: label,
@@ -331,23 +474,111 @@ class const _WorkflowConnectorToolPickerItem({
         ),
         outputs: null,
       )),
-      subtitle: _subtitle(context),
+      subtitle: _subtitle(
+        context,
+        tools,
+        connections,
+        requiresConnection: connectorTool.requiresConnection,
+      ),
     );
   }
 
-  String _subtitle(BuildContext context) {
+  String _subtitle(
+    BuildContext context,
+    AsyncValue<List<WorkspaceToolEntity>> tools,
+    AsyncValue<List<ConnectorConnectionCandidate>>? connections, {
+    required bool requiresConnection,
+  }) {
     final description = connectorTool.description;
-    if (!connectorTool.requiresConnection) return description;
-    final requirement = LocaleKeys
-        .workflow_editor_connector_tool_requires_connection
-        .tr(context: context);
+    final definition = connectorTool.toolDefinition;
+    final operation = (definition != null && connectorToolWrites(definition))
+        ? LocaleKeys.workflow_editor_write_operation.tr(context: context)
+        : LocaleKeys.workflow_editor_read_operation.tr(context: context);
+    final requirements = [
+      operation,
+      _accessStatus(context, tools),
+      _connectionStatus(context, connections, requiresConnection),
+    ].join(' · ');
 
-    return description.isEmpty ? requirement : '$description ($requirement)';
+    return description.isEmpty ? requirements : '$description\n$requirements';
+  }
+
+  String _accessStatus(
+    BuildContext context,
+    AsyncValue<List<WorkspaceToolEntity>> tools,
+  ) => switch (tools) {
+    AsyncData(:final value) => _workspaceToolAccess(context, value),
+    AsyncLoading() =>
+      LocaleKeys.workflow_editor_connector_tool_access_checking.tr(
+        context: context,
+      ),
+    AsyncError() =>
+      LocaleKeys.workflow_editor_connector_tool_access_unavailable.tr(
+        context: context,
+      ),
+  };
+
+  String _workspaceToolAccess(
+    BuildContext context,
+    List<WorkspaceToolEntity> tools,
+  ) {
+    final workspaceTool = tools
+        .where((tool) => tool.toolId == connectorTool.toolId)
+        .firstOrNull;
+    if (workspaceTool == null || !workspaceTool.isEnabled) {
+      return LocaleKeys.workflow_editor_connector_tool_access_disabled.tr(
+        context: context,
+      );
+    }
+    if (workspaceTool.permissionMode == ToolPermissionMode.alwaysDeny) {
+      return LocaleKeys.workflow_editor_connector_tool_access_denied.tr(
+        context: context,
+      );
+    }
+
+    return LocaleKeys.workflow_editor_connector_tool_access_enabled.tr(
+      context: context,
+    );
+  }
+
+  String _connectionStatus(
+    BuildContext context,
+    AsyncValue<List<ConnectorConnectionCandidate>>? connections,
+    bool requiresConnection,
+  ) {
+    if (connections == null) {
+      if (requiresConnection) {
+        return LocaleKeys.workflow_editor_connector_tool_connection_unavailable
+            .tr(context: context);
+      }
+
+      return LocaleKeys.workflow_editor_connector_tool_no_connection_required
+          .tr(context: context);
+    }
+
+    return switch (connections) {
+      AsyncData(:final value) =>
+        value.isEmpty
+            ? LocaleKeys.workflow_editor_connector_tool_connection_missing.tr(
+                context: context,
+              )
+            : LocaleKeys.workflow_editor_connector_tool_connection_available.tr(
+                context: context,
+              ),
+      AsyncLoading() =>
+        LocaleKeys.workflow_editor_connector_tool_connection_checking.tr(
+          context: context,
+        ),
+      AsyncError() =>
+        LocaleKeys.workflow_editor_connector_tool_connection_unavailable.tr(
+          context: context,
+        ),
+    };
   }
 }
 
 class const _WorkflowDefinitionSection({
-  required final List<WorkflowDefinition> workflows,
+  required final List<WorkspaceWorkflow> workflows,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _WorkflowLibrarySection(
@@ -361,7 +592,7 @@ class const _WorkflowDefinitionSection({
 }
 
 class const _WorkflowDefinitionPickerItem({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _WorkflowLibraryTile(

@@ -86,7 +86,7 @@ abstract final class WorkflowEditorNodeReducer {
 
   static WorkflowEditorState _appendDraft(
     WorkflowEditorState state,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowNodeDraft draft,
   ) {
     final node = WorkflowEditorNodeFactory.create(
@@ -103,8 +103,8 @@ abstract final class WorkflowEditorNodeReducer {
 }
 
 abstract final class WorkflowEditorNodeRemovalReducer {
-  static WorkflowDefinition withoutNode(
-    WorkflowDefinition workflow,
+  static WorkspaceWorkflow withoutNode(
+    WorkspaceWorkflow workflow,
     String nodeId,
   ) => workflow.copyWith(
     nodes: _nodesWithout(workflow.nodes, nodeId),
@@ -172,7 +172,7 @@ abstract final class WorkflowEditorConnectionReducer {
       state.copyWith(clearPendingOutput: true);
 
   static WorkflowConnection? _candidate(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowPendingOutput pending,
     String? nodeId,
     String portId,
@@ -193,7 +193,7 @@ abstract final class WorkflowEditorConnectionReducer {
 
   static WorkflowEditorState _appendConnection(
     WorkflowEditorState state,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowConnection connection,
   ) {
     if (WorkflowConnectionDraft.isDuplicate(workflow, connection)) {
@@ -213,7 +213,7 @@ abstract final class WorkflowEditorConnectionReducer {
 typedef _ConnectionPorts = ({WorkflowPort source, WorkflowPort target});
 typedef _ConnectionNodes = ({WorkflowNode? source, WorkflowNode? target});
 typedef WorkflowConnectionRequest = ({
-  WorkflowDefinition workflow,
+  WorkspaceWorkflow workflow,
   WorkflowPendingOutput pending,
   String? targetNodeId,
   String targetPortId,
@@ -262,7 +262,7 @@ abstract final class WorkflowConnectionEndpointResolver {
         ports.target.type,
       );
 
-  static WorkflowNode? _findNode(WorkflowDefinition workflow, String? nodeId) =>
+  static WorkflowNode? _findNode(WorkspaceWorkflow workflow, String? nodeId) =>
       nodeId == null
       ? null
       : workflow.nodes.where((node) => node.id == nodeId).firstOrNull;
@@ -301,7 +301,7 @@ abstract final class WorkflowConnectionDraft {
   );
 
   static bool isDuplicate(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowConnection candidate,
   ) => workflow.connections.any(
     (connection) => _sameEndpoints(connection, candidate),
@@ -370,8 +370,8 @@ abstract final class WorkflowEditorBoundaryPortReducer {
 }
 
 abstract final class _WorkflowPortCollection {
-  static WorkflowDefinition _addWorkflowPort(
-    WorkflowDefinition workflow,
+  static WorkspaceWorkflow _addWorkflowPort(
+    WorkspaceWorkflow workflow,
     WorkflowBoundaryPortDraft draft,
   ) {
     final ports = _workflowPorts(workflow, draft.isInput);
@@ -384,8 +384,8 @@ abstract final class _WorkflowPortCollection {
     return _withWorkflowPorts(workflow, draft.isInput, [...ports, port]);
   }
 
-  static WorkflowDefinition _updateWorkflowPort(
-    WorkflowDefinition workflow,
+  static WorkspaceWorkflow _updateWorkflowPort(
+    WorkspaceWorkflow workflow,
     WorkflowBoundaryPortUpdate update,
   ) => _withWorkflowPorts(
     workflow,
@@ -397,8 +397,8 @@ abstract final class _WorkflowPortCollection {
     ),
   );
 
-  static WorkflowDefinition _removeWorkflowPort(
-    WorkflowDefinition workflow,
+  static WorkspaceWorkflow _removeWorkflowPort(
+    WorkspaceWorkflow workflow,
     WorkflowBoundaryPortRemoval removal,
   ) =>
       _withWorkflowPorts(
@@ -431,12 +431,12 @@ abstract final class _WorkflowPortCollection {
       .toList();
 
   static List<WorkflowPort> _workflowPorts(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     bool isInput,
   ) => isInput ? workflow.inputs : workflow.outputs;
 
-  static WorkflowDefinition _withWorkflowPorts(
-    WorkflowDefinition workflow,
+  static WorkspaceWorkflow _withWorkflowPorts(
+    WorkspaceWorkflow workflow,
     bool isInput,
     List<WorkflowPort> ports,
   ) => isInput
@@ -514,8 +514,8 @@ abstract final class _WorkflowNodePortCollection {
     ),
   );
 
-  static WorkflowDefinition _remove(
-    WorkflowDefinition workflow,
+  static WorkspaceWorkflow _remove(
+    WorkspaceWorkflow workflow,
     WorkflowNodePortRemoval removal,
   ) => workflow.copyWith(
     nodes: _replaceNodePort(workflow.nodes, removal),
@@ -581,7 +581,7 @@ abstract final class WorkflowEditorPortFactory {
 abstract final class WorkflowEditorStateReducer {
   static WorkflowEditorState markSaved(
     WorkflowEditorState state,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) => state.copyWith(
     workflow: workflow,
     isLoading: false,
@@ -590,7 +590,7 @@ abstract final class WorkflowEditorStateReducer {
 
   static WorkflowEditorState updateWorkflow(
     WorkflowEditorState state,
-    WorkflowDefinition Function(WorkflowDefinition) update,
+    WorkspaceWorkflow Function(WorkspaceWorkflow) update,
   ) {
     final workflow = state.workflow;
 

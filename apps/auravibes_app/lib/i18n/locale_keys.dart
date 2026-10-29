@@ -1762,16 +1762,6 @@ abstract class LocaleKeys {
   static const more_screen_skills_subtitle = 'more_screen.skills.subtitle';
   static const more_screen_agents_title = 'more_screen.agents.title';
   static const more_screen_agents_subtitle = 'more_screen.agents.subtitle';
-  static const more_screen_workflows_title = 'more_screen.workflows.title';
-  static const more_screen_workflows_subtitle =
-      'more_screen.workflows.subtitle';
-  static const workflows_screen_title = 'workflows_screen.title';
-  static const workflows_screen_create = 'workflows_screen.create';
-  static const workflows_screen_empty_title = 'workflows_screen.empty_title';
-  static const workflows_screen_empty_subtitle =
-      'workflows_screen.empty_subtitle';
-  static const workflows_screen_load_error = 'workflows_screen.load_error';
-  static const workflows_screen_summary = 'workflows_screen.summary';
   static const workflow_editor_title = 'workflow_editor.title';
   static const workflow_editor_new_title = 'workflow_editor.new_title';
   static const workflow_editor_name = 'workflow_editor.name';
@@ -1784,7 +1774,6 @@ abstract class LocaleKeys {
   static const workflow_editor_not_found = 'workflow_editor.not_found';
   static const workflow_editor_load_error = 'workflow_editor.load_error';
   static const workflow_editor_retry = 'workflow_editor.retry';
-  static const workflow_editor_back_to_list = 'workflow_editor.back_to_list';
   static const workflow_editor_add_node = 'workflow_editor.add_node';
   static const workflow_editor_add_input = 'workflow_editor.add_input';
   static const workflow_editor_add_output = 'workflow_editor.add_output';
@@ -1802,8 +1791,19 @@ abstract class LocaleKeys {
       'workflow_editor.available_agents';
   static const workflow_editor_available_connector_tools =
       'workflow_editor.available_connector_tools';
+  static const workflow_editor_picker_search = 'workflow_editor.picker_search';
+  static const workflow_editor_picker_no_results =
+      'workflow_editor.picker_no_results';
   static const workflow_editor_available_workflows =
       'workflow_editor.available_workflows';
+  static const workflow_editor_no_connector_tools =
+      'workflow_editor.no_connector_tools';
+  static const workflow_editor_read_operation =
+      'workflow_editor.read_operation';
+  static const workflow_editor_write_operation =
+      'workflow_editor.write_operation';
+  static const workflow_editor_referenced_workflow_unavailable =
+      'workflow_editor.referenced_workflow_unavailable';
   static const workflow_editor_empty_group = 'workflow_editor.empty_group';
   static const workflow_editor_node_label = 'workflow_editor.node_label';
   static const workflow_editor_input = 'workflow_editor.input';
@@ -1811,6 +1811,26 @@ abstract class LocaleKeys {
   static const workflow_editor_result = 'workflow_editor.result';
   static const workflow_editor_connector_tool_requires_connection =
       'workflow_editor.connector_tool_requires_connection';
+  static const workflow_editor_connector_tool_access_checking =
+      'workflow_editor.connector_tool_access_checking';
+  static const workflow_editor_connector_tool_access_unavailable =
+      'workflow_editor.connector_tool_access_unavailable';
+  static const workflow_editor_connector_tool_access_disabled =
+      'workflow_editor.connector_tool_access_disabled';
+  static const workflow_editor_connector_tool_access_denied =
+      'workflow_editor.connector_tool_access_denied';
+  static const workflow_editor_connector_tool_access_enabled =
+      'workflow_editor.connector_tool_access_enabled';
+  static const workflow_editor_connector_tool_no_connection_required =
+      'workflow_editor.connector_tool_no_connection_required';
+  static const workflow_editor_connector_tool_connection_checking =
+      'workflow_editor.connector_tool_connection_checking';
+  static const workflow_editor_connector_tool_connection_unavailable =
+      'workflow_editor.connector_tool_connection_unavailable';
+  static const workflow_editor_connector_tool_connection_missing =
+      'workflow_editor.connector_tool_connection_missing';
+  static const workflow_editor_connector_tool_connection_available =
+      'workflow_editor.connector_tool_connection_available';
   static const workflow_editor_tool_unavailable =
       'workflow_editor.tool_unavailable';
   static const workflow_editor_sample_outputs =
@@ -1860,6 +1880,7 @@ abstract class LocaleKeys {
       'workflow_editor.unsaved_message';
   static const workflow_editor_discard = 'workflow_editor.discard';
   static const workflow_editor_continue = 'workflow_editor.continue';
+  static const workflow_editor_read_only = 'workflow_editor.read_only';
   static const workflow_editor_execution_notice =
       'workflow_editor.execution_notice';
   static const sidebar_open = 'sidebar.open';
@@ -3017,6 +3038,8 @@ abstract class LocaleKeys {
       'workspace_items.duplicate_relationships';
   static const workspace_items_duplicate_view_binding =
       'workspace_items.duplicate_view_binding';
+  static const workspace_items_duplicate_workflow_hint =
+      'workspace_items.duplicate_workflow_hint';
   static const workspace_items_duplicate_created =
       'workspace_items.duplicate_created';
   static const workspace_items_duplicate_hint =

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
@@ -42,6 +46,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
           ],
@@ -80,6 +87,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -89,9 +99,18 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Folder35'));
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Folder35'));
+    final directoryScroll = find.byType(Scrollable).first;
+    final targetFolder = find.text('Folder35').first;
+    for (
+      var attempt = 0;
+      attempt < 12 && find.text('Folder35').hitTestable().evaluate().isEmpty;
+      attempt++
+    ) {
+      await tester.drag(directoryScroll, const Offset(0, -300));
+      final _ = await tester.pumpAndSettle();
+    }
+    expect(find.text('Folder35').hitTestable(), findsOneWidget);
+    await tester.tap(targetFolder);
     final _ = await tester.pumpAndSettle();
     generation.value++;
     final _ = await tester.pumpAndSettle();
@@ -118,6 +137,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith(
               (ref, arguments) async => [
@@ -175,6 +197,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceAccessProvider('one')
                 .overrideWith((ref) async => (role: 'member')),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
@@ -200,6 +225,9 @@ void main() {
             overrides: [
               workspaceViewsProvider.overrideWith((ref, arguments) async => []),
               workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+              workspaceDirectoryWorkflowsProvider.overrideWith(
+                (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+              ),
               workspaceTablesProvider.overrideWith(
                 (ref, arguments) async => [],
               ),
@@ -241,6 +269,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
           ],
           workspaceId: 'one',
@@ -308,6 +339,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             appDatabaseProvider.overrideWithValue(database),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => tables),
@@ -367,6 +401,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith(
               (ref, arguments) async => [
                 const WorkspaceTable(
@@ -427,6 +464,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -479,6 +519,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),

@@ -60,11 +60,6 @@ List<AuraNavigationData> _conversationNavigationItems(BuildContext context) => [
 List<AuraNavigationData> _workspaceNavigationItems(BuildContext context) => [
   _navigationItem(
     context,
-    LocaleKeys.workflows_screen_title,
-    const Icon(Icons.account_tree_outlined),
-  ),
-  _navigationItem(
-    context,
     LocaleKeys.settings_screen_title,
     const Icon(Icons.settings_outlined),
     footer: true,
@@ -319,7 +314,6 @@ abstract final class _NavigationTargets {
       .chats => _newChatLocation(workspaceId),
       .agentsAndSkills => _featureLocation(navigation.agentsLocation),
       .connections => _featureLocation(navigation.connectionsLocation),
-      .workflows => WorkflowsRoute(workspaceId: workspaceId).location,
       .appSettings => _settingsLocation(workspaceId),
       .cloudAccounts => _cloudAccountsLocation(workspaceId),
       .items => _itemsLocation(workspaceId),

@@ -9,33 +9,10 @@ export 'package:auravibes_app/features/workflows/models/workflow_value_type.dart
 typedef WorkflowResourceSource = ({
   String id,
   String workspaceId,
+  int revision,
+  DateTime? deletedAt,
+  bool canManage,
   Map<String, Object?> data,
-  DateTime createdAt,
-  DateTime updatedAt,
-});
-typedef _WorkflowHeader = ({
-  String id,
-  String workspaceId,
-  String name,
-  String description,
-  DateTime createdAt,
-  DateTime updatedAt,
-});
-typedef _WorkflowContents = ({
-  List<WorkflowPort> inputs,
-  List<WorkflowPort> outputs,
-  List<WorkflowNode> nodes,
-  List<WorkflowConnection> connections,
-});
-typedef _WorkflowFields = ({
-  String id,
-  String workspaceId,
-  String name,
-  String description,
-  List<WorkflowPort> inputs,
-  List<WorkflowPort> outputs,
-  List<WorkflowNode> nodes,
-  List<WorkflowConnection> connections,
   DateTime createdAt,
   DateTime updatedAt,
 });
@@ -61,16 +38,10 @@ class WorkflowDefinition {
   static const formatVersion = 1;
 
   const new({
-    required this.id,
-    required this.workspaceId,
-    required this.name,
-    required this.description,
     required this.inputs,
     required this.outputs,
     required this.nodes,
     required this.connections,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
   factory decode(String json) => WorkflowDefinitionCodec.decode(json);
@@ -78,52 +49,143 @@ class WorkflowDefinition {
   factory fromJson(Map<String, Object?> json) =>
       WorkflowDefinitionCodec.fromJson(json);
 
-  factory fromResource(WorkflowResourceSource source) =>
-      WorkflowDefinitionCodec.fromResource(source);
-
-  final String id;
-  final String workspaceId;
-  final String name;
-  final String description;
   final List<WorkflowPort> inputs;
   final List<WorkflowPort> outputs;
   final List<WorkflowNode> nodes;
   final List<WorkflowConnection> connections;
-  final DateTime createdAt;
-  final DateTime updatedAt;
 
   String encode() => WorkflowDefinitionCodec.encode(this);
 
   Map<String, Object?> toJson() => WorkflowDefinitionCodec.toJson(this);
 
-  Map<String, Object?> toResourceData() =>
-      WorkflowDefinitionCodec.toResourceData(this);
-
   WorkflowDefinition copyWith({
-    String? id,
-    String? workspaceId,
-    String? name,
-    String? description,
     List<WorkflowPort>? inputs,
     List<WorkflowPort>? outputs,
     List<WorkflowNode>? nodes,
     List<WorkflowConnection>? connections,
-    DateTime? createdAt,
-    DateTime? updatedAt,
   }) => WorkflowDefinition(
-    id: _valueOr(id, this.id),
-    workspaceId: _valueOr(workspaceId, this.workspaceId),
-    name: _valueOr(name, this.name),
-    description: _valueOr(description, this.description),
-    inputs: _valueOr(inputs, this.inputs),
-    outputs: _valueOr(outputs, this.outputs),
-    nodes: _valueOr(nodes, this.nodes),
-    connections: _valueOr(connections, this.connections),
-    createdAt: _valueOr(createdAt, this.createdAt),
-    updatedAt: _valueOr(updatedAt, this.updatedAt),
+    inputs: inputs ?? this.inputs,
+    outputs: outputs ?? this.outputs,
+    nodes: nodes ?? this.nodes,
+    connections: connections ?? this.connections,
+  );
+}
+
+/// Directory identity and lifecycle for a saved workflow graph.
+class WorkspaceWorkflow {
+  const new({
+    required this.id,
+    required this.workspaceId,
+    required this.name,
+    required this.description,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.definition,
+    this.parentId,
+    this.deletedAt,
+    this.canManage = true,
+  });
+  factory create({
+    required String id,
+    required String workspaceId,
+    required String name,
+    required String description,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    String? parentId,
+    int revision = 1,
+    DateTime? deletedAt,
+    bool canManage = true,
+    List<WorkflowPort> inputs = const [],
+    List<WorkflowPort> outputs = const [],
+    List<WorkflowNode> nodes = const [],
+    List<WorkflowConnection> connections = const [],
+  }) => WorkspaceWorkflow(
+    id: id,
+    workspaceId: workspaceId,
+    parentId: parentId,
+    name: name,
+    description: description,
+    revision: revision,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    deletedAt: deletedAt,
+    canManage: canManage,
+    definition: WorkflowDefinition(
+      inputs: inputs,
+      outputs: outputs,
+      nodes: nodes,
+      connections: connections,
+    ),
   );
 
-  static T _valueOr<T>(T? value, T fallback) => value ?? fallback;
+  factory decode(String json) => WorkspaceWorkflowCodec.decode(json);
+  factory fromJson(Map<String, Object?> json) =>
+      WorkspaceWorkflowCodec.fromJson(json);
+  factory fromResource(WorkflowResourceSource source) =>
+      WorkspaceWorkflowCodec.fromResource(source);
+
+  final String id;
+  final String workspaceId;
+  final String? parentId;
+  final String name;
+  final String description;
+  final int revision;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final WorkflowDefinition definition;
+  final bool canManage;
+
+  List<WorkflowPort> get inputs => definition.inputs;
+  List<WorkflowPort> get outputs => definition.outputs;
+  List<WorkflowNode> get nodes => definition.nodes;
+  List<WorkflowConnection> get connections => definition.connections;
+
+  String encode() => WorkspaceWorkflowCodec.encode(this);
+  Map<String, Object?> toJson() => WorkspaceWorkflowCodec.toJson(this);
+  Map<String, Object?> toResourceData() =>
+      WorkspaceWorkflowCodec.toResourceData(this);
+
+  WorkspaceWorkflow copyWith({
+    String? id,
+    String? workspaceId,
+    String? parentId,
+    bool clearParentId = false,
+    String? name,
+    String? description,
+    int? revision,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
+    bool? canManage,
+    WorkflowDefinition? definition,
+    List<WorkflowPort>? inputs,
+    List<WorkflowPort>? outputs,
+    List<WorkflowNode>? nodes,
+    List<WorkflowConnection>? connections,
+  }) => WorkspaceWorkflow(
+    id: id ?? this.id,
+    workspaceId: workspaceId ?? this.workspaceId,
+    parentId: clearParentId ? null : parentId ?? this.parentId,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    revision: revision ?? this.revision,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: clearDeletedAt ? null : deletedAt ?? this.deletedAt,
+    canManage: canManage ?? this.canManage,
+    definition:
+        definition ??
+        this.definition.copyWith(
+          inputs: inputs,
+          outputs: outputs,
+          nodes: nodes,
+          connections: connections,
+        ),
+  );
 }
 
 class WorkflowPort {
@@ -232,99 +294,31 @@ class WorkflowConnection {
 
 abstract final class WorkflowDefinitionCodec {
   static WorkflowDefinition decode(String json) =>
-      _WorkflowDefinitionParser.fromJson(
-        jsonDecode(json) as Map<String, Object?>,
-      );
+      fromJson(jsonDecode(json) as Map<String, Object?>);
 
   static WorkflowDefinition fromJson(Map<String, Object?> json) =>
       _WorkflowDefinitionParser.fromJson(json);
-
-  static WorkflowDefinition fromResource(WorkflowResourceSource source) =>
-      _WorkflowDefinitionParser.fromResource(source);
 
   static String encode(WorkflowDefinition workflow) =>
       _WorkflowDefinitionSerializer.encode(workflow);
 
   static Map<String, Object?> toJson(WorkflowDefinition workflow) =>
       _WorkflowDefinitionSerializer.toJson(workflow);
-
-  static Map<String, Object?> toResourceData(WorkflowDefinition workflow) =>
-      _WorkflowDefinitionSerializer.toResourceData(workflow);
 }
 
 abstract final class _WorkflowDefinitionParser {
-  static WorkflowDefinition fromJson(Map<String, Object?> json) =>
-      _create(_fieldsFromJson(json));
+  static WorkflowDefinition fromJson(Map<String, Object?> definition) {
+    _validateVersion(definition);
 
-  static WorkflowDefinition fromResource(WorkflowResourceSource source) =>
-      _create(_fieldsFromResource(source));
-
-  static _WorkflowFields _fieldsFromJson(Map<String, Object?> json) {
-    final definition = _definition(json['definition']);
-    final header = _WorkflowHeaderCodec.fromJson(json);
-    final contents = _contentsFromDefinition(definition);
-
-    return _combine(header, contents);
+    return WorkflowDefinition(
+      inputs: WorkflowCollectionCodec.decodePorts(definition['inputs']),
+      outputs: WorkflowCollectionCodec.decodePorts(definition['outputs']),
+      nodes: WorkflowCollectionCodec.decodeNodes(definition['nodes']),
+      connections: WorkflowCollectionCodec.decodeConnections(
+        definition['connections'],
+      ),
+    );
   }
-
-  static _WorkflowFields _fieldsFromResource(WorkflowResourceSource source) {
-    final definition = _definition(source.data['definition']);
-    final header = _WorkflowHeaderCodec.fromResource(source);
-    final contents = _contentsFromDefinition(definition);
-
-    return _combine(header, contents);
-  }
-
-  static Map<String, Object?> _definition(Object? value) {
-    if (value is! Map<String, Object?>) {
-      throw const FormatException('Workflow definition must be a map.');
-    }
-
-    _validateVersion(value);
-
-    return value;
-  }
-
-  static _WorkflowContents _contentsFromDefinition(
-    Map<String, Object?> definition,
-  ) => (
-    inputs: WorkflowCollectionCodec.decodePorts(definition['inputs']),
-    outputs: WorkflowCollectionCodec.decodePorts(definition['outputs']),
-    nodes: WorkflowCollectionCodec.decodeNodes(definition['nodes']),
-    connections: WorkflowCollectionCodec.decodeConnections(
-      definition['connections'],
-    ),
-  );
-
-  static _WorkflowFields _combine(
-    _WorkflowHeader header,
-    _WorkflowContents contents,
-  ) => (
-    id: header.id,
-    workspaceId: header.workspaceId,
-    name: header.name,
-    description: header.description,
-    inputs: contents.inputs,
-    outputs: contents.outputs,
-    nodes: contents.nodes,
-    connections: contents.connections,
-    createdAt: header.createdAt,
-    updatedAt: header.updatedAt,
-  );
-
-  static WorkflowDefinition _create(_WorkflowFields fields) =>
-      WorkflowDefinition(
-        id: fields.id,
-        workspaceId: fields.workspaceId,
-        name: fields.name,
-        description: fields.description,
-        inputs: fields.inputs,
-        outputs: fields.outputs,
-        nodes: fields.nodes,
-        connections: fields.connections,
-        createdAt: fields.createdAt,
-        updatedAt: fields.updatedAt,
-      );
 
   static void _validateVersion(Map<String, Object?> definition) {
     if (definition['version'] != WorkflowDefinition.formatVersion) {
@@ -333,45 +327,12 @@ abstract final class _WorkflowDefinitionParser {
   }
 }
 
-abstract final class _WorkflowHeaderCodec {
-  static _WorkflowHeader fromJson(Map<String, Object?> json) => (
-    id: json['id']! as String,
-    workspaceId: json['workspaceId']! as String,
-    name: json['name']! as String,
-    description: json['description']! as String,
-    createdAt: DateTime.parse(json['createdAt']! as String).toUtc(),
-    updatedAt: DateTime.parse(json['updatedAt']! as String).toUtc(),
-  );
-
-  static _WorkflowHeader fromResource(WorkflowResourceSource source) => (
-    id: source.id,
-    workspaceId: source.workspaceId,
-    name: source.data['name']! as String,
-    description: source.data['description'] as String? ?? '',
-    createdAt: source.createdAt.toUtc(),
-    updatedAt: source.updatedAt.toUtc(),
-  );
-}
-
 abstract final class _WorkflowDefinitionSerializer {
   static String encode(WorkflowDefinition workflow) =>
       jsonEncode(toJson(workflow));
 
-  static Map<String, Object?> toJson(WorkflowDefinition workflow) => {
-    'id': workflow.id,
-    'workspaceId': workflow.workspaceId,
-    'name': workflow.name,
-    'description': workflow.description,
-    'definition': _definitionJson(workflow),
-    'createdAt': workflow.createdAt.toUtc().toIso8601String(),
-    'updatedAt': workflow.updatedAt.toUtc().toIso8601String(),
-  };
-
-  static Map<String, Object?> toResourceData(WorkflowDefinition workflow) => {
-    'name': workflow.name,
-    'description': workflow.description,
-    'definition': _definitionJson(workflow),
-  };
+  static Map<String, Object?> toJson(WorkflowDefinition workflow) =>
+      _definitionJson(workflow);
 
   static Map<String, Object?> _definitionJson(WorkflowDefinition workflow) => {
     'version': WorkflowDefinition.formatVersion,
@@ -388,6 +349,73 @@ abstract final class _WorkflowDefinitionSerializer {
       for (final connection in workflow.connections)
         WorkflowConnectionCodec.toJson(connection),
     ],
+  };
+}
+
+abstract final class WorkspaceWorkflowCodec {
+  static WorkspaceWorkflow decode(String json) =>
+      fromJson(jsonDecode(json) as Map<String, Object?>);
+
+  static WorkspaceWorkflow fromJson(Map<String, Object?> json) {
+    final rawDefinition = json['definition'];
+    if (rawDefinition is! Map<String, Object?>) {
+      throw const FormatException('Invalid workflow definition.');
+    }
+
+    return WorkspaceWorkflow(
+      id: json['id']! as String,
+      workspaceId: json['workspaceId']! as String,
+      parentId: json['parentId'] as String?,
+      name: json['name']! as String,
+      description: json['description'] as String? ?? '',
+      revision: json['revision'] as int? ?? 1,
+      createdAt: DateTime.parse(json['createdAt']! as String).toUtc(),
+      updatedAt: DateTime.parse(json['updatedAt']! as String).toUtc(),
+      deletedAt: (json['deletedAt'] as String?) == null
+          ? null
+          : DateTime.parse(json['deletedAt']! as String).toUtc(),
+      definition: WorkflowDefinition.fromJson(rawDefinition),
+    );
+  }
+
+  static WorkspaceWorkflow fromResource(WorkflowResourceSource source) =>
+      WorkspaceWorkflow(
+        id: source.id,
+        workspaceId: source.workspaceId,
+        parentId: source.data['parentId'] as String?,
+        name: source.data['name']! as String,
+        description: source.data['description'] as String? ?? '',
+        revision: source.revision,
+        createdAt: source.createdAt.toUtc(),
+        updatedAt: source.updatedAt.toUtc(),
+        deletedAt: source.deletedAt?.toUtc(),
+        canManage: source.canManage,
+        definition: WorkflowDefinition.fromJson(
+          source.data['definition']! as Map<String, Object?>,
+        ),
+      );
+
+  static String encode(WorkspaceWorkflow workflow) =>
+      jsonEncode(toJson(workflow));
+
+  static Map<String, Object?> toJson(WorkspaceWorkflow workflow) => {
+    'id': workflow.id,
+    'workspaceId': workflow.workspaceId,
+    'parentId': workflow.parentId,
+    'name': workflow.name,
+    'description': workflow.description,
+    'revision': workflow.revision,
+    'createdAt': workflow.createdAt.toUtc().toIso8601String(),
+    'updatedAt': workflow.updatedAt.toUtc().toIso8601String(),
+    'deletedAt': workflow.deletedAt?.toUtc().toIso8601String(),
+    'definition': workflow.definition.toJson(),
+  };
+
+  static Map<String, Object?> toResourceData(WorkspaceWorkflow workflow) => {
+    'name': workflow.name,
+    'description': workflow.description,
+    'parentId': workflow.parentId,
+    'definition': workflow.definition.toJson(),
   };
 }
 

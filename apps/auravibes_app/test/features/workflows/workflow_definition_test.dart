@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('rejects a non-map definition with a format error', () {
     expect(
-      () => WorkflowDefinition.fromJson({'definition': null}),
+      () => WorkspaceWorkflow.fromJson({'definition': null}),
       throwsFormatException,
     );
   });
@@ -40,13 +40,11 @@ void main() {
   });
 
   test('preserves Connector tool node identity and typed input ports', () {
-    final definition = WorkflowDefinition(
+    final definition = WorkspaceWorkflow.create(
       id: 'workflow-1',
       workspaceId: 'workspace-1',
       name: 'Research',
       description: '',
-      inputs: const [],
-      outputs: const [],
       nodes: const [
         WorkflowNode(
           id: 'node-1',
@@ -67,12 +65,11 @@ void main() {
           ],
         ),
       ],
-      connections: const [],
       createdAt: .utc(2026),
       updatedAt: .utc(2026),
     );
 
-    final node = WorkflowDefinition.decode(definition.encode()).nodes.single;
+    final node = WorkspaceWorkflow.decode(definition.encode()).nodes.single;
 
     expect(node.kind, WorkflowNodeKind.connectorTool);
     expect(node.targetId, 'connector/brave/web_search');

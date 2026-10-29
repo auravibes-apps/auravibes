@@ -130,6 +130,12 @@ class _WorkflowConnectorToolSampleState
               connections: connections,
               connectionId: _connectionId,
               onChanged: (value) => setState(() => _connectionId = value),
+              onRetry: () => ref.invalidate(
+                workspaceConnectedConnectionsProvider(
+                  widget.workspaceId,
+                  connectorId,
+                ),
+              ),
             ),
           if (_invalidSample)
             const TextLocale(LocaleKeys.workflow_editor_invalid_sample_inputs),
@@ -248,6 +254,7 @@ class const _WorkflowSampleConnectionPicker({
   required final AsyncValue<List<ConnectorConnectionCandidate>>? connections,
   required final String? connectionId,
   required final ValueChanged<String?> onChanged,
+  required final VoidCallback onRetry,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (connections) {
@@ -256,7 +263,17 @@ class const _WorkflowSampleConnectionPicker({
       padding: EdgeInsets.symmetric(vertical: 8),
       child: Center(child: AuraSpinner()),
     ),
-    AsyncError() => const TextLocale(LocaleKeys.workflow_editor_sample_failed),
+    AsyncError() => Row(
+      children: [
+        const Expanded(
+          child: TextLocale(LocaleKeys.workflow_editor_sample_failed),
+        ),
+        TextButton(
+          onPressed: onRetry,
+          child: const TextLocale(LocaleKeys.workflow_editor_retry),
+        ),
+      ],
+    ),
     AsyncData(value: []) => const TextLocale(
       LocaleKeys.workflow_editor_sample_needs_connection,
     ),

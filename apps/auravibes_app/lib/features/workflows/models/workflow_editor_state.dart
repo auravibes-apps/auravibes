@@ -2,7 +2,7 @@ import 'package:auravibes_app/features/workflows/models/workflow_definition.dart
 
 typedef WorkflowPendingOutput = ({String? nodeId, String portId});
 typedef _WorkflowWorkflowCopy = ({
-  WorkflowDefinition? workflow,
+  WorkspaceWorkflow? workflow,
   String? initialSnapshot,
   bool resetInitialSnapshot,
   bool clearWorkflow,
@@ -24,7 +24,7 @@ typedef _WorkflowEditorStateCopy = ({
   _WorkflowLoadingCopy loading,
 });
 typedef _WorkflowAndSnapshot = ({
-  WorkflowDefinition? workflow,
+  WorkspaceWorkflow? workflow,
   String? initialSnapshot,
 });
 typedef _WorkflowSelection = ({
@@ -52,15 +52,11 @@ class WorkflowEditorState {
     final now = DateTime.now().toUtc();
 
     return WorkflowEditorState(
-      workflow: .new(
+      workflow: WorkspaceWorkflow.create(
         id: '',
         workspaceId: workspaceId,
         name: '',
         description: '',
-        inputs: const [],
-        outputs: const [],
-        nodes: const [],
-        connections: const [],
         createdAt: now,
         updatedAt: now,
       ),
@@ -73,7 +69,7 @@ class WorkflowEditorState {
 
   factory missing() => WorkflowEditorState(workflow: null, notFound: true);
 
-  final WorkflowDefinition? workflow;
+  final WorkspaceWorkflow? workflow;
   final String? initialSnapshot;
   final String? selectedNodeId;
   final WorkflowPendingOutput? pendingOutput;
@@ -88,7 +84,7 @@ class WorkflowEditorState {
         currentWorkflow.encode() != initialSnapshot;
   }
 
-  WorkflowEditorState withWorkflow(WorkflowDefinition value) =>
+  WorkflowEditorState withWorkflow(WorkspaceWorkflow value) =>
       copyWith(workflow: value);
 
   WorkflowEditorState withSelection(String nodeId) =>
@@ -98,7 +94,7 @@ class WorkflowEditorState {
       copyWith(clearSelectedNode: true, clearPendingOutput: true);
 
   WorkflowEditorState copyWith({
-    WorkflowDefinition? workflow,
+    WorkspaceWorkflow? workflow,
     String? initialSnapshot,
     bool resetInitialSnapshot = false,
     bool clearWorkflow = false,
@@ -195,16 +191,16 @@ abstract final class WorkflowEditorStateValues {
   static bool _flag({required bool? value, required bool current}) =>
       value ?? current;
 
-  static WorkflowDefinition? _workflow({
-    required WorkflowDefinition? value,
-    required WorkflowDefinition? current,
+  static WorkspaceWorkflow? _workflow({
+    required WorkspaceWorkflow? value,
+    required WorkspaceWorkflow? current,
     required bool clear,
   }) => clear ? null : value ?? current;
 
   static String? _initialSnapshot({
     required String? value,
     required String? current,
-    required WorkflowDefinition? workflow,
+    required WorkspaceWorkflow? workflow,
     required bool reset,
   }) => reset ? workflow?.encode() : value ?? current;
 

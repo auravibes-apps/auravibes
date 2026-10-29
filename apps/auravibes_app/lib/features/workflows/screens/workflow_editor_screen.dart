@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/workflows/widgets/workflow_node_picker.da
 import 'package:auravibes_app/features/workflows/widgets/workflow_signature_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
-import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -21,7 +20,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-typedef _WorkflowEditorIdentity = ({String workspaceId, String? workflowId});
+typedef _WorkflowEditorIdentity = ({
+  String workspaceId,
+  String? workflowId,
+  bool compact,
+  VoidCallback onBack,
+});
 typedef _WorkflowEditorDocument = ({
   WorkflowEditorState state,
   WorkflowEditorNotifier editor,
@@ -53,10 +57,18 @@ typedef _WorkflowEditorPresentation = ({
 });
 
 class WorkflowEditorScreen extends ConsumerStatefulWidget {
-  const new({required this.workspaceId, this.workflowId, super.key});
+  const new({
+    required this.workspaceId,
+    this.workflowId,
+    this.compact = false,
+    this.onBack,
+    super.key,
+  });
 
   final String workspaceId;
   final String? workflowId;
+  final bool compact;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<WorkflowEditorScreen> createState() =>
@@ -114,11 +126,22 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
     );
   }
 
-  void _goBackToWorkflows() {
-    WorkflowsRoute(workspaceId: widget.workspaceId).go(context);
+  void _goBack(BuildContext context) {
+    final onBack = widget.onBack;
+    if (onBack == null) {
+      Navigator.of(context).maybePop();
+
+      return;
+    }
+    unawaited(_guardedBack(context, onBack));
   }
 
-  void _syncTextFields(WorkflowDefinition? workflow) {
+  Future<void> _guardedBack(BuildContext context, VoidCallback onBack) async {
+    if (!await _exitGuard.canExit(context) || !context.mounted) return;
+    onBack();
+  }
+
+  void _syncTextFields(WorkspaceWorkflow? workflow) {
     if (workflow == null) return;
     final key = workflow.id.isEmpty
         ? 'new:${workflow.workspaceId}'
@@ -130,7 +153,7 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
   }
 
   Future<void> _save(WorkflowEditorState editorState) async {
-    if (_saving || editorState.workflow == null) return;
+    if (_saving || editorState.workflow?.canManage != true) return;
     await WorkflowEditorSaveFlow.save(_saveRequest(editorState));
   }
 
@@ -149,6 +172,13 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
   );
 
   Future<void> _openNodePicker() async {
+    if (ref
+            .read(workflowEditorProvider(widget.workspaceId, widget.workflowId))
+            .workflow
+            ?.canManage !=
+        true) {
+      return;
+    }
     final draft = await WorkflowNodePicker.show(
       context: context,
       workspaceId: widget.workspaceId,
@@ -176,7 +206,7 @@ abstract final class _WorkflowEditorPresentationFactory {
     required WorkflowEditorState state,
     required WorkflowEditorNotifier editor,
   }) {
-    final identity = _identity(screen);
+    final identity = _identity(screen, context);
     final document = _document(state, editor);
 
     return (
@@ -189,11 +219,15 @@ abstract final class _WorkflowEditorPresentationFactory {
     );
   }
 
-  static _WorkflowEditorIdentity _identity(_WorkflowEditorScreenState screen) =>
-      (
-        workspaceId: screen.widget.workspaceId,
-        workflowId: screen.widget.workflowId,
-      );
+  static _WorkflowEditorIdentity _identity(
+    _WorkflowEditorScreenState screen,
+    BuildContext context,
+  ) => (
+    workspaceId: screen.widget.workspaceId,
+    workflowId: screen.widget.workflowId,
+    compact: screen.widget.compact,
+    onBack: () => screen._goBack(context),
+  );
 
   static _WorkflowEditorDocument _document(
     WorkflowEditorState state,
@@ -215,7 +249,7 @@ abstract final class _WorkflowEditorPresentationFactory {
     BuildContext context,
     WorkflowEditorState state,
   ) => (
-    onBack: screen._goBackToWorkflows,
+    onBack: () => screen._goBack(context),
     onSave: () => screen._save(state),
     onAddNode: () => unawaited(screen._openNodePicker()),
     onEditSignature: () => _openSignatureEditor(
@@ -248,7 +282,35 @@ class const _WorkflowEditorPage({
   @override
   Widget build(BuildContext context) => DraftExitScope(
     guard: presentation.guard,
-    child: _WorkflowEditorScaffold(presentation: presentation),
+    child: presentation.identity.compact
+        ? _WorkflowCompactScaffold(presentation: presentation)
+        : _WorkflowEditorScaffold(presentation: presentation),
+  );
+}
+
+class const _WorkflowCompactScaffold({
+  required final _WorkflowEditorPresentation presentation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Row(
+        children: [
+          AuraIconButton(
+            icon: Icons.close,
+            onPressed: presentation.actions.onBack,
+            tooltip: LocaleKeys.common_close.tr(),
+          ),
+          Expanded(
+            child: _WorkflowEditorTitle(
+              workflowId: presentation.identity.workflowId,
+            ),
+          ),
+          _WorkflowSaveAction(presentation: presentation),
+        ],
+      ),
+      Expanded(child: _WorkflowEditorScaffoldBody(presentation: presentation)),
+    ],
   );
 }
 
@@ -307,7 +369,8 @@ class const _WorkflowSaveAction({
     icon: Icons.save_outlined,
     onPressed: presentation.actions.onSave,
     disabled:
-        presentation.isSaving || presentation.document.state.workflow == null,
+        presentation.isSaving ||
+        presentation.document.state.workflow?.canManage != true,
     tooltip: LocaleKeys.workflow_editor_save.tr(context: context),
   );
 }
@@ -357,6 +420,7 @@ class const _WorkflowNotFoundRecovery({
     workflowId: identity.workflowId,
     messageKey: LocaleKeys.workflow_editor_not_found,
     canRetry: false,
+    onBack: identity.onBack,
   );
 }
 
@@ -369,6 +433,7 @@ class const _WorkflowLoadFailedRecovery({
     workflowId: identity.workflowId,
     messageKey: LocaleKeys.workflow_editor_load_error,
     canRetry: true,
+    onBack: identity.onBack,
   );
 }
 
@@ -390,12 +455,13 @@ class const _WorkflowEditorLoadedWorkflow({
 
 class const _WorkflowEditorReadyView({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
       _WorkflowEditorMetadataSection(presentation: presentation),
+      if (!workflow.canManage) const _WorkflowReadOnlyNotice(),
       _WorkflowEditorToolbarSection(presentation: presentation),
       Expanded(
         child: _WorkflowEditorResponsiveSection(
@@ -420,6 +486,7 @@ class const _WorkflowEditorMetadataSection({
       descriptionController: metadata.descriptionController,
       onNameChanged: metadata.onNameChanged,
       onDescriptionChanged: metadata.onDescriptionChanged,
+      readOnly: presentation.document.state.workflow?.canManage != true,
     );
   }
 }
@@ -428,15 +495,18 @@ class const _WorkflowEditorToolbarSection({
   required final _WorkflowEditorPresentation presentation,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _WorkflowEditorToolbar(
-    onAddNode: presentation.actions.onAddNode,
-    onEditSignature: presentation.actions.onEditSignature,
-  );
+  Widget build(BuildContext context) =>
+      presentation.document.state.workflow?.canManage == true
+      ? _WorkflowEditorToolbar(
+          onAddNode: presentation.actions.onAddNode,
+          onEditSignature: presentation.actions.onEditSignature,
+        )
+      : const SizedBox.shrink();
 }
 
 class const _WorkflowEditorResponsiveSection({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
@@ -445,7 +515,7 @@ class const _WorkflowEditorResponsiveSection({
 
 class const _WorkflowResponsiveEditor({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   static const _wideLayoutBreakpoint = 980.0;
 
@@ -461,7 +531,7 @@ class const _WorkflowResponsiveEditor({
 
 class const _WorkflowEditorLayout({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final bool isWide,
 }) extends StatelessWidget {
   @override
@@ -472,7 +542,7 @@ class const _WorkflowEditorLayout({
 
 class const _WorkflowWideEditor({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   static const _inspectorWidth = 340.0;
 
@@ -495,6 +565,7 @@ class const _WorkflowWideEditor({
             workflow: workflow,
             editorState: document.state,
             editor: document.editor,
+            canEdit: workflow.canManage,
           ),
         ),
       ],
@@ -504,7 +575,7 @@ class const _WorkflowWideEditor({
 
 class const _WorkflowCompactEditor({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   static const _inspectorHeight = 260.0;
 
@@ -527,6 +598,7 @@ class const _WorkflowCompactEditor({
               workflow: workflow,
               editorState: document.state,
               editor: document.editor,
+              canEdit: workflow.canManage,
             ),
           ),
       ],
@@ -545,11 +617,23 @@ class const _WorkflowExecutionNotice() extends StatelessWidget {
   );
 }
 
+class const _WorkflowReadOnlyNotice() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: TextLocale(LocaleKeys.workflow_editor_read_only),
+    ),
+  );
+}
+
 class const _WorkflowMetadataFields({
   required final TextEditingController nameController,
   required final TextEditingController descriptionController,
   required final ValueChanged<String> onNameChanged,
   required final ValueChanged<String> onDescriptionChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
@@ -559,6 +643,7 @@ class const _WorkflowMetadataFields({
       descriptionController: descriptionController,
       onNameChanged: onNameChanged,
       onDescriptionChanged: onDescriptionChanged,
+      readOnly: readOnly,
     ),
   );
 }
@@ -568,6 +653,7 @@ class const _WorkflowMetadataConstraintLayout({
   required final TextEditingController descriptionController,
   required final ValueChanged<String> onNameChanged,
   required final ValueChanged<String> onDescriptionChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   static const _wideLayoutBreakpoint = 650.0;
 
@@ -579,6 +665,7 @@ class const _WorkflowMetadataConstraintLayout({
       descriptionController: descriptionController,
       onNameChanged: onNameChanged,
       onDescriptionChanged: onDescriptionChanged,
+      readOnly: readOnly,
     ),
   );
 }
@@ -589,6 +676,7 @@ class const _WorkflowMetadataLayout({
   required final TextEditingController descriptionController,
   required final ValueChanged<String> onNameChanged,
   required final ValueChanged<String> onDescriptionChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => isWide
@@ -597,12 +685,14 @@ class const _WorkflowMetadataLayout({
           descriptionController: descriptionController,
           onNameChanged: onNameChanged,
           onDescriptionChanged: onDescriptionChanged,
+          readOnly: readOnly,
         )
       : _WorkflowMetadataCompactLayout(
           nameController: nameController,
           descriptionController: descriptionController,
           onNameChanged: onNameChanged,
           onDescriptionChanged: onDescriptionChanged,
+          readOnly: readOnly,
         );
 }
 
@@ -611,6 +701,7 @@ class const _WorkflowMetadataWideLayout({
   required final TextEditingController descriptionController,
   required final ValueChanged<String> onNameChanged,
   required final ValueChanged<String> onDescriptionChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   static const _nameFieldFlex = 2;
   static const _descriptionFieldFlex = 3;
@@ -623,12 +714,14 @@ class const _WorkflowMetadataWideLayout({
         flex: _nameFieldFlex,
         controller: nameController,
         onChanged: onNameChanged,
+        readOnly: readOnly,
       ),
       const SizedBox(width: _fieldSpacing),
       _WorkflowMetadataDescriptionCell(
         flex: _descriptionFieldFlex,
         controller: descriptionController,
         onChanged: onDescriptionChanged,
+        readOnly: readOnly,
       ),
     ],
   );
@@ -638,6 +731,7 @@ class const _WorkflowMetadataNameCell({
   required final int flex,
   required final TextEditingController controller,
   required final ValueChanged<String> onChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
@@ -647,6 +741,7 @@ class const _WorkflowMetadataNameCell({
       labelKey: LocaleKeys.workflow_editor_name,
       textInputAction: .next,
       onChanged: onChanged,
+      readOnly: readOnly,
     ),
   );
 }
@@ -655,6 +750,7 @@ class const _WorkflowMetadataDescriptionCell({
   required final int flex,
   required final TextEditingController controller,
   required final ValueChanged<String> onChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
@@ -664,6 +760,7 @@ class const _WorkflowMetadataDescriptionCell({
       labelKey: LocaleKeys.workflow_editor_description,
       textInputAction: .done,
       onChanged: onChanged,
+      readOnly: readOnly,
     ),
   );
 }
@@ -673,6 +770,7 @@ class const _WorkflowMetadataCompactLayout({
   required final TextEditingController descriptionController,
   required final ValueChanged<String> onNameChanged,
   required final ValueChanged<String> onDescriptionChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   static const _fieldSpacing = 8.0;
 
@@ -684,6 +782,7 @@ class const _WorkflowMetadataCompactLayout({
         labelKey: LocaleKeys.workflow_editor_name,
         textInputAction: .next,
         onChanged: onNameChanged,
+        readOnly: readOnly,
       ),
       const SizedBox(height: _fieldSpacing),
       _WorkflowMetadataField(
@@ -691,6 +790,7 @@ class const _WorkflowMetadataCompactLayout({
         labelKey: LocaleKeys.workflow_editor_description,
         textInputAction: .done,
         onChanged: onDescriptionChanged,
+        readOnly: readOnly,
       ),
     ],
   );
@@ -701,6 +801,7 @@ class const _WorkflowMetadataField({
   required final String labelKey,
   required final TextInputAction textInputAction,
   required final ValueChanged<String> onChanged,
+  required final bool readOnly,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextField(
@@ -708,6 +809,7 @@ class const _WorkflowMetadataField({
     decoration: .new(labelText: labelKey.tr(context: context), isDense: true),
     textInputAction: textInputAction,
     onChanged: onChanged,
+    readOnly: readOnly,
   );
 }
 
@@ -716,6 +818,7 @@ class const _WorkflowLoadRecovery({
   required final String? workflowId,
   required final String messageKey,
   required final bool canRetry,
+  required final VoidCallback onBack,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -728,6 +831,7 @@ class const _WorkflowLoadRecovery({
             workspaceId: workspaceId,
             workflowId: workflowId,
             canRetry: canRetry,
+            onBack: onBack,
           ),
         ],
       ),
@@ -739,6 +843,7 @@ class const _WorkflowRecoveryActions({
   required final String workspaceId,
   required final String? workflowId,
   required final bool canRetry,
+  required final VoidCallback onBack,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -751,7 +856,7 @@ class const _WorkflowRecoveryActions({
           _WorkflowRetryButton(
             onPressed: () => ref.invalidate(workflowProvider(workspaceId, id)),
           ),
-        _WorkflowBackToListButton(workspaceId: workspaceId),
+        _WorkflowBackToListButton(onBack: onBack),
       ],
     );
   }
@@ -766,12 +871,12 @@ class const _WorkflowRetryButton({required final VoidCallback onPressed})
   );
 }
 
-class const _WorkflowBackToListButton({required final String workspaceId})
+class const _WorkflowBackToListButton({required final VoidCallback onBack})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
-    onPressed: () => WorkflowsRoute(workspaceId: workspaceId).go(context),
-    child: const TextLocale(LocaleKeys.workflow_editor_back_to_list),
+    onPressed: onBack,
+    child: const TextLocale(LocaleKeys.common_back),
   );
 }
 
@@ -826,17 +931,30 @@ class const _WorkflowEditSignatureButton({
 
 class const _WorkflowCanvasView({
   required final _WorkflowEditorPresentation presentation,
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => WorkflowCanvas(
-    workflow: workflow,
-    editorState: presentation.document.state,
-    onSelectNode: presentation.document.commands.nodes.select,
-    onMoveNode: presentation.document.commands.nodes.move,
-    onSelectOutput: presentation.document.commands.connections.selectOutput,
-    onSelectInput: presentation.document.commands.connections.selectInput,
-  );
+  Widget build(BuildContext context) {
+    final commands = presentation.document.commands;
+    final canEdit = workflow.canManage;
+
+    return WorkflowCanvas(
+      workflow: workflow,
+      editorState: presentation.document.state,
+      onSelectNode: commands.nodes.select,
+      onMoveNode: canEdit ? commands.nodes.move : _ignoreMove,
+      onSelectOutput: canEdit
+          ? commands.connections.selectOutput
+          : _ignorePortSelection,
+      onSelectInput: canEdit
+          ? commands.connections.selectInput
+          : _ignorePortSelection,
+    );
+  }
+
+  static void _ignoreMove(String nodeId, double x, double y) {}
+
+  static void _ignorePortSelection(String? nodeId, String portId) {}
 }
 
 Future<void> _openSignatureEditor(
@@ -874,6 +992,7 @@ class const _WorkflowSignatureSheet({
       editor: ref.watch(
         workflowEditorProvider(workspaceId, workflowId).notifier,
       ),
+      readOnly: !workflow.canManage,
     );
   }
 }

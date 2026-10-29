@@ -1,11 +1,16 @@
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 
 abstract interface class WorkflowRepository {
-  Stream<List<WorkflowDefinition>> watchWorkflows(String workspaceId);
+  Stream<List<WorkspaceWorkflow>> watchWorkflows(String workspaceId);
 
-  Future<List<WorkflowDefinition>> getWorkflows(String workspaceId);
+  Stream<List<WorkspaceWorkflow>> watchDirectory(
+    String workspaceId,
+    String? parentId,
+  );
 
-  Future<WorkflowDefinition?> getWorkflow(String id);
+  Future<List<WorkspaceWorkflow>> getWorkflows(String workspaceId);
 
-  Future<void> saveWorkflow(WorkflowDefinition workflow);
+  Future<WorkspaceWorkflow?> getWorkflow(String id);
+
+  Future<WorkspaceWorkflow> saveWorkflow(WorkspaceWorkflow workflow);
 }

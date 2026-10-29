@@ -7,6 +7,8 @@ import 'package:auravibes_app/features/browser/providers/browser_session_provide
 import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
 import 'package:auravibes_app/features/browser/screens/browser_panel.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -179,6 +181,161 @@ void main() {
     );
     await tester.pumpWidget(const SizedBox.shrink());
     final _ = await tester.pumpAndSettle();
+  });
+
+  testWidgets('workflow tabs show read-only state and close cleanly', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final runtime = FakeBrowserWebViewService();
+    final now = DateTime.utc(2026, 10, 29);
+    final workflow = WorkspaceWorkflow.create(
+      id: 'flow',
+      workspaceId: 'workspace',
+      name: 'Shared workflow',
+      description: 'Read-only item',
+      revision: 2,
+      createdAt: now,
+      updatedAt: now,
+      canManage: false,
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const _SidebarHarness(),
+          overrides: [
+            browserSessionProvider(
+              'workspace',
+              'conversation',
+            ).overrideWith(_TestBrowserSessionNotifier.new),
+            browserWebViewServiceProvider.overrideWithValue(runtime.service),
+            workflowProvider(
+              'workspace',
+              'flow',
+            ).overrideWith((ref) async => workflow),
+            workflowsProvider('workspace')
+                .overrideWith((ref) => Stream.value([workflow])),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open-sidebar')));
+    final _ = await tester.pumpAndSettle();
+    final ref = ProviderScope.containerOf(
+      tester.element(find.byType(BrowserPanel)),
+    );
+    ref
+        .read(workspaceOpenViewProvider('workspace', 'conversation').notifier)
+        .openItem('flow', 'workflow');
+    final _ = await tester.pumpAndSettle();
+
+    final chip = find.bySemanticsIdentifier('sidebar_workspace_workflow:flow');
+    expect(chip, findsOneWidget);
+    expect(
+      find.descendant(of: chip, matching: find.text('Shared workflow')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Read only: only workspace owners and admins can edit this workflow.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Add step'), findsNothing);
+    final metadataFields = tester.widgetList<TextField>(find.byType(TextField));
+    expect(metadataFields, hasLength(2));
+    expect(metadataFields.every((field) => field.readOnly), isTrue);
+
+    tester.view.physicalSize = const Size(466, 678);
+    await tester.pumpAndSettle();
+    tester.view.physicalSize = const Size(1280, 800);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton &&
+            widget.identifier == 'sidebar_close_workspace_workflow:flow',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(chip, findsNothing);
+    expect(find.text('Sidebar closed'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('workflow tab close confirms unsaved metadata edits', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final runtime = FakeBrowserWebViewService();
+    final now = DateTime.utc(2026, 10, 29);
+    final workflow = WorkspaceWorkflow.create(
+      id: 'flow',
+      workspaceId: 'workspace',
+      name: 'Editable workflow',
+      description: 'Draft',
+      createdAt: now,
+      updatedAt: now,
+    );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const _SidebarHarness(),
+          overrides: [
+            browserSessionProvider(
+              'workspace',
+              'conversation',
+            ).overrideWith(_TestBrowserSessionNotifier.new),
+            browserWebViewServiceProvider.overrideWithValue(runtime.service),
+            workflowProvider(
+              'workspace',
+              'flow',
+            ).overrideWith((ref) async => workflow),
+            workflowsProvider('workspace')
+                .overrideWith((ref) => Stream.value([workflow])),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open-sidebar')));
+    final _ = await tester.pumpAndSettle();
+    final ref = ProviderScope.containerOf(
+      tester.element(find.byType(BrowserPanel)),
+    );
+    ref
+        .read(workspaceOpenViewProvider('workspace', 'conversation').notifier)
+        .openItem('flow', 'workflow');
+    final _ = await tester.pumpAndSettle();
+
+    final chip = find.bySemanticsIdentifier('sidebar_workspace_workflow:flow');
+    final close = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraIconButton &&
+          widget.identifier == 'sidebar_close_workspace_workflow:flow',
+    );
+    await tester.enterText(find.byType(TextField).first, 'Unsaved workflow');
+    await tester.pump();
+    await tester.tap(close);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Keep editing'), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    final _ = await tester.pumpAndSettle();
+    expect(chip, findsOneWidget);
+
+    await tester.tap(close);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard changes'));
+    final _ = await tester.pumpAndSettle();
+    expect(chip, findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('workspace requests open separate tabs and can be closed', (

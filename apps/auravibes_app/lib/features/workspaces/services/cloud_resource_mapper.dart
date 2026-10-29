@@ -164,6 +164,9 @@ void _validateResourceSpecificFields(
   if (kind == WorkspaceResourceKind.folder) {
     _validateFolderParent(data['parentId']);
   }
+  if (kind == WorkspaceResourceKind.workflow) {
+    _validateFolderParent(data['parentId']);
+  }
   _validateVisibility(kind, data);
   _validatePermissionMode(kind, data);
   _validateAssociation(kind, data);

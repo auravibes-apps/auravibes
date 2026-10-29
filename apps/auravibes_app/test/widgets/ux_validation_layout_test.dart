@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/data/repositories/workflows_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -61,10 +62,13 @@ import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart'
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -388,6 +392,89 @@ void main() {
   });
 
   for (final viewport in const [
+    (name: 'compact', size: Size(466, 678)),
+    (name: 'expanded', size: Size(1280, 800)),
+  ]) {
+    testWidgets('production Workflow opens in chat ${viewport.name}', (
+      tester,
+    ) async {
+      final fixture = await UxValidationFixture.create();
+      final now = DateTime.utc(2026, 10, 29);
+      await WorkflowsRepository(fixture.database).saveWorkflow(
+        WorkspaceWorkflow.create(
+          id: 'workflow-ux',
+          workspaceId: fixture.workspaceId,
+          name: 'Prepare weekly update',
+          description: 'Collect highlights for the team.',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final router = await fixture.pump(
+        tester,
+        ConversationRoute(
+          workspaceId: fixture.workspaceId,
+          chatId: fixture.chatId,
+        ).location,
+        size: viewport.size,
+      );
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatConversationScreen)),
+      );
+      container
+          .read(
+            workspaceOpenViewProvider(
+              fixture.workspaceId,
+              fixture.chatId,
+            ).notifier,
+          )
+          .openItem('workflow-ux', 'workflow');
+      await fixture.settle(tester);
+
+      expect(find.text('Add step'), findsOneWidget);
+      expect(
+        find.bySemanticsIdentifier('sidebar_workspace_workflow:workflow-ux'),
+        findsOneWidget,
+      );
+      await _capture(
+        tester,
+        'workflow-chat-panel-${viewport.name}',
+        router.routeInformationProvider.value.uri.toString(),
+        locale: 'en',
+        size: viewport.size,
+        scale: 1,
+        dark: false,
+      );
+      final addStep = find.ancestor(
+        of: find.text('Add step'),
+        matching: find.byType(AuraButton),
+      );
+      expect(addStep, findsOneWidget);
+      await tester.tap(addStep);
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNWidgets(3));
+      final searchField = find.byType(TextField).last;
+      await tester.enterText(searchField, 'Brave Search');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Connector tools'), findsOneWidget);
+      expect(find.text('Brave Search'), findsWidgets);
+      expect(find.textContaining('Read operation'), findsWidgets);
+      expect(find.textContaining('No connection available'), findsWidgets);
+      await _capture(
+        tester,
+        'workflow-node-picker-${viewport.name}',
+        router.routeInformationProvider.value.uri.toString(),
+        locale: 'en',
+        size: viewport.size,
+        scale: 1,
+        dark: false,
+      );
+      expect(tester.takeException(), isNull);
+      await fixture.close(tester);
+    });
+  }
+
+  for (final viewport in const [
     (name: 'duo_closed', size: Size(466, 678)),
     (name: 'duo_open_content', size: Size(671, 669)),
     (name: 'duo_open', size: Size(951, 669)),
@@ -402,6 +489,19 @@ void main() {
           final fixture = await UxValidationFixture.create(
             empty: name == 'IntroRoute',
           );
+          if (name == 'WorkspaceItemsRoute') {
+            final now = DateTime.utc(2026, 10, 29);
+            await WorkflowsRepository(fixture.database).saveWorkflow(
+              WorkspaceWorkflow.create(
+                id: 'weekly-update',
+                workspaceId: fixture.workspaceId,
+                name: 'Prepare weekly update',
+                description: 'Collect highlights for the team.',
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+          }
           if (name == 'CloudTools') {
             expect(
               await fixture.database.workspaceDao.patchWorkspace(
@@ -465,6 +565,9 @@ void main() {
             expect(find.textContaining('Tap the + button'), findsOneWidget);
             expect(find.byIcon(Icons.add), findsOneWidget);
           }
+          if (name == 'WorkspaceItemsRoute') {
+            expect(find.text('Prepare weekly update'), findsOneWidget);
+          }
           if (name == 'AgentsRoute' || name == 'DarkAgents') {
             final measurement = _disabledBadgeMeasurement(tester);
             expect(
@@ -519,7 +622,7 @@ void main() {
             findsWidgets,
             reason: '$name route must apply the app side safe area',
           );
-          if (viewport.name != 'desktop') {
+          if (viewport.name != 'desktop' || name == 'WorkspaceItemsRoute') {
             await _capture(
               tester,
               '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
@@ -630,6 +733,7 @@ void main() {
   }
   for (final name in const [
     'NewChatRoute',
+    'WorkspaceItemsRoute',
     'SkillsRoute',
     'ToolsRoute',
     'ServiceConnectionsRoute',
@@ -833,6 +937,12 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       selection: -1,
       expected: null,
     ),
+    'WorkspaceItemsRoute' => (
+      location: '$base/items',
+      screen: WorkspaceItemsScreen,
+      selection: null,
+      expected: null,
+    ),
     'WorkspaceCreateRoute' => (
       location: '$base/manage-workspaces/create',
       screen: CreateWorkspaceScreen,
@@ -959,6 +1069,7 @@ const _routeNames = [
   'IntroRoute',
   'WorkspaceRoute',
   'NewChatRoute',
+  'WorkspaceItemsRoute',
   'ChatsRoute',
   'ConversationRoute',
   'SubAgentConversationRoute',

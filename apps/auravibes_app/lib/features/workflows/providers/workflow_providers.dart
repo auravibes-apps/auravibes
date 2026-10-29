@@ -26,12 +26,12 @@ WorkflowRepository workflowRepository(Ref ref, String workspaceId) {
 }
 
 @riverpod
-Stream<List<WorkflowDefinition>> workflows(Ref ref, String workspaceId) => ref
+Stream<List<WorkspaceWorkflow>> workflows(Ref ref, String workspaceId) => ref
     .watch(workflowRepositoryProvider(workspaceId))
     .watchWorkflows(workspaceId);
 
 @riverpod
-Future<WorkflowDefinition?> workflow(
+Future<WorkspaceWorkflow?> workflow(
   Ref ref,
   String workspaceId,
   String workflowId,

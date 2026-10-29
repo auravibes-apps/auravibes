@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_editor_state.dart';
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_connector_tool_sample.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_port_group.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_signature_editor.dart';
@@ -8,37 +9,54 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class WorkflowInspectorPanel extends StatelessWidget {
+class WorkflowInspectorPanel extends ConsumerWidget {
   const new({
     required this.workflow,
     required this.editorState,
     required this.editor,
+    this.canEdit = true,
     super.key,
   });
 
-  final WorkflowDefinition workflow;
+  final WorkspaceWorkflow workflow;
   final WorkflowEditorState editorState;
   final WorkflowEditorNotifier editor;
+  final bool canEdit;
 
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(16),
-    children: [
-      _WorkflowInspectorContent(
-        workflow: workflow,
-        editorState: editorState,
-        editor: editor,
-      ),
-    ],
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeWorkflows = ref.watch(workflowsProvider(workflow.workspaceId));
+    final activeWorkflowIds = switch (activeWorkflows) {
+      AsyncData(:final value) => {for (final item in value) item.id},
+      AsyncLoading() || AsyncError() => const <String>{},
+    };
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _WorkflowInspectorContent(
+          workflow: workflow,
+          editorState: editorState,
+          editor: editor,
+          canEdit: canEdit,
+          activeWorkflowIds: activeWorkflowIds,
+          availabilityKnown: activeWorkflows is AsyncData,
+        ),
+      ],
+    );
+  }
 }
 
 class const _WorkflowInspectorContent({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
+  required final Set<String> activeWorkflowIds,
+  required final bool availabilityKnown,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -47,30 +65,52 @@ class const _WorkflowInspectorContent({
         .firstOrNull;
 
     return node == null
-        ? WorkflowSignatureEditor(workflow: workflow, editor: editor)
+        ? WorkflowSignatureEditor(
+            workflow: workflow,
+            editor: editor,
+            readOnly: !canEdit,
+          )
         : _WorkflowNodeInspector(
             workflow: workflow,
             node: node,
             editor: editor,
+            canEdit: canEdit,
+            unavailable:
+                availabilityKnown &&
+                node.kind == .workflow &&
+                !activeWorkflowIds.contains(node.targetId),
           );
   }
 }
 
 class const _WorkflowNodeInspector({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowNode node,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
+  required final bool unavailable,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
-      _WorkflowNodeHeading(node: node, editor: editor),
-      _WorkflowNodeLabelField(node: node, editor: editor),
-      _WorkflowNodePortGroup(node: node, editor: editor, isInput: true),
+      _WorkflowNodeHeading(node: node, editor: editor, canEdit: canEdit),
+      if (unavailable) const _UnavailableWorkflowNotice(),
+      _WorkflowNodeLabelField(node: node, editor: editor, canEdit: canEdit),
+      _WorkflowNodePortGroup(
+        node: node,
+        editor: editor,
+        isInput: true,
+        canEdit: canEdit,
+      ),
       const SizedBox(height: 12),
-      _WorkflowNodePortGroup(node: node, editor: editor, isInput: false),
-      if (node.kind == .connectorTool)
+      _WorkflowNodePortGroup(
+        node: node,
+        editor: editor,
+        isInput: false,
+        canEdit: canEdit,
+      ),
+      if (node.kind == .connectorTool && canEdit)
         WorkflowConnectorToolSample(
           workspaceId: workflow.workspaceId,
           node: node,
@@ -78,20 +118,36 @@ class const _WorkflowNodeInspector({
           key: ValueKey(node.id),
         ),
       const SizedBox(height: 16),
-      _NodeConnections(workflow: workflow, node: node, editor: editor),
+      _NodeConnections(
+        workflow: workflow,
+        node: node,
+        editor: editor,
+        canEdit: canEdit,
+      ),
     ],
+  );
+}
+
+class const _UnavailableWorkflowNotice() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.only(top: 8),
+    child: TextLocale(
+      LocaleKeys.workflow_editor_referenced_workflow_unavailable,
+    ),
   );
 }
 
 class const _WorkflowNodeHeading({
   required final WorkflowNode node,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
       Expanded(child: _WorkflowNodeKindLabel(kind: node.kind)),
-      _WorkflowDeleteNodeButton(nodeId: node.id, editor: editor),
+      if (canEdit) _WorkflowDeleteNodeButton(nodeId: node.id, editor: editor),
     ],
   );
 }
@@ -123,15 +179,19 @@ class const _WorkflowDeleteNodeButton({
 class const _WorkflowNodeLabelField({
   required final WorkflowNode node,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextFormField(
     key: ValueKey('workflow-node-name-${node.id}'),
     initialValue: node.label,
+    readOnly: !canEdit,
     decoration: .new(
       labelText: LocaleKeys.workflow_editor_node_label.tr(context: context),
     ),
-    onChanged: (value) => editor.commands().nodes.setLabel(node.id, value),
+    onChanged: canEdit
+        ? (value) => editor.commands().nodes.setLabel(node.id, value)
+        : null,
   );
 }
 
@@ -139,6 +199,7 @@ class const _WorkflowNodePortGroup({
   required final WorkflowNode node,
   required final WorkflowEditorNotifier editor,
   required final bool isInput,
+  required final bool canEdit,
 }) extends StatelessWidget {
   List<WorkflowPort> get _ports => isInput ? node.inputs : node.outputs;
 
@@ -153,6 +214,7 @@ class const _WorkflowNodePortGroup({
     onAdd: _add(context),
     onUpdate: _update,
     onRemove: _remove,
+    readOnly: !canEdit,
   );
 
   VoidCallback _add(BuildContext context) =>
@@ -184,19 +246,25 @@ class const _WorkflowNodePortGroup({
 }
 
 class const _NodeConnections({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowNode node,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      _WorkflowConnectionList(workflow: workflow, node: node, editor: editor);
+  Widget build(BuildContext context) => _WorkflowConnectionList(
+    workflow: workflow,
+    node: node,
+    editor: editor,
+    canEdit: canEdit,
+  );
 }
 
 class const _WorkflowConnectionList({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowNode node,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -207,6 +275,7 @@ class const _WorkflowConnectionList({
       workflow: workflow,
       connections: connections,
       editor: editor,
+      canEdit: canEdit,
     );
   }
 
@@ -219,9 +288,10 @@ class const _WorkflowConnectionList({
 }
 
 class const _WorkflowConnectionItems({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final List<WorkflowConnection> connections,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
@@ -233,30 +303,34 @@ class const _WorkflowConnectionItems({
           workflow: workflow,
           connection: connection,
           editor: editor,
+          canEdit: canEdit,
         ),
     ],
   );
 }
 
 class const _WorkflowConnectionTile({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowConnection connection,
   required final WorkflowEditorNotifier editor,
+  required final bool canEdit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     title: _WorkflowConnectionTitle(workflow: workflow, connection: connection),
-    trailing: _WorkflowConnectionRemoveButton(
-      connection: connection,
-      editor: editor,
-    ),
+    trailing: canEdit
+        ? _WorkflowConnectionRemoveButton(
+            connection: connection,
+            editor: editor,
+          )
+        : null,
     dense: true,
     contentPadding: EdgeInsets.zero,
   );
 }
 
 class const _WorkflowConnectionTitle({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowConnection connection,
 }) extends StatelessWidget {
   @override
@@ -278,7 +352,7 @@ class const _WorkflowConnectionRemoveButton({
 
 abstract final class WorkflowConnectionText {
   static String description(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowConnection connection,
     BuildContext context,
   ) {
@@ -302,7 +376,7 @@ abstract final class WorkflowConnectionText {
   }
 
   static String _endpointLabel(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     String? nodeId,
     String boundaryKey,
     BuildContext context,

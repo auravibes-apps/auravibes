@@ -1,15 +1,36 @@
-# Workflow Connector Tool Nodes
+# Workflow Items and Connector Tool Nodes
 
 - Status: Accepted
 - Date: 2026-10-28
+- Updated: 2026-10-29
 
-## Purpose
+## Item model and location
+
+- A Workflow is a named, editable item in the current Workspace Directory.
+- The Workflow item owns stable ID, workspace, parent folder, name,
+  description, revision and lifecycle. Its Workflow definition owns only the
+  graph inputs, outputs, nodes and connections.
+- Local Drift and cloud workflow resources store the same item metadata.
+- Do not migrate unpublished prototype rows or legacy Skill-node data.
+- Directory supports create, list, rename, move, duplicate, trash and restore.
+  A duplicate gets a new ID and retains Connector/tool and nested-Workflow
+  references.
+- Trashing a referenced Workflow keeps its ID in the graph. Show the nested
+  step as unavailable until the target is restored or repaired.
+- Open the item from Directory or an existing chat item tab. Do not add a
+  Workflows sidebar destination or a separate discovery tool.
+- AI uses existing `readDirectory` and `readItem` operations to find and read
+  active Workflows in the selected Workspace, with existing access checks.
+
+## Connector tool nodes
+
+### Purpose
 
 Workflow nodes should use the executable Connector tools already available in
 the workspace. People should be able to choose a named tool and inspect its
 inputs and outputs without guessing.
 
-## Decisions
+### Decisions
 
 - The picker lists executable Connector tools with connector name, tool name,
   description, and a visible connection requirement. A missing Connection does
@@ -34,13 +55,13 @@ inputs and outputs without guessing.
 - Legacy Skill workflow nodes are not supported. This feature has not shipped
   or been used, so no Skill-node decoder or server compatibility path remains.
 
-## Scope
+### Scope
 
-The editor saves workflow definitions but does not execute whole workflows yet.
-Sampling executes one read tool only, or infers a write tool's output from
-pasted JSON.
+The editor saves Workflow definitions but does not execute whole workflows.
+Sampling may execute one read Connector tool with temporary inputs. Write-tool
+samples require pasted JSON and never run the write operation.
 
-## Acceptance criteria
+### Acceptance criteria
 
 1. Users can choose real Connector tools before connecting an account and can
    see when a Connection is required.
@@ -49,3 +70,13 @@ pasted JSON.
 4. Write samples require pasted JSON and never dispatch a write operation.
 5. Output ports follow the inference and repeated-sample rules above.
 6. Saved workflow node kinds contain no Skill node.
+7. A user can create a Workflow in the current folder and the editor opens the
+   saved item.
+8. Directory supports local and cloud listing, saving, folder moves,
+   duplication, trash and restore.
+9. A trashed nested Workflow remains referenced and appears unavailable until
+   restored or repaired.
+10. Existing chat item tabs can open, restore and close a Workflow in compact
+    and expanded layouts without losing unsaved edits silently.
+11. AI Directory path/name searches include active Workflows. `readItem`
+    returns the graph only when the item belongs to the authorized Workspace.

@@ -15,4 +15,10 @@ _Avoid_: Workspace items as the navigation label, filesystem as a synonym
 A named container for folders and items within a Directory.
 
 **Item**:
-A named object in a Directory, such as a table, view or file. Each item belongs to one workspace and retains its identity when renamed or moved.
+A named object in a Directory, such as a table, view, file or Workflow. Each item belongs to one workspace and retains its identity when renamed or moved.
+
+**Workflow**:
+A reusable Directory item that contains a Workflow definition. It has a name and description, belongs to a workspace, and can live in a folder.
+
+**Workflow definition**:
+The graph of inputs, outputs, nodes and connections that describes a Workflow's steps.

@@ -58,6 +58,7 @@ void main() {
     final data = {
       'name': 'Workflow',
       'description': 'Composed workflow',
+      'parentId': 'folder-1',
       'definition': {
         'version': 1,
         'inputs': [
@@ -115,7 +116,10 @@ void main() {
     );
     expect(
       references.map((reference) => (reference.kind, reference.id)),
-      [(WorkspaceResourceKind.agent, 'agent-1')],
+      [
+        (WorkspaceResourceKind.folder, 'folder-1'),
+        (WorkspaceResourceKind.agent, 'agent-1'),
+      ],
     );
   });
 

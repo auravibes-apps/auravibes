@@ -117,7 +117,7 @@ part 'app_database.g.dart';
     RecentModelSelections,
     ModelUsageRecords,
     BackgroundWorks,
-    Workflows,
+    WorkspaceWorkflows,
     WorkspaceFolders,
     WorkspaceTables,
     WorkspaceTableRecords,
@@ -158,7 +158,7 @@ part 'app_database.g.dart';
     AppSkillWorkspaceSettingsDao,
     RecentModelSelectionsDao,
     ModelUsageRecordsDao,
-    WorkflowsDao,
+    WorkspaceWorkflowsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -242,7 +242,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAttachmentDeletionsSchemaVersion + 1;
   static const int _workflowSchemaVersion =
       _workspaceAssetDeletionOwnerSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workflowSchemaVersion;
+  static const int _workspaceWorkflowItemSchemaVersion =
+      _workflowSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceWorkflowItemSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -514,11 +516,11 @@ extension on AppDatabase {
   }
 
   Future<void> _upgradeWorkflowSchema(Migrator m, int from) async {
-    if (from >= AppDatabase._workflowSchemaVersion ||
-        await _tableExists('workflows')) {
-      return;
+    if (from >= AppDatabase._workspaceWorkflowItemSchemaVersion) return;
+    await customStatement('DROP TABLE IF EXISTS workflows');
+    if (!await _tableExists('workspace_workflows')) {
+      await m.createTable(workspaceWorkflows);
     }
-    await m.createTable(workflows);
   }
 
   Future<void> _upgradeModelCapabilitiesSchema(Migrator m) async {

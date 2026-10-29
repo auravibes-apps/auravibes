@@ -94,8 +94,17 @@ class const _TableReader(
     return switch (resource.resourceKind) {
       .folder => _visibleFolder(resource, member.role),
       .file => await _file(resource),
+      .workflow => _workflow(resource, member.role),
       _ => await _tableResource(resource),
     };
+  }
+
+  WorkspaceResource _workflow(WorkspaceResource resource, String role) {
+    final data = _data(resource);
+    data['canManageWorkflow'] =
+        role == WorkspaceRoles.owner || role == WorkspaceRoles.admin;
+
+    return resource.copyWith(data: jsonEncode(data));
   }
 
   Future<bool> canSeeEvent(WorkspaceEvent event) =>

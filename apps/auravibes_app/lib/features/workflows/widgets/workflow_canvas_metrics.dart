@@ -31,7 +31,7 @@ abstract final class WorkflowCanvasMetrics {
 }
 
 abstract final class WorkflowCanvasLayout {
-  static Size sizeFor(WorkflowDefinition workflow) {
+  static Size sizeFor(WorkspaceWorkflow workflow) {
     final double width = math.max(
       WorkflowCanvasMetrics.canvasWidth,
       _maxNodeRight(workflow.nodes) + WorkflowCanvasMetrics.canvasPadding,
@@ -54,7 +54,7 @@ abstract final class WorkflowCanvasLayout {
     ),
   );
 
-  static double _maxContentBottom(WorkflowDefinition workflow) => math.max(
+  static double _maxContentBottom(WorkspaceWorkflow workflow) => math.max(
     _maxNodeBottom(workflow.nodes),
     _boundaryBottom(workflow.inputs, workflow.outputs),
   );

@@ -40,7 +40,7 @@ void main() {
       WorkflowGraphValidation.validateWorkflowDefinition(workflow),
       isEmpty,
     );
-    final decoded = WorkflowDefinition.decode(workflow.encode());
+    final decoded = WorkspaceWorkflow.decode(workflow.encode());
     expect(decoded.connections.first.fromNodeId, isNull);
     expect(decoded.connections.last.toNodeId, isNull);
   });
@@ -125,13 +125,13 @@ void main() {
   });
 }
 
-WorkflowDefinition _workflow({
+WorkspaceWorkflow _workflow({
   String id = 'draft',
   List<WorkflowPort> inputs = const [],
   List<WorkflowPort> outputs = const [],
   List<WorkflowNode> nodes = const [],
   List<WorkflowConnection> connections = const [],
-}) => WorkflowDefinition(
+}) => WorkspaceWorkflow.create(
   id: id,
   workspaceId: 'workspace-1',
   name: 'Workflow',

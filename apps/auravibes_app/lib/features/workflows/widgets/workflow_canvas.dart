@@ -19,7 +19,7 @@ class WorkflowCanvas extends StatefulWidget {
     super.key,
   });
 
-  final WorkflowDefinition workflow;
+  final WorkspaceWorkflow workflow;
   final WorkflowEditorState editorState;
   final ValueChanged<String> onSelectNode;
   final void Function(String nodeId, double x, double y) onMoveNode;
@@ -59,7 +59,7 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
 }
 
 class const _WorkflowCanvasViewport({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
   required final TransformationController transform,
   required final ValueChanged<String> onSelectNode,
@@ -90,7 +90,7 @@ class const _WorkflowCanvasViewport({
 }
 
 class const _WorkflowCanvasScene({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
   required final ValueChanged<String> onSelectNode,
   required final void Function(String nodeId, double x, double y) onMoveNode,
@@ -117,7 +117,7 @@ class const _WorkflowCanvasScene({
 }
 
 class const _WorkflowCanvasSceneLayers({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
   required final ValueChanged<String> onSelectNode,
   required final void Function(String nodeId, double x, double y) onMoveNode,
@@ -154,7 +154,7 @@ class const _WorkflowGridLayer() extends StatelessWidget {
 }
 
 class const _WorkflowConnectionLayer({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Positioned.fill(
@@ -168,7 +168,7 @@ class const _WorkflowConnectionLayer({
 }
 
 class const _WorkflowBoundaryPosition({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
   required final void Function(String? nodeId, String portId) onSelectOutput,
   required final void Function(String? nodeId, String portId) onSelectInput,
@@ -228,7 +228,7 @@ class const _WorkflowOutputBoundary({
 }
 
 class const _WorkflowCanvasNodes({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
   required final ValueChanged<String> onSelectNode,
   required final void Function(String nodeId, double x, double y) onMoveNode,
@@ -860,7 +860,7 @@ abstract final class WorkflowCanvasGridPainter {
 class _ConnectionPainter extends CustomPainter {
   const new({required this.workflow, required this.color});
 
-  final WorkflowDefinition workflow;
+  final WorkspaceWorkflow workflow;
   final Color color;
 
   @override
@@ -874,7 +874,7 @@ class _ConnectionPainter extends CustomPainter {
 
 typedef _WorkflowConnectionDrawingContext = ({
   Map<String, WorkflowNode> nodes,
-  WorkflowDefinition workflow,
+  WorkspaceWorkflow workflow,
   Paint paint,
   Color color,
 });
@@ -887,7 +887,7 @@ typedef _WorkflowConnectionSegment = ({
 
 abstract final class WorkflowConnectionPainter {
   static const _curveOffsetDivisor = 2.0;
-  static void paint(Canvas canvas, WorkflowDefinition workflow, Color color) {
+  static void paint(Canvas canvas, WorkspaceWorkflow workflow, Color color) {
     final nodes = {for (final node in workflow.nodes) node.id: node};
     final drawing = (
       nodes: nodes,

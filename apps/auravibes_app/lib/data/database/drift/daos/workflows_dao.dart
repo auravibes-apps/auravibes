@@ -4,34 +4,63 @@ import 'package:drift/drift.dart';
 
 part 'workflows_dao.g.dart';
 
-@DriftAccessor(tables: [Workflows])
-class WorkflowsDao(super.attachedDatabase)
+@DriftAccessor(tables: [WorkspaceWorkflows])
+class WorkspaceWorkflowsDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
-    with _$WorkflowsDaoMixin;
+    with _$WorkspaceWorkflowsDaoMixin;
 
-extension WorkflowsDaoReadOperations on WorkflowsDao {
-  Stream<List<WorkflowsTable>> watchByWorkspace(String workspaceId) =>
-      (select(workflows)
-            ..where((table) => table.workspaceId.equals(workspaceId))
+extension WorkspaceWorkflowsDaoReadOperations on WorkspaceWorkflowsDao {
+  Stream<List<WorkspaceWorkflowRow>> watchByDirectory(
+    String workspaceId,
+    String? parentId,
+  ) =>
+      (select(workspaceWorkflows)
+            ..where(
+              (table) =>
+                  table.workspaceId.equals(workspaceId) &
+                  table.parentId.equalsNullable(parentId) &
+                  table.deletedAt.isNull(),
+            )
             ..orderBy([
               (table) => OrderingTerm(expression: table.updatedAt, mode: .desc),
             ]))
           .watch();
 
-  Future<List<WorkflowsTable>> getByWorkspace(String workspaceId) =>
-      (select(workflows)
-            ..where((table) => table.workspaceId.equals(workspaceId))
+  Stream<List<WorkspaceWorkflowRow>> watchWorkspace(String workspaceId) =>
+      (select(workspaceWorkflows)
+            ..where(
+              (table) =>
+                  table.workspaceId.equals(workspaceId) &
+                  table.deletedAt.isNull(),
+            )
+            ..orderBy([
+              (table) => OrderingTerm(expression: table.updatedAt, mode: .desc),
+            ]))
+          .watch();
+
+  Future<List<WorkspaceWorkflowRow>> getWorkspace(String workspaceId) =>
+      (select(workspaceWorkflows)
+            ..where(
+              (table) =>
+                  table.workspaceId.equals(workspaceId) &
+                  table.deletedAt.isNull(),
+            )
             ..orderBy([
               (table) => OrderingTerm(expression: table.updatedAt, mode: .desc),
             ]))
           .get();
 
-  Future<WorkflowsTable?> getById(String id) => (select(
-    workflows,
+  Future<WorkspaceWorkflowRow?> getById(String id) =>
+      (select(workspaceWorkflows)
+            ..where((table) => table.id.equals(id) & table.deletedAt.isNull()))
+          .getSingleOrNull();
+
+  Future<WorkspaceWorkflowRow?> getByIdIncludingDeleted(String id) => (select(
+    workspaceWorkflows,
   )..where((table) => table.id.equals(id))).getSingleOrNull();
 }
 
-extension WorkflowsDaoWriteOperations on WorkflowsDao {
-  Future<void> save(WorkflowsCompanion workflow) =>
-      into(workflows).insertOnConflictUpdate(workflow);
+extension WorkspaceWorkflowsDaoWriteOperations on WorkspaceWorkflowsDao {
+  Future<void> save(WorkspaceWorkflowsCompanion workflow) =>
+      into(workspaceWorkflows).insertOnConflictUpdate(workflow);
 }

@@ -44,7 +44,6 @@ class const CloudAccountAuthScreen({
       .chats => LocaleKeys.navigation_chats,
       .agentsAndSkills => LocaleKeys.navigation_agents_skills,
       .connections => LocaleKeys.navigation_connections,
-      .workflows => LocaleKeys.workflows_screen_title,
       .appSettings => LocaleKeys.settings_screen_title,
       .cloudAccounts => LocaleKeys.cloud_accounts_title,
       .items => LocaleKeys.workspace_items_title,

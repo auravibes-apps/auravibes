@@ -11,7 +11,7 @@ abstract final class WorkflowGraphValidation {
   static const maxWorkflowNodePosition = 10000.0;
 
   static List<WorkflowGraphIssue> validateWorkflowDefinition(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) => _WorkflowGraphValidator(workflow).validate();
 
   static bool workflowPortTypesCompatible(
@@ -23,8 +23,8 @@ abstract final class WorkflowGraphValidation {
       target == WorkflowValueType.any;
 
   static bool workflowHasDependencyCycle(
-    WorkflowDefinition candidate,
-    Iterable<WorkflowDefinition> existing,
+    WorkspaceWorkflow candidate,
+    Iterable<WorkspaceWorkflow> existing,
   ) => WorkflowDependencyGraph.withCandidate(candidate, existing).hasAnyCycle();
 }
 
@@ -33,7 +33,7 @@ enum _WorkflowVisitState { visiting, visited }
 class WorkflowDependencyGraph {
   new(Map<String, Set<String>> edges) : _edges = edges;
 
-  factory fromWorkflows(Iterable<WorkflowDefinition> workflows) =>
+  factory fromWorkflows(Iterable<WorkspaceWorkflow> workflows) =>
       WorkflowDependencyGraph({
         for (final workflow in workflows)
           workflow.id: {
@@ -43,8 +43,8 @@ class WorkflowDependencyGraph {
       });
 
   factory withCandidate(
-    WorkflowDefinition candidate,
-    Iterable<WorkflowDefinition> existing,
+    WorkspaceWorkflow candidate,
+    Iterable<WorkspaceWorkflow> existing,
   ) => WorkflowDependencyGraph.fromWorkflows([
     for (final workflow in existing)
       if (workflow.id != candidate.id) workflow,
@@ -100,7 +100,7 @@ class WorkflowDependencyGraph {
 class _WorkflowGraphValidator {
   new(this.workflow);
 
-  final WorkflowDefinition workflow;
+  final WorkspaceWorkflow workflow;
 
   List<WorkflowGraphIssue> validate() {
     final issues = <WorkflowGraphIssue>[
@@ -118,30 +118,30 @@ class _WorkflowGraphValidator {
 }
 
 abstract final class _WorkflowDefinitionLimitValidator {
-  static List<WorkflowGraphIssue> validate(WorkflowDefinition workflow) => [
+  static List<WorkflowGraphIssue> validate(WorkspaceWorkflow workflow) => [
     ..._nameIssues(workflow),
     ..._nodeLimitIssues(workflow),
     ..._connectionLimitIssues(workflow),
     ..._boundaryPortIssues(workflow),
   ];
 
-  static List<WorkflowGraphIssue> _nameIssues(WorkflowDefinition workflow) =>
+  static List<WorkflowGraphIssue> _nameIssues(WorkspaceWorkflow workflow) =>
       workflow.name.trim().isEmpty ? [.emptyName] : const [];
 
   static List<WorkflowGraphIssue> _nodeLimitIssues(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) => _exceedsCollectionLimit(workflow.nodes.length)
       ? [.tooManyNodes]
       : const [];
 
   static List<WorkflowGraphIssue> _connectionLimitIssues(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) => _exceedsCollectionLimit(workflow.connections.length)
       ? [.tooManyConnections]
       : const [];
 
   static List<WorkflowGraphIssue> _boundaryPortIssues(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) => [
     ..._WorkflowPortCollectionValidator.validate(workflow.inputs),
     ..._WorkflowPortCollectionValidator.validate(workflow.outputs),
@@ -160,7 +160,7 @@ abstract final class _WorkflowDefinitionLimitValidator {
 }
 
 abstract final class _WorkflowNodeValidator {
-  static List<WorkflowGraphIssue> validate(WorkflowDefinition workflow) {
+  static List<WorkflowGraphIssue> validate(WorkspaceWorkflow workflow) {
     final issues = <WorkflowGraphIssue>[];
     final nodeIds = <String>{};
     for (final node in workflow.nodes) {
@@ -252,12 +252,12 @@ typedef _ConnectionValidationResult = ({
 });
 
 class _WorkflowConnectionValidator {
-  new(WorkflowDefinition workflow)
+  new(WorkspaceWorkflow workflow)
     : workflow = workflow,
       _nodesById = {for (final node in workflow.nodes) node.id: node},
       _edges = {for (final node in workflow.nodes) node.id: <String>{}};
 
-  final WorkflowDefinition workflow;
+  final WorkspaceWorkflow workflow;
   final List<WorkflowGraphIssue> _issues = [];
   final Set<
     ({String? fromNodeId, String fromPortId, String? toNodeId, String toPortId})
@@ -323,7 +323,7 @@ class _WorkflowConnectionValidator {
 
 abstract final class _WorkflowConnectionEndpointResolver {
   static _ConnectionResolution resolve(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     Map<String, WorkflowNode> nodesById,
     WorkflowConnection connection,
   ) {
@@ -381,7 +381,7 @@ abstract final class _WorkflowConnectionNodeResolver {
 
 abstract final class _WorkflowConnectionPortResolver {
   static _ConnectionResolution resolve(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowConnection connection,
     _ConnectionNodes nodes,
   ) {
@@ -403,7 +403,7 @@ abstract final class _WorkflowConnectionPortResolver {
   }
 
   static WorkflowPort? _sourcePort(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowConnection connection,
     WorkflowNode? source,
   ) => source == null
@@ -411,7 +411,7 @@ abstract final class _WorkflowConnectionPortResolver {
       : _findPort(source.outputs, connection.fromPortId);
 
   static WorkflowPort? _targetPort(
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
     WorkflowConnection connection,
     WorkflowNode? target,
   ) => target == null

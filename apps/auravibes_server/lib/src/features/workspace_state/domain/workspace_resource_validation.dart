@@ -179,9 +179,12 @@ class WorkspaceResourceValidation {
     final name = data['name'];
     final description = data['description'];
     final definition = data['definition'];
+    final parentId = data['parentId'];
     if (name is! String ||
         name.trim().isEmpty ||
+        name.length > 200 ||
         description is! String ||
+        (parentId != null && (parentId is! String || parentId.isEmpty)) ||
         definition is! Map<String, Object?> ||
         definition['version'] != 1) {
       throw const FormatException();
@@ -454,8 +457,10 @@ class WorkspaceResourceValidation {
       WorkspaceResourceKind.toolGroup ||
       WorkspaceResourceKind.mcpServer ||
       WorkspaceResourceKind.compactionSetting ||
-      WorkspaceResourceKind.workspaceSetting ||
-      WorkspaceResourceKind.workflow => const {},
+      WorkspaceResourceKind.workspaceSetting => const {},
+      WorkspaceResourceKind.workflow => const {
+        'parentId': WorkspaceResourceKind.folder,
+      },
       WorkspaceResourceKind.view ||
       WorkspaceResourceKind.conversation ||
       WorkspaceResourceKind.message ||
@@ -522,6 +527,7 @@ class WorkspaceResourceValidation {
   ) async {
     for (final reference in references(kind, data)) {
       if (!await exists(reference)) {
+        if (reference.kind == WorkspaceResourceKind.workflow) continue;
         throw const FormatException();
       }
     }

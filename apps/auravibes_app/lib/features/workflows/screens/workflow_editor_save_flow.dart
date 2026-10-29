@@ -6,8 +6,6 @@ import 'package:auravibes_app/features/workflows/providers/workflow_providers.da
 import 'package:auravibes_app/features/workflows/usecases/save_workflow_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
-import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -22,7 +20,7 @@ typedef WorkflowEditorSaveRequest = ({
   void Function(String messageKey) showMessage,
 });
 
-typedef _SaveOutcome = ({WorkflowDefinition? workflow, Object? error});
+typedef _SaveOutcome = ({WorkspaceWorkflow? workflow, Object? error});
 
 abstract final class WorkflowEditorSaveFlow {
   static Future<void> save(WorkflowEditorSaveRequest request) async {
@@ -59,7 +57,7 @@ abstract final class WorkflowEditorSaveFlow {
 
   static Future<_SaveOutcome> _persist(
     WorkflowEditorSaveRequest request,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) async {
     try {
       final saved = await _runMutation(request, workflow);
@@ -72,9 +70,9 @@ abstract final class WorkflowEditorSaveFlow {
     }
   }
 
-  static Future<WorkflowDefinition> _runMutation(
+  static Future<WorkspaceWorkflow> _runMutation(
     WorkflowEditorSaveRequest request,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) => WorkflowMutations.save.run(
     request.ref,
     (_) => request.ref
@@ -102,7 +100,7 @@ abstract final class WorkflowEditorSaveFlow {
 
   static void _markSaved(
     WorkflowEditorSaveRequest request,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) {
     request.ref
         .read(
@@ -112,13 +110,6 @@ abstract final class WorkflowEditorSaveFlow {
           ).notifier,
         )
         .markSaved(workflow);
-    if (request.workflowId == null) {
-      request.context.go(
-        WorkflowsRoute(workspaceId: request.workspaceId).location,
-      );
-
-      return;
-    }
     request.showMessage(LocaleKeys.workflow_editor_save_success);
   }
 }

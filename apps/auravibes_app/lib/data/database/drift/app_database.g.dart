@@ -16141,426 +16141,6 @@ class BackgroundWorksCompanion extends UpdateCompanion<BackgroundWorkTable> {
   }
 }
 
-class $WorkflowsTable extends Workflows
-    with TableInfo<$WorkflowsTable, WorkflowsTable> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $WorkflowsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
-    'workspaceId',
-  );
-  @override
-  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
-    'workspace_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _definitionJsonMeta = const VerificationMeta(
-    'definitionJson',
-  );
-  @override
-  late final GeneratedColumn<String> definitionJson = GeneratedColumn<String>(
-    'definition_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    name,
-    definitionJson,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'workflows';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<WorkflowsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('workspace_id')) {
-      context.handle(
-        _workspaceIdMeta,
-        workspaceId.isAcceptableOrUnknown(
-          data['workspace_id']!,
-          _workspaceIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_workspaceIdMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('definition_json')) {
-      context.handle(
-        _definitionJsonMeta,
-        definitionJson.isAcceptableOrUnknown(
-          data['definition_json']!,
-          _definitionJsonMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_definitionJsonMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  WorkflowsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return WorkflowsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      workspaceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}workspace_id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      definitionJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}definition_json'],
-      )!,
-    );
-  }
-
-  @override
-  $WorkflowsTable createAlias(String alias) {
-    return $WorkflowsTable(attachedDatabase, alias);
-  }
-}
-
-class WorkflowsTable extends DataClass implements Insertable<WorkflowsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String workspaceId;
-  final String name;
-  final String definitionJson;
-  const WorkflowsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.workspaceId,
-    required this.name,
-    required this.definitionJson,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['workspace_id'] = Variable<String>(workspaceId);
-    map['name'] = Variable<String>(name);
-    map['definition_json'] = Variable<String>(definitionJson);
-    return map;
-  }
-
-  WorkflowsCompanion toCompanion(bool nullToAbsent) {
-    return WorkflowsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      workspaceId: Value(workspaceId),
-      name: Value(name),
-      definitionJson: Value(definitionJson),
-    );
-  }
-
-  factory WorkflowsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return WorkflowsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      workspaceId: serializer.fromJson<String>(json['workspaceId']),
-      name: serializer.fromJson<String>(json['name']),
-      definitionJson: serializer.fromJson<String>(json['definitionJson']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'workspaceId': serializer.toJson<String>(workspaceId),
-      'name': serializer.toJson<String>(name),
-      'definitionJson': serializer.toJson<String>(definitionJson),
-    };
-  }
-
-  WorkflowsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? workspaceId,
-    String? name,
-    String? definitionJson,
-  }) => WorkflowsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    workspaceId: workspaceId ?? this.workspaceId,
-    name: name ?? this.name,
-    definitionJson: definitionJson ?? this.definitionJson,
-  );
-  WorkflowsTable copyWithCompanion(WorkflowsCompanion data) {
-    return WorkflowsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      workspaceId: data.workspaceId.present
-          ? data.workspaceId.value
-          : this.workspaceId,
-      name: data.name.present ? data.name.value : this.name,
-      definitionJson: data.definitionJson.present
-          ? data.definitionJson.value
-          : this.definitionJson,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('WorkflowsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('name: $name, ')
-          ..write('definitionJson: $definitionJson')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, createdAt, updatedAt, workspaceId, name, definitionJson);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is WorkflowsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.workspaceId == this.workspaceId &&
-          other.name == this.name &&
-          other.definitionJson == this.definitionJson);
-}
-
-class WorkflowsCompanion extends UpdateCompanion<WorkflowsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> workspaceId;
-  final Value<String> name;
-  final Value<String> definitionJson;
-  final Value<int> rowid;
-  const WorkflowsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.workspaceId = const Value.absent(),
-    this.name = const Value.absent(),
-    this.definitionJson = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  WorkflowsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String workspaceId,
-    required String name,
-    required String definitionJson,
-    this.rowid = const Value.absent(),
-  }) : workspaceId = Value(workspaceId),
-       name = Value(name),
-       definitionJson = Value(definitionJson);
-  static Insertable<WorkflowsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? workspaceId,
-    Expression<String>? name,
-    Expression<String>? definitionJson,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (workspaceId != null) 'workspace_id': workspaceId,
-      if (name != null) 'name': name,
-      if (definitionJson != null) 'definition_json': definitionJson,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  WorkflowsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? workspaceId,
-    Value<String>? name,
-    Value<String>? definitionJson,
-    Value<int>? rowid,
-  }) {
-    return WorkflowsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      workspaceId: workspaceId ?? this.workspaceId,
-      name: name ?? this.name,
-      definitionJson: definitionJson ?? this.definitionJson,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (workspaceId.present) {
-      map['workspace_id'] = Variable<String>(workspaceId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (definitionJson.present) {
-      map['definition_json'] = Variable<String>(definitionJson.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('WorkflowsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('name: $name, ')
-          ..write('definitionJson: $definitionJson, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $WorkspaceFoldersTable extends WorkspaceFolders
     with TableInfo<$WorkspaceFoldersTable, WorkspaceFolderRow> {
   @override
@@ -17073,6 +16653,632 @@ class WorkspaceFoldersCompanion extends UpdateCompanion<WorkspaceFolderRow> {
           ..write('parentId: $parentId, ')
           ..write('revision: $revision, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceWorkflowsTable extends WorkspaceWorkflows
+    with TableInfo<$WorkspaceWorkflowsTable, WorkspaceWorkflowRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceWorkflowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _parentIdMeta = const VerificationMeta(
+    'parentId',
+  );
+  @override
+  late final GeneratedColumn<String> parentId = GeneratedColumn<String>(
+    'parent_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspace_folders (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _definitionJsonMeta = const VerificationMeta(
+    'definitionJson',
+  );
+  @override
+  late final GeneratedColumn<String> definitionJson = GeneratedColumn<String>(
+    'definition_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    parentId,
+    name,
+    description,
+    revision,
+    deletedAt,
+    definitionJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_workflows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceWorkflowRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('parent_id')) {
+      context.handle(
+        _parentIdMeta,
+        parentId.isAcceptableOrUnknown(data['parent_id']!, _parentIdMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('definition_json')) {
+      context.handle(
+        _definitionJsonMeta,
+        definitionJson.isAcceptableOrUnknown(
+          data['definition_json']!,
+          _definitionJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_definitionJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkspaceWorkflowRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceWorkflowRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      parentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      definitionJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}definition_json'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceWorkflowsTable createAlias(String alias) {
+    return $WorkspaceWorkflowsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceWorkflowRow extends DataClass
+    implements Insertable<WorkspaceWorkflowRow> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String? parentId;
+  final String name;
+  final String description;
+  final int revision;
+  final DateTime? deletedAt;
+  final String definitionJson;
+  const WorkspaceWorkflowRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    this.parentId,
+    required this.name,
+    required this.description,
+    required this.revision,
+    this.deletedAt,
+    required this.definitionJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    if (!nullToAbsent || parentId != null) {
+      map['parent_id'] = Variable<String>(parentId);
+    }
+    map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
+    map['revision'] = Variable<int>(revision);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['definition_json'] = Variable<String>(definitionJson);
+    return map;
+  }
+
+  WorkspaceWorkflowsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceWorkflowsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      parentId: parentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentId),
+      name: Value(name),
+      description: Value(description),
+      revision: Value(revision),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      definitionJson: Value(definitionJson),
+    );
+  }
+
+  factory WorkspaceWorkflowRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceWorkflowRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      parentId: serializer.fromJson<String?>(json['parentId']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
+      revision: serializer.fromJson<int>(json['revision']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      definitionJson: serializer.fromJson<String>(json['definitionJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'parentId': serializer.toJson<String?>(parentId),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
+      'revision': serializer.toJson<int>(revision),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'definitionJson': serializer.toJson<String>(definitionJson),
+    };
+  }
+
+  WorkspaceWorkflowRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    Value<String?> parentId = const Value.absent(),
+    String? name,
+    String? description,
+    int? revision,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? definitionJson,
+  }) => WorkspaceWorkflowRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    parentId: parentId.present ? parentId.value : this.parentId,
+    name: name ?? this.name,
+    description: description ?? this.description,
+    revision: revision ?? this.revision,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    definitionJson: definitionJson ?? this.definitionJson,
+  );
+  WorkspaceWorkflowRow copyWithCompanion(WorkspaceWorkflowsCompanion data) {
+    return WorkspaceWorkflowRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      parentId: data.parentId.present ? data.parentId.value : this.parentId,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      definitionJson: data.definitionJson.present
+          ? data.definitionJson.value
+          : this.definitionJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceWorkflowRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('parentId: $parentId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('revision: $revision, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('definitionJson: $definitionJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    parentId,
+    name,
+    description,
+    revision,
+    deletedAt,
+    definitionJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceWorkflowRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.parentId == this.parentId &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.revision == this.revision &&
+          other.deletedAt == this.deletedAt &&
+          other.definitionJson == this.definitionJson);
+}
+
+class WorkspaceWorkflowsCompanion
+    extends UpdateCompanion<WorkspaceWorkflowRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String?> parentId;
+  final Value<String> name;
+  final Value<String> description;
+  final Value<int> revision;
+  final Value<DateTime?> deletedAt;
+  final Value<String> definitionJson;
+  final Value<int> rowid;
+  const WorkspaceWorkflowsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.parentId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.definitionJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceWorkflowsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    this.parentId = const Value.absent(),
+    required String name,
+    this.description = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String definitionJson,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       name = Value(name),
+       definitionJson = Value(definitionJson);
+  static Insertable<WorkspaceWorkflowRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? parentId,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<int>? revision,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? definitionJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (parentId != null) 'parent_id': parentId,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (revision != null) 'revision': revision,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (definitionJson != null) 'definition_json': definitionJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceWorkflowsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String?>? parentId,
+    Value<String>? name,
+    Value<String>? description,
+    Value<int>? revision,
+    Value<DateTime?>? deletedAt,
+    Value<String>? definitionJson,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceWorkflowsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      parentId: parentId ?? this.parentId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      revision: revision ?? this.revision,
+      deletedAt: deletedAt ?? this.deletedAt,
+      definitionJson: definitionJson ?? this.definitionJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (parentId.present) {
+      map['parent_id'] = Variable<String>(parentId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (definitionJson.present) {
+      map['definition_json'] = Variable<String>(definitionJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceWorkflowsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('parentId: $parentId, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('revision: $revision, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('definitionJson: $definitionJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -23898,10 +24104,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BackgroundWorksTable backgroundWorks = $BackgroundWorksTable(
     this,
   );
-  late final $WorkflowsTable workflows = $WorkflowsTable(this);
   late final $WorkspaceFoldersTable workspaceFolders = $WorkspaceFoldersTable(
     this,
   );
+  late final $WorkspaceWorkflowsTable workspaceWorkflows =
+      $WorkspaceWorkflowsTable(this);
   late final $WorkspaceTablesTable workspaceTables = $WorkspaceTablesTable(
     this,
   );
@@ -24036,7 +24243,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ModelUsageRecordsDao modelUsageRecordsDao = ModelUsageRecordsDao(
     this as AppDatabase,
   );
-  late final WorkflowsDao workflowsDao = WorkflowsDao(this as AppDatabase);
+  late final WorkspaceWorkflowsDao workspaceWorkflowsDao =
+      WorkspaceWorkflowsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -24067,8 +24275,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     recentModelSelections,
     modelUsageRecords,
     backgroundWorks,
-    workflows,
     workspaceFolders,
+    workspaceWorkflows,
     workspaceTables,
     workspaceTableRecords,
     connectorWrites,
@@ -24358,14 +24566,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('workflows', kind: UpdateKind.delete)],
+      result: [TableUpdate('workspace_folders', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('workspace_folders', kind: UpdateKind.delete)],
+      result: [TableUpdate('workspace_workflows', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -24742,24 +24950,6 @@ final class $$WorkspacesTableReferences
     );
   }
 
-  static MultiTypedResultKey<$WorkflowsTable, List<WorkflowsTable>>
-  _workflowsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.workflows,
-    aliasName: 'workspaces__id__workflows__workspace_id',
-  );
-
-  $$WorkflowsTableProcessedTableManager get workflowsRefs {
-    final manager = $$WorkflowsTableTableManager(
-      $_db,
-      $_db.workflows,
-    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_workflowsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
   static MultiTypedResultKey<$WorkspaceFoldersTable, List<WorkspaceFolderRow>>
   _workspaceFoldersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.workspaceFolders,
@@ -24774,6 +24964,30 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceFoldersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceWorkflowsTable,
+    List<WorkspaceWorkflowRow>
+  >
+  _workspaceWorkflowsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceWorkflows,
+        aliasName: 'workspaces__id__workspace_workflows__workspace_id',
+      );
+
+  $$WorkspaceWorkflowsTableProcessedTableManager get workspaceWorkflowsRefs {
+    final manager = $$WorkspaceWorkflowsTableTableManager(
+      $_db,
+      $_db.workspaceWorkflows,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceWorkflowsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -25363,31 +25577,6 @@ class $$WorkspacesTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> workflowsRefs(
-    Expression<bool> Function($$WorkflowsTableFilterComposer f) f,
-  ) {
-    final $$WorkflowsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.workflows,
-      getReferencedColumn: (t) => t.workspaceId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkflowsTableFilterComposer(
-            $db: $db,
-            $table: $db.workflows,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<bool> workspaceFoldersRefs(
     Expression<bool> Function($$WorkspaceFoldersTableFilterComposer f) f,
   ) {
@@ -25404,6 +25593,31 @@ class $$WorkspacesTableFilterComposer
           }) => $$WorkspaceFoldersTableFilterComposer(
             $db: $db,
             $table: $db.workspaceFolders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceWorkflowsRefs(
+    Expression<bool> Function($$WorkspaceWorkflowsTableFilterComposer f) f,
+  ) {
+    final $$WorkspaceWorkflowsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workspaceWorkflows,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceWorkflowsTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaceWorkflows,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -26070,31 +26284,6 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> workflowsRefs<T extends Object>(
-    Expression<T> Function($$WorkflowsTableAnnotationComposer a) f,
-  ) {
-    final $$WorkflowsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.workflows,
-      getReferencedColumn: (t) => t.workspaceId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkflowsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.workflows,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<T> workspaceFoldersRefs<T extends Object>(
     Expression<T> Function($$WorkspaceFoldersTableAnnotationComposer a) f,
   ) {
@@ -26117,6 +26306,32 @@ class $$WorkspacesTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<T> workspaceWorkflowsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceWorkflowsTableAnnotationComposer a) f,
+  ) {
+    final $$WorkspaceWorkflowsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceWorkflows,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceWorkflowsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceWorkflows,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -26436,8 +26651,8 @@ class $$WorkspacesTableTableManager
             bool workspaceCompactionSettingsRefs,
             bool appSkillWorkspaceSettingsRefs,
             bool backgroundWorksRefs,
-            bool workflowsRefs,
             bool workspaceFoldersRefs,
+            bool workspaceWorkflowsRefs,
             bool workspaceTablesRefs,
             bool workspaceTableRecordsRefs,
             bool connectorWritesRefs,
@@ -26527,8 +26742,8 @@ class $$WorkspacesTableTableManager
                 workspaceCompactionSettingsRefs = false,
                 appSkillWorkspaceSettingsRefs = false,
                 backgroundWorksRefs = false,
-                workflowsRefs = false,
                 workspaceFoldersRefs = false,
+                workspaceWorkflowsRefs = false,
                 workspaceTablesRefs = false,
                 workspaceTableRecordsRefs = false,
                 connectorWritesRefs = false,
@@ -26557,8 +26772,8 @@ class $$WorkspacesTableTableManager
                     if (appSkillWorkspaceSettingsRefs)
                       db.appSkillWorkspaceSettings,
                     if (backgroundWorksRefs) db.backgroundWorks,
-                    if (workflowsRefs) db.workflows,
                     if (workspaceFoldersRefs) db.workspaceFolders,
+                    if (workspaceWorkflowsRefs) db.workspaceWorkflows,
                     if (workspaceTablesRefs) db.workspaceTables,
                     if (workspaceTableRecordsRefs) db.workspaceTableRecords,
                     if (connectorWritesRefs) db.connectorWrites,
@@ -26809,27 +27024,6 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (workflowsRefs)
-                        await $_getPrefetchedData<
-                          WorkspacesTable,
-                          $WorkspacesTable,
-                          WorkflowsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$WorkspacesTableReferences
-                              ._workflowsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WorkspacesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).workflowsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.workspaceId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                       if (workspaceFoldersRefs)
                         await $_getPrefetchedData<
                           WorkspacesTable,
@@ -26845,6 +27039,27 @@ class $$WorkspacesTableTableManager
                                 table,
                                 p0,
                               ).workspaceFoldersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceWorkflowsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceWorkflowRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceWorkflowsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceWorkflowsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -27114,8 +27329,8 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceCompactionSettingsRefs,
         bool appSkillWorkspaceSettingsRefs,
         bool backgroundWorksRefs,
-        bool workflowsRefs,
         bool workspaceFoldersRefs,
+        bool workspaceWorkflowsRefs,
         bool workspaceTablesRefs,
         bool workspaceTableRecordsRefs,
         bool connectorWritesRefs,
@@ -41121,340 +41336,6 @@ typedef $$BackgroundWorksTableProcessedTableManager =
         bool originatingMessageId,
       })
     >;
-typedef $$WorkflowsTableCreateCompanionBuilder = WorkflowsCompanion Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  required String workspaceId,
-  required String name,
-  required String definitionJson,
-  Value<int> rowid,
-});
-typedef $$WorkflowsTableUpdateCompanionBuilder = WorkflowsCompanion Function({
-  Value<String> id,
-  Value<DateTime> createdAt,
-  Value<DateTime> updatedAt,
-  Value<String> workspaceId,
-  Value<String> name,
-  Value<String> definitionJson,
-  Value<int> rowid,
-});
-
-final class $$WorkflowsTableReferences
-    extends BaseReferences<_$AppDatabase, $WorkflowsTable, WorkflowsTable> {
-  $$WorkflowsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias('workflows__workspace_id__workspaces__id');
-
-  $$WorkspacesTableProcessedTableManager get workspaceId {
-    final $_column = $_itemColumn<String>('workspace_id')!;
-
-    final manager = $$WorkspacesTableTableManager(
-      $_db,
-      $_db.workspaces,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$WorkflowsTableFilterComposer
-    extends Composer<_$AppDatabase, $WorkflowsTable> {
-  $$WorkflowsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$WorkspacesTableFilterComposer get workspaceId {
-    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableFilterComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$WorkflowsTableOrderingComposer
-    extends Composer<_$AppDatabase, $WorkflowsTable> {
-  $$WorkflowsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$WorkspacesTableOrderingComposer get workspaceId {
-    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableOrderingComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$WorkflowsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $WorkflowsTable> {
-  $$WorkflowsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get definitionJson => $composableBuilder(
-    column: $table.definitionJson,
-    builder: (column) => column,
-  );
-
-  $$WorkspacesTableAnnotationComposer get workspaceId {
-    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$WorkflowsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $WorkflowsTable,
-          WorkflowsTable,
-          $$WorkflowsTableFilterComposer,
-          $$WorkflowsTableOrderingComposer,
-          $$WorkflowsTableAnnotationComposer,
-          $$WorkflowsTableCreateCompanionBuilder,
-          $$WorkflowsTableUpdateCompanionBuilder,
-          (WorkflowsTable, $$WorkflowsTableReferences),
-          WorkflowsTable,
-          PrefetchHooks Function({bool workspaceId})
-        > {
-  $$WorkflowsTableTableManager(_$AppDatabase db, $WorkflowsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$WorkflowsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$WorkflowsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$WorkflowsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> workspaceId = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String> definitionJson = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => WorkflowsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                name: name,
-                definitionJson: definitionJson,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String workspaceId,
-                required String name,
-                required String definitionJson,
-                Value<int> rowid = const Value.absent(),
-              }) => WorkflowsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                name: name,
-                definitionJson: definitionJson,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<$WorkflowsTable, WorkflowsTable>(table),
-                  $$WorkflowsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({workspaceId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (workspaceId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.workspaceId,
-                        referencedTable: $$WorkflowsTableReferences
-                            ._workspaceIdTable(db),
-                        referencedColumn: $$WorkflowsTableReferences
-                            ._workspaceIdTable(db)
-                            .id,
-                      ) as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$WorkflowsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $WorkflowsTable,
-      WorkflowsTable,
-      $$WorkflowsTableFilterComposer,
-      $$WorkflowsTableOrderingComposer,
-      $$WorkflowsTableAnnotationComposer,
-      $$WorkflowsTableCreateCompanionBuilder,
-      $$WorkflowsTableUpdateCompanionBuilder,
-      (WorkflowsTable, $$WorkflowsTableReferences),
-      WorkflowsTable,
-      PrefetchHooks Function({bool workspaceId})
-    >;
 typedef $$WorkspaceFoldersTableCreateCompanionBuilder =
     WorkspaceFoldersCompanion Function({
       Value<String> id,
@@ -41507,6 +41388,30 @@ final class $$WorkspaceFoldersTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceWorkflowsTable,
+    List<WorkspaceWorkflowRow>
+  >
+  _workspaceWorkflowsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceWorkflows,
+        aliasName: 'workspace_folders__id__workspace_workflows__parent_id',
+      );
+
+  $$WorkspaceWorkflowsTableProcessedTableManager get workspaceWorkflowsRefs {
+    final manager = $$WorkspaceWorkflowsTableTableManager(
+      $_db,
+      $_db.workspaceWorkflows,
+    ).filter((f) => f.parentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceWorkflowsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -41576,6 +41481,31 @@ class $$WorkspaceFoldersTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> workspaceWorkflowsRefs(
+    Expression<bool> Function($$WorkspaceWorkflowsTableFilterComposer f) f,
+  ) {
+    final $$WorkspaceWorkflowsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workspaceWorkflows,
+      getReferencedColumn: (t) => t.parentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceWorkflowsTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaceWorkflows,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -41699,6 +41629,32 @@ class $$WorkspaceFoldersTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> workspaceWorkflowsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceWorkflowsTableAnnotationComposer a) f,
+  ) {
+    final $$WorkspaceWorkflowsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceWorkflows,
+          getReferencedColumn: (t) => t.parentId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceWorkflowsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceWorkflows,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspaceFoldersTableTableManager
@@ -41714,7 +41670,10 @@ class $$WorkspaceFoldersTableTableManager
           $$WorkspaceFoldersTableUpdateCompanionBuilder,
           (WorkspaceFolderRow, $$WorkspaceFoldersTableReferences),
           WorkspaceFolderRow,
-          PrefetchHooks Function({bool workspaceId})
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool workspaceWorkflowsRefs,
+          })
         > {
   $$WorkspaceFoldersTableTableManager(
     _$AppDatabase db,
@@ -41783,7 +41742,536 @@ class $$WorkspaceFoldersTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({workspaceId = false}) {
+          prefetchHooksCallback:
+              ({workspaceId = false, workspaceWorkflowsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (workspaceWorkflowsRefs) db.workspaceWorkflows,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$WorkspaceFoldersTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn: $$WorkspaceFoldersTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (workspaceWorkflowsRefs)
+                        await $_getPrefetchedData<
+                          WorkspaceFolderRow,
+                          $WorkspaceFoldersTable,
+                          WorkspaceWorkflowRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspaceFoldersTableReferences
+                              ._workspaceWorkflowsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspaceFoldersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceWorkflowsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.parentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$WorkspaceFoldersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceFoldersTable,
+      WorkspaceFolderRow,
+      $$WorkspaceFoldersTableFilterComposer,
+      $$WorkspaceFoldersTableOrderingComposer,
+      $$WorkspaceFoldersTableAnnotationComposer,
+      $$WorkspaceFoldersTableCreateCompanionBuilder,
+      $$WorkspaceFoldersTableUpdateCompanionBuilder,
+      (WorkspaceFolderRow, $$WorkspaceFoldersTableReferences),
+      WorkspaceFolderRow,
+      PrefetchHooks Function({bool workspaceId, bool workspaceWorkflowsRefs})
+    >;
+typedef $$WorkspaceWorkflowsTableCreateCompanionBuilder =
+    WorkspaceWorkflowsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      Value<String?> parentId,
+      required String name,
+      Value<String> description,
+      Value<int> revision,
+      Value<DateTime?> deletedAt,
+      required String definitionJson,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceWorkflowsTableUpdateCompanionBuilder =
+    WorkspaceWorkflowsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String?> parentId,
+      Value<String> name,
+      Value<String> description,
+      Value<int> revision,
+      Value<DateTime?> deletedAt,
+      Value<String> definitionJson,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceWorkflowsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceWorkflowsTable,
+          WorkspaceWorkflowRow
+        > {
+  $$WorkspaceWorkflowsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('workspace_workflows__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $WorkspaceFoldersTable _parentIdTable(_$AppDatabase db) => db
+      .workspaceFolders
+      .createAlias('workspace_workflows__parent_id__workspace_folders__id');
+
+  $$WorkspaceFoldersTableProcessedTableManager? get parentId {
+    final $_column = $_itemColumn<String>('parent_id');
+    if ($_column == null) return null;
+    final manager = $$WorkspaceFoldersTableTableManager(
+      $_db,
+      $_db.workspaceFolders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_parentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceWorkflowsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceWorkflowsTable> {
+  $$WorkspaceWorkflowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get definitionJson => $composableBuilder(
+    column: $table.definitionJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkspaceFoldersTableFilterComposer get parentId {
+    final $$WorkspaceFoldersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentId,
+      referencedTable: $db.workspaceFolders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceFoldersTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaceFolders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceWorkflowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceWorkflowsTable> {
+  $$WorkspaceWorkflowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get definitionJson => $composableBuilder(
+    column: $table.definitionJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkspaceFoldersTableOrderingComposer get parentId {
+    final $$WorkspaceFoldersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentId,
+      referencedTable: $db.workspaceFolders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceFoldersTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaceFolders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceWorkflowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceWorkflowsTable> {
+  $$WorkspaceWorkflowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get definitionJson => $composableBuilder(
+    column: $table.definitionJson,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$WorkspaceFoldersTableAnnotationComposer get parentId {
+    final $$WorkspaceFoldersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentId,
+      referencedTable: $db.workspaceFolders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspaceFoldersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaceFolders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceWorkflowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceWorkflowsTable,
+          WorkspaceWorkflowRow,
+          $$WorkspaceWorkflowsTableFilterComposer,
+          $$WorkspaceWorkflowsTableOrderingComposer,
+          $$WorkspaceWorkflowsTableAnnotationComposer,
+          $$WorkspaceWorkflowsTableCreateCompanionBuilder,
+          $$WorkspaceWorkflowsTableUpdateCompanionBuilder,
+          (WorkspaceWorkflowRow, $$WorkspaceWorkflowsTableReferences),
+          WorkspaceWorkflowRow,
+          PrefetchHooks Function({bool workspaceId, bool parentId})
+        > {
+  $$WorkspaceWorkflowsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceWorkflowsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceWorkflowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkspaceWorkflowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkspaceWorkflowsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String?> parentId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> definitionJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceWorkflowsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                parentId: parentId,
+                name: name,
+                description: description,
+                revision: revision,
+                deletedAt: deletedAt,
+                definitionJson: definitionJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                Value<String?> parentId = const Value.absent(),
+                required String name,
+                Value<String> description = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String definitionJson,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceWorkflowsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                parentId: parentId,
+                name: name,
+                description: description,
+                revision: revision,
+                deletedAt: deletedAt,
+                definitionJson: definitionJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$WorkspaceWorkflowsTable, WorkspaceWorkflowRow>(
+                    table,
+                  ),
+                  $$WorkspaceWorkflowsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false, parentId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -41807,10 +42295,21 @@ class $$WorkspaceFoldersTableTableManager
                       state = state.withJoin(
                         currentTable: table,
                         currentColumn: table.workspaceId,
-                        referencedTable: $$WorkspaceFoldersTableReferences
+                        referencedTable: $$WorkspaceWorkflowsTableReferences
                             ._workspaceIdTable(db),
-                        referencedColumn: $$WorkspaceFoldersTableReferences
+                        referencedColumn: $$WorkspaceWorkflowsTableReferences
                             ._workspaceIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (parentId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.parentId,
+                        referencedTable: $$WorkspaceWorkflowsTableReferences
+                            ._parentIdTable(db),
+                        referencedColumn: $$WorkspaceWorkflowsTableReferences
+                            ._parentIdTable(db)
                             .id,
                       ) as T;
                     }
@@ -41826,19 +42325,19 @@ class $$WorkspaceFoldersTableTableManager
       );
 }
 
-typedef $$WorkspaceFoldersTableProcessedTableManager =
+typedef $$WorkspaceWorkflowsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $WorkspaceFoldersTable,
-      WorkspaceFolderRow,
-      $$WorkspaceFoldersTableFilterComposer,
-      $$WorkspaceFoldersTableOrderingComposer,
-      $$WorkspaceFoldersTableAnnotationComposer,
-      $$WorkspaceFoldersTableCreateCompanionBuilder,
-      $$WorkspaceFoldersTableUpdateCompanionBuilder,
-      (WorkspaceFolderRow, $$WorkspaceFoldersTableReferences),
-      WorkspaceFolderRow,
-      PrefetchHooks Function({bool workspaceId})
+      $WorkspaceWorkflowsTable,
+      WorkspaceWorkflowRow,
+      $$WorkspaceWorkflowsTableFilterComposer,
+      $$WorkspaceWorkflowsTableOrderingComposer,
+      $$WorkspaceWorkflowsTableAnnotationComposer,
+      $$WorkspaceWorkflowsTableCreateCompanionBuilder,
+      $$WorkspaceWorkflowsTableUpdateCompanionBuilder,
+      (WorkspaceWorkflowRow, $$WorkspaceWorkflowsTableReferences),
+      WorkspaceWorkflowRow,
+      PrefetchHooks Function({bool workspaceId, bool parentId})
     >;
 typedef $$WorkspaceTablesTableCreateCompanionBuilder =
     WorkspaceTablesCompanion Function({
@@ -47618,10 +48117,10 @@ class $AppDatabaseManager {
       $$ModelUsageRecordsTableTableManager(_db, _db.modelUsageRecords);
   $$BackgroundWorksTableTableManager get backgroundWorks =>
       $$BackgroundWorksTableTableManager(_db, _db.backgroundWorks);
-  $$WorkflowsTableTableManager get workflows =>
-      $$WorkflowsTableTableManager(_db, _db.workflows);
   $$WorkspaceFoldersTableTableManager get workspaceFolders =>
       $$WorkspaceFoldersTableTableManager(_db, _db.workspaceFolders);
+  $$WorkspaceWorkflowsTableTableManager get workspaceWorkflows =>
+      $$WorkspaceWorkflowsTableTableManager(_db, _db.workspaceWorkflows);
   $$WorkspaceTablesTableTableManager get workspaceTables =>
       $$WorkspaceTablesTableTableManager(_db, _db.workspaceTables);
   $$WorkspaceTableRecordsTableTableManager get workspaceTableRecords =>

@@ -188,23 +188,6 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                 ),
               ],
             ),
-            GoRouteData.$route(
-              path: 'more/workflows',
-              hasOverriddenOnExit: false,
-              factory: $WorkflowsRoute._fromState,
-              routes: [
-                GoRouteData.$route(
-                  path: 'new',
-                  hasOverriddenOnExit: true,
-                  factory: $WorkflowCreateRoute._fromState,
-                ),
-                GoRouteData.$route(
-                  path: ':workflowId',
-                  hasOverriddenOnExit: true,
-                  factory: $WorkflowEditRoute._fromState,
-                ),
-              ],
-            ),
           ],
         ),
         StatefulShellBranchData.$branch(
@@ -1042,83 +1025,6 @@ mixin $AgentDetailRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/agents/${Uri.encodeComponent(_self.agentId)}',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $WorkflowsRoute on GoRouteData {
-  static WorkflowsRoute _fromState(GoRouterState state) =>
-      WorkflowsRoute(workspaceId: state.pathParameters['workspaceId']!);
-
-  WorkflowsRoute get _self => this as WorkflowsRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/workflows',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $WorkflowCreateRoute on GoRouteData {
-  static WorkflowCreateRoute _fromState(GoRouterState state) =>
-      WorkflowCreateRoute(workspaceId: state.pathParameters['workspaceId']!);
-
-  WorkflowCreateRoute get _self => this as WorkflowCreateRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/workflows/new',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $WorkflowEditRoute on GoRouteData {
-  static WorkflowEditRoute _fromState(GoRouterState state) => WorkflowEditRoute(
-    workspaceId: state.pathParameters['workspaceId']!,
-    workflowId: state.pathParameters['workflowId']!,
-  );
-
-  WorkflowEditRoute get _self => this as WorkflowEditRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/workflows/${Uri.encodeComponent(_self.workflowId)}',
   );
 
   @override

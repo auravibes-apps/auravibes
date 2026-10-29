@@ -9,22 +9,22 @@ class SaveWorkflowUsecase {
 
   final WorkflowRepository _repository;
 
-  Future<WorkflowDefinition> call(WorkflowDefinition draft) async {
+  Future<WorkspaceWorkflow> call(WorkspaceWorkflow draft) async {
     final workflow = WorkflowSaveDraft.prepare(draft);
-    await _validateAndPersist(workflow);
-
-    return workflow;
+    return await _validateAndPersist(workflow);
   }
 
-  Future<void> _validateAndPersist(WorkflowDefinition workflow) async {
+  Future<WorkspaceWorkflow> _validateAndPersist(
+    WorkspaceWorkflow workflow,
+  ) async {
     final issues = await WorkflowSaveValidation.issues(_repository, workflow);
     if (issues.isNotEmpty) throw WorkflowValidationException(issues);
-    await _repository.saveWorkflow(workflow);
+    return await _repository.saveWorkflow(workflow);
   }
 }
 
 abstract final class WorkflowSaveDraft {
-  static WorkflowDefinition prepare(WorkflowDefinition draft) {
+  static WorkspaceWorkflow prepare(WorkspaceWorkflow draft) {
     final now = DateTime.now().toUtc();
     final isNew = draft.id.isEmpty;
 
@@ -41,7 +41,7 @@ abstract final class WorkflowSaveDraft {
 abstract final class WorkflowSaveValidation {
   static Future<List<WorkflowGraphIssue>> issues(
     WorkflowRepository repository,
-    WorkflowDefinition workflow,
+    WorkspaceWorkflow workflow,
   ) async {
     final result = <WorkflowGraphIssue>[
       ...WorkflowGraphValidation.validateWorkflowDefinition(workflow),

@@ -7,8 +7,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const WorkflowSignatureEditor({
-  required final WorkflowDefinition workflow,
+  required final WorkspaceWorkflow workflow,
   required final WorkflowEditorNotifier editor,
+  final bool readOnly = false,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -21,12 +22,14 @@ class const WorkflowSignatureEditor({
         ports: workflow.inputs,
         isInput: true,
         editor: editor,
+        readOnly: readOnly,
       ),
       const SizedBox(height: 16),
       _WorkflowSignaturePorts(
         ports: workflow.outputs,
         isInput: false,
         editor: editor,
+        readOnly: readOnly,
       ),
     ],
   );
@@ -36,6 +39,7 @@ class const _WorkflowSignaturePorts({
   required final List<WorkflowPort> ports,
   required final bool isInput,
   required final WorkflowEditorNotifier editor,
+  required final bool readOnly,
 }) extends StatelessWidget {
   String get _titleKey => isInput
       ? LocaleKeys.workflow_editor_inputs
@@ -48,6 +52,7 @@ class const _WorkflowSignaturePorts({
     onAdd: _addPort(context),
     onUpdate: _updatePort,
     onRemove: _removePort,
+    readOnly: readOnly,
   );
 
   VoidCallback _addPort(BuildContext context) =>

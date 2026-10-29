@@ -99,13 +99,13 @@ final workflowsProvider = WorkflowsFamily._();
 final class WorkflowsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<WorkflowDefinition>>,
-          List<WorkflowDefinition>,
-          Stream<List<WorkflowDefinition>>
+          AsyncValue<List<WorkspaceWorkflow>>,
+          List<WorkspaceWorkflow>,
+          Stream<List<WorkspaceWorkflow>>
         >
     with
-        $FutureModifier<List<WorkflowDefinition>>,
-        $StreamProvider<List<WorkflowDefinition>> {
+        $FutureModifier<List<WorkspaceWorkflow>>,
+        $StreamProvider<List<WorkspaceWorkflow>> {
   WorkflowsProvider._({
     required WorkflowsFamily super.from,
     required String super.argument,
@@ -129,12 +129,12 @@ final class WorkflowsProvider
 
   @$internal
   @override
-  $StreamProviderElement<List<WorkflowDefinition>> $createElement(
+  $StreamProviderElement<List<WorkspaceWorkflow>> $createElement(
     $ProviderPointer pointer,
   ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<List<WorkflowDefinition>> create(Ref ref) {
+  Stream<List<WorkspaceWorkflow>> create(Ref ref) {
     final argument = this.argument as String;
     return workflows(ref, argument);
   }
@@ -150,10 +150,10 @@ final class WorkflowsProvider
   }
 }
 
-String _$workflowsHash() => r'295b360b662e7f00df93464e750794601ba7d4cc';
+String _$workflowsHash() => r'85ba30f07a721f424872d32c2c7bb5f629adf25a';
 
 final class WorkflowsFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<WorkflowDefinition>>, String> {
+    with $FunctionalFamilyOverride<Stream<List<WorkspaceWorkflow>>, String> {
   WorkflowsFamily._()
     : super(
         retry: null,
@@ -176,13 +176,13 @@ final workflowProvider = WorkflowFamily._();
 final class WorkflowProvider
     extends
         $FunctionalProvider<
-          AsyncValue<WorkflowDefinition?>,
-          WorkflowDefinition?,
-          FutureOr<WorkflowDefinition?>
+          AsyncValue<WorkspaceWorkflow?>,
+          WorkspaceWorkflow?,
+          FutureOr<WorkspaceWorkflow?>
         >
     with
-        $FutureModifier<WorkflowDefinition?>,
-        $FutureProvider<WorkflowDefinition?> {
+        $FutureModifier<WorkspaceWorkflow?>,
+        $FutureProvider<WorkspaceWorkflow?> {
   WorkflowProvider._({
     required WorkflowFamily super.from,
     required (String, String) super.argument,
@@ -206,12 +206,12 @@ final class WorkflowProvider
 
   @$internal
   @override
-  $FutureProviderElement<WorkflowDefinition?> $createElement(
+  $FutureProviderElement<WorkspaceWorkflow?> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<WorkflowDefinition?> create(Ref ref) {
+  FutureOr<WorkspaceWorkflow?> create(Ref ref) {
     final argument = this.argument as (String, String);
     return workflow(ref, argument.$1, argument.$2);
   }
@@ -227,12 +227,12 @@ final class WorkflowProvider
   }
 }
 
-String _$workflowHash() => r'ac009c6ca29ddfe205813e8e723072decca311fa';
+String _$workflowHash() => r'10be5f6fa9d72e3d59449aa7f5222b5794102448';
 
 final class WorkflowFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<WorkflowDefinition?>,
+          FutureOr<WorkspaceWorkflow?>,
           (String, String)
         > {
   WorkflowFamily._()
