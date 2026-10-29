@@ -92,6 +92,7 @@ class _ConversationMessageSearchScreenState
   }
 
   Future<void> _search() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final query = _queryController.text.trim();
     if (query.isEmpty) return;
     final generation = ++_searchGeneration;
@@ -268,12 +269,14 @@ class const _ConversationSearchScopeSelector({
   required final ValueChanged<Set<_ConversationSearchScope>> onSelectionChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      SegmentedButton<_ConversationSearchScope>(
-        segments: _conversationSearchScopeSegments,
-        selected: {scope},
-        onSelectionChanged: onSelectionChanged,
-      );
+  Widget build(BuildContext context) => SizedBox(
+    width: .infinity,
+    child: SegmentedButton<_ConversationSearchScope>(
+      segments: _conversationSearchScopeSegments,
+      selected: {scope},
+      onSelectionChanged: onSelectionChanged,
+    ),
+  );
 }
 
 class const _ConversationSearchActionButton({
@@ -482,15 +485,17 @@ class const _SearchResultsErrorBanner({
   Widget build(BuildContext context) => visible
       ? Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            mainAxisSize: .min,
-            crossAxisAlignment: .start,
+          child: Row(
             children: [
-              AuraCallout(
-                title: LocaleKeys.chats_screens_conversation_search_error.tr(),
-                icon: Icons.error_outline,
-                tint: .error,
+              Expanded(
+                child: AuraCallout(
+                  title: LocaleKeys.chats_screens_conversation_search_error
+                      .tr(),
+                  icon: Icons.error_outline,
+                  tint: .error,
+                ),
               ),
+              const SizedBox(width: 8),
               _SearchResultsRetryButton(onRetry: onRetry),
             ],
           ),
@@ -502,11 +507,14 @@ class const _SearchResultsRetryButton({
   required final Future<void> Function() onRetry,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TextButton(
+  Widget build(BuildContext context) => AuraButton(
     onPressed: () => unawaited(onRetry()),
     child: const TextLocale(
       LocaleKeys.chats_screens_conversation_search_target_retry,
     ),
+    variant: .outlined,
+    tint: .error,
+    size: .small,
   );
 }
 
@@ -516,6 +524,7 @@ class const _SearchResultList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView.separated(
+    padding: EdgeInsets.zero,
     itemBuilder: (context, index) => _ConversationMessageSearchResultTile(
       result: results[index],
       scope: scope,

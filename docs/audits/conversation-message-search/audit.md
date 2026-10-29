@@ -63,26 +63,27 @@ Scope: randomly selected [`ConversationMessageSearchScreen`](../../../apps/aurav
 
 ### Findings
 
-1. **Full and partial search failures lack a semantic error callout and Retry action**
+1. **Full and partial search failures lack a semantic error callout and inline Retry action**
    - **Task step / view:** Recovering from a failed search (`hasError && !hasResults`) or a partial cloud workspace / pagination failure (`hasError && hasResults`).
    - **Evidence:** Code inspection (`_SearchResultsStatus`, `_SearchResultsError`) and baseline render (`before.png`).
-   - **User problem & impact:** Both full and partial error states rendered plain centered text (`"Could not search messages. Try again."`) without an `AuraCallout` surface or a `Retry` button. If a remote workspace failed in `All workspaces` mode or `Load more` failed on a later page, users had no direct recovery control on the error notice.
+   - **User problem & impact:** Both full and partial error states rendered plain centered text (`"Could not search messages. Try again."`) without an `AuraCallout` surface or a `Retry` button. When a detached retry button was initially placed below the callout, it created an excessive vertical gap (~32 px) before the first result row.
    - **Severity:** **high** | **Confidence:** **high**
-   - **Recommendation:** Replace the plain error text with `_SearchResultsErrorBanner`, pairing `AuraCallout(tint: .error, icon: Icons.error_outline)` with a `Retry` action (`LocaleKeys.chats_screens_conversation_search_target_retry`) that invalidates the failed page provider and retries either the initial search or the failed pagination offset.
+   - **Recommendation:** Pair `AuraCallout(tint: .error, icon: Icons.error_outline)` with an inline `AuraButton(variant: .outlined, tint: .error, size: .small)` directly inside the error banner row, and set `padding: EdgeInsets.zero` on the results `ListView.separated` so no awkward empty space sits below Retry.
 
-2. **Unlabeled raw loading indicator and non-Aura pagination button**
-   - **Task step / view:** Waiting for search results (`_SearchResultsStatus`) or loading the next page (`_SearchResultsFooter`).
-   - **Evidence:** Code inspection (`CircularProgressIndicator()`, `OutlinedButton`).
-   - **User problem & impact:** Initial search rendered a raw `CircularProgressIndicator()` in both `_SearchResultsStatus` and `_SearchResultsFooter` simultaneously while ignoring the existing localized `LocaleKeys.chats_screens_conversation_search_loading` (`"Searching messages…"` / `"Buscando mensajes…"`). Pagination used a raw Material `OutlinedButton` instead of `AuraButton`.
-   - **Severity:** **low** | **Confidence:** **high**
-   - **Recommendation:** Render `AuraSpinner` with `TextLocale(LocaleKeys.chats_screens_conversation_search_loading)` during initial search loading, hide the footer when `hasMore` is false so initial loading never shows two spinners, and use `AuraButton(variant: .outlined, size: .small, isLoading: isLoading)` for `Load more`.
+2. **Unlabeled raw loading indicator, non-Aura pagination button, and layout alignment**
+   - **Task step / view:** Waiting for search results (`_SearchResultsStatus`), toggling workspace scope, or loading the next page (`_SearchResultsFooter`).
+   - **Evidence:** Code inspection (`CircularProgressIndicator()`, `OutlinedButton`, `SegmentedButton`).
+   - **User problem & impact:** Initial search rendered a raw `CircularProgressIndicator()` in both `_SearchResultsStatus` and `_SearchResultsFooter` simultaneously while ignoring the existing localized `LocaleKeys.chats_screens_conversation_search_loading` (`"Searching messages…"` / `"Buscando mensajes…"`). Pagination used a raw Material `OutlinedButton` instead of `AuraButton`. The scope selector was centered with intrinsic width rather than full-width, and software keyboards remained active after search submission.
+   - **Severity:** **medium** | **Confidence:** **high**
+   - **Recommendation:** Render `AuraSpinner` with `TextLocale(LocaleKeys.chats_screens_conversation_search_loading)` during initial search loading, hide the footer when `hasMore` is false so initial loading never shows two spinners, use `AuraButton(variant: .outlined, size: .small, isLoading: isLoading)` for `Load more`, expand the scope selector to full width, and dismiss the keyboard (`FocusManager.instance.primaryFocus?.unfocus()`) on submit.
 
 ### Final re-audit after Iteration 3 fixes
 
-- All three iterations' findings are resolved and verified in widget tests (`conversation_message_search_screen_test.dart`):
-  - Search controls use `AuraInput` and `AuraButton`, omit the `0/256` counter chrome, disable submission when empty, and support one-tap `Clear search`.
+- All findings are resolved and verified in widget tests (`conversation_message_search_screen_test.dart`):
+  - Search controls use full-width `AuraInput`, full-width `SegmentedButton`, and full-width `AuraButton`, omit the `0/256` counter chrome, disable submission when empty, dismiss the keyboard on submit, and support one-tap `Clear search`.
   - Result rows lead with the matched message excerpt, adapt metadata to the selected workspace scope, and show a trailing chevron.
-  - Loading states display `AuraSpinner` with `"Searching messages…"`, and error states render an `AuraCallout` with a working `Retry` button.
+  - Loading states display `AuraSpinner` with `"Searching messages…"`.
+  - Error states render a single inline banner with `AuraCallout` and an aligned `AuraButton` Retry action, with `EdgeInsets.zero` on the list view eliminating any empty gap below the error notice.
 
 ## Before and after
 
