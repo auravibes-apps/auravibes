@@ -10,7 +10,7 @@ import 'package:material_ui/material_ui.dart';
 
 class ChatA2uiSurfaceHost extends StatelessWidget {
   const new message({
-    required this.runtime,
+    required ChatA2uiRuntime runtime,
     required this.messageId,
     required this.payloads,
     this.issuesBySurface = const {},
@@ -18,15 +18,17 @@ class ChatA2uiSurfaceHost extends StatelessWidget {
     this.interactive = true,
     this.wrapInSelectionArea = true,
     super.key,
-  }) : _historical = false;
+  }) : runtime = runtime,
+       _historical = false;
 
   const new live({
-    required this.runtime,
+    required ChatA2uiRuntime runtime,
     required this.messageId,
     this.interactive = true,
     this.wrapInSelectionArea = true,
     super.key,
-  }) : payloads = const [],
+  }) : runtime = runtime,
+       payloads = const [],
        issuesBySurface = const {},
        messageIssues = const [],
        _historical = false;
