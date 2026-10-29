@@ -423,6 +423,12 @@ abstract class LocaleKeys {
   static const agents_duplicate = 'agents.duplicate';
   static const agents_duplicate_error = 'agents.duplicate_error';
   static const agents_load_error = 'agents.load_error';
+  static const agents_detail_load_error = 'agents.detail_load_error';
+  static const agents_detail_not_found = 'agents.detail_not_found';
+  static const agents_detail_permissions_load_error =
+      'agents.detail_permissions_load_error';
+  static const agents_detail_save_error = 'agents.detail_save_error';
+  static const agents_detail_return = 'agents.detail_return';
   static const agents_empty_title = 'agents.empty_title';
   static const agents_empty_subtitle = 'agents.empty_subtitle';
   static const agents_details_title = 'agents.details_title';

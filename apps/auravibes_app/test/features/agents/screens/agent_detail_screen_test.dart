@@ -9,6 +9,7 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/agent_list_query.dart';
+import 'package:auravibes_app/domain/entities/agent_tool_override_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -83,6 +84,119 @@ void main() {
 
     return (database: database, workspace: workspace);
   }
+
+  testWidgets('agent load failure can retry into the editor', (tester) async {
+    final fixture = await createFixture();
+    final agent = await AgentsRepository(fixture.database).createAgent(
+      fixture.workspace.id,
+      const AgentToCreate(
+        name: 'Research helper',
+        description: 'Research a topic.',
+        content: 'Research carefully.',
+      ),
+    );
+
+    await _pumpAgentScreen(
+      tester,
+      fixture,
+      agentId: agent.id,
+      agentRepository: _RetryingAgentLoadRepository(
+        delegate: AgentsRepository(fixture.database),
+        release: Completer<void>(),
+      ),
+      readyFinder: find.text('Could not load this agent.'),
+    );
+
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Return to agents'), findsOneWidget);
+    await tester.tap(find.text('Retry'));
+    await _pumpUntilFound(tester, find.text('Agent details'));
+    expect(find.byType(AuraInput), findsWidgets);
+  });
+
+  testWidgets('missing agent offers return to agents', (tester) async {
+    final fixture = await createFixture();
+    final route = AgentDetailRoute(
+      workspaceId: fixture.workspace.id,
+      agentId: 'removed-agent',
+    );
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/agent', builder: route.build, onExit: route.onExit),
+        GoRoute(
+          path: '/workspaces/:workspaceId/agents',
+          builder: (_, _) => const Text('Agents return'),
+        ),
+      ],
+      initialLocation: '/agent',
+    );
+    addTearDown(router.dispose);
+
+    await _pumpAgentScreen(
+      tester,
+      fixture,
+      agentId: 'removed-agent',
+      router: router,
+      readyFinder: find.text('This agent is no longer available.'),
+    );
+
+    await tester.tap(find.text('Return to agents'));
+    await _pumpUntilFound(tester, find.text('Agents return'));
+  });
+
+  testWidgets('tool permission load failure can retry into the editor', (
+    tester,
+  ) async {
+    final fixture = await createFixture();
+    final agent = await AgentsRepository(fixture.database).createAgent(
+      fixture.workspace.id,
+      const AgentToCreate(
+        name: 'Research helper',
+        description: 'Research a topic.',
+        content: 'Research carefully.',
+      ),
+    );
+
+    await _pumpAgentScreen(
+      tester,
+      fixture,
+      agentId: agent.id,
+      agentToolsRepository: _RetryingAgentToolsRepository(
+        delegate: AgentToolsRepository(fixture.database),
+      ),
+      readyFinder: find.textContaining('Could not load this agent'),
+    );
+
+    expect(find.text('Return to agents'), findsOneWidget);
+    await tester.tap(find.text('Retry'));
+    await _pumpUntilFound(tester, find.text('Agent details'));
+    expect(find.byType(AuraInput), findsWidgets);
+  });
+
+  testWidgets('save failure keeps the agent draft available to retry', (
+    tester,
+  ) async {
+    final fixture = await createFixture();
+    await _pumpAgentScreen(
+      tester,
+      fixture,
+      agentRepository: _FailingAgentCreateRepository(
+        delegate: AgentsRepository(fixture.database),
+        release: Completer<void>(),
+      ),
+    );
+
+    await _enterValidDraft(tester);
+    await tester.tap(find.widgetWithText(AuraButton, 'Create agent'));
+    await tester.pump();
+    await _pumpUntilFound(
+      tester,
+      find.textContaining('Could not finish saving this agent.'),
+    );
+
+    expect(find.text('Summarizer'), findsOneWidget);
+    expect(_isSaveButtonDisabled(tester, 'Create agent'), isFalse);
+  });
 
   testWidgets('saved agent exposes disabled and missing dependencies', (
     tester,
@@ -382,6 +496,8 @@ Future<void> _pumpAgentScreen(
   GoRouter? router,
   String Function()? skillTitle,
   List<WorkspaceSkill>? skills,
+  AgentToolsRepositoryContract? agentToolsRepository,
+  Finder? readyFinder,
 }) async {
   final session = WorkspaceSession(
     LocalWorkspaceRef(localWorkspaceId: fixture.workspace.id),
@@ -414,8 +530,9 @@ Future<void> _pumpAgentScreen(
           agentRepositoryProvider(fixture.workspace.id).overrideWithValue(
             agentRepository ?? AgentsRepository(fixture.database),
           ),
-          agentToolsRepositoryProvider(fixture.workspace.id)
-              .overrideWithValue(AgentToolsRepository(fixture.database)),
+          agentToolsRepositoryProvider(fixture.workspace.id).overrideWithValue(
+            agentToolsRepository ?? AgentToolsRepository(fixture.database),
+          ),
           cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
           workspaceSkillsProvider(fixture.workspace.id).overrideWith(
             (_) async =>
@@ -441,8 +558,12 @@ Future<void> _pumpAgentScreen(
       ),
     ),
   );
-  await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(AuraInput));
+  if (readyFinder case final finder?) {
+    await _pumpUntilFound(tester, finder);
+  } else {
+    await _pumpUntilFound(tester, find.text('Agent details'));
+    await _pumpUntilFound(tester, find.byType(AuraInput));
+  }
 }
 
 bool _isSaveButtonDisabled(WidgetTester tester, String label) {
@@ -522,6 +643,65 @@ class _BlockingAgentRepository({
   Future<bool> deleteAgent(String agentId) {
     return delegate.deleteAgent(agentId);
   }
+}
+
+class _RetryingAgentLoadRepository({
+  required super.delegate,
+  required super.release,
+}) extends _BlockingAgentRepository {
+  bool _hasFailed = false;
+
+  @override
+  Future<AgentEntity?> getAgentById(String agentId) {
+    if (!_hasFailed) {
+      _hasFailed = true;
+
+      return Future.error(StateError('Temporary agent load failure'));
+    }
+
+    return super.getAgentById(agentId);
+  }
+}
+
+class _RetryingAgentToolsRepository({
+  required final AgentToolsRepositoryContract delegate,
+}) implements AgentToolsRepositoryContract {
+  bool _hasFailed = false;
+
+  @override
+  Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) {
+    if (!_hasFailed) {
+      _hasFailed = true;
+
+      return Future.error(StateError('Temporary permissions load failure'));
+    }
+
+    return delegate.getAgentTools(agentId);
+  }
+
+  @override
+  Future<AgentToolOverrideEntity> setAgentToolPermission(
+    String agentId,
+    String toolId, {
+    required ToolPermissionMode permissionMode,
+  }) => delegate.setAgentToolPermission(
+    agentId,
+    toolId,
+    permissionMode: permissionMode,
+  );
+
+  @override
+  Future<bool> clearAgentToolPermission(String agentId, String toolId) =>
+      delegate.clearAgentToolPermission(agentId, toolId);
+}
+
+class _FailingAgentCreateRepository({
+  required super.delegate,
+  required super.release,
+}) extends _BlockingAgentRepository {
+  @override
+  Future<AgentEntity> createAgent(String workspaceId, AgentToCreate agent) =>
+      Future.error(StateError('Temporary agent save failure'));
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
