@@ -77,21 +77,6 @@ class const WorkspaceView({
     summaryColumnIds: summaryColumnIds,
     connected: connected,
   );
-  WorkspaceView withAction(A2uiSavedAction? value) => .new(
-    id: id,
-    name: name,
-    tableId: tableId,
-    bindings: bindings,
-    columnTypes: columnTypes,
-    definition: definition,
-    action: value,
-    revision: revision,
-    parentId: parentId,
-    canManage: canManage,
-    query: query,
-    summaryColumnIds: summaryColumnIds,
-    connected: connected,
-  );
   WorkspaceView withConnected(WorkspaceConnectedBinding? value) => .new(
     id: id,
     name: name,
@@ -179,6 +164,24 @@ class const WorkspaceView({
     revision: revision,
     parentId: parentId,
     canManage: value,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
+    connected: connected,
+  );
+}
+
+extension WorkspaceViewActionCopy on WorkspaceView {
+  WorkspaceView withAction(A2uiSavedAction? value) => .new(
+    id: id,
+    name: name,
+    tableId: tableId,
+    bindings: bindings,
+    columnTypes: columnTypes,
+    definition: definition,
+    action: value,
+    revision: revision,
+    parentId: parentId,
+    canManage: canManage,
     query: query,
     summaryColumnIds: summaryColumnIds,
     connected: connected,

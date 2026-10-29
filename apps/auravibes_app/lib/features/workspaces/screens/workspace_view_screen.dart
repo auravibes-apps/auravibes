@@ -510,32 +510,27 @@ class const _Surface(final WorkspaceViewData data, final String workspaceId)
 }
 
 bool _isDetail(WorkspaceViewData data) {
-  if (data.view.action?.type == A2uiSavedActionType.updateSelectedRecord) {
+  final view = data.view;
+  if (view.action?.type == A2uiSavedActionType.updateSelectedRecord) {
     return true;
   }
-  final paths = {
-    for (final key in data.view.bindings.keys) ...[
-      '/$key',
-      '/${key}_raw',
-      '/fieldLabels/$key',
-    ],
-  };
+  final paths = _detailPaths(view.bindings.keys);
 
-  return data.view.definition.components.any(
-    (component) =>
-        component['id'].toString().startsWith('detail_') ||
-        _hasPathReference(component, paths),
+  return view.definition.components.any(
+    (item) => _isDetailComponent(item, paths),
   );
 }
 
-bool _hasPathReference(Object? value, Set<String> paths) => switch (value) {
+Set<String> _detailPaths(Iterable<String> keys) => {
+  for (final key in keys) ...['/$key', '/${key}_raw', '/fieldLabels/$key'],
+};
+
+bool _isDetailComponent(Map<String, Object?> component, Set<String> paths) =>
+    component['id'].toString().startsWith('detail_') ||
+    component.values.any((item) => _referencesDetailPath(item, paths));
+
+bool _referencesDetailPath(Object? value, Set<String> paths) => switch (value) {
   {'path': final String path} => paths.contains(path),
-  final Map<Object?, Object?> map => map.values.any(
-    (item) => _hasPathReference(item, paths),
-  ),
-  final List<Object?> list => list.any(
-    (item) => _hasPathReference(item, paths),
-  ),
   _ => false,
 };
 

@@ -773,6 +773,38 @@ ToolSpec workspaceSaveColumnToolSpec() => _workspaceActionToolSpec(
   required: const ['tableId', 'revision', 'schemaRevision', 'column'],
 );
 
+const _viewCommonSchemaProperties = <String, Object?>{
+  'bindings': {
+    'type': 'object',
+    'description': 'Optional map of binding key to table column ID.',
+  },
+  'definition': {
+    'type': 'object',
+    'description':
+        'Optional saved A2UI surface definition '
+        '({"version": 1, "components": [...]}).',
+  },
+  'query': {
+    'type': ['object', 'null'],
+    'description':
+        'Optional query filter/sort '
+        '({"search", "filterColumnId", "filterValue", "filterOperator", '
+        '"sortColumnId", "descending", "offset", "limit"}).',
+  },
+  'summaryColumnIds': {
+    'type': 'array',
+    'items': {'type': 'string'},
+    'description': 'Optional numeric column IDs to expose under /summary.',
+  },
+  'viewAction': {
+    'type': ['object', 'null'],
+    'description':
+        'Optional form submit action '
+        '({"version": 1, "type": "updateSelectedRecord", '
+        '"inputs": {"<columnId>": "/<bindingKey>"}}).',
+  },
+};
+
 ToolSpec workspaceCreateViewToolSpec() => _workspaceActionToolSpec(
   name: workspaceCreateViewToolName,
   description:
@@ -790,35 +822,7 @@ ToolSpec workspaceCreateViewToolSpec() => _workspaceActionToolSpec(
       'type': 'array',
       'items': {'type': 'string'},
     },
-    'bindings': {
-      'type': 'object',
-      'description': 'Optional map of binding key to table column ID.',
-    },
-    'definition': {
-      'type': 'object',
-      'description':
-          'Optional saved A2UI surface definition '
-          '({"version": 1, "components": [...]}).',
-    },
-    'query': {
-      'type': ['object', 'null'],
-      'description':
-          'Optional query filter/sort '
-          '({"search", "filterColumnId", "filterValue", "filterOperator", '
-          '"sortColumnId", "descending", "offset", "limit"}).',
-    },
-    'summaryColumnIds': {
-      'type': 'array',
-      'items': {'type': 'string'},
-      'description': 'Optional numeric column IDs to expose under /summary.',
-    },
-    'viewAction': {
-      'type': ['object', 'null'],
-      'description':
-          'Optional form submit action '
-          '({"version": 1, "type": "updateSelectedRecord", '
-          '"inputs": {"<columnId>": "/<bindingKey>"}}).',
-    },
+    ..._viewCommonSchemaProperties,
   },
   required: const [
     'tableId',
@@ -843,7 +847,6 @@ ToolSpec workspaceSaveViewToolSpec() => _workspaceActionToolSpec(
     'revision': {'type': 'integer', 'minimum': 1},
     'schemaRevision': {'type': 'integer', 'minimum': 1},
     'name': {'type': 'string', 'minLength': 1},
-    'definition': {'type': 'object'},
     'updateComponents': {
       'type': 'array',
       'items': {'type': 'object'},
@@ -854,17 +857,7 @@ ToolSpec workspaceSaveViewToolSpec() => _workspaceActionToolSpec(
       'items': {'type': 'string'},
       'description': 'Component IDs to remove from the View surface.',
     },
-    'bindings': {'type': 'object'},
-    'query': {
-      'type': ['object', 'null'],
-    },
-    'summaryColumnIds': {
-      'type': 'array',
-      'items': {'type': 'string'},
-    },
-    'viewAction': {
-      'type': ['object', 'null'],
-    },
+    ..._viewCommonSchemaProperties,
   },
   required: const ['id', 'revision', 'schemaRevision'],
 );

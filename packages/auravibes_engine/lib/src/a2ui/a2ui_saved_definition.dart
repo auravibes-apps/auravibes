@@ -25,24 +25,9 @@ class A2uiSavedDefinition {
     Iterable<String>? removeComponentIds,
     bool requiresUserAction = false,
   }) {
-    final removed = removeComponentIds?.toSet() ?? const <String>{};
-    if (removed.any((id) => id.isEmpty)) _invalid();
-    final updatedById = <String, Map<String, Object?>>{};
-    for (final component
-        in updateComponents ?? const <Map<String, Object?>>[]) {
-      final id = component['id'];
-      if (id is! String || id.isEmpty || updatedById.containsKey(id)) {
-        _invalid();
-      }
-      updatedById[id] = component;
-    }
-    final next = <Map<String, Object?>>[
-      for (final existing in components)
-        if (!removed.contains(existing['id']))
-          updatedById.remove(existing['id']! as String) ?? existing,
-      for (final added in updatedById.entries)
-        if (!removed.contains(added.key)) added.value,
-    ];
+    final removed = _removedIds(removeComponentIds);
+    final updatedById = _updatedComponentsById(updateComponents);
+    final next = _patchedComponents(components, updatedById, removed);
 
     return A2uiSavedDefinition.fromJson({
       'version': 1,
@@ -53,7 +38,46 @@ class A2uiSavedDefinition {
   Map<String, Object?> toJson() => {'version': 1, 'components': components};
 }
 
-const savedSurfaceExcludedComponents = <String>{
+Set<String> _removedIds(Iterable<String>? ids) {
+  final removed = ids?.toSet() ?? const <String>{};
+  if (removed.any((id) => id.isEmpty)) _invalid();
+
+  return removed;
+}
+
+Map<String, Map<String, Object?>> _updatedComponentsById(
+  Iterable<Map<String, Object?>>? updates,
+) {
+  final byId = <String, Map<String, Object?>>{};
+  for (final component in updates ?? const <Map<String, Object?>>[]) {
+    final id = _componentId(component);
+    if (byId.containsKey(id)) _invalid();
+    byId[id] = component;
+  }
+
+  return byId;
+}
+
+String _componentId(Map<String, Object?> component) {
+  final id = component['id'];
+  if (id is! String || id.isEmpty) _invalid();
+
+  return id;
+}
+
+List<Map<String, Object?>> _patchedComponents(
+  List<Map<String, Object?>> current,
+  Map<String, Map<String, Object?>> updatedById,
+  Set<String> removed,
+) => [
+  for (final existing in current)
+    if (!removed.contains(existing['id']))
+      updatedById.remove(existing['id']! as String) ?? existing,
+  for (final added in updatedById.entries)
+    if (!removed.contains(added.key)) added.value,
+];
+
+const _excludedComponents = <String>{
   'Image',
   'Avatar',
   'AvatarGroup',
@@ -98,7 +122,7 @@ Map<String, Object?> _component(Object? value) {
   if (value is! Map<String, Object?>) _invalid();
   final type = value['component'];
   if (!supportedA2uiChatComponents.contains(type) ||
-      savedSurfaceExcludedComponents.contains(type)) {
+      _excludedComponents.contains(type)) {
     _invalid();
   }
 

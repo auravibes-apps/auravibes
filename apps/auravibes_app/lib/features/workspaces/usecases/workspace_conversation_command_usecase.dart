@@ -339,8 +339,11 @@ class const _ViewEdit(
 ) {
   Future<Map<String, Object?>> save() async {
     _current();
+    if (!_hasViewEditArguments(arguments)) {
+      throw const WorkspaceTableException();
+    }
     final saved = await manager.save(
-      _applyViewChanges(data.view, data.table, arguments),
+      _ViewMutation(data.view, data.table, arguments).apply(),
     );
 
     return _Snapshots.view(saved);
@@ -355,51 +358,57 @@ class const _ViewEdit(
   }
 }
 
-WorkspaceView _applyViewChanges(
-  WorkspaceView view,
-  WorkspaceTable table,
-  Map<String, dynamic> arguments, {
-  bool allowEmptyEdit = false,
-}) {
-  if (!allowEmptyEdit && !_hasViewEditArguments(arguments)) {
-    throw const WorkspaceTableException();
-  }
-  final name = arguments.containsKey('name')
+class const _ViewMutation(
+  final WorkspaceView view,
+  final WorkspaceTable table,
+  final Map<String, dynamic> arguments,
+) {
+  WorkspaceView apply() => _withFilters().edited(
+    name: _name(),
+    definition: _definition(),
+    bindings: _bindings(),
+    columnTypes: _columnTypes(),
+  );
+
+  WorkspaceView _withFilters() => view
+      .withQuery(_resolvedViewQuery(view.query, arguments))
+      .withSummaryColumns(_summary())
+      .withAction(_action());
+
+  String _name() => arguments.containsKey('name')
       ? _Arguments.string(arguments, 'name')
       : view.name;
-  final bindings = arguments.containsKey('bindings')
+
+  Map<String, String> _bindings() => arguments.containsKey('bindings')
       ? _stringMap(arguments['bindings'])
       : view.bindings;
-  final query = _resolvedViewQuery(view.query, arguments);
-  final summary = arguments.containsKey('summaryColumnIds')
+
+  List<String> _summary() => arguments.containsKey('summaryColumnIds')
       ? _stringList(arguments['summaryColumnIds'])
       : view.summaryColumnIds;
-  final action = _resolvedViewAction(view.action, arguments);
-  final definition = _resolvedViewDefinition(
+
+  A2uiSavedAction? _action() => _resolvedViewAction(view.action, arguments);
+
+  A2uiSavedDefinition _definition() => _resolvedViewDefinition(
     view.definition,
     arguments,
-    requiresUserAction: action != null,
+    requiresUserAction: _action() != null,
   );
-  final dependencies = <String>{
-    ...bindings.values,
-    ...summary,
-    ?query.filterColumnId,
-    ?query.sortColumnId,
-  };
 
-  return view
-      .withQuery(query)
-      .withSummaryColumns(summary)
-      .withAction(action)
-      .edited(
-        name: name,
-        definition: definition,
-        bindings: bindings,
-        columnTypes: {
-          for (final column in table.columns)
-            if (dependencies.contains(column.id)) column.id: column.type.name,
-        },
-      );
+  Map<String, String> _columnTypes() {
+    final query = _resolvedViewQuery(view.query, arguments);
+    final dependencies = <String>{
+      ..._bindings().values,
+      ..._summary(),
+      ?query.filterColumnId,
+      ?query.sortColumnId,
+    };
+
+    return {
+      for (final column in table.columns)
+        if (dependencies.contains(column.id)) column.id: column.type.name,
+    };
+  }
 }
 
 bool _hasViewEditArguments(Map<String, dynamic> arguments) => const [
@@ -443,9 +452,7 @@ A2uiSavedDefinition _resolvedViewDefinition(
   required bool requiresUserAction,
 }) {
   final hasDefinition = arguments.containsKey('definition');
-  final hasPatch =
-      arguments.containsKey('updateComponents') ||
-      arguments.containsKey('removeComponentIds');
+  final hasPatch = _hasDefinitionPatch(arguments);
   if (hasDefinition && hasPatch) throw const WorkspaceTableException();
   if (hasDefinition) {
     return .fromJson(
@@ -454,17 +461,27 @@ A2uiSavedDefinition _resolvedViewDefinition(
     );
   }
   if (hasPatch) {
-    return current.applyPatch(
-      updateComponents: _componentMaps(arguments['updateComponents']),
-      removeComponentIds: arguments.containsKey('removeComponentIds')
-          ? _stringList(arguments['removeComponentIds'])
-          : null,
-      requiresUserAction: requiresUserAction,
-    );
+    return _patchDefinition(current, arguments, requiresUserAction);
   }
 
   return .fromJson(current.toJson(), requiresUserAction: requiresUserAction);
 }
+
+bool _hasDefinitionPatch(Map<String, dynamic> arguments) =>
+    arguments.containsKey('updateComponents') ||
+    arguments.containsKey('removeComponentIds');
+
+A2uiSavedDefinition _patchDefinition(
+  A2uiSavedDefinition current,
+  Map<String, dynamic> arguments,
+  bool requiresUserAction,
+) => current.applyPatch(
+  updateComponents: _componentMaps(arguments['updateComponents']),
+  removeComponentIds: arguments.containsKey('removeComponentIds')
+      ? _stringList(arguments['removeComponentIds'])
+      : null,
+  requiresUserAction: requiresUserAction,
+);
 
 Map<String, String> _stringMap(Object? value) {
   if (value is! Map ||
@@ -706,31 +723,33 @@ class const _ViewCreation(
 
   Future<WorkspaceView> _create() {
     final arguments = command.input.arguments;
-    final draft = WorkspaceView.create(
-      name: _Arguments.string(arguments, 'name'),
-      table: table,
-      columnIds: _ids(),
-      parentId: table.parentId,
-    );
-    if (!const [
-      'bindings',
-      'definition',
-      'query',
-      'summaryColumnIds',
-      'viewAction',
-    ].any(arguments.containsKey)) {
+    final name = _Arguments.string(arguments, 'name');
+    if (!_hasCustomCreationArgs(arguments)) {
       return manager.create(
-        name: draft.name,
+        name: name,
         table: table,
         columnIds: _ids(),
         parentId: table.parentId,
       );
     }
 
-    return manager.save(
-      _applyViewChanges(draft, table, arguments, allowEmptyEdit: true),
-    );
+    return manager.save(_ViewMutation(_draft(name), table, arguments).apply());
   }
+
+  WorkspaceView _draft(String name) => WorkspaceView.create(
+    name: name,
+    table: table,
+    columnIds: _ids(),
+    parentId: table.parentId,
+  );
+
+  bool _hasCustomCreationArgs(Map<String, dynamic> arguments) => const [
+    'bindings',
+    'definition',
+    'query',
+    'summaryColumnIds',
+    'viewAction',
+  ].any(arguments.containsKey);
 
   List<String> _ids() => _stringList(command.input.arguments['columnIds']);
 }

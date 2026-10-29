@@ -160,6 +160,13 @@ class const _Presentation(
     ],
   );
   void _preset(String mode) {
+    _updateAction(mode);
+    layout.text = const JsonEncoder.withIndent(
+      '  ',
+    ).convert({'version': 1, 'components': _components(mode, table, bindings)});
+  }
+
+  void _updateAction(String mode) {
     if (mode == 'form') {
       action?.value = A2uiSavedAction(
         type: .updateSelectedRecord,
@@ -167,13 +174,12 @@ class const _Presentation(
           for (final entry in bindings.entries) entry.value: '/${entry.key}',
         },
       );
-    } else if (action?.value?.type ==
-        A2uiSavedActionType.updateSelectedRecord) {
+
+      return;
+    }
+    if (action?.value?.type == A2uiSavedActionType.updateSelectedRecord) {
       action?.value = null;
     }
-    layout.text = const JsonEncoder.withIndent(
-      '  ',
-    ).convert({'version': 1, 'components': _components(mode, table, bindings)});
   }
 }
 
@@ -181,61 +187,62 @@ List<Map<String, Object?>> _components(
   String mode,
   WorkspaceTable table,
   Map<String, String> bindings,
-) {
-  final fields = bindings.keys;
-  if (mode == 'detail') {
-    return [
-      {
-        'id': 'root',
-        'component': 'Column',
-        'children': [
-          for (final field in fields) ...['label_$field', 'detail_$field'],
-        ],
-      },
-      for (final field in fields) ...[
-        {
-          'id': 'label_$field',
-          'component': 'Text',
-          'text': {'path': '/fieldLabels/$field'},
-        },
-        {
-          'id': 'detail_$field',
-          'component': 'Text',
-          'text': {'path': '/$field'},
-        },
-      ],
-    ];
-  }
-  if (mode == 'form') {
-    return [
-      {
-        'id': 'root',
-        'component': 'Column',
-        'children': [for (final field in fields) 'input_$field'],
-      },
-      for (final entry in bindings.entries)
-        _formComponent(entry.key, entry.value, table),
-    ];
-  }
+) => switch (mode) {
+  'detail' => _detailComponents(bindings.keys),
+  'form' => _formComponents(table, bindings),
+  'chart' => [_chartComponent()],
+  _ => [_tableComponent()],
+};
 
-  return [
-    switch (mode) {
-      'chart' => {
-        'id': 'root',
-        'component': 'Chart',
-        'variant': 'bar',
-        'labels': {'path': '/chartLabels'},
-        'series': {'path': '/chartSeries'},
-      },
-      _ => {
-        'id': 'root',
-        'component': 'Table',
-        'columns': {'path': '/columns'},
-        'rows': {'path': '/rows'},
-      },
+List<Map<String, Object?>> _detailComponents(Iterable<String> fields) => [
+  {
+    'id': 'root',
+    'component': 'Column',
+    'children': [
+      for (final field in fields) ...['label_$field', 'detail_$field'],
+    ],
+  },
+  for (final field in fields) ...[
+    {
+      'id': 'label_$field',
+      'component': 'Text',
+      'text': {'path': '/fieldLabels/$field'},
     },
-  ];
-}
+    {
+      'id': 'detail_$field',
+      'component': 'Text',
+      'text': {'path': '/$field'},
+    },
+  ],
+];
+
+List<Map<String, Object?>> _formComponents(
+  WorkspaceTable table,
+  Map<String, String> bindings,
+) => [
+  {
+    'id': 'root',
+    'component': 'Column',
+    'children': [for (final field in bindings.keys) 'input_$field'],
+  },
+  for (final entry in bindings.entries)
+    _formComponent(entry.key, entry.value, table),
+];
+
+Map<String, Object?> _chartComponent() => {
+  'id': 'root',
+  'component': 'Chart',
+  'variant': 'bar',
+  'labels': {'path': '/chartLabels'},
+  'series': {'path': '/chartSeries'},
+};
+
+Map<String, Object?> _tableComponent() => {
+  'id': 'root',
+  'component': 'Table',
+  'columns': {'path': '/columns'},
+  'rows': {'path': '/rows'},
+};
 
 Map<String, Object?> _formComponent(
   String field,

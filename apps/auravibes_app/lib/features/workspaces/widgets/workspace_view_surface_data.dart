@@ -77,53 +77,63 @@ abstract final class WorkspaceViewSurfaceData {
       ],
   ];
   static Map<String, Object?> _fields(WorkspaceViewData data) {
-    if (data.records.isEmpty) return {};
-    final record = data.records.first;
-    final result = <String, Object?>{};
-    for (final entry in data.view.bindings.entries) {
-      final rawValue = record.values[entry.value];
-      final display =
-          _displayValue(data, record, entry.value)?.toString() ?? '-';
-      final path = '/${entry.key}';
-      if ((rawValue is num || rawValue is bool) &&
-          _usesTypedFieldBinding(data.view.definition.components, path)) {
-        result[entry.key] = rawValue;
-      } else {
-        result[entry.key] = display;
-      }
-      if (rawValue is num || rawValue is bool) {
-        result['${entry.key}_raw'] = rawValue;
-      }
-    }
+    final record = data.records.firstOrNull;
+    if (record == null) return const {};
 
-    return result;
+    return {
+      for (final entry in data.view.bindings.entries)
+        ..._fieldEntries(data, record, entry),
+    };
   }
-
-  static bool _usesTypedFieldBinding(
-    List<Map<String, Object?>> components,
-    String path,
-  ) {
-    var hasTyped = false;
-    for (final component in components) {
-      final type = component['component'];
-      if (type == 'Text' && _bindsPath(component['text'], path)) {
-        return false;
-      }
-      if ((type == 'CheckBox' ||
-              type == 'Slider' ||
-              type == 'Rating' ||
-              type == 'Progress') &&
-          _bindsPath(component['value'], path)) {
-        hasTyped = true;
-      }
-    }
-
-    return hasTyped;
-  }
-
-  static bool _bindsPath(Object? value, String path) =>
-      value is Map && value['path'] == path;
 }
+
+Map<String, Object?> _fieldEntries(
+  WorkspaceViewData data,
+  WorkspaceRecord record,
+  MapEntry<String, String> entry,
+) {
+  final rawValue = record.values[entry.value];
+  final display = _displayValue(data, record, entry.value)?.toString() ?? '-';
+  if (!_isScalar(rawValue)) return {entry.key: display};
+
+  return _scalarFieldEntries(data, entry.key, rawValue, display);
+}
+
+bool _isScalar(Object? value) => value is num || value is bool;
+
+Map<String, Object?> _scalarFieldEntries(
+  WorkspaceViewData data,
+  String key,
+  Object? rawValue,
+  String display,
+) => {
+  key: _usesTypedFieldBinding(data.view.definition.components, '/$key')
+      ? rawValue
+      : display,
+  '${key}_raw': rawValue,
+};
+
+bool _usesTypedFieldBinding(
+  List<Map<String, Object?>> components,
+  String path,
+) =>
+    !components.any((item) => _bindsText(item, path)) &&
+    components.any((item) => _bindsTypedValue(item, path));
+
+bool _bindsText(Map<String, Object?> component, String path) =>
+    component['component'] == 'Text' && _bindsPath(component['text'], path);
+
+bool _bindsTypedValue(Map<String, Object?> component, String path) =>
+    _isTypedComponent(component['component']) &&
+    _bindsPath(component['value'], path);
+
+bool _isTypedComponent(Object? type) => switch (type) {
+  'CheckBox' || 'Slider' || 'Rating' || 'Progress' => true,
+  _ => false,
+};
+
+bool _bindsPath(Object? value, String path) =>
+    value is Map && value['path'] == path;
 
 abstract final class _WorkspaceViewFormDefaults {
   static Map<String, Object?> values(
