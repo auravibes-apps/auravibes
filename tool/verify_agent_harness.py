@@ -274,7 +274,8 @@ def verify(root):
                 if not match:
                     continue
                 reference = match.group(1).strip("\"'")
-                if reference.startswith("./"):
+                # GitHub resolves `$/` references to the workflow's running commit.
+                if reference.startswith(("./", "$/")):
                     continue
                 _, separator, revision = reference.rpartition("@")
                 if not separator or not FULL_COMMIT_SHA.fullmatch(revision):

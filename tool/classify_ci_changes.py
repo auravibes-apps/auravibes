@@ -30,6 +30,8 @@ _CI_ROUTING_PATHS = _CI_SELECTOR_TOOL_PATHS | {
     "tool/ci_summary.py",
     "tool/ci_summary_test.py",
     "tool/sonar_workflow_test.py",
+    "tool/verify_agent_harness.py",
+    "tool/verify_agent_harness_test.py",
 }
 
 _STATIC_ASSET_SUFFIXES = (

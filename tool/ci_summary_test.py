@@ -439,6 +439,8 @@ class CiSummaryTest(unittest.TestCase):
                 "tool/ci_summary.py",
                 "tool/ci_summary_test.py",
                 "tool/sonar_workflow_test.py",
+                "tool/verify_agent_harness.py",
+                "tool/verify_agent_harness_test.py",
                 "tool/changed_test_selector.dart",
                 "tool/changed_test_selector_test.dart",
             }
