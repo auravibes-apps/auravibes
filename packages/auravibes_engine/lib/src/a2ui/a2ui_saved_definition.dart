@@ -20,19 +20,50 @@ class A2uiSavedDefinition {
 
   final List<Map<String, Object?>> components;
 
+  A2uiSavedDefinition applyPatch({
+    Iterable<Map<String, Object?>>? updateComponents,
+    Iterable<String>? removeComponentIds,
+    bool requiresUserAction = false,
+  }) {
+    final removed = removeComponentIds?.toSet() ?? const <String>{};
+    if (removed.any((id) => id.isEmpty)) _invalid();
+    final updatedById = <String, Map<String, Object?>>{};
+    for (final component
+        in updateComponents ?? const <Map<String, Object?>>[]) {
+      final id = component['id'];
+      if (id is! String || id.isEmpty || updatedById.containsKey(id)) {
+        _invalid();
+      }
+      updatedById[id] = component;
+    }
+    final next = <Map<String, Object?>>[
+      for (final existing in components)
+        if (!removed.contains(existing['id']))
+          updatedById.remove(existing['id']! as String) ?? existing,
+      for (final added in updatedById.entries)
+        if (!removed.contains(added.key)) added.value,
+    ];
+
+    return A2uiSavedDefinition.fromJson({
+      'version': 1,
+      'components': next,
+    }, requiresUserAction: requiresUserAction);
+  }
+
   Map<String, Object?> toJson() => {'version': 1, 'components': components};
 }
 
-const _maximumComponents = 100;
-const _maximumBytes = 65536;
-const _maximumDepth = 24;
-const _externalComponents = {
+const savedSurfaceExcludedComponents = <String>{
   'Image',
   'Avatar',
   'AvatarGroup',
   'Link',
   'SkillSuggestion',
 };
+
+const _maximumComponents = 100;
+const _maximumBytes = 65536;
+const _maximumDepth = 24;
 const _forbiddenKeys = {
   'action',
   'actions',
@@ -67,7 +98,7 @@ Map<String, Object?> _component(Object? value) {
   if (value is! Map<String, Object?>) _invalid();
   final type = value['component'];
   if (!supportedA2uiChatComponents.contains(type) ||
-      _externalComponents.contains(type)) {
+      savedSurfaceExcludedComponents.contains(type)) {
     _invalid();
   }
 

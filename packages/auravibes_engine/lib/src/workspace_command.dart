@@ -777,8 +777,10 @@ ToolSpec workspaceCreateViewToolSpec() => _workspaceActionToolSpec(
   name: workspaceCreateViewToolName,
   description:
       'Create a View for a workspace table the current user can access. '
-      'Use column IDs from the '
-      'current table schema.',
+      'Use column IDs from the current table schema. Optionally pass '
+      'bindings, a saved A2UI definition (load a2ui-views skill resource for '
+      'component schemas and host data-model bindings), query, '
+      'summaryColumnIds, or viewAction.',
   properties: const {
     'tableId': {'type': 'string', 'minLength': 1},
     'revision': {'type': 'integer', 'minimum': 1},
@@ -787,6 +789,35 @@ ToolSpec workspaceCreateViewToolSpec() => _workspaceActionToolSpec(
     'columnIds': {
       'type': 'array',
       'items': {'type': 'string'},
+    },
+    'bindings': {
+      'type': 'object',
+      'description': 'Optional map of binding key to table column ID.',
+    },
+    'definition': {
+      'type': 'object',
+      'description':
+          'Optional saved A2UI surface definition '
+          '({"version": 1, "components": [...]}).',
+    },
+    'query': {
+      'type': ['object', 'null'],
+      'description':
+          'Optional query filter/sort '
+          '({"search", "filterColumnId", "filterValue", "filterOperator", '
+          '"sortColumnId", "descending", "offset", "limit"}).',
+    },
+    'summaryColumnIds': {
+      'type': 'array',
+      'items': {'type': 'string'},
+      'description': 'Optional numeric column IDs to expose under /summary.',
+    },
+    'viewAction': {
+      'type': ['object', 'null'],
+      'description':
+          'Optional form submit action '
+          '({"version": 1, "type": "updateSelectedRecord", '
+          '"inputs": {"<columnId>": "/<bindingKey>"}}).',
     },
   },
   required: const [
@@ -802,25 +833,40 @@ ToolSpec workspaceSaveViewToolSpec() => _workspaceActionToolSpec(
   name: workspaceSaveViewToolName,
   description:
       'Edit one workspace View the current user can manage. Use its current '
-      'View ID, View revision '
-      'and source table schema revision. Preserve the existing definition '
-      'unless the user asks to change it.',
+      'View ID, View revision and source table schema revision. '
+      'Pass definition to replace the surface, or updateComponents and/or '
+      'removeComponentIds to patch components incrementally without '
+      'resending unchanged components. Omitted fields keep their current '
+      'View values.',
   properties: const {
     'id': {'type': 'string', 'minLength': 1},
     'revision': {'type': 'integer', 'minimum': 1},
     'schemaRevision': {'type': 'integer', 'minimum': 1},
     'name': {'type': 'string', 'minLength': 1},
     'definition': {'type': 'object'},
+    'updateComponents': {
+      'type': 'array',
+      'items': {'type': 'object'},
+      'description': 'Components to add or replace by id in the View surface.',
+    },
+    'removeComponentIds': {
+      'type': 'array',
+      'items': {'type': 'string'},
+      'description': 'Component IDs to remove from the View surface.',
+    },
     'bindings': {'type': 'object'},
+    'query': {
+      'type': ['object', 'null'],
+    },
+    'summaryColumnIds': {
+      'type': 'array',
+      'items': {'type': 'string'},
+    },
+    'viewAction': {
+      'type': ['object', 'null'],
+    },
   },
-  required: const [
-    'id',
-    'revision',
-    'schemaRevision',
-    'name',
-    'definition',
-    'bindings',
-  ],
+  required: const ['id', 'revision', 'schemaRevision'],
 );
 
 ToolSpec _workspaceActionToolSpec({

@@ -75,4 +75,5 @@ WorkspaceViewData _detailData(WorkspaceViewData data, WorkspaceRecord record) =>
       table: data.table,
       records: [record],
       needsRepair: data.needsRepair,
+      summary: data.summary,
     );

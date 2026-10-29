@@ -76,19 +76,53 @@ abstract final class WorkspaceViewSurfaceData {
           _displayValue(data, record, id),
       ],
   ];
-  static Map<String, Object?> _fields(WorkspaceViewData data) =>
-      data.records.isEmpty
-      ? {}
-      : {
-          for (final entry in data.view.bindings.entries)
-            entry.key:
-                _displayValue(
-                  data,
-                  data.records.first,
-                  entry.value,
-                )?.toString() ??
-                '-',
-        };
+  static Map<String, Object?> _fields(WorkspaceViewData data) {
+    if (data.records.isEmpty) return {};
+    final record = data.records.first;
+    final result = <String, Object?>{};
+    for (final entry in data.view.bindings.entries) {
+      final rawValue = record.values[entry.value];
+      final display =
+          _displayValue(data, record, entry.value)?.toString() ?? '-';
+      final path = '/${entry.key}';
+      if ((rawValue is num || rawValue is bool) &&
+          _usesTypedFieldBinding(data.view.definition.components, path)) {
+        result[entry.key] = rawValue;
+      } else {
+        result[entry.key] = display;
+      }
+      if (rawValue is num || rawValue is bool) {
+        result['${entry.key}_raw'] = rawValue;
+      }
+    }
+
+    return result;
+  }
+
+  static bool _usesTypedFieldBinding(
+    List<Map<String, Object?>> components,
+    String path,
+  ) {
+    var hasTyped = false;
+    for (final component in components) {
+      final type = component['component'];
+      if (type == 'Text' && _bindsPath(component['text'], path)) {
+        return false;
+      }
+      if ((type == 'CheckBox' ||
+              type == 'Slider' ||
+              type == 'Rating' ||
+              type == 'Progress') &&
+          _bindsPath(component['value'], path)) {
+        hasTyped = true;
+      }
+    }
+
+    return hasTyped;
+  }
+
+  static bool _bindsPath(Object? value, String path) =>
+      value is Map && value['path'] == path;
 }
 
 abstract final class _WorkspaceViewFormDefaults {
@@ -198,31 +232,38 @@ Object? _columnValue(WorkspaceColumn? column, Object? value) {
 }
 
 Map<String, Object?> _chart(WorkspaceViewData data) {
-  final column = _chartColumn(data);
-  if (column == null) {
+  final columns = _chartColumns(data);
+  if (columns.isEmpty) {
     return {'chartLabels': <String>[], 'chartSeries': <Object>[]};
   }
 
-  return _chartModel(data, column);
+  return _chartModel(data, columns);
 }
 
-WorkspaceColumn? _chartColumn(WorkspaceViewData data) => data.table.columns
+List<WorkspaceColumn> _chartColumns(WorkspaceViewData data) => data
+    .table
+    .columns
     .where(
       (column) =>
           column.type == .number && data.view.bindings.containsValue(column.id),
     )
-    .firstOrNull;
+    .toList();
+
 Map<String, Object?> _chartModel(
   WorkspaceViewData data,
-  WorkspaceColumn column,
+  List<WorkspaceColumn> columns,
 ) {
   final records = data.records
-      .where((record) => record.values[column.id] is num)
+      .where(
+        (record) => columns.every((column) => record.values[column.id] is num),
+      )
       .toList();
 
   return {
     'chartLabels': _chartLabels(data, records),
-    'chartSeries': [_chartSeries(column, records)],
+    'chartSeries': [
+      for (final column in columns) _chartSeries(column, records),
+    ],
   };
 }
 

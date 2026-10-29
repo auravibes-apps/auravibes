@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_views_prov
 import 'package:auravibes_app/features/workspaces/widgets/workspace_item_failure.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_table_actions.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_query_editor.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -32,9 +33,9 @@ class const _EditState(
   final ValueNotifier<Set<String>> selected,
   final WorkspaceTableAction action,
   final ValueNotifier<WorkspaceRecordQuery> query,
-  final ValueNotifier<Set<String>> summary, {
-  required final bool requiresUserAction,
-}) {
+  final ValueNotifier<Set<String>> summary,
+  final ValueNotifier<A2uiSavedAction?> savedAction,
+) {
   factory use(BuildContext context, WorkspaceViewData data) => _EditState(
     useTextEditingController(text: data.view.name),
     useTextEditingController(text: _definitionText(data)),
@@ -42,7 +43,7 @@ class const _EditState(
     WorkspaceTableActions.use(context),
     useState(data.view.query),
     useState(data.view.summaryColumnIds.toSet()),
-    requiresUserAction: data.view.action != null,
+    useState(data.view.action),
   );
 
   WorkspaceView edited(WorkspaceViewData data) => data.view
@@ -53,7 +54,24 @@ class const _EditState(
         columnTypes: _types(data),
       )
       .withSummaryColumns(summary.value.toList())
-      .withQuery(query.value);
+      .withQuery(query.value)
+      .withAction(savedAction.value);
+  WorkspaceViewData? previewData(WorkspaceViewData data) {
+    try {
+      return WorkspaceViewData(
+        view: edited(data),
+        table: data.table,
+        records: data.records,
+        needsRepair: false,
+        hasMore: data.hasMore,
+        offset: data.offset,
+        summary: data.summary,
+      );
+    } on Object {
+      return null;
+    }
+  }
+
   void toggle(String id, {required bool checked}) {
     final next = {...selected.value};
     if (checked) {
@@ -66,7 +84,7 @@ class const _EditState(
 
   A2uiSavedDefinition _definition() => A2uiSavedDefinition.fromJson(
     Map<String, Object?>.from(jsonDecode(layout.text) as Map),
-    requiresUserAction: requiresUserAction,
+    requiresUserAction: savedAction.value != null,
   );
   Map<String, String> _types(WorkspaceViewData data) => {
     for (final column in data.table.columns)
@@ -115,6 +133,7 @@ class const _Form(final WorkspaceViewEditor owner, final _EditState state)
       _Fields(owner, state),
       _QueryEditor(owner, state),
       _Layout(state),
+      _Preview(owner, state),
       _Save(owner, state),
       if (state.action.error case final error?)
         WorkspaceItemFailure(error: error),
@@ -174,6 +193,25 @@ class const _Layout(final _EditState state) extends StatelessWidget {
   );
 }
 
+class const _Preview(final WorkspaceViewEditor owner, final _EditState state)
+    extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final _ = useListenable(state.layout);
+    final preview = state.previewData(owner.data);
+
+    return ExpansionTile(
+      title: const TextLocale(LocaleKeys.workspace_assets_preview),
+      children: [
+        if (preview == null)
+          const TextLocale(LocaleKeys.workspace_views_repair)
+        else
+          WorkspaceViewSurface(data: preview),
+      ],
+    );
+  }
+}
+
 class const _Save(final WorkspaceViewEditor owner, final _EditState state)
     extends HookConsumerWidget {
   @override
@@ -220,5 +258,6 @@ class const _QueryEditor(
     layout: state.layout,
     summary: state.summary,
     bindings: state._bindings(owner.data.view.bindings),
+    action: state.savedAction,
   );
 }

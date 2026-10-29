@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_view_summary
 import 'package:auravibes_app/features/workspaces/widgets/workspace_view_surface.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -508,9 +509,35 @@ class const _Surface(final WorkspaceViewData data, final String workspaceId)
   }
 }
 
-bool _isDetail(WorkspaceViewData data) => data.view.definition.components.any(
-  (component) => component['id'].toString().startsWith('detail_'),
-);
+bool _isDetail(WorkspaceViewData data) {
+  if (data.view.action?.type == A2uiSavedActionType.updateSelectedRecord) {
+    return true;
+  }
+  final paths = {
+    for (final key in data.view.bindings.keys) ...[
+      '/$key',
+      '/${key}_raw',
+      '/fieldLabels/$key',
+    ],
+  };
+
+  return data.view.definition.components.any(
+    (component) =>
+        component['id'].toString().startsWith('detail_') ||
+        _hasPathReference(component, paths),
+  );
+}
+
+bool _hasPathReference(Object? value, Set<String> paths) => switch (value) {
+  {'path': final String path} => paths.contains(path),
+  final Map<Object?, Object?> map => map.values.any(
+    (item) => _hasPathReference(item, paths),
+  ),
+  final List<Object?> list => list.any(
+    (item) => _hasPathReference(item, paths),
+  ),
+  _ => false,
+};
 
 bool _boundChart(Map<String, Object?> component) => switch (component) {
   {

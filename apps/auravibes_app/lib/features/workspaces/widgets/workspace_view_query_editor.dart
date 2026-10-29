@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_query_filter.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:material_ui/material_ui.dart';
@@ -18,6 +19,7 @@ class const WorkspaceViewQueryEditor({
   required final TextEditingController layout,
   required final ValueNotifier<Set<String>> summary,
   required final Map<String, String> bindings,
+  final ValueNotifier<A2uiSavedAction?>? action,
   super.key,
 }) extends HookWidget {
   @override
@@ -34,7 +36,7 @@ class const WorkspaceViewQueryEditor({
       _Descending(query),
       _PageSize(query),
       _SummarySelection(data.table, summary),
-      _Presentation(data.table, bindings, layout),
+      _Presentation(data.table, bindings, layout, action),
     ],
   );
 }
@@ -136,31 +138,51 @@ class const _Presentation(
   final WorkspaceTable table,
   final Map<String, String> bindings,
   final TextEditingController layout,
+  final ValueNotifier<A2uiSavedAction?>? action,
 ) extends StatelessWidget {
   bool get _hasNumbers => table.columns.any(
     (column) => column.type == .number && bindings.containsValue(column.id),
   );
+  bool get _hasFormFields => bindings.isNotEmpty;
   @override
   Widget build(BuildContext context) => Wrap(
     spacing: 8,
     children: [
-      for (final mode in ['list', 'detail', 'chart'])
+      for (final mode in ['list', 'detail', 'chart', 'form'])
         AuraButton(
           onPressed: () => _preset(mode),
           child: TextLocale(_modeKey(mode)),
-          disabled: mode == 'chart' && !_hasNumbers,
+          disabled:
+              (mode == 'chart' && !_hasNumbers) ||
+              (mode == 'form' && !_hasFormFields),
           identifier: 'workspace_view_layout_$mode',
         ),
     ],
   );
   void _preset(String mode) {
+    if (mode == 'form') {
+      action?.value = A2uiSavedAction(
+        type: .updateSelectedRecord,
+        inputs: {
+          for (final entry in bindings.entries) entry.value: '/${entry.key}',
+        },
+      );
+    } else if (action?.value?.type ==
+        A2uiSavedActionType.updateSelectedRecord) {
+      action?.value = null;
+    }
     layout.text = const JsonEncoder.withIndent(
       '  ',
-    ).convert({'version': 1, 'components': _components(mode, bindings.keys)});
+    ).convert({'version': 1, 'components': _components(mode, table, bindings)});
   }
 }
 
-List<Map<String, Object?>> _components(String mode, Iterable<String> fields) {
+List<Map<String, Object?>> _components(
+  String mode,
+  WorkspaceTable table,
+  Map<String, String> bindings,
+) {
+  final fields = bindings.keys;
   if (mode == 'detail') {
     return [
       {
@@ -184,6 +206,17 @@ List<Map<String, Object?>> _components(String mode, Iterable<String> fields) {
       ],
     ];
   }
+  if (mode == 'form') {
+    return [
+      {
+        'id': 'root',
+        'component': 'Column',
+        'children': [for (final field in fields) 'input_$field'],
+      },
+      for (final entry in bindings.entries)
+        _formComponent(entry.key, entry.value, table),
+    ];
+  }
 
   return [
     switch (mode) {
@@ -204,9 +237,33 @@ List<Map<String, Object?>> _components(String mode, Iterable<String> fields) {
   ];
 }
 
+Map<String, Object?> _formComponent(
+  String field,
+  String columnId,
+  WorkspaceTable table,
+) {
+  final column = table.columns.where((item) => item.id == columnId).firstOrNull;
+  if (column?.type == .checkbox) {
+    return {
+      'id': 'input_$field',
+      'component': 'CheckBox',
+      'label': {'path': '/fieldLabels/$field'},
+      'value': {'path': '/$field'},
+    };
+  }
+
+  return {
+    'id': 'input_$field',
+    'component': 'TextField',
+    'label': {'path': '/fieldLabels/$field'},
+    'value': {'path': '/$field'},
+  };
+}
+
 String _modeKey(String mode) => switch (mode) {
   'chart' => LocaleKeys.workspace_relational_chart,
   'detail' => LocaleKeys.workspace_relational_detail,
+  'form' => LocaleKeys.workspace_items_save_record,
   _ => LocaleKeys.workspace_relational_list,
 };
 
