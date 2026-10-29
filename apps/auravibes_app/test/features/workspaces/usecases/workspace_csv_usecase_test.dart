@@ -177,7 +177,7 @@ void main() {
     final repository = LocalWorkspaceCsvRepository(db, 'csv');
     final csv = WorkspaceCsvUsecase(repository);
     final money = {'amount': '900719925474099312345.00100', 'currency': 'USD'};
-    final input = const ListToCsvConverter().convert([
+    final input = Csv().encode([
       ['Name', 'Money', 'Date', 'Instant', 'Link', 'Links'],
       [
         '=SUM(1,2)',
@@ -208,8 +208,7 @@ void main() {
     expect(records.single.values['instant'], '2026-10-24T06:00:00.000001Z');
     expect(records.single.values['link'], linked.id);
     final exported = await ExportWorkspaceCsvUsecase(repository)(table.id);
-    final decoded = const CsvToListConverter(shouldParseNumbers: false)
-        .convert(exported);
+    final decoded = Csv().decode(exported);
     expect(decoded.last, contains(linked.id));
     expect(decoded.last, contains('Linked'));
     expect(decoded.last, contains(jsonEncode('=SUM(1,2)')));
@@ -299,16 +298,22 @@ void main() {
   });
   test('malformed CSV reports an actionable file error before writes', () {
     const csv = WorkspaceCsvUsecase(_RestrictedExport());
-    expect(
-      () => csv.read('Name\r\n"unfinished'),
-      throwsA(
-        isA<WorkspaceCsvException>().having(
-          (error) => error.localizationKey,
-          'reason',
-          'workspace_csv.invalid_file',
+    for (final source in [
+      'Name\r\n"unfinished',
+      'Name\nunquoted"quote',
+      'Name\n"closed"tail',
+    ]) {
+      expect(
+        () => csv.read(source),
+        throwsA(
+          isA<WorkspaceCsvException>().having(
+            (error) => error.localizationKey,
+            'reason',
+            'workspace_csv.invalid_file',
+          ),
         ),
-      ),
-    );
+      );
+    }
   });
   test('deleted-reference proof keeps authorized IDs without labels', () async {
     final output = await const ExportWorkspaceCsvUsecase(
