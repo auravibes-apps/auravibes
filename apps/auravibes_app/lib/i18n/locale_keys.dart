@@ -1263,6 +1263,12 @@ abstract class LocaleKeys {
   static const markdown_editor_link_destination_required =
       'markdown_editor.link_destination_required';
   static const markdown_editor_apply = 'markdown_editor.apply';
+  static const markdown_editor_character_count =
+      'markdown_editor.character_count';
+  static const markdown_editor_limit_exceeded =
+      'markdown_editor.limit_exceeded';
+  static const markdown_editor_return_to_edit =
+      'markdown_editor.return_to_edit';
   static const markdown_editor_draft_hint = 'markdown_editor.draft_hint';
   static const markdown_editor_agent_instructions =
       'markdown_editor.agent_instructions';

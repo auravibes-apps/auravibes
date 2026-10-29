@@ -141,8 +141,11 @@ void main() {
       final _ = await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).last, 'a' * 1025);
       final _ = await tester.pumpAndSettle();
-      expect(find.text('1025/1024'), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.save_outlined).last);
+      expect(
+        find.text('1025 of 1024 characters: Limit exceeded'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Apply'));
       final _ = await tester.pumpAndSettle();
       expect(find.text('Edit skill description'), findsOneWidget);
       await tester.enterText(
@@ -150,8 +153,8 @@ void main() {
         '# Summary\n\n**Bold**',
       );
       final _ = await tester.pumpAndSettle();
-      expect(find.text('19/1024'), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.save_outlined).last);
+      expect(find.text('19 of 1024 characters'), findsOneWidget);
+      await tester.tap(find.text('Apply'));
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Edit content'));
       final _ = await tester.pumpAndSettle();
@@ -159,7 +162,7 @@ void main() {
         find.byType(TextFormField).last,
         'Summarize text.',
       );
-      await tester.tap(find.byIcon(Icons.save_outlined).last);
+      await tester.tap(find.text('Apply'));
       final _ = await tester.pumpAndSettle();
       expect(
         await SkillsRepository(database).getWorkspaceSkills(workspace.id),
@@ -234,7 +237,7 @@ void main() {
           find.byType(EditableText).last,
           'Exact resource content',
         );
-        await tester.tap(find.byTooltip('Apply changes'));
+        await tester.tap(find.text('Apply'));
         final _ = await tester.pumpAndSettle();
         await tester.ensureVisible(find.text('Save resource'));
         await tester.tap(find.text('Save resource'));

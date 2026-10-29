@@ -39,7 +39,7 @@ void main() {
     await tester.tap(find.text('Edit prompt'));
     await f.settle(tester);
     await tester.enterText(find.byType(TextFormField), 'Applied nested draft');
-    await tester.tap(find.byTooltip('Apply changes'));
+    await tester.tap(find.text('Apply'));
     await f.settle(tester);
     expect(find.byType(MarkdownEditorScreen), findsNothing);
     expect(find.text('Keep editing'), findsNothing);
