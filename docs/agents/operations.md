@@ -22,7 +22,10 @@ gh pr checks <number> --json name,bucket \
     '[.jobs[] | select(.status != "completed") | {name, status, activeStep: ([.steps[]? | select(.status == "in_progress") | .name][0])}]'
   ```
 
-- `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
+- `ci success` only summarizes fan-out; inspect first failed job. When a failed
+  check needs a code or workflow fix, push it promptly instead of waiting for
+  unrelated jobs on the old head. New pushes cancel in-flight PR runs in
+  Flutter Test CI, so old-head results do not validate the new revision.
 - `integrity` generated drift: run `python3 tool/validation_lease.py -- fvm dart run melos run validate:generated` from a clean worktree; inspect and commit generated diff. Never hand-edit output.
 - `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
