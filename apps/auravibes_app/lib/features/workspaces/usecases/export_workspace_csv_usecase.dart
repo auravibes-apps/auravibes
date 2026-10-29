@@ -16,7 +16,7 @@ class const ExportWorkspaceCsvUsecase(
       rows.add(await _row(table, record));
     }
 
-    return const ListToCsvConverter().convert(rows);
+    return csv.encode(rows);
   }
 
   Future<List<String>> _row(

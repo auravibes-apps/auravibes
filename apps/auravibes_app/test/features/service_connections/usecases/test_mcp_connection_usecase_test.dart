@@ -149,7 +149,7 @@ void main() {
     );
     final report = McpConnectionDiagnosticReport.fromTest(result).format(
       appVersion: '0.0.4',
-      localizedSummary: 'MCP network or timeout failure',
+      localizedSummary: 'Could not reach this service',
       labels: (
         transport: 'Transport',
         category: 'Status category',
@@ -164,7 +164,7 @@ void main() {
     expect(report, contains('Status category: network'));
     expect(report, contains('Attempt time: 2026-09-27T12:30:00.000Z'));
     expect(report, contains('App version: 0.0.4'));
-    expect(report, contains('Summary: MCP network or timeout failure'));
+    expect(report, contains('Summary: Could not reach this service'));
     for (final secret in [
       'mcp.example.com',
       'secret',

@@ -534,6 +534,7 @@ class const _ServiceConnectionsAppBarContent({
       if (view != .connectors)
         _ConnectionsAppBarActions(
           workspaceId: workspaceId,
+          view: view,
           onAddConnection: onAddConnection,
           isCompact: isCompact,
         ),
@@ -543,6 +544,7 @@ class const _ServiceConnectionsAppBarContent({
 
 class const _ConnectionsAppBarActions({
   required final String workspaceId,
+  required final ConnectionDestination view,
   required final VoidCallback? onAddConnection,
   required final bool isCompact,
 }) extends StatelessWidget {
@@ -550,7 +552,7 @@ class const _ConnectionsAppBarActions({
   Widget build(BuildContext context) => AuraRow(
     children: [
       _SyncModelCatalogButton(workspaceId: workspaceId),
-      _BrowseMcpCatalogButton(workspaceId: workspaceId),
+      if (view != .services) _BrowseMcpCatalogButton(workspaceId: workspaceId),
       _ConnectionsAddButton(onPressed: onAddConnection, isCompact: isCompact),
     ],
     spacing: .none,
@@ -941,6 +943,7 @@ class const _ConnectionsListTab({required final _ConnectionsListLayout layout})
     onAddConnection: layout.onAddConnection,
     filter: layout.state.filter,
     searchQuery: layout.state.searchQuery,
+    onClearSearch: () => layout.notifier.setSearchQuery(''),
   );
 }
 
@@ -1010,9 +1013,34 @@ class const _ConnectionSearchField({
   required final ValueChanged<String> onChanged,
 }) extends HookWidget {
   @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController(text: searchQuery);
+    useEffect(() => _syncSearchText(controller, searchQuery), [searchQuery]);
+
+    return _ConnectionSearchTextField(
+      controller: controller,
+      onChanged: onChanged,
+    );
+  }
+
+  static Dispose? _syncSearchText(
+    TextEditingController controller,
+    String searchQuery,
+  ) {
+    if (controller.text != searchQuery) controller.text = searchQuery;
+
+    return null;
+  }
+}
+
+class const _ConnectionSearchTextField({
+  required final TextEditingController controller,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) => AuraInput(
     key: const ValueKey<String>('service_connections_search'),
-    controller: useTextEditingController(text: searchQuery),
+    controller: controller,
     placeholder: const TextLocale(
       LocaleKeys.service_connections_search_placeholder,
     ),
@@ -1138,6 +1166,7 @@ class const _ConnectionsTab({
   required final VoidCallback? onAddConnection,
   required final ConnectionFilter filter,
   required final String searchQuery,
+  required final VoidCallback onClearSearch,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1152,6 +1181,7 @@ class const _ConnectionsTab({
         filter: filter,
         onAddConnection: onAddConnection,
         searchQuery: searchQuery,
+        onClearSearch: onClearSearch,
       );
     }
 
@@ -1163,6 +1193,7 @@ class const _EmptyFilteredConnections({
   required final ConnectionFilter filter,
   required final VoidCallback? onAddConnection,
   required final String searchQuery,
+  required final VoidCallback onClearSearch,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
@@ -1170,6 +1201,7 @@ class const _EmptyFilteredConnections({
       filter: filter,
       onAddConnection: onAddConnection,
       searchQuery: searchQuery,
+      onClearSearch: onClearSearch,
     ),
   );
 }
@@ -1178,6 +1210,7 @@ class const _EmptyFilteredConnectionsContent({
   required final ConnectionFilter filter,
   required final VoidCallback? onAddConnection,
   required final String searchQuery,
+  required final VoidCallback onClearSearch,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -1190,10 +1223,34 @@ class const _EmptyFilteredConnectionsContent({
         child: Text(_filteredConnectionsMessage(context, filter, searchQuery)),
         style: .heading3,
       ),
-      _ConnectionsAddAction(onPressed: onAddConnection),
+      _EmptyFilteredConnectionAction(
+        searchQuery: searchQuery,
+        onClearSearch: onClearSearch,
+        onAddConnection: onAddConnection,
+      ),
     ],
     mainAxisAlignment: .center,
   );
+}
+
+class const _EmptyFilteredConnectionAction({
+  required final String searchQuery,
+  required final VoidCallback onClearSearch,
+  required final VoidCallback? onAddConnection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (searchQuery.trim().isNotEmpty) {
+      return AuraButton(
+        onPressed: onClearSearch,
+        child: const TextLocale(LocaleKeys.common_clear_search),
+        variant: .outlined,
+        identifier: 'service_connections_empty_clear_search',
+      );
+    }
+
+    return _ConnectionsAddAction(onPressed: onAddConnection);
+  }
 }
 
 String _filteredConnectionsMessage(

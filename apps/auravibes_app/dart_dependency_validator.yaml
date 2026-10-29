@@ -2,7 +2,6 @@ ignore:
  - sqlite3_flutter_libs
  - shared_preferences
  - json_annotation
- - easy_localization_loader
  - drift_flutter
  - build_runner   # Development tool with executables
  # Native playback libraries used by generated platform plugin registrants.

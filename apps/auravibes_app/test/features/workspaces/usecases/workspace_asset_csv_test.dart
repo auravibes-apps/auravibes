@@ -56,7 +56,7 @@ void main() {
     final repository = LocalWorkspaceCsvRepository(database, 'local');
     final usecase = WorkspaceCsvUsecase(repository);
     final input = usecase.read(
-      const ListToCsvConverter().convert([
+      csv.encode([
         ['Name', 'Attachments'],
         [
           'Notes',
@@ -74,10 +74,7 @@ void main() {
     final rows = await tables.records(table.id);
     expect(rows.single.values[assetColumn], ['asset']);
     final exported = await ExportWorkspaceCsvUsecase(repository)(table.id);
-    expect(
-      const CsvToListConverter().convert(exported).last.last,
-      jsonEncode(['asset']),
-    );
+    expect(csv.decode(exported).last.last, jsonEncode(['asset']));
     expect(await database.select(database.workspaceAssets).get(), hasLength(1));
     final _ =
         await (database.update(database.workspaceAssets)
@@ -100,7 +97,7 @@ void main() {
       expect(snapshot.data['values'] as Map, isNot(contains(assetColumn)));
     }
     final hiddenExport = await ExportWorkspaceCsvUsecase(repository)(table.id);
-    expect(const CsvToListConverter().convert(hiddenExport).last.last, '');
+    expect(csv.decode(hiddenExport).last.last, '');
     final _ = await tables.updateRecord(
       table: table,
       record: hidden,
@@ -115,7 +112,7 @@ void main() {
       usecase.preview(
         table: table,
         input: usecase.read(
-          const ListToCsvConverter().convert([
+          csv.encode([
             ['Name', 'Attachments'],
             [
               'Guessed',
