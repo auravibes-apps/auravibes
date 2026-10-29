@@ -512,7 +512,8 @@ class const _ServiceConnectionsAppBar({
       actions: [
         if (view != .connectors) ...[
           _SyncModelCatalogButton(workspaceId: workspaceId),
-          _BrowseMcpCatalogButton(workspaceId: workspaceId),
+          if (view != .services)
+            _BrowseMcpCatalogButton(workspaceId: workspaceId),
           _ConnectionsAddButton(onPressed: onAddConnection),
         ],
       ],
@@ -881,6 +882,7 @@ class const _ConnectionsListTab({required final _ConnectionsListLayout layout})
     onAddConnection: layout.onAddConnection,
     filter: layout.state.filter,
     searchQuery: layout.state.searchQuery,
+    onClearSearch: () => layout.notifier.setSearchQuery(''),
   );
 }
 
@@ -950,17 +952,28 @@ class const _ConnectionSearchField({
   required final ValueChanged<String> onChanged,
 }) extends HookWidget {
   @override
-  Widget build(BuildContext context) => AuraInput(
-    key: const ValueKey<String>('service_connections_search'),
-    controller: useTextEditingController(text: searchQuery),
-    placeholder: const TextLocale(
-      LocaleKeys.service_connections_search_placeholder,
-    ),
-    prefixIcon: const AuraIcon(Icons.search),
-    size: .small,
-    textInputAction: .search,
-    onChanged: onChanged,
-  );
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController(text: searchQuery);
+    Dispose? syncSearchQuery() {
+      if (controller.text != searchQuery) controller.text = searchQuery;
+
+      return null;
+    }
+
+    useEffect(syncSearchQuery, [searchQuery]);
+
+    return AuraInput(
+      key: const ValueKey<String>('service_connections_search'),
+      controller: controller,
+      placeholder: const TextLocale(
+        LocaleKeys.service_connections_search_placeholder,
+      ),
+      prefixIcon: const AuraIcon(Icons.search),
+      size: .small,
+      textInputAction: .search,
+      onChanged: onChanged,
+    );
+  }
 }
 
 class const _ConnectionFilterSelector({
@@ -1078,6 +1091,7 @@ class const _ConnectionsTab({
   required final VoidCallback? onAddConnection,
   required final ConnectionFilter filter,
   required final String searchQuery,
+  required final VoidCallback onClearSearch,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1092,6 +1106,7 @@ class const _ConnectionsTab({
         filter: filter,
         onAddConnection: onAddConnection,
         searchQuery: searchQuery,
+        onClearSearch: onClearSearch,
       );
     }
 
@@ -1103,6 +1118,7 @@ class const _EmptyFilteredConnections({
   required final ConnectionFilter filter,
   required final VoidCallback? onAddConnection,
   required final String searchQuery,
+  required final VoidCallback onClearSearch,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
@@ -1110,6 +1126,7 @@ class const _EmptyFilteredConnections({
       filter: filter,
       onAddConnection: onAddConnection,
       searchQuery: searchQuery,
+      onClearSearch: onClearSearch,
     ),
   );
 }
@@ -1118,6 +1135,7 @@ class const _EmptyFilteredConnectionsContent({
   required final ConnectionFilter filter,
   required final VoidCallback? onAddConnection,
   required final String searchQuery,
+  required final VoidCallback onClearSearch,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -1130,7 +1148,15 @@ class const _EmptyFilteredConnectionsContent({
         child: Text(_filteredConnectionsMessage(context, filter, searchQuery)),
         style: .heading3,
       ),
-      _ConnectionsAddAction(onPressed: onAddConnection),
+      if (searchQuery.trim().isNotEmpty)
+        AuraButton(
+          onPressed: onClearSearch,
+          child: const TextLocale(LocaleKeys.common_clear_search),
+          variant: .outlined,
+          identifier: 'service_connections_empty_clear_search',
+        )
+      else
+        _ConnectionsAddAction(onPressed: onAddConnection),
     ],
     mainAxisAlignment: .center,
   );
@@ -1813,10 +1839,10 @@ String _connectionSubtitle(
 ) {
   final kind = _connectionTypeLabel(context, connection.kind);
   if (connection.kind == ServiceConnectionListItemKind.mcpServer) {
-    return _mcpConnectionSubtitle(context, connection, kind);
+    return _mcpConnectionSubtitle(connection, kind);
   }
 
-  return _serviceConnectionSubtitle(context, connection, kind);
+  return _serviceConnectionSubtitle(connection, kind);
 }
 
 String _connectionTypeLabel(
@@ -1837,32 +1863,23 @@ String _connectionTypeLabel(
 }
 
 String _mcpConnectionSubtitle(
-  BuildContext context,
   ServiceConnectionListItem connection,
   String kind,
-) {
-  return '$kind - ${connection.authenticationType ?? 'unknown'}/'
-      '${_statusLabel(context, connection.displayStatus)} - '
-      '${_connectionServiceName(context, connection)}';
-}
+) => '$kind - ${_connectionServiceName(connection)}';
 
 String _serviceConnectionSubtitle(
-  BuildContext context,
   ServiceConnectionListItem connection,
   String kind,
 ) {
   final suffix = connection.keySuffix;
   if (suffix == null || suffix.isEmpty) {
-    return '$kind - ${_connectionServiceName(context, connection)}';
+    return '$kind - ${_connectionServiceName(connection)}';
   }
 
-  return '$kind - ${_connectionServiceName(context, connection)} - ****$suffix';
+  return '$kind - ${_connectionServiceName(connection)} - ****$suffix';
 }
 
-String _connectionServiceName(
-  BuildContext _,
-  ServiceConnectionListItem connection,
-) {
+String _connectionServiceName(ServiceConnectionListItem connection) {
   final serviceName = connection.serviceName;
   if (serviceName != null && serviceName.isNotEmpty) return serviceName;
 

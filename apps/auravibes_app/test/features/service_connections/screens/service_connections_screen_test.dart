@@ -229,7 +229,7 @@ void main() {
     await tester.tap(find.text('Test connection'));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('MCP network or timeout failure'), findsOneWidget);
+    expect(find.text('Could not reach this service'), findsOneWidget);
     expect(find.text('Retry test'), findsOneWidget);
     expect(find.textContaining('Tested '), findsOneWidget);
     await tester.tap(find.text('View details'));
@@ -295,9 +295,9 @@ void main() {
     await tester.tap(find.textContaining('Probar conexi'));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.textContaining('la autenticaci'), findsOneWidget);
+    expect(find.textContaining('No se pudo iniciar'), findsOneWidget);
     expect(
-      find.text('Reconecta este servidor MCP para restablecer el acceso.'),
+      find.text('Vuelve a conectar este servicio para recuperar el acceso.'),
       findsOneWidget,
     );
     expect(find.text('Reconectar'), findsWidgets);
@@ -342,13 +342,13 @@ void main() {
     );
     await tester.tap(testButton);
     final _ = await tester.pumpAndSettle();
-    expect(find.text('MCP server or configuration failure'), findsOneWidget);
+    expect(find.text('Service settings need attention'), findsOneWidget);
     expect(find.text('Open settings'), findsOneWidget);
     expect(find.textContaining('connection settings'), findsOneWidget);
 
     await tester.tap(testButton);
     final _ = await tester.pumpAndSettle();
-    expect(find.text('MCP connection check failed'), findsOneWidget);
+    expect(find.text('Connection check failed'), findsOneWidget);
     expect(find.text('Open settings'), findsNothing);
     expect(find.text('Retry test'), findsNothing);
     expect(find.text('View details'), findsOneWidget);
@@ -384,7 +384,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('MCP connection check passed'), findsOneWidget);
+    expect(find.text('Connection check passed'), findsOneWidget);
     expect(find.textContaining('Tested '), findsOneWidget);
     expect(find.text('Reconnect'), findsNothing);
     expect(find.text('Retry test'), findsNothing);
@@ -415,7 +415,7 @@ void main() {
 
     await _pumpScreen(tester, container, _syncWorkspaceId);
 
-    expect(find.text('MCP connection check passed'), findsOneWidget);
+    expect(find.text('Connection check passed'), findsOneWidget);
     expect(find.text('Found 2 tools in 31 ms'), findsOneWidget);
     expect(find.text('View details'), findsNothing);
   });
@@ -444,7 +444,7 @@ void main() {
 
     await _pumpScreen(tester, container, _syncWorkspaceId);
 
-    expect(find.text('MCP connection check failed'), findsOneWidget);
+    expect(find.text('Connection check failed'), findsOneWidget);
     expect(find.text('View details'), findsOneWidget);
     expect(find.text('Retry test'), findsNothing);
     expect(find.text('Open settings'), findsNothing);
@@ -489,6 +489,22 @@ void main() {
       );
     });
   }
+
+  testWidgets('shows one catalog entry action in services view', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [_mcpConnection(name: 'Notion', displayStatus: .connected)],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId, view: .services);
+
+    expect(find.byTooltip('Browse service catalog'), findsNothing);
+    expect(find.byTooltip('Add connection'), findsOneWidget);
+  });
 
   testWidgets('shows catalog connectors and filters by offered tools', (
     tester,
@@ -931,6 +947,13 @@ void main() {
       findsOneWidget,
     );
     expect(find.byIcon(Icons.search_off), findsOneWidget);
+    expect(find.text('Clear search'), findsOneWidget);
+    expect(find.text('Add connection'), findsNothing);
+
+    final _ = await tester.tap(find.text('Clear search'));
+    final _ = await tester.pumpAndSettle();
+    expect(tester.widget<EditableText>(searchField).controller.text, '');
+    expect(find.text('Notion'), findsOneWidget);
   });
 
   testWidgets('syncs the local model catalog with visible progress', (
@@ -1147,7 +1170,9 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Notion'), findsOneWidget);
-    expect(find.textContaining('MCP - oauth2/Needs reconnect'), findsOneWidget);
+    expect(find.text('Service - mcp.notion.com'), findsOneWidget);
+    expect(find.textContaining('oauth2'), findsNothing);
+    expect(find.text('Needs reconnect'), findsOneWidget);
     expect(find.textContaining('mcp.notion.com'), findsOneWidget);
     expect(find.textContaining('notion-client-id'), findsOneWidget);
     expect(find.textContaining('read, write'), findsOneWidget);
@@ -1167,7 +1192,6 @@ void main() {
     final layout = width == 420.0 ? 'compact' : 'wide';
     Future<void> renderConnectionStates(WidgetTester tester) async {
       _addWidgetTearDown(tester);
-      await tester.binding.setSurfaceSize(.new(width, 1000));
       final container = _syncTestContainer(
         .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
         connections: [
@@ -1194,7 +1218,13 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await _pumpScreen(tester, container, _syncWorkspaceId);
+      await _pumpScreen(
+        tester,
+        container,
+        _syncWorkspaceId,
+        view: .services,
+        surfaceSize: .new(width, 1000),
+      );
 
       await expectLater(
         find.byType(ServiceConnectionsScreen),
@@ -1202,7 +1232,15 @@ void main() {
       );
       expect(find.text('Notion'), findsOneWidget);
       expect(find.text('Linear'), findsOneWidget);
+      if (width < 600) {
+        await tester.scrollUntilVisible(
+          find.text('Sentry'),
+          300,
+          scrollable: find.byType(Scrollable).last,
+        );
+      }
       expect(find.text('Sentry'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     }
 
     testWidgets(
@@ -1284,8 +1322,9 @@ Future<void> _pumpScreen(
   String workspaceId, {
   Locale locale = const Locale('en'),
   ConnectionDestination view = .overview,
+  Size surfaceSize = const Size(1000, 1200),
 }) async {
-  await tester.binding.setSurfaceSize(const Size(1000, 1200));
+  await tester.binding.setSurfaceSize(surfaceSize);
   addTearDown(() => tester.binding.setSurfaceSize(null));
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
