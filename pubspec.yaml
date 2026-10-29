@@ -68,8 +68,12 @@ melos:
       description: Run legacy Dart Code Linter rule analysis manually
 
     unused:code:
-      # DCL 4.4.3 still reports these paths without exclusions; review before removal.
-      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics check-unused-code --monorepo --exclude='{**/*.freezed.dart,apps/auravibes_app/lib/features/skills/usecases/sync_skill_tool_permissions_usecase.dart,apps/auravibes_app/lib/domain/entities/tool_permission_mode.dart,packages/auravibes_engine/lib/src/sub_agents/sub_agent_tool_specs.dart,apps/auravibes_app/lib/features/chats/providers/cloud_conversation_provider.dart,apps/auravibes_app/lib/features/chats/providers/conversation_selection_provider.dart,apps/auravibes_app/lib/features/chats/providers/message_id_list.dart,apps/auravibes_app/lib/features/tools/providers/mcp_repository_provider.dart,packages/auravibes_engine/lib/src/conversation_compaction.dart,packages/auravibes_engine/lib/src/mcp.dart,packages/auravibes_engine/lib/src/provider_profile.dart,packages/auravibes_engine/lib/src/provider_tool_exchange.dart,packages/auravibes_engine/lib/src/skills/skill_control_tools.dart,packages/auravibes_engine/lib/src/tool_schema_strictification.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
+      # App findings are family-level test overrides or a visible-for-testing
+      # reader; this gate scans production lib only.
+      # Engine files are public exports. mcp.dart, provider_profile.dart, and
+      # provider_tool_exchange.dart also have consumers in the unscanned server.
+      # skill_control_tools.dart retains deprecated compatibility exports.
+      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics check-unused-code --monorepo --exclude='{**/*.freezed.dart,packages/auravibes_engine/lib/src/sub_agents/sub_agent_tool_specs.dart,apps/auravibes_app/lib/features/chats/providers/cloud_conversation_provider.dart,apps/auravibes_app/lib/features/chats/providers/conversation_selection_provider.dart,apps/auravibes_app/lib/features/chats/providers/message_id_list.dart,apps/auravibes_app/lib/features/tools/providers/mcp_repository_provider.dart,packages/auravibes_engine/lib/src/conversation_compaction.dart,packages/auravibes_engine/lib/src/mcp.dart,packages/auravibes_engine/lib/src/provider_profile.dart,packages/auravibes_engine/lib/src/provider_tool_exchange.dart,packages/auravibes_engine/lib/src/skills/skill_control_tools.dart,packages/auravibes_engine/lib/src/tool_schema_strictification.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
       description: Fail when production unused declarations are detected
 
     unnecessary:nullable:
