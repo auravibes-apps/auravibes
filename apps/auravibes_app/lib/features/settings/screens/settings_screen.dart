@@ -2,6 +2,7 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
 
+import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
@@ -18,7 +19,7 @@ import 'package:material_ui/material_ui.dart';
 const _settingsAppBar = AuraAppBarWithDrawer(
   title: TextLocale(LocaleKeys.settings_screen_title),
 );
-const _appSettingsHeader = AuraColumn(
+const _appearanceHeader = AuraColumn(
   children: [
     AuraText(
       child: TextLocale(LocaleKeys.settings_screen_app_settings_title),
@@ -35,7 +36,7 @@ const _appSettingsHeader = AuraColumn(
 const _themeOptions = <AuraChoiceOption<AppTheme>>[
   AuraChoiceOption(
     value: AppTheme.system,
-    label: TextLocale(LocaleKeys.settings_screen_theme_system_default),
+    label: TextLocale(LocaleKeys.settings_screen_theme_system),
   ),
   AuraChoiceOption(
     value: AppTheme.light,
@@ -66,7 +67,7 @@ class const _SettingsPage({required final String workspaceId})
       workspaceId: workspaceId,
       currentTheme: currentTheme,
       onThemeTap: () => _showThemeDialog(context, ref, currentTheme),
-      onThemeReset: () => _resetTheme(ref),
+      onAppearanceReset: () => _resetAppearance(ref),
     );
   }
 
@@ -98,15 +99,23 @@ class const _SettingsPage({required final String workspaceId})
   }
 }
 
-void _resetTheme(WidgetRef ref) {
+void _resetAppearance(WidgetRef ref) {
   ref.read(themeProvider.notifier).setTheme(.system);
+  ref.read(accentHueProvider.notifier).setHue(AccentHue.defaultValue);
+}
+
+bool _hasAppearanceChanges(WidgetRef ref, AppTheme theme) {
+  final accentHue =
+      ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
+
+  return theme != AppTheme.system || accentHue != AccentHue.defaultValue;
 }
 
 class const _SettingsPageSurface({
   required final String workspaceId,
   required final AppTheme currentTheme,
   required final VoidCallback onThemeTap,
-  required final VoidCallback onThemeReset,
+  required final VoidCallback onAppearanceReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppScreen(
@@ -114,7 +123,7 @@ class const _SettingsPageSurface({
       workspaceId: workspaceId,
       currentTheme: currentTheme,
       onThemeTap: onThemeTap,
-      onThemeReset: onThemeReset,
+      onAppearanceReset: onAppearanceReset,
     ),
     appBar: _settingsAppBar,
   );
@@ -136,7 +145,7 @@ class const _SettingsBody({
   required final String workspaceId,
   required final AppTheme currentTheme,
   required final VoidCallback onThemeTap,
-  required final VoidCallback onThemeReset,
+  required final VoidCallback onAppearanceReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -145,12 +154,11 @@ class const _SettingsBody({
           .copyWith(bottom: BottomPadding.of(context)),
       child: AuraColumn(
         children: [
-          _AppSettingsCard(
+          _AppearanceCard(
             currentTheme: currentTheme,
             onThemeTap: onThemeTap,
-            onThemeReset: onThemeReset,
+            onReset: onAppearanceReset,
           ),
-          const AccentColorSection(),
           const LegalLinksSection(),
           const AppVersionIndicator(),
         ],
@@ -161,19 +169,21 @@ class const _SettingsBody({
   }
 }
 
-class const _AppSettingsCard({
+class const _AppearanceCard({
   required final AppTheme currentTheme,
   required final VoidCallback onThemeTap,
-  required final VoidCallback onThemeReset,
-}) extends StatelessWidget {
+  required final VoidCallback onReset,
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AuraCard(
       child: AuraColumn(
         children: [
-          _appSettingsHeader,
+          _appearanceHeader,
           _ThemeTile(theme: currentTheme, onTap: onThemeTap),
-          _ThemeResetButton(onPressed: onThemeReset),
+          const AccentColorSection(),
+          if (_hasAppearanceChanges(ref, currentTheme))
+            _AppearanceResetButton(onPressed: onReset),
         ],
         spacing: .none,
         crossAxisAlignment: .start,
@@ -182,7 +192,7 @@ class const _AppSettingsCard({
   }
 }
 
-class const _ThemeResetButton({required final VoidCallback onPressed})
+class const _AppearanceResetButton({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Align(
@@ -190,11 +200,11 @@ class const _ThemeResetButton({required final VoidCallback onPressed})
     child: AuraButton(
       onPressed: onPressed,
       child: const TextLocale(
-        LocaleKeys.settings_screen_actions_reset_defaults,
+        LocaleKeys.settings_screen_actions_reset_appearance,
       ),
       variant: .ghost,
       size: .small,
-      identifier: 'settings_theme_reset',
+      identifier: 'settings_appearance_reset',
     ),
   );
 }
@@ -254,7 +264,7 @@ class const _ThemeTileIcon({required final Color color})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      Icon(Icons.palette_outlined, color: color);
+      Icon(Icons.brightness_6_outlined, color: color);
 }
 
 String _themeName(AppTheme theme) => switch (theme) {

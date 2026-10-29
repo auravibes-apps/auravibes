@@ -6,7 +6,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Settings section that lets the user pick the app's accent hue.
+/// Appearance row that lets the user pick the app's accent hue.
 ///
 /// The hue is persisted via [AccentHueNotifier]; the whole palette recomputes
 /// from it through [AuraComputedColorScheme].
@@ -16,10 +16,9 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
     final hue =
         ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
 
-    return _AccentColorCard(
+    return _AccentColorTile(
       hue: hue,
       onTap: () => _showAccentDialog(context, ref, hue),
-      onReset: () => _resetAccentHue(ref),
     );
   }
 
@@ -41,81 +40,19 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
   }
 }
 
-void _resetAccentHue(WidgetRef ref) {
-  ref.read(accentHueProvider.notifier).setHue(AccentHue.defaultValue);
-}
-
 Future<bool?> _confirmAccentColor({
   required BuildContext context,
   required double current,
   required ValueChanged<double> onChanged,
 }) => AuraDialogs.confirm(
   context: context,
-  title: const TextLocale(LocaleKeys.settings_screen_accent_color_dialog_title),
+  title: const TextLocale(LocaleKeys.settings_screen_accent_color_title),
   message: _HueDialog(hue: current, onChanged: onChanged),
   actions: const AuraConfirmDialogActions(
     confirmLabel: TextLocale(LocaleKeys.settings_screen_actions_save),
     cancelLabel: TextLocale(LocaleKeys.settings_screen_actions_cancel),
   ),
 );
-
-class const _AccentColorCard({
-  required final double hue,
-  required final VoidCallback onTap,
-  required final VoidCallback onReset,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          const _AccentColorHeader(),
-          _AccentColorTile(hue: hue, onTap: onTap),
-          _AccentColorResetButton(onPressed: onReset),
-        ],
-        spacing: .none,
-        crossAxisAlignment: .start,
-      ),
-    );
-  }
-}
-
-class const _AccentColorResetButton({required final VoidCallback onPressed})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext _) => Align(
-    alignment: .centerRight,
-    child: AuraButton(
-      onPressed: onPressed,
-      child: const TextLocale(
-        LocaleKeys.settings_screen_actions_reset_defaults,
-      ),
-      variant: .ghost,
-      size: .small,
-      identifier: 'settings_accent_color_reset',
-    ),
-  );
-}
-
-class const _AccentColorHeader() extends StatelessWidget {
-  static const _content = AuraColumn(
-    children: [
-      AuraText(
-        child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
-        style: .heading6,
-      ),
-      AuraText(
-        child: TextLocale(LocaleKeys.settings_screen_accent_color_subtitle),
-        style: .bodySmall,
-      ),
-    ],
-    spacing: .none,
-    crossAxisAlignment: .start,
-  );
-
-  @override
-  Widget build(BuildContext context) => _content;
-}
 
 class const _AccentColorTile({
   required final double hue,
@@ -178,6 +115,10 @@ class _HueDialogState extends State<_HueDialog> {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.settings_screen_accent_color_dialog_hint),
+        style: .bodySmall,
+      ),
       _HueSwatch(hue: _hue, size: 48),
       _HueSlider(hue: _hue, onChanged: _updateHue),
     ],

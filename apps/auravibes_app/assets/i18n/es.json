@@ -1305,25 +1305,23 @@
   "settings_screen": {
     "title": "Ajustes de la aplicación",
     "app_settings": {
-      "title": "Configuración de la App",
-      "subtitle": "Configura tus preferencias y comportamiento de la app"
+      "title": "Apariencia",
+      "subtitle": "Elige cómo se ve AuraVibes en este dispositivo."
     },
     "theme": {
-      "title": "Tema y Apariencia",
+      "title": "Tema",
       "light": "Claro",
       "dark": "Oscuro",
-      "system": "Sistema",
-      "system_default": "Predeterminado del Sistema"
+      "system": "Sistema"
     },
     "accent_color": {
       "title": "Color de acento",
-      "subtitle": "Elige el tono que define la paleta de la app",
-      "dialog_title": "Tono de acento"
+      "dialog_hint": "Arrastra para cambiar el color principal de botones, enlaces y resaltados."
     },
     "actions": {
       "cancel": "Cancelar",
       "save": "Guardar",
-      "reset_defaults": "Restaurar valores predeterminados"
+      "reset_appearance": "Restablecer apariencia"
     },
     "legal": {
       "title": "Privacidad y términos",
