@@ -511,7 +511,10 @@ void main() {
     await _pumpScreen(tester, container, _syncWorkspaceId, view: .services);
 
     expect(find.byTooltip('Browse service catalog'), findsNothing);
-    expect(find.byTooltip('Add connection'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_add')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows catalog connectors and filters by offered tools', (
@@ -955,7 +958,10 @@ void main() {
     );
     expect(find.byIcon(Icons.search_off), findsOneWidget);
     expect(find.text('Clear search'), findsOneWidget);
-    expect(find.text('Add connection'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_empty_add')),
+      findsNothing,
+    );
 
     final _ = await tester.tap(find.text('Clear search'));
     final _ = await tester.pumpAndSettle();

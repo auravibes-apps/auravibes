@@ -46,12 +46,14 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_status.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
+import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
@@ -387,10 +389,8 @@ void main() {
     await fixture.close(tester);
   });
 
-  testWidgets('captures service connections audit task states', (
-    tester,
-  ) async {
-    const size = Size(951, 669);
+  testWidgets('captures service connections audit task states', (tester) async {
+    const size = Size(1280, 800);
     final fixture = await UxValidationFixture.create();
     final router = await fixture.pump(
       tester,
@@ -401,7 +401,9 @@ void main() {
       size: size,
       overrides: [
         serviceConnectionsProvider(fixture.workspaceId).overrideWith(
-          (_) => Stream.value(_serviceConnectionsAuditFixture(fixture.workspaceId)),
+          (_) => Stream.value(
+            _serviceConnectionsAuditFixture(fixture.workspaceId),
+          ),
         ),
       ],
     );
@@ -433,6 +435,57 @@ void main() {
     await _capture(
       tester,
       'service-connections-search-empty',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await fixture.close(tester);
+  });
+
+  testWidgets('captures service connection network recovery copy', (
+    tester,
+  ) async {
+    const size = Size(1280, 800);
+    final fixture = await UxValidationFixture.create();
+    final testUsecase = _AuditTestMcpConnectionUsecase();
+    when(() => testUsecase('notion-server')).thenAnswer((_) async {
+      return (
+        status: McpConnectionTestStatus.network,
+        testedAt: DateTime.utc(2026, 10, 29, 12),
+        transport: const McpTransportTypeStreamableHttp(),
+        toolCount: 0,
+        durationMilliseconds: 5,
+        errorDetails: 'Connection timed out',
+      );
+    });
+    final router = await fixture.pump(
+      tester,
+      ServiceConnectionsRoute(
+        workspaceId: fixture.workspaceId,
+        view: 'services',
+      ).location,
+      size: size,
+      overrides: [
+        serviceConnectionsProvider(fixture.workspaceId).overrideWith(
+          (_) => Stream.value(
+            _serviceConnectionsAuditFixture(fixture.workspaceId),
+          ),
+        ),
+        testMcpConnectionUsecaseProvider(fixture.workspaceId)
+            .overrideWith((_) async => testUsecase),
+      ],
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('service_connection_test_notion')),
+    );
+    await fixture.settle(tester);
+    expect(find.textContaining('Tested '), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'service-connections-network-error',
       router.routeInformationProvider.value.uri.toString(),
       locale: 'en',
       size: size,
@@ -1383,10 +1436,14 @@ double _contrast(Color foreground, Color background) {
 String _fixtureDescription(String name) => switch (name) {
   'service-connections-services-entry' =>
     'Persisted local workspace with three controlled service rows: '
-        'Notion needs reconnect, Linear connected, Sentry failed; no remote access',
+        'Notion needs reconnect, Linear connected, Sentry failed; '
+        'no remote access',
   'service-connections-search-empty' =>
     'Same Services route and rows after a query matching no service; '
         'no remote access',
+  'service-connections-network-error' =>
+    'Same Services route and rows after a controlled network test failure; '
+        'no remote request',
   'IntroRoute' => 'Empty in-memory database; no workspace or account',
   'MixedConnections' =>
     'Four controlled connection rows: model provider, '
@@ -1473,5 +1530,8 @@ List<ServiceConnectionListItem> _serviceConnectionsAuditFixture(
     transport: const McpTransportTypeStreamableHttp(),
   ),
 ];
+
+class _AuditTestMcpConnectionUsecase extends Mock
+    implements TestMcpConnectionUsecase;
 
 int _captureNumber = 0;
