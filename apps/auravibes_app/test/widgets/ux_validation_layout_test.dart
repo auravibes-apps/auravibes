@@ -341,7 +341,14 @@ void main() {
           await tester.tap(apply);
           final _ = await tester.pumpAndSettle();
           expect(find.byType(MarkdownEditorScreen), findsOneWidget);
-          expect(find.text('${cap + 1}/$cap'), findsOneWidget);
+          final overLimitCount = 'markdown_editor.character_count'.tr(
+            context: editorContext,
+            namedArgs: {'count': '${cap + 1}', 'limit': '$cap'},
+          );
+          final limitExceeded = 'markdown_editor.limit_exceeded'.tr(
+            context: editorContext,
+          );
+          expect(find.text('$overLimitCount: $limitExceeded'), findsOneWidget);
         }
         final legal = 'x' * (field.cap ?? 60000);
         await tester.enterText(find.byType(EditableText).last, legal);
@@ -377,6 +384,61 @@ void main() {
       NewChatRoute(workspaceId: fixture.workspaceId).location,
     );
     expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
+
+  testWidgets('captures service connections audit task states', (
+    tester,
+  ) async {
+    const size = Size(951, 669);
+    final fixture = await UxValidationFixture.create();
+    final router = await fixture.pump(
+      tester,
+      ServiceConnectionsRoute(
+        workspaceId: fixture.workspaceId,
+        view: 'services',
+      ).location,
+      size: size,
+      overrides: [
+        serviceConnectionsProvider(fixture.workspaceId).overrideWith(
+          (_) => Stream.value(_serviceConnectionsAuditFixture(fixture.workspaceId)),
+        ),
+      ],
+    );
+    expect(find.byType(ServiceConnectionsScreen), findsOneWidget);
+    expect(find.text('Notion'), findsOneWidget);
+    expect(find.text('Linear'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'service-connections-services-entry',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+
+    final searchField = find.descendant(
+      of: find.byKey(const ValueKey('service_connections_search')),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(searchField, 'no matching service');
+    await fixture.settle(tester);
+    expect(
+      find.text('No connections match your search or filters.'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'service-connections-search-empty',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
     await fixture.close(tester);
   });
 
@@ -1096,7 +1158,7 @@ Future<void> _capture(
         'route': route,
         'fixture': _fixtureDescription(name),
         'sourceFingerprint': fingerprint,
-        'renderer': 'Flutter widget-test Skia, Linux',
+        'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
         'viewport': [size.width, size.height],
         'locale': locale,
         'textScale': scale,
@@ -1106,8 +1168,8 @@ Future<void> _capture(
         'disableAnimations': true,
         'fonts': _captureFontMetadata,
         'fontLimitations':
-            'Family-free Copy code uses test Ahem; '
-            'native control typography is unverified.',
+            'Flutter widget-test text only; native system typography and '
+            'assistive technology are not represented.',
       }),
     );
   });
@@ -1319,6 +1381,12 @@ double _contrast(Color foreground, Color background) {
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  'service-connections-services-entry' =>
+    'Persisted local workspace with three controlled service rows: '
+        'Notion needs reconnect, Linear connected, Sentry failed; no remote access',
+  'service-connections-search-empty' =>
+    'Same Services route and rows after a query matching no service; '
+        'no remote access',
   'IntroRoute' => 'Empty in-memory database; no workspace or account',
   'MixedConnections' =>
     'Four controlled connection rows: model provider, '
@@ -1346,5 +1414,64 @@ String _fixtureDescription(String name) => switch (name) {
         'without credential, template resource/tool, parent and '
         'child chats; no models or cloud accounts',
 };
+
+List<ServiceConnectionListItem> _serviceConnectionsAuditFixture(
+  String workspaceId,
+) => [
+  ServiceConnectionListItem(
+    id: 'notion',
+    workspaceId: workspaceId,
+    name: 'Notion',
+    serviceName: 'mcp.notion.test',
+    kind: .mcpServer,
+    keySuffix: null,
+    mcpServerId: 'notion-server',
+    authenticationType: 'oauth2',
+    displayStatus: .needsReauth,
+    expiresAt: null,
+    lastRefreshedAt: null,
+    lastAuthError: null,
+    metadataValues: const [],
+    canRefresh: false,
+    canReconnect: true,
+    transport: const McpTransportTypeStreamableHttp(),
+  ),
+  ServiceConnectionListItem(
+    id: 'linear',
+    workspaceId: workspaceId,
+    name: 'Linear',
+    serviceName: 'mcp.linear.test',
+    kind: .mcpServer,
+    keySuffix: null,
+    mcpServerId: 'linear-server',
+    authenticationType: 'oauth2',
+    displayStatus: .connected,
+    expiresAt: null,
+    lastRefreshedAt: null,
+    lastAuthError: null,
+    metadataValues: const [],
+    canRefresh: false,
+    canReconnect: false,
+    transport: const McpTransportTypeStreamableHttp(),
+  ),
+  ServiceConnectionListItem(
+    id: 'sentry',
+    workspaceId: workspaceId,
+    name: 'Sentry',
+    serviceName: 'mcp.sentry.test',
+    kind: .mcpServer,
+    keySuffix: null,
+    mcpServerId: 'sentry-server',
+    authenticationType: 'oauth2',
+    displayStatus: .failed,
+    expiresAt: null,
+    lastRefreshedAt: null,
+    lastAuthError: null,
+    metadataValues: const [],
+    canRefresh: false,
+    canReconnect: true,
+    transport: const McpTransportTypeStreamableHttp(),
+  ),
+];
 
 int _captureNumber = 0;

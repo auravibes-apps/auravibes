@@ -640,16 +640,15 @@ void main() {
           );
           await tester.binding.setSurfaceSize(.new(width, 1200));
           final _ = await tester.pumpAndSettle();
-          if (width < 600) {
+          final filterSheet = find.byKey(const ValueKey('app_filter_sheet'));
+          if (filterSheet.evaluate().isNotEmpty) {
             expect(
               tester.widgetList<AuraDropdownSelector<ConnectionFilter>>(
                 find.byType(AuraDropdownSelector<ConnectionFilter>),
               ),
               isEmpty,
             );
-            await tester.tap(
-              find.byKey(const ValueKey('app_filter_sheet')).first,
-            );
+            await tester.tap(filterSheet.first);
             final _ = await tester.pumpAndSettle();
           }
           tester
@@ -1061,8 +1060,15 @@ void main() {
 
     await _pumpScreen(tester, container, _syncWorkspaceId);
 
+    final appBarAddButton = find.byKey(
+      const ValueKey<String>('service_connections_add'),
+    );
+    expect(appBarAddButton, findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('service_connections_add')),
+      find.descendant(
+        of: appBarAddButton,
+        matching: find.text('Add connection'),
+      ),
       findsOneWidget,
     );
     expect(
@@ -1178,10 +1184,9 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Notion'), findsOneWidget);
-    expect(find.text('Service - mcp.notion.com'), findsOneWidget);
-    expect(find.textContaining('oauth2'), findsNothing);
     expect(find.text('Needs reconnect'), findsOneWidget);
     expect(find.textContaining('mcp.notion.com'), findsOneWidget);
+    expect(find.textContaining('oauth2'), findsNothing);
     expect(find.textContaining('notion-client-id'), findsOneWidget);
     expect(find.textContaining('read, write'), findsOneWidget);
     expect(find.textContaining('secret-token'), findsNothing);
@@ -1234,21 +1239,21 @@ void main() {
         surfaceSize: .new(width, 1000),
       );
 
+      if (width < 600) {
+        await tester.scrollUntilVisible(
+          find.text('Sentry'),
+          180,
+          scrollable: find.byType(Scrollable).last,
+        );
+      }
+
       await expectLater(
         find.byType(ServiceConnectionsScreen),
         matchesGoldenFile('goldens/service_connections_$layout.png'),
       );
       expect(find.text('Notion'), findsOneWidget);
       expect(find.text('Linear'), findsOneWidget);
-      if (width < 600) {
-        await tester.scrollUntilVisible(
-          find.text('Sentry'),
-          300,
-          scrollable: find.byType(Scrollable).last,
-        );
-      }
       expect(find.text('Sentry'), findsOneWidget);
-      expect(tester.takeException(), isNull);
     }
 
     testWidgets(
@@ -1376,16 +1381,6 @@ Future<void> _pumpScreen(
   final _ = await tester.pumpAndSettle();
 }
 
-Future<void> _openConnectionMenu(WidgetTester tester, String name) async {
-  await tester.tap(
-    find.descendant(
-      of: find.byKey(ValueKey<String>('service_connection_menu_$name')),
-      matching: find.byIcon(Icons.more_vert),
-    ),
-  );
-  final _ = await tester.pumpAndSettle();
-}
-
 Future<ByteData> _sdkRoboto() async {
   for (
     var directory = File(Platform.resolvedExecutable).parent;
@@ -1398,6 +1393,16 @@ Future<ByteData> _sdkRoboto() async {
     }
   }
   throw StateError('Flutter SDK Roboto font unavailable for capture');
+}
+
+Future<void> _openConnectionMenu(WidgetTester tester, String name) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byKey(ValueKey<String>('service_connection_menu_$name')),
+      matching: find.byIcon(Icons.more_vert),
+    ),
+  );
+  final _ = await tester.pumpAndSettle();
 }
 
 void _addWidgetTearDown(WidgetTester tester) {

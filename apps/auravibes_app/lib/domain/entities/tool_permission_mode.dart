@@ -77,23 +77,6 @@ abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
   bool isForWorkspace(String workspaceId) => this.workspaceId == workspaceId;
 }
 
-extension WorkspaceToolEntityHelpers on WorkspaceToolEntity {
-  /// Returns true if the tool has custom configuration.
-  bool get hasConfig => config?.isNotEmpty ?? false;
-
-  /// Returns true if this tool has a description.
-  bool get hasDescription => description?.isNotEmpty ?? false;
-
-  /// Returns true if this tool has an input schema (MCP tool).
-  bool get hasInputSchema => inputSchema?.isNotEmpty ?? false;
-
-  bool hasToolId(String value) => toolId == value;
-
-  bool hasWorkspaceId(String value) => workspaceId == value;
-
-  bool usesPermissionMode(ToolPermissionMode mode) => permissionMode == mode;
-}
-
 extension WorkspaceToolEntityClassification on WorkspaceToolEntity {
   UserToolType? get buildInType => UserToolType.fromValue(toolId);
 

@@ -867,7 +867,10 @@
     "link_text_label": "Link text",
     "link_destination_label": "Destination URL",
     "link_destination_required": "Enter a destination URL",
-    "apply": "Apply changes",
+    "apply": "Apply",
+    "character_count": "{count} of {limit} characters",
+    "limit_exceeded": "Limit exceeded",
+    "return_to_edit": "Edit Markdown",
     "draft_hint": "Applies to the parent draft. Save the parent to finish.",
     "agent_instructions": "Edit agent instructions",
     "skill_description": "Edit skill description",
@@ -1305,25 +1308,23 @@
   "settings_screen": {
     "title": "App settings",
     "app_settings": {
-      "title": "App Settings",
-      "subtitle": "Configure your app preferences and behavior"
+      "title": "Appearance",
+      "subtitle": "Choose how AuraVibes looks on this device."
     },
     "theme": {
-      "title": "Theme & Appearance",
+      "title": "Theme",
       "light": "Light",
       "dark": "Dark",
-      "system": "System",
-      "system_default": "System Default"
+      "system": "System"
     },
     "accent_color": {
       "title": "Accent Color",
-      "subtitle": "Choose the hue that drives the app palette",
-      "dialog_title": "Accent Hue"
+      "dialog_hint": "Drag to change the main color for buttons, links, and highlights."
     },
     "actions": {
       "cancel": "Cancel",
       "save": "Save",
-      "reset_defaults": "Reset to Defaults"
+      "reset_appearance": "Reset Appearance"
     },
     "legal": {
       "title": "Privacy and terms",

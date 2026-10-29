@@ -80,13 +80,7 @@ conversationMessageTargetMessagesProvider = FutureProvider.autoDispose
           .toList();
     });
 
-extension MessageIdList on ChatMessagesFamily {
-  Override overrideWithValue(Stream<List<MessageEntity>> value) =>
-      overrideWith((_, _) => value);
-}
-
-extension MessageIdListCompaction
-    on ConversationCompactionExecutionStateFamily {
+extension MessageIdList on ConversationCompactionExecutionStateFamily {
   Override overrideWithValue(CompactionExecutionState? value) =>
       overrideWith((_, _) => value);
 }

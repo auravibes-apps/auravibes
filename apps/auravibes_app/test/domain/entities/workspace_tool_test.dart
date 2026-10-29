@@ -36,21 +36,6 @@ void main() {
       expect(disabled.isAvailable, isFalse);
     });
 
-    test('hasConfig true when config is set and not empty', () {
-      final withConfig = WorkspaceToolEntity(
-        id: 'tool_3',
-        workspaceId: 'ws_1',
-        toolId: 'config_tool',
-        isEnabled: true,
-        permissionMode: .alwaysAsk,
-        createdAt: now,
-        updatedAt: now,
-        config: '{"key":"value"}',
-      );
-      expect(withConfig.hasConfig, isTrue);
-      expect(entity.hasConfig, isFalse);
-    });
-
     test('belongsToGroup true when workspaceToolsGroupId is set', () {
       final grouped = WorkspaceToolEntity(
         id: 'tool_4',
@@ -78,35 +63,6 @@ void main() {
         workspaceToolsGroupId: '',
       );
       expect(emptyGroup.belongsToGroup, isFalse);
-    });
-
-    test('hasDescription true when description is set', () {
-      final withDesc = WorkspaceToolEntity(
-        id: 'tool_6',
-        workspaceId: 'ws_1',
-        toolId: 'desc_tool',
-        isEnabled: true,
-        permissionMode: .alwaysAsk,
-        createdAt: now,
-        updatedAt: now,
-        description: 'A useful tool',
-      );
-      expect(withDesc.hasDescription, isTrue);
-    });
-
-    test('hasInputSchema true when inputSchema is set', () {
-      final withSchema = WorkspaceToolEntity(
-        id: 'tool_7',
-        workspaceId: 'ws_1',
-        toolId: 'schema_tool',
-        isEnabled: true,
-        permissionMode: .alwaysAsk,
-        createdAt: now,
-        updatedAt: now,
-        inputSchema: '{"type":"object"}',
-      );
-      expect(withSchema.hasInputSchema, isTrue);
-      expect(entity.hasInputSchema, isFalse);
     });
 
     test('buildInType returns null for unknown toolId', () {

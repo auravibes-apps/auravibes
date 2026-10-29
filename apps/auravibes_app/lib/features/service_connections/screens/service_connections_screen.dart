@@ -43,6 +43,7 @@ const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 const _overviewFilterOptionCount = 4;
 const _connectionMetadataMaxLines = 2;
+const _connectionFiltersInlineBreakpoint = 720.0;
 const _deleteConfirmationActions = AuraConfirmDialogActions(
   confirmLabel: TextLocale(LocaleKeys.common_delete),
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
@@ -504,21 +505,59 @@ class const _ServiceConnectionsAppBar({
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) {
-    return FeatureDestinationAppBar(
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _ServiceConnectionsAppBarContent(
+      onAddConnection: onAddConnection,
+      workspaceId: workspaceId,
+      view: view,
       destinations: destinations,
       selectedLocation: selectedLocation,
-      masterTitleKey: LocaleKeys.navigation_connections,
-      actions: [
-        if (view != .connectors) ...[
-          _SyncModelCatalogButton(workspaceId: workspaceId),
-          if (view != .services)
-            _BrowseMcpCatalogButton(workspaceId: workspaceId),
-          _ConnectionsAddButton(onPressed: onAddConnection),
-        ],
-      ],
-    );
-  }
+      isCompact: constraints.maxWidth < 600,
+    ),
+  );
+}
+
+class const _ServiceConnectionsAppBarContent({
+  required final VoidCallback? onAddConnection,
+  required final String workspaceId,
+  required final ConnectionDestination view,
+  required final List<FeatureNavigationDestination> destinations,
+  required final String selectedLocation,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FeatureDestinationAppBar(
+    destinations: destinations,
+    selectedLocation: selectedLocation,
+    masterTitleKey: LocaleKeys.navigation_connections,
+    actions: [
+      if (view != .connectors)
+        _ConnectionsAppBarActions(
+          workspaceId: workspaceId,
+          view: view,
+          onAddConnection: onAddConnection,
+          isCompact: isCompact,
+        ),
+    ],
+  );
+}
+
+class const _ConnectionsAppBarActions({
+  required final String workspaceId,
+  required final ConnectionDestination view,
+  required final VoidCallback? onAddConnection,
+  required final bool isCompact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      _SyncModelCatalogButton(workspaceId: workspaceId),
+      if (view != .services) _BrowseMcpCatalogButton(workspaceId: workspaceId),
+      _ConnectionsAddButton(onPressed: onAddConnection, isCompact: isCompact),
+    ],
+    spacing: .none,
+    mainAxisSize: .min,
+  );
 }
 
 class const _BrowseMcpCatalogButton({required final String workspaceId})
@@ -579,15 +618,37 @@ class const _ModelCatalogSyncIconButton({
   );
 }
 
-class const _ConnectionsAddButton({required final VoidCallback? onPressed})
-    extends StatelessWidget {
+class const _ConnectionsAddButton({
+  required final VoidCallback? onPressed,
+  required final bool isCompact,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraIconButton(
-    icon: Icons.add,
-    onPressed: onPressed,
-    identifier: 'service_connections_add',
-    tooltip: LocaleKeys.service_connections_add.tr(context: context),
-  );
+  Widget build(BuildContext context) {
+    final label = LocaleKeys.service_connections_add.tr(context: context);
+    if (isCompact) {
+      return AuraIconButton(
+        icon: Icons.add,
+        onPressed: onPressed,
+        disabled: onPressed == null,
+        identifier: 'service_connections_add',
+        tooltip: label,
+      );
+    }
+
+    return AuraButton(
+      onPressed: _handlePressed,
+      child: const TextLocale(LocaleKeys.service_connections_add),
+      disabled: onPressed == null,
+      identifier: 'service_connections_add',
+      semanticLabel: label,
+    );
+  }
+
+  void _handlePressed() {
+    final callback = onPressed;
+    if (callback == null) return;
+    callback();
+  }
 }
 
 class const _ConnectionsList({
@@ -845,7 +906,7 @@ class const _ConnectionResponsiveFilterControl({
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => _ConnectionResponsiveFilterContent(
       layout: layout,
-      isCompact: constraints.maxWidth < AppFilterSheetButton.breakpoint,
+      isCompact: constraints.maxWidth < _connectionFiltersInlineBreakpoint,
     ),
   );
 }
@@ -1867,12 +1928,15 @@ String _connectionSubtitle(
   BuildContext context,
   ServiceConnectionListItem connection,
 ) {
-  final kind = _connectionTypeLabel(context, connection.kind);
   if (connection.kind == ServiceConnectionListItemKind.mcpServer) {
-    return _mcpConnectionSubtitle(connection, kind);
+    return _connectionServiceName(context, connection);
   }
 
-  return _serviceConnectionSubtitle(connection, kind);
+  return _serviceConnectionSubtitle(
+    context,
+    connection,
+    _connectionTypeLabel(context, connection.kind),
+  );
 }
 
 String _connectionTypeLabel(
@@ -1892,24 +1956,23 @@ String _connectionTypeLabel(
   };
 }
 
-String _mcpConnectionSubtitle(
-  ServiceConnectionListItem connection,
-  String kind,
-) => '$kind - ${_connectionServiceName(connection)}';
-
 String _serviceConnectionSubtitle(
+  BuildContext context,
   ServiceConnectionListItem connection,
   String kind,
 ) {
   final suffix = connection.keySuffix;
   if (suffix == null || suffix.isEmpty) {
-    return '$kind - ${_connectionServiceName(connection)}';
+    return '$kind - ${_connectionServiceName(context, connection)}';
   }
 
-  return '$kind - ${_connectionServiceName(connection)} - ****$suffix';
+  return '$kind - ${_connectionServiceName(context, connection)} - ****$suffix';
 }
 
-String _connectionServiceName(ServiceConnectionListItem connection) {
+String _connectionServiceName(
+  BuildContext _,
+  ServiceConnectionListItem connection,
+) {
   final serviceName = connection.serviceName;
   if (serviceName != null && serviceName.isNotEmpty) return serviceName;
 

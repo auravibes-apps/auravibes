@@ -867,7 +867,10 @@
     "link_text_label": "Texto del enlace",
     "link_destination_label": "URL de destino",
     "link_destination_required": "Introduce una URL de destino",
-    "apply": "Aplicar cambios",
+    "apply": "Aplicar",
+    "character_count": "{count} de {limit} caracteres",
+    "limit_exceeded": "Límite superado",
+    "return_to_edit": "Editar Markdown",
     "draft_hint": "Se aplica al borrador principal. Guarda el elemento principal para terminar.",
     "agent_instructions": "Editar instrucciones del agente",
     "skill_description": "Editar descripción de la habilidad",
@@ -1305,25 +1308,23 @@
   "settings_screen": {
     "title": "Ajustes de la aplicación",
     "app_settings": {
-      "title": "Configuración de la App",
-      "subtitle": "Configura tus preferencias y comportamiento de la app"
+      "title": "Apariencia",
+      "subtitle": "Elige cómo se ve AuraVibes en este dispositivo."
     },
     "theme": {
-      "title": "Tema y Apariencia",
+      "title": "Tema",
       "light": "Claro",
       "dark": "Oscuro",
-      "system": "Sistema",
-      "system_default": "Predeterminado del Sistema"
+      "system": "Sistema"
     },
     "accent_color": {
       "title": "Color de acento",
-      "subtitle": "Elige el tono que define la paleta de la app",
-      "dialog_title": "Tono de acento"
+      "dialog_hint": "Arrastra para cambiar el color principal de botones, enlaces y resaltados."
     },
     "actions": {
       "cancel": "Cancelar",
       "save": "Guardar",
-      "reset_defaults": "Restaurar valores predeterminados"
+      "reset_appearance": "Restablecer apariencia"
     },
     "legal": {
       "title": "Privacidad y términos",

@@ -413,14 +413,14 @@ void main() {
     expect(find.text('2 of 3 required fields complete'), findsOneWidget);
 
     await _openPromptEditor(tester);
-    await tester.tap(find.byIcon(Icons.save_outlined));
+    await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Add a system prompt.'), findsOneWidget);
     expect(find.text('Validation failed'), findsNothing);
 
     await _openPromptEditor(tester);
     await tester.enterText(find.byType(TextFormField), 'Summarize clearly.');
-    await tester.tap(find.byIcon(Icons.save_outlined));
+    await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('3 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isFalse);
@@ -585,7 +585,7 @@ Future<void> _enterValidDraft(WidgetTester tester) async {
   await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
   await _openPromptEditor(tester);
   await tester.enterText(find.byType(TextFormField), 'Summarize clearly.');
-  await tester.tap(find.byIcon(Icons.save_outlined));
+  await tester.tap(find.text('Apply'));
   final _ = await tester.pumpAndSettle();
 }
 
