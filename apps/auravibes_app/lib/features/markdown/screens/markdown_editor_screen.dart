@@ -658,15 +658,13 @@ class const _MarkdownLimitText({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final countText = LocaleKeys.markdown_editor_character_count.tr(
-      context: context,
-      namedArgs: {'count': '$characterCount', 'limit': '$maxCharacters'},
-    );
     final isOverLimit = characterCount > maxCharacters;
-    final limitExceededText = LocaleKeys.markdown_editor_limit_exceeded.tr(
-      context: context,
+    final text = _labelText(
+      context,
+      characterCount,
+      maxCharacters,
+      isOverLimit,
     );
-    final text = isOverLimit ? '$countText: $limitExceededText' : countText;
 
     return Center(
       child: AuraText(
@@ -675,5 +673,24 @@ class const _MarkdownLimitText({
         tint: isOverLimit ? AuraTint.error : null,
       ),
     );
+  }
+
+  static String _labelText(
+    BuildContext context,
+    int characterCount,
+    int maxCharacters,
+    bool isOverLimit,
+  ) {
+    final countText = LocaleKeys.markdown_editor_character_count.tr(
+      context: context,
+      namedArgs: {'count': '$characterCount', 'limit': '$maxCharacters'},
+    );
+    if (!isOverLimit) return countText;
+
+    final limitExceededText = LocaleKeys.markdown_editor_limit_exceeded.tr(
+      context: context,
+    );
+
+    return '$countText: $limitExceededText';
   }
 }
