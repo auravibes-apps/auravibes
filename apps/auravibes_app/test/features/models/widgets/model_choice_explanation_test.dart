@@ -14,7 +14,7 @@ void main() {
     (
       code: 'en',
       providerDescription:
-          "Choose which service receives your model's requests",
+          'Choose which service receives your model\'s requests',
       modelDescription: 'Models can differ in response quality',
       helpLabel: 'Learn about providers and models',
       helpTitle: 'About providers and models',
@@ -26,7 +26,8 @@ void main() {
           'Elige el servicio que recibe las solicitudes de tu modelo',
       modelDescription: 'Los modelos pueden diferir en la calidad',
       helpLabel:
-          'M${String.fromCharCode(0xe1)}s informaci${String.fromCharCode(0xf3)}n sobre proveedores y modelos',
+          'M${String.fromCharCode(0xe1)}s informaci'
+          '${String.fromCharCode(0xf3)}n sobre proveedores y modelos',
       helpTitle: 'Sobre proveedores y modelos',
       helpDetails: 'Un proveedor es el servicio o servidor configurado',
     ),
@@ -77,7 +78,7 @@ Future<void> _expectExplanation(
       child: Scaffold(
         body: ModelChoiceExplanation(descriptionKey: descriptionKey),
       ),
-      startLocale: Locale.new(localeCode),
+      startLocale: .new(localeCode),
     ),
   );
   final _ = await tester.pumpAndSettle();
