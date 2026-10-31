@@ -1,8 +1,16 @@
+import 'package:auravibes_app/router/workspace_route_normalizer.dart';
+
 /// Router-owned allowlist for task completion and cancellation.
 abstract final class TaskReturn {
   static String? validate(String? location, {required String workspaceId}) {
-    if (!_TaskReturnValidation._hasSafeLocation(location)) return null;
-    final safeLocation = location;
+    final normalizedLocation = location == null
+        ? null
+        : WorkspaceRouteNormalizer.normalizeLegacyMoreLocation(location) ??
+              location;
+    if (!_TaskReturnValidation._hasSafeLocation(normalizedLocation)) {
+      return null;
+    }
+    final safeLocation = normalizedLocation;
     if (safeLocation == null) return null;
     try {
       if (!_TaskReturnValidation._hasSafePathSegments(safeLocation)) {
