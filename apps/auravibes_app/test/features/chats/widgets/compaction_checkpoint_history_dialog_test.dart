@@ -345,10 +345,16 @@ void main() {
       find.text('$spanishRestoreLabel del punto de control'),
       findsOneWidget,
     );
-    expect(find.text('Punto de control que se restaurará'), findsOneWidget);
     expect(
       find.text(
-        'Este punto de control tiene un resumen distinto del punto de control activo.',
+        'Punto de control que se restaurar${String.fromCharCode(0xe1)}',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Este punto de control tiene un resumen distinto del '
+        'punto de control activo.',
       ),
       findsOneWidget,
     );
