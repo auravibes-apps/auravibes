@@ -88,7 +88,7 @@
       "model": "Tu modelo elegido"
     },
     "ai": {
-      "choose_provider": "Elige el servicio o servidor para tu modelo. Recibirá las solicitudes que envíes; el tratamiento de datos depende de la conexión que elijas.",
+      "choose_provider": "Elige qué servicio recibe las solicitudes de tu modelo.",
       "start_chat": "Comenzar a chatear",
       "explore": "Explorar espacio",
       "explore_hint": "Puedes explorar ahora. Para chatear necesitas una conexión de IA y un modelo disponible.",

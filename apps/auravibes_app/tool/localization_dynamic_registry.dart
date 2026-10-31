@@ -1510,6 +1510,20 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     ],
     keys: {..._modelsScreensDynamicKeys},
   ),
+  LocalizationDynamicRegistry(
+    family: 'model-choice-explanation-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/models/widgets/model_choice_explanation.dart',
+        method: 'TextLocale',
+        keyExpression: 'descriptionKey',
+      ),
+    ],
+    keys: {
+      'intro_flow.ai.choose_provider',
+      'models_screens.model_choice_explanation',
+    },
+  ),
 
   LocalizationDynamicRegistry(
     family: 'service-connection-and-mcp-label-keys',

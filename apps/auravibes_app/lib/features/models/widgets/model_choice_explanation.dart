@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const ModelChoiceExplanation({
   required final String descriptionKey,
@@ -23,9 +23,9 @@ class const ModelChoiceExplanation({
         AuraIconButton(
           icon: Icons.info_outline,
           onPressed: () => unawaited(_showModelChoiceHelp(context)),
+          size: .small,
           semanticLabel: helpLabel,
           tooltip: helpLabel,
-          size: .small,
         ),
       ],
     );

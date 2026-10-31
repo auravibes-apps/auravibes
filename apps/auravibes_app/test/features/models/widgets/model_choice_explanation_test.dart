@@ -1,14 +1,20 @@
 import 'package:auravibes_app/features/models/widgets/model_choice_explanation.dart';
-import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
 
 void main() {
+  setUpAll(() async {
+    await EasyLocalization.ensureInitialized();
+  });
+
   for (final locale in [
     (
       code: 'en',
-      providerDescription: 'Choose the service or server for your model',
+      providerDescription:
+          "Choose which service receives your model's requests",
       modelDescription: 'Models can differ in response quality',
       helpLabel: 'Learn about providers and models',
       helpTitle: 'About providers and models',
@@ -16,9 +22,11 @@ void main() {
     ),
     (
       code: 'es',
-      providerDescription: 'Elige el servicio o servidor para tu modelo',
+      providerDescription:
+          'Elige el servicio que recibe las solicitudes de tu modelo',
       modelDescription: 'Los modelos pueden diferir en la calidad',
-      helpLabel: 'Más información sobre proveedores y modelos',
+      helpLabel:
+          'M${String.fromCharCode(0xe1)}s informaci${String.fromCharCode(0xf3)}n sobre proveedores y modelos',
       helpTitle: 'Sobre proveedores y modelos',
       helpDetails: 'Un proveedor es el servicio o servidor configurado',
     ),
@@ -66,18 +74,18 @@ Future<void> _expectExplanation(
   addTearDown(semantics.dispose);
   await tester.pumpWidget(
     TestableApp(
-      startLocale: Locale(localeCode),
       child: Scaffold(
         body: ModelChoiceExplanation(descriptionKey: descriptionKey),
       ),
+      startLocale: Locale.new(localeCode),
     ),
   );
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
   expect(find.textContaining(description), findsOneWidget);
   expect(find.bySemanticsLabel(helpLabel), findsOneWidget);
 
   await tester.tap(find.bySemanticsLabel(helpLabel));
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
   expect(find.text(helpTitle), findsOneWidget);
   expect(find.textContaining(helpDetailsPrefix), findsOneWidget);
 }

@@ -408,11 +408,13 @@ class _ModelSheetContent extends Column {
              controller: controller,
              onChanged: onSearchChanged,
            ),
-           const AuraSizedBox(height: .xs),
-           const ModelChoiceExplanation(
-             descriptionKey: 'models_screens.model_choice_explanation',
-           ),
-           const AuraSizedBox(height: .sm),
+           if (controller.text.isEmpty) ...[
+             const AuraSizedBox(height: .xs),
+             const ModelChoiceExplanation(
+               descriptionKey: 'models_screens.model_choice_explanation',
+             ),
+             const AuraSizedBox(height: .sm),
+           ],
            Flexible(
              child: _ModelSheetOptions(
                models: filteredModels,
@@ -904,10 +906,12 @@ class const _DropdownSearchHeader({
           style: .new(color: context.auraColors.onSurface),
           onChanged: onChanged,
         ),
-        const AuraSizedBox(height: .xs),
-        const ModelChoiceExplanation(
-          descriptionKey: 'models_screens.model_choice_explanation',
-        ),
+        if (controller.text.isEmpty) ...[
+          const AuraSizedBox(height: .xs),
+          const ModelChoiceExplanation(
+            descriptionKey: 'models_screens.model_choice_explanation',
+          ),
+        ],
       ],
     ),
     padding: .small,
