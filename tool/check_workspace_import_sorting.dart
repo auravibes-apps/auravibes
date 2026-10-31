@@ -50,7 +50,9 @@ void main() {
     final generatedPluginRegistrant = p.normalize(
       p.join(packageRoot.path, _generatedPluginRegistrant),
     );
-    files.remove(generatedPluginRegistrant);
+    files.removeWhere(
+      (path, _) => p.normalize(path) == generatedPluginRegistrant,
+    );
     totalDartFiles += files.length;
     stdout.writeln(
       'Checking ${package.location}: ${files.length} Dart files',
@@ -84,9 +86,7 @@ void main() {
     '$totalDartFiles Dart files.',
   );
   if (errors.isNotEmpty) {
-    for (final error in errors) {
-      stderr.writeln(error);
-    }
+    errors.forEach(stderr.writeln);
     exitCode = 1;
   }
 }
@@ -103,6 +103,7 @@ List<_WorkspacePackage> _workspacePackages(
   if (result.exitCode != 0) {
     errors.add('Could not list Melos workspace packages.');
     stderr.write(result.stderr);
+
     return const [];
   }
 
@@ -111,10 +112,12 @@ List<_WorkspacePackage> _workspacePackages(
     decoded = jsonDecode(result.stdout as String);
   } on FormatException catch (error) {
     errors.add('Melos package list was not valid JSON: ${error.message}');
+
     return const [];
   }
   if (decoded is! List) {
     errors.add('Melos package list must be a JSON array.');
+
     return const [];
   }
 
@@ -133,6 +136,7 @@ List<_WorkspacePackage> _workspacePackages(
       ),
     );
   }
+
   return packages;
 }
 
@@ -149,6 +153,7 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
       !fixturePubspec.existsSync() ||
       !fixtureSource.existsSync()) {
     errors.add('Nested import-sorter workspace fixture is incomplete.');
+
     return;
   }
 
@@ -156,16 +161,21 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
     'import_sorter_nested_package_',
   );
   try {
-    fixturePubspec.copySync(p.join(packageRoot.path, 'pubspec.yaml'));
+    final _ = fixturePubspec.copySync(
+      p.join(packageRoot.path, 'pubspec.yaml'),
+    );
     final lib = Directory(p.join(packageRoot.path, 'lib'))
       ..createSync(recursive: true);
-    fixtureSource.copySync(p.join(lib.path, 'unsorted_imports.dart'));
+    final _ = fixtureSource.copySync(
+      p.join(lib.path, 'unsorted_imports.dart'),
+    );
     final files = import_files.dartFiles(packageRoot.path, const []);
     if (files.length != 1) {
       errors.add(
         'Nested import-sorter package fixture should scan one Dart file; '
         'found ${files.length}.',
       );
+
       return;
     }
 
@@ -181,6 +191,7 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
       errors.add(
         'Nested import-sorter package fixture no longer has unsorted imports.',
       );
+
       return;
     }
   } finally {
@@ -190,7 +201,7 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
 }
 
 class _WorkspacePackage {
-  const _WorkspacePackage({required this.name, required this.location});
+  const new({required this.name, required this.location});
 
   final String name;
   final String location;
