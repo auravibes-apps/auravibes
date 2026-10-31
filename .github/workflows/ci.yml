@@ -72,6 +72,7 @@ jobs:
           python3 tool/sonar_workflow_test.py
           python3 tool/plan_test_shards_test.py
           python3 tool/validation_lease_test.py
+          python3 tool/validation_evidence_test.py
           python3 tool/test_server_test.py
           python3 tool/agent_worktree_test.py
 
