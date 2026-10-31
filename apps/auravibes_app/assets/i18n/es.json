@@ -1262,6 +1262,10 @@
   "workspace_capabilities": {
     "unsupported_error": "Esta función no está disponible en este espacio de trabajo."
   },
+  "workspace_network_disclosure": {
+    "title": "El almacenamiento local no significa que funcione sin conexión.",
+    "description": "Al enviar un mensaje, se envían su texto y el contexto de la conversación al servicio de modelo configurado. También pueden incluirse los archivos adjuntos compatibles, y la solicitud usa las credenciales configuradas para ese servicio. Las llamadas a herramientas conectadas envían sus datos de entrada al servicio configurado y pueden usar las credenciales de esa conexión. Los servicios pueden estar en internet o en tu red local."
+  },
   "tools_names": {
     "calculator": {
       "name": "Calculadora",

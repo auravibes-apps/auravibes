@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -406,19 +407,22 @@ class const _ChatInputCapabilities({
   required final _ChatInputAttachmentCapabilities attachments,
   required final bool supportsDrop,
   required final bool isMacOS,
+  required final bool isLocalWorkspace,
 });
 
 abstract final class _ChatInputCapabilitiesFactory {
   static _ChatInputCapabilities create(
     WorkspaceCapabilities? workspaceCapabilities,
-    List<String> modalitiesInput,
-  ) => _ChatInputCapabilities(
+    List<String> modalitiesInput, {
+    required bool isLocalWorkspace,
+  }) => _ChatInputCapabilities(
     attachments: _createAttachmentCapabilities(
       workspaceCapabilities,
       modalitiesInput,
     ),
     supportsDrop: _supportsDrop(workspaceCapabilities),
     isMacOS: defaultTargetPlatform == TargetPlatform.macOS,
+    isLocalWorkspace: isLocalWorkspace,
   );
 
   static bool _supportsDrop(WorkspaceCapabilities? capabilities) =>
@@ -502,14 +506,14 @@ _ChatInputCapabilities _watchChatInputCapabilities(
   WidgetRef ref,
   ChatInputWidget input,
 ) {
-  final workspaceCapabilities = ref.watch(
-    workspaceSessionForRouteProvider(input.workspaceId)
-        .select((session) => session.value?.capabilities),
+  final workspaceSession = ref.watch(
+    workspaceSessionForRouteProvider(input.workspaceId),
   );
 
   return _ChatInputCapabilitiesFactory.create(
-    workspaceCapabilities,
+    workspaceSession.value?.capabilities,
     input.modalitiesInput,
+    isLocalWorkspace: workspaceSession.value?.workspace is LocalWorkspaceRef,
   );
 }
 
@@ -2115,6 +2119,8 @@ class const _ChatInputFooterContent({required final _ChatInputState state})
       child: Column(
         crossAxisAlignment: .start,
         children: [
+          if (state.capabilities.isLocalWorkspace)
+            const _LocalWorkspaceNetworkDisclosure(),
           _ChatInputAttachments(state: state),
           _ChatInputDisabledHintSection(hint: state.input.disabledHint),
           _ChatInputControls(state: state),
@@ -2122,6 +2128,22 @@ class const _ChatInputFooterContent({required final _ChatInputState state})
       ),
     );
   }
+}
+
+class const _LocalWorkspaceNetworkDisclosure() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraCallout(
+      key: const ValueKey<String>('local_workspace_network_disclosure'),
+      title: 'workspace_network_disclosure.title'.tr(context: context),
+      description: 'workspace_network_disclosure.description'.tr(
+        context: context,
+      ),
+      icon: Icons.public_outlined,
+      tint: .info,
+    ),
+    padding: const .bottom(.sm),
+  );
 }
 
 class const _ChatInputAttachments({required final _ChatInputState state})
