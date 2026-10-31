@@ -161,7 +161,7 @@ void main() {
         ),
       );
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final header = find.byKey(const ValueKey('background_work_header_button'));
     expect(
@@ -171,7 +171,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     stream.add(const []);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(
       tester.getSemantics(header).getSemanticsData().label,
       'Background work, 0 active',
@@ -179,23 +179,26 @@ void main() {
     expect(find.byIcon(Icons.error_outline), findsNothing);
 
     stream.add([_work('work-1', .running, now)]);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(
       tester.getSemantics(header).getSemanticsData().label,
       'Background work, 1 active',
     );
 
     stream.addError(StateError('private failure detail'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     final errorSemantics = tester.getSemantics(header).getSemanticsData();
     expect(
       errorSemantics.label,
-      'Background work could not refresh. Last known count: 1 active. Open the list to retry.',
+      'Background work could not refresh. Last known count: 1 active. '
+      'Open the list to retry.',
     );
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('private failure detail'), findsNothing);
-    await stream.close();
+    final closeResult = await stream.close();
+    expect(closeResult, isNull);
+    expect(stream.isClosed, isTrue);
   });
 
   testWidgets('local background work load offers explicit retry', (
@@ -283,7 +286,6 @@ void main() {
     final _ = await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          workspaceSession: const WorkspaceSession(workspace),
           child: Scaffold(
             appBar: AppBar(
               actions: const [
@@ -307,10 +309,11 @@ void main() {
               return [work];
             }),
           ],
+          workspaceSession: const .new(workspace),
         ),
       );
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     final header = find.byKey(const ValueKey('background_work_header_button'));
     expect(
@@ -318,11 +321,11 @@ void main() {
       'Background work could not load. Open the list to retry.',
     );
     await tester.tap(header);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('background_work_retry')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('background_work_retry')));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       find.byKey(const ValueKey('background_work_title_cloud-work-1')),
