@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_location_info.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_location_kind.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +10,7 @@ void main() {
   test('local workspace is stored on this device', () {
     final info = workspaceLocationInfo(_workspace(WorkspaceType.local));
 
-    expect(info.kind, WorkspaceLocationKind.onDevice);
+    expect(info.kind, .onDevice);
   });
 
   test('owner-only cloud workspace is personal', () {
@@ -18,7 +19,7 @@ void main() {
       cloudDetail: _cloudDetail(role: 'owner', members: [_member('owner')]),
     );
 
-    expect(info.kind, WorkspaceLocationKind.personalCloud);
+    expect(info.kind, .personalCloud);
     expect(info.canViewMembers, isTrue);
   });
 
@@ -34,7 +35,7 @@ void main() {
       ),
     );
 
-    expect(info.kind, WorkspaceLocationKind.teamWorkspace);
+    expect(info.kind, .teamWorkspace);
   });
 
   test('pending invites make an owner cloud workspace a team workspace', () {
@@ -47,7 +48,7 @@ void main() {
       ),
     );
 
-    expect(info.kind, WorkspaceLocationKind.teamWorkspace);
+    expect(info.kind, .teamWorkspace);
   });
 
   test('member role shows team even when roster access is unavailable', () {
@@ -56,7 +57,7 @@ void main() {
       cloudDetail: _cloudDetail(role: 'member', canViewMembers: false),
     );
 
-    expect(info.kind, WorkspaceLocationKind.teamWorkspace);
+    expect(info.kind, .teamWorkspace);
     expect(info.canViewMembers, isFalse);
   });
 }

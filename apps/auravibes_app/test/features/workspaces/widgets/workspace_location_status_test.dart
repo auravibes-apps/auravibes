@@ -3,9 +3,9 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_location_sta
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   Widget buildSubject(
@@ -53,7 +53,7 @@ void main() {
       await tester.pumpWidget(
         buildSubject(const WorkspaceLocationInfo(kind: .onDevice)),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('On this device'), findsOneWidget);
       expect(
@@ -77,7 +77,7 @@ void main() {
     await tester.pumpWidget(
       buildSubject(const WorkspaceLocationInfo(kind: .personalCloud)),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Personal cloud'), findsOneWidget);
   });
@@ -90,7 +90,7 @@ void main() {
         onViewAccess: () => opened = true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Team workspace'), findsOneWidget);
     expect(find.text('Members and access'), findsOneWidget);
@@ -103,18 +103,20 @@ void main() {
   testWidgets('team member without roster access gets access details label', (
     tester,
   ) async {
+    var opened = false;
     await tester.pumpWidget(
       buildSubject(
-        const WorkspaceLocationInfo(
-          kind: .teamWorkspace,
-          canViewMembers: false,
-        ),
-        onViewAccess: () {},
+        const WorkspaceLocationInfo(kind: .teamWorkspace),
+        onViewAccess: () => opened = true,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Access details'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('workspace_location_access')),
+    );
+    expect(opened, isTrue);
   });
 
   testWidgets('workspace type uses Spanish copy', (tester) async {
@@ -124,7 +126,7 @@ void main() {
         locale: const Locale('es'),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Espacio de equipo'), findsOneWidget);
   });

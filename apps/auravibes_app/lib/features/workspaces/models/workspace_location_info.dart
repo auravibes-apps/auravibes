@@ -1,21 +1,7 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
-
-/// Describes where an active workspace is stored and whether it is shared.
-enum WorkspaceLocationKind {
-  /// Stored on this device.
-  onDevice,
-
-  /// Cloud workspace with only its owner and no pending invitations.
-  personalCloud,
-
-  /// Cloud workspace with collaborators or pending invitations.
-  teamWorkspace,
-
-  /// Cloud destination while sharing details are unavailable.
-  cloud,
-}
+import 'package:auravibes_app/features/workspaces/models/workspace_location_kind.dart';
 
 /// Workspace location and roster visibility for the active workspace.
 class const WorkspaceLocationInfo({
@@ -39,6 +25,7 @@ WorkspaceLocationInfo workspaceLocationInfo(
   }
 
   final detail = cloudDetail.detail;
+
   return cloudWorkspaceLocationInfo(
     role: detail.workspace.role,
     memberCount: cloudDetail.members.length,
