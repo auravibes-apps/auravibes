@@ -817,7 +817,7 @@ Future<SelectionResult> selectRepository({
         '$base:$normalized',
       ]);
     }
-    var diff = await _git(rootPath, [
+    final diff = await _git(rootPath, [
       'diff',
       '--name-status',
       '--find-renames',
@@ -825,6 +825,7 @@ Future<SelectionResult> selectRepository({
       if (includeWorkingTree) base else '$base...$head',
       if (includeWorkingTree) '--',
     ]);
+    final changes = <ChangedFile>[...parseNameStatus(diff)];
     if (includeWorkingTree) {
       final untracked = await _git(rootPath, [
         'ls-files',
@@ -832,12 +833,16 @@ Future<SelectionResult> selectRepository({
         '--exclude-standard',
         '-z',
       ]);
-      final paths = untracked.split('\u0000').where((path) => path.isNotEmpty);
-      diff += [for (final path in paths) ...['A', path, '']].join('\u0000');
+      changes.addAll(
+        untracked
+            .split('\u0000')
+            .where((path) => path.isNotEmpty)
+            .map(ChangedFile.added),
+      );
     }
 
     return selectChangedTests(
-      changes: parseNameStatus(diff),
+      changes: changes,
       headSources: headSources,
       baseSources: baseSources,
       packageRoots: {
