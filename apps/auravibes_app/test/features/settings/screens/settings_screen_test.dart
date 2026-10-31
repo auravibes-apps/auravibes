@@ -3,7 +3,7 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/settings/models/app_language_preference.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
-import 'package:auravibes_app/features/settings/providers/app_language_preference_provider.dart';
+import 'package:auravibes_app/features/settings/providers/app_language_preference_notifier.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';

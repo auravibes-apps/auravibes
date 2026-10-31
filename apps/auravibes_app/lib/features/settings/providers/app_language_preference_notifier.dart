@@ -20,7 +20,7 @@ class AppLanguagePreferenceNotifier
 
   Future<void> save(AppLanguagePreference preference) async {
     final preferences = await ref.read(sharedPreferencesProvider.future);
-    await preferences.setString(
+    final _ = await preferences.setString(
       AppLanguagePreference.preferenceKey,
       preference.name,
     );

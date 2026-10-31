@@ -4,11 +4,10 @@
 
 import 'dart:async';
 
-import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/models/app_language_preference.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
-import 'package:auravibes_app/features/settings/providers/app_language_preference_provider.dart';
+import 'package:auravibes_app/features/settings/providers/app_language_preference_notifier.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_appearance_profile_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
@@ -260,7 +259,7 @@ Future<void> _applyLanguagePreference(
   final locale = preference.locale;
   if (locale == null) {
     await context.resetLocale();
-    await context.deleteSaveLocale();
+    if (context.mounted) await context.deleteSaveLocale();
   } else {
     await context.setLocale(locale);
   }

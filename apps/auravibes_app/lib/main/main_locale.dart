@@ -11,16 +11,15 @@ export 'package:easy_localization/easy_localization.dart'
 
 class const MainLocale({required final Widget child, super.key})
     extends StatelessWidget {
-  static const supportedLocales = [Locale('en'), Locale('es')];
-  static AppLanguagePreference _languagePreference =
-      AppLanguagePreference.system;
+  static const supportedLocales = <Locale>[.new('en'), .new('es')];
+  static AppLanguagePreference _languagePreference = .system;
 
   static Future<void> ensureInitialized() async {
     final preferences = await SharedPreferences.getInstance();
-    _languagePreference = AppLanguagePreference.fromStoredValue(
+    _languagePreference = .fromStoredValue(
       preferences.getString(AppLanguagePreference.preferenceKey),
     );
-    await preferences.remove(
+    final _ = await preferences.remove(
       AppLanguagePreference.easyLocalizationPreferenceKey,
     );
 
@@ -35,8 +34,8 @@ class const MainLocale({required final Widget child, super.key})
       supportedLocales: MainLocale.supportedLocales,
       path: 'assets/i18n',
       startLocale: _languagePreference.locale,
-      saveLocale: false,
       fallbackLocale: MainLocale.supportedLocales.firstOrNull,
+      saveLocale: false,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
       useFallbackTranslationsForEmptyResources: true,

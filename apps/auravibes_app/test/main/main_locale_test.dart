@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('starts in the saved app language', (tester) async {
-    SharedPreferences.setMockInitialValues({
+    SharedPreferences.setMockInitialValues(<String, Object>{
       AppLanguagePreference.preferenceKey: 'spanish',
       AppLanguagePreference.easyLocalizationPreferenceKey: 'en',
     });
@@ -34,7 +34,7 @@ void main() {
   });
 
   test('clears a saved language override for device mode', () async {
-    SharedPreferences.setMockInitialValues({
+    SharedPreferences.setMockInitialValues(<String, Object>{
       AppLanguagePreference.preferenceKey: 'system',
       AppLanguagePreference.easyLocalizationPreferenceKey: 'es',
     });
@@ -51,7 +51,7 @@ void main() {
   });
 
   test('unknown saved preferences fall back to device mode', () async {
-    SharedPreferences.setMockInitialValues({
+    SharedPreferences.setMockInitialValues(<String, Object>{
       AppLanguagePreference.preferenceKey: 'unsupported',
       AppLanguagePreference.easyLocalizationPreferenceKey: 'es',
     });
