@@ -68,7 +68,8 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     stdout.writeln('  ${_changeLabel(change)}');
   }
   stdout.writeln(
-    'Test selection: ${selection.mode.name} — ${selection.reason}',
+    'Test selection: ${selection.mode.name} — '
+    '${selection.reason.replaceAll(root.path, '.')}',
   );
   if (selection.mode == SelectionMode.full) {
     stdout.writeln(
@@ -114,11 +115,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
 
   final plannedCommands = <_PlannedCommand>[];
+  final diagnostics = <String>[];
   final planningExitCode = await runSelectedTests(
     selection,
     rootPath: root.path,
     dryRun: true,
-    onDiagnostic: (_) {},
+    onDiagnostic: diagnostics.add,
     onPlannedCommand: ({
       required String executable,
       required List<String> arguments,
@@ -135,6 +137,9 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   );
   if (planningExitCode != 0) {
     stderr.writeln('local-preflight: could not plan selected tests.');
+    for (final diagnostic in diagnostics) {
+      stderr.writeln(diagnostic.replaceAll(root.path, '.'));
+    }
 
     return planningExitCode;
   }
