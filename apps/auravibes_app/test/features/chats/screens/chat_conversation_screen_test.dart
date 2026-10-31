@@ -944,6 +944,94 @@ void main() {
     );
   });
 
+  testWidgets('starter fills the empty composer without sending', (
+    tester,
+  ) async {
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+    );
+    await tester.pump();
+
+    final starter = find.byKey(const ValueKey('chat_empty_starter_plan_day'));
+    expect(starter, findsOneWidget);
+    await tester.tap(starter);
+    await tester.pump();
+    await tester.pump();
+
+    final editableText = tester.widget<EditableText>(
+      find.byType(EditableText).first,
+    );
+    expect(editableText.controller.text, 'Help me plan my day');
+    expect(starter, findsNothing);
+    expect(find.text('Help me plan my day'), findsNothing);
+  });
+
+  testWidgets('hides starters without replacing an existing draft', (
+    tester,
+  ) async {
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+    );
+    final editableText = find.byType(EditableText).first;
+    await tester.enterText(editableText, 'Keep this draft');
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('chat_empty_starter_plan_day')),
+      findsNothing,
+    );
+    expect(
+      tester.widget<EditableText>(editableText).controller.text,
+      'Keep this draft',
+    );
+  });
+
+  testWidgets('localizes starter copy and accessible labels', (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+      startLocale: const Locale('es'),
+    );
+
+    expect(find.text('¿No sabes por dónde empezar?'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Ayúdame a planificar mi día'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('hides starters after a message exists', (tester) async {
+    final message = MessageEntity(
+      id: 'existing-message',
+      conversationId: _chatId,
+      content: 'Hello',
+      messageType: .text,
+      isUser: true,
+      status: .sent,
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
+    );
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+      chatMessages: [message],
+    );
+
+    expect(
+      find.byKey(const ValueKey('chat_empty_starter_plan_day')),
+      findsNothing,
+    );
+  });
+
   testWidgets('shows and updates active sub-agent status in chat controls', (
     tester,
   ) async {
@@ -2037,6 +2125,7 @@ Future<void> _pumpCloudConversationScreen(
   Future<CloudTurnUsecase?>? usecaseFuture,
   bool iterationLimitReached = false,
   String? parentId,
+  Locale startLocale = const Locale('en'),
   GoRouter? router,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
@@ -2170,10 +2259,10 @@ Future<void> _pumpCloudConversationScreen(
             );
           },
         ),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: startLocale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),
