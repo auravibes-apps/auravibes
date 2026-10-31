@@ -26,13 +26,13 @@ class const AppAppearanceProfileSection({super.key}) extends ConsumerWidget {
 
 class const _AppearanceProfileHeading() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
+  Widget build(BuildContext context) => const AuraColumn(
     children: [
-      const AuraText(
+      AuraText(
         child: TextLocale(LocaleKeys.settings_screen_appearance_profile_title),
         style: .bodyLarge,
       ),
-      const AuraText(
+      AuraText(
         child: TextLocale(
           LocaleKeys.settings_screen_appearance_profile_description,
         ),
@@ -88,9 +88,9 @@ Future<void> _exportProfile(BuildContext context, WidgetRef ref) async {
     final saved = await ref
         .read(appAppearanceProfileUsecaseProvider)
         .exportProfile(_currentAppearanceProfile(ref));
-    if (saved) _showExportSuccess(context);
+    if (saved && context.mounted) _showExportSuccess(context);
   } on Object catch (_) {
-    _showActionFailure(context);
+    if (context.mounted) _showActionFailure(context);
   }
 }
 
@@ -106,9 +106,9 @@ Future<void> _importProfile(BuildContext context, WidgetRef ref) async {
   try {
     await _startAppearanceImport(context, ref);
   } on AppAppearanceProfileException catch (error) {
-    _showImportError(context, error);
+    if (context.mounted) _showImportError(context, error);
   } on Object catch (_) {
-    _showActionFailure(context);
+    if (context.mounted) _showActionFailure(context);
   }
 }
 
@@ -154,7 +154,7 @@ Future<void> _applyAppearanceProfile(
       .read(themeProvider.notifier)
       .setTheme(AppTheme.values.byName(profile.themeMode));
   await ref.read(accentHueProvider.notifier).setHue(profile.accentHue);
-  _showImportSuccess(context);
+  if (context.mounted) _showImportSuccess(context);
 }
 
 void _showImportError(

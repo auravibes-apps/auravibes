@@ -56,4 +56,4 @@ final class AppAppearanceProfileUsecaseProvider
 }
 
 String _$appAppearanceProfileUsecaseHash() =>
-    r'0b1406f2c9eda3bf1705bbd8102231dc57a7dfc3';
+    r'54694dbaf9049757bb2d1a288b78ec4dd1b075f8';
