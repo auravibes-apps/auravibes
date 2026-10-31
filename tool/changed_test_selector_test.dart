@@ -268,6 +268,121 @@ void main() {
     );
   });
 
+  test(
+    'repository selector includes current worktree and untracked tests',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final renameSource = File(
+        '${root.path}/packages/core/test/rename_me_test.dart',
+      );
+      await renameSource.writeAsString('void main() {}\n');
+      await _git(root, ['init', '--quiet']);
+      await _git(root, ['add', '.']);
+      await _git(root, [
+        '-c',
+        'user.name=Fixture',
+        '-c',
+        'user.email=fixture@example.invalid',
+        'commit',
+        '--quiet',
+        '-m',
+        'base',
+      ]);
+      final base = await _git(root, ['rev-parse', 'HEAD']);
+
+      final modifiedTest = File(
+        '${root.path}/packages/core/test/behavior_test.dart',
+      );
+      await modifiedTest.writeAsString(
+        'void main() { final changed = true; }\n',
+      );
+      var selection = await selectRepository(
+        rootPath: root.path,
+        base: base,
+        head: base,
+        includeWorkingTree: true,
+      );
+      expect(selection.mode, SelectionMode.affected);
+      expect(
+        selection.packages['packages/core'],
+        contains('test/behavior_test.dart'),
+      );
+
+      final addedTest = File(
+        '${root.path}/packages/core/test/added_test.dart',
+      );
+      await addedTest.writeAsString('void main() {}\n');
+      selection = await selectRepository(
+        rootPath: root.path,
+        base: base,
+        head: base,
+        includeWorkingTree: true,
+      );
+      expect(
+        selection.packages['packages/core'],
+        contains('test/added_test.dart'),
+      );
+
+      await _git(root, [
+        'mv',
+        'packages/core/test/rename_me_test.dart',
+        'packages/core/test/renamed_test.dart',
+      ]);
+      selection = await selectRepository(
+        rootPath: root.path,
+        base: base,
+        head: base,
+        includeWorkingTree: true,
+      );
+      expect(
+        selection.packages['packages/core'],
+        contains('test/renamed_test.dart'),
+      );
+
+      await modifiedTest.delete();
+      selection = await selectRepository(
+        rootPath: root.path,
+        base: base,
+        head: base,
+        includeWorkingTree: true,
+      );
+      expect(
+        selection.packages['packages/core'],
+        isNot(contains('test/behavior_test.dart')),
+      );
+
+      final unknown = File('${root.path}/unclassified/input.dat');
+      await unknown.parent.create(recursive: true);
+      await unknown.writeAsString('unknown input');
+      selection = await selectRepository(
+        rootPath: root.path,
+        base: base,
+        head: base,
+        includeWorkingTree: true,
+      );
+      expect(selection.mode, SelectionMode.full);
+      expect(selection.reason, 'Unsupported test input.');
+    },
+  );
+
+  test(
+    'repository selector reports snapshot failures as full fallback',
+    () async {
+      final root = await Directory.systemTemp.createTemp('selector-failure-');
+      addTearDown(() => root.delete(recursive: true));
+      final result = await selectRepository(
+        rootPath: root.path,
+        base: 'HEAD',
+        head: 'HEAD',
+        includeWorkingTree: true,
+      );
+
+      expect(result.mode, SelectionMode.full);
+      expect(result.reason, startsWith('Repository snapshot failed:'));
+    },
+  );
+
   test('selects direct, transitive, shared, and cross-package consumers', () {
     final result = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/lib/leaf.dart')],
@@ -779,6 +894,37 @@ void main() {
     },
   );
 
+  test('runner dry-run returns package-scoped planned commands', () async {
+    final root = await _runnerFixture();
+    addTearDown(() => root.delete(recursive: true));
+    final diagnostics = <String>[];
+    final planned = <String>[];
+    final code = await runSelectedTests(
+      SelectionResult(
+        mode: .affected,
+        packages: {
+          'packages/core': ['test/behavior_test.dart'],
+        },
+        reason: 'test',
+      ),
+      rootPath: root.path,
+      dryRun: true,
+      onDiagnostic: diagnostics.add,
+      onPlannedCommand: ({
+        required String executable,
+        required List<String> arguments,
+        required String workingDirectory,
+      }) {
+        planned.add('$executable ${arguments.join(' ')} @ $workingDirectory');
+      },
+    );
+
+    expect(code, 0);
+    expect(diagnostics.single, contains('packageRoot=packages/core'));
+    expect(planned.single, contains('test/behavior_test.dart'));
+    expect(planned.single, contains('${root.path}/packages/core'));
+  });
+
   test('runner validates paths before launching', () async {
     final root = await _runnerFixture();
     addTearDown(() => root.delete(recursive: true));
@@ -1238,6 +1384,17 @@ ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
   }
 
   return root;
+}
+
+Future<String> _git(Directory root, List<String> arguments) async {
+  final result = await Process.run(
+    'git',
+    arguments,
+    workingDirectory: root.path,
+  );
+  expect(result.exitCode, 0, reason: result.stderr.toString());
+
+  return result.stdout.toString().trim();
 }
 
 String _timingReport(

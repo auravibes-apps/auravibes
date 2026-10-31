@@ -420,6 +420,12 @@ typedef ProcessLauncher = Future<int> Function({
   required String workingDirectory,
 });
 
+typedef PlannedCommandListener = void Function({
+  required String executable,
+  required List<String> arguments,
+  required String workingDirectory,
+});
+
 /// One GitHub Actions matrix row for a selected package test group.
 class TestMatrixEntry {
   const new({
@@ -568,6 +574,7 @@ Future<int> runSelectedTests(
   required String rootPath,
   ProcessLauncher? launcher,
   void Function(String message)? onDiagnostic,
+  PlannedCommandListener? onPlannedCommand,
   bool dryRun = false,
   String? packageRoot,
   int? totalShards,
@@ -646,9 +653,17 @@ Future<int> runSelectedTests(
             '${_commandDiagnostic(group, activeCommand)}',
           );
           if (dryRun) {
-            stdout.writeln(
-              [command.executable, ...command.arguments].join(' '),
-            );
+            if (onPlannedCommand == null) {
+              stdout.writeln(
+                [command.executable, ...command.arguments].join(' '),
+              );
+            } else {
+              onPlannedCommand(
+                executable: command.executable,
+                arguments: command.arguments,
+                workingDirectory: group.package.absoluteRoot,
+              );
+            }
 
             return 0;
           }
@@ -773,6 +788,7 @@ Future<SelectionResult> selectRepository({
   required String rootPath,
   required String base,
   required String head,
+  bool includeWorkingTree = false,
 }) async {
   try {
     _validateRevision(base);
@@ -801,13 +817,24 @@ Future<SelectionResult> selectRepository({
         '$base:$normalized',
       ]);
     }
-    final diff = await _git(rootPath, [
+    var diff = await _git(rootPath, [
       'diff',
       '--name-status',
       '--find-renames',
       '-z',
-      '$base...$head',
+      if (includeWorkingTree) base else '$base...$head',
+      if (includeWorkingTree) '--',
     ]);
+    if (includeWorkingTree) {
+      final untracked = await _git(rootPath, [
+        'ls-files',
+        '--others',
+        '--exclude-standard',
+        '-z',
+      ]);
+      final paths = untracked.split('\u0000').where((path) => path.isNotEmpty);
+      diff += [for (final path in paths) ...['A', path, '']].join('\u0000');
+    }
 
     return selectChangedTests(
       changes: parseNameStatus(diff),
@@ -832,11 +859,17 @@ Future<void> main(List<String> args) async {
     final options = _options(args.skip(1));
     switch (args.firstOrNull) {
       case 'select':
-        _checkOptions(options, const {'base', 'head', 'output'});
+        _checkOptions(options, const {
+          'base',
+          'head',
+          'output',
+          'worktree',
+        });
         final result = await selectRepository(
           rootPath: Directory.current.path,
           base: _requiredOption(options, 'base'),
           head: _requiredOption(options, 'head'),
+          includeWorkingTree: options.containsKey('worktree'),
         );
         final _ = await File(_requiredOption(options, 'output'))
             .writeAsString(jsonEncode(result.toJson()));
@@ -1396,7 +1429,9 @@ Map<String, String> _options(Iterable<String> arguments) {
   final values = arguments.toList();
   for (var index = 0; index < values.length; index++) {
     final argument = values[index];
-    if (argument == '--dry-run' || argument == '--coverage') {
+    if (argument == '--dry-run' ||
+        argument == '--coverage' ||
+        argument == '--worktree') {
       options[argument._slice(2)] = '';
     } else if (argument.startsWith('--') && index + 1 < values.length) {
       options[argument._slice(2)] = values[++index];
