@@ -139,10 +139,15 @@ void main() {
       cloudWorkspaceState: UxValidationFixture.erasureConfirmationState,
     );
 
+    await fixture.settle(tester);
+    expect(find.text('Manage Workspaces'), findsOneWidget);
+    expect(find.text('Shared research space'), findsOneWidget);
     await tester.ensureVisible(find.text('Erase workspace data'));
     await tester.tap(find.text('Erase workspace data'));
     await fixture.settle(tester);
     expect(find.byType(AuraConfirmDialog), findsOneWidget);
+    expect(find.text('Manage Workspaces'), findsOneWidget);
+    expect(find.text('Shared research space'), findsOneWidget);
     await _capture(
       tester,
       'workspace-erasure-confirmation-disclosure',

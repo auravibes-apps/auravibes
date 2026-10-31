@@ -1,8 +1,8 @@
 {
   "name": "workspace-erasure-confirmation-disclosure",
-  "route": "/workspaces/01a191d5-0004-7d91-8fce-dc455e9c6102/manage-workspaces?view=connect",
+  "route": "/workspaces/019a1e91-0000-7000-8000-000000001691/manage-workspaces?view=connect",
   "fixture": "In-memory local workspace plus synthetic owner account and deleted cloud workspace state; confirmation open with no remote access or deletion",
-  "sourceFingerprint": "",
+  "sourceFingerprint": "e6b3e5bf04cd609c3f8e3065df08736be5053830",
   "renderer": "Flutter widget-test Skia, linux",
   "viewport": [
     960.0,
