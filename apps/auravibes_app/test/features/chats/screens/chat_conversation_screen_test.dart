@@ -2260,7 +2260,7 @@ Future<void> _pumpCloudConversationScreen(
                   (ref, _) => Stream.value(chatMessages),
                 ),
                 messageBookmarksProvider(_workspaceId)
-                    .overrideWith((ref, _) => Stream.value(const [])),
+                    .overrideWith((ref) => Stream.value(const [])),
                 chatMessageIdsProvider.overrideWith(
                   (ref, _) => const <String>[],
                 ),
