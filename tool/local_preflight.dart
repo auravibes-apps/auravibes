@@ -10,12 +10,13 @@ Future<void> main(List<String> arguments) async {
 }
 
 Future<int> runLocalPreflight(List<String> arguments) async {
-  late final _Options options;
+  final _Options options;
   try {
     options = _Options.parse(arguments);
   } on FormatException catch (error) {
-    stderr.writeln('local-preflight: $error');
-    stderr.writeln(_usage);
+    stderr
+      ..writeln('local-preflight: $error')
+      ..writeln(_usage);
 
     return 2;
   }
@@ -34,14 +35,15 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   final root = Directory((rootResult.stdout as String).trim());
   if (options.fullValidation) {
     const command = ['dart', 'run', 'melos', 'run', 'validate'];
-    stdout.writeln('Full workspace validation was explicitly requested.');
-    stdout.writeln(_formatCommand('fvm', command));
+    stdout
+      ..writeln('Full workspace validation was explicitly requested.')
+      ..writeln(_formatCommand('fvm', command));
     if (options.dryRun) return 0;
 
-    return _run('fvm', command, root);
+    return await _run('fvm', command, root);
   }
 
-  late final List<ChangedFile> changes;
+  final List<ChangedFile> changes;
   try {
     changes = await _workingTreeChanges(root, options.base);
   } on Object catch (error) {
@@ -60,15 +62,16 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     includeWorkingTree: true,
   );
 
-  stdout.writeln(
-    'Base: ${options.base} (working tree, including untracked files)',
-  );
-  stdout.writeln('Changed files: ${sortedChanges.length}');
+  stdout
+    ..writeln(
+      'Base: ${options.base} (working tree, including untracked files)',
+    )
+    ..writeln('Changed files: ${sortedChanges.length}');
   for (final change in sortedChanges) {
     stdout.writeln('  ${_changeLabel(change)}');
   }
   stdout.writeln(
-    'Test selection: ${selection.mode.name} — '
+    'Test selection: ${selection.mode.name} - '
     '${selection.reason.replaceAll(root.path, '.')}',
   );
   if (selection.mode == SelectionMode.full) {
@@ -99,19 +102,17 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   if (changedDartPaths.isEmpty) {
     stdout.writeln('  No command; no changed Dart files exist.');
   } else {
-    stdout.writeln('  Paths causing selection: ${changedDartPaths.join(', ')}');
-    stdout.writeln(
-      '  ${_formatCommand('fvm dart', formatArguments.skip(1))}',
-    );
+    stdout
+      ..writeln('  Paths causing selection: ${changedDartPaths.join(', ')}')
+      ..writeln('  ${_formatCommand('fvm dart', formatArguments.skip(1))}');
   }
   stdout.writeln('Analyzer (${analyzePaths.length} analyzed Dart files):');
   if (analyzePaths.isEmpty) {
     stdout.writeln('  No command; no changed Dart files are analyzed.');
   } else {
-    stdout.writeln('  Paths causing selection: ${analyzePaths.join(', ')}');
-    stdout.writeln(
-      '  ${_formatCommand('fvm dart', analyzeArguments.skip(1))}',
-    );
+    stdout
+      ..writeln('  Paths causing selection: ${analyzePaths.join(', ')}')
+      ..writeln('  ${_formatCommand('fvm dart', analyzeArguments.skip(1))}');
   }
 
   final plannedCommands = <_PlannedCommand>[];
@@ -119,21 +120,21 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   final planningExitCode = await runSelectedTests(
     selection,
     rootPath: root.path,
-    dryRun: true,
     onDiagnostic: diagnostics.add,
     onPlannedCommand: ({
-      required String executable,
-      required List<String> arguments,
-      required String workingDirectory,
+      required executable,
+      required arguments,
+      required workingDirectory,
     }) {
       plannedCommands.add(
-        _PlannedCommand(
+        .new(
           executable: executable,
           arguments: arguments,
           workingDirectory: workingDirectory,
         ),
       );
     },
+    dryRun: true,
   );
   if (planningExitCode != 0) {
     stderr.writeln('local-preflight: could not plan selected tests.');
@@ -150,19 +151,18 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     for (var index = 0; index < plannedCommands.length; index += 1) {
       final command = plannedCommands[index];
       final package = p.relative(command.workingDirectory, from: root.path);
-      stdout.writeln('  Package: $package');
       final testPaths = command.arguments
           .where((argument) => argument.startsWith('test/'))
           .toList();
-      stdout.writeln('    Selected test paths: ${testPaths.join(', ')}');
-      stdout.writeln(
-        '    Changed paths considered for this selection: '
-        '${sortedChanges.map(_changeLabel).join(', ')}',
-      );
       final commandName = _fvmCommand(root, command.executable);
-      stdout.writeln(
-        '    ${_formatCommand(commandName, command.arguments)}',
-      );
+      stdout
+        ..writeln('  Package: $package')
+        ..writeln('    Selected test paths: ${testPaths.join(', ')}')
+        ..writeln(
+          '    Changed paths considered for this selection: '
+          '${sortedChanges.map(_changeLabel).join(', ')}',
+        )
+        ..writeln('    ${_formatCommand(commandName, command.arguments)}');
     }
   }
   if (options.dryRun) return 0;
@@ -215,7 +215,9 @@ List<String> _existingChangedDartPaths(
     final path = change.newPath;
     if (path == null || !path.endsWith('.dart')) continue;
     final normalized = p.normalize(path);
-    if (File(p.join(root.path, normalized)).existsSync()) paths.add(normalized);
+    if (File(p.join(root.path, normalized)).existsSync()) {
+      final _ = paths.add(normalized);
+    }
   }
 
   return paths.toList()..sort();
@@ -230,7 +232,8 @@ Future<List<String>> _analyzedPaths(Directory root, List<String> paths) async {
     return paths
         .where(
           (path) => collection.contexts.any(
-          (context) => context.contextRoot.isAnalyzed(p.join(root.path, path)),
+            (context) =>
+                context.contextRoot.isAnalyzed(p.join(root.path, path)),
           ),
         )
         .toList();
@@ -281,7 +284,10 @@ String _formatCommand(String executable, Iterable<String> arguments) =>
 String _quote(String value) {
   if (RegExp(r'^[A-Za-z0-9_./:=,@+-]+$').hasMatch(value)) return value;
 
-  return "'${value.replaceAll("'", "'\\''")}'";
+  final quote = String.fromCharCode(0x27);
+  final escapedQuote = String.fromCharCodes([0x27, 0x5c, 0x27, 0x27]);
+
+  return '$quote${value.replaceAll(quote, escapedQuote)}$quote';
 }
 
 Future<int> _run(
@@ -299,17 +305,11 @@ Future<int> _run(
   return await process.exitCode;
 }
 
-class _PlannedCommand {
-  const _PlannedCommand({
-    required this.executable,
-    required this.arguments,
-    required this.workingDirectory,
-  });
-
-  final String executable;
-  final List<String> arguments;
-  final String workingDirectory;
-}
+class const _PlannedCommand({
+  required final String executable,
+  required final List<String> arguments,
+  required final String workingDirectory,
+});
 
 const _usage = '''
 Usage: melos run preflight:changed [-- --base <ref>]
@@ -320,15 +320,13 @@ are included. --dry-run prints selected formatter, analyzer, and test commands.
 --full-validation explicitly runs the complete Melos validate script.
 ''';
 
-class _Options {
-  const _Options({
-    required this.base,
-    required this.dryRun,
-    required this.fullValidation,
-    required this.help,
-  });
-
-  factory _Options.parse(List<String> arguments) {
+class const _Options({
+  required final String base,
+  required final bool dryRun,
+  required final bool fullValidation,
+  required final bool help,
+}) {
+  factory parse(List<String> arguments) {
     var base = 'origin/main';
     var dryRun = false;
     var fullValidation = false;
@@ -363,7 +361,7 @@ class _Options {
       );
     }
 
-    return _Options(
+    return .new(
       base: base,
       dryRun: dryRun,
       fullValidation: fullValidation,
@@ -371,8 +369,4 @@ class _Options {
     );
   }
 
-  final String base;
-  final bool dryRun;
-  final bool fullValidation;
-  final bool help;
 }

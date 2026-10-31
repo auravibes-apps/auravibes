@@ -276,10 +276,10 @@ void main() {
       final renameSource = File(
         '${root.path}/packages/core/test/rename_me_test.dart',
       );
-      await renameSource.writeAsString('void main() {}\n');
-      await _git(root, ['init', '--quiet']);
-      await _git(root, ['add', '.']);
-      await _git(root, [
+      final _ = await renameSource.writeAsString('void main() {}\n');
+      final _ = await _git(root, ['init', '--quiet']);
+      final _ = await _git(root, ['add', '.']);
+      final _ = await _git(root, [
         '-c',
         'user.name=Fixture',
         '-c',
@@ -296,7 +296,7 @@ void main() {
       final modifiedTest = File(
         '${root.path}/packages/core/test/behavior_test.dart',
       );
-      await modifiedTest.writeAsString(
+      final _ = await modifiedTest.writeAsString(
         'void main() { final changed = true; }\n',
       );
       var selection = await selectRepository(
@@ -314,7 +314,7 @@ void main() {
       final addedTest = File(
         '${root.path}/packages/core/test/added_test.dart',
       );
-      await addedTest.writeAsString('void main() {}\n');
+      final _ = await addedTest.writeAsString('void main() {}\n');
       selection = await selectRepository(
         rootPath: root.path,
         base: base,
@@ -326,7 +326,7 @@ void main() {
         contains('test/added_test.dart'),
       );
 
-      await _git(root, [
+      final _ = await _git(root, [
         'mv',
         'packages/core/test/rename_me_test.dart',
         'packages/core/test/renamed_test.dart',
@@ -342,7 +342,7 @@ void main() {
         contains('test/renamed_test.dart'),
       );
 
-      await modifiedTest.delete();
+      final _ = await modifiedTest.delete();
       selection = await selectRepository(
         rootPath: root.path,
         base: base,
@@ -355,8 +355,8 @@ void main() {
       );
 
       final unknown = File('${root.path}/unclassified/input.dat');
-      await unknown.parent.create(recursive: true);
-      await unknown.writeAsString('unknown input');
+      final _ = await unknown.parent.create(recursive: true);
+      final _ = await unknown.writeAsString('unknown input');
       selection = await selectRepository(
         rootPath: root.path,
         base: base,
@@ -446,30 +446,33 @@ void main() {
     });
   });
 
-  test('uses marker scope for Serverpod package with nonstandard root/name', () {
-    const sources = <String, String>{
-      'services/custom-root/lib/leaf.dart': 'class Leaf {}',
-      'services/custom-root/test/features/feature_test.dart':
-          '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
-      'services/custom-root/test/unit_test.dart':
-          '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
-      'services/custom-root/test/integration/test_tools/serverpod_test_tools.dart':
-          'class ServerpodMarker {}',
-    };
-    final result = selectChangedTests(
-      changes: [
-        const ChangedFile.modified('services/custom-root/lib/leaf.dart'),
-      ],
-      headSources: sources,
-      baseSources: sources,
-      packageRoots: const {'odd_name': 'services/custom-root'},
-      serverpodPackageRoots: const {'services/custom-root'},
-    );
+  test(
+    'uses marker scope for Serverpod package with nonstandard root/name',
+    () {
+      const sources = <String, String>{
+        'services/custom-root/lib/leaf.dart': 'class Leaf {}',
+        'services/custom-root/test/features/feature_test.dart':
+            '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
+        'services/custom-root/test/unit_test.dart':
+            '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
+        'services/custom-root/test/integration/test_tools/'
+            'serverpod_test_tools.dart': 'class ServerpodMarker {}',
+      };
+      final result = selectChangedTests(
+        changes: [
+          const ChangedFile.modified('services/custom-root/lib/leaf.dart'),
+        ],
+        headSources: sources,
+        baseSources: sources,
+        packageRoots: const {'odd_name': 'services/custom-root'},
+        serverpodPackageRoots: const {'services/custom-root'},
+      );
 
-    expect(result.packages, {
-      'services/custom-root': ['test/features/feature_test.dart'],
-    });
-  });
+      expect(result.packages, {
+        'services/custom-root': ['test/features/feature_test.dart'],
+      });
+    },
+  );
 
   test('docs-only and multiple changes are empty or sorted unions', () {
     final docs = selectChangedTests(
@@ -902,7 +905,7 @@ void main() {
     final diagnostics = <String>[];
     final planned = <String>[];
     final code = await runSelectedTests(
-      SelectionResult(
+      .new(
         mode: .affected,
         packages: {
           'packages/core': ['test/behavior_test.dart'],
@@ -910,15 +913,15 @@ void main() {
         reason: 'test',
       ),
       rootPath: root.path,
-      dryRun: true,
       onDiagnostic: diagnostics.add,
       onPlannedCommand: ({
-        required String executable,
-        required List<String> arguments,
-        required String workingDirectory,
+        required executable,
+        required arguments,
+        required workingDirectory,
       }) {
         planned.add('$executable ${arguments.join(' ')} @ $workingDirectory');
       },
+      dryRun: true,
     );
 
     expect(code, 0);

@@ -1076,7 +1076,8 @@ Future<List<_Package>> _loadPackages(String rootPath) async {
           (line) => RegExp(r'^  flutter:\s*(#.*)?$').hasMatch(line),
         ),
         serverpod: File(
-          '${packageRoot.path}/test/integration/test_tools/serverpod_test_tools.dart',
+          '${packageRoot.path}/test/integration/'
+          'test_tools/serverpod_test_tools.dart',
         ).existsSync(),
         absoluteRoot: packageRoot.absolute.path,
       ),
@@ -1097,8 +1098,10 @@ Future<Map<String, String>> _workspaceSources(List<_Package> packages) async {
     }
     await for (final entity in root.list(recursive: true, followLinks: false)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      sources['${package.relativeRoot}/${_relativePath(package.absoluteRoot, entity.path)}'] =
-          await entity.readAsString();
+      sources[
+        '${package.relativeRoot}/'
+        '${_relativePath(package.absoluteRoot, entity.path)}'
+      ] = await entity.readAsString();
     }
   }
 
