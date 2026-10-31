@@ -2,6 +2,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'aura_action_test_helpers.dart';
+
 void main() {
   group('Aura action test helpers', () {
     testWidgets('finds and activates a directly identified action', (
