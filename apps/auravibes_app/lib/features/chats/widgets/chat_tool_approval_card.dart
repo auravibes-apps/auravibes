@@ -124,6 +124,8 @@ class const _PendingToolCallsView({
       hiddenKeys: hiddenKeys,
       pendingCalls: pendingCalls,
       asyncCalls: asyncCalls,
+      onRetry: () =>
+          ref.invalidate(pendingToolCallsProvider(workspaceId, conversationId)),
     );
   }
 }
@@ -140,22 +142,157 @@ class const _PendingToolCallsResult({
   required final ValueNotifier<Set<String>> hiddenKeys,
   required final List<PendingToolCall>? pendingCalls,
   required final AsyncValue<List<PendingToolCall>>? asyncCalls,
+  required final VoidCallback onRetry,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (asyncCalls case AsyncError(:final error, :final stackTrace)) {
-      _logger.warning('Pending tool calls failed', error, stackTrace);
+    final calls = pendingCalls;
+    if (calls != null) {
+      return _PendingToolCallsList(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        hiddenKeys: hiddenKeys,
+        pendingCalls: calls,
+      );
+    }
 
-      return const SizedBox.shrink();
+    final asyncCalls = this.asyncCalls;
+    if (asyncCalls == null) return const SizedBox.shrink();
+
+    if (asyncCalls.hasError) {
+      final error = asyncCalls.error;
+      final stackTrace = asyncCalls.stackTrace;
+      if (error != null) {
+        _logger.warning('Pending tool calls failed', error, stackTrace);
+      }
+      final previousCalls = asyncCalls.value;
+      if (asyncCalls.hasValue && previousCalls != null) {
+        if (previousCalls.isEmpty) {
+          return _PendingToolCallsStatus(
+            message: const TextLocale(
+              LocaleKeys.tool_approval_pending_refresh_error,
+            ),
+            onRetry: onRetry,
+          );
+        }
+
+        return _PendingToolCallsRefreshing(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          hiddenKeys: hiddenKeys,
+          pendingCalls: previousCalls,
+          message: const TextLocale(
+            LocaleKeys.tool_approval_pending_refresh_error,
+          ),
+          showProgress: false,
+          onRetry: onRetry,
+        );
+      }
+
+      return _PendingToolCallsStatus(
+        message: const TextLocale(LocaleKeys.tool_approval_pending_load_error),
+        onRetry: onRetry,
+      );
+    }
+
+    if (asyncCalls.isLoading) {
+      final previousCalls = asyncCalls.value;
+      if (asyncCalls.hasValue && previousCalls != null) {
+        if (previousCalls.isEmpty) {
+          return const _PendingToolCallsStatus(
+            message: TextLocale(LocaleKeys.tool_approval_pending_refreshing),
+            showProgress: true,
+          );
+        }
+
+        return _PendingToolCallsRefreshing(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          hiddenKeys: hiddenKeys,
+          pendingCalls: previousCalls,
+          message: const TextLocale(
+            LocaleKeys.tool_approval_pending_refreshing,
+          ),
+        );
+      }
+
+      return const _PendingToolCallsStatus(
+        message: TextLocale(LocaleKeys.tool_approval_pending_loading),
+        showProgress: true,
+      );
     }
 
     return _PendingToolCallsList(
       workspaceId: workspaceId,
       conversationId: conversationId,
       hiddenKeys: hiddenKeys,
-      pendingCalls: pendingCalls ?? asyncCalls?.value ?? const [],
+      pendingCalls: asyncCalls.value ?? const [],
     );
   }
+}
+
+class const _PendingToolCallsRefreshing({
+  required final String workspaceId,
+  required final String conversationId,
+  required final ValueNotifier<Set<String>> hiddenKeys,
+  required final List<PendingToolCall> pendingCalls,
+  required final Widget message,
+  final bool showProgress = true,
+  final VoidCallback? onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _PendingToolCallsStatus(
+        message: message,
+        showProgress: showProgress,
+        onRetry: onRetry,
+      ),
+      _PendingToolCallsList(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        hiddenKeys: hiddenKeys,
+        pendingCalls: pendingCalls,
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .stretch,
+    mainAxisSize: .min,
+  );
+}
+
+class const _PendingToolCallsStatus({
+  required final Widget message,
+  final bool showProgress = false,
+  final VoidCallback? onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      AuraRow(
+        children: [
+          if (showProgress)
+            const ExcludeSemantics(
+              child: SizedBox.square(child: AuraSpinner(), dimension: 16),
+            ),
+          Flexible(child: Semantics(child: message, liveRegion: true)),
+        ],
+        spacing: .xs,
+        mainAxisSize: .min,
+      ),
+      if (onRetry case final retry?)
+        AuraButton(
+          onPressed: retry,
+          child: const TextLocale(LocaleKeys.route_state_retry),
+          variant: .outlined,
+          size: .small,
+          identifier: 'tool_approval_retry',
+        ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+    mainAxisSize: .min,
+  );
 }
 
 class const _PendingToolCallsList({

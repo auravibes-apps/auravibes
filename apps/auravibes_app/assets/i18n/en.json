@@ -1180,6 +1180,10 @@
   },
   "tool_approval": {
     "pending_count": "Tool approval {} of {}",
+    "pending_loading": "Loading pending tool approvals…",
+    "pending_refreshing": "Refreshing pending tool approvals…",
+    "pending_load_error": "Could not load pending tool approvals.",
+    "pending_refresh_error": "Pending tool approvals are out of date. Could not refresh.",
     "errors": {
       "approve_once": "Could not approve this tool call.",
       "approve_conversation": "Could not approve this tool call for the conversation.",

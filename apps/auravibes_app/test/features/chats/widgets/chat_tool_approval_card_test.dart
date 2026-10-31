@@ -15,6 +15,7 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
@@ -53,9 +54,19 @@ class _FakeBatchToolApprovalActions implements BatchToolApprovalActions {
 }
 
 void main() {
+  setUpAll(() async {
+    await (FontLoader(
+      'Inter',
+    )..addFont(rootBundle.load('assets/fonts/Inter.ttf'))).load();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  });
+
   Widget buildSubject({
     required List<Object> overrides,
     Locale startLocale = const Locale('en'),
+    Widget? child,
   }) {
     return EasyLocalization(
       child: ProviderScope(
@@ -66,12 +77,14 @@ void main() {
               home: AuraThemeScope(
                 theme: .light,
                 child: Theme(
-                  data: .new(),
-                  child: const Material(
-                    child: ChatToolApprovalCard(
-                      workspaceId: 'ws-1',
-                      conversationId: 'conv-1',
-                    ),
+                  data: .new(fontFamily: 'Inter'),
+                  child: Material(
+                    child:
+                        child ??
+                        const ChatToolApprovalCard(
+                          workspaceId: 'ws-1',
+                          conversationId: 'conv-1',
+                        ),
                   ),
                 ),
               ),
@@ -130,6 +143,291 @@ void main() {
   }
 
   group('ChatToolApprovalCard', () {
+    testWidgets('renders the recovered pending-approval load error', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(640, 240));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) async => throw StateError('pending read failed'),
+            ),
+          ],
+          child: const Center(
+            child: SizedBox(
+              key: ValueKey<String>('tool_approval_capture'),
+              width: 480,
+              height: 160,
+              child: ColoredBox(
+                color: .new(0xFFFFFFFF),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: ChatToolApprovalCard(
+                    workspaceId: 'ws-1',
+                    conversationId: 'conv-1',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final _ = await tester.pumpAndSettle();
+      final capture = find.byKey(
+        const ValueKey<String>('tool_approval_capture'),
+      );
+      expect(
+        find.descendant(
+          of: capture,
+          matching: find.text('Could not load pending tool approvals.'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: capture, matching: find.text('Retry')),
+        findsOneWidget,
+      );
+
+      await expectLater(
+        capture,
+        matchesGoldenFile('goldens/chat_tool_approval_load_error.png'),
+      );
+    }, tags: ['golden']);
+
+    testWidgets(
+      'shows localized accessible retry UI after initial load failure',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        try {
+          await pumpAndInit(
+            tester,
+            buildSubject(
+              startLocale: const Locale('es'),
+              overrides: [
+                pendingToolCallsProvider.overrideWith(
+                  (ref, _) async => throw StateError('pending read failed'),
+                ),
+              ],
+            ),
+          );
+
+          final errorMessage = find.text(
+            'No se pudieron cargar las aprobaciones de '
+            'herramientas pendientes.',
+          );
+          expect(errorMessage, findsOneWidget);
+          expect(
+            tester
+                .getSemantics(errorMessage)
+                .getSemanticsData()
+                .flagsCollection
+                .isLiveRegion,
+            isTrue,
+          );
+
+          final retry = find.text('Reintentar');
+          expect(retry, findsOneWidget);
+          expect(
+            tester.getSemantics(retry).getSemanticsData().hasAction(.tap),
+            isTrue,
+          );
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+
+    testWidgets('retry reloads pending calls without making a decision', (
+      tester,
+    ) async {
+      final pendingCalls = [_createPendingToolCall()];
+      final effects = _DecisionEffects();
+      final runtime = _MockAuraAgentService();
+      when(() => runtime.tools).thenReturn(
+        agent.ToolsNamespace<ResolvedTool>(
+          approvals: effects,
+          skips: effects,
+          stopPending: effects,
+          resume: _MockAgentToolResumeProvider(),
+          cancellationEffects: _MockAgentCancellationEffects(),
+        ),
+      );
+      var providerReads = 0;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            auraAgentServiceProvider.overrideWithValue(runtime),
+            pendingToolCallsProvider.overrideWith((ref, _) async {
+              providerReads++;
+              if (providerReads == 1) throw StateError('first read failed');
+
+              return pendingCalls;
+            }),
+          ],
+        ),
+      );
+
+      expect(providerReads, 1);
+      expect(find.text('Retry'), findsOneWidget);
+      await tester.tap(find.text('Retry'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(providerReads, 2);
+      expect(find.text('Read File'), findsOneWidget);
+      expect(effects.sources, isEmpty);
+      expect(effects.grants, isEmpty);
+      expect(effects.executions, 0);
+      expect(effects.skipCount, 0);
+      expect(effects.stopCount, 0);
+      expect(effects.resumeCount, 0);
+    });
+
+    testWidgets('shows loading while pending calls are unresolved', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      final pendingCalls = Completer<List<PendingToolCall>>();
+      try {
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            overrides: [
+              pendingToolCallsProvider.overrideWith(
+                (ref, _) => pendingCalls.future,
+              ),
+            ],
+          ),
+        );
+
+        final loading = find.text('Loading pending tool approvals\u2026');
+        expect(loading, findsOneWidget);
+        expect(
+          tester
+              .getSemantics(loading)
+              .getSemanticsData()
+              .flagsCollection
+              .isLiveRegion,
+          isTrue,
+        );
+
+        pendingCalls.complete(const <PendingToolCall>[]);
+        final _ = await tester.pumpAndSettle();
+      } finally {
+        semantics.dispose();
+      }
+    });
+
+    testWidgets(
+      'keeps prior calls visible with a loading status during refresh',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        final pendingCalls = [_createPendingToolCall()];
+        final refresh = Completer<List<PendingToolCall>>();
+        var providerReads = 0;
+        try {
+          await pumpAndInit(
+            tester,
+            buildSubject(
+              overrides: [
+                pendingToolCallsProvider.overrideWith((ref, _) {
+                  providerReads++;
+
+                  return providerReads == 1
+                      ? Future.value(pendingCalls)
+                      : refresh.future;
+                }),
+              ],
+            ),
+          );
+
+          expect(find.text('Read File'), findsOneWidget);
+          ProviderScope.containerOf(
+            tester.element(find.byType(ChatToolApprovalCard)),
+            listen: false,
+          )..invalidate(pendingToolCallsProvider('ws-1', 'conv-1'));
+          for (var frame = 0; frame < 2; frame++) {
+            final _ = await tester.pump();
+          }
+
+          final refreshing = find.text(
+            'Refreshing pending tool approvals\u2026',
+          );
+          expect(providerReads, 2);
+          expect(find.text('Read File'), findsOneWidget);
+          expect(refreshing, findsOneWidget);
+          expect(
+            tester
+                .getSemantics(refreshing)
+                .getSemanticsData()
+                .flagsCollection
+                .isLiveRegion,
+            isTrue,
+          );
+
+          refresh.complete(pendingCalls);
+          final _ = await tester.pumpAndSettle();
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+
+    testWidgets(
+      'keeps prior calls visible and marks them stale after refresh failure',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        final pendingCalls = [_createPendingToolCall()];
+        var providerReads = 0;
+
+        try {
+          await pumpAndInit(
+            tester,
+            buildSubject(
+              overrides: [
+                pendingToolCallsProvider.overrideWith((ref, _) {
+                  providerReads++;
+                  if (providerReads == 1) return Future.value(pendingCalls);
+
+                  return Future.error(StateError('refresh failed'));
+                }),
+              ],
+            ),
+          );
+
+          ProviderScope.containerOf(
+            tester.element(find.byType(ChatToolApprovalCard)),
+            listen: false,
+          )..invalidate(pendingToolCallsProvider('ws-1', 'conv-1'));
+          final _ = await tester.pumpAndSettle();
+
+          final staleMessage = find.text(
+            'Pending tool approvals are out of date. Could not refresh.',
+          );
+          expect(providerReads, 2);
+          expect(find.text('Read File'), findsOneWidget);
+          expect(staleMessage, findsOneWidget);
+          expect(
+            tester
+                .getSemantics(staleMessage)
+                .getSemanticsData()
+                .flagsCollection
+                .isLiveRegion,
+            isTrue,
+          );
+          expect(find.text('Retry'), findsOneWidget);
+        } finally {
+          semantics.dispose();
+        }
+      },
+    );
+
     testWidgets('renders SizedBox.shrink when no pending calls', (
       tester,
     ) async {
@@ -734,23 +1032,25 @@ void main() {
       expect(find.textContaining('visible'), findsOneWidget);
     });
 
-    testWidgets('renders SizedBox.shrink when async has error', (tester) async {
+    testWidgets('shows an error and retry when initial async load fails', (
+      tester,
+    ) async {
       await pumpAndInit(
         tester,
         buildSubject(
           overrides: [
             pendingToolCallsProvider.overrideWith(
-              (ref, _) => throw Exception('fail'),
+              (ref, _) async => throw Exception('fail'),
             ),
           ],
         ),
       );
 
-      final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
       expect(
-        sizedBoxes.any((box) => box.width == 0 && box.height == 0),
-        isTrue,
+        find.text('Could not load pending tool approvals.'),
+        findsOneWidget,
       );
+      expect(find.text('Retry'), findsOneWidget);
     });
 
     testWidgets('shows count and navigates between pending calls', (
