@@ -2119,8 +2119,6 @@ class const _ChatInputFooterContent({required final _ChatInputState state})
       child: Column(
         crossAxisAlignment: .start,
         children: [
-          if (state.capabilities.isLocalWorkspace)
-            const _LocalWorkspaceNetworkDisclosure(),
           _ChatInputAttachments(state: state),
           _ChatInputDisabledHintSection(hint: state.input.disabledHint),
           _ChatInputControls(state: state),
@@ -2132,18 +2130,27 @@ class const _ChatInputFooterContent({required final _ChatInputState state})
 
 class const _LocalWorkspaceNetworkDisclosure() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraPadding(
-    child: AuraCallout(
-      title: 'workspace_network_disclosure.title'.tr(context: context),
-      key: const ValueKey<String>('local_workspace_network_disclosure'),
-      description: 'workspace_network_disclosure.description'.tr(
-        context: context,
-      ),
+  Widget build(BuildContext context) {
+    final label = 'workspace_network_disclosure.title'.tr(context: context);
+
+    return AuraIconButton(
       icon: Icons.public_outlined,
-    ),
-    padding: const AuraEdgeInsetsGeometry.only(bottom: .sm),
-  );
+      onPressed: () => unawaited(_showLocalWorkspaceNetworkDisclosure(context)),
+      key: const ValueKey<String>('local_workspace_network_disclosure'),
+      size: .small,
+      semanticLabel: label,
+      tooltip: label,
+    );
+  }
 }
+
+Future<void> _showLocalWorkspaceNetworkDisclosure(BuildContext context) =>
+    AuraDialogs.alert(
+      context: context,
+      title: const TextLocale('workspace_network_disclosure.title'),
+      message: const TextLocale('workspace_network_disclosure.description'),
+      dismissLabel: const TextLocale(LocaleKeys.common_close),
+    );
 
 class const _ChatInputAttachments({required final _ChatInputState state})
     extends StatelessWidget {
@@ -2305,6 +2312,8 @@ class const _ChatInputLeadingControls({
     return Row(
       mainAxisSize: .min,
       children: [
+        if (state.capabilities.isLocalWorkspace)
+          const _LocalWorkspaceNetworkDisclosure(),
         if (!isRecording) _ChatInputBrowseControls(state: state),
         if (!isRecording || hasToolAccessMode)
           _ChatInputControlSpacing(compact: compact),

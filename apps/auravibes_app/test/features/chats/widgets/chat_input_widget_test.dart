@@ -654,7 +654,17 @@ void main() {
       find.byKey(const ValueKey<String>('local_workspace_network_disclosure')),
       findsOneWidget,
     );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('local_workspace_network_disclosure')),
+    );
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Local storage does not mean offline.'), findsOneWidget);
+    expect(
+      find.textContaining('Sending a message sends its text'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'unsent message');
     await tester.pump();
     await tester.tap(
