@@ -1,0 +1,148 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:auravibes_app/features/workspaces/models/workspace_search_index.dart';
+import 'package:unorm_dart/unorm_dart.dart';
+
+// The before path mirrors the former screen helpers. The after path builds one
+// index per data snapshot and includes the same cache-validity check used by
+// the screen before each warm search.
+const _catalogSizes = [50, 1000, 10000];
+const _sampleCount = 9;
+const _query = 'workspace';
+
+var _resultSink = 0;
+
+void main() {
+  final results = [for (final size in _catalogSizes) _measureCatalog(size)];
+  stdout.writeln(
+    jsonEncode({
+      'benchmark': 'synthetic_workspace_search',
+      'dart': Platform.version.split(' ').first,
+      'os': Platform.operatingSystem,
+      'samples': _sampleCount,
+      'query': _query,
+      'resultSink': _resultSink,
+      'results': results,
+    }),
+  );
+}
+
+Map<String, Object?> _measureCatalog(int size) {
+  final catalog = [
+    for (var index = 0; index < size; index++)
+      _CatalogItem(
+        id: index.toString().padLeft(8, '0'),
+        name: switch (index % 4) {
+          0 => 'Café Alpha Workspace $index',
+          1 => 'Résumé Beta Workspace $index',
+          2 => 'Workspace Gamma $index',
+          _ => 'Workspace Delta $index',
+        },
+      ),
+  ];
+  final baselineMatches = _baselineFilter(catalog, _query);
+  final index = _newIndex(catalog);
+  final indexedMatches = index.matching(_query);
+
+  final before = <String, int>{
+    'normalizeAllUs': _measure(() => _baselineNormalizeAll(catalog)),
+    'filterUs': _measure(() => _baselineFilter(catalog, _query).length),
+    'sortUs': _measure(() => _baselineSort(baselineMatches).length),
+    'searchUs': _measure(
+      () => _baselineSort(_baselineFilter(catalog, _query)).length,
+    ),
+  };
+
+  late WorkspaceSearchIndex<_CatalogItem> measuredIndex;
+  final after = <String, int>{
+    'normalizeAllUs': _measure(() => _indexedNormalizeAll(catalog)),
+    'indexBuildUs': _measure(() {
+      measuredIndex = _newIndex(catalog);
+      return catalog.length;
+    }),
+    'cacheCheckUs': _measure(() => measuredIndex.hasSameItems(catalog) ? 1 : 0),
+    'filterUs': _measure(() => measuredIndex.matching(_query).length),
+    'sortUs': _measure(() => measuredIndex.sort(indexedMatches).length),
+    'warmSearchUs': _measure(() {
+      if (!measuredIndex.hasSameItems(catalog)) {
+        measuredIndex = _newIndex(catalog);
+      }
+      return measuredIndex.search(_query).length;
+    }),
+  };
+  final perSearchSavings = before['searchUs']! - after['warmSearchUs']!;
+  final rebuildCost = after['indexBuildUs']!;
+
+  return {
+    'catalogSize': size,
+    'matchedCount': baselineMatches.length,
+    'before': before,
+    'after': after,
+    'estimatedBreakEvenQueries': perSearchSavings <= 0
+        ? null
+        : (rebuildCost / perSearchSavings).ceil(),
+  };
+}
+
+WorkspaceSearchIndex<_CatalogItem> _newIndex(List<_CatalogItem> catalog) =>
+    WorkspaceSearchIndex(
+      catalog,
+      nameOf: (item) => item.name,
+      idOf: (item) => item.id,
+    );
+
+int _measure(int Function() operation) {
+  final samples = <int>[];
+  _resultSink = operation();
+  for (var sample = 0; sample < _sampleCount; sample++) {
+    final timer = Stopwatch()..start();
+    _resultSink = operation();
+    timer.stop();
+    samples.add(timer.elapsedMicroseconds);
+  }
+  samples.sort();
+
+  return samples[samples.length ~/ 2];
+}
+
+int _baselineNormalizeAll(List<_CatalogItem> catalog) {
+  var normalizedLength = 0;
+  for (final item in catalog) {
+    normalizedLength += _normalizeBefore(item.name).length;
+  }
+  return normalizedLength;
+}
+
+int _indexedNormalizeAll(List<_CatalogItem> catalog) {
+  var normalizedLength = 0;
+  for (final item in catalog) {
+    normalizedLength += normalizeWorkspaceSearch(item.name).length;
+  }
+  return normalizedLength;
+}
+
+String _normalizeBefore(String value) =>
+    nfkd(value).replaceAll(RegExp(r'\p{M}', unicode: true), '').toLowerCase();
+
+List<_CatalogItem> _baselineFilter(
+  List<_CatalogItem> catalog,
+  String normalizedQuery,
+) => catalog
+    .where((item) => _normalizeBefore(item.name).contains(normalizedQuery))
+    .toList();
+
+List<_CatalogItem> _baselineSort(List<_CatalogItem> items) =>
+    List<_CatalogItem>.of(items)..sort((left, right) {
+      final comparison = left.name.toLowerCase().compareTo(
+        right.name.toLowerCase(),
+      );
+      return comparison != 0 ? comparison : left.id.compareTo(right.id);
+    });
+
+final class _CatalogItem {
+  const _CatalogItem({required this.id, required this.name});
+
+  final String id;
+  final String name;
+}
