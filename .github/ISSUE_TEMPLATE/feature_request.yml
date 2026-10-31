@@ -1,0 +1,59 @@
+name: Feature request
+description: Describe a user problem and a behavior that would solve it.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include passwords, API keys, tokens, personal data, or other private information.
+        Do not post vulnerability details in a public issue. Use the repository's private
+        vulnerability reporting option if it is available.
+
+  - type: textarea
+    id: user-problem
+    attributes:
+      label: User problem
+      description: Who is affected, and what are they trying to do?
+      placeholder: Describe the problem from the user's perspective.
+    validations:
+      required: true
+
+  - type: textarea
+    id: intended-behavior
+    attributes:
+      label: Intended behavior
+      description: What should AuraVibes do?
+      placeholder: Describe the outcome that would solve the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope-acceptance
+    attributes:
+      label: Scope and acceptance criteria
+      description: What must be included for the request to be complete?
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Exclusions or constraints
+      description: Optional. Note behaviors or approaches that should stay out of scope.
+      placeholder: Describe important exclusions or constraints.
+    validations:
+      required: false
+
+  - type: textarea
+    id: supporting-context
+    attributes:
+      label: Supporting context
+      description: Optional. Add examples or links; redact private information.
+      placeholder: Add context that helps maintainers evaluate the request.
+    validations:
+      required: false
