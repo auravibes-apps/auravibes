@@ -1,5 +1,8 @@
 import 'package:characters/characters.dart';
 
+const _workspacePrefixSegmentCount = 3;
+const _legacyDestinationStartSegmentIndex = 4;
+
 /// Normalizes legacy workspace locations before route matching and validation.
 abstract final class WorkspaceRouteNormalizer {
   /// Rewrites `/workspaces/<id>/more/<destination>` to its canonical path.
@@ -29,6 +32,7 @@ abstract final class _LegacyMoreLocationNormalizer {
     if (segments == null) return null;
 
     final canonicalPath = _canonicalPath(segments);
+
     return _appendCanonicalQuery(canonicalPath, segments, rawLocation);
   }
 
@@ -36,88 +40,71 @@ abstract final class _LegacyMoreLocationNormalizer {
     final characters = location.characters.toList();
     final queryIndex = characters.indexOf('?');
     final fragmentIndex = characters.indexOf('#');
-    final queryAndFragment = _queryAndFragment(
-      characters,
-      queryIndex,
-      fragmentIndex,
-    );
+    final rawQuery = _rawQuery(characters, queryIndex, fragmentIndex);
+    final fragmentSuffix = _fragmentSuffix(characters, fragmentIndex);
 
     return (
-      path: characters
-          .take(_pathEnd(characters.length, queryIndex, fragmentIndex))
-          .join(),
-      query: queryAndFragment.query,
-      fragmentSuffix: queryAndFragment.fragmentSuffix,
-    );
-  }
-
-  static int _pathEnd(int length, int queryIndex, int fragmentIndex) {
-    var pathEnd = length;
-    if (queryIndex >= 0 && queryIndex < pathEnd) pathEnd = queryIndex;
-    if (fragmentIndex >= 0 && fragmentIndex < pathEnd) {
-      pathEnd = fragmentIndex;
-    }
-    return pathEnd;
-  }
-
-  static ({String? query, String fragmentSuffix}) _queryAndFragment(
-    List<String> characters,
-    int queryIndex,
-    int fragmentIndex,
-  ) {
-    final fragmentSuffix = fragmentIndex < 0
-        ? ''
-        : characters.skip(fragmentIndex).join();
-    if (queryIndex < 0 ||
-        (fragmentIndex >= 0 && fragmentIndex < queryIndex)) {
-      return (query: null, fragmentSuffix: fragmentSuffix);
-    }
-
-    final queryEnd = fragmentIndex < 0
-        ? characters.length
-        : fragmentIndex;
-    return (
-      query: characters
-          .skip(queryIndex + 1)
-          .take(queryEnd - queryIndex - 1)
-          .join(),
+      path: _rawPath(characters, queryIndex, fragmentIndex),
+      query: rawQuery,
       fragmentSuffix: fragmentSuffix,
     );
   }
 
+  static String? _rawQuery(
+    List<String> characters,
+    int queryIndex,
+    int fragmentIndex,
+  ) {
+    if (queryIndex < 0 || (fragmentIndex >= 0 && fragmentIndex < queryIndex)) {
+      return null;
+    }
+
+    final queryEnd = fragmentIndex < 0 ? characters.length : fragmentIndex;
+
+    return characters
+        .skip(queryIndex + 1)
+        .take(queryEnd - queryIndex - 1)
+        .join();
+  }
+
+  static String _fragmentSuffix(List<String> characters, int fragmentIndex) =>
+      fragmentIndex < 0 ? '' : characters.skip(fragmentIndex).join();
+
   static List<String>? _legacyMoreSegments(String rawPath) {
     final segments = rawPath.split('/');
-    if (segments.length < 5 ||
+    if (segments.length <= _legacyDestinationStartSegmentIndex ||
         segments.firstOrNull != '' ||
         segments[1] != 'workspaces' ||
         segments[2].isEmpty ||
         segments[3] != 'more' ||
-        segments[4].isEmpty) {
+        segments[_legacyDestinationStartSegmentIndex].isEmpty) {
       return null;
     }
+
     return segments;
   }
 
-  static String _canonicalPath(List<String> segments) => [
-    ...segments.take(3),
-    ...segments.skip(4),
-  ].join('/');
+  static String _canonicalPath(List<String> segments) =>
+      [
+        ...segments.take(_workspacePrefixSegmentCount),
+        ...segments.skip(_legacyDestinationStartSegmentIndex),
+      ].join('/');
 
   static String _appendCanonicalQuery(
     String canonicalPath,
     List<String> segments,
     _RawLocationParts rawLocation,
   ) {
-    final acceptedKeys = _acceptedQueryKeys(segments.skip(4).toList());
+    final acceptedKeys = _acceptedQueryKeys(
+      segments.skip(_legacyDestinationStartSegmentIndex).toList(),
+    );
     final query = _canonicalQuery(rawLocation.query, acceptedKeys);
     final querySuffix = query == null ? '' : '?$query';
+
     return '$canonicalPath$querySuffix${rawLocation.fragmentSuffix}';
   }
 
-  static String? _canonicalQuery(
-    String? rawQuery,
-    Set<String> acceptedKeys,
-  ) {
+  static String? _canonicalQuery(String? rawQuery, Set<String> acceptedKeys) {
     if (rawQuery == null || rawQuery.isEmpty || acceptedKeys.isEmpty) {
       return null;
     }
@@ -125,6 +112,7 @@ abstract final class _LegacyMoreLocationNormalizer {
     final queryValues = Uri.parse('/?$rawQuery').queryParametersAll;
     final filtered = _singleAcceptedValues(queryValues, acceptedKeys);
     if (filtered.isEmpty) return null;
+
     return Uri(queryParameters: filtered).query;
   }
 
@@ -139,6 +127,7 @@ abstract final class _LegacyMoreLocationNormalizer {
         filtered[key] = values.single;
       }
     }
+
     return filtered;
   }
 
@@ -159,4 +148,14 @@ abstract final class _LegacyMoreLocationNormalizer {
     },
     _ => const {},
   };
+}
+
+String _rawPath(List<String> characters, int queryIndex, int fragmentIndex) {
+  var pathEnd = characters.length;
+  if (queryIndex >= 0 && queryIndex < pathEnd) pathEnd = queryIndex;
+  if (fragmentIndex >= 0 && fragmentIndex < pathEnd) {
+    pathEnd = fragmentIndex;
+  }
+
+  return characters.take(pathEnd).join();
 }

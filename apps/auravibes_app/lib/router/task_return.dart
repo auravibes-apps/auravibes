@@ -25,12 +25,6 @@ abstract final class TaskReturn {
 }
 
 abstract final class _TaskReturnValidation {
-  static String? _normalizeLegacyLocation(String? location) {
-    if (location == null) return null;
-    return WorkspaceRouteNormalizer.normalizeLegacyMoreLocation(location) ??
-        location;
-  }
-
   static bool isWorkspaceTask(Uri uri, String workspaceId) {
     if (uri.hasScheme || uri.hasAuthority || uri.hasFragment) return false;
     final parts = uri.pathSegments;
@@ -42,6 +36,13 @@ abstract final class _TaskReturnValidation {
     }
 
     return _recognized(parts.skip(2).toList());
+  }
+
+  static String? _normalizeLegacyLocation(String? location) {
+    if (location == null) return null;
+
+    return WorkspaceRouteNormalizer.normalizeLegacyMoreLocation(location) ??
+        location;
   }
 
   static bool _hasSafeLocation(String? location) =>
