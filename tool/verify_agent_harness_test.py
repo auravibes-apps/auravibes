@@ -130,6 +130,14 @@ class HarnessVerificationTest(unittest.TestCase):
             "Run `fvm dart run melos bootstrap` to set up the workspace.\n"
             "Run `melos exec -- flutter test` for package-local execution.\n"
             "Run `flutter test` for an individual package.\n"
+            "\n"
+            "Generic Melos configuration example:\n"
+            "```yaml\n"
+            "melos:\n"
+            "  scripts:\n"
+            "    test:\n"
+            "      run: melos run test\n"
+            "```\n"
         )
 
         self.assertEqual(verify(self.root), [])
