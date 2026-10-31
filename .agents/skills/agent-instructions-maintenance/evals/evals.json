@@ -78,6 +78,24 @@
       "prompt": "Fix one misspelled label in an existing test.",
       "expected_output": "Makes the focused correction and runs its relevant check. Does not require broad DCL, Serverpod setup, or a parallel handoff workflow.",
       "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "The harness verifier rejects GitHub's documented `$/...` self-repository action reference as an unpinned external action. Fix the verifier and preserve external SHA checks.",
+      "expected_output": "Confirms `$/` resolves to the running commit, updates the verifier and regression test to accept it, keeps full-SHA enforcement for external actions, routes harness tooling changes through narrow checks, and updates the maintenance evaluation cases.",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "CI recommends `$/` for our local setup action, but Harness Verification fails and calls it mutable. Make the workflow and verifier agree.",
+      "expected_output": "Verifies the official same-repository syntax, fixes the false positive with a focused regression test, preserves external action pinning, adds maintenance evaluation coverage, and runs the harness check.",
+      "files": []
+    },
+    {
+      "id": 16,
+      "prompt": "Pin `example-org/action@v4` in this workflow to a full commit SHA.",
+      "expected_output": "Pins the external action and runs the relevant workflow check. Does not load or change the agent-instructions maintenance skill or its evaluations.",
+      "files": []
     }
   ]
 }

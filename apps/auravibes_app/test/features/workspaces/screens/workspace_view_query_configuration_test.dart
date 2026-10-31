@@ -52,9 +52,11 @@ void main() {
     );
     final query = ValueNotifier(const WorkspaceRecordQuery());
     final summary = ValueNotifier(<String>{});
+    final action = ValueNotifier<A2uiSavedAction?>(null);
     final layout = TextEditingController();
     addTearDown(query.dispose);
     addTearDown(summary.dispose);
+    addTearDown(action.dispose);
     addTearDown(layout.dispose);
     final view = WorkspaceView.create(
       name: 'Related',
@@ -81,6 +83,7 @@ void main() {
                   layout: layout,
                   summary: summary,
                   bindings: view.bindings,
+                  action: action,
                 ),
               ),
             ),
@@ -128,6 +131,19 @@ void main() {
       ),
       isTrue,
     );
+    await tester.ensureVisible(_button('workspace_view_layout_form'));
+    await tester.tap(_button('workspace_view_layout_form'));
+    final formDefinition = A2uiSavedDefinition.fromJson(
+      Map<String, Object?>.from(jsonDecode(layout.text) as Map),
+      requiresUserAction: action.value != null,
+    );
+    expect(
+      formDefinition.components.any(
+        (component) => component['id'] == 'input_field0',
+      ),
+      isTrue,
+    );
+    expect(action.value?.type, A2uiSavedActionType.updateSelectedRecord);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

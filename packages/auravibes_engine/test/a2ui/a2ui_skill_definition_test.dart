@@ -12,6 +12,7 @@ void main() {
       'a2ui-core',
       'a2ui-forms',
       'a2ui-passive',
+      'a2ui-views',
     ]);
     expect(a2uiSkillDefinition.content, contains('load_skill_resource'));
   });
@@ -44,6 +45,13 @@ void main() {
       resources['a2ui-forms'],
       isNot(contains('A2UI_CORE_INSTRUCTIONS_START')),
     );
+
+    expect(resources['a2ui-views'], contains('workspace_create_view'));
+    expect(resources['a2ui-views'], contains('workspace_save_view'));
+    expect(resources['a2ui-views'], contains('updateComponents'));
+    expect(resources['a2ui-views'], contains('/fieldLabels/'));
+    expect(resources['a2ui-views'], isNot(contains('"Image":')));
+    expect(resources['a2ui-views'], isNot(contains('"SkillSuggestion":')));
   });
 
   test('filters generated resources to negotiated components', () {
@@ -57,6 +65,8 @@ void main() {
     expect(resources[a2uiPassiveResourceSlug], isNot(contains('"TextField"')));
     expect(resources[a2uiFormsResourceSlug], contains('"Text"'));
     expect(resources[a2uiFormsResourceSlug], isNot(contains('"TextField"')));
+    expect(resources[a2uiViewsResourceSlug], contains('"Text"'));
+    expect(resources[a2uiViewsResourceSlug], isNot(contains('"TextField"')));
   });
 
   test('exposes skill suggestions in passive resource only', () {
@@ -73,6 +83,10 @@ void main() {
     expect(
       resources[a2uiCoreResourceSlug],
       isNot(contains('"SkillSuggestion"')),
+    );
+    expect(
+      resources[a2uiViewsResourceSlug],
+      isNot(contains('"SkillSuggestion":')),
     );
   });
 

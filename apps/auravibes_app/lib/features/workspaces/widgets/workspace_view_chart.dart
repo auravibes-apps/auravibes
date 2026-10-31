@@ -10,27 +10,28 @@ class const WorkspaceViewChart({
   final String? workspaceId,
   super.key,
 }) extends StatelessWidget {
-  WorkspaceColumn? get _column => data.table.columns
+  List<WorkspaceColumn> get _columns => data.table.columns
       .where(
         (column) =>
             column.type == .number &&
             data.view.bindings.containsValue(column.id),
       )
-      .firstOrNull;
+      .toList();
   @override
   Widget build(BuildContext context) {
-    final column = _column;
-    if (column == null || _samples(data, column).isEmpty) {
+    final columns = _columns;
+    if (columns.isEmpty ||
+        columns.every((column) => _samples(data, column).isEmpty)) {
       return const TextLocale(LocaleKeys.workspace_relational_no_numbers);
     }
 
-    return _ChartContent(data, column, workspaceId);
+    return _ChartContent(data, columns, workspaceId);
   }
 }
 
 class const _ChartContent(
   final WorkspaceViewData data,
-  final WorkspaceColumn column,
+  final List<WorkspaceColumn> columns,
   final String? workspaceId,
 ) extends StatelessWidget {
   @override
@@ -39,7 +40,7 @@ class const _ChartContent(
     children: [
       const TextLocale(LocaleKeys.workspace_relational_chart_scope),
       WorkspaceViewSurface(data: data, workspaceId: workspaceId),
-      _ChartValues(data, column),
+      for (final column in columns) _ChartValues(data, column),
     ],
   );
 }

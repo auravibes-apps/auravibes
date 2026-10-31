@@ -10,7 +10,11 @@ import shlex
 import sys
 
 from classify_ci_changes import (
+    _is_docker_validation_path,
+    _is_docs_media,
     _is_ci_routing_path,
+    _is_object_gateway_path,
+    _is_routed_non_dart_input,
     _is_skill_metadata,
     _requires_code_checks,
 )
@@ -43,8 +47,16 @@ def routing_summary(paths, outputs, event, unknown_range):
     for path in paths:
         if _is_ci_routing_path(path):
             categories.add("CI routing tooling")
+        elif _is_object_gateway_path(path):
+            categories.add("Object gateway Go workflow or source")
         elif _is_skill_metadata(path):
             categories.add("Skill metadata")
+        elif _is_docs_media(path):
+            categories.add("Documentation asset")
+        elif _is_routed_non_dart_input(path):
+            categories.add("Native platform input or UI asset")
+        elif _is_docker_validation_path(path):
+            categories.add("Docker or server runtime configuration")
         elif path == "renovate.json":
             categories.add("Renovate configuration")
         elif _requires_code_checks(path):
@@ -75,14 +87,16 @@ def routing_summary(paths, outputs, event, unknown_range):
     renovate = outputs["renovate_config_changes"] == "true"
     goldens = outputs["run_ui_goldens"] == "true"
     generated = outputs["run_generated_checks"] == "true"
+    dependency_preflight = outputs["run_dependency_preflight"] == "true"
     lines += [
-        f'| Code checks | {"Scheduled" if code else skip} | {"Conservative or code-check policy applies" if code else "Only documentation, CI routing tooling, metadata, Renovate configuration, or no changed paths"} |',
+        f'| Code checks | {"Scheduled" if code else skip} | {"Conservative or code-check policy applies" if code else "No Dart or workspace code input changed"} |',
         f'| Server integration | {"Scheduled" if server else skip} | {"Server integration policy applies" if server else "No server, engine, or shared integration inputs changed"} |',
         f'| CI routing tests | {"Scheduled" if ci_tools else skip} | {"CI workflow or routing tools changed" if ci_tools else "No CI routing tools changed"} |',
         f'| Platform builds | {text(", ".join(platforms)) if platforms else skip} | {"Full event/range policy or platform build inputs" if platforms else "No platform build inputs changed"} |',
         f'| Renovate validation | {"Scheduled" if renovate else skip} | {"renovate.json changed" if renovate else "Comparison unavailable. Configuration changes not determined" if unknown_range else "renovate.json did not change"} |',
         f'| UI golden tests | {"Scheduled" if goldens else skip} | {"UI implementation, assets, or golden tests changed" if goldens else "No UI golden inputs changed"} |',
         f'| Generated artifact checks | {"Scheduled" if generated else skip} | {"Generator inputs or generated sources changed" if generated else "No generator inputs changed"} |',
+        f'| Dependency preflight | {"Scheduled" if dependency_preflight else skip} | {"Dependency manifests, toolchain, or workspace bootstrap changed" if dependency_preflight else "No dependency-resolution inputs changed"} |',
         "",
         "Scheduled checks do not yet have results. Skipped validators did not validate anything.",
     ]

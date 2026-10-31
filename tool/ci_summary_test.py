@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 import ci_summary
+from classify_ci_changes import _requires_dependency_preflight
 
 
 class CiSummaryTest(unittest.TestCase):
@@ -23,6 +24,7 @@ class CiSummaryTest(unittest.TestCase):
                 "renovate_config_changes": "false",
                 "run_ui_goldens": "false",
                 "run_generated_checks": "false",
+                "run_dependency_preflight": "false",
             },
             "pull_request",
             False,
@@ -33,6 +35,7 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("renovate.json did not change", summary)
         self.assertIn("No UI golden inputs changed", summary)
         self.assertIn("No generator inputs changed", summary)
+        self.assertIn("No dependency-resolution inputs changed", summary)
         self.assertIn("No CI routing tools changed", summary)
         self.assertNotIn("passed", summary)
 
@@ -47,6 +50,7 @@ class CiSummaryTest(unittest.TestCase):
                 "renovate_config_changes": "false",
                 "run_ui_goldens": "true",
                 "run_generated_checks": "true",
+                "run_dependency_preflight": "true",
             },
             "push",
             True,
@@ -54,6 +58,7 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("Missing or invalid comparison range", summary)
         self.assertIn("conservative full checks", summary)
         self.assertIn("not determined", summary)
+        self.assertIn("Dependency preflight", summary)
 
     def test_affected_lists_packages_paths_and_native_shards(self):
         summary = ci_summary.plan_summary(
@@ -217,6 +222,7 @@ class CiSummaryTest(unittest.TestCase):
                 "run_server_integration=false\nrenovate_config_changes=false\n"
                 "run_ci_tool_checks=false\n"
                 "run_ui_goldens=false\nrun_generated_checks=false\n"
+                "run_dependency_preflight=false\n"
             )
             summary = Path(directory) / "summary"
             subprocess.run(
@@ -246,14 +252,56 @@ class CiSummaryTest(unittest.TestCase):
         self.assertIn("  ci-routing-tests:\n", workflow)
         self.assertIn("run_ci_tool_checks == 'true'", workflow)
         self.assertIn("run_code_checks != 'true'", workflow)
+        selector_lane = workflow.split("  ci-routing-tests:\n", 1)[1].split(
+            "\n  platform-builds:", 1
+        )[0]
+        self.assertIn("run_ci_selector_checks == 'true'", selector_lane)
+        self.assertIn("uses: $/.github/actions/setup-workspace", selector_lane)
+        analysis_step = selector_lane.split(
+            "      - name: Analyze changed test selector\n", 1
+        )[1].split("\n      - name: Test changed test selector", 1)[0]
+        self.assertIn("tool/changed_test_selector.dart", analysis_step)
+        self.assertIn("tool/changed_test_selector_test.dart", analysis_step)
+        self.assertIn("--fatal-infos", analysis_step)
+        self.assertIn("--fatal-warnings", analysis_step)
+        self.assertIn("dart test tool/changed_test_selector_test.dart", selector_lane)
+        format_step = selector_lane.split(
+            "      - name: Check changed test selector formatting\n", 1
+        )[1].split("\n      - name:", 1)[0]
+        self.assertIn(
+            "if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}",
+            format_step,
+        )
+        self.assertIn(
+            "dart format --line-length 80 -o none --set-exit-if-changed",
+            selector_lane,
+        )
         block = workflow.split("      - name: Determine changed platforms\n", 1)[1]
         script = block.split("        run: |\n", 1)[1].split(
-            "\n  renovate-validation:", 1
+            "\n      - name: Resolve dependencies before validation fan-out", 1
         )[0]
         script = "\n".join(line[10:] for line in script.splitlines())
         all_platforms = '["android","ios","macos","linux","windows","web"]'
         cases = [
             ("README.md", "pull_request", False, "[]", "false", "false", "false"),
+            (
+                "tool/changed_test_selector.dart",
+                "pull_request",
+                False,
+                "[]",
+                "false",
+                "false",
+                "false",
+            ),
+            (
+                "tool/changed_test_selector_test.dart",
+                "pull_request",
+                False,
+                "[]",
+                "false",
+                "false",
+                "false",
+            ),
             (
                 ".agents/skills/a/evals/evals.json",
                 "pull_request",
@@ -304,7 +352,7 @@ class CiSummaryTest(unittest.TestCase):
                 "apps/auravibes_app/lib/features/models/generated_input.dart",
                 "pull_request",
                 False,
-                all_platforms,
+                '["linux"]',
                 "true",
                 "false",
                 "false",
@@ -314,7 +362,7 @@ class CiSummaryTest(unittest.TestCase):
                 "pull_request",
                 False,
                 '["ios"]',
-                "true",
+                "false",
                 "false",
                 "false",
             ),
@@ -390,6 +438,15 @@ class CiSummaryTest(unittest.TestCase):
                 "tool/classify_ci_changes_test.py",
                 "tool/ci_summary.py",
                 "tool/ci_summary_test.py",
+                "tool/sonar_workflow_test.py",
+                "tool/verify_agent_harness.py",
+                "tool/verify_agent_harness_test.py",
+                "tool/changed_test_selector.dart",
+                "tool/changed_test_selector_test.dart",
+            }
+            ci_selector_paths = {
+                "tool/changed_test_selector.dart",
+                "tool/changed_test_selector_test.dart",
             }
             for path, event, unknown, platforms, code, server, renovate in cases:
                 with self.subTest(path=path, event=event, unknown=unknown):
@@ -448,6 +505,9 @@ class CiSummaryTest(unittest.TestCase):
                             "run_ci_tool_checks": str(
                                 path in ci_tool_paths
                             ).lower(),
+                            "run_ci_selector_checks": str(
+                                path in ci_selector_paths
+                            ).lower(),
                             "renovate_config_changes": renovate,
                             "run_ui_goldens": str(
                                 unknown
@@ -458,6 +518,9 @@ class CiSummaryTest(unittest.TestCase):
                                 unknown
                                 or event in {"merge_group", "workflow_dispatch"}
                                 or path in {"pubspec.yaml", generated_source}
+                            ).lower(),
+                            "run_dependency_preflight": str(
+                                unknown or _requires_dependency_preflight(path)
                             ).lower(),
                         },
                     )

@@ -386,6 +386,75 @@ void main() {
       hasLength(2),
     );
   });
+
+  testWidgets('renders empty state card with guidance and call-to-action', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const CloudAccountsScreen(workspaceId: 'local'),
+          overrides: [
+            cloudAccountsProvider.overrideWith((ref) async => const []),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.cloud_outlined), findsOneWidget);
+    expect(
+      find.text(
+        'No cloud accounts connected yet. '
+        'Log in or register to use cloud workspaces.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Add cloud account'), findsOneWidget);
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+  });
+
+  testWidgets('renders account cards with typography and structured actions', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const CloudAccountsScreen(workspaceId: 'local'),
+          overrides: [
+            cloudAccountsProvider.overrideWith(
+              (ref) async => const [
+                CloudAccountSession(
+                  serverUrl: 'https://cloud.auravibes.example',
+                  userId: 'same',
+                  email: 'primary@example.test',
+                ),
+              ],
+            ),
+            checkCloudAccountUsecaseProvider.overrideWith(
+              (ref) =>
+                  CheckCloudAccountUsecase(check: (key) async => key.accountId),
+            ),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
+    expect(find.text('primary@example.test'), findsOneWidget);
+    expect(find.text('https://cloud.auravibes.example'), findsOneWidget);
+    expect(find.text('Add another account'), findsOneWidget);
+    expect(find.text('Remove from this app'), findsOneWidget);
+    expect(find.text('Delete cloud account'), findsOneWidget);
+
+    final tileCenter = tester.getCenter(find.byType(AuraTile));
+    final addButtonCenter = tester.getCenter(find.text('Add another account'));
+    expect(addButtonCenter.dy, greaterThan(tileCenter.dy));
+  });
 }
 
 Future<void> _pumpAccountsScreen(WidgetTester tester, Locale locale) async {

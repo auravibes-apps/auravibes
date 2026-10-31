@@ -6,6 +6,8 @@ import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
 import 'src/features/codex_oauth/codex_oauth_callback_route.dart';
 import 'src/features/conversations/engine/server_tool_runtime.dart';
+import 'src/features/objects/object_gateway_service.dart';
+import 'src/features/objects/object_gateway_storage.dart';
 import 'src/features/workers/recurring_worker_coordinator.dart';
 
 /// The starting point of the Serverpod server.
@@ -35,6 +37,10 @@ void run(List<String> args) async {
     CodexOAuthCallbackRoute(),
     '/auth/codex/callback',
   );
+  final objectGateway = ObjectGatewayRuntime.configureFromEnvironment();
+  if (objectGateway != null) {
+    pod.webServer.addRoute(ObjectGatewayRoute(objectGateway), '/objects/**');
+  }
 
   // Start the server.
   await pod.start();

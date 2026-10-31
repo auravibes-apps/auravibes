@@ -78,6 +78,7 @@ class _AuraDialogShellTitleContent extends StatelessWidget {
              color: colors.onSurface,
              fontSize: theme.typography.fontSizeLg,
              fontWeight: theme.typography.fontWeightSemibold,
+             fontFamily: theme.typography.headingFontFamily,
            ),
            child: title,
          ),
@@ -152,5 +153,6 @@ TextStyle _dialogShellMessageStyle(BuildContext context) {
     fontSize: theme.typography.fontSizeBase,
     fontWeight: theme.typography.fontWeightRegular,
     height: theme.typography.lineHeightBase,
+    fontFamily: theme.typography.bodyFontFamily,
   );
 }

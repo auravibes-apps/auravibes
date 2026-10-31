@@ -20,19 +20,74 @@ class A2uiSavedDefinition {
 
   final List<Map<String, Object?>> components;
 
+  A2uiSavedDefinition applyPatch({
+    Iterable<Map<String, Object?>>? updateComponents,
+    Iterable<String>? removeComponentIds,
+    bool requiresUserAction = false,
+  }) {
+    final removed = _removedIds(removeComponentIds);
+    final updatedById = _updatedComponentsById(updateComponents);
+    final next = _patchedComponents(components, updatedById, removed);
+
+    return A2uiSavedDefinition.fromJson({
+      'version': 1,
+      'components': next,
+    }, requiresUserAction: requiresUserAction);
+  }
+
   Map<String, Object?> toJson() => {'version': 1, 'components': components};
 }
 
-const _maximumComponents = 100;
-const _maximumBytes = 65536;
-const _maximumDepth = 24;
-const _externalComponents = {
+Set<String> _removedIds(Iterable<String>? ids) {
+  final removed = ids?.toSet() ?? const <String>{};
+  if (removed.any((id) => id.isEmpty)) _invalid();
+
+  return removed;
+}
+
+Map<String, Map<String, Object?>> _updatedComponentsById(
+  Iterable<Map<String, Object?>>? updates,
+) {
+  final byId = <String, Map<String, Object?>>{};
+  for (final component in updates ?? const <Map<String, Object?>>[]) {
+    final id = _componentId(component);
+    if (byId.containsKey(id)) _invalid();
+    byId[id] = component;
+  }
+
+  return byId;
+}
+
+String _componentId(Map<String, Object?> component) {
+  final id = component['id'];
+  if (id is! String || id.isEmpty) _invalid();
+
+  return id;
+}
+
+List<Map<String, Object?>> _patchedComponents(
+  List<Map<String, Object?>> current,
+  Map<String, Map<String, Object?>> updatedById,
+  Set<String> removed,
+) => [
+  for (final existing in current)
+    if (!removed.contains(existing['id']))
+      updatedById.remove(existing['id']! as String) ?? existing,
+  for (final added in updatedById.entries)
+    if (!removed.contains(added.key)) added.value,
+];
+
+const _excludedComponents = <String>{
   'Image',
   'Avatar',
   'AvatarGroup',
   'Link',
   'SkillSuggestion',
 };
+
+const _maximumComponents = 100;
+const _maximumBytes = 65536;
+const _maximumDepth = 24;
 const _forbiddenKeys = {
   'action',
   'actions',
@@ -67,7 +122,7 @@ Map<String, Object?> _component(Object? value) {
   if (value is! Map<String, Object?>) _invalid();
   final type = value['component'];
   if (!supportedA2uiChatComponents.contains(type) ||
-      _externalComponents.contains(type)) {
+      _excludedComponents.contains(type)) {
     _invalid();
   }
 

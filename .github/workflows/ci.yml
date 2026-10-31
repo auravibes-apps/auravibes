@@ -200,9 +200,11 @@ jobs:
       run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
       run_server_integration: ${{ steps.platforms.outputs.run_server_integration }}
       run_ci_tool_checks: ${{ steps.platforms.outputs.run_ci_tool_checks }}
+      run_ci_selector_checks: ${{ steps.platforms.outputs.run_ci_selector_checks }}
       renovate_config_changes: ${{ steps.platforms.outputs.renovate_config_changes }}
       run_ui_goldens: ${{ steps.platforms.outputs.run_ui_goldens }}
       run_generated_checks: ${{ steps.platforms.outputs.run_generated_checks }}
+      run_dependency_preflight: ${{ steps.platforms.outputs.run_dependency_preflight }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -225,8 +227,10 @@ jobs:
           run_code_checks=true
           renovate_config_changes=false
           run_ci_tool_checks=false
+          run_ci_selector_checks=false
           run_ui_goldens=false
           run_generated_checks=false
+          run_dependency_preflight=false
           force_optional_checks=false
           base_sha=''
           head_sha="$GITHUB_SHA"
@@ -276,6 +280,12 @@ jobs:
             fi
           fi
 
+          if [[ "$EVENT_NAME" == "pull_request" ]] && \
+            git cat-file -e "${base_sha}^{commit}" 2>/dev/null && \
+            git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+            base_sha="$(git merge-base "$base_sha" "$head_sha" 2>/dev/null || true)"
+          fi
+
           if [[ "$base_sha" == "" || "$base_sha" =~ ^0+$ ]] || \
             ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null || \
             [[ "$head_sha" == "" ]] || \
@@ -284,9 +294,11 @@ jobs:
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_server_integration=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_ci_tool_checks=false\n' >> "$GITHUB_OUTPUT"
+            printf 'run_ci_selector_checks=false\n' >> "$GITHUB_OUTPUT"
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             printf 'run_ui_goldens=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_generated_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'run_dependency_preflight=true\n' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -296,9 +308,11 @@ jobs:
           run_code_checks="$(jq -r '.run_code_checks' <<< "$classification")"
           run_server_integration="$(jq -r '.run_server_integration' <<< "$classification")"
           run_ci_tool_checks="$(jq -r '.run_ci_tool_checks' <<< "$classification")"
+          run_ci_selector_checks="$(jq -r '.run_ci_selector_checks' <<< "$classification")"
           renovate_config_changes="$(jq -r '.renovate_config_changes' <<< "$classification")"
           run_ui_goldens="$(jq -r '.run_ui_goldens' <<< "$classification")"
           run_generated_checks="$(jq -r '.run_generated_checks' <<< "$classification")"
+          run_dependency_preflight="$(jq -r '.run_dependency_preflight' <<< "$classification")"
           platforms=()
 
           if [[ "$full_build" == true ]]; then
@@ -313,9 +327,11 @@ jobs:
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
             printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
             printf 'run_ci_tool_checks=%s\n' "$run_ci_tool_checks" >> "$GITHUB_OUTPUT"
+            printf 'run_ci_selector_checks=%s\n' "$run_ci_selector_checks" >> "$GITHUB_OUTPUT"
             printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             printf 'run_ui_goldens=%s\n' "$run_ui_goldens" >> "$GITHUB_OUTPUT"
             printf 'run_generated_checks=%s\n' "$run_generated_checks" >> "$GITHUB_OUTPUT"
+            printf 'run_dependency_preflight=%s\n' "$run_dependency_preflight" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -335,7 +351,7 @@ jobs:
               apps/auravibes_app/linux/*) add_platform linux ;;
               apps/auravibes_app/windows/*) add_platform windows ;;
               apps/auravibes_app/web/*) add_platform web ;;
-              apps/auravibes_app/lib/*|apps/auravibes_app/assets/*|packages/*/lib/*|packages/*/assets/*) full_build=true ;;
+              apps/auravibes_app/lib/*|apps/auravibes_app/assets/*|packages/*/lib/*|packages/*/assets/*) add_platform linux ;;
               apps/auravibes_app/pubspec.yaml|apps/auravibes_app/pubspec.lock|apps/auravibes_app/pubspec_overrides.yaml) full_build=true ;;
               packages/*/pubspec.yaml|packages/*/pubspec.lock|packages/*/pubspec_overrides.yaml) full_build=true ;;
               pubspec.yaml|pubspec.lock|pubspec_overrides.yaml|melos.yaml) full_build=true ;;
@@ -356,9 +372,15 @@ jobs:
           printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
           printf 'run_server_integration=%s\n' "$run_server_integration" >> "$GITHUB_OUTPUT"
           printf 'run_ci_tool_checks=%s\n' "$run_ci_tool_checks" >> "$GITHUB_OUTPUT"
+          printf 'run_ci_selector_checks=%s\n' "$run_ci_selector_checks" >> "$GITHUB_OUTPUT"
           printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
           printf 'run_ui_goldens=%s\n' "$run_ui_goldens" >> "$GITHUB_OUTPUT"
           printf 'run_generated_checks=%s\n' "$run_generated_checks" >> "$GITHUB_OUTPUT"
+          printf 'run_dependency_preflight=%s\n' "$run_dependency_preflight" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve dependencies before validation fan-out
+        if: ${{ steps.platforms.outputs.run_dependency_preflight == 'true' }}
+        uses: ./.github/actions/setup-workspace
 
   renovate-validation:
     name: validate Renovate configuration
@@ -402,6 +424,31 @@ jobs:
         run: |
           python3 tool/classify_ci_changes_test.py
           python3 tool/ci_summary_test.py
+          python3 tool/sonar_workflow_test.py
+
+      - name: Set up Flutter workspace for selector checks
+        if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
+        uses: $/.github/actions/setup-workspace
+
+      - name: Analyze changed test selector
+        if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
+        run: >-
+          dart analyze
+          tool/changed_test_selector.dart
+          tool/changed_test_selector_test.dart
+          --fatal-infos
+          --fatal-warnings
+
+      - name: Test changed test selector
+        if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
+        run: dart test tool/changed_test_selector_test.dart
+
+      - name: Check changed test selector formatting
+        if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
+        run: >-
+          dart format --line-length 80 -o none --set-exit-if-changed
+          tool/changed_test_selector.dart
+          tool/changed_test_selector_test.dart
 
   platform-builds:
     name: platform builds
@@ -800,8 +847,8 @@ jobs:
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         needs.coverage.result == 'skipped' &&
-        (needs.change.outputs.run_code_checks == 'false' ||
-         needs.test-plan.outputs.mode == 'none')
+        needs.change.outputs.run_code_checks == 'true' &&
+        needs.test-plan.outputs.mode == 'none'
       }}
     runs-on: ubuntu-latest
     steps:
@@ -835,6 +882,8 @@ jobs:
 
   server-compose:
     name: server-compose / Docker smoke
+    needs: change
+    if: ${{ needs.change.outputs.run_server_integration == 'true' }}
     runs-on: ubuntu-latest
     env:
       POSTGRES_PASSWORD: ci-postgres-password
@@ -928,6 +977,11 @@ jobs:
             pull_request)
               base="$PR_BASE_SHA"
               head="$PR_HEAD_SHA"
+              if [ -n "$base" ] && [ -n "$head" ] \
+                && git cat-file -e "$base^{commit}" 2>/dev/null \
+                && git cat-file -e "$head^{commit}" 2>/dev/null; then
+                base="$(git merge-base "$base" "$head" 2>/dev/null || true)"
+              fi
               ;;
             push)
               base="$BEFORE_SHA"
@@ -1121,7 +1175,7 @@ jobs:
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [change, format, analysis, localization-audit, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, sonar-without-coverage, platform-builds, server-compose, server-integration, renovate-validation]
+    needs: [change, format, analysis, localization-audit, code-health, integrity, ci-routing-tests, test-plan, test, responsive-shell-goldens, coverage, sonar-without-coverage, platform-builds, server-compose, server-integration, renovate-validation]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks

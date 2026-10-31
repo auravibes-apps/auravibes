@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import 'object_deletion_guard.dart';
+import 'object_gateway_storage.dart';
 import 'object_repository.dart';
 import 'object_store.dart';
 import '../workspaces/workspace_erasure_cleanup.dart';
@@ -228,12 +227,10 @@ Future<void> runObjectCleanupWorker(
   required bool Function() isActive,
 }) async {
   if (!isActive()) return;
-  final endpoint = Platform.environment['OBJECT_STORE_GATEWAY_ENDPOINT'];
-  final legacyEndpoint = Platform.environment['OBJECT_STORE_LEGACY_ENDPOINT'];
-  if (endpoint == null && legacyEndpoint == null) return;
+  if (ObjectGatewayRuntime.current == null) return;
   try {
     await ObjectCleanupService(
-      store: HttpObjectStore.fromEnvironment(),
+      store: objectStoreForSession(session),
     ).runOnce(session, isActive: isActive, coordinator: coordinator);
   } on Object catch (error, stackTrace) {
     ObjectCleanupService._cleanupError(session, error, stackTrace);

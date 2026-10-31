@@ -76,20 +76,64 @@ abstract final class WorkspaceViewSurfaceData {
           _displayValue(data, record, id),
       ],
   ];
-  static Map<String, Object?> _fields(WorkspaceViewData data) =>
-      data.records.isEmpty
-      ? {}
-      : {
-          for (final entry in data.view.bindings.entries)
-            entry.key:
-                _displayValue(
-                  data,
-                  data.records.first,
-                  entry.value,
-                )?.toString() ??
-                '-',
-        };
+  static Map<String, Object?> _fields(WorkspaceViewData data) {
+    final record = data.records.firstOrNull;
+    if (record == null) return const {};
+
+    return {
+      for (final entry in data.view.bindings.entries)
+        ..._fieldEntries(data, record, entry),
+    };
+  }
 }
+
+Map<String, Object?> _fieldEntries(
+  WorkspaceViewData data,
+  WorkspaceRecord record,
+  MapEntry<String, String> entry,
+) {
+  final rawValue = record.values[entry.value];
+  final display = _displayValue(data, record, entry.value)?.toString() ?? '-';
+  if (!_isScalar(rawValue)) return {entry.key: display};
+
+  return _scalarFieldEntries(data, entry.key, rawValue, display);
+}
+
+bool _isScalar(Object? value) => value is num || value is bool;
+
+Map<String, Object?> _scalarFieldEntries(
+  WorkspaceViewData data,
+  String key,
+  Object? rawValue,
+  String display,
+) => {
+  key: _usesTypedFieldBinding(data.view.definition.components, '/$key')
+      ? rawValue
+      : display,
+  '${key}_raw': rawValue,
+};
+
+bool _usesTypedFieldBinding(
+  List<Map<String, Object?>> components,
+  String path,
+) =>
+    !components.any((item) => _bindsText(item, path)) &&
+    components.any((item) => _bindsTypedValue(item, path));
+
+bool _bindsText(Map<String, Object?> component, String path) =>
+    component['component'] == 'Text' && _bindsPath(component['text'], path);
+
+bool _bindsTypedValue(Map<String, Object?> component, String path) =>
+    _isTypedComponent(component['component']) &&
+    _bindsPath(component['value'], path);
+
+bool _isTypedComponent(Object? type) => switch (type) {
+  'CheckBox' || 'Slider' || 'Rating' || 'Progress' => true,
+  _ => false,
+};
+
+bool _bindsPath(Object? value, String path) =>
+    value is Map && value['path'] == path;
 
 abstract final class _WorkspaceViewFormDefaults {
   static Map<String, Object?> values(
@@ -198,31 +242,38 @@ Object? _columnValue(WorkspaceColumn? column, Object? value) {
 }
 
 Map<String, Object?> _chart(WorkspaceViewData data) {
-  final column = _chartColumn(data);
-  if (column == null) {
+  final columns = _chartColumns(data);
+  if (columns.isEmpty) {
     return {'chartLabels': <String>[], 'chartSeries': <Object>[]};
   }
 
-  return _chartModel(data, column);
+  return _chartModel(data, columns);
 }
 
-WorkspaceColumn? _chartColumn(WorkspaceViewData data) => data.table.columns
+List<WorkspaceColumn> _chartColumns(WorkspaceViewData data) => data
+    .table
+    .columns
     .where(
       (column) =>
           column.type == .number && data.view.bindings.containsValue(column.id),
     )
-    .firstOrNull;
+    .toList();
+
 Map<String, Object?> _chartModel(
   WorkspaceViewData data,
-  WorkspaceColumn column,
+  List<WorkspaceColumn> columns,
 ) {
   final records = data.records
-      .where((record) => record.values[column.id] is num)
+      .where(
+        (record) => columns.every((column) => record.values[column.id] is num),
+      )
       .toList();
 
   return {
     'chartLabels': _chartLabels(data, records),
-    'chartSeries': [_chartSeries(column, records)],
+    'chartSeries': [
+      for (final column in columns) _chartSeries(column, records),
+    ],
   };
 }
 

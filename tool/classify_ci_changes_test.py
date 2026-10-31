@@ -19,9 +19,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": False,
                 "run_server_integration": False,
                 "run_ci_tool_checks": False,
+                "run_ci_selector_checks": False,
                 "renovate_config_changes": False,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -43,9 +45,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": False,
                 "run_server_integration": False,
                 "run_ci_tool_checks": False,
+                "run_ci_selector_checks": False,
                 "renovate_config_changes": True,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -60,9 +64,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": True,
                 "run_server_integration": False,
                 "run_ci_tool_checks": False,
+                "run_ci_selector_checks": False,
                 "renovate_config_changes": False,
                 "run_ui_goldens": False,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -75,9 +81,11 @@ class ClassifyCiChangesTest(unittest.TestCase):
                 "run_code_checks": True,
                 "run_server_integration": False,
                 "run_ci_tool_checks": False,
+                "run_ci_selector_checks": False,
                 "renovate_config_changes": True,
                 "run_ui_goldens": True,
                 "run_generated_checks": False,
+                "run_dependency_preflight": False,
             },
         )
 
@@ -98,6 +106,28 @@ class ClassifyCiChangesTest(unittest.TestCase):
 
         self.assertFalse(result["run_code_checks"])
         self.assertFalse(result["run_server_integration"])
+
+
+    def test_dependency_changes_request_resolution_preflight(self):
+        for path in (
+            ".fvmrc",
+            "melos.yaml",
+            "pubspec.yaml",
+            "apps/auravibes_app/pubspec.yaml",
+            "packages/auravibes_engine/pubspec.lock",
+            "apps/auravibes_server/pubspec_overrides.yaml",
+            ".github/actions/setup-workspace/action.yml",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(classify_paths([path])["run_dependency_preflight"])
+
+        for path in (
+            "README.md",
+            "apps/auravibes_app/lib/main.dart",
+            "packages/auravibes_engine/lib/engine.dart",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(classify_paths([path])["run_dependency_preflight"])
 
     def test_server_integration_runs_for_server_engine_and_shared_ci_inputs(self):
         for path in (
@@ -133,18 +163,40 @@ class ClassifyCiChangesTest(unittest.TestCase):
             "tool/classify_ci_changes_test.py",
             "tool/ci_summary.py",
             "tool/ci_summary_test.py",
+            "tool/sonar_workflow_test.py",
+            "tool/verify_agent_harness.py",
+            "tool/verify_agent_harness_test.py",
         ):
             with self.subTest(path=path):
                 result = classify_paths([path])
                 self.assertFalse(result["run_code_checks"])
                 self.assertFalse(result["run_server_integration"])
                 self.assertTrue(result["run_ci_tool_checks"])
+                self.assertFalse(result["run_ci_selector_checks"])
 
         mixed = classify_paths(
             ["tool/classify_ci_changes.py", "apps/auravibes_app/lib/main.dart"]
         )
         self.assertTrue(mixed["run_code_checks"])
         self.assertTrue(mixed["run_ci_tool_checks"])
+
+    def test_changed_test_selector_uses_focused_ci_checks(self):
+        for path in (
+            "tool/changed_test_selector.dart",
+            "tool/changed_test_selector_test.dart",
+        ):
+            with self.subTest(path=path):
+                result = classify_paths([path])
+                self.assertFalse(result["run_code_checks"])
+                self.assertFalse(result["run_server_integration"])
+                self.assertTrue(result["run_ci_tool_checks"])
+                self.assertTrue(result["run_ci_selector_checks"])
+
+        mixed = classify_paths(
+            ["tool/changed_test_selector.dart", "apps/auravibes_app/lib/main.dart"]
+        )
+        self.assertTrue(mixed["run_code_checks"])
+        self.assertTrue(mixed["run_ci_selector_checks"])
 
     def test_ui_goldens_only_run_for_visual_inputs(self):
         cases = {

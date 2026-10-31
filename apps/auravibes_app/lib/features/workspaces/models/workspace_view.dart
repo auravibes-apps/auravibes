@@ -170,6 +170,24 @@ class const WorkspaceView({
   );
 }
 
+extension WorkspaceViewActionCopy on WorkspaceView {
+  WorkspaceView withAction(A2uiSavedAction? value) => .new(
+    id: id,
+    name: name,
+    tableId: tableId,
+    bindings: bindings,
+    columnTypes: columnTypes,
+    definition: definition,
+    action: value,
+    revision: revision,
+    parentId: parentId,
+    canManage: canManage,
+    query: query,
+    summaryColumnIds: summaryColumnIds,
+    connected: connected,
+  );
+}
+
 Map<String, String> _bindings(List<String> ids) => {
   for (var index = 0; index < ids.length; index++) 'field$index': ids[index],
 };

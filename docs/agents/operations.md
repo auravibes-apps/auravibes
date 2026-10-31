@@ -21,6 +21,22 @@ gh pr checks <number> --json name,bucket \
   gh run view "$run_id" --json jobs --jq \
     '[.jobs[] | select(.status != "completed") | {name, status, activeStep: ([.steps[]? | select(.status == "in_progress") | .name][0])}]'
   ```
+- For failed app test shards, inspect `test-report-*` artifacts before fetching full runner logs:
+  ```sh
+  artifact_dir="$(mktemp -d)"
+  gh run download "$run_id" --repo auravibes-apps/auravibes --pattern 'test-report-*' --dir "$artifact_dir"
+  find "$artifact_dir" -type f -name '*.json' -exec jq -r '
+    select(
+      .type == "error"
+      or (
+        .type == "print"
+        and ((.message // "") | contains("EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK"))
+      )
+    )
+    | [.type, (.error // .message // ""), (.stackTrace // "")] | @tsv
+  ' {} +
+  ```
+  If no cause appears, inspect `test-command.txt` and `test-plan/` for selected cases, then read the failed job logs.
 
 - `ci success` only summarizes fan-out; inspect first failed job. When a failed
   check needs a code or workflow fix, push it promptly instead of waiting for

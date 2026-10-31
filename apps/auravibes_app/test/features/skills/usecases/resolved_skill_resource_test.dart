@@ -129,6 +129,7 @@ void main() {
       'a2ui-core',
       'a2ui-forms',
       'a2ui-passive',
+      'a2ui-views',
     ]);
     expect(resource?.content, contains('A2UI_CORE_INSTRUCTIONS_START'));
   });

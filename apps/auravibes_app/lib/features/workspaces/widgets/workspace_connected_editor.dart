@@ -51,7 +51,10 @@ class const WorkspaceConnectedEditor({
 
     return view.edited(
       name: view.name,
-      definition: _definition(state.layout.text),
+      definition: _definition(
+        state.layout.text,
+        requiresUserAction: view.action != null,
+      ),
       bindings: Map<String, String>.from(
         jsonDecode(state.bindings.text) as Map,
       ),
@@ -317,8 +320,13 @@ WorkspaceConnectedBinding _binding(_ReadTool target, _EditState state) => .new(
   inputs: Map<String, Object?>.from(jsonDecode(state.inputs.text) as Map),
   connectionId: state.connection.value,
 );
-A2uiSavedDefinition _definition(String value) =>
-    .fromJson(Map<String, Object?>.from(jsonDecode(value) as Map));
+A2uiSavedDefinition _definition(
+  String value, {
+  required bool requiresUserAction,
+}) => .fromJson(
+  Map<String, Object?>.from(jsonDecode(value) as Map),
+  requiresUserAction: requiresUserAction,
+);
 
 class _ReadOption extends AuraDropdownOption<String> {
   new(_ReadTool choice)
