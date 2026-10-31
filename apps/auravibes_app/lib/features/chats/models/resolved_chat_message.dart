@@ -7,9 +7,7 @@ class const ResolvedChatMessage({
   required final bool isStreaming,
 });
 
-sealed class ChatTimelineItem {
-  const ChatTimelineItem();
-}
+sealed class const ChatTimelineItem();
 
 class const ActivityRunTimelineItem(final ActivityRun run)
     extends ChatTimelineItem;
