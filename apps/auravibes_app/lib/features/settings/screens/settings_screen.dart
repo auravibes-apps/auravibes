@@ -2,8 +2,13 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
 
+import 'dart:async';
+
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/settings/models/app_language_preference.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
+import 'package:auravibes_app/features/settings/providers/app_language_preference_provider.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_appearance_profile_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
@@ -14,6 +19,7 @@ import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -50,6 +56,25 @@ const _themeOptions = <AuraChoiceOption<AppTheme>>[
 ];
 const _settingsScreenPadding = 16.0;
 const _themeTileArrowSize = 16.0;
+const _languageTitleKey = 'settings_screen.language.title';
+const _languageDialogTitleKey = 'settings_screen.language.dialog_title';
+const _languageEnglishKey = 'settings_screen.language.english';
+const _languageSpanishKey = 'settings_screen.language.spanish';
+const _languageDeviceKey = 'settings_screen.language.device';
+const _languageOptions = <AuraChoiceOption<AppLanguagePreference>>[
+  AuraChoiceOption(
+    value: AppLanguagePreference.system,
+    label: TextLocale(_languageDeviceKey),
+  ),
+  AuraChoiceOption(
+    value: AppLanguagePreference.english,
+    label: TextLocale(_languageEnglishKey),
+  ),
+  AuraChoiceOption(
+    value: AppLanguagePreference.spanish,
+    label: TextLocale(_languageSpanishKey),
+  ),
+];
 
 class const SettingsScreen({required final String workspaceId, super.key})
     extends StatelessWidget {
@@ -182,6 +207,12 @@ class const _AppearanceCard({
         children: [
           _appearanceHeader,
           _ThemeTile(theme: currentTheme, onTap: onThemeTap),
+          _LanguageTile(
+            preference:
+                ref.watch(appLanguagePreferenceProvider).asData?.value ??
+                AppLanguagePreference.system,
+            onTap: () => _showLanguageDialog(context, ref),
+          ),
           const AccentColorSection(),
           if (_hasAppearanceChanges(ref, currentTheme))
             _AppearanceResetButton(onPressed: onReset),
@@ -193,6 +224,48 @@ class const _AppearanceCard({
       ),
     );
   }
+
+  void _showLanguageDialog(BuildContext context, WidgetRef ref) {
+    final preference =
+        ref.read(appLanguagePreferenceProvider).asData?.value ??
+        AppLanguagePreference.system;
+    AuraDialogs.alert(
+      context: context,
+      title: const TextLocale(_languageDialogTitleKey),
+      message: _LanguageChoicePicker(
+        preference: preference,
+        onChanged: (values) => _handleLanguageChanged(context, ref, values),
+      ),
+      dismissLabel: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
+    );
+  }
+
+  void _handleLanguageChanged(
+    BuildContext context,
+    WidgetRef ref,
+    List<AppLanguagePreference> values,
+  ) {
+    final preference = values.firstOrNull;
+    if (preference == null) return;
+    Navigator.of(context, rootNavigator: true).pop();
+    unawaited(_applyLanguagePreference(context, ref, preference));
+  }
+}
+
+Future<void> _applyLanguagePreference(
+  BuildContext context,
+  WidgetRef ref,
+  AppLanguagePreference preference,
+) async {
+  final locale = preference.locale;
+  if (locale == null) {
+    await context.resetLocale();
+    await context.deleteSaveLocale();
+  } else {
+    await context.setLocale(locale);
+  }
+
+  await ref.read(appLanguagePreferenceProvider.notifier).save(preference);
 }
 
 class const _AppearanceResetButton({required final VoidCallback onPressed})
@@ -268,6 +341,54 @@ class const _ThemeTileIcon({required final Color color})
   @override
   Widget build(BuildContext context) =>
       Icon(Icons.brightness_6_outlined, color: color);
+}
+
+class const _LanguageTile({
+  required final AppLanguagePreference preference,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: const AuraText(
+      child: TextLocale(_languageTitleKey),
+      style: .bodyLarge,
+    ),
+    onTap: onTap,
+    variant: .ghost,
+    leading: Icon(Icons.language, color: context.auraColors.secondary),
+    trailing: _LanguageTileTrailing(
+      preference: preference,
+      color: context.auraColors.onSurfaceVariant,
+    ),
+    identifier: 'settings_language',
+  );
+}
+
+class const _LanguageTileTrailing({
+  required final AppLanguagePreference preference,
+  required final Color color,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      TextLocale(preference.labelKey, style: .new(color: color, fontSize: 14)),
+      const SizedBox(width: 8),
+      _ThemeTileArrow(color: color),
+    ],
+  );
+}
+
+class const _LanguageChoicePicker({
+  required final AppLanguagePreference preference,
+  required final ValueChanged<List<AppLanguagePreference>> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraChoicePicker<AppLanguagePreference>(
+    options: _languageOptions,
+    value: [preference],
+    onChanged: onChanged,
+  );
 }
 
 String _themeName(AppTheme theme) => switch (theme) {

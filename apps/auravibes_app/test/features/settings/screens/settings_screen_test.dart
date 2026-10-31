@@ -1,11 +1,14 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/settings/models/app_language_preference.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
+import 'package:auravibes_app/features/settings/providers/app_language_preference_provider.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -111,6 +114,93 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('settings_compaction_save')),
         findsNothing,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('selects a language, persists it, and clears the override', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      SharedPreferences.setMockInitialValues({});
+
+      await tester.runAsync(() async {
+        await EasyLocalization.ensureInitialized();
+        await tester.pumpWidget(
+          TestableApp(
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
+            ),
+            overrides: [
+              themeProvider.overrideWith(_MockThemeNotifier.new),
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Device language'), findsOneWidget);
+      await tester.tap(find.bySemanticsIdentifier('settings_language'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('App language'), findsOneWidget);
+
+      await tester.tap(find.text('English'));
+      final _ = await tester.pumpAndSettle();
+
+      var preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(AppLanguagePreference.preferenceKey),
+        'english',
+      );
+
+      await tester.tap(find.bySemanticsIdentifier('settings_language'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Spanish'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Idioma'), findsOneWidget);
+      expect(find.text('Apariencia'), findsOneWidget);
+      preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(AppLanguagePreference.preferenceKey),
+        'spanish',
+      );
+
+      final restoredContainer = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWith((ref) async => preferences),
+        ],
+      );
+      addTearDown(restoredContainer.dispose);
+      expect(
+        await restoredContainer.read(appLanguagePreferenceProvider.future),
+        AppLanguagePreference.spanish,
+      );
+
+      await tester.tap(find.bySemanticsIdentifier('settings_language'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Idioma del dispositivo'));
+      final _ = await tester.pumpAndSettle();
+
+      preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(AppLanguagePreference.preferenceKey),
+        'system',
+      );
+      expect(
+        preferences.getString(
+          AppLanguagePreference.easyLocalizationPreferenceKey,
+        ),
+        isNull,
       );
       semantics.dispose();
     });
