@@ -7,6 +7,12 @@ on:
     branches: [main, dev, stage]
   merge_group:
   workflow_dispatch:
+    inputs:
+      capture_mcp_catalog_benchmark:
+        description: Capture five independent MCP catalog profiling runs
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -29,6 +35,130 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup-workspace
+
+      - name: Capture optional MCP catalog baseline
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_mcp_catalog_benchmark == true }}
+        continue-on-error: true
+        timeout-minutes: 20
+        working-directory: apps/auravibes_app
+        shell: bash
+        env:
+          BASELINE_OUTPUT: ${{ runner.temp }}/mcp-catalog-baseline
+          AURAVIBES_MCP_BENCHMARK_REVISION: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$BASELINE_OUTPUT"
+          git rev-parse HEAD > "$BASELINE_OUTPUT/revision.txt"
+          test "$(cat "$BASELINE_OUTPUT/revision.txt")" = "$GITHUB_SHA"
+          uname -a > "$BASELINE_OUTPUT/runner.txt"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          keys = ["GITHUB_SHA", "GITHUB_REF", "GITHUB_WORKFLOW_SHA", "GITHUB_EVENT_NAME", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "RUNNER_OS", "RUNNER_ARCH"]
+          output = Path(os.environ["BASELINE_OUTPUT"])
+          (output / "environment.json").write_text(json.dumps({key: os.environ.get(key) for key in keys}, indent=2) + "\n")
+          PY
+          flutter --version --machine > "$BASELINE_OUTPUT/flutter-version.json"
+          correctness_status=0
+          flutter test test/data/repositories/mcp_catalog_refresh_test.dart \
+            --no-pub --reporter=expanded \
+            > "$BASELINE_OUTPUT/correctness.log" 2>&1 || correctness_status=$?
+          cat "$BASELINE_OUTPUT/correctness.log"
+          printf '%s\n' "$correctness_status" > "$BASELINE_OUTPUT/correctness-status.txt"
+          combined_status="$correctness_status"
+          for process in 1 2 3 4 5; do
+            status=0
+            AURAVIBES_MCP_CATALOG_BENCHMARK=1 \
+              AURAVIBES_MCP_BENCHMARK_RUN="baseline-$process" \
+              flutter test test/data/repositories/mcp_catalog_refresh_benchmark_test.dart \
+              --no-pub --reporter=expanded \
+              > "$BASELINE_OUTPUT/baseline-$process.log" 2>&1 || status=$?
+            cat "$BASELINE_OUTPUT/baseline-$process.log"
+            printf '%s\n' "$status" > "$BASELINE_OUTPUT/baseline-$process-status.txt"
+            if [ "$status" -ne 0 ]; then
+              combined_status=1
+            fi
+          done
+          exit "$combined_status"
+
+      - name: Extract optional MCP catalog evidence
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.capture_mcp_catalog_benchmark == true }}
+        continue-on-error: true
+        shell: bash
+        env:
+          BASELINE_OUTPUT: ${{ runner.temp }}/mcp-catalog-baseline
+          AURAVIBES_MCP_BENCHMARK_REVISION: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          output = Path(os.environ["BASELINE_OUTPUT"])
+          output.mkdir(parents=True, exist_ok=True)
+          revision = os.environ["AURAVIBES_MCP_BENCHMARK_REVISION"]
+          expected_cases = {
+              (backend, size, size * percent // 100)
+              for backend in ["sqlite-memory", "sqlite-background-file"]
+              for size in [10, 100, 1000]
+              for percent in [0, 10, 100]
+          }
+          errors = []
+          for name in ["revision.txt", "runner.txt", "environment.json", "flutter-version.json", "correctness.log"]:
+              path = output / name
+              if not path.exists() or not path.read_text().strip():
+                  errors.append(f"Missing capture provenance or log: {name}")
+          source = output / "revision.txt"
+          if source.exists() and source.read_text().strip() != revision:
+              errors.append("Checked-out revision differs from dispatched commit")
+          correctness = output / "correctness-status.txt"
+          if not correctness.exists() or correctness.read_text().strip() != "0":
+              errors.append("Focused correctness checks did not pass")
+          for process in range(1, 6):
+              label = f"baseline-{process}"
+              log = output / f"{label}.log"
+              raw_records = []
+              if log.exists():
+                  for line in log.read_text().splitlines():
+                      start = line.find('{"workload":"mcp_catalog_refresh"')
+                      if start >= 0:
+                          raw_records.append(line[start:])
+              (output / f"{label}.jsonl").write_text("".join(record + "\n" for record in raw_records))
+              status = output / f"{label}-status.txt"
+              if not status.exists() or status.read_text().strip() != "0":
+                  errors.append(f"{label}: process did not pass")
+              cases = []
+              for raw in raw_records:
+                  try:
+                      record = json.loads(raw)
+                      cases.append((record["backend"], record["catalogSize"], record["changedTools"]))
+                      if record["revision"] != revision or record["run"] != label:
+                          errors.append(f"{label}: revision or run label mismatch")
+                      if record["sampleCount"] != 7 or len(record["samples"]) != 7:
+                          errors.append(f"{label}: expected seven samples per case")
+                  except (json.JSONDecodeError, KeyError, TypeError) as error:
+                      errors.append(f"{label}: invalid record: {error}")
+              if len(cases) != 18 or set(cases) != expected_cases:
+                  errors.append(f"{label}: expected all 18 workload cases exactly once")
+          validation = {"valid": not errors, "errors": errors, "artifactUploadStatus": "verify_from_workflow_run"}
+          (output / "validation.json").write_text(json.dumps(validation, indent=2) + "\n")
+          for error in errors:
+              print(error, file=sys.stderr)
+          sys.exit(bool(errors))
+          PY
+
+      - name: Upload optional MCP catalog evidence
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.capture_mcp_catalog_benchmark == true }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: mcp-catalog-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mcp-catalog-baseline
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Check formatting
         run: melos run format:check
