@@ -1408,6 +1408,38 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
+    family: 'background-work-accessible-state-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/background_work_header_button.dart',
+        method: 'tr',
+        keyExpression: '_backgroundWorkLoadingAccessibleLabelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/background_work_header_button.dart',
+        method: 'tr',
+        keyExpression: '_backgroundWorkRefreshErrorAccessibleLabelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/background_work_header_button.dart',
+        method: 'tr',
+        keyExpression: '_backgroundWorkLoadErrorAccessibleLabelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/background_work_header_button.dart',
+        method: 'TextLocale',
+        keyExpression: '_backgroundWorkRetryKey',
+      ),
+    ],
+    keys: {
+      'chats_screens.chat_conversation.background_work_load_error_accessible_label',
+      'chats_screens.chat_conversation.background_work_loading_accessible_label',
+      'chats_screens.chat_conversation.background_work_refresh_error_accessible_label',
+      'chats_screens.chat_conversation.background_work_retry',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
     family: 'cloud-workspace-error-and-action-keys',
     sites: [
       DynamicTranslationSite(
