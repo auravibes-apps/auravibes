@@ -4,20 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('WorkspaceSearchIndex', () {
     test('folds accents and compatibility characters for matching', () {
-      final cafe = _SearchItem('cafe', 'Caf\u00e9 Local');
-      final flower = _SearchItem('flower', '\uFB02ower Garden');
+      final eAcute = String.fromCharCode(0xe9);
+      final ligatureFl = String.fromCharCode(0xfb02);
+      final cafe = _SearchItem('cafe', 'Caf$eAcute Local');
+      final flower = _SearchItem('flower', '${ligatureFl}ower Garden');
       final index = _index([cafe, flower]);
 
       expect(index.matching(normalizeWorkspaceSearch('cafe')).map(_name), [
-        'Caf\u00e9 Local',
+        'Caf$eAcute Local',
       ]);
       expect(index.matching(normalizeWorkspaceSearch('flower')).map(_name), [
-        '\uFB02ower Garden',
+        '${ligatureFl}ower Garden',
       ]);
     });
 
     test('rebuilds after a workspace is renamed', () {
-      final workspace = _SearchItem('workspace', 'Caf\u00e9 Local');
+      final eAcute = String.fromCharCode(0xe9);
+      final workspace = _SearchItem('workspace', 'Caf$eAcute Local');
       var index = _index([workspace]);
       expect(index.matching(normalizeWorkspaceSearch('cafe')), hasLength(1));
 

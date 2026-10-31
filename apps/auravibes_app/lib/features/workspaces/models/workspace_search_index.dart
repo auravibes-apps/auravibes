@@ -16,11 +16,7 @@ class WorkspaceSearchIndex<T>(
   final String Function(T) _idOf = idOf;
   final List<WorkspaceSearchEntry<T>> _entries = List.unmodifiable([
     for (final item in items)
-      WorkspaceSearchEntry<T>(
-        item: item,
-        name: nameOf(item),
-        stableId: idOf(item),
-      ),
+      .new(item: item, name: nameOf(item), stableId: idOf(item)),
   ]);
 
   /// Returns whether [items] still match the exact snapshot indexed here.

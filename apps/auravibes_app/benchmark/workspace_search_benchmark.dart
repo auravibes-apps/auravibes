@@ -10,6 +10,7 @@ import 'package:unorm_dart/unorm_dart.dart';
 const _catalogSizes = [50, 1000, 10000];
 const _sampleCount = 9;
 const _query = 'workspace';
+final _eAcute = String.fromCharCode(0xe9);
 
 var _resultSink = 0;
 
@@ -38,8 +39,8 @@ Map<String, Object?> _measureCatalog(int size) {
       _CatalogItem(
         id: index.toString().padLeft(8, '0'),
         name: switch (index % 4) {
-          0 => 'Caf\u00e9 Alpha Workspace $index',
-          1 => 'R\u00e9sum\u00e9 Beta Workspace $index',
+          0 => 'Caf${_eAcute} Alpha Workspace $index',
+          1 => 'R${_eAcute}sum${_eAcute} Beta Workspace $index',
           2 => 'Workspace Gamma $index',
           _ => 'Workspace Delta $index',
         },
