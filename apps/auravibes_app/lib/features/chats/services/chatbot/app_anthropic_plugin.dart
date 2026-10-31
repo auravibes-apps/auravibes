@@ -1,6 +1,7 @@
 import 'package:anthropic_sdk_dart/anthropic_sdk_dart.dart' as sdk;
 import 'package:auravibes_app/features/chats/services/chatbot/anthropic_message_codec.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/anthropic_request_encoder.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/cancellable_provider_client.dart';
 import 'package:genkit/plugin.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:http/http.dart' as http;
@@ -41,7 +42,12 @@ class AppAnthropicPlugin extends GenkitPlugin {
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
     final encoded = encoder.encode(model, request);
-    final client = _createClient();
+    final transport = CancellableProviderClient(
+      client: httpClient ?? http.Client(),
+      cancellation: context.cancel,
+      ownsClient: httpClient == null,
+    );
+    final client = _createClient(transport);
     try {
       final message = await _request(client, encoded, context);
 
@@ -53,15 +59,17 @@ class AppAnthropicPlugin extends GenkitPlugin {
       );
     } finally {
       client.close();
+      transport.close();
     }
   }
 
-  sdk.AnthropicClient _createClient() => sdk.AnthropicClient.withApiKey(
-    apiKey,
-    baseUrl: baseUrl,
-    defaultHeaders: headers,
-    httpClient: httpClient,
-  );
+  sdk.AnthropicClient _createClient(http.Client transport) =>
+      sdk.AnthropicClient.withApiKey(
+        apiKey,
+        baseUrl: baseUrl,
+        defaultHeaders: headers,
+        httpClient: transport,
+      );
 }
 
 Future<sdk.Message> _stream(

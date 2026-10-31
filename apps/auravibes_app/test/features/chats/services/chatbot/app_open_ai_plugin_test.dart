@@ -1,0 +1,126 @@
+import 'dart:convert';
+
+import 'package:auravibes_app/features/chats/services/chatbot/app_open_ai_plugin.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:genkit/genkit.dart';
+import 'package:genkit_openai/genkit_openai.dart';
+import 'package:http/http.dart' as http;
+
+import 'support/provider_fault_client.dart';
+import 'support/provider_fault_protocol.dart';
+
+void main() {
+  test('retains upstream namespaces, metadata, options, and action routing', () {
+    final upstream = _upstream();
+    final wrapped = AppOpenAIPlugin(upstream: upstream);
+    final original =
+        upstream.resolve(.model, 'contract-model')! as Model<dynamic>;
+    final model = wrapped.resolve(.model, 'contract-model')! as Model<dynamic>;
+
+    expect(wrapped.name, upstream.name);
+    expect(model.name, original.name);
+    expect(model.metadata, original.metadata);
+    expect(model.customOptions, same(original.customOptions));
+    expect(wrapped.resolve(.tool, 'contract-model'), isNull);
+  });
+
+  test('preserves upstream encoded options and closes only its owned client',
+      () async {
+    final originalClient = _client();
+    final wrappedClient = _client();
+    final original = await _generate(_upstream(), originalClient);
+    final wrapped = await _generate(
+      AppOpenAIPlugin(upstream: _upstream()),
+      wrappedClient,
+    );
+
+    expect(wrapped.text, original.text);
+    expect(wrapped.finishReason, original.finishReason);
+    expect(
+      wrappedClient.requests.single.body,
+      originalClient.requests.single.body,
+    );
+    final request = wrappedClient.requests.single;
+    expect(request.url, originalClient.requests.single.url);
+    expect(request.json['temperature'], 0.25);
+    expect(request.json['top_p'], 0.75);
+    expect(request.json['max_completion_tokens'], 20);
+    expect(request.json['user'], 'fixture-user');
+    expect(request.supportsAbort, isTrue);
+    expect(wrappedClient.closeCount, 1);
+    expect(originalClient.closeCount, 1);
+  });
+
+  test('does not close an injected caller-owned client', () async {
+    final client = _client();
+    final result = await _generate(
+      AppOpenAIPlugin(upstream: _upstream(), httpClient: client),
+      client,
+    );
+
+    expect(result.text, 'ready');
+    expect(client.requests.single.supportsAbort, isTrue);
+    expect(client.closeCount, 0);
+    client.close();
+    expect(client.closeCount, 1);
+  });
+
+  test('retains upstream failure cause and retry behavior', () async {
+    ProviderFaultClient failingClient() => ProviderFaultClient([
+      (_) async => http.StreamedResponse(
+        Stream.value(
+          utf8.encode('{"error":{"type":"server_error","message":"failed"}}'),
+        ),
+        500,
+        headers: const {'content-type': 'application/json'},
+      ),
+    ]);
+    final originalClient = failingClient();
+    final wrappedClient = failingClient();
+    final original = await _generate(_upstream(), originalClient);
+    final wrapped = await _generate(
+      AppOpenAIPlugin(upstream: _upstream()),
+      wrappedClient,
+    );
+
+    expect(wrapped.finishReason, original.finishReason);
+    expect(wrapped.error?.status, original.error?.status);
+    expect(wrapped.cause.runtimeType, original.cause.runtimeType);
+    expect(wrappedClient.requests, hasLength(1));
+    expect(originalClient.requests, hasLength(1));
+    expect(wrappedClient.closeCount, 1);
+  });
+}
+
+GenkitPlugin _upstream() => openAI(
+  apiKey: 'fixture-key',
+  baseUrl: 'https://provider.invalid/v1',
+);
+
+ProviderFaultClient _client() => ProviderFaultClient([
+  (_) async => http.StreamedResponse(
+    Stream.value(ProviderFaultProtocol.chat.success('ready')),
+    200,
+    headers: const {'content-type': 'text/event-stream'},
+  ),
+]);
+
+Future<GenerateResult<Object?>> _generate(
+  GenkitPlugin plugin,
+  ProviderFaultClient client,
+) => http.runWithClient(
+  () => Genkit(plugins: [plugin], isDevEnv: false)
+      .generate<OpenAIChatOptions, Object?>(
+        model: modelRef<OpenAIChatOptions>('openai/contract-model'),
+        config: OpenAIChatOptions(
+          temperature: 0.25,
+          topP: 0.75,
+          maxTokens: 20,
+          user: 'fixture-user',
+        ),
+        prompt: 'Preserve the upstream request.',
+        onChunk: (_) {},
+        cancel: CancellationController().token,
+      ),
+  () => client,
+);
