@@ -1,6 +1,7 @@
+import 'dart:ui' show Tristate;
+
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart' show SemanticsAction, SemanticsFlag;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'aura_action_test_helpers.dart';
@@ -28,8 +29,8 @@ void main() {
       expect(action, findsOneWidget);
       final data = tester.getSemantics(action).getSemanticsData();
       expect(data.label, 'Save changes');
-      expect(data.hasFlag(SemanticsFlag.isEnabled), isTrue);
-      expect(data.hasAction(SemanticsAction.tap), isTrue);
+      expect(data.flagsCollection.isEnabled, Tristate.isTrue);
+      expect(data.hasAction(.tap), isTrue);
       expect(find.text('Save'), findsOneWidget);
 
       await tapAuraAction(tester, semanticsIdentifier: 'save-action');
@@ -78,18 +79,18 @@ void main() {
 
       await _pump(
         tester,
-        Column(
-          mainAxisSize: MainAxisSize.min,
+        const Column(
+          mainAxisSize: .min,
           children: [
             AuraButton(
               onPressed: _noop,
-              child: const Text('First save'),
+              child: Text('First save'),
               identifier: 'duplicate-action',
               semanticLabel: 'First save',
             ),
             AuraButton(
               onPressed: _noop,
-              child: const Text('Second save'),
+              child: Text('Second save'),
               identifier: 'duplicate-action',
               semanticLabel: 'Second save',
             ),
@@ -140,9 +141,9 @@ void main() {
 
       await _pump(
         tester,
-        AuraButton(
+        const AuraButton(
           onPressed: _noop,
-          child: const Text('Save'),
+          child: Text('Save'),
           disabled: true,
           identifier: 'disabled-action',
           semanticLabel: 'Save changes',
@@ -195,9 +196,9 @@ void main() {
       );
 
       await tapAuraAction(tester, semanticsIdentifier: 'more-actions');
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
       await tapAuraAction(tester, semanticsIdentifier: 'rename-action');
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(itemPresses, 1);
     });
 
@@ -211,8 +212,8 @@ void main() {
       await _pump(
         tester,
         const Offstage(
-          offstage: true,
           child: AuraButton(
+            key: actionKey,
             onPressed: _noop,
             child: Text('Hidden save'),
             identifier: 'offstage-action',
@@ -247,4 +248,4 @@ Future<void> _pump(WidgetTester tester, Widget child) {
   );
 }
 
-void _noop() {}
+void _noop() => throw StateError('Unexpected test action.');

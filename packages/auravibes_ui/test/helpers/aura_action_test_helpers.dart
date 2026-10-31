@@ -1,6 +1,7 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/semantics.dart' show SemanticsAction, SemanticsFlag;
 
 /// Finds one Aura action by its widget [key], semantics [semanticsIdentifier],
 /// or both when the key wraps the identified semantic control.
@@ -12,14 +13,14 @@ Finder findAuraAction({
   String? semanticsIdentifier,
   String? description,
 }) {
-  if (key == null && semanticsIdentifier == null) {
-    throw ArgumentError('Provide a key, semantics identifier, or both.');
-  }
-
   final keyFinder = key == null ? null : find.byKey(key, skipOffstage: false);
   final semanticsFinder = semanticsIdentifier == null
       ? null
       : find.bySemanticsIdentifier(semanticsIdentifier, skipOffstage: false);
+  final finder =
+      semanticsFinder ??
+      keyFinder ??
+      (throw ArgumentError('Provide a key, semantics identifier, or both.'));
   final targetDescription = _targetDescription(
     key: key,
     semanticsIdentifier: semanticsIdentifier,
@@ -53,7 +54,6 @@ Finder findAuraAction({
     return semanticsFinder;
   }
 
-  final finder = semanticsFinder ?? keyFinder!;
   final elements = semanticsFinder == null ? keyElements : semanticsElements;
   if (elements.isEmpty) _throwNotFound(targetDescription);
 
@@ -82,10 +82,10 @@ Future<void> tapAuraAction(
   );
   final data = tester.getSemantics(action).getSemanticsData();
 
-  if (!data.hasFlag(SemanticsFlag.isEnabled)) {
+  if (data.flagsCollection.isEnabled != Tristate.isTrue) {
     throw TestFailure('Aura action $targetDescription is disabled.');
   }
-  if (!data.hasAction(SemanticsAction.tap)) {
+  if (!data.hasAction(.tap)) {
     throw TestFailure(
       'Aura action $targetDescription does not expose a semantic tap action.',
     );
