@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:auravibes_engine/src/agent_stream_service.dart';
 import 'package:test/test.dart';
@@ -201,6 +202,8 @@ void main() {
           final cancellationScope = cancellationRuntime.start(conversationId);
           final responseStream = StreamController<_Chunk>();
           final firstChunkPersisted = Completer<void>();
+          final completionStarted = Completer<void>();
+          final completionRelease = Completer<void>();
           final persistenceSink = _MemorySink<_Chunk>(
             onAdd: (chunk) {
               if (chunk.text == 'first' && !firstChunkPersisted.isCompleted) {
@@ -216,6 +219,10 @@ void main() {
               persistenceSink: persistenceSink,
               uiSink: uiSink,
               calls: calls,
+              onPersistCompleted: (_, _) async {
+                completionStarted.complete();
+                await completionRelease.future;
+              },
             ),
           );
 
@@ -229,24 +236,36 @@ void main() {
           await firstChunkPersisted.future;
           trace.add('persist:first');
 
-          final events = ['close', 'cancel', 'cancel']
-            ..shuffle(Random(seed));
-          final raceStart = Completer<void>();
-          final scheduledEvents = events.map((event) async {
-            await raceStart.future;
-            trace.add(event);
-            if (event == 'cancel') {
+          if (seed.isEven) {
+            trace.add('close');
+            await responseStream.close();
+            await completionStarted.future;
+            trace.add('completion-persistence-pending');
+            for (var request = 0; request < 2; request++) {
+              trace.add('cancel');
               cancellationScope.requestStop();
-              if (!responseStream.isClosed) {
-                responseStream.add(const _Chunk('late'));
-                trace.add('emit:late');
-              }
-            } else {
-              await responseStream.close();
             }
-          }).toList();
-          raceStart.complete();
-          await Future.wait(scheduledEvents);
+            completionRelease.complete();
+          } else {
+            final events = ['close', 'cancel', 'cancel']
+              ..shuffle(Random(seed));
+            final raceStart = Completer<void>();
+            final scheduledEvents = events.map((event) async {
+              await raceStart.future;
+              trace.add(event);
+              if (event == 'cancel') {
+                cancellationScope.requestStop();
+                if (!responseStream.isClosed) {
+                  responseStream.add(const _Chunk('late'));
+                  trace.add('emit:late');
+                }
+              } else {
+                await responseStream.close();
+              }
+            }).toList();
+            raceStart.complete();
+            await Future.wait(scheduledEvents);
+          }
           final result = await run;
           await cancellationScope.cleanupCompletion;
           final terminalWrites = calls
@@ -335,6 +354,8 @@ class const _FakeAgentStreamProvider({
   required final List<String> calls,
   final bool throwOnConcat = false,
   final void Function(String messageId)? onStartMessageStreaming,
+  final Future<void> Function(String messageId, _Chunk result)?
+  onPersistCompleted,
   final Future<void> Function(String? messageId, _Chunk? result)?
   onPersistStopped,
 }) implements AgentStreamProvider<_Chunk> {
@@ -404,6 +425,7 @@ class const _FakeAgentStreamProvider({
     _Chunk result,
   ) async {
     calls.add('complete:$messageId:${result.text}');
+    await onPersistCompleted?.call(messageId, result);
   }
 
   @override
