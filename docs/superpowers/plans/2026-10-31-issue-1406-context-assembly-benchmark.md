@@ -85,7 +85,7 @@ The existing benchmark satisfies the deterministic catalogs, multiple sizes, off
 
 ## Proposed plan revision: hosted baseline capture
 
-**Status:** Awaiting parent plan review. Do not edit workflow code or create a PR before this revision is approved. The original two-run baseline remains historical data until five fresh hosted outputs are available.
+**Status:** Parent approved Task 3. Workflow implementation is ready for parent patch review; publication and dispatch require the parent's next authorization. The original two-run baseline remains historical data until five fresh hosted outputs are available. No PR may be created while that acceptance gap remains.
 
 ### Task 3: Capture the baseline in an opt-in existing CI run
 
@@ -121,3 +121,5 @@ The existing benchmark satisfies the deterministic catalogs, multiple sizes, off
 - Task 2: Current execution-host provenance, distinct from the historical baseline host, is Linux kernel 6.18.57, x86_64, AMD EPYC 9V74 80-Core Processor, 5 logical CPUs reported by Python. Benchmark source blob is `dbb4f8385a39c0590f3a4c4229ce380194b812c3`.
 - Verification: `git diff --check` passed after the test and README edits. Dart tests, pinned formatting/analyzer, benchmark-import validation, and fresh baseline runs remain blocked by the lease prerequisite and are not reported as passing. The existing historical baseline is unchanged; no fresh CSV exists.
 - Review revision: Narrowed README wording to final-envelope serialization/byte counting after timing; skill-catalog JSON/UTF-8 encoding and revision hashing remain within measured assembly. Proposed Task 3 uses optional capture steps in the existing manually dispatched CI format job, with original raw outputs/provenance preserved as an artifact. Workflow implementation awaits parent review of this plan revision.
+- Task 3: Parent approved the hosted capture plan and requested a workflow commit for review before publication/dispatch. Added the default-false boolean input and two explicitly gated steps immediately after the existing format job setup. Capture records provenance and preserves five separate original stdout/stderr pairs. Artifact upload uses the existing pinned action, `always()`, missing-file failure, and 30-day retention. Existing jobs, setup, permissions, and checks are unchanged. No timing threshold is present.
+- Task 3 verification: The focused leased `python3 tool/sonar_workflow_test.py` command exited 3 in 0.2 seconds before tests started, with the same 17.5 GiB worktree and 3.0 GiB `/tmp` free-space reports against the 20 GiB reserve. No test, analyzer, formatting, or benchmark execution was substituted outside the lease. Static patch inspection and `git diff --check` are the available local evidence; hosted checks and capture await parent patch approval and dispatch authorization.
