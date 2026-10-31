@@ -12,22 +12,25 @@ void main() {
     'https://[::1]/path',
     'https://[::ffff:127.0.0.1]/path',
   ]) {
-    test('rejects blocked address literal $url before DNS lookup', () async {
-      var lookupCalled = false;
+    test(
+      'rejects blocked address literal $url before DNS lookup',
+      () async {
+        var lookupCalled = false;
 
-      await expectLater(
-        PublicUrlGuard.resolveHttpsUri(
-          url,
-          lookup: (_) async {
-            lookupCalled = true;
+        await expectLater(
+          PublicUrlGuard.resolveHttpsUri(
+            url,
+            lookup: (_) async {
+              lookupCalled = true;
 
-            return [InternetAddress('8.8.8.8')];
-          },
-        ),
-        throwsA(isA<FormatException>()),
-      );
-      expect(lookupCalled, isFalse);
-    });
+              return [InternetAddress('8.8.8.8')];
+            },
+          ),
+          throwsA(isA<FormatException>()),
+        );
+        expect(lookupCalled, isFalse);
+      },
+    );
   }
 
   for (final blockedAddress in [
@@ -37,18 +40,21 @@ void main() {
     InternetAddress('::1'),
     InternetAddress('::ffff:127.0.0.1'),
   ]) {
-    test('rejects DNS answers containing $blockedAddress', () async {
-      await expectLater(
-        PublicUrlGuard.resolveHttpsUri(
-          'https://mixed-answer.example/path',
-          lookup: (_) async => [
-            InternetAddress('8.8.8.8'),
-            blockedAddress,
-          ],
-        ),
-        throwsA(isA<FormatException>()),
-      );
-    });
+    test(
+      'rejects DNS answers containing $blockedAddress',
+      () async {
+        await expectLater(
+          PublicUrlGuard.resolveHttpsUri(
+            'https://mixed-answer.example/path',
+            lookup: (_) async => [
+              InternetAddress('8.8.8.8'),
+              blockedAddress,
+            ],
+          ),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
   }
 
   test('returns validated addresses for transport pinning', () async {
