@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_archive_export_review_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
@@ -672,6 +673,12 @@ extension on _ChatTileState {
       _forkChatAndNavigate(this, context);
 
   Future<void> _exportConversationArchive(BuildContext context) async {
+    final shouldExport = await ConversationArchiveExportReviewDialog.show(
+      context,
+      fileName: 'conversation.auravibes.json',
+    );
+    if (!shouldExport || !context.mounted) return;
+
     try {
       final saved = await _saveConversationArchive();
       if (!saved || !context.mounted) return;
@@ -951,7 +958,14 @@ extension on _ChatListBulkActionsState {
 
   Future<void> _exportSelected(Iterable<ConversationEntity> selected) async {
     if (_isWorking) return;
-    await _withWorking(() => _exportSelectedArchive(selected));
+    final selectedConversations = selected.toList(growable: false);
+    final shouldExport = await ConversationArchiveExportReviewDialog.show(
+      context,
+      fileName: 'conversations.auravibes.json',
+    );
+    if (!shouldExport || !mounted) return;
+
+    await _withWorking(() => _exportSelectedArchive(selectedConversations));
   }
 
   Future<void> _exportSelectedArchive(
