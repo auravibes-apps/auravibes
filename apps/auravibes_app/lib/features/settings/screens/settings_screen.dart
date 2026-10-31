@@ -5,6 +5,7 @@
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
+import 'package:auravibes_app/features/settings/widgets/app_appearance_profile_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/features/settings/widgets/legal_links_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -184,6 +185,8 @@ class const _AppearanceCard({
           const AccentColorSection(),
           if (_hasAppearanceChanges(ref, currentTheme))
             _AppearanceResetButton(onPressed: onReset),
+          const AuraSizedBox(height: .md),
+          const AppAppearanceProfileSection(),
         ],
         spacing: .none,
         crossAxisAlignment: .start,
