@@ -3522,18 +3522,20 @@ void _showAgentStopNoticeIfNeeded({
   required AgentIterationDecision? decision,
   required VoidCallback onContinue,
 }) {
-  final contentKey = switch (decision) {
-    AgentIterationDecision.iterationLimitReached =>
+  final content = switch (decision) {
+    AgentIterationDecision.iterationLimitReached => const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
-    AgentIterationDecision.repeatedToolLoopDetected =>
-      'chats.screens.chat_conversation.repeated_tool_loop_detected',
+    ),
+    AgentIterationDecision.repeatedToolLoopDetected => const TextLocale(
+      'chats_screens.chat_conversation.repeated_tool_loop_detected',
+    ),
     _ => null,
   };
-  if (contentKey == null || !context.mounted) return;
+  if (content == null || !context.mounted) return;
 
   final _ = AuraSnackBars.show(
     context: context,
-    content: TextLocale(contentKey),
+    content: content,
     duration: const Duration(seconds: 10),
     actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
     onAction: onContinue,
