@@ -306,6 +306,4 @@ class const _AgentIterationStep(
   final AgentIterationContext? context,
   final AgentIterationDecision decision, {
   final String? toolFingerprint,
-}) {
-  final String? toolFingerprint = toolFingerprint;
-}
+});

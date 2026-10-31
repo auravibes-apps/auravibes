@@ -1021,6 +1021,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       ),
       DynamicTranslationSite(
         file: 'features/chats/screens/chat_conversation_screen.dart',
+        method: 'TextLocale',
+        keyExpression: 'contentKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/screens/chat_conversation_screen.dart',
         method: 'tr',
         keyExpression: 'localeKey',
       ),
@@ -1037,6 +1042,8 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'chats_screens.chat_conversation.model_missing',
       'chats_screens.chat_conversation.model_loading',
       'chats_screens.chat_conversation.model_unavailable',
+      'chats.screens.chat_conversation.iteration_limit_reached',
+      'chats.screens.chat_conversation.repeated_tool_loop_detected',
       'compaction.errors.compaction_failed',
       'compaction.errors.compaction_unsafe',
       'compaction.errors.compaction_unavailable',
