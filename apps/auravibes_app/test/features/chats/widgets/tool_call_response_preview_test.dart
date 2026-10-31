@@ -4,6 +4,8 @@ import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -37,7 +39,10 @@ void main() {
               ),
             ),
             locale: context.locale,
-            localizationsDelegates: context.localizationDelegates,
+            localizationsDelegates: [
+              ...sdk_localizations.GlobalMaterialLocalizations.delegates,
+              ...context.localizationDelegates,
+            ],
             supportedLocales: context.supportedLocales,
           );
         },
@@ -201,7 +206,7 @@ void main() {
     testWidgets('shows a retryable status when copying fails', (tester) async {
       const response = 'private tool response';
       const status =
-          'Couldn\'t copy the tool response. '
+          "Couldn't copy the tool response. "
           'Use Copy tool response to try again.';
       var attempts = 0;
       String? copiedContent;
@@ -246,7 +251,7 @@ void main() {
       tester,
     ) async {
       var content = 'First response';
-      late VoidCallback changeContent;
+      VoidCallback changeContent = _noop;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
         (call) async => null,

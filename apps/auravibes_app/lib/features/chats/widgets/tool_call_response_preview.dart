@@ -301,7 +301,10 @@ class _ToolCallResponseCopyButtonState
     setState(() => _copied = true);
     _pendingConfirmationAttempt = attempt;
     _pendingConfirmationContent = content;
-    _copyConfirmationTimer = Timer(.new(seconds: 2), _clearCopyConfirmation);
+    _copyConfirmationTimer = .new(
+      const Duration(seconds: 2),
+      _clearCopyConfirmation,
+    );
   }
 
   void _clearCopyConfirmation() {
