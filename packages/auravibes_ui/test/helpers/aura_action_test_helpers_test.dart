@@ -194,7 +194,7 @@ void main() {
         ),
       );
 
-      await tapAuraAction(tester, semanticsIdentifier: 'more-actions');
+      await tester.tap(find.bySemanticsIdentifier('more-actions'));
       await tester.pump(const Duration(milliseconds: 500));
       await tapAuraAction(tester, semanticsIdentifier: 'rename-action');
       await tester.pump(const Duration(milliseconds: 500));
@@ -212,9 +212,9 @@ void main() {
         tester,
         const Offstage(
           child: AuraButton(
-            key: actionKey,
             onPressed: _noop,
             child: Text('Hidden save'),
+            key: actionKey,
             identifier: 'offstage-action',
           ),
         ),
