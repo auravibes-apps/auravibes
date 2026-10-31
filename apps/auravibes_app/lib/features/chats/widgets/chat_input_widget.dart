@@ -2135,22 +2135,23 @@ class const _LocalWorkspaceNetworkDisclosure() extends StatelessWidget {
 
     return AuraIconButton(
       icon: Icons.public_outlined,
-      onPressed: () => unawaited(_showLocalWorkspaceNetworkDisclosure(context)),
+      onPressed: () =>
+          unawaited(_LocalWorkspaceNetworkDisclosure._showDisclosure(context)),
       key: const ValueKey<String>('local_workspace_network_disclosure'),
       size: .small,
       semanticLabel: label,
       tooltip: label,
     );
   }
-}
 
-Future<void> _showLocalWorkspaceNetworkDisclosure(BuildContext context) =>
-    AuraDialogs.alert(
-      context: context,
-      title: const TextLocale('workspace_network_disclosure.title'),
-      message: const TextLocale('workspace_network_disclosure.description'),
-      dismissLabel: const TextLocale(LocaleKeys.common_close),
-    );
+  static Future<void> _showDisclosure(BuildContext context) =>
+      AuraDialogs.alert(
+        context: context,
+        title: const TextLocale('workspace_network_disclosure.title'),
+        message: const TextLocale('workspace_network_disclosure.description'),
+        dismissLabel: const TextLocale(LocaleKeys.common_close),
+      );
+}
 
 class const _ChatInputAttachments({required final _ChatInputState state})
     extends StatelessWidget {
