@@ -27,6 +27,7 @@ class const EmptyConversationStarters({
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => SingleChildScrollView(
       padding: const .all(24),
+      primary: false,
       child: ConstrainedBox(
         constraints: .new(minHeight: constraints.maxHeight),
         child: Center(
@@ -45,32 +46,32 @@ class const _EmptyConversationStarterContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    crossAxisAlignment: .stretch,
-    mainAxisSize: .min,
-    spacing: .sm,
     children: [
       const AuraText(child: TextLocale(_titleKey), style: .heading5),
       const AuraText(child: TextLocale(_helperKey), style: .bodySmall),
       const AuraSizedBox(height: .xs),
       _EmptyConversationStarterButton(
-        key: const ValueKey('chat_empty_starter_plan_day'),
         onPressed: () =>
             onSelect(ChatDraft(text: _planDayKey.tr(context: context))),
         child: const TextLocale(_planDayKey),
+        key: const ValueKey('chat_empty_starter_plan_day'),
       ),
       _EmptyConversationStarterButton(
-        key: const ValueKey('chat_empty_starter_shopping_list'),
         onPressed: () =>
             onSelect(ChatDraft(text: _shoppingListKey.tr(context: context))),
         child: const TextLocale(_shoppingListKey),
+        key: const ValueKey('chat_empty_starter_shopping_list'),
       ),
       _EmptyConversationStarterButton(
-        key: const ValueKey('chat_empty_starter_personal_message'),
         onPressed: () =>
             onSelect(ChatDraft(text: _personalMessageKey.tr(context: context))),
         child: const TextLocale(_personalMessageKey),
+        key: const ValueKey('chat_empty_starter_personal_message'),
       ),
     ],
+    spacing: .sm,
+    crossAxisAlignment: .stretch,
+    mainAxisSize: .min,
   );
 }
 

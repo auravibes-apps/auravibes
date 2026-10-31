@@ -1001,11 +1001,18 @@ void main() {
       startLocale: const Locale('es'),
     );
 
-    expect(find.text('\u00BFNo sabes por d\u00F3nde empezar?'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel('Ay\u00FAdame a planificar mi d\u00EDa'),
-      findsOneWidget,
-    );
+    final spanishStarterTitle = [
+      String.fromCharCode(0xbf),
+      'No sabes por d',
+      String.fromCharCode(0xf3),
+      'nde empezar?',
+    ].join();
+    final spanishPlanDay =
+        'Ay${String.fromCharCode(0xfa)}dame a planificar '
+        'mi d${String.fromCharCode(0xed)}a';
+
+    expect(find.text(spanishStarterTitle), findsOneWidget);
+    expect(find.bySemanticsLabel(spanishPlanDay), findsOneWidget);
   });
 
   testWidgets('hides starters after a message exists', (tester) async {
