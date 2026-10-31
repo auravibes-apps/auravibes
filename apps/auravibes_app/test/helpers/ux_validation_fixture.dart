@@ -6,6 +6,8 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_view_state.dart';
+import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -15,6 +17,7 @@ import 'package:auravibes_app/main.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -47,6 +50,29 @@ class UxValidationFixture {
   final String childId;
 
   static AppDatabase? _database;
+
+  static const erasureAccount = CloudAccountSession(
+    serverUrl: 'https://fixture.example',
+    userId: 'fixture-account',
+    email: 'reviewer@example.test',
+  );
+
+  static CloudWorkspaceViewState get erasureConfirmationState =>
+      CloudWorkspaceViewState(
+        workspaces: const [],
+        pendingInvites: const [],
+        deletedOwnedWorkspaces: [
+          CloudWorkspaceSummary(
+            id: 7,
+            name: 'Shared research space',
+            role: 'owner',
+            revision: 1,
+            sequence: 1,
+            createdAt: DateTime.utc(2026, 10, 30),
+            updatedAt: DateTime.utc(2026, 10, 30),
+          ),
+        ],
+      );
 
   static Future<void> closeDatabase() async {
     await _database?.close();
@@ -149,6 +175,7 @@ class UxValidationFixture {
     bool dark = false,
     List<Object> overrides = const [],
     List<CloudAccountSession> accounts = const [],
+    CloudWorkspaceViewState? cloudWorkspaceState,
     Future<List<CloudAccountSession>> Function()? accountsLoad,
     WorkspaceSession? sessionOverride,
     Exception? sessionFailure,
@@ -194,6 +221,11 @@ class UxValidationFixture {
         cloudAccountsProvider.overrideWith(
           (ref) async => accountsLoad == null ? accounts : await accountsLoad(),
         ),
+        if (cloudWorkspaceState case final workspaceState?)
+          for (final account in accounts)
+            cloudWorkspaceStateProvider(account.key).overrideWith(
+              (ref) async => workspaceState,
+            ),
         if (emptyModels)
           chatModelConnectionsProvider(workspaceId)
               .overrideWith((ref) => Stream.value([])),
