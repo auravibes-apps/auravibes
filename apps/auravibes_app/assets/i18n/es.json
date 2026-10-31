@@ -1181,6 +1181,10 @@
   },
   "tool_approval": {
     "pending_count": "Aprobación de herramienta {} de {}",
+    "pending_loading": "Cargando las aprobaciones de herramientas pendientes…",
+    "pending_refreshing": "Actualizando las aprobaciones de herramientas pendientes…",
+    "pending_load_error": "No se pudieron cargar las aprobaciones de herramientas pendientes.",
+    "pending_refresh_error": "Las aprobaciones de herramientas pendientes están desactualizadas. No se pudieron actualizar.",
     "errors": {
       "approve_once": "No se pudo aprobar esta llamada de herramienta.",
       "approve_conversation": "No se pudo aprobar esta llamada de herramienta para la conversación.",
@@ -1321,6 +1325,23 @@
     "accent_color": {
       "title": "Color de acento",
       "dialog_hint": "Arrastra para cambiar el color principal de botones, enlaces y resaltados."
+    },
+    "appearance_profile": {
+      "title": "Perfil de apariencia",
+      "description": "Guarda o restaura solo el tema y el color de acento.",
+      "export": "Exportar perfil",
+      "import": "Importar perfil",
+      "preview_title": "Vista previa del perfil de apariencia",
+      "preview_scope": "Esto solo cambiará el tema y el color de acento en este dispositivo.",
+      "theme": "Tema",
+      "accent_color": "Color de acento",
+      "accent_hue_value": "Tono: {hue}°",
+      "apply": "Aplicar apariencia",
+      "export_success": "Perfil de apariencia guardado.",
+      "import_success": "Apariencia restaurada.",
+      "invalid_file": "Este archivo no es un perfil de apariencia válido.",
+      "unsupported_version": "Este perfil de apariencia usa una versión no compatible.",
+      "action_failed": "No se pudo usar este perfil de apariencia. Inténtalo de nuevo."
     },
     "actions": {
       "cancel": "Cancelar",

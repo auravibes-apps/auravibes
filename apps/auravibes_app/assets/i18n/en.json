@@ -1181,6 +1181,10 @@
   },
   "tool_approval": {
     "pending_count": "Tool approval {} of {}",
+    "pending_loading": "Loading pending tool approvals…",
+    "pending_refreshing": "Refreshing pending tool approvals…",
+    "pending_load_error": "Could not load pending tool approvals.",
+    "pending_refresh_error": "Pending tool approvals are out of date. Could not refresh.",
     "errors": {
       "approve_once": "Could not approve this tool call.",
       "approve_conversation": "Could not approve this tool call for the conversation.",
@@ -1321,6 +1325,23 @@
     "accent_color": {
       "title": "Accent Color",
       "dialog_hint": "Drag to change the main color for buttons, links, and highlights."
+    },
+    "appearance_profile": {
+      "title": "Appearance profile",
+      "description": "Save or restore only your theme and accent color.",
+      "export": "Export profile",
+      "import": "Import profile",
+      "preview_title": "Preview appearance profile",
+      "preview_scope": "This will update only the theme and accent color on this device.",
+      "theme": "Theme",
+      "accent_color": "Accent color",
+      "accent_hue_value": "Hue: {hue}°",
+      "apply": "Apply appearance",
+      "export_success": "Appearance profile saved.",
+      "import_success": "Appearance restored.",
+      "invalid_file": "This file is not a valid appearance profile.",
+      "unsupported_version": "This appearance profile uses an unsupported version.",
+      "action_failed": "Could not use this appearance profile. Try again."
     },
     "actions": {
       "cancel": "Cancel",

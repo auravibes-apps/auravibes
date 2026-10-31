@@ -251,7 +251,8 @@ class _ToolCallResponseCopyButtonState
               liveRegion: true,
               child: AuraText(
                 child: const TextLocale(
-                  'chats_screens_chat_conversation_tool_response_copy_failed',
+                  LocaleKeys
+                      .chats_screens_chat_conversation_tool_response_copy_failed,
                 ),
                 style: .bodySmall,
               ),
