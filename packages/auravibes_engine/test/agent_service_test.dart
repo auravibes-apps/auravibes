@@ -683,7 +683,9 @@ class _FakeAgentConversationDataProvider
     continuationConversationIds.add(conversationId);
     continuationContexts.add(context);
     final continueAgent = onContinueAgent;
-    if (continueAgent != null) return continueAgent(conversationId);
+    if (continueAgent != null) {
+      return await continueAgent(conversationId);
+    }
     if (continueErrors.isNotEmpty) {
       Error.throwWithStackTrace(continueErrors.removeAt(0), .current);
     }
