@@ -1074,7 +1074,7 @@ void main() {
       ];
       final workspaceTools = WorkspaceToolsRepository(database);
       final archiveUsecase = _RecordingConversationArchiveUsecase(
-        ConversationArchiveUsecase(
+        delegate: .new(
           conversationRepository: archiveConversations,
           messageRepository: .new(database),
           attachmentService: .new(),
@@ -1681,7 +1681,7 @@ class _RecordingArchiveFileService extends ConversationArchiveFileService {
 }
 
 class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
-  _RecordingConversationArchiveUsecase(ConversationArchiveUsecase delegate)
+  new(ConversationArchiveUsecase delegate)
     : _delegate = delegate,
       super(
         conversationRepository: delegate.conversationRepository,
@@ -1691,9 +1691,8 @@ class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
         workspaceToolsRepository: delegate.workspaceToolsRepository,
         toolsGroupsRepository: delegate.toolsGroupsRepository,
       );
-
-  final ConversationArchiveUsecase _delegate;
   int bulkExportCalls = 0;
+  final ConversationArchiveUsecase _delegate = delegate;
 
   @override
   Future<String> exportConversations({
