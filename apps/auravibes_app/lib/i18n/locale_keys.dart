@@ -1738,6 +1738,36 @@ abstract class LocaleKeys {
       'settings_screen.accent_color.title';
   static const settings_screen_accent_color_dialog_hint =
       'settings_screen.accent_color.dialog_hint';
+  static const settings_screen_appearance_profile_title =
+      'settings_screen.appearance_profile.title';
+  static const settings_screen_appearance_profile_description =
+      'settings_screen.appearance_profile.description';
+  static const settings_screen_appearance_profile_export =
+      'settings_screen.appearance_profile.export';
+  static const settings_screen_appearance_profile_import =
+      'settings_screen.appearance_profile.import';
+  static const settings_screen_appearance_profile_preview_title =
+      'settings_screen.appearance_profile.preview_title';
+  static const settings_screen_appearance_profile_preview_scope =
+      'settings_screen.appearance_profile.preview_scope';
+  static const settings_screen_appearance_profile_theme =
+      'settings_screen.appearance_profile.theme';
+  static const settings_screen_appearance_profile_accent_color =
+      'settings_screen.appearance_profile.accent_color';
+  static const settings_screen_appearance_profile_accent_hue_value =
+      'settings_screen.appearance_profile.accent_hue_value';
+  static const settings_screen_appearance_profile_apply =
+      'settings_screen.appearance_profile.apply';
+  static const settings_screen_appearance_profile_export_success =
+      'settings_screen.appearance_profile.export_success';
+  static const settings_screen_appearance_profile_import_success =
+      'settings_screen.appearance_profile.import_success';
+  static const settings_screen_appearance_profile_invalid_file =
+      'settings_screen.appearance_profile.invalid_file';
+  static const settings_screen_appearance_profile_unsupported_version =
+      'settings_screen.appearance_profile.unsupported_version';
+  static const settings_screen_appearance_profile_action_failed =
+      'settings_screen.appearance_profile.action_failed';
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
   static const settings_screen_actions_save = 'settings_screen.actions.save';
