@@ -152,7 +152,7 @@ TextStyle _dialogShellMessageStyle(BuildContext context) {
     color: context.auraColors.onSurfaceVariant,
     fontSize: theme.typography.fontSizeBase,
     fontWeight: theme.typography.fontWeightRegular,
-    fontFamily: theme.typography.bodyFontFamily,
     height: theme.typography.lineHeightBase,
+    fontFamily: theme.typography.bodyFontFamily,
   );
 }

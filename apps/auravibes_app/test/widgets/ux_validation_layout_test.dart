@@ -134,7 +134,6 @@ void main() {
         view: 'connect',
       ).location,
       size: size,
-      locale: 'en',
       accounts: [UxValidationFixture.erasureAccount],
       cloudWorkspaceState: UxValidationFixture.erasureConfirmationState,
     );
