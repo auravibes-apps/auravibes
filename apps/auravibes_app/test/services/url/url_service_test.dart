@@ -168,10 +168,7 @@ void main() {
         expect(requests, hasLength(1));
         expect(requests.single.uri.host, 'api.example.com');
         expect(requests.single.followRedirects, isFalse);
-        expect(
-          requests.single.headers['Authorization'],
-          'Bearer secret-token',
-        );
+        expect(requests.single.headers['Authorization'], 'Bearer secret-token');
         expect(requests.single.headers['Cookie'], 'session=private');
         expect(requests.single.headers['X-Api-Key'], 'secret-key');
       },

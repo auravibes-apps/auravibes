@@ -13,10 +13,7 @@ void main() {
       requirePublicUri: (url) async {
         validatedUrl = url;
 
-        return (
-          uri: Uri.parse(url),
-          addresses: ['93.184.216.34'],
-        );
+        return (uri: Uri.parse(url), addresses: ['93.184.216.34']);
       },
     );
     const request = UrlRequest(
