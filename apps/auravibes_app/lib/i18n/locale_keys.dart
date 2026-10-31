@@ -1616,6 +1616,13 @@ abstract class LocaleKeys {
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
+  static const tool_approval_pending_loading = 'tool_approval.pending_loading';
+  static const tool_approval_pending_refreshing =
+      'tool_approval.pending_refreshing';
+  static const tool_approval_pending_load_error =
+      'tool_approval.pending_load_error';
+  static const tool_approval_pending_refresh_error =
+      'tool_approval.pending_refresh_error';
   static const tool_approval_errors_approve_once =
       'tool_approval.errors.approve_once';
   static const tool_approval_errors_approve_conversation =
