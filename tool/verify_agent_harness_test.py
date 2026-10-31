@@ -34,6 +34,7 @@ class HarnessVerificationTest(unittest.TestCase):
         (self.root / "docs").mkdir()
         (self.root / "docs/ARCHITECTURE.md").write_text("# Architecture\n")
         (self.root / "docs/agents").mkdir()
+        (self.root / "docs/agents/commands.md").write_text("# Agent commands\n")
         self._write_melos_scripts("test:unit", "validate:quick")
         (self.root / "README.md").write_text("# README\n")
         (self.root / "CONTRIBUTING.md").write_text("# Contributing\n")
