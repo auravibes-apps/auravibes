@@ -166,6 +166,16 @@ void main() {
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Spanish'));
       final _ = await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        final preferences = await SharedPreferences.getInstance();
+        final stopwatch = Stopwatch()..start();
+        while (preferences.getString(AppLanguagePreference.preferenceKey) !=
+                'spanish' &&
+            stopwatch.elapsed < const Duration(seconds: 2)) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Idioma'), findsOneWidget);
       expect(find.text('Apariencia'), findsOneWidget);

@@ -1408,6 +1408,22 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
+    family: 'app-language-preference-labels',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/settings/screens/settings_screen.dart',
+        method: 'TextLocale',
+        keyExpression: 'preference.labelKey',
+      ),
+    ],
+    keys: {
+      'settings_screen.language.device',
+      'settings_screen.language.english',
+      'settings_screen.language.spanish',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
     family: 'cloud-workspace-error-and-action-keys',
     sites: [
       DynamicTranslationSite(
