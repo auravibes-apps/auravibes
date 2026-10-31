@@ -10,7 +10,7 @@ void main() {
         message: _message(
           id: 'streaming-response',
           content: 'partial response',
-          status: MessageStatus.unfinished,
+          status: .unfinished,
         ),
         isStreaming: true,
       );
@@ -71,7 +71,7 @@ void main() {
     test('keeps A2UI replay content as a message timeline item', () {
       final message = _message(
         id: 'a2ui-response',
-        status: MessageStatus.unfinished,
+        status: .unfinished,
         metadata: const MessageMetadataEntity(a2uiMessages: ['surface']),
       );
       final source = ResolvedChatMessage(message: message, isStreaming: false);
@@ -108,7 +108,7 @@ void main() {
       final summary = ResolvedChatMessage(
         message: _message(
           id: 'compaction-summary',
-          messageType: MessageType.system,
+          messageType: .system,
           content: 'Earlier conversation summary',
           metadata: const MessageMetadataEntity(isCompactionSummary: true),
         ),
@@ -138,7 +138,7 @@ void main() {
         message: _message(
           id: 'retryable-user',
           isUser: true,
-          status: MessageStatus.error,
+          status: .error,
           content: 'Try this again',
         ),
         isStreaming: false,
@@ -152,7 +152,7 @@ void main() {
           id: 'forked-user',
           isUser: true,
           isForkReference: true,
-          status: MessageStatus.unfinished,
+          status: .unfinished,
           content: 'Inherited prompt',
         ),
         isStreaming: false,
@@ -167,9 +167,9 @@ void main() {
 MessageEntity _message({
   required String id,
   String content = '',
-  MessageType messageType = MessageType.text,
+  MessageType messageType = .text,
   bool isUser = false,
-  MessageStatus status = MessageStatus.sent,
+  MessageStatus status = .sent,
   MessageMetadataEntity? metadata,
   bool isForkReference = false,
 }) => MessageEntity(
@@ -179,8 +179,8 @@ MessageEntity _message({
   messageType: messageType,
   isUser: isUser,
   status: status,
-  createdAt: DateTime.utc(2026),
-  updatedAt: DateTime.utc(2026),
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
   metadata: metadata,
   isForkReference: isForkReference,
 );

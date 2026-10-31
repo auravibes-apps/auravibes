@@ -1,6 +1,5 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
 
 /// A message together with the transient streaming state used by the timeline.
 class ResolvedChatMessage {
@@ -217,10 +216,10 @@ List<ChatTimelineItem> buildChatTimelineItems(
 
     if (hasActivity) {
       final awaitsA2uiAction =
-          message.status == MessageStatus.unfinished &&
+          message.status == .unfinished &&
           hasA2uiMessageState(message);
       final isFinalResponse =
-          message.status == MessageStatus.sent &&
+          message.status == .sent &&
           hasVisibleResponse &&
           !hasFollowingAssistantActivity &&
           !hasToolCalls;
@@ -256,7 +255,7 @@ List<ChatTimelineItem> buildChatTimelineItems(
         source,
         showResponseActions:
             message.isUser ||
-            (!source.isStreaming && message.status == MessageStatus.sent),
+            (!source.isStreaming && message.status == .sent),
       ),
     );
   }
@@ -292,8 +291,8 @@ bool canRetryUserMessage(MessageEntity message) =>
     message.isUser &&
     !message.isForkReference &&
     message.hasValidContent &&
-    (message.status == MessageStatus.unfinished ||
-        (message.status == MessageStatus.error &&
+    (message.status == .unfinished ||
+        (message.status == .error &&
             ProviderRecoveryMetadata.isRetryEligible(message)));
 
 bool hasA2uiMessageState(MessageEntity? message) {
@@ -340,7 +339,7 @@ bool _requiresMessageTimelineItem(
 
 bool _isTimelineBoundary(MessageEntity message) =>
     message.isUser ||
-    message.messageType == MessageType.system ||
-    message.status == MessageStatus.error ||
+    message.messageType == .system ||
+    message.status == .error ||
     message.metadata?.isCompactionSummary == true;
 }
