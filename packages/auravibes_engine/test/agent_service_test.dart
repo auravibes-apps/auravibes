@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
@@ -102,6 +103,122 @@ void main() {
 
     expect(result, AgentIterationDecision.done);
     expect(dataProvider.allowedToolRuns, ['conversation-1:workspace-1']);
+  });
+
+  test('seeded cancellation handoffs keep late continuations scoped', () async {
+    for (var seed = 1; seed <= 16; seed++) {
+      final trace = <String>[];
+      try {
+        final cancellationRuntime = FakeCancellationEffects();
+        final conversationIds = ['owner', 'sibling'];
+        final modelStarted = {
+          for (final id in conversationIds) id: Completer<void>(),
+        };
+        final modelResults = {
+          for (final id in conversationIds)
+            id: Completer<ContinueAgentResult>(),
+        };
+        Future<void> waitForModelStart(String id) async {
+          final started = modelStarted[id];
+          if (started == null) {
+            throw StateError('Unexpected conversation start: $id');
+          }
+          await started.future;
+        }
+
+        void releaseModel(String id) {
+          final result = modelResults[id];
+          if (result == null) {
+            throw StateError('Unexpected conversation release: $id');
+          }
+          result.complete(
+            ContinueAgentResult(messageId: 'assistant-$id', hasToolCalls: true),
+          );
+        }
+
+        final dataProvider = _FakeAgentConversationDataProvider(
+          workspaceIdForConversation: (id) => 'workspace-$id',
+          onContinueAgent: (id) {
+            final started = modelStarted[id];
+            if (started == null) {
+              throw StateError('Unexpected conversation start: $id');
+            }
+            started.complete();
+            final result = modelResults[id];
+            if (result == null) {
+              throw StateError('Unexpected conversation: $id');
+            }
+
+            return result.future;
+          },
+        );
+        final sendQueue = _FakeAgentSendQueueRuntime();
+        final usecase = _buildAgentService(
+          dataProvider,
+          sendQueueRuntime: sendQueue,
+          cancellationEffects: cancellationRuntime,
+        );
+        trace.add('start:owner');
+        final ownerRun = usecase(
+          conversationId: 'owner',
+          context: const AgentIterationContext(
+            origin: .userMessage,
+            ackMessageIds: ['owner-ack'],
+          ),
+        );
+        await waitForModelStart('owner');
+        trace.add('model-waiting:owner');
+
+        Future<AgentIterationDecision>? siblingRun;
+        final setupEvents = [
+          'cancel-owner',
+          'cancel-owner',
+          'start-sibling',
+        ]..shuffle(Random(seed));
+        for (final event in setupEvents) {
+          if (event == 'cancel-owner') {
+            trace.add(event);
+            cancellationRuntime.requestStop('owner');
+            continue;
+          }
+
+          trace.add(event);
+          siblingRun = usecase(
+            conversationId: 'sibling',
+            context: const AgentIterationContext(origin: .userMessage),
+          );
+          await waitForModelStart('sibling');
+          trace.add('model-waiting:sibling');
+        }
+
+        final sibling = siblingRun;
+        if (sibling == null) {
+          throw StateError('Sibling run did not start.');
+        }
+        final releases = ['owner', 'sibling']..shuffle(Random(seed + 1));
+        for (final id in releases) {
+          trace.add('release-model:$id');
+          releaseModel(id);
+        }
+
+        final decisions = await Future.wait([ownerRun, sibling]);
+
+        expect(decisions, [
+          AgentIterationDecision.done,
+          AgentIterationDecision.done,
+        ]);
+        expect(dataProvider.workspaceLookups, ['owner', 'sibling']);
+        expect(dataProvider.continuationConversationIds, ['owner', 'sibling']);
+        expect(dataProvider.allowedToolRuns, ['sibling:workspace-sibling']);
+        expect(dataProvider.markedSent, ['owner-ack']);
+        expect(sendQueue.cleared, ['owner']);
+      } on Object catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          StateError('seed=$seed events=${trace.join(' -> ')}\n$error'),
+          stackTrace,
+        );
+      }
+    }
   });
 
   test('waits for all allowed tools before the next model request', () async {
@@ -525,6 +642,8 @@ class _FakeAgentConversationDataProvider
     List<AgentIterationDecision>? toolDecisions,
     this.onAutoCompact,
     this.onRunAllowedTools,
+    this.workspaceIdForConversation,
+    this.onContinueAgent,
   }) : continueResults = List.of(
          continueResults ??
              const [
@@ -545,8 +664,12 @@ class _FakeAgentConversationDataProvider
   final List<AgentIterationDecision> toolDecisions;
   final void Function()? onAutoCompact;
   final Future<void> Function()? onRunAllowedTools;
+  final String? Function(String conversationId)? workspaceIdForConversation;
+  final Future<ContinueAgentResult> Function(String conversationId)?
+  onContinueAgent;
   final workspaceLookups = <String>[];
   final continuationContexts = <AgentIterationContext?>[];
+  final continuationConversationIds = <String>[];
   final createdContents = <String>[];
   final markedSent = <String>[];
   final markedErrored = <String>[];
@@ -557,7 +680,10 @@ class _FakeAgentConversationDataProvider
     required String conversationId,
     AgentIterationContext? context,
   }) async {
+    continuationConversationIds.add(conversationId);
     continuationContexts.add(context);
+    final continueAgent = onContinueAgent;
+    if (continueAgent != null) return continueAgent(conversationId);
     if (continueErrors.isNotEmpty) {
       Error.throwWithStackTrace(continueErrors.removeAt(0), .current);
     }
@@ -593,7 +719,7 @@ class _FakeAgentConversationDataProvider
   Future<String?> getWorkspaceId(String conversationId) async {
     workspaceLookups.add(conversationId);
 
-    return workspaceId;
+    return workspaceIdForConversation?.call(conversationId) ?? workspaceId;
   }
 
   @override

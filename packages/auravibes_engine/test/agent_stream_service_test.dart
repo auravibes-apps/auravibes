@@ -190,6 +190,102 @@ void main() {
   );
 
   test(
+    'seeded completion races settle once and ignore late stream chunks',
+    () async {
+      final terminalKinds = <String>{};
+      for (var seed = 1; seed <= 16; seed++) {
+        final trace = <String>[];
+        try {
+          final conversationId = 'conversation-$seed';
+          final cancellationRuntime = FakeCancellationEffects();
+          final cancellationScope = cancellationRuntime.start(conversationId);
+          final responseStream = StreamController<_Chunk>();
+          final firstChunkPersisted = Completer<void>();
+          final persistenceSink = _MemorySink<_Chunk>(
+            onAdd: (chunk) {
+              if (chunk.text == 'first' && !firstChunkPersisted.isCompleted) {
+                firstChunkPersisted.complete();
+              }
+            },
+          );
+          final uiSink = _MemorySink<_Chunk>();
+          final calls = <String>[];
+          final usecase = AgentStreamService<_Chunk>(
+            cancellationEffects: cancellationRuntime,
+            provider: _FakeAgentStreamProvider(
+              persistenceSink: persistenceSink,
+              uiSink: uiSink,
+              calls: calls,
+            ),
+          );
+
+          trace.add('start:$conversationId');
+          final run = usecase.call(
+            conversationId: conversationId,
+            responseStream: responseStream.stream,
+            pendingUserMessageIds: const [],
+          );
+          responseStream.add(const _Chunk('first'));
+          await firstChunkPersisted.future;
+          trace.add('persist:first');
+
+          final events = seed.isEven
+              ? ['close', 'cancel', 'cancel']
+              : ['cancel', 'cancel', 'close'];
+          for (final event in events) {
+            trace.add(event);
+            if (event == 'cancel') {
+              cancellationScope.requestStop();
+              if (!responseStream.isClosed) {
+                responseStream.add(const _Chunk('late'));
+                trace.add('emit:late');
+              }
+            } else {
+              await responseStream.close();
+              await run;
+            }
+          }
+
+          final result = await run;
+          await cancellationScope.cleanupCompletion;
+          final terminalWrites = calls
+              .where(
+                (call) =>
+                    call.startsWith('stopped:') ||
+                    call.startsWith('complete:'),
+              )
+              .toList();
+
+          expect(result.messageId, 'm1');
+          expect(result.hasToolCalls, isFalse);
+          expect(terminalWrites, hasLength(1));
+          terminalKinds.add(
+            terminalWrites.single.startsWith('stopped:')
+                ? 'stopped'
+                : 'completed',
+          );
+          expect(persistenceSink.items.map((chunk) => chunk.text), ['first']);
+          expect(uiSink.items.map((chunk) => chunk.text), ['first']);
+          expect(
+            calls.where((call) => call == 'start:$conversationId').toList(),
+            ['start:$conversationId'],
+          );
+          expect(
+            calls.where((call) => call == 'remove:$conversationId').toList(),
+            ['remove:$conversationId'],
+          );
+        } on Object catch (error, stackTrace) {
+          Error.throwWithStackTrace(
+            StateError('seed=$seed events=${trace.join(' -> ')}\n$error'),
+            stackTrace,
+          );
+        }
+      }
+      expect(terminalKinds, {'stopped', 'completed'});
+    },
+  );
+
+  test(
     'keeps cancellation pending until stopped-message cleanup finishes',
     () async {
       final cancellationRuntime = FakeCancellationEffects()..start('c1');
@@ -339,12 +435,14 @@ class const _FakeAgentStreamProvider({
   void trackCancellationStreamError(Object error, StackTrace stackTrace) {}
 }
 
-class _MemorySink<T> implements AgentChunkSink<T> {
+class _MemorySink<T>({final void Function(T)? onAdd})
+    implements AgentChunkSink<T> {
   final items = <T>[];
 
   @override
   void add(T chunk) {
     items.add(chunk);
+    onAdd?.call(chunk);
   }
 
   @override
