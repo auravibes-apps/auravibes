@@ -2,54 +2,34 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/provider_recovery_metadata.dart';
 
 /// A message together with the transient streaming state used by the timeline.
-class ResolvedChatMessage {
-  const ResolvedChatMessage({
-    required this.message,
-    required this.isStreaming,
-  });
-
-  final MessageEntity message;
-  final bool isStreaming;
-}
+class const ResolvedChatMessage({
+  required final MessageEntity message,
+  required final bool isStreaming,
+});
 
 sealed class ChatTimelineItem {
   const ChatTimelineItem();
 }
 
-class ActivityRunTimelineItem extends ChatTimelineItem {
-  const ActivityRunTimelineItem(this.run);
+class const ActivityRunTimelineItem(final ActivityRun run)
+    extends ChatTimelineItem;
 
-  final ActivityRun run;
-}
+class const MessageTimelineItem(
+  final ResolvedChatMessage source, {
+  final bool activityRenderedInSession = false,
+  final bool showResponseActions = true,
+}) extends ChatTimelineItem;
 
-class MessageTimelineItem extends ChatTimelineItem {
-  const MessageTimelineItem(
-    this.source, {
-    this.activityRenderedInSession = false,
-    this.showResponseActions = true,
-  });
-
-  final ResolvedChatMessage source;
-  final bool activityRenderedInSession;
-  final bool showResponseActions;
-}
-
-class ActivityRun {
-  const ActivityRun(
-    this.sources, {
-    this.activityContentMessageIds = const {},
-    this.richResponseMessageIds = const {},
-    this.pendingToolCallKeys = const {},
-    this.responseMessageId,
-  });
-
-  final List<ResolvedChatMessage> sources;
-  final Set<String> activityContentMessageIds;
-  final Set<String> richResponseMessageIds;
-  final Set<String> pendingToolCallKeys;
-  final String? responseMessageId;
-
-  String get id => sources.first.message.id;
+class const ActivityRun(
+  final List<ResolvedChatMessage> sources, {
+  final Set<String> activityContentMessageIds = const {},
+  final Set<String> richResponseMessageIds = const {},
+  final Set<String> pendingToolCallKeys = const {},
+  final String? responseMessageId,
+}) {
+  String get id =>
+      sources.firstOrNull?.message.id ??
+      (throw StateError('An activity run must contain a message source.'));
 }
 
 typedef ActivityToolCall = ({
@@ -67,38 +47,23 @@ sealed class ActivityRunEntry {
   const ActivityRunEntry();
 }
 
-class ActivityNarrativeEntry extends ActivityRunEntry {
-  const ActivityNarrativeEntry({
-    required this.messageId,
-    required this.content,
-  });
+class const ActivityNarrativeEntry({
+  required final String messageId,
+  required final String content,
+}) extends ActivityRunEntry;
 
-  final String messageId;
-  final String content;
-}
+class const ActivityThinkingEntry({
+  required final String messageId,
+  required final String content,
+}) extends ActivityRunEntry;
 
-class ActivityThinkingEntry extends ActivityRunEntry {
-  const ActivityThinkingEntry({
-    required this.messageId,
-    required this.content,
-  });
+class const ActivityResponseEntry(
+  final ResolvedChatMessage source, {
+  required final bool isFinal,
+}) extends ActivityRunEntry;
 
-  final String messageId;
-  final String content;
-}
-
-class ActivityResponseEntry extends ActivityRunEntry {
-  const ActivityResponseEntry(this.source, {required this.isFinal});
-
-  final ResolvedChatMessage source;
-  final bool isFinal;
-}
-
-class ActivityToolGroupEntry extends ActivityRunEntry {
-  const ActivityToolGroupEntry(this.toolCalls);
-
-  final List<ActivityToolCall> toolCalls;
-}
+class const ActivityToolGroupEntry(final List<ActivityToolCall> toolCalls)
+    extends ActivityRunEntry;
 
 List<ActivityRunEntry> buildActivityRunEntries(ActivityRun run) {
   final entries = <ActivityRunEntry>[];
@@ -106,7 +71,7 @@ List<ActivityRunEntry> buildActivityRunEntries(ActivityRun run) {
 
   void addToolGroup() {
     if (toolCalls.isEmpty) return;
-    entries.add(ActivityToolGroupEntry(List.of(toolCalls)));
+    entries.add(ActivityToolGroupEntry(.of(toolCalls)));
     toolCalls.clear();
   }
 
@@ -169,9 +134,9 @@ List<ChatTimelineItem> buildChatTimelineItems(
   void addActivityRun({String? responseMessageId}) {
     if (activitySources.isEmpty) return;
     final run = ActivityRun(
-      List.of(activitySources),
-      activityContentMessageIds: Set.of(activityContentMessageIds),
-      richResponseMessageIds: Set.of(richResponseMessageIds),
+      .of(activitySources),
+      activityContentMessageIds: .of(activityContentMessageIds),
+      richResponseMessageIds: .of(richResponseMessageIds),
       pendingToolCallKeys: pendingToolCallKeys,
       responseMessageId: responseMessageId,
     );
@@ -279,9 +244,9 @@ bool hasAssistantResponseCandidate(
 String? retryableUserMessageId(List<ResolvedChatMessage?> messages) {
   for (final source in messages.reversed) {
     final message = source?.message;
-    if (message?.isUser != true) continue;
+    if (message == null || !message.isUser) continue;
 
-    return canRetryUserMessage(message!) ? message.id : null;
+    return canRetryUserMessage(message) ? message.id : null;
   }
 
   return null;

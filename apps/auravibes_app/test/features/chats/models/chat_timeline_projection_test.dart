@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/chats/models/chat_timeline_projection.dart';
+import 'package:auravibes_app/features/chats/models/resolved_chat_message.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -36,11 +36,11 @@ void main() {
       final source = ResolvedChatMessage(
         message: _message(
           id: 'forked-activity',
-          isForkReference: true,
           metadata: const MessageMetadataEntity(
-            thinking: '  Searching sources  ',
             toolCalls: [toolCall],
+            thinking: '  Searching sources  ',
           ),
+          isForkReference: true,
         ),
         isStreaming: true,
       );
@@ -58,7 +58,7 @@ void main() {
       expect(item.run.id, 'forked-activity');
       expect(entries, hasLength(2));
       expect(
-        (entries.first as ActivityThinkingEntry).content,
+        (entries.firstOrNull as ActivityThinkingEntry).content,
         'Searching sources',
       );
       final toolGroup = entries.last as ActivityToolGroupEntry;
@@ -108,8 +108,8 @@ void main() {
       final summary = ResolvedChatMessage(
         message: _message(
           id: 'compaction-summary',
-          messageType: .system,
           content: 'Earlier conversation summary',
+          messageType: .system,
           metadata: const MessageMetadataEntity(isCompactionSummary: true),
         ),
         isStreaming: false,
@@ -125,11 +125,14 @@ void main() {
       final items = buildChatTimelineItems([before, summary, after], const {});
 
       expect(items, hasLength(3));
-      expect(items[0], isA<ActivityRunTimelineItem>());
+      expect(items.firstOrNull, isA<ActivityRunTimelineItem>());
       expect(items[1], isA<MessageTimelineItem>());
       expect((items[1] as MessageTimelineItem).source, summary);
       expect(items[2], isA<ActivityRunTimelineItem>());
-      expect((items[0] as ActivityRunTimelineItem).run.id, 'before-summary');
+      expect(
+        (items.firstOrNull as ActivityRunTimelineItem).run.id,
+        'before-summary',
+      );
       expect((items[2] as ActivityRunTimelineItem).run.id, 'after-summary');
     });
 
@@ -137,9 +140,9 @@ void main() {
       final retryable = ResolvedChatMessage(
         message: _message(
           id: 'retryable-user',
+          content: 'Try this again',
           isUser: true,
           status: .error,
-          content: 'Try this again',
         ),
         isStreaming: false,
       );
@@ -150,10 +153,10 @@ void main() {
       final forkReference = ResolvedChatMessage(
         message: _message(
           id: 'forked-user',
-          isUser: true,
-          isForkReference: true,
-          status: .unfinished,
           content: 'Inherited prompt',
+          isUser: true,
+          status: .unfinished,
+          isForkReference: true,
         ),
         isStreaming: false,
       );
