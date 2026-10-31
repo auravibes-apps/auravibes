@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/semantics.dart' show SemanticsAction, SemanticsFlag;
 
 /// Finds one Aura action by its widget [key], semantics [semanticsIdentifier],
 /// or both when the key wraps the identified semantic control.

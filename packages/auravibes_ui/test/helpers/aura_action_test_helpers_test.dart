@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsAction, SemanticsFlag;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'aura_action_test_helpers.dart';
