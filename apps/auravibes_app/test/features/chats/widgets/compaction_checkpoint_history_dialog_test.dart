@@ -26,6 +26,7 @@ class _RestoreUsecase extends Mock
 class const _Subject({
   required final RestoreCompactionCheckpointUsecase restoreUsecase,
   required final Locale locale,
+  required final List<MessageEntity> messages,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EasyLocalization(
@@ -40,7 +41,7 @@ class const _Subject({
             chatMessagesByConversationProvider(
               _workspaceId,
               _conversationId,
-            ).overrideWith((_) => Stream.value(_messages)),
+            ).overrideWith((_) => Stream.value(messages)),
             restoreCompactionCheckpointUsecaseProvider.overrideWithValue(
               restoreUsecase,
             ),
@@ -120,6 +121,7 @@ final List<MessageEntity> _messages = [
     messageType: .system,
     metadata: const MessageMetadataEntity(
       isCompactionSummary: true,
+      compactedFromMessageId: 'replay-user',
       compactedThroughMessageId: 'replay-assistant',
       compactedMessageIds: ['replay-user', 'replay-assistant'],
     ),
@@ -182,7 +184,17 @@ void main() {
     await _openPreview(tester);
 
     expect(find.text('Restore checkpoint preview'), findsOneWidget);
+    expect(find.text('Active checkpoint'), findsNWidgets(2));
+    expect(find.text('Checkpoint to restore'), findsOneWidget);
     expect(find.text('Older checkpoint summary'), findsOneWidget);
+    expect(find.text('Current checkpoint summary'), findsNWidgets(2));
+    expect(
+      find.text(
+        'This checkpoint has a different summary from the active checkpoint.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('replay-user'), findsNWidgets(2));
     expect(find.textContaining('before-user'), findsNWidgets(2));
     expect(find.textContaining('before-assistant'), findsNWidgets(3));
     expect(find.textContaining('openai/gpt-test'), findsNWidgets(2));
@@ -191,7 +203,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Messages that will be replayed: 3'), findsOneWidget);
-    expect(find.textContaining('Sep 20, 2026'), findsOneWidget);
+    expect(find.textContaining('Sep 20, 2026'), findsNWidgets(2));
     expect(find.text('Replay user message'), findsOneWidget);
     expect(find.text('Replay assistant response'), findsOneWidget);
     expect(find.text('Current user message'), findsOneWidget);
@@ -206,6 +218,33 @@ void main() {
     expect(find.text('Active checkpoint'), findsOneWidget);
     expect(find.text('Current checkpoint summary'), findsOneWidget);
     final _ = verifyNever(() => restoreUsecase.call(any()));
+  });
+
+  testWidgets('labels matching checkpoint summaries without duplicating text', (
+    tester,
+  ) async {
+    final restoreUsecase = _RestoreUsecase();
+    stubRestoreUsecase(restoreUsecase);
+    final messages = _messages
+        .map(
+          (message) => message.id == _oldCheckpointId
+              ? message.copyWith(content: 'Current checkpoint summary')
+              : message,
+        )
+        .toList();
+
+    await _pump(tester, restoreUsecase, messages: messages);
+    await _openHistory(tester);
+    await _openPreview(tester);
+
+    expect(
+      find.text(
+        'This checkpoint has the same summary as the active checkpoint.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Current checkpoint summary'), findsNWidgets(2));
+    expect(find.text('Older checkpoint summary'), findsNothing);
   });
 
   testWidgets('dismissal and repeated input do not restore a checkpoint', (
@@ -306,6 +345,13 @@ void main() {
       find.text('$spanishRestoreLabel del punto de control'),
       findsOneWidget,
     );
+    expect(find.text('Punto de control que se restaurará'), findsOneWidget);
+    expect(
+      find.text(
+        'Este punto de control tiene un resumen distinto del punto de control activo.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Restaurar punto de control'), findsOneWidget);
     expect(find.text('Cancelar'), findsOneWidget);
   });
@@ -315,10 +361,15 @@ Future<void> _pump(
   WidgetTester tester,
   RestoreCompactionCheckpointUsecase restoreUsecase, {
   Locale locale = const Locale('en'),
+  List<MessageEntity> messages = _messages,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
-      _Subject(restoreUsecase: restoreUsecase, locale: locale),
+      _Subject(
+        restoreUsecase: restoreUsecase,
+        locale: locale,
+        messages: messages,
+      ),
     );
   });
   await tester.pump();

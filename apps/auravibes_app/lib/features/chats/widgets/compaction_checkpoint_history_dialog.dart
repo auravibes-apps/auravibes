@@ -21,11 +21,19 @@ typedef _PreviewCheckpointRestore = void Function(
 );
 
 typedef _CheckpointRestorePreview = ({
+  MessageEntity activeCheckpoint,
   int conversationRevision,
   MessageEntity checkpoint,
   List<MessageEntity> replayMessages,
   List<MessageEntity> transcriptMessages,
 });
+
+const _targetCheckpointLabelKey =
+    'compaction.compacted.history_preview_target_checkpoint';
+const _sameCheckpointSummaryKey =
+    'compaction.compacted.history_preview_summary_same';
+const _differentCheckpointSummaryKey =
+    'compaction.compacted.history_preview_summaries_different';
 
 class const CompactionCheckpointHistoryDialog({
   required final String workspaceId,
@@ -141,6 +149,11 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
   MessageEntity checkpoint,
   CompactionCheckpointHistory history,
 ) {
+  final activeCheckpoint = history.summaries
+      .where((summary) => summary.id == history.activeCheckpointId)
+      .firstOrNull;
+  if (activeCheckpoint == null) return null;
+
   final transcriptMessages = SelectPromptMessagesUsecase.promptEligibleMessages(
     history.messages,
   );
@@ -151,6 +164,7 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
   if (selectedMessages == null) return null;
 
   return (
+    activeCheckpoint: activeCheckpoint,
     conversationRevision: history.conversationRevision,
     checkpoint: checkpoint,
     replayMessages: List<MessageEntity>.unmodifiable(selectedMessages.skip(1)),
@@ -443,17 +457,50 @@ class const _CheckpointRestorePreviewDetails({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
-    final checkpoint = preview.checkpoint;
+    final activeCheckpoint = preview.activeCheckpoint;
+    final targetCheckpoint = preview.checkpoint;
+    final summariesMatch = activeCheckpoint.content == targetCheckpoint.content;
 
     return AuraColumn(
       children: [
-        _CheckpointPreviewMetadata(checkpoint: checkpoint),
-        _CheckpointPreviewSummary(checkpoint: checkpoint),
+        _CheckpointPreviewSection(
+          checkpoint: activeCheckpoint,
+          headingKey: LocaleKeys.compaction_compacted_history_active,
+          isActive: true,
+          summaryMatchesActive: true,
+        ),
+        _CheckpointPreviewSection(
+          checkpoint: targetCheckpoint,
+          headingKey: _targetCheckpointLabelKey,
+          isActive: false,
+          summaryMatchesActive: summariesMatch,
+        ),
         _CheckpointReplayPlan(preview: preview),
       ],
       crossAxisAlignment: .stretch,
     );
   }
+}
+
+class const _CheckpointPreviewSection({
+  required final MessageEntity checkpoint,
+  required final String headingKey,
+  required final bool isActive,
+  required final bool summaryMatchesActive,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      TextLocale(headingKey, style: .new(fontWeight: FontWeight.bold)),
+      _CheckpointPreviewMetadata(checkpoint: checkpoint),
+      _CheckpointPreviewSummary(
+        checkpoint: checkpoint,
+        isActive: isActive,
+        summaryMatchesActive: summaryMatchesActive,
+      ),
+    ],
+    crossAxisAlignment: .stretch,
+  );
 }
 
 class const _CheckpointPreviewMetadata({
@@ -491,8 +538,11 @@ class const _CheckpointPreviewTimestamp({required final DateTime createdAt})
   }
 }
 
-class const _CheckpointPreviewSummary({required final MessageEntity checkpoint})
-    extends StatelessWidget {
+class const _CheckpointPreviewSummary({
+  required final MessageEntity checkpoint,
+  required final bool isActive,
+  required final bool summaryMatchesActive,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraColumn(
     children: [
@@ -500,7 +550,14 @@ class const _CheckpointPreviewSummary({required final MessageEntity checkpoint})
         LocaleKeys.compaction_compacted_history_preview_summary,
         style: .new(fontWeight: FontWeight.bold),
       ),
-      AuraSelectableText(checkpoint.content, style: .bodySmall),
+      if (!isActive)
+        TextLocale(
+          summaryMatchesActive
+              ? _sameCheckpointSummaryKey
+              : _differentCheckpointSummaryKey,
+        ),
+      if (isActive || !summaryMatchesActive)
+        AuraSelectableText(checkpoint.content, style: .bodySmall),
     ],
     crossAxisAlignment: .stretch,
   );
