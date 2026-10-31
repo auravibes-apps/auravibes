@@ -5,7 +5,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -16,7 +18,10 @@ typedef _ConversationPagination = ({int? limit, int offset});
 typedef _ConversationListOptions = ({
   String search,
   _ConversationPagination pagination,
+  bool fetchAllPages,
 });
+
+const _cloudConversationPageSize = 100;
 
 const _ConversationPagination _defaultConversationPagination = (
   limit: null,
@@ -77,6 +82,7 @@ Stream<List<ConversationEntity>> conversationsStream(
   yield* _conversationsForSession(ref, session, workspaceId, (
     search: search,
     pagination: pagination,
+    fetchAllPages: false,
   ));
 }
 
@@ -100,7 +106,7 @@ Stream<List<ConversationEntity>> _conversationsForSession(
       );
 }
 
-@riverpod
+@Riverpod(retry: _childConversationRetry)
 Stream<List<ConversationEntity>> childConversationsStream(
   Ref ref,
   String workspaceId, {
@@ -117,18 +123,29 @@ Stream<List<ConversationEntity>> childConversationsStream(
   return _localChildConversations(ref, parentConversationId);
 }
 
+Duration? _childConversationRetry(int retryCount, Object error) {
+  if (error is CloudAppException && error.code == 'invalidCursor') return null;
+
+  return ProviderContainer.defaultRetry(retryCount, error);
+}
+
 Stream<List<ConversationEntity>> _cloudChildConversations(
   Ref ref,
   CloudWorkspaceRef cloud,
   String parentConversationId,
-) => _cloudConversations(ref, cloud).map(
-  (conversations) => conversations
-      .where(
-        (conversation) =>
-            conversation.parentConversationId == parentConversationId,
-      )
-      .toList(),
-);
+) =>
+    _cloudConversations(ref, cloud, (
+      search: '',
+      pagination: _defaultConversationPagination,
+      fetchAllPages: true,
+    )).map(
+      (conversations) => conversations
+          .where(
+            (conversation) =>
+                conversation.parentConversationId == parentConversationId,
+          )
+          .toList(),
+    );
 
 Stream<List<ConversationEntity>> _localChildConversations(
   Ref ref,
@@ -150,6 +167,7 @@ Stream<List<ConversationEntity>> _cloudConversations(
   _ConversationListOptions options = (
     search: '',
     pagination: _defaultConversationPagination,
+    fetchAllPages: false,
   ),
 ]) async* {
   final gateway = await ref.watch(
@@ -179,11 +197,9 @@ _readCloudConversations(
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
 ) async {
-  final conversations = await _readCloudConversationPage(
-    gateway,
-    cloud,
-    options,
-  );
+  final conversations = options.fetchAllPages
+      ? await _readAllCloudConversationPages(gateway, cloud)
+      : await _readCloudConversationPage(gateway, cloud, options);
   final currentSequence = await _cloudConversationSequence(gateway);
 
   return _cloudConversationSnapshot(
@@ -211,13 +227,44 @@ Future<List<ConversationSummary>> _readCloudConversationPage(
   final page = await gateway.client.conversation.listPage(
     .new(
       workspaceId: cloud.cloudWorkspaceId,
-      limit: options.pagination.limit ?? 100,
+      limit: options.pagination.limit ?? _cloudConversationPageSize,
       search: options.search.isEmpty ? null : options.search,
       offset: options.pagination.offset,
     ),
   );
 
   return page.conversations;
+}
+
+Future<List<ConversationSummary>> _readAllCloudConversationPages(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+) async {
+  final conversations = <ConversationSummary>[];
+  final seenCursors = <String>{};
+  String? cursor;
+
+  while (true) {
+    final page = await gateway.client.conversation.listPage(
+      .new(
+        workspaceId: cloud.cloudWorkspaceId,
+        limit: _cloudConversationPageSize,
+        cursor: cursor,
+      ),
+    );
+    conversations.addAll(page.conversations);
+
+    final nextCursor = page.nextCursor;
+    if (nextCursor == null) return conversations;
+    if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
+      throw const CloudAppException(
+        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+        context: .conversation,
+        code: 'invalidCursor',
+      );
+    }
+    cursor = nextCursor;
+  }
 }
 
 Future<int> _cloudConversationSequence(

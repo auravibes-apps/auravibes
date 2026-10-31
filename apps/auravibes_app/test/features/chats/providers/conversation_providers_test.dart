@@ -7,12 +7,17 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _FakeConversationRepository implements ConversationRepository {
   ConversationEntity? conversationById;
   List<ConversationEntity> conversationsByWorkspace = const [];
+  final Map<String, List<ConversationEntity>> childConversationsByParent = {};
 
   @override
   Stream<ConversationEntity?> watchConversationById(String id) =>
@@ -29,7 +34,9 @@ class _FakeConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchChildConversations(
     String parentConversationId,
-  ) => const Stream.empty();
+  ) => Stream.value(
+    childConversationsByParent[parentConversationId] ?? const [],
+  );
 
   @override
   Future<List<ConversationEntity>> getChildConversations(
@@ -237,6 +244,147 @@ void main() {
         equals([unpinnedFirst, pinnedFirst, unpinnedSecond, pinnedSecond]),
       );
     });
+
+    test('keeps regular cloud conversation listing to one page', () async {
+      final endpoint = _TestConversationEndpoint([
+        ConversationPage(
+          conversations: [_cloudConversationSummary(id: 'first-page')],
+          nextCursor: 'page-2',
+        ),
+        ConversationPage(
+          conversations: [_cloudConversationSummary(id: 'second-page')],
+        ),
+      ]);
+      final container = _cloudContainer(endpoint);
+      addTearDown(container.dispose);
+      final provider = conversationsStreamProvider(workspaceId: 'cloud');
+      final subscription = container.listen(
+        provider,
+        (_, next) => next.toString(),
+      );
+      addTearDown(subscription.close);
+
+      final conversations = await container.read(provider.future);
+
+      expect(conversations.map((conversation) => conversation.id), [
+        'first-page',
+      ]);
+      expect(endpoint.requests, hasLength(1));
+      expect(endpoint.requests.single.cursor, isNull);
+    });
+  });
+
+  group('childConversationsStreamProvider', () {
+    final fixture = _ConversationProviderFixture();
+
+    setUp(fixture.reset);
+
+    tearDown(fixture.dispose);
+
+    test('streams local child conversations from the repository', () async {
+      final child = _conversation(
+        id: 'local-child',
+        workspaceId: 'ws1',
+        parentConversationId: 'parent',
+      );
+      fixture.repository.childConversationsByParent['parent'] = [child];
+
+      final children = await _readChildConversations(
+        fixture.container,
+        workspaceId: 'ws1',
+        parentConversationId: 'parent',
+      );
+
+      expect(children, [child]);
+    });
+
+    test('paginates cloud children and filters other parents', () async {
+      final endpoint = _TestConversationEndpoint([
+        ConversationPage(
+          conversations: .generate(
+            100,
+            (index) => _cloudConversationSummary(id: 'page-1-$index'),
+          ),
+          nextCursor: 'page-2',
+        ),
+        ConversationPage(
+          conversations: [
+            _cloudConversationSummary(
+              id: 'requested-child',
+              parentConversationId: 'parent',
+            ),
+            _cloudConversationSummary(
+              id: 'other-parent-child',
+              parentConversationId: 'other-parent',
+            ),
+          ],
+        ),
+      ]);
+      final container = _cloudContainer(endpoint);
+      addTearDown(container.dispose);
+
+      final children = await _readChildConversations(
+        container,
+        workspaceId: 'cloud',
+        parentConversationId: 'parent',
+      );
+
+      expect(children.map((conversation) => conversation.id), [
+        'requested-child',
+      ]);
+      expect(endpoint.requests, hasLength(2));
+      expect(endpoint.requests.map((request) => request.cursor), [
+        null,
+        'page-2',
+      ]);
+      expect(endpoint.requests.map((request) => request.limit), [100, 100]);
+    });
+
+    test('rejects a repeated cloud conversation cursor', () async {
+      final endpoint = _TestConversationEndpoint([
+        ConversationPage(
+          conversations: [_cloudConversationSummary(id: 'page-1')],
+          nextCursor: 'page-2',
+        ),
+        ConversationPage(
+          conversations: [_cloudConversationSummary(id: 'page-2')],
+          nextCursor: 'page-2',
+        ),
+      ]);
+      final container = _cloudContainer(endpoint);
+      addTearDown(container.dispose);
+
+      await expectLater(
+        _readChildConversations(
+          container,
+          workspaceId: 'cloud',
+          parentConversationId: 'parent',
+        ),
+        throwsA(_invalidConversationCursorException()),
+      );
+      expect(endpoint.requests, hasLength(2));
+    });
+
+    test('rejects an empty cloud conversation cursor', () async {
+      final endpoint = _TestConversationEndpoint([
+        ConversationPage(
+          conversations: [_cloudConversationSummary(id: 'page-1')],
+          nextCursor: '',
+        ),
+      ]);
+      final container = _cloudContainer(endpoint);
+      addTearDown(container.dispose);
+
+      await expectLater(
+        _readChildConversations(
+          container,
+          workspaceId: 'cloud',
+          parentConversationId: 'parent',
+        ),
+        throwsA(_invalidConversationCursorException()),
+      );
+      expect(endpoint.requests, hasLength(1));
+    });
   });
 
   test(
@@ -347,3 +495,141 @@ class _ConversationProviderFixture {
     _container = null;
   }
 }
+
+const _cloudWorkspace = CloudWorkspaceRef(
+  localWorkspaceId: 'cloud',
+  serverUrl: 'https://example.com',
+  accountId: 'account',
+  cloudWorkspaceId: 7,
+);
+
+ProviderContainer _cloudContainer(_TestConversationEndpoint endpoint) {
+  final client = _TestClient(endpoint);
+  final gateway = _TestCloudWorkspaceStateGateway(
+    workspace: _cloudWorkspace,
+    client: client,
+  );
+
+  return ProviderContainer(
+    overrides: [
+      workspaceSessionForRouteProvider(
+        'cloud',
+      ).overrideWithValue(const AsyncData(WorkspaceSession(_cloudWorkspace))),
+      cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
+        (_, _) async => gateway,
+      ),
+    ],
+  );
+}
+
+Future<List<ConversationEntity>> _readChildConversations(
+  ProviderContainer container, {
+  required String workspaceId,
+  required String parentConversationId,
+}) async {
+  final provider = childConversationsStreamProvider(
+    workspaceId,
+    parentConversationId: parentConversationId,
+  );
+  final subscription = container.listen(provider, (_, next) => next.toString());
+  try {
+    return await container.read(provider.future);
+  } finally {
+    subscription.close();
+  }
+}
+
+class _TestClient extends Fake implements Client {
+  new(this.conversation);
+
+  @override
+  final EndpointConversation conversation;
+}
+
+class _TestConversationEndpoint extends Fake implements EndpointConversation {
+  new(this._pages);
+
+  final requests = <ListConversationsRequest>[];
+  final List<ConversationPage> _pages;
+
+  @override
+  Future<ConversationPage> listPage(ListConversationsRequest request) async {
+    requests.add(request);
+    if (requests.length > _pages.length) {
+      throw StateError('Unexpected conversation page request.');
+    }
+
+    return _pages[requests.length - 1];
+  }
+}
+
+class _TestCloudWorkspaceStateGateway extends Fake
+    implements CloudWorkspaceStateGateway {
+  new({required this.workspace, required this.client});
+
+  @override
+  final CloudWorkspaceRef workspace;
+
+  @override
+  final Client client;
+
+  @override
+  Future<ReadWorkspaceStateResponse> read({
+    required List<WorkspaceResourcePageRequest> pages,
+    int? afterSequence,
+    int eventLimit = 100,
+  }) async => ReadWorkspaceStateResponse(
+    pages: const [],
+    currentSequence: 1,
+    events: const [],
+    requiresSnapshot: false,
+  );
+
+  @override
+  Stream<T> watch<T>(
+    Set<String> resourceKinds,
+    Future<({T value, int currentSequence})> Function() load,
+  ) async* {
+    yield (await load()).value;
+  }
+}
+
+ConversationSummary _cloudConversationSummary({
+  required String id,
+  String? parentConversationId,
+}) => ConversationSummary(
+  id: id,
+  title: id,
+  isPinned: false,
+  parentConversationId: parentConversationId,
+  revision: 1,
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
+);
+
+ConversationEntity _conversation({
+  required String id,
+  required String workspaceId,
+  String? parentConversationId,
+}) => .new(
+  id: id,
+  title: id,
+  workspaceId: workspaceId,
+  isPinned: false,
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
+  parentConversationId: parentConversationId,
+);
+
+Matcher _invalidConversationCursorException() => isA<CloudAppException>()
+    .having(
+      (exception) => exception.localizationKey,
+      'localizationKey',
+      LocaleKeys.cloud_errors_malformed_resource,
+    )
+    .having(
+      (exception) => exception.context,
+      'context',
+      CloudOperationContext.conversation,
+    )
+    .having((exception) => exception.code, 'code', 'invalidCursor');
