@@ -7,6 +7,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 typedef _WorkflowLinkDrag = ({
@@ -45,11 +46,18 @@ class WorkflowCanvas extends StatefulWidget {
 }
 
 class _WorkflowCanvasState extends State<WorkflowCanvas> {
+  final GlobalKey _sceneKey = GlobalKey();
   final TransformationController _transform = TransformationController();
+  final ValueNotifier<Offset?> _dragPosition = ValueNotifier(null);
+  String? _draggedNodeId;
+  Offset? _dragStartPosition;
+  Offset? _dragStartPointerPosition;
+  Offset? _pointerDownGlobalPosition;
 
   @override
   void dispose() {
     _transform.dispose();
+    _dragPosition.dispose();
     super.dispose();
   }
 
@@ -61,32 +69,101 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
     minScale: 0.45,
     transformationController: _transform,
     child: _WorkflowCanvasScene(
+      sceneKey: _sceneKey,
       workflow: widget.workflow,
       editorState: widget.editorState,
+      draggedNodeId: _draggedNodeId,
+      dragPosition: _dragPosition,
       onSelectNode: widget.onSelectNode,
       onClearSelection: widget.onClearSelection,
-      onMoveNode: widget.onMoveNode,
+      onPointerDown: (globalPosition) =>
+          _pointerDownGlobalPosition = globalPosition,
+      onMoveStart: _startNodeMove,
+      onMoveUpdate: _updateNodeMove,
+      onMoveEnd: _finishNodeMove,
       onAddNode: widget.onAddNode,
       onConnect: widget.onConnect,
     ),
   );
+
+  void _startNodeMove(
+    String nodeId,
+    double x,
+    double y,
+    Offset globalPosition,
+  ) {
+    if (_draggedNodeId != null) return;
+    final pointerPosition = _scenePosition(
+      _pointerDownGlobalPosition ?? globalPosition,
+    );
+    if (pointerPosition == null) return;
+    _dragStartPosition = Offset(x, y);
+    _dragStartPointerPosition = pointerPosition;
+    _dragPosition.value = _dragStartPosition;
+    setState(() => _draggedNodeId = nodeId);
+  }
+
+  void _updateNodeMove(String nodeId, Offset globalPosition) {
+    final start = _dragStartPosition;
+    final pointerStart = _dragStartPointerPosition;
+    if (_draggedNodeId != nodeId || start == null || pointerStart == null) {
+      return;
+    }
+
+    final pointerPosition = _scenePosition(globalPosition);
+    if (pointerPosition == null) return;
+    final delta = pointerPosition - pointerStart;
+    _dragPosition.value = Offset(
+      WorkflowConnectionGeometry.boundedPosition(start.dx + delta.dx),
+      WorkflowConnectionGeometry.boundedPosition(start.dy + delta.dy),
+    );
+  }
+
+  void _finishNodeMove(String nodeId) {
+    final start = _dragStartPosition;
+    final position = _dragPosition.value;
+    if (_draggedNodeId != nodeId || start == null || position == null) return;
+
+    if (position != start) {
+      widget.onMoveNode(nodeId, position.dx, position.dy);
+    }
+    setState(() => _draggedNodeId = null);
+    _dragPosition.value = null;
+    _dragStartPosition = null;
+    _dragStartPointerPosition = null;
+    _pointerDownGlobalPosition = null;
+  }
+
+  Offset? _scenePosition(Offset globalPosition) {
+    final renderObject = _sceneKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox) return null;
+
+    return renderObject.globalToLocal(globalPosition);
+  }
 }
 
 class const _WorkflowCanvasScene({
+  required final GlobalKey sceneKey,
   required final WorkspaceWorkflow workflow,
   required final WorkflowEditorState editorState,
+  required final String? draggedNodeId,
+  required final ValueListenable<Offset?> dragPosition,
   required final ValueChanged<String> onSelectNode,
   required final VoidCallback onClearSelection,
+  required final ValueChanged<Offset> onPointerDown,
+  required final void Function(String, double, double, Offset) onMoveStart,
+  required final void Function(String, Offset) onMoveUpdate,
+  required final ValueChanged<String> onMoveEnd,
   required final void Function(String, WorkflowConditionBranch?) onAddNode,
   required final void Function(String, String, WorkflowConditionBranch?)
   onConnect,
-  required final void Function(String, double, double) onMoveNode,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = WorkflowCanvasLayout.sizeFor(workflow);
 
     return SizedBox(
+      key: sceneKey,
       width: size.width,
       height: size.height,
       child: Stack(
@@ -108,23 +185,27 @@ class const _WorkflowCanvasScene({
               painter: _WorkflowConnectionPainter(
                 workflow: workflow,
                 color: context.auraColors.primary,
+                draggedNodeId: draggedNodeId,
+                dragPosition: dragPosition,
               ),
             ),
           ),
           for (final node in workflow.nodes)
-            Positioned(
-              left: WorkflowConnectionGeometry.boundedPosition(node.x),
-              top: WorkflowConnectionGeometry.boundedPosition(node.y),
+            _WorkflowPositionedNode(
+              nodeId: node.id,
+              nodePosition: Offset(node.x, node.y),
+              draggedNodeId: draggedNodeId,
+              dragPosition: dragPosition,
               child: _WorkflowCanvasNode(
                 node: node,
                 selected: editorState.selectedNodeId == node.id,
                 canEdit: workflow.canManage,
                 onSelect: () => onSelectNode(node.id),
-                onMove: (delta) => onMoveNode(
-                  node.id,
-                  WorkflowConnectionGeometry.boundedPosition(node.x + delta.dx),
-                  WorkflowConnectionGeometry.boundedPosition(node.y + delta.dy),
-                ),
+                onPointerDown: onPointerDown,
+                onMoveStart: (position) =>
+                    onMoveStart(node.id, node.x, node.y, position),
+                onMove: (delta) => onMoveUpdate(node.id, delta),
+                onMoveEnd: () => onMoveEnd(node.id),
                 onAddNode: (branch) => onAddNode(node.id, branch),
                 onConnect: onConnect,
               ),
@@ -135,12 +216,76 @@ class const _WorkflowCanvasScene({
   }
 }
 
+class const _WorkflowPositionedNode({
+  required final String nodeId,
+  required final Offset nodePosition,
+  required final String? draggedNodeId,
+  required final ValueListenable<Offset?> dragPosition,
+  required final Widget child,
+}) extends StatefulWidget {
+  @override
+  State<_WorkflowPositionedNode> createState() =>
+      _WorkflowPositionedNodeState();
+}
+
+class _WorkflowPositionedNodeState extends State<_WorkflowPositionedNode> {
+  Offset? _previewPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewPosition = widget.dragPosition.value;
+    widget.dragPosition.addListener(_updateDragPosition);
+  }
+
+  @override
+  void dispose() {
+    widget.dragPosition.removeListener(_updateDragPosition);
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _WorkflowPositionedNode oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.dragPosition != widget.dragPosition) {
+      oldWidget.dragPosition.removeListener(_updateDragPosition);
+      widget.dragPosition.addListener(_updateDragPosition);
+    }
+    if (oldWidget.dragPosition != widget.dragPosition ||
+        oldWidget.draggedNodeId != widget.draggedNodeId) {
+      _previewPosition = widget.dragPosition.value;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final position = widget.nodeId == widget.draggedNodeId
+        ? _previewPosition ?? widget.nodePosition
+        : widget.nodePosition;
+
+    return Positioned(
+      left: WorkflowConnectionGeometry.boundedPosition(position.dx),
+      top: WorkflowConnectionGeometry.boundedPosition(position.dy),
+      child: widget.child,
+    );
+  }
+
+  void _updateDragPosition() {
+    if (widget.nodeId == widget.draggedNodeId) {
+      setState(() => _previewPosition = widget.dragPosition.value);
+    }
+  }
+}
+
 class const _WorkflowCanvasNode({
   required final WorkflowNode node,
   required final bool selected,
   required final bool canEdit,
   required final VoidCallback onSelect,
+  required final ValueChanged<Offset> onPointerDown,
+  required final ValueChanged<Offset> onMoveStart,
   required final ValueChanged<Offset> onMove,
+  required final VoidCallback onMoveEnd,
   required final ValueChanged<WorkflowConditionBranch?> onAddNode,
   required final void Function(String, String, WorkflowConditionBranch?)
   onConnect,
@@ -168,24 +313,34 @@ class const _WorkflowCanvasNode({
             width: WorkflowCanvasMetrics.nodeWidth + handleExtent,
             height: WorkflowCanvasMetrics.nodeHeight,
           ),
-          GestureDetector(
-            onTap: onSelect,
-            onPanUpdate: canEdit ? (details) => onMove(details.delta) : null,
-            child: SizedBox(
-              width: WorkflowCanvasMetrics.nodeWidth,
-              height: WorkflowCanvasMetrics.nodeHeight,
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: selected || candidates.isNotEmpty
-                        ? context.auraColors.primary
-                        : Theme.of(context).dividerColor,
-                    width: selected ? 2 : 1,
+          Listener(
+            onPointerDown: (event) => onPointerDown(event.position),
+            child: GestureDetector(
+              onTap: onSelect,
+              onPanStart: canEdit
+                  ? (details) => onMoveStart(details.globalPosition)
+                  : null,
+              onPanUpdate: canEdit
+                  ? (details) => onMove(details.globalPosition)
+                  : null,
+              onPanEnd: canEdit ? (_) => onMoveEnd() : null,
+              onPanCancel: canEdit ? onMoveEnd : null,
+              child: SizedBox(
+                width: WorkflowCanvasMetrics.nodeWidth,
+                height: WorkflowCanvasMetrics.nodeHeight,
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: selected || candidates.isNotEmpty
+                          ? context.auraColors.primary
+                          : Theme.of(context).dividerColor,
+                      width: selected ? 2 : 1,
+                    ),
                   ),
+                  child: _WorkflowCanvasNodeContents(node: node),
                 ),
-                child: _WorkflowCanvasNodeContents(node: node),
               ),
             ),
           ),
@@ -347,13 +502,33 @@ class const _WorkflowGridPainter({required final Color color})
       oldDelegate.color != color;
 }
 
-class const _WorkflowConnectionPainter({
-  required final WorkspaceWorkflow workflow,
-  required final Color color,
-}) extends CustomPainter {
+class _WorkflowConnectionPainter extends CustomPainter {
+  _WorkflowConnectionPainter({
+    required this.workflow,
+    required this.color,
+    required this.draggedNodeId,
+    required this.dragPosition,
+  }) : super(repaint: dragPosition);
+
+  final WorkspaceWorkflow workflow;
+  final Color color;
+  final String? draggedNodeId;
+  final ValueListenable<Offset?> dragPosition;
+
   @override
   void paint(Canvas canvas, Size size) {
     final nodes = {for (final node in workflow.nodes) node.id: node};
+    final previewPosition = dragPosition.value;
+    final activeNodeId = draggedNodeId;
+    if (previewPosition != null && activeNodeId != null) {
+      final activeNode = nodes[activeNodeId];
+      if (activeNode != null) {
+        nodes[activeNodeId] = activeNode.copyWith(
+          x: previewPosition.dx,
+          y: previewPosition.dy,
+        );
+      }
+    }
     for (final connection in workflow.connections) {
       final start = WorkflowConnectionGeometry.start(connection, nodes);
       final end = WorkflowConnectionGeometry.end(connection, nodes);
@@ -387,7 +562,10 @@ class const _WorkflowConnectionPainter({
 
   @override
   bool shouldRepaint(_WorkflowConnectionPainter oldDelegate) =>
-      oldDelegate.workflow != workflow || oldDelegate.color != color;
+      oldDelegate.workflow != workflow ||
+      oldDelegate.color != color ||
+      oldDelegate.draggedNodeId != draggedNodeId ||
+      oldDelegate.dragPosition != dragPosition;
 }
 
 abstract final class WorkflowNodeIcon {
