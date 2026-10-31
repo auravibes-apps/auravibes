@@ -124,7 +124,9 @@ void main() {
   });
   testWidgets('workspace erasure confirmation disclosure', (tester) async {
     const size = Size(960, 1400);
-    final fixture = await UxValidationFixture.create();
+    final fixture = await UxValidationFixture.create(
+      localWorkspaceId: UxValidationFixture.erasureLocalWorkspaceId,
+    );
     final router = await fixture.pump(
       tester,
       WorkspaceManagementRoute(
