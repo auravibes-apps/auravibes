@@ -175,6 +175,78 @@ void main() {
       expect(result, isNull);
     });
 
+    test('legacy service connection list keeps its typed query key', () {
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+        .parse(
+          '/workspaces/ws-1/more/service-connections'
+          '?view=providers&discard=1',
+        ),
+        [_workspace('ws-1')],
+      );
+
+      expect(result, '/workspaces/ws-1/service-connections?view=providers');
+    });
+
+    test('legacy service connection list drops duplicate query keys', () {
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+        .parse(
+          '/workspaces/ws-1/more/service-connections'
+          '?view=providers&view=services',
+        ),
+        [_workspace('ws-1')],
+      );
+
+      expect(result, '/workspaces/ws-1/service-connections');
+    });
+
+    test('preserves legacy fragment when dropping unsupported query keys', () {
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+        .parse(
+          '/workspaces/ws-1/more/service-connections'
+          '?discard=1#providers',
+        ),
+        [_workspace('ws-1')],
+      );
+
+      expect(result, '/workspaces/ws-1/service-connections#providers');
+    });
+
+    test(
+      'redirects nested legacy skill resource and drops unsupported query',
+      () {
+        final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+          .parse(
+            '/workspaces/ws-1/more/skills/skill-1/resources/resource-1'
+            '?view=providers#resource',
+          ),
+          [_workspace('ws-1')],
+        );
+
+        expect(
+          result,
+          '/workspaces/ws-1/skills/skill-1/resources/resource-1#resource',
+        );
+      },
+    );
+
+    test(
+      'does not normalize an incomplete or differently nested more path',
+      () {
+        for (final location in [
+          '/workspaces/ws-1/more',
+          '/workspaces/ws-1/skills/more/skill-1',
+        ]) {
+          expect(
+            WorkspaceRouteResolver.resolveWorkspaceRedirect(.parse(location), [
+              _workspace('ws-1'),
+            ]),
+            isNull,
+            reason: location,
+          );
+        }
+      },
+    );
+
     test('falls back to first workspace for stale saved selection', () {
       final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         .parse('/'),
