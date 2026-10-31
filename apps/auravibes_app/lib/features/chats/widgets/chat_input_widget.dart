@@ -2134,15 +2134,14 @@ class const _LocalWorkspaceNetworkDisclosure() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPadding(
     child: AuraCallout(
-      key: const ValueKey<String>('local_workspace_network_disclosure'),
       title: 'workspace_network_disclosure.title'.tr(context: context),
+      key: const ValueKey<String>('local_workspace_network_disclosure'),
       description: 'workspace_network_disclosure.description'.tr(
         context: context,
       ),
       icon: Icons.public_outlined,
-      tint: .info,
     ),
-    padding: const .bottom(.sm),
+    padding: const AuraEdgeInsetsGeometry.only(bottom: .sm),
   );
 }
 

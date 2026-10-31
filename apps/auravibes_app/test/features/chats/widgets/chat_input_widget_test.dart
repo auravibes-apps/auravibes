@@ -644,9 +644,6 @@ void main() {
       tester,
       buildSubject(
         activeConversation: activeConversation,
-        workspaceSession: const WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-        ),
         onSendMessage: (_) async {
           attempts++;
           if (attempts == 1) throw StateError('send failed');
