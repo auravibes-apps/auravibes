@@ -93,13 +93,12 @@ List<_WorkspacePackage> _workspacePackages(
   Directory root,
   List<String> errors,
 ) {
-  final result = Process.runSync('dart', const [
-    'run',
-    'melos',
-    'list',
-    '--json',
-    '--relative',
-  ], workingDirectory: root.path);
+  const arguments = ['run', 'melos', 'list', '--json', '--relative'];
+  final result = Process.runSync(
+    'dart',
+    arguments,
+    workingDirectory: root.path,
+  );
   if (result.exitCode != 0) {
     errors.add('Could not list Melos workspace packages.');
     stderr.write(result.stderr);
