@@ -146,70 +146,85 @@ class const _WorkflowCanvasNode({
   onConnect,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => DragTarget<_WorkflowLinkDrag>(
-    onWillAcceptWithDetails: (details) =>
-        canEdit && node.kind != .inputs && details.data.sourceNodeId != node.id,
-    onAcceptWithDetails: (details) =>
-        onConnect(details.data.sourceNodeId, node.id, details.data.branch),
-    builder: (context, candidates, rejected) => Stack(
-      clipBehavior: Clip.none,
-      children: [
-        GestureDetector(
-          onTap: onSelect,
-          onPanUpdate: canEdit ? (details) => onMove(details.delta) : null,
-          child: SizedBox(
-            width: WorkflowCanvasMetrics.nodeWidth,
+  Widget build(BuildContext context) {
+    final handleExtent = switch (node.kind) {
+      .outputs => 0.0,
+      .condition when canEdit => 106.0,
+      _ when canEdit => 42.0,
+      _ => 0.0,
+    };
+
+    return DragTarget<_WorkflowLinkDrag>(
+      onWillAcceptWithDetails: (details) =>
+          canEdit &&
+          node.kind != .inputs &&
+          details.data.sourceNodeId != node.id,
+      onAcceptWithDetails: (details) =>
+          onConnect(details.data.sourceNodeId, node.id, details.data.branch),
+      builder: (context, candidates, rejected) => Stack(
+        clipBehavior: Clip.none,
+        children: [
+          SizedBox(
+            width: WorkflowCanvasMetrics.nodeWidth + handleExtent,
             height: WorkflowCanvasMetrics.nodeHeight,
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: selected || candidates.isNotEmpty
-                      ? context.auraColors.primary
-                      : Theme.of(context).dividerColor,
-                  width: selected ? 2 : 1,
+          ),
+          GestureDetector(
+            onTap: onSelect,
+            onPanUpdate: canEdit ? (details) => onMove(details.delta) : null,
+            child: SizedBox(
+              width: WorkflowCanvasMetrics.nodeWidth,
+              height: WorkflowCanvasMetrics.nodeHeight,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: selected || candidates.isNotEmpty
+                        ? context.auraColors.primary
+                        : Theme.of(context).dividerColor,
+                    width: selected ? 2 : 1,
+                  ),
                 ),
+                child: _WorkflowCanvasNodeContents(node: node),
               ),
-              child: _WorkflowCanvasNodeContents(node: node),
             ),
           ),
-        ),
-        if (canEdit && node.kind != .outputs)
-          if (node.kind == .condition)
-            Positioned(
-              right: -106,
-              top: 28,
-              child: Column(
-                children: [
-                  _WorkflowNodeAddHandle(
-                    node: node,
-                    branch: .trueBranch,
-                    labelKey: LocaleKeys.workflow_editor_true,
-                    onTap: () => onAddNode(.trueBranch),
-                  ),
-                  const SizedBox(height: 8),
-                  _WorkflowNodeAddHandle(
-                    node: node,
-                    branch: .falseBranch,
-                    labelKey: LocaleKeys.workflow_editor_false,
-                    onTap: () => onAddNode(.falseBranch),
-                  ),
-                ],
+          if (canEdit && node.kind != .outputs)
+            if (node.kind == .condition)
+              Positioned(
+                right: 0,
+                top: 28,
+                child: Column(
+                  children: [
+                    _WorkflowNodeAddHandle(
+                      node: node,
+                      branch: .trueBranch,
+                      labelKey: LocaleKeys.workflow_editor_true,
+                      onTap: () => onAddNode(.trueBranch),
+                    ),
+                    const SizedBox(height: 8),
+                    _WorkflowNodeAddHandle(
+                      node: node,
+                      branch: .falseBranch,
+                      labelKey: LocaleKeys.workflow_editor_false,
+                      onTap: () => onAddNode(.falseBranch),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Positioned(
+                right: 0,
+                top: (WorkflowCanvasMetrics.nodeHeight - 42) / 2,
+                child: _WorkflowNodeAddHandle(
+                  node: node,
+                  onTap: () => onAddNode(null),
+                ),
               ),
-            )
-          else
-            Positioned(
-              right: -42,
-              top: (WorkflowCanvasMetrics.nodeHeight - 42) / 2,
-              child: _WorkflowNodeAddHandle(
-                node: node,
-                onTap: () => onAddNode(null),
-              ),
-            ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class const _WorkflowCanvasNodeContents({required final WorkflowNode node})
