@@ -229,10 +229,11 @@ void main() {
           await firstChunkPersisted.future;
           trace.add('persist:first');
 
-          final events = seed.isEven
-              ? ['close', 'cancel', 'cancel']
-              : ['cancel', 'cancel', 'close'];
-          for (final event in events) {
+          final events = ['close', 'cancel', 'cancel']
+            ..shuffle(Random(seed));
+          final raceStart = Completer<void>();
+          final scheduledEvents = events.map((event) async {
+            await raceStart.future;
             trace.add(event);
             if (event == 'cancel') {
               cancellationScope.requestStop();
@@ -242,10 +243,10 @@ void main() {
               }
             } else {
               await responseStream.close();
-              await run;
             }
-          }
-
+          }).toList();
+          raceStart.complete();
+          await Future.wait(scheduledEvents);
           final result = await run;
           await cancellationScope.cleanupCompletion;
           final terminalWrites = calls
