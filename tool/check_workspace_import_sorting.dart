@@ -54,9 +54,7 @@ void main() {
       (path, _) => p.normalize(path) == generatedPluginRegistrant,
     );
     totalDartFiles += files.length;
-    stdout.writeln(
-      'Checking ${package.location}: ${files.length} Dart files',
-    );
+    stdout.writeln('Checking ${package.location}: ${files.length} Dart files');
     if (files.isEmpty) {
       errors.add(
         'Melos package ${package.name} has no Dart files in the directories '
