@@ -251,8 +251,7 @@ void main() {
           final terminalWrites = calls
               .where(
                 (call) =>
-                    call.startsWith('stopped:') ||
-                    call.startsWith('complete:'),
+                    call.startsWith('stopped:') || call.startsWith('complete:'),
               )
               .toList();
 
