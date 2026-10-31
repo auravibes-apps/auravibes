@@ -41,6 +41,7 @@ void main() {
             locale: context.locale,
             localizationsDelegates: [
               ...sdk_localizations.GlobalMaterialLocalizations.delegates,
+              sdk_localizations.GlobalMaterialLocalizations.delegate,
               ...context.localizationDelegates,
             ],
             supportedLocales: context.supportedLocales,
@@ -206,7 +207,7 @@ void main() {
     testWidgets('shows a retryable status when copying fails', (tester) async {
       const response = 'private tool response';
       const status =
-          "Couldn't copy the tool response. "
+          'Couldn't copy the tool response. '
           'Use Copy tool response to try again.';
       var attempts = 0;
       String? copiedContent;
@@ -251,7 +252,7 @@ void main() {
       tester,
     ) async {
       var content = 'First response';
-      VoidCallback changeContent = _noop;
+      var changeContent = _noop;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
         (call) async => null,
