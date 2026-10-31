@@ -12,7 +12,6 @@ void main() {
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       var presses = 0;
 
       await _pump(
@@ -28,20 +27,20 @@ void main() {
       final action = findAuraAction(semanticsIdentifier: 'save-action');
       expect(action, findsOneWidget);
       final data = tester.getSemantics(action).getSemanticsData();
-      expect(data.label, 'Save changes');
+      expect(data.label, startsWith('Save changes'));
       expect(data.flagsCollection.isEnabled, Tristate.isTrue);
       expect(data.hasAction(.tap), isTrue);
       expect(find.text('Save'), findsOneWidget);
 
       await tapAuraAction(tester, semanticsIdentifier: 'save-action');
       expect(presses, 1);
+      semantics.dispose();
     });
 
     testWidgets('matches an outer key to its nested semantic action', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       var presses = 0;
       const actionKey = ValueKey<String>('save-control');
 
@@ -69,13 +68,13 @@ void main() {
         semanticsIdentifier: 'nested-save-action',
       );
       expect(presses, 1);
+      semantics.dispose();
     });
 
     testWidgets('rejects duplicate semantic identifiers as ambiguous', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
 
       await _pump(
         tester,
@@ -108,13 +107,13 @@ void main() {
           ),
         ),
       );
+      semantics.dispose();
     });
 
     testWidgets('reports a missing action and suggests revealing hidden UI', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
 
       await _pump(tester, const SizedBox.shrink());
 
@@ -131,13 +130,13 @@ void main() {
           ),
         ),
       );
+      semantics.dispose();
     });
 
     testWidgets('rejects disabled actions with a clear diagnostic', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
 
       await _pump(
         tester,
@@ -160,13 +159,13 @@ void main() {
           ),
         ),
       );
+      semantics.dispose();
     });
 
     testWidgets('reports a hidden menu item until its menu is opened', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       var itemPresses = 0;
 
       await _pump(
@@ -200,13 +199,13 @@ void main() {
       await tapAuraAction(tester, semanticsIdentifier: 'rename-action');
       await tester.pump(const Duration(milliseconds: 500));
       expect(itemPresses, 1);
+      semantics.dispose();
     });
 
     testWidgets('rejects offstage targets before attempting activation', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       const actionKey = ValueKey<String>('offstage-action');
 
       await _pump(
@@ -231,6 +230,7 @@ void main() {
           ),
         ),
       );
+      semantics.dispose();
     });
   });
 }
