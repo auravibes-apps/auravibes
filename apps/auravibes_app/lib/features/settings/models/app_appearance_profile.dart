@@ -14,74 +14,100 @@ abstract final class AppAppearanceProfileCodec {
   static const version = 1;
   static const int maxProfileBytes = 16 * 1024;
 
-  static const _fields = {'format', 'version', 'themeMode', 'accentHue'};
-  static const _themeModes = {'system', 'light', 'dark'};
-
   static String encode(AppAppearanceProfile profile) {
     _validateThemeMode(profile.themeMode);
-    _validateHue(profile.accentHue);
+    _validateAccentHue(profile.accentHue);
     final json = jsonEncode({
       'format': format,
       'version': version,
       'themeMode': profile.themeMode,
       'accentHue': profile.accentHue,
     });
-    if (utf8.encode(json).length > maxProfileBytes) _invalidProfile();
+    if (utf8.encode(json).length > maxProfileBytes) _throwInvalidProfile();
 
     return json;
   }
 
   static AppAppearanceProfile decode(String json) {
-    if (utf8.encode(json).length > maxProfileBytes) _invalidProfile();
+    final byteLength = utf8.encode(json).length;
+    if (byteLength > maxProfileBytes) _throwInvalidProfile();
 
     try {
-      final decoded = jsonDecode(json);
-      if (decoded is! Map<String, dynamic> || !_hasExactFields(decoded)) {
-        _invalidProfile();
-      }
-      if (decoded['format'] != format) _invalidProfile();
-
-      final rawVersion = decoded['version'];
-      if (rawVersion is! int) _invalidProfile();
-      if (rawVersion != version) _unsupportedVersion();
-
-      final themeMode = decoded['themeMode'];
-      if (themeMode is! String || !_themeModes.contains(themeMode)) {
-        _invalidProfile();
-      }
-      final rawHue = decoded['accentHue'];
-      if (rawHue is! num) _invalidProfile();
-      final accentHue = rawHue.toDouble();
-      _validateHue(accentHue);
-
-      return AppAppearanceProfile(themeMode: themeMode, accentHue: accentHue);
+      return _decodeProfile(jsonDecode(json));
     } on AppAppearanceProfileException {
       rethrow;
     } on Object catch (_, stackTrace) {
-      Error.throwWithStackTrace(_invalidProfileError(), stackTrace);
+      Error.throwWithStackTrace(_profileFormatError(), stackTrace);
     }
   }
-
-  static bool _hasExactFields(Map<String, dynamic> value) =>
-      value.length == _fields.length && _fields.containsAll(value.keys);
-
-  static void _validateThemeMode(String value) {
-    if (!_themeModes.contains(value)) _invalidProfile();
-  }
-
-  static void _validateHue(double hue) {
-    if (!hue.isFinite || hue < 0 || hue > 360) _invalidProfile();
-  }
-
-  static Never _invalidProfile() => throw _invalidProfileError();
-
-  static AppAppearanceProfileException _invalidProfileError() =>
-      const AppAppearanceProfileException(
-        'settings_screen.appearance_profile.invalid_file',
-      );
-
-  static Never _unsupportedVersion() =>
-      throw const AppAppearanceProfileException(
-        'settings_screen.appearance_profile.unsupported_version',
-      );
 }
+
+const _profileFields = {'format', 'version', 'themeMode', 'accentHue'};
+const _supportedThemeModes = {'system', 'light', 'dark'};
+
+AppAppearanceProfile _decodeProfile(Object? value) {
+  final profile = _profileObject(value);
+  _validateFormat(profile['format']);
+  _validateVersion(profile['version']);
+
+  return AppAppearanceProfile(
+    themeMode: _validatedThemeMode(profile['themeMode']),
+    accentHue: _validatedAccentHue(profile['accentHue']),
+  );
+}
+
+Map<String, dynamic> _profileObject(Object? value) {
+  if (value is! Map<String, dynamic> || !_hasExactFields(value)) {
+    _throwInvalidProfile();
+  }
+
+  return value;
+}
+
+bool _hasExactFields(Map<String, dynamic> value) =>
+    value.length == _profileFields.length &&
+    _profileFields.containsAll(value.keys);
+
+void _validateFormat(Object? value) {
+  if (value != AppAppearanceProfileCodec.format) _throwInvalidProfile();
+}
+
+void _validateVersion(Object? value) {
+  if (value is! int) _throwInvalidProfile();
+  if (value != AppAppearanceProfileCodec.version) _throwUnsupportedVersion();
+}
+
+String _validatedThemeMode(Object? value) {
+  if (value is! String || !_supportedThemeModes.contains(value)) {
+    _throwInvalidProfile();
+  }
+
+  return value;
+}
+
+double _validatedAccentHue(Object? value) {
+  if (value is! num) _throwInvalidProfile();
+  final hue = value.toDouble();
+  _validateAccentHue(hue);
+
+  return hue;
+}
+
+void _validateThemeMode(String value) {
+  if (!_supportedThemeModes.contains(value)) _throwInvalidProfile();
+}
+
+void _validateAccentHue(double hue) {
+  if (!hue.isFinite || hue < 0 || hue > 360) _throwInvalidProfile();
+}
+
+Never _throwInvalidProfile() => throw _profileFormatError();
+
+AppAppearanceProfileException _profileFormatError() =>
+    const AppAppearanceProfileException(
+      'settings_screen.appearance_profile.invalid_file',
+    );
+
+Never _throwUnsupportedVersion() => throw const AppAppearanceProfileException(
+  'settings_screen.appearance_profile.unsupported_version',
+);

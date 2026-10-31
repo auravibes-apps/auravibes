@@ -12,24 +12,9 @@ class const AppAppearanceProfileFileService() {
     );
     if (file == null) return null;
 
-    final knownLength = file.lengthSync();
-    if (knownLength != null) _validateLength(knownLength);
-    final bytes = BytesBuilder(copy: false);
-    await for (final chunk in file.readAsByteStream()) {
-      if (bytes.length + chunk.length >
-          AppAppearanceProfileCodec.maxProfileBytes) {
-        _invalidProfile();
-      }
-      bytes.add(chunk);
-    }
+    final bytes = await _readProfileBytes(file);
 
-    final profileBytes = bytes.takeBytes();
-    _validateLength(profileBytes.length);
-    try {
-      return utf8.decode(profileBytes);
-    } on FormatException catch (_, stackTrace) {
-      Error.throwWithStackTrace(_invalidProfileError(), stackTrace);
-    }
+    return _decodeProfileBytes(bytes);
   }
 
   Future<bool> saveProfileJson(String json) async {
@@ -43,12 +28,50 @@ class const AppAppearanceProfileFileService() {
 
     return saved != null;
   }
+
+  Future<Uint8List> _readProfileBytes(PlatformFile file) async {
+    final knownLength = file.lengthSync();
+    if (knownLength != null) _validateKnownLength(knownLength);
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in file.readAsByteStream()) {
+      _appendProfileChunk(bytes, chunk);
+    }
+
+    final profileBytes = bytes.takeBytes();
+    _validateBufferedLength(profileBytes.length);
+
+    return profileBytes;
+  }
+
+  String _decodeProfileBytes(Uint8List bytes) {
+    try {
+      return utf8.decode(bytes);
+    } on FormatException catch (_, stackTrace) {
+      Error.throwWithStackTrace(_invalidProfileError(), stackTrace);
+    }
+  }
 }
 
 void _validateLength(int length) {
   if (length < 0 || length > AppAppearanceProfileCodec.maxProfileBytes) {
     _invalidProfile();
   }
+}
+
+void _validateKnownLength(int length) {
+  if (length > AppAppearanceProfileCodec.maxProfileBytes) _invalidProfile();
+}
+
+void _appendProfileChunk(BytesBuilder bytes, Uint8List chunk) {
+  final nextLength = bytes.length + chunk.length;
+  if (nextLength > AppAppearanceProfileCodec.maxProfileBytes) {
+    _invalidProfile();
+  }
+  bytes.add(chunk);
+}
+
+void _validateBufferedLength(int length) {
+  if (length > AppAppearanceProfileCodec.maxProfileBytes) _invalidProfile();
 }
 
 Never _invalidProfile() => throw _invalidProfileError();
