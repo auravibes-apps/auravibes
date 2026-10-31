@@ -233,7 +233,7 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
     final current = _workspaceSearchIndex;
     if (current != null && current.hasSameItems(workspaces)) return current;
 
-    return _workspaceSearchIndex = WorkspaceSearchIndex(
+    return _workspaceSearchIndex = .new(
       workspaces,
       nameOf: (workspace) => workspace.name,
       idOf: (workspace) => workspace.id,
@@ -626,7 +626,7 @@ _CloudAccountWorkspaceState _watchCloudAccountState(
       account.key,
       value.workspaces,
     ),
-    _ => null,
+    AsyncData(value: null) || AsyncLoading() || AsyncError() => null,
   };
 
   return (account: account, state: state, searchIndex: searchIndex);
@@ -2439,7 +2439,7 @@ class _AvailableCloudAccountItemsState
     final current = _workspaceSearchIndexes[account];
     if (current != null && current.hasSameItems(workspaces)) return current;
 
-    return _workspaceSearchIndexes[account] = WorkspaceSearchIndex(
+    return _workspaceSearchIndexes[account] = .new(
       workspaces,
       nameOf: (workspace) => workspace.name,
       idOf: (workspace) => workspace.id.toString(),
@@ -2558,7 +2558,13 @@ class _AvailableCloudAccountState extends StatelessWidget {
            searchQuery: searchQuery,
            workspaceId: workspaceId,
            value: value,
-           searchIndex: searchIndex!,
+           searchIndex:
+               searchIndex ??
+               .new(
+                 value.workspaces,
+                 nameOf: (workspace) => workspace.name,
+                 idOf: (workspace) => workspace.id.toString(),
+               ),
            actions: actions,
          ),
          AsyncData(value: null) => const TextLocale(

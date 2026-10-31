@@ -4,20 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('WorkspaceSearchIndex', () {
     test('folds accents and compatibility characters for matching', () {
-      final cafe = _SearchItem('cafe', 'Café Local');
-      final flower = _SearchItem('flower', 'ﬂower Garden');
+      final cafe = _SearchItem('cafe', 'Caf\u00e9 Local');
+      final flower = _SearchItem('flower', '\uFB02ower Garden');
       final index = _index([cafe, flower]);
 
       expect(index.matching(normalizeWorkspaceSearch('cafe')).map(_name), [
-        'Café Local',
+        'Caf\u00e9 Local',
       ]);
       expect(index.matching(normalizeWorkspaceSearch('flower')).map(_name), [
-        'ﬂower Garden',
+        '\uFB02ower Garden',
       ]);
     });
 
     test('rebuilds after a workspace is renamed', () {
-      final workspace = _SearchItem('workspace', 'Café Local');
+      final workspace = _SearchItem('workspace', 'Caf\u00e9 Local');
       var index = _index([workspace]);
       expect(index.matching(normalizeWorkspaceSearch('cafe')), hasLength(1));
 
@@ -82,9 +82,6 @@ WorkspaceSearchIndex<_SearchItem> _index(Iterable<_SearchItem> items) =>
 
 String _name(WorkspaceSearchEntry<_SearchItem> entry) => entry.item.name;
 
-class _SearchItem {
-  _SearchItem(this.id, this.name);
-
-  final String id;
-  String name;
+class _SearchItem(final String id, String name) {
+  String name = name;
 }

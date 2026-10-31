@@ -7,25 +7,21 @@ String normalizeWorkspaceSearch(String value) =>
     nfkd(value).replaceAll(_combiningMarks, '').toLowerCase();
 
 /// A workspace-name snapshot that reuses normalized names across searches.
-class WorkspaceSearchIndex<T> {
-  WorkspaceSearchIndex(
-    Iterable<T> items, {
-    required String Function(T) nameOf,
-    required String Function(T) idOf,
-  }) : _nameOf = nameOf,
-       _idOf = idOf,
-       _entries = List.unmodifiable([
-         for (final item in items)
-           WorkspaceSearchEntry<T>(
-             item: item,
-             name: nameOf(item),
-             stableId: idOf(item),
-           ),
-       ]);
-
-  final String Function(T) _nameOf;
-  final String Function(T) _idOf;
-  final List<WorkspaceSearchEntry<T>> _entries;
+class WorkspaceSearchIndex<T>(
+  Iterable<T> items, {
+  required String Function(T) nameOf,
+  required String Function(T) idOf,
+}) {
+  final String Function(T) _nameOf = nameOf;
+  final String Function(T) _idOf = idOf;
+  final List<WorkspaceSearchEntry<T>> _entries = List.unmodifiable([
+    for (final item in items)
+      WorkspaceSearchEntry<T>(
+        item: item,
+        name: nameOf(item),
+        stableId: idOf(item),
+      ),
+  ]);
 
   /// Returns whether [items] still match the exact snapshot indexed here.
   ///
@@ -63,6 +59,7 @@ class WorkspaceSearchIndex<T> {
   }) {
     final matches = matching(normalizedQuery);
     _sort(matches, descending: descending);
+
     return matches;
   }
 
@@ -73,6 +70,7 @@ class WorkspaceSearchIndex<T> {
   }) {
     final sorted = List<WorkspaceSearchEntry<T>>.of(entries);
     _sort(sorted, descending: descending);
+
     return sorted;
   }
 
@@ -92,18 +90,12 @@ class WorkspaceSearchIndex<T> {
 }
 
 /// An item plus the name keys calculated once when a search index is built.
-class WorkspaceSearchEntry<T> {
-  WorkspaceSearchEntry({
-    required this.item,
-    required String name,
-    required this.stableId,
-  }) : sourceName = name,
-       normalizedName = normalizeWorkspaceSearch(name),
-       sortName = name.toLowerCase();
-
-  final T item;
-  final String sourceName;
-  final String normalizedName;
-  final String sortName;
-  final String stableId;
+class WorkspaceSearchEntry<T>({
+  required final T item,
+  required String name,
+  required final String stableId,
+}) {
+  final String sourceName = name;
+  final String normalizedName = normalizeWorkspaceSearch(name);
+  final String sortName = name.toLowerCase();
 }

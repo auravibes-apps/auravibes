@@ -13,19 +13,23 @@ const _query = 'workspace';
 
 var _resultSink = 0;
 
-void main() {
-  final results = [for (final size in _catalogSizes) _measureCatalog(size)];
-  stdout.writeln(
-    jsonEncode({
-      'benchmark': 'synthetic_workspace_search',
-      'dart': Platform.version.split(' ').first,
-      'os': Platform.operatingSystem,
-      'samples': _sampleCount,
-      'query': _query,
-      'resultSink': _resultSink,
-      'results': results,
-    }),
-  );
+void main() => const WorkspaceSearchBenchmark().run();
+
+final class const WorkspaceSearchBenchmark() {
+  void run() {
+    final results = [for (final size in _catalogSizes) _measureCatalog(size)];
+    stdout.writeln(
+      jsonEncode({
+        'benchmark': 'synthetic_workspace_search',
+        'dart': Platform.version.split(' ').first,
+        'os': Platform.operatingSystem,
+        'samples': _sampleCount,
+        'query': _query,
+        'resultSink': _resultSink,
+        'results': results,
+      }),
+    );
+  }
 }
 
 Map<String, Object?> _measureCatalog(int size) {
@@ -34,8 +38,8 @@ Map<String, Object?> _measureCatalog(int size) {
       _CatalogItem(
         id: index.toString().padLeft(8, '0'),
         name: switch (index % 4) {
-          0 => 'Café Alpha Workspace $index',
-          1 => 'Résumé Beta Workspace $index',
+          0 => 'Caf\u00e9 Alpha Workspace $index',
+          1 => 'R\u00e9sum\u00e9 Beta Workspace $index',
           2 => 'Workspace Gamma $index',
           _ => 'Workspace Delta $index',
         },
@@ -54,11 +58,12 @@ Map<String, Object?> _measureCatalog(int size) {
     ),
   };
 
-  late WorkspaceSearchIndex<_CatalogItem> measuredIndex;
+  var measuredIndex = _newIndex(catalog);
   final after = <String, int>{
     'normalizeAllUs': _measure(() => _indexedNormalizeAll(catalog)),
     'indexBuildUs': _measure(() {
       measuredIndex = _newIndex(catalog);
+
       return catalog.length;
     }),
     'cacheCheckUs': _measure(() => measuredIndex.hasSameItems(catalog) ? 1 : 0),
@@ -68,6 +73,7 @@ Map<String, Object?> _measureCatalog(int size) {
       if (!measuredIndex.hasSameItems(catalog)) {
         measuredIndex = _newIndex(catalog);
       }
+
       return measuredIndex.search(_query).length;
     }),
   };
@@ -111,6 +117,7 @@ int _baselineNormalizeAll(List<_CatalogItem> catalog) {
   for (final item in catalog) {
     normalizedLength += _normalizeBefore(item.name).length;
   }
+
   return normalizedLength;
 }
 
@@ -119,6 +126,7 @@ int _indexedNormalizeAll(List<_CatalogItem> catalog) {
   for (final item in catalog) {
     normalizedLength += normalizeWorkspaceSearch(item.name).length;
   }
+
   return normalizedLength;
 }
 
@@ -137,12 +145,11 @@ List<_CatalogItem> _baselineSort(List<_CatalogItem> items) =>
       final comparison = left.name.toLowerCase().compareTo(
         right.name.toLowerCase(),
       );
+
       return comparison != 0 ? comparison : left.id.compareTo(right.id);
     });
 
-final class _CatalogItem {
-  const _CatalogItem({required this.id, required this.name});
-
-  final String id;
-  final String name;
-}
+final class _CatalogItem({
+  required final String id,
+  required final String name,
+});
