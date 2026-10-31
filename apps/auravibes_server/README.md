@@ -33,41 +33,74 @@ credentials file.
 
 ## Private object storage
 
-Configure the registered storage gateway for new uploads with
-`OBJECT_STORE_GATEWAY_ENDPOINT` and `OBJECT_STORE_GATEWAY_BEARER_TOKEN`.
-Configure the old storage endpoint separately with
-`OBJECT_STORE_LEGACY_ENDPOINT` and, when required,
-`OBJECT_STORE_LEGACY_BEARER_TOKEN`. Keep endpoint credentials in the runtime's
-secret configuration, not in tracked files.
+The Serverpod process serves signed object requests at `/objects/...` and
+stores registration and operation state in PostgreSQL schema `object_gateway`.
+Apply the `object-gateway` Serverpod migration before enabling the route.
 
-The server persists a gateway registration ID and `pending` state before
-registering a new object key. It claims `registering` before the external call,
-then stores `registered` only after the gateway returns 204 and before
-requesting the first PUT signature. A concurrent retry cannot issue another
-registration while the row is `registering`; a crash or unknown result remains
-fail-closed without automatic recovery. Only a pending, never-signed key may be
-registered; registered keys are never registered again. HEAD, GET signing, and
-quiescence do not create registration records. Keep the ID and state in the
-database with its upload row; the client does not receive them.
-Existing upload rows without an ID remain legacy and are routed only to the
-explicitly configured legacy endpoint. Do not register legacy keys in the new
-gateway or use it as a fallback for missing legacy configuration. Legacy
-uploads without registration provenance remain blocked from cloud erasure.
-Gateway quiescence must confirm that registered-key reads and writes have
-drained before deletion: 409 `pending` is retryable, while 409 `conflict` for an
-unknown or mismatched registration is a durable blocker. Registered DELETE is
-confirmed only by 204; do not treat 404 as deletion proof. The exact 422 JSON
-code `replica_provenance_unavailable` is a durable provider blocker with no
-self-service Retry. HTTP 502 remains a transient cleanup failure, and unknown
-responses fail closed.
+Set these server secrets and settings:
 
-Before enabling registration-aware signing or erasure, stop and drain every
-pre-fence app signer that can issue direct/legacy PUT URLs and every pre-fence
-object-cleanup worker. Account for all outstanding legacy URL expiries and
-verify in-flight writes/deletes have definitive outcomes; expiry alone is not
-proof that an in-flight upload ended. Do not deploy until the gateway/provider
-deletion proof and this drain are verified. This repository change does not
-authorize deployment.
+- `OBJECT_STORE_BUCKET`: private bucket shared with the old gateway.
+- `OBJECT_STORE_PUBLIC_BASE_URL`: public base URL ending in `/objects`.
+- `OBJECT_STORE_SIGNING_KEY`: signing key with at least 32 bytes.
+- `AWS_REGION` or `OBJECT_STORE_REGION`: AWS region. Set `auto` for R2.
+- AWS SDK default credential-chain settings for the Serverpod process.
+- `OBJECT_STORE_S3_ENDPOINT`: optional HTTPS S3-compatible endpoint. For R2,
+  use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
+
+Optional settings: `OBJECT_STORE_ALLOWED_ORIGINS`,
+`OBJECT_STORE_MAX_CONCURRENT_UPLOADS`,
+`OBJECT_STORE_MAX_CONCURRENT_DOWNLOADS`,
+`OBJECT_STORE_REQUEST_TIMEOUT_SECONDS`, and
+`OBJECT_STORE_READ_TIMEOUT_SECONDS`. Do not commit secrets.
+
+The app upload and download API stays unchanged. New keys are registered in
+PostgreSQL before the app receives a PUT URL. The ledger hashes keys, IDs, and
+nonces. Short transactions serialize upload start and quiescence; no database
+transaction stays open during an S3 call or object stream. Uploads remain
+limited to 25 MiB and require a matching SHA-256 checksum.
+Registration, signing, metadata checks, status, and quiescence now run inside
+Serverpod; the standalone bearer-token control API is gone.
+
+Legacy keys use `<workspace-id>/<48 lowercase hex characters>`. They remain
+read-only: the Serverpod route can sign and serve GET requests, but cannot
+register, upload, or delete those keys. Legacy uploads without registration
+provenance remain blocked from cloud erasure. Erasure stays fail-closed: preserve
+`replica_provenance_unavailable` until replica history and deletion proof are
+verified. This migration does not establish that history.
+
+The Go gateway source and workflow are retired from this repository. Keep any
+deployed Go process and its database available during cutover for already-issued
+signed URLs and in-flight requests. Route new `/objects/...` URLs to Serverpod
+and keep old gateway URLs on their existing route. Wait for the longest signed
+URL expiry and drain active requests before retiring the deployed Go process
+and its database. Confirm that old and new gateways use the same bucket before
+cutover. This repository change does not authorize deployment.
+
+Run a read-only AWS bucket snapshot before cutover:
+
+```sh
+cd apps/auravibes_server
+AWS_REGION=<region> OBJECT_STORE_BUCKET=<bucket> \
+  fvm dart run bin/audit_object_bucket.dart
+```
+
+The audit checks current replication, versioning, object lock, lifecycle,
+ownership, public access, and contents. A passing snapshot does not prove
+historical configuration or prevent later changes. The audit rejects endpoint
+overrides, so use it with AWS S3 credentials and region settings.
+
+S3 compatibility tests are opt-in. They write one random object and delete it
+afterward; point them only at a disposable LocalStack bucket or a dedicated R2
+test bucket. Set the matching `OBJECT_GATEWAY_LOCALSTACK_*` or
+`OBJECT_GATEWAY_R2_*` variables and run:
+
+```sh
+fvm dart test test/features/objects/object_gateway_s3_integration_test.dart
+```
+
+R2 tests require region `auto`. Both targets use the AWS SDK default credential
+chain. The normal test suite skips these tests when their endpoint variables
+are absent.
 
 ## Integration tests
 

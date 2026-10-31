@@ -38,6 +38,8 @@ dependency_overrides:
   # Flutter 3.47.4 pins test_api 0.7.12; test 1.32.0 requires 0.7.14.
   # Keep override until Flutter updates its flutter_test pin.
   test_api: 0.7.14
+  # ponytail: aws_client 0.10.0 needs xml 7; easy_localization_loader uses stable DOM APIs. Remove when its constraint allows xml 7.
+  xml: ^7.0.0
 
 melos:
   sdkPath: .fvm/flutter_sdk

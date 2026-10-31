@@ -627,7 +627,7 @@ class const ServerConversationAttachmentReader()
     required List<int> objectIds,
   }) async {
     if (objectIds.isEmpty) return const [];
-    final store = HttpObjectStore.fromEnvironment();
+    final store = objectStoreForSession(session);
     final result = <ConversationAttachment>[];
     for (final objectId in objectIds.toSet()) {
       final object = await WorkspaceObject.db.findFirstRow(
