@@ -42,6 +42,47 @@ void main() {
     },
   );
 
+  test(
+    'cleanup failures emit safe diagnostics without interrupting cancel',
+    () async {
+      final diagnostics = <AgentCancellationCleanupFailure>[];
+      final completed = <String>[];
+      final scope = AgentCancellationScope(onCleanupFailure: diagnostics.add);
+
+      scope
+        ..registerCleanup(() {
+          throw StateError('prompt=private transcript');
+        })
+        ..registerCleanup(() async {
+          throw Exception('credential=secret');
+        })
+        ..registerCleanup(() => completed.add('after-failures'))
+        ..requestStop()
+        ..close();
+
+      await scope.waitForCleanupCompletion();
+
+      expect(completed, ['after-failures']);
+      expect(diagnostics, hasLength(2));
+      expect(diagnostics.map((failure) => failure.phase), [
+        AgentCancellationCleanupPhase.synchronous,
+        AgentCancellationCleanupPhase.asynchronous,
+      ]);
+      expect(diagnostics.map((failure) => failure.errorClassification), [
+        AgentCancellationCleanupErrorClassification.error,
+        AgentCancellationCleanupErrorClassification.exception,
+      ]);
+      final diagnosticPayload = diagnostics
+          .map(
+            (failure) =>
+                '${failure.phase.name}:${failure.errorClassification.name}',
+          )
+          .join(' ');
+      expect(diagnosticPayload, isNot(contains('private transcript')));
+      expect(diagnosticPayload, isNot(contains('secret')));
+    },
+  );
+
   test('cleanup ownership can be transferred before stop', () async {
     final scope = AgentCancellationScope();
     var cleanupCount = 0;

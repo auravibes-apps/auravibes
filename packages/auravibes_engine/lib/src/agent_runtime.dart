@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 class const AgentQueuedDraft({
   required final String content,
@@ -49,9 +50,14 @@ abstract interface class AgentCancellationEffects {
 }
 
 class AgentCancellationScope {
+  AgentCancellationScope({
+    AgentCancellationCleanupFailureHandler? onCleanupFailure,
+  }) : _onCleanupFailure = onCleanupFailure ?? _logCleanupFailure;
+
   final _cleanupCallbacks = <AgentCancellationCleanupRegistration>[];
   final _cleanupFutures = <Future<void>>[];
   final _closedCompleter = Completer<void>();
+  final AgentCancellationCleanupFailureHandler _onCleanupFailure;
   bool _isCancellationRequested = false;
   bool _isClosed = false;
 
@@ -113,13 +119,65 @@ class AgentCancellationScope {
     try {
       final result = cleanup();
       if (result is Future<void>) {
-        final future = result.catchError((Object _) {});
+        final future = result.catchError((Object error) {
+          _reportCleanupFailure(
+            AgentCancellationCleanupPhase.asynchronous,
+            error,
+          );
+        });
         _cleanupFutures.add(future);
       }
-    } on Object {
-      return;
+    } on Object catch (error) {
+      _reportCleanupFailure(AgentCancellationCleanupPhase.synchronous, error);
     }
   }
+
+  void _reportCleanupFailure(
+    AgentCancellationCleanupPhase phase,
+    Object error,
+  ) {
+    final diagnostic = AgentCancellationCleanupFailure(
+      phase: phase,
+      errorClassification: switch (error) {
+        Error() => AgentCancellationCleanupErrorClassification.error,
+        Exception() => AgentCancellationCleanupErrorClassification.exception,
+        _ => AgentCancellationCleanupErrorClassification.other,
+      },
+    );
+    try {
+      _onCleanupFailure(diagnostic);
+    } on Object {
+      // Diagnostics must not make best-effort cancellation fail.
+    }
+  }
+}
+
+typedef AgentCancellationCleanupFailureHandler = void Function(
+  AgentCancellationCleanupFailure failure,
+);
+
+enum AgentCancellationCleanupPhase { synchronous, asynchronous }
+
+enum AgentCancellationCleanupErrorClassification { error, exception, other }
+
+/// A privacy-safe signal for a cleanup callback that failed during cancellation.
+///
+/// This event deliberately carries only its phase and a broad error category;
+/// it never retains the thrown object, message, or stack trace.
+class const AgentCancellationCleanupFailure({
+  required this.phase,
+  required this.errorClassification,
+}) {
+  final AgentCancellationCleanupPhase phase;
+  final AgentCancellationCleanupErrorClassification errorClassification;
+}
+
+void _logCleanupFailure(AgentCancellationCleanupFailure failure) {
+  developer.log(
+    'cleanup_failure phase=${failure.phase.name} '
+    'classification=${failure.errorClassification.name}',
+    name: 'auravibes.engine.agent_cancellation',
+  );
 }
 
 /// A cleanup that can be transferred away from its foreground scope.
