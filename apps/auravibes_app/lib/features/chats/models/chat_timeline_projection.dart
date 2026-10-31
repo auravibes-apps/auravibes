@@ -210,8 +210,8 @@ List<ChatTimelineItem> buildChatTimelineItems(
       replayPayloadsByMessageId,
     );
     final hasActivity =
-        !_isTimelineBoundary(message) &&
-        (_hasAssistantActivity(message) ||
+        !isTimelineBoundary(message) &&
+        (hasAssistantActivity(message) ||
             (hasVisibleResponse && hasFollowingAssistantActivity));
 
     if (hasActivity) {
@@ -314,10 +314,10 @@ bool _hasFollowingAssistantActivity(
   if (index + 1 >= messages.length) return false;
   final next = messages[index + 1];
 
-  return next == null || !_isTimelineBoundary(next.message);
+  return next == null || !isTimelineBoundary(next.message);
 }
 
-bool _hasAssistantActivity(MessageEntity message) =>
+bool hasAssistantActivity(MessageEntity message) =>
     message.metadata?.thinking?.trim().isNotEmpty == true ||
     message.metadata?.toolCalls.isNotEmpty == true;
 
@@ -337,9 +337,8 @@ bool _requiresMessageTimelineItem(
     replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
     message.metadata?.modelMetadata['a2uiDiagnosticPayloads'] is List;
 
-bool _isTimelineBoundary(MessageEntity message) =>
+bool isTimelineBoundary(MessageEntity message) =>
     message.isUser ||
     message.messageType == .system ||
     message.status == .error ||
     message.metadata?.isCompactionSummary == true;
-}

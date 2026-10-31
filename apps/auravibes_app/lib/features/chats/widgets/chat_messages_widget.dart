@@ -1073,8 +1073,8 @@ class const _ChatMessageTimelineItem({
 
     final showActivity =
         !activityRenderedInSession &&
-        !_isTimelineBoundary(message) &&
-        _hasAssistantActivity(message);
+        !isTimelineBoundary(message) &&
+        hasAssistantActivity(message);
     final content = AuraColumn(
       crossAxisAlignment: message.isUser
           ? CrossAxisAlignment.end
@@ -1140,7 +1140,7 @@ class const _ChatMessageContent({
       message: message,
       isStreaming: isStreaming,
       hasContent: hasContent,
-      hasActivity: _hasAssistantActivity(message),
+      hasActivity: hasAssistantActivity(message),
     );
     final status = _messageDeliveryStatus(message, isStreaming);
     final hasA2uiResponse =
