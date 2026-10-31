@@ -40,6 +40,37 @@ import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 final _logger = Logger('chat_tool_approval_card');
+const _navigationIconSize = 16.0;
+
+abstract final class _PendingToolCallsRetry {
+  static VoidCallback create(
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+  ) =>
+      () =>
+          ref.invalidate(pendingToolCallsProvider(workspaceId, conversationId));
+}
+
+abstract final class _PendingToolCallsWatch {
+  static AsyncValue<List<PendingToolCall>>? read(
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    List<PendingToolCall>? pendingCalls,
+  ) => pendingCalls == null
+      ? ref.watch(pendingToolCallsProvider(workspaceId, conversationId))
+      : null;
+}
+
+abstract final class _PendingToolCallsHooks {
+  static void useResetHiddenKeys(
+    ValueNotifier<Set<String>> hiddenKeys,
+    String conversationId,
+  ) {
+    useEffect(() => _resetHiddenKeys(hiddenKeys), [conversationId]);
+  }
+}
 
 typedef _ActionErrorRequest = ({
   BuildContext context,
@@ -58,6 +89,11 @@ typedef _BatchApprovalErrorRequest = ({
 
 typedef _ApprovalToolDisplay = ({String name, String? description});
 typedef _ApprovalDisplayContext = ({BuildContext context, WidgetRef ref});
+typedef _PendingToolCallsContext = ({
+  String workspaceId,
+  String conversationId,
+  ValueNotifier<Set<String>> hiddenKeys,
+});
 
 void _showApprovalActionError(_ActionErrorRequest request) {
   _logApprovalActionError(request);
@@ -112,20 +148,23 @@ class const _PendingToolCallsView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hiddenKeys = useState(<String>{});
-    final asyncCalls = pendingCalls == null
-        ? ref.watch(pendingToolCallsProvider(workspaceId, conversationId))
-        : null;
 
-    useEffect(() => _resetHiddenKeys(hiddenKeys), [conversationId]);
+    _PendingToolCallsHooks.useResetHiddenKeys(hiddenKeys, conversationId);
 
     return _PendingToolCallsResult(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      hiddenKeys: hiddenKeys,
+      request: (
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        hiddenKeys: hiddenKeys,
+      ),
       pendingCalls: pendingCalls,
-      asyncCalls: asyncCalls,
-      onRetry: () =>
-          ref.invalidate(pendingToolCallsProvider(workspaceId, conversationId)),
+      asyncCalls: _PendingToolCallsWatch.read(
+        ref,
+        workspaceId,
+        conversationId,
+        pendingCalls,
+      ),
+      onRetry: _PendingToolCallsRetry.create(ref, workspaceId, conversationId),
     );
   }
 }
@@ -137,104 +176,139 @@ Dispose? _resetHiddenKeys(ValueNotifier<Set<String>> hiddenKeys) {
 }
 
 class const _PendingToolCallsResult({
-  required final String workspaceId,
-  required final String conversationId,
-  required final ValueNotifier<Set<String>> hiddenKeys,
+  required final _PendingToolCallsContext request,
   required final List<PendingToolCall>? pendingCalls,
   required final AsyncValue<List<PendingToolCall>>? asyncCalls,
   required final VoidCallback onRetry,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final calls = pendingCalls;
-    if (calls != null) {
-      return _PendingToolCallsList(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        hiddenKeys: hiddenKeys,
-        pendingCalls: calls,
-      );
+    if (pendingCalls case final calls?) {
+      return _PendingToolCallsList(request: request, pendingCalls: calls);
     }
 
+    return _PendingToolCallsAsyncState(
+      asyncCalls: asyncCalls,
+      request: request,
+      onRetry: onRetry,
+    );
+  }
+}
+
+class const _PendingToolCallsAsyncState({
+  required final AsyncValue<List<PendingToolCall>>? asyncCalls,
+  required final _PendingToolCallsContext request,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final asyncCalls = this.asyncCalls;
     if (asyncCalls == null) return const SizedBox.shrink();
-
     if (asyncCalls.hasError) {
-      final error = asyncCalls.error;
-      final stackTrace = asyncCalls.stackTrace;
-      if (error != null) {
-        _logger.warning('Pending tool calls failed', error, stackTrace);
-      }
-      final previousCalls = asyncCalls.value;
-      if (asyncCalls.hasValue && previousCalls != null) {
-        if (previousCalls.isEmpty) {
-          return _PendingToolCallsStatus(
-            message: const TextLocale(
-              LocaleKeys.tool_approval_pending_refresh_error,
-            ),
-            onRetry: onRetry,
-          );
-        }
-
-        return _PendingToolCallsRefreshing(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          hiddenKeys: hiddenKeys,
-          pendingCalls: previousCalls,
-          message: const TextLocale(
-            LocaleKeys.tool_approval_pending_refresh_error,
-          ),
-          showProgress: false,
-          onRetry: onRetry,
-        );
-      }
-
-      return _PendingToolCallsStatus(
-        message: const TextLocale(LocaleKeys.tool_approval_pending_load_error),
+      return _PendingToolCallsErrorState(
+        asyncCalls: asyncCalls,
+        request: request,
         onRetry: onRetry,
       );
     }
-
     if (asyncCalls.isLoading) {
-      final previousCalls = asyncCalls.value;
-      if (asyncCalls.hasValue && previousCalls != null) {
-        if (previousCalls.isEmpty) {
-          return const _PendingToolCallsStatus(
-            message: TextLocale(LocaleKeys.tool_approval_pending_refreshing),
-            showProgress: true,
-          );
-        }
-
-        return _PendingToolCallsRefreshing(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          hiddenKeys: hiddenKeys,
-          pendingCalls: previousCalls,
-          message: const TextLocale(
-            LocaleKeys.tool_approval_pending_refreshing,
-          ),
-        );
-      }
-
-      return const _PendingToolCallsStatus(
-        message: TextLocale(LocaleKeys.tool_approval_pending_loading),
-        showProgress: true,
+      return _PendingToolCallsLoadingState(
+        asyncCalls: asyncCalls,
+        request: request,
       );
     }
 
     return _PendingToolCallsList(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      hiddenKeys: hiddenKeys,
+      request: request,
       pendingCalls: asyncCalls.value ?? const [],
     );
   }
 }
 
+class const _PendingToolCallsErrorState({
+  required final AsyncValue<List<PendingToolCall>> asyncCalls,
+  required final _PendingToolCallsContext request,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (asyncCalls.error case final error?) {
+      _logger.warning(
+        'Pending tool calls failed',
+        error,
+        asyncCalls.stackTrace,
+      );
+    }
+
+    return switch (asyncCalls.value) {
+      null => _PendingToolCallsErrorNotice(onRetry: onRetry),
+      final calls when calls.isEmpty => _PendingToolCallsErrorNotice(
+        onRetry: onRetry,
+        refreshing: true,
+      ),
+      final calls => _PendingToolCallsStaleNotice(
+        request: request,
+        pendingCalls: calls,
+        onRetry: onRetry,
+      ),
+    };
+  }
+}
+
+class const _PendingToolCallsErrorNotice({
+  required final VoidCallback onRetry,
+  final bool refreshing = false,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _PendingToolCallsStatus(
+    message: refreshing
+        ? const TextLocale(LocaleKeys.tool_approval_pending_refresh_error)
+        : const TextLocale(LocaleKeys.tool_approval_pending_load_error),
+    onRetry: onRetry,
+  );
+}
+
+class const _PendingToolCallsStaleNotice({
+  required final _PendingToolCallsContext request,
+  required final List<PendingToolCall> pendingCalls,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _PendingToolCallsRefreshing(
+    request: request,
+    pendingCalls: pendingCalls,
+    message: const TextLocale(LocaleKeys.tool_approval_pending_refresh_error),
+    showProgress: false,
+    onRetry: onRetry,
+  );
+}
+
+class const _PendingToolCallsLoadingState({
+  required final AsyncValue<List<PendingToolCall>> asyncCalls,
+  required final _PendingToolCallsContext request,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return switch (asyncCalls.value) {
+      null => const _PendingToolCallsStatus(
+        message: TextLocale(LocaleKeys.tool_approval_pending_loading),
+        showProgress: true,
+      ),
+      final calls when calls.isEmpty => const _PendingToolCallsStatus(
+        message: TextLocale(LocaleKeys.tool_approval_pending_refreshing),
+        showProgress: true,
+      ),
+      final calls => _PendingToolCallsRefreshing(
+        request: request,
+        pendingCalls: calls,
+        message: const TextLocale(LocaleKeys.tool_approval_pending_refreshing),
+      ),
+    };
+  }
+}
+
 class const _PendingToolCallsRefreshing({
-  required final String workspaceId,
-  required final String conversationId,
-  required final ValueNotifier<Set<String>> hiddenKeys,
+  required final _PendingToolCallsContext request,
   required final List<PendingToolCall> pendingCalls,
   required final Widget message,
   final bool showProgress = true,
@@ -248,12 +322,7 @@ class const _PendingToolCallsRefreshing({
         showProgress: showProgress,
         onRetry: onRetry,
       ),
-      _PendingToolCallsList(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        hiddenKeys: hiddenKeys,
-        pendingCalls: pendingCalls,
-      ),
+      _PendingToolCallsList(request: request, pendingCalls: pendingCalls),
     ],
     spacing: .xs,
     crossAxisAlignment: .stretch,
@@ -269,16 +338,9 @@ class const _PendingToolCallsStatus({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      AuraRow(
-        children: [
-          if (showProgress)
-            const ExcludeSemantics(
-              child: SizedBox.square(child: AuraSpinner(), dimension: 16),
-            ),
-          Flexible(child: Semantics(child: message, liveRegion: true)),
-        ],
-        spacing: .xs,
-        mainAxisSize: .min,
+      _PendingToolCallsStatusMessage(
+        message: message,
+        showProgress: showProgress,
       ),
       if (onRetry case final retry?)
         AuraButton(
@@ -295,35 +357,44 @@ class const _PendingToolCallsStatus({
   );
 }
 
+class const _PendingToolCallsStatusMessage({
+  required final Widget message,
+  final bool showProgress = false,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      if (showProgress)
+        const ExcludeSemantics(
+          child: SizedBox.square(child: AuraSpinner(), dimension: 16),
+        ),
+      Flexible(child: Semantics(child: message, liveRegion: true)),
+    ],
+    spacing: .xs,
+    mainAxisSize: .min,
+  );
+}
+
 class const _PendingToolCallsList({
-  required final String workspaceId,
-  required final String conversationId,
-  required final ValueNotifier<Set<String>> hiddenKeys,
+  required final _PendingToolCallsContext request,
   required final List<PendingToolCall> pendingCalls,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => pendingCalls.isEmpty
       ? const SizedBox.shrink()
-      : _PendingToolCallsPager(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          hiddenKeys: hiddenKeys,
-          pendingCalls: pendingCalls,
-        );
+      : _PendingToolCallsPager(request: request, pendingCalls: pendingCalls);
 }
 
 class const _PendingToolCallsPager({
-  required final String workspaceId,
-  required final String conversationId,
-  required final ValueNotifier<Set<String>> hiddenKeys,
+  required final _PendingToolCallsContext request,
   required final List<PendingToolCall> pendingCalls,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final request = _usePendingToolCallsPager((
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      hiddenKeys: hiddenKeys,
+      workspaceId: this.request.workspaceId,
+      conversationId: this.request.conversationId,
+      hiddenKeys: this.request.hiddenKeys,
       pendingCalls: pendingCalls,
     ));
 
@@ -1051,7 +1122,11 @@ class const _NavigationIcon() extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.build_outlined, size: 16, color: context.auraColors.warning),
+        Icon(
+          Icons.build_outlined,
+          size: _navigationIconSize,
+          color: context.auraColors.warning,
+        ),
         const AuraSizedBox(width: .xs),
       ],
     );
