@@ -9,6 +9,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+const String _toolResponseCopyFailedKey =
+    LocaleKeys.chats_screens_chat_conversation_tool_response_copy_failed;
+
 /// A preview widget for tool call responses that shows a collapsed view.
 ///
 /// Displays up to 3 lines of the response text. If the content exceeds
@@ -203,6 +206,8 @@ class _ToolCallResponseCopyButtonState
   var _copyFailed = false;
   var _copyAttempt = 0;
   Timer? _copyConfirmationTimer;
+  int? _pendingConfirmationAttempt;
+  String? _pendingConfirmationContent;
 
   IconData get _copyIcon => _copied ? Icons.check : Icons.copy_outlined;
 
@@ -213,18 +218,6 @@ class _ToolCallResponseCopyButtonState
           .tr();
 
   @override
-  void didUpdateWidget(covariant _ToolCallResponseCopyButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.content == widget.content) return;
-
-    _copyAttempt++;
-    _copyConfirmationTimer?.cancel();
-    _copyConfirmationTimer = null;
-    _copied = false;
-    _copyFailed = false;
-  }
-
-  @override
   void dispose() {
     _copyAttempt++;
     _copyConfirmationTimer?.cancel();
@@ -232,11 +225,25 @@ class _ToolCallResponseCopyButtonState
   }
 
   @override
+  void didUpdateWidget(covariant _ToolCallResponseCopyButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content == widget.content) return;
+
+    _copyAttempt++;
+    _copyConfirmationTimer?.cancel();
+    _copyConfirmationTimer = null;
+    _pendingConfirmationAttempt = null;
+    _pendingConfirmationContent = null;
+    _copied = false;
+    _copyFailed = false;
+  }
+
+  @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
     child: Column(
-      crossAxisAlignment: .start,
       mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         AuraIconButton(
           icon: _copyIcon,
@@ -248,14 +255,11 @@ class _ToolCallResponseCopyButtonState
           Padding(
             padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
             child: Semantics(
-              liveRegion: true,
-              child: AuraText(
-                child: const TextLocale(
-                  LocaleKeys
-                      .chats_screens_chat_conversation_tool_response_copy_failed,
-                ),
+              child: const AuraText(
+                child: TextLocale(_toolResponseCopyFailedKey),
                 style: .bodySmall,
               ),
+              liveRegion: true,
             ),
           ),
       ],
@@ -269,6 +273,8 @@ class _ToolCallResponseCopyButtonState
     final attempt = ++_copyAttempt;
     _copyConfirmationTimer?.cancel();
     _copyConfirmationTimer = null;
+    _pendingConfirmationAttempt = null;
+    _pendingConfirmationContent = null;
     if (_copied || _copyFailed) {
       setState(() {
         _copied = false;
@@ -284,6 +290,7 @@ class _ToolCallResponseCopyButtonState
       }
 
       setState(() => _copyFailed = true);
+
       return;
     }
 
@@ -292,12 +299,21 @@ class _ToolCallResponseCopyButtonState
     }
 
     setState(() => _copied = true);
-    _copyConfirmationTimer = Timer(const Duration(seconds: 2), () {
-      if (!mounted || attempt != _copyAttempt || widget.content != content) {
-        return;
-      }
+    _pendingConfirmationAttempt = attempt;
+    _pendingConfirmationContent = content;
+    _copyConfirmationTimer = Timer(.new(seconds: 2), _clearCopyConfirmation);
+  }
 
-      setState(() => _copied = false);
-    });
+  void _clearCopyConfirmation() {
+    final attempt = _pendingConfirmationAttempt;
+    final content = _pendingConfirmationContent;
+    _pendingConfirmationAttempt = null;
+    _pendingConfirmationContent = null;
+    _copyConfirmationTimer = null;
+    if (!mounted || attempt != _copyAttempt || widget.content != content) {
+      return;
+    }
+
+    setState(() => _copied = false);
   }
 }

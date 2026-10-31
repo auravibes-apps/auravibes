@@ -201,7 +201,8 @@ void main() {
     testWidgets('shows a retryable status when copying fails', (tester) async {
       const response = 'private tool response';
       const status =
-          "Couldn't copy the tool response. Use Copy tool response to try again.";
+          'Couldn\'t copy the tool response. '
+          'Use Copy tool response to try again.';
       var attempts = 0;
       String? copiedContent;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -244,8 +245,8 @@ void main() {
     testWidgets('clears old copy confirmation when response changes', (
       tester,
     ) async {
-      String content = 'First response';
-      VoidCallback? changeContent;
+      var content = 'First response';
+      late VoidCallback changeContent;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
         (call) async => null,
@@ -278,7 +279,7 @@ void main() {
       await tester.pump();
       expect(find.byIcon(Icons.check), findsOneWidget);
 
-      changeContent!();
+      changeContent();
       await tester.pump();
 
       expect(find.text('Updated response'), findsOneWidget);
@@ -314,7 +315,8 @@ void main() {
 
       expect(
         find.text(
-          'No se pudo copiar la respuesta de la herramienta. Usa Copiar respuesta de la herramienta para volver a intentarlo.',
+          'No se pudo copiar la respuesta de la herramienta. '
+          'Usa Copiar respuesta de la herramienta para volver a intentarlo.',
         ),
         findsOneWidget,
       );
