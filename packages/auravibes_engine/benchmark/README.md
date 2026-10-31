@@ -34,24 +34,34 @@ request encoding and model tokenization can produce different sizes.
 
 ## Recorded baseline
 
-The baseline preserved from commit `2dcc8fff81ef27495837136bb627e0e0904dbdae`
-was collected on 2026-10-31 on Linux x86_64 with Dart SDK 3.13.7. Its benchmark
-source has Git blob ID `dbb4f8385a39c0590f3a4c4229ce380194b812c3`. Two consecutive
-runs used the same fixed inputs and produced identical serialized byte counts:
+Collected on 2026-10-31 at 23:53 UTC in
+[Actions run 41253092704, attempt 1](https://github.com/auravibes-apps/auravibes/actions/runs/41253092704/attempts/1)
+from commit `005a6238b722159287eb4c559cf967cc6ff49737`. The runner used Ubuntu
+24.04.5, kernel `7.0.0-1017-azure`, x86_64, an AMD EPYC 7763 processor with four
+logical CPUs, Flutter 3.47.9, and Dart 3.13.7. Each of five sequential fresh JIT
+processes used the fixed inputs and produced identical serialized byte counts.
+The table shows the range of their five median assembly times:
 
-| Tools | Skills | Loaded skills | Median assembly, run 1 (µs) | Median assembly, run 2 (µs) | Serialized context (bytes) |
+| Tools | Skills | Loaded skills | Minimum median assembly (µs) | Maximum median assembly (µs) | Serialized context (bytes) |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 10 | 10 | 1 | 829 | 792 | 5,033 |
-| 50 | 50 | 5 | 1,476 | 1,533 | 23,665 |
-| 100 | 100 | 10 | 2,076 | 2,003 | 46,955 |
-| 500 | 500 | 50 | 7,317 | 6,845 | 235,835 |
-| 1,000 | 1,000 | 100 | 14,340 | 13,248 | 471,935 |
+| 10 | 10 | 1 | 1,196 | 2,077 | 5,033 |
+| 50 | 50 | 5 | 1,866 | 3,106 | 23,665 |
+| 100 | 100 | 10 | 2,530 | 2,841 | 46,955 |
+| 500 | 500 | 50 | 7,785 | 8,145 | 235,835 |
+| 1,000 | 1,000 | 100 | 16,114 | 17,296 | 471,935 |
 
-The original record did not include the CPU model, logical CPU count, kernel
-version, or original stdout files. Treat these timings as a historical comparison
-with incomplete host provenance. The automated executable contract test checks
-the reported counts and byte sizes across two independent processes. It does
-not compare their latency values.
+The [baseline CSV](baselines/agent_context_assembly_baseline.csv) preserves all
+25 original data rows with only a run-number column added. The
+[provenance file](baselines/agent_context_assembly_provenance.txt) preserves the
+captured source commit/blob, command, SDK, CPU/kernel, and run identifiers.
+The benchmark source blob is `dbb4f8385a39c0590f3a4c4229ce380194b812c3`.
+The [original artifact](https://github.com/auravibes-apps/auravibes/actions/runs/41253092704/artifacts/13061669116)
+contains five untouched stdout CSVs, five empty stderr files, and provenance.
+It has 30-day retention; the checked-in CSV and provenance remain available.
+Its ZIP SHA-256 is `c3756eaa5a9b7c28d61b91da2993ad2910c184ccc3d6bc5f71945d93db8c76bd`.
+
+The automated executable contract test checks the reported counts and byte
+sizes across two independent processes. It does not compare latency values.
 
 ## Refreshing the baseline
 
@@ -65,10 +75,15 @@ adding only the run number to each original row. Report each catalog size's
 minimum and maximum of the five process medians alongside the raw measurements.
 Other hosts can reproduce the inputs and procedure; latency depends on the host.
 
+To capture on hosted CI, manually dispatch `ci.yml` on the source branch with
+`capture_context_benchmark=true`. The existing format job captures five fresh
+runs after workspace setup and uploads the raw output and provenance before
+format checks. Ordinary push and pull-request runs do not capture baselines.
+
 ## CI timing policy
 
-There is no latency threshold. Two historical runs, or five fresh runs on one
-shared host, cannot establish stable latency across CI runners. JIT warm-up and
+There is no latency threshold. Five fresh runs on one shared host cannot
+establish stable latency across CI runners. JIT warm-up and
 host scheduling can change the medians. A future latency gate needs a controlled
 runner and repeated measurements of between-run variability. Deterministic
 catalog counts and serialized sizes are checked without a latency ceiling.
