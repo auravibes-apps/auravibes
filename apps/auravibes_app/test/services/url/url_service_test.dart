@@ -132,6 +132,51 @@ void main() {
       expect(followRedirects, isFalse);
     });
 
+    test(
+      'does not forward sensitive headers across redirect origins',
+      () async {
+        final requests = <RequestOptions>[];
+        final adapter = _FakeHttpClientAdapter(
+          onFetch: (options, _, _) async {
+            requests.add(options);
+
+            return ResponseBody.fromString(
+              '',
+              302,
+              headers: {
+                'location': ['https://1.1.1.1/collect'],
+              },
+            );
+          },
+        );
+        final dio = Dio()..httpClientAdapter = adapter;
+
+        final response = await UrlService(dio: dio)
+            .execute(
+              const UrlRequest(
+                url: 'https://api.example.com/resource',
+                headers: {
+                  'Authorization': 'Bearer secret-token',
+                  'Cookie': 'session=private',
+                  'X-Api-Key': 'secret-key',
+                },
+              ),
+            )
+            .value;
+
+        expect(response.statusCode, 302);
+        expect(requests, hasLength(1));
+        expect(requests.single.uri.host, 'api.example.com');
+        expect(requests.single.followRedirects, isFalse);
+        expect(
+          requests.single.headers['Authorization'],
+          'Bearer secret-token',
+        );
+        expect(requests.single.headers['Cookie'], 'session=private');
+        expect(requests.single.headers['X-Api-Key'], 'secret-key');
+      },
+    );
+
     test('cancels the underlying dio request', () async {
       final requestStarted = Completer<void>();
       CancelToken? observedCancelToken;
