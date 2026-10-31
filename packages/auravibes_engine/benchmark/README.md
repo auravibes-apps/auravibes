@@ -20,7 +20,9 @@ tool-catalog construction, skill conversion, catalog sorting and revision
 hashing, XML escaping, and skill-message composition.
 
 Synthetic input generation happens before timing. JSON encoding and UTF-8 byte
-counting happen after timing. The serialized envelope contains tool names,
+counting of the final benchmark envelope happen after timing. Skill-catalog
+serialization and revision hashing remain inside the timed assembly. The final
+serialized envelope contains tool names,
 descriptions, and input schemas, plus skill-message roles, content, and metadata.
 Each measured iteration checks that the entire serialized envelope is unchanged.
 The benchmark does not construct a provider request or include transcript history,
