@@ -540,10 +540,10 @@ void main() {
             'Can invite members and admins, change roles, rename or delete '
                 'the workspace, and transfer ownership.',
           'admin' =>
-            "Can view, invite, and remove members, but can't manage admins, "
+            'Can view, invite, and remove members, but can\'t manage admins, '
                 'rename the workspace, or transfer ownership.',
           _ =>
-            "Can use workspace content, but can't view the member list or "
+            'Can use workspace content, but can\'t view the member list or '
                 'manage people.',
         };
         expect(find.text(roleDescription), findsOneWidget);
@@ -562,7 +562,7 @@ void main() {
 
         if (canManage) {
           await tester.tap(find.text('Invite member'));
-          await tester.pumpAndSettle();
+          final _ = await tester.pumpAndSettle();
           final inviteDescription = find.byKey(
             const ValueKey('workspace_invite_role_description'),
           );
@@ -570,7 +570,7 @@ void main() {
             find.descendant(
               of: inviteDescription,
               matching: find.text(
-                "Can use workspace content, but can't view the member list or "
+                'Can use workspace content, but can\'t view the member list or '
                 'manage people.',
               ),
             ),
@@ -578,12 +578,12 @@ void main() {
           );
           if (isOwner) {
             await tester.tap(find.text('Admin').last);
-            await tester.pumpAndSettle();
+            final _ = await tester.pumpAndSettle();
             expect(
               find.descendant(
                 of: inviteDescription,
                 matching: find.text(
-                  "Can view, invite, and remove members, but can't manage "
+                  'Can view, invite, and remove members, but can\'t manage '
                   'admins, rename the workspace, or transfer ownership.',
                 ),
               ),
@@ -591,23 +591,23 @@ void main() {
             );
           }
           await tester.tap(find.text('Cancel'));
-          await tester.pumpAndSettle();
+          final _ = await tester.pumpAndSettle();
         }
 
         final changeRole = find.byTooltip('Change role');
         expect(changeRole, isOwner ? findsOneWidget : findsNothing);
         if (isOwner) {
           await tester.tap(changeRole);
-          await tester.pumpAndSettle();
+          final _ = await tester.pumpAndSettle();
           expect(
             find.text(
-              "Can view, invite, and remove members, but can't manage admins, "
+              'Can view, invite, and remove members, but can\'t manage admins, '
               'rename the workspace, or transfer ownership.',
             ),
             findsOneWidget,
           );
           await tester.tap(find.text('Cancel'));
-          await tester.pumpAndSettle();
+          final _ = await tester.pumpAndSettle();
         }
         expect(tester.takeException(), isNull);
       },
@@ -623,7 +623,6 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          startLocale: const Locale('es'),
           child: const CloudWorkspaceDetailScreen(
             workspaceId: 'local',
             cloudAccountId: 'same',
@@ -675,10 +674,11 @@ void main() {
               ),
             ),
           ],
+          startLocale: const Locale('es'),
         ),
       );
     });
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     const ownerDescription =
         'Puede invitar a miembros y administradores, cambiar roles, cambiar '

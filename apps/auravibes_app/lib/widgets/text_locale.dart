@@ -5,6 +5,7 @@ class const TextLocale(
   final String data, {
   super.key,
   final List<String>? args,
+  final Map<String, String>? namedArgs,
   final TextStyle? style,
   final StrutStyle? strutStyle,
   final TextAlign? textAlign,
@@ -20,7 +21,7 @@ class const TextLocale(
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
-    data.tr(args: args, context: context),
+    data.tr(args: args, namedArgs: namedArgs, context: context),
     style: style,
     strutStyle: strutStyle,
     textAlign: textAlign,

@@ -333,8 +333,10 @@ class const _DetailBody({
     if (mirror != null &&
         !await _confirm(
           context,
-          LocaleKeys.cloud_workspaces_remove_confirm,
-          namedArgs: {'name': workspace.name},
+          message: TextLocale(
+            LocaleKeys.cloud_workspaces_remove_confirm,
+            namedArgs: {'name': workspace.name},
+          ),
         )) {
       return;
     }
@@ -398,7 +400,10 @@ class const _DetailBody({
     WidgetRef ref,
     CloudWorkspaceSummary workspace,
   ) async {
-    if (!await _confirm(context, LocaleKeys.cloud_workspaces_leave_confirm)) {
+    if (!await _confirm(
+      context,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_leave_confirm),
+    )) {
       return;
     }
     await _runCloudAction(context, ref, account, () async {
@@ -532,7 +537,7 @@ class const _MemberTile({
     final nextRole = member.role == 'admin' ? 'member' : 'admin';
     if (!await _confirm(
       context,
-      LocaleKeys.cloud_workspaces_change_role,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_change_role),
       title: _roleLabel(nextRole).tr(context: context),
       detail: _WorkspaceRoleDescription(role: nextRole, showRoleLabel: true),
     )) {
@@ -550,7 +555,10 @@ class const _MemberTile({
   }
 
   Future<void> _remove(BuildContext context, WidgetRef ref) async {
-    if (!await _confirm(context, LocaleKeys.cloud_workspaces_remove_member)) {
+    if (!await _confirm(
+      context,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_remove_member),
+    )) {
       return;
     }
     await _runCloudAction(context, ref, account, () async {
@@ -566,7 +574,7 @@ class const _MemberTile({
   Future<void> _transfer(BuildContext context, WidgetRef ref) async {
     if (!await _confirm(
       context,
-      LocaleKeys.cloud_workspaces_transfer_confirm,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_transfer_confirm),
     )) {
       return;
     }
@@ -678,7 +686,7 @@ Widget _roleDescriptionContent({
         mainAxisSize: .min,
         spacing: .xs,
         children: [
-          AuraText(child: label, style: .bodyMedium),
+          AuraText(child: label, style: .body),
           AuraText(child: description),
         ],
       )
@@ -747,11 +755,10 @@ class const _WorkspaceNamePrompt({
 }
 
 Future<bool> _confirm(
-  BuildContext context,
-  String key, {
+  BuildContext context, {
+  required Widget message,
   String? title,
   Widget? detail,
-  Map<String, String>? namedArgs,
 }) async {
   FocusManager.instance.primaryFocus?.unfocus();
   final result = await showDialog<bool>(
@@ -759,15 +766,12 @@ Future<bool> _confirm(
     builder: (context) => AlertDialog(
       title: title == null ? null : Text(title),
       content: detail == null
-          ? Text(key.tr(namedArgs: namedArgs))
+          ? message
           : AuraColumn(
               crossAxisAlignment: .start,
               mainAxisSize: .min,
               spacing: .sm,
-              children: [
-                Text(key.tr(namedArgs: namedArgs)),
-                detail,
-              ],
+              children: [message, detail],
             ),
       actions: [
         TextButton(
