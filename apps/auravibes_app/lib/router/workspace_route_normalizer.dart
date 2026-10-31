@@ -8,19 +8,84 @@ abstract final class WorkspaceRouteNormalizer {
   /// Path segments remain raw so callers can still reject encoded separators
   /// and traversal after normalization.
   static String? normalizeLegacyMoreLocation(String location) {
-    final locationCharacters = location.characters.toList();
-    final queryIndex = locationCharacters.indexOf('?');
-    final fragmentIndex = locationCharacters.indexOf('#');
-    var pathEnd = locationCharacters.length;
+    try {
+      return _LegacyMoreLocationNormalizer.normalize(location);
+    } on FormatException {
+      return null;
+    }
+  }
+}
+
+typedef _RawLocationParts = ({
+  String path,
+  String? query,
+  String fragmentSuffix,
+});
+
+abstract final class _LegacyMoreLocationNormalizer {
+  static String? normalize(String location) {
+    final rawLocation = _splitLocation(location);
+    final segments = _legacyMoreSegments(rawLocation.path);
+    if (segments == null) return null;
+
+    final canonicalPath = _canonicalPath(segments);
+    return _appendCanonicalQuery(canonicalPath, segments, rawLocation);
+  }
+
+  static _RawLocationParts _splitLocation(String location) {
+    final characters = location.characters.toList();
+    final queryIndex = characters.indexOf('?');
+    final fragmentIndex = characters.indexOf('#');
+    final queryAndFragment = _queryAndFragment(
+      characters,
+      queryIndex,
+      fragmentIndex,
+    );
+
+    return (
+      path: characters
+          .take(_pathEnd(characters.length, queryIndex, fragmentIndex))
+          .join(),
+      query: queryAndFragment.query,
+      fragmentSuffix: queryAndFragment.fragmentSuffix,
+    );
+  }
+
+  static int _pathEnd(int length, int queryIndex, int fragmentIndex) {
+    var pathEnd = length;
     if (queryIndex >= 0 && queryIndex < pathEnd) pathEnd = queryIndex;
     if (fragmentIndex >= 0 && fragmentIndex < pathEnd) {
       pathEnd = fragmentIndex;
     }
+    return pathEnd;
+  }
+
+  static ({String? query, String fragmentSuffix}) _queryAndFragment(
+    List<String> characters,
+    int queryIndex,
+    int fragmentIndex,
+  ) {
     final fragmentSuffix = fragmentIndex < 0
         ? ''
-        : locationCharacters.skip(fragmentIndex).join();
+        : characters.skip(fragmentIndex).join();
+    if (queryIndex < 0 ||
+        (fragmentIndex >= 0 && fragmentIndex < queryIndex)) {
+      return (query: null, fragmentSuffix: fragmentSuffix);
+    }
 
-    final rawPath = locationCharacters.take(pathEnd).join();
+    final queryEnd = fragmentIndex < 0
+        ? characters.length
+        : fragmentIndex;
+    return (
+      query: characters
+          .skip(queryIndex + 1)
+          .take(queryEnd - queryIndex - 1)
+          .join(),
+      fragmentSuffix: fragmentSuffix,
+    );
+  }
+
+  static List<String>? _legacyMoreSegments(String rawPath) {
     final segments = rawPath.split('/');
     if (segments.length < 5 ||
         segments.firstOrNull != '' ||
@@ -30,64 +95,68 @@ abstract final class WorkspaceRouteNormalizer {
         segments[4].isEmpty) {
       return null;
     }
+    return segments;
+  }
 
-    final canonicalPath = [...segments.take(3), ...segments.skip(4)].join('/');
+  static String _canonicalPath(List<String> segments) => [
+    ...segments.take(3),
+    ...segments.skip(4),
+  ].join('/');
+
+  static String _appendCanonicalQuery(
+    String canonicalPath,
+    List<String> segments,
+    _RawLocationParts rawLocation,
+  ) {
     final acceptedKeys = _acceptedQueryKeys(segments.skip(4).toList());
-    final queryStart = _queryStart(queryIndex, fragmentIndex);
-    if (queryStart == null || acceptedKeys.isEmpty) {
-      return '$canonicalPath$fragmentSuffix';
-    }
+    final query = _canonicalQuery(rawLocation.query, acceptedKeys);
+    final querySuffix = query == null ? '' : '?$query';
+    return '$canonicalPath$querySuffix${rawLocation.fragmentSuffix}';
+  }
 
-    final queryEnd = fragmentIndex < 0
-        ? locationCharacters.length
-        : fragmentIndex;
-    final rawQuery = locationCharacters
-        .skip(queryStart)
-        .take(queryEnd - queryStart)
-        .join();
-    if (rawQuery.isEmpty) return '$canonicalPath$fragmentSuffix';
-
-    try {
-      final queryValues = Uri.parse('/?$rawQuery').queryParametersAll;
-      final filtered = <String, String>{};
-      for (final key in acceptedKeys) {
-        final values = queryValues[key];
-        if (values != null && values.length == 1) {
-          filtered[key] = values.single;
-        }
-      }
-      if (filtered.isEmpty) return '$canonicalPath$fragmentSuffix';
-
-      return '$canonicalPath?${Uri(queryParameters: filtered).query}'
-          '$fragmentSuffix';
-    } on FormatException {
+  static String? _canonicalQuery(
+    String? rawQuery,
+    Set<String> acceptedKeys,
+  ) {
+    if (rawQuery == null || rawQuery.isEmpty || acceptedKeys.isEmpty) {
       return null;
     }
+
+    final queryValues = Uri.parse('/?$rawQuery').queryParametersAll;
+    final filtered = _singleAcceptedValues(queryValues, acceptedKeys);
+    if (filtered.isEmpty) return null;
+    return Uri(queryParameters: filtered).query;
   }
-}
 
-int? _queryStart(int queryIndex, int fragmentIndex) {
-  if (queryIndex < 0 || (fragmentIndex >= 0 && fragmentIndex < queryIndex)) {
-    return null;
+  static Map<String, String> _singleAcceptedValues(
+    Map<String, List<String>> queryValues,
+    Set<String> acceptedKeys,
+  ) {
+    final filtered = <String, String>{};
+    for (final key in acceptedKeys) {
+      final values = queryValues[key];
+      if (values != null && values.length == 1) {
+        filtered[key] = values.single;
+      }
+    }
+    return filtered;
   }
 
-  return queryIndex + 1;
+  static Set<String> _acceptedQueryKeys(List<String> path) => switch (path) {
+    ['chat', 'new'] => const {'model-selection-id'},
+    ['chats', _] => const {'message-id'},
+    ['bookmarks'] => const {'conversation-id'},
+    ['manage-workspaces'] => const {'view'},
+    ['manage-workspaces', 'cloud', _, _] => const {'server-url'},
+    ['cloud-accounts', 'add' || 'login' || 'register' || 'forgot-password'] =>
+      const {'return-path'},
+    ['service-connections'] => const {'view'},
+    ['service-connections', 'new'] => const {
+      'return-path',
+      'type',
+      'connectorId',
+      'modelProviderId',
+    },
+    _ => const {},
+  };
 }
-
-Set<String> _acceptedQueryKeys(List<String> path) => switch (path) {
-  ['chat', 'new'] => const {'model-selection-id'},
-  ['chats', _] => const {'message-id'},
-  ['bookmarks'] => const {'conversation-id'},
-  ['manage-workspaces'] => const {'view'},
-  ['manage-workspaces', 'cloud', _, _] => const {'server-url'},
-  ['cloud-accounts', 'add' || 'login' || 'register' || 'forgot-password'] =>
-    const {'return-path'},
-  ['service-connections'] => const {'view'},
-  ['service-connections', 'new'] => const {
-    'return-path',
-    'type',
-    'connectorId',
-    'modelProviderId',
-  },
-  _ => const {},
-};

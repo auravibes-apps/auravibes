@@ -3,14 +3,12 @@ import 'package:auravibes_app/router/workspace_route_normalizer.dart';
 /// Router-owned allowlist for task completion and cancellation.
 abstract final class TaskReturn {
   static String? validate(String? location, {required String workspaceId}) {
-    final normalizedLocation = location == null
-        ? null
-        : WorkspaceRouteNormalizer.normalizeLegacyMoreLocation(location) ??
-              location;
-    if (!_TaskReturnValidation._hasSafeLocation(normalizedLocation)) {
+    final safeLocation = _TaskReturnValidation._normalizeLegacyLocation(
+      location,
+    );
+    if (!_TaskReturnValidation._hasSafeLocation(safeLocation)) {
       return null;
     }
-    final safeLocation = normalizedLocation;
     if (safeLocation == null) return null;
     try {
       if (!_TaskReturnValidation._hasSafePathSegments(safeLocation)) {
@@ -27,6 +25,12 @@ abstract final class TaskReturn {
 }
 
 abstract final class _TaskReturnValidation {
+  static String? _normalizeLegacyLocation(String? location) {
+    if (location == null) return null;
+    return WorkspaceRouteNormalizer.normalizeLegacyMoreLocation(location) ??
+        location;
+  }
+
   static bool isWorkspaceTask(Uri uri, String workspaceId) {
     if (uri.hasScheme || uri.hasAuthority || uri.hasFragment) return false;
     final parts = uri.pathSegments;
