@@ -34,7 +34,7 @@ jobs:
         run: melos run format:check
 
       - name: Check import sorting
-        run: dart run import_sorter:main --exit-if-changed
+        run: dart run tool/check_workspace_import_sorting.dart
       - name: Check workspace benchmark imports
         run: dart run tool/check_benchmark_imports.dart
 
