@@ -41,9 +41,7 @@ typedef ActivityToolCall = ({
 String activityToolCallKey(String messageId, String toolCallId) =>
     '$messageId:$toolCallId';
 
-sealed class ActivityRunEntry {
-  const ActivityRunEntry();
-}
+sealed class const ActivityRunEntry();
 
 class const ActivityNarrativeEntry({
   required final String messageId,
@@ -179,8 +177,7 @@ List<ChatTimelineItem> buildChatTimelineItems(
 
     if (hasActivity) {
       final awaitsA2uiAction =
-          message.status == .unfinished &&
-          hasA2uiMessageState(message);
+          message.status == .unfinished && hasA2uiMessageState(message);
       final isFinalResponse =
           message.status == .sent &&
           hasVisibleResponse &&
@@ -201,9 +198,9 @@ List<ChatTimelineItem> buildChatTimelineItems(
       activitySources.add(source);
       if (hasVisibleResponse && !isFinalResponse) {
         if (requiresMessageItem) {
-          richResponseMessageIds.add(message.id);
+          final _ = richResponseMessageIds.add(message.id);
         } else {
-          activityContentMessageIds.add(message.id);
+          final _ = activityContentMessageIds.add(message.id);
         }
       }
       if (isFinalResponse) {
@@ -217,8 +214,7 @@ List<ChatTimelineItem> buildChatTimelineItems(
       MessageTimelineItem(
         source,
         showResponseActions:
-            message.isUser ||
-            (!source.isStreaming && message.status == .sent),
+            message.isUser || (!source.isStreaming && message.status == .sent),
       ),
     );
   }

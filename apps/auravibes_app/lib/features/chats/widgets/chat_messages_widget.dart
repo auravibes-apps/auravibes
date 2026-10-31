@@ -1884,8 +1884,7 @@ class const _AssistantActivityRun({
         : activityEntries.skip(responseEntryIndex + 1).toList(growable: false);
     final responseSource = responseEntryIndex < 0
         ? null
-        : (activityEntries[responseEntryIndex] as ActivityResponseEntry)
-              .source;
+        : (activityEntries[responseEntryIndex] as ActivityResponseEntry).source;
     final toolGroupEntries = [
       for (final entry in activityEntries)
         if (entry is ActivityToolGroupEntry) entry,
@@ -2236,10 +2235,7 @@ class const _AssistantActivityRun({
     );
 
     Widget activityEntry(ActivityRunEntry entry) {
-      if (entry case ActivityNarrativeEntry(
-        :final messageId,
-        :final content,
-      )) {
+      if (entry case ActivityNarrativeEntry(:final messageId, :final content)) {
         return Padding(
           padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
           child: _ActivityNarrative(
