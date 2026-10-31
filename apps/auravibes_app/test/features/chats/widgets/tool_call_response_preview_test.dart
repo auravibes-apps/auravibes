@@ -10,6 +10,7 @@ import 'package:material_ui/material_ui.dart';
 void main() {
   Widget buildSubject({
     required String content,
+    Locale locale = const Locale('en'),
     TextScaler? textScaler,
     Widget? subject,
     VoidCallback? onShowMore,
@@ -41,10 +42,10 @@ void main() {
           );
         },
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: locale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
     );
@@ -172,6 +173,146 @@ void main() {
 
       expect(opened, isTrue);
       expect(find.byType(Dialog), findsNothing);
+    });
+
+    testWidgets('shows copy confirmation only briefly', (tester) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async => null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpAndInit(tester, buildSubject(content: 'Tool response'));
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+      expect(find.byIcon(Icons.check), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsNothing);
+    });
+
+    testWidgets('shows a retryable status when copying fails', (tester) async {
+      const response = 'private tool response';
+      const status =
+          "Couldn't copy the tool response. Use Copy tool response to try again.";
+      var attempts = 0;
+      String? copiedContent;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            attempts++;
+            if (attempts == 1) {
+              throw PlatformException(code: 'clipboard_unavailable');
+            }
+            copiedContent = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpAndInit(tester, buildSubject(content: response));
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+
+      expect(find.text(status), findsOneWidget);
+      expect(copiedContent, isNull);
+
+      await tester.tap(find.byTooltip('Copy tool response'));
+      await tester.pump();
+
+      expect(attempts, 2);
+      expect(copiedContent, response);
+      expect(find.text(status), findsNothing);
+      expect(find.byIcon(Icons.check), findsOneWidget);
+    });
+
+    testWidgets('clears old copy confirmation when response changes', (
+      tester,
+    ) async {
+      String content = 'First response';
+      VoidCallback? changeContent;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async => null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          content: content,
+          subject: StatefulBuilder(
+            builder: (context, setState) {
+              changeContent = () => setState(
+                () => content = 'Updated response',
+              );
+
+              return ToolCallResponsePreview(
+                content: content,
+                onShowMore: _noop,
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+      expect(find.byIcon(Icons.check), findsOneWidget);
+
+      changeContent!();
+      await tester.pump();
+
+      expect(find.text('Updated response'), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      expect(find.byTooltip('Copy tool response'), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsNothing);
+    });
+
+    testWidgets('localizes copy failure status in Spanish', (tester) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async => throw PlatformException(code: 'clipboard_unavailable'),
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(content: 'Respuesta privada', locale: const Locale('es')),
+      );
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+
+      expect(
+        find.text(
+          'No se pudo copiar la respuesta de la herramienta. Usa Copiar respuesta de la herramienta para volver a intentarlo.',
+        ),
+        findsOneWidget,
+      );
     });
 
     test('static maxPreviewLines is 3', () {
