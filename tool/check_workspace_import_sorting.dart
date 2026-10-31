@@ -93,11 +93,13 @@ List<_WorkspacePackage> _workspacePackages(
   Directory root,
   List<String> errors,
 ) {
-  final result = Process.runSync(
-    'dart',
-    const ['run', 'melos', 'list', '--json', '--relative-paths'],
-    workingDirectory: root.path,
-  );
+  final result = Process.runSync('dart', const [
+    'run',
+    'melos',
+    'list',
+    '--json',
+    '--relative-paths',
+  ], workingDirectory: root.path);
   if (result.exitCode != 0) {
     errors.add('Could not list Melos workspace packages.');
     stderr.write(result.stderr);
@@ -159,14 +161,10 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
     'import_sorter_nested_package_',
   );
   try {
-    final _ = fixturePubspec.copySync(
-      p.join(packageRoot.path, 'pubspec.yaml'),
-    );
+    final _ = fixturePubspec.copySync(p.join(packageRoot.path, 'pubspec.yaml'));
     final lib = Directory(p.join(packageRoot.path, 'lib'))
       ..createSync(recursive: true);
-    final _ = fixtureSource.copySync(
-      p.join(lib.path, 'unsorted_imports.dart'),
-    );
+    final _ = fixtureSource.copySync(p.join(lib.path, 'unsorted_imports.dart'));
     final files = import_files.dartFiles(packageRoot.path, const []);
     if (files.length != 1) {
       errors.add(
