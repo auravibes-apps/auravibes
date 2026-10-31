@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_list_view.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -135,7 +136,69 @@ void main() {
     expect(watchedConversationIds, isNotEmpty);
   });
 
-  testWidgets('reopening the list retries a failed background work load', (
+  testWidgets('header distinguishes loading, empty, and stale failure states', (
+    tester,
+  ) async {
+    final now = DateTime.utc(2026, 10, 11, 12);
+    final stream = StreamController<List<AgentBackgroundWork>>();
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: Scaffold(
+            appBar: AppBar(
+              actions: const [
+                BackgroundWorkHeaderButton(
+                  workspaceId: 'workspace-1',
+                  conversationId: 'conversation-1',
+                ),
+              ],
+            ),
+          ),
+          overrides: [
+            conversationBackgroundWorksProvider('conversation-1')
+                .overrideWith((ref) => stream.stream),
+          ],
+        ),
+      );
+    });
+    await tester.pumpAndSettle();
+
+    final header = find.byKey(const ValueKey('background_work_header_button'));
+    expect(
+      tester.getSemantics(header).getSemanticsData().label,
+      'Checking background work.',
+    );
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    stream.add(const []);
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSemantics(header).getSemanticsData().label,
+      'Background work, 0 active',
+    );
+    expect(find.byIcon(Icons.error_outline), findsNothing);
+
+    stream.add([_work('work-1', .running, now)]);
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSemantics(header).getSemanticsData().label,
+      'Background work, 1 active',
+    );
+
+    stream.addError(StateError('private failure detail'));
+    await tester.pumpAndSettle();
+    final errorSemantics = tester.getSemantics(header).getSemanticsData();
+    expect(
+      errorSemantics.label,
+      'Background work could not refresh. Last known count: 1 active. Open the list to retry.',
+    );
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('private failure detail'), findsNothing);
+    await stream.close();
+  });
+
+  testWidgets('local background work load offers explicit retry', (
     tester,
   ) async {
     final now = DateTime.utc(2026, 10, 11, 12);
@@ -179,22 +242,90 @@ void main() {
       ..addError(StateError('temporary failure'))
       ..close();
     final _ = await tester.pumpAndSettle();
+    final header = find.byKey(const ValueKey('background_work_header_button'));
     expect(
-      find.text(
-        'Could not load background work. Reopen this list to try again.',
-      ),
-      findsOneWidget,
+      tester.getSemantics(header).getSemanticsData().label,
+      'Background work could not load. Open the list to retry.',
     );
+    expect(find.text('Could not load background work.'), findsOneWidget);
+    final retry = find.byKey(const ValueKey('background_work_retry'));
+    expect(retry, findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('background_work_close')));
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(const ValueKey('background_work_header_button')),
-    );
+    await tester.tap(retry);
     final _ = await tester.pumpAndSettle();
 
     expect(
       find.byKey(const ValueKey('background_work_title_work-1')),
+      findsOneWidget,
+    );
+    expect(attempts, 2);
+  });
+
+  testWidgets('cloud background work load can be retried without dispatching', (
+    tester,
+  ) async {
+    const workspace = CloudWorkspaceRef(
+      localWorkspaceId: 'workspace-1',
+      serverUrl: 'https://example.com',
+      accountId: 'account-1',
+      cloudWorkspaceId: 1,
+    );
+    const request = (
+      workspaceId: 'workspace-1',
+      conversationId: 'conversation-1',
+    );
+    final work = _work(
+      'cloud-work-1',
+      .completed,
+      DateTime.utc(2026, 10, 11, 12),
+    );
+    var attempts = 0;
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceSession: const WorkspaceSession(workspace),
+          child: Scaffold(
+            appBar: AppBar(
+              actions: const [
+                BackgroundWorkHeaderButton(
+                  workspaceId: 'workspace-1',
+                  conversationId: 'conversation-1',
+                ),
+              ],
+            ),
+          ),
+          overrides: [
+            cloudConversationBackgroundWorksProvider.overrideWith((
+              ref,
+              arg,
+            ) async {
+              attempts++;
+              if (attempts == 1) throw StateError('temporary cloud failure');
+
+              expect(arg, request);
+
+              return [work];
+            }),
+          ],
+        ),
+      );
+    });
+    await tester.pumpAndSettle();
+
+    final header = find.byKey(const ValueKey('background_work_header_button'));
+    expect(
+      tester.getSemantics(header).getSemanticsData().label,
+      'Background work could not load. Open the list to retry.',
+    );
+    await tester.tap(header);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('background_work_retry')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('background_work_retry')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('background_work_title_cloud-work-1')),
       findsOneWidget,
     );
     expect(attempts, 2);
