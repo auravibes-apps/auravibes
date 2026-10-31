@@ -66,7 +66,7 @@ melos:
       description: Fail when unused Dart files are detected
 
     dcl:analyze:
-      run: dart run tool/run_quiet.dart -- dart run dart_code_linter:metrics analyze apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib widgetbook/lib --exclude='{**/*_test.dart,**/test/**}' --no-congratulate --set-exit-on-violation-level=warning
+      run: dart run tool/dcl_analyze.dart
       description: Run legacy Dart Code Linter rule analysis manually
 
     unused:code:
@@ -226,7 +226,7 @@ melos:
 
     validate:changed:
       run: dart run tool/validate_changed_dart.dart
-      description: Format and analyze changed Dart files
+      description: Format and analyze changed Dart files; run DCL for production changes
 
     validate:generated:
       run: |
