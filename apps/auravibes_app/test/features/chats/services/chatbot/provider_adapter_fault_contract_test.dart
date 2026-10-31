@@ -423,12 +423,14 @@ void main() {
         test('cancellation during a retry wait prevents any resend', () async {
           final waiting = Completer<void>();
           final release = Completer<void>();
+          final waitSettled = Completer<void>();
           final harness = _Harness(
             adapter,
             [(_) async => _error(503, retryAfter: '12')],
-            retryWait: (_) {
+            retryWait: (_) async {
               waiting.complete();
-              return release.future;
+              await release.future;
+              waitSettled.complete();
             },
           );
           final cancellation = CancellationController();
@@ -437,6 +439,12 @@ void main() {
           cancellation.cancel();
           final result = await generation;
           release.complete();
+          await waitSettled.future;
+          // One event turn drains the callback's queued await continuations;
+          // assertions must also catch a resend after the old wait completes.
+          final continuationsDrained = Completer<void>();
+          Timer.run(continuationsDrained.complete);
+          await continuationsDrained.future;
 
           expect(result.finishReason, FinishReason.aborted);
           expect(harness.retryDelays, [const Duration(seconds: 12)]);
