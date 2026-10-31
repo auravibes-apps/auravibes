@@ -23,6 +23,10 @@ MELOS_RUN = re.compile(r"\bmelos\s+run\s+([A-Za-z0-9][A-Za-z0-9:_-]*)\b")
 MELOS_SCRIPT_DECLARATION = re.compile(
     r"^ {4}([A-Za-z0-9][A-Za-z0-9:_-]*):(?:[ \t]*(?:#.*)?)?$"
 )
+SKILL_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+SKILL_NAME_MIN_LENGTH = 1
+SKILL_NAME_MAX_LENGTH = 64
+SKILL_DESCRIPTION_MAX_LENGTH = 1024
 
 
 def _without_yaml_code_blocks(text):
@@ -444,8 +448,29 @@ def verify(root):
                 fields[key] = match.group(1).strip().strip("\"'") if match else ""
                 if not fields[key]:
                     fail(path, f"Missing {key}. Describe the skill's task trigger.")
+            name = fields["name"]
+            if name:
+                if not SKILL_NAME_MIN_LENGTH <= len(name) <= SKILL_NAME_MAX_LENGTH:
+                    fail(
+                        path,
+                        "Skill name must contain 1 to 64 characters "
+                        f"(got {len(name)}).",
+                    )
+                if not SKILL_NAME.fullmatch(name):
+                    fail(
+                        path,
+                        "Skill name must use lowercase letters, numbers, and "
+                        "single hyphens; it cannot start or end with a hyphen.",
+                    )
             if fields["name"] and fields["name"] != path.parent.name:
                 fail(path, "Skill name differs from directory. Align discovery metadata.")
+            description = fields["description"]
+            if len(description) > SKILL_DESCRIPTION_MAX_LENGTH:
+                fail(
+                    path,
+                    "Skill description must be at most 1024 characters "
+                    f"(got {len(description)}).",
+                )
         markdown.add(path)
         markdown.update((path.parent / "references").glob("*.md"))
         cases = path.parent / "evals/evals.json"
