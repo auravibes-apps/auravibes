@@ -84,6 +84,13 @@ mixin _WorkspaceToolsDaoQueryApi {
 }
 
 mixin _WorkspaceToolsDaoMetadataApi {
+  Future<void> updateOutputSchema({
+    required String id,
+    required String? outputSchemaJson,
+  }) =>
+      WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao)
+          .updateOutputSchema(id: id, outputSchemaJson: outputSchemaJson);
+
   Future<void> updateToolMetadata({
     required String id,
     required String description,
@@ -271,6 +278,24 @@ extension WorkspaceToolsDaoQueryMethods on WorkspaceToolsDao {
 }
 
 extension WorkspaceToolsDaoMetadata on WorkspaceToolsDao {
+  Future<void> updateOutputSchema({
+    required String id,
+    required String? outputSchemaJson,
+  }) async {
+    final updatedCount = await _updateTool(
+      id,
+      ToolsCompanion(
+        updatedAt: .new(DateTime.now()),
+        outputSchema: .new(outputSchemaJson),
+      ),
+    );
+    if (updatedCount != 1) {
+      throw StateError(
+        'Expected to update exactly one tool row for id=$id, got $updatedCount',
+      );
+    }
+  }
+
   Future<void> updateToolMetadata({
     required String id,
     required String description,

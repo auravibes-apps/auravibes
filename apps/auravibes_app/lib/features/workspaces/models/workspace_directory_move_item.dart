@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -47,6 +48,13 @@ class const WorkspaceDirectoryMoveItem({
     revision: file.revision,
     canManage: file.canManage,
   );
+  static WorkspaceDirectoryMoveItem workflow(WorkspaceWorkflow workflow) =>
+      .new(
+        key: (kind: .workflow, id: workflow.id),
+        name: workflow.name,
+        revision: workflow.revision,
+        canManage: workflow.canManage,
+      );
 
   bool canMoveTo(String? parentId) =>
       canManage &&
@@ -56,7 +64,7 @@ class const WorkspaceDirectoryMoveItem({
       _validName;
 }
 
-enum WorkspaceDirectoryItemKind { folder, table, view, file }
+enum WorkspaceDirectoryItemKind { folder, table, view, file, workflow }
 
 abstract interface class WorkspaceDirectoryMoveRepository {
   Future<void> move(List<WorkspaceDirectoryMoveItem> items, String? parentId);

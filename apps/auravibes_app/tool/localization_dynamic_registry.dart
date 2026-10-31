@@ -750,6 +750,29 @@ const _workspaceSetupDynamicKeys = <String>{
   'workspace_setup.sign_in_connect',
 };
 
+const _workflowEditorDynamicKeys = <String>{
+  'workflow_editor.available_agents',
+  'workflow_editor.available_connector_tools',
+  'workflow_editor.available_tools',
+  'workflow_editor.available_workflows',
+  'workflow_editor.description',
+  'workflow_editor.inputs',
+  'workflow_editor.load_error',
+  'workflow_editor.name',
+  'workflow_editor.not_found',
+  'workflow_editor.outputs',
+  'workflow_editor.save_error',
+  'workflow_editor.save_success',
+  'workflow_editor.type_any',
+  'workflow_editor.type_array',
+  'workflow_editor.type_boolean',
+  'workflow_editor.type_integer',
+  'workflow_editor.type_number',
+  'workflow_editor.type_object',
+  'workflow_editor.type_string',
+  'workflow_editor.validation_error',
+};
+
 /// Dynamic translations are listed by source call site and finite key family.
 const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   LocalizationDynamicRegistry(
@@ -2291,5 +2314,52 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       ),
     ],
     keys: {'mcp.elicitation.invalid', 'mcp.elicitation.open_error'},
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'workflow-editor-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workflows/screens/workflow_editor_screen.dart',
+        method: 'tr',
+        keyExpression: 'messageKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/screens/workflow_editor_screen.dart',
+        method: 'tr',
+        keyExpression: 'labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/screens/workflow_editor_screen.dart',
+        method: 'TextLocale',
+        keyExpression: 'messageKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/widgets/workflow_canvas.dart',
+        method: 'TextLocale',
+        keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/widgets/workflow_inspector_panel.dart',
+        method: 'tr',
+        keyExpression: 'boundaryKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/widgets/workflow_node_picker.dart',
+        method: 'TextLocale',
+        keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/widgets/workflow_port_group.dart',
+        method: 'TextLocale',
+        keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workflows/widgets/workflow_port_group.dart',
+        method: 'tr',
+        keyExpression: '!',
+      ),
+    ],
+    keys: _workflowEditorDynamicKeys,
   ),
 ];

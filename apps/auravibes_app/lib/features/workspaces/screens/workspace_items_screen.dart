@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
+import 'package:auravibes_app/features/workflows/screens/workflow_editor_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/directory_navigation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_access_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
@@ -36,7 +40,10 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+
+final _logger = Logger('workspace_items_screen');
 
 class const WorkspaceItemsScreen({required final String workspaceId, super.key})
     extends HookConsumerWidget {
@@ -117,7 +124,8 @@ class const _Navigation(
       ..invalidate(workspaceFoldersProvider(workspaceId, parent))
       ..invalidate(workspaceTablesProvider(workspaceId, parent))
       ..invalidate(workspaceViewsProvider(workspaceId, parent))
-      ..invalidate(workspaceFilesProvider(workspaceId, parent));
+      ..invalidate(workspaceFilesProvider(workspaceId, parent))
+      ..invalidate(workspaceDirectoryWorkflowsProvider(workspaceId, parent));
   }
 }
 
@@ -132,6 +140,7 @@ class const _SelectedItem(final _Navigation navigation) extends ConsumerWidget {
         final String id => _OpenedTable(navigation, id),
         DirectoryViewLocation(:final id) => _OpenedView(navigation, id),
         DirectoryFileLocation(:final id) => _OpenedFile(navigation, id),
+        DirectoryWorkflowLocation(:final id) => _OpenedWorkflow(navigation, id),
         _ => _Browser(navigation),
       };
 }
@@ -181,6 +190,19 @@ class const _OpenedFile(final _Navigation navigation, final String id)
     navigation.actions.open(null);
     navigation._refresh(ref);
   }
+}
+
+class const _OpenedWorkflow(final _Navigation navigation, final String id)
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => WorkflowEditorScreen(
+    workspaceId: navigation.workspaceId,
+    workflowId: id,
+    onBack: () {
+      navigation.actions.open(null);
+      navigation._refresh(ref);
+    },
+  );
 }
 
 class const _OpenedTable(final _Navigation navigation, final String id)
@@ -349,7 +371,8 @@ class const _SelectionActions(final _Navigation navigation)
       ..invalidate(workspaceFoldersProvider(workspace, parent))
       ..invalidate(workspaceTablesProvider(workspace, parent))
       ..invalidate(workspaceViewsProvider(workspace, parent))
-      ..invalidate(workspaceFilesProvider(workspace, parent));
+      ..invalidate(workspaceFilesProvider(workspace, parent))
+      ..invalidate(workspaceDirectoryWorkflowsProvider(workspace, parent));
   }
 
   void _refreshItem(WidgetRef ref, WorkspaceDirectoryMoveItem item) {
@@ -362,6 +385,8 @@ class const _SelectionActions(final _Navigation navigation)
         ref.invalidate(workspaceTableProvider(workspace, id));
       case .view:
         ref.invalidate(workspaceViewDataProvider(workspace, id));
+      case .workflow:
+        ref.invalidate(workflowProvider(workspace, id));
       case .folder:
         return;
     }
@@ -427,23 +452,56 @@ class const _DirectoryList(final _Navigation navigation) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final parent = navigation._parentId;
-    final scroll = useScrollController(
-      initialScrollOffset: navigation.state.offsets[parent] ?? 0,
+    final initialOffset = useMemoized(
+      () => navigation.state.offsets[parent] ?? 0,
+      [parent],
     );
-    _rememberScroll(scroll, navigation, parent);
+    final scroll = useScrollController(
+      initialScrollOffset: initialOffset,
+      keepScrollOffset: false,
+    );
+    final restorePending = useRef(initialOffset > 0);
+    void restoreOffset() {
+      if (!restorePending.value || !scroll.hasClients) return;
+      final position = scroll.position;
+      if (position.maxScrollExtent < initialOffset) return;
+      scroll.jumpTo(initialOffset);
+      restorePending.value = false;
+    }
 
-    return _DirectoryLayout(navigation, scroll);
+    void scheduleRestore() =>
+        WidgetsBinding.instance.addPostFrameCallback((_) => restoreOffset());
+
+    useEffect(() {
+      scheduleRestore();
+
+      return null;
+    }, [parent, scroll]);
+    _rememberScroll(scroll, navigation, parent, restorePending);
+
+    return _DirectoryLayout(
+      navigation: navigation,
+      scroll: scroll,
+      onMetricsChanged: scheduleRestore,
+    );
   }
 }
 
-class const _DirectoryLayout(
-  final _Navigation navigation,
-  final ScrollController scroll,
-) extends StatelessWidget {
+class const _DirectoryLayout({
+  required final _Navigation navigation,
+  required final ScrollController scroll,
+  required final VoidCallback onMetricsChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Expanded(child: _DirectoryScroll(navigation, scroll)),
+      Expanded(
+        child: _DirectoryScroll(
+          navigation: navigation,
+          scroll: scroll,
+          onMetricsChanged: onMetricsChanged,
+        ),
+      ),
       Flexible(
         child: SingleChildScrollView(
           child: _SelectionSpace(navigation.selection.value?.values.toList()),
@@ -453,21 +511,30 @@ class const _DirectoryLayout(
   );
 }
 
-class const _DirectoryScroll(
-  final _Navigation navigation,
-  final ScrollController scroll,
-) extends StatelessWidget {
+class const _DirectoryScroll({
+  required final _Navigation navigation,
+  required final ScrollController scroll,
+  required final VoidCallback onMetricsChanged,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ListView(
-    key: ValueKey(navigation._parentId),
-    controller: scroll,
-    padding: const EdgeInsets.all(16),
-    children: [
-      if (navigation.state.path.isNotEmpty) _Breadcrumb(navigation),
-      _DirectoryStatus(navigation),
-      _Items(navigation),
-    ],
-  );
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollMetricsNotification>(
+        onNotification: (_) {
+          onMetricsChanged();
+
+          return false;
+        },
+        child: ListView(
+          key: ValueKey(navigation._parentId),
+          controller: scroll,
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (navigation.state.path.isNotEmpty) _Breadcrumb(navigation),
+            _DirectoryStatus(navigation),
+            _Items(navigation, scroll),
+          ],
+        ),
+      );
 }
 
 class const _DirectoryStatus(final _Navigation navigation)
@@ -550,9 +617,18 @@ void _rememberScroll(
   ScrollController scroll,
   _Navigation navigation,
   String? parent,
+  ObjectRef<bool> restorePending,
 ) {
   Dispose listen() {
-    void remember() => navigation.actions.rememberOffset(parent, scroll.offset);
+    void remember() {
+      if (restorePending.value ||
+          !scroll.hasClients ||
+          !scroll.position.isScrollingNotifier.value) {
+        return;
+      }
+      navigation.actions.rememberOffset(parent, scroll.offset);
+    }
+
     scroll.addListener(remember);
 
     return () => scroll.removeListener(remember);
@@ -600,16 +676,16 @@ class const _CreateMenu(final _Navigation navigation) extends ConsumerWidget {
 class const _CreationChoices(
   final _Navigation navigation,
   final WorkspaceAccess access,
-) extends StatelessWidget {
+) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => AuraPopupMenuButton(
-    items: _items(context),
+  Widget build(BuildContext context, WidgetRef ref) => AuraPopupMenuButton(
+    items: _items(context, ref),
     key: const ValueKey('directory_create'),
     icon: Icons.add,
     tooltip: LocaleKeys.common_add.tr(),
   );
 
-  List<AuraPopupMenuItem> _items(BuildContext context) => [
+  List<AuraPopupMenuItem> _items(BuildContext context, WidgetRef ref) => [
     _fileItem(context),
     AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.workspace_items_folder),
@@ -621,6 +697,7 @@ class const _CreationChoices(
         onTap: () => _show(context, true),
       ),
     if (access.isOwner) _viewItem(context),
+    _workflowItem(context, ref),
   ];
 
   AuraPopupMenuItem _fileItem(BuildContext context) => AuraPopupMenuItem(
@@ -632,6 +709,45 @@ class const _CreationChoices(
     title: const TextLocale(LocaleKeys.workspace_views_title),
     onTap: () => _present(context, _ViewCreation(navigation)),
   );
+
+  AuraPopupMenuItem _workflowItem(BuildContext context, WidgetRef ref) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workflow_editor_new_title),
+        onTap: () => unawaited(_createWorkflow(context, ref)),
+      );
+
+  Future<void> _createWorkflow(BuildContext context, WidgetRef ref) async {
+    final now = DateTime.now().toUtc();
+    final draft = WorkspaceWorkflow.create(
+      id: '',
+      workspaceId: navigation.workspaceId,
+      parentId: navigation._parentId,
+      name: LocaleKeys.workflow_editor_new_title.tr(context: context),
+      description: '',
+      createdAt: now,
+      updatedAt: now,
+    );
+    try {
+      final saved = await ref
+          .read(saveWorkflowUsecaseProvider(navigation.workspaceId))
+          .call(draft);
+      if (!context.mounted) return;
+      navigation.actions.open(DirectoryWorkflowLocation(saved.id));
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'Workflow creation failed: workspace=${navigation.workspaceId} '
+        'parent=${navigation._parentId}',
+        error,
+        stackTrace,
+      );
+      if (!context.mounted) return;
+      AuraSnackBars.show(
+        context: context,
+        content: const TextLocale(LocaleKeys.workflow_editor_save_error),
+        variant: .error,
+      );
+    }
+  }
 
   void _show(BuildContext context, bool table) =>
       _present(context, _Creation(navigation, table: table));
@@ -721,21 +837,51 @@ class const _ViewCreation(final _Navigation navigation)
   );
 }
 
-class const _Items(final _Navigation navigation) extends StatelessWidget {
+class const _Items(final _Navigation navigation, final ScrollController scroll)
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => WorkspaceItemLists(
     workspaceId: navigation.workspaceId,
     parentId: navigation._parentId,
-    onOpenFolder: navigation._folder,
-    onOpenTable: navigation.actions.open,
+    onOpenFolder: (folder) {
+      _rememberDirectory();
+      navigation._folder(folder);
+    },
+    onOpenTable: (id) {
+      _rememberDirectory();
+      navigation.actions.open(id);
+    },
     onOpenView: _view,
     onOpenFile: _file,
-    onEdit: navigation.actions.open,
+    onOpenWorkflow: (id) {
+      _rememberDirectory();
+      navigation.actions.open(DirectoryWorkflowLocation(id));
+    },
+    onEdit: (item) {
+      _rememberDirectory();
+      navigation.actions.open(item);
+    },
     selection: navigation.selection.value?.keys.toSet(),
     onSelect: _select,
   );
-  void _file(String id) => navigation.actions.open(DirectoryFileLocation(id));
-  void _view(String id) => navigation.actions.open(DirectoryViewLocation(id));
+  void _file(String id) {
+    _rememberDirectory();
+    navigation.actions.open(DirectoryFileLocation(id));
+  }
+
+  void _view(String id) {
+    _rememberDirectory();
+    navigation.actions.open(DirectoryViewLocation(id));
+  }
+
+  void _rememberDirectory() {
+    if (!scroll.hasClients) return;
+    navigation.actions.rememberOffset(
+      navigation._parentId,
+      scroll.position.pixels,
+    );
+  }
+
   void _select(WorkspaceDirectoryMoveItem item) {
     final selected = {...?navigation.selection.value};
     if (selected.containsKey(item.key)) {

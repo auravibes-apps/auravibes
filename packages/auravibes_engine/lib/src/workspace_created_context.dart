@@ -4,6 +4,15 @@ import 'package:auravibes_engine/src/workspace_context_selection.dart';
 String? workspaceTargetKind(Map<String, dynamic> arguments) =>
     switch (arguments['action']) {
       'read' when arguments['tableId'] != null => 'table',
+      'read'
+          when const {
+            'folder',
+            'table',
+            'view',
+            'file',
+            'workflow',
+          }.contains(arguments['kind']) =>
+        arguments['kind'] as String,
       'createFolder' || 'createTable' || 'renameFolder' => 'folder',
       'renameTable' ||
       'saveColumn' ||

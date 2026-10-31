@@ -66,6 +66,10 @@ void main() {
       );
     }
     expect(
+      WorkspaceNavigation.classify(.parse('/workspaces/A/more/workflows')),
+      isNull,
+    );
+    expect(
       WorkspaceNavigation.classify(.parse('/workspaces/A/workspace-settings')),
       isNull,
     );

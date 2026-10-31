@@ -21,6 +21,10 @@ void main() {
               'toolGroupId': 'group-1',
               'description': 'Lookup',
               'inputSchema': {'type': 'object'},
+              'outputSchemaJson': {
+                'type': 'object',
+                'properties': <String, Object?>{},
+              },
               'isEnabled': true,
               'permissionMode': 'alwaysAsk',
             }),
@@ -40,6 +44,10 @@ void main() {
       expect(configured.single.id, 'mcp-tool');
       expect(configured.single.workspaceToolsGroupId, 'group-1');
       expect(configured.single.inputSchema, jsonEncode({'type': 'object'}));
+      expect(
+        configured.single.outputSchemaJson,
+        jsonEncode({'type': 'object', 'properties': <String, Object?>{}}),
+      );
     },
   );
 
@@ -173,6 +181,18 @@ void main() {
           .toList();
       expect(matching, hasLength(1));
       expect(matching.single.config, '{"memberAccess":"readWrite"}');
+      await repository.updateToolOutputSchema(
+        'workspace',
+        id,
+        '{"type":"object","properties":{"url":{"type":"string"}}}',
+      );
+      final schemaTool = (await repository.getWorkspaceTools('workspace'))
+          .where((tool) => tool.toolId == id)
+          .single;
+      expect(
+        schemaTool.outputSchemaJson,
+        '{"type":"object","properties":{"url":{"type":"string"}}}',
+      );
       expect(
         (await repository.setToolEnabledById(id, isEnabled: false)).isEnabled,
         false,

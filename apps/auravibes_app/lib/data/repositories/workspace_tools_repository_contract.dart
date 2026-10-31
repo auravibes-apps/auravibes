@@ -22,6 +22,12 @@ abstract interface class WorkspaceToolsRepositoryReadContract {
 }
 
 abstract interface class WorkspaceToolsRepositoryWriteContract {
+  Future<List<WorkspaceToolEntity>> updateToolOutputSchema(
+    String workspaceId,
+    String toolId,
+    String? outputSchemaJson,
+  );
+
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String workspaceId,
     String toolType, {

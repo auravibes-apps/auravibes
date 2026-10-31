@@ -71,7 +71,13 @@ class const WorkspaceTrashStore(
         session,
         where: (row) =>
             row.workspaceId.equals(workspaceId) &
-            row.resourceKind.inSet({.folder, .table, .tableRecord, .file}),
+            row.resourceKind.inSet({
+              .folder,
+              .table,
+              .tableRecord,
+              .file,
+              .workflow,
+            }),
         transaction: transaction,
       );
   Future<void> _write(WorkspaceResource resource) async {
