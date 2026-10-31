@@ -465,13 +465,19 @@ class const _CheckpointRestorePreviewDetails({
       children: [
         _CheckpointPreviewSection(
           checkpoint: activeCheckpoint,
-          headingKey: LocaleKeys.compaction_compacted_history_active,
+          heading: const TextLocale(
+            LocaleKeys.compaction_compacted_history_active,
+            style: .new(fontWeight: FontWeight.bold),
+          ),
           isActive: true,
           summaryMatchesActive: true,
         ),
         _CheckpointPreviewSection(
           checkpoint: targetCheckpoint,
-          headingKey: _targetCheckpointLabelKey,
+          heading: const TextLocale(
+            _targetCheckpointLabelKey,
+            style: .new(fontWeight: FontWeight.bold),
+          ),
           isActive: false,
           summaryMatchesActive: summariesMatch,
         ),
@@ -484,14 +490,14 @@ class const _CheckpointRestorePreviewDetails({
 
 class const _CheckpointPreviewSection({
   required final MessageEntity checkpoint,
-  required final String headingKey,
+  required final Widget heading,
   required final bool isActive,
   required final bool summaryMatchesActive,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraColumn(
     children: [
-      TextLocale(headingKey, style: .new(fontWeight: FontWeight.bold)),
+      heading,
       _CheckpointPreviewMetadata(checkpoint: checkpoint),
       _CheckpointPreviewSummary(
         checkpoint: checkpoint,

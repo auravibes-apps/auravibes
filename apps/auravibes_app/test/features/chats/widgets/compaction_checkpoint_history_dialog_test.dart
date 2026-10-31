@@ -361,14 +361,14 @@ Future<void> _pump(
   WidgetTester tester,
   RestoreCompactionCheckpointUsecase restoreUsecase, {
   Locale locale = const Locale('en'),
-  List<MessageEntity> messages = _messages,
+  List<MessageEntity>? messages,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
       _Subject(
         restoreUsecase: restoreUsecase,
         locale: locale,
-        messages: messages,
+        messages: messages ?? _messages,
       ),
     );
   });
