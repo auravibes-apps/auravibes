@@ -22,7 +22,8 @@ class const ModelChoiceExplanation({
         const AuraSizedBox(width: .xs),
         AuraIconButton(
           icon: Icons.info_outline,
-          onPressed: () => unawaited(_showModelChoiceHelp(context)),
+          onPressed: () =>
+              unawaited(ModelChoiceExplanation._showModelChoiceHelp(context)),
           size: .small,
           semanticLabel: helpLabel,
           tooltip: helpLabel,
@@ -30,11 +31,12 @@ class const ModelChoiceExplanation({
       ],
     );
   }
-}
 
-Future<void> _showModelChoiceHelp(BuildContext context) => AuraDialogs.alert(
-  context: context,
-  title: const TextLocale('models_screens.choice_help.title'),
-  message: const TextLocale('models_screens.choice_help.details'),
-  dismissLabel: const TextLocale('common.close'),
-);
+  static Future<void> _showModelChoiceHelp(BuildContext context) =>
+      AuraDialogs.alert(
+        context: context,
+        title: const TextLocale('models_screens.choice_help.title'),
+        message: const TextLocale('models_screens.choice_help.details'),
+        dismissLabel: const TextLocale('common.close'),
+      );
+}
