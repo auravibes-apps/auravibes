@@ -84,11 +84,10 @@ abstract final class _LegacyMoreLocationNormalizer {
     return segments;
   }
 
-  static String _canonicalPath(List<String> segments) =>
-      [
-        ...segments.take(_workspacePrefixSegmentCount),
-        ...segments.skip(_legacyDestinationStartSegmentIndex),
-      ].join('/');
+  static String _canonicalPath(List<String> segments) => [
+    ...segments.take(_workspacePrefixSegmentCount),
+    ...segments.skip(_legacyDestinationStartSegmentIndex),
+  ].join('/');
 
   static String _appendCanonicalQuery(
     String canonicalPath,
