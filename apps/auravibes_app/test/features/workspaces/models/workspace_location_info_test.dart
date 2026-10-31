@@ -8,14 +8,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('local workspace is stored on this device', () {
-    final info = workspaceLocationInfo(_workspace(WorkspaceType.local));
+    final info = workspaceLocationInfo(_workspace(.local));
 
     expect(info.kind, WorkspaceLocationKind.onDevice);
   });
 
   test('owner-only cloud workspace is personal', () {
     final info = workspaceLocationInfo(
-      _workspace(WorkspaceType.remote),
+      _workspace(.remote),
       cloudDetail: _cloudDetail(role: 'owner', members: [_member('owner')]),
     );
 
@@ -25,7 +25,7 @@ void main() {
 
   test('cloud workspace with another member is a team workspace', () {
     final info = workspaceLocationInfo(
-      _workspace(WorkspaceType.remote),
+      _workspace(.remote),
       cloudDetail: _cloudDetail(
         role: 'owner',
         members: [
@@ -40,7 +40,7 @@ void main() {
 
   test('pending invites make an owner cloud workspace a team workspace', () {
     final info = workspaceLocationInfo(
-      _workspace(WorkspaceType.remote),
+      _workspace(.remote),
       cloudDetail: _cloudDetail(
         role: 'owner',
         members: [_member('owner')],
@@ -53,7 +53,7 @@ void main() {
 
   test('member role shows team even when roster access is unavailable', () {
     final info = workspaceLocationInfo(
-      _workspace(WorkspaceType.remote),
+      _workspace(.remote),
       cloudDetail: _cloudDetail(role: 'member', canViewMembers: false),
     );
 
@@ -66,8 +66,8 @@ WorkspaceEntity _workspace(WorkspaceType type) => WorkspaceEntity(
   id: 'workspace-1',
   name: 'Workspace',
   type: type,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
 
 CloudWorkspaceDetailState _cloudDetail({
@@ -76,18 +76,18 @@ CloudWorkspaceDetailState _cloudDetail({
   List<CloudWorkspaceInviteSummary> invites = const [],
   bool canViewMembers = true,
 }) => CloudWorkspaceDetailState(
-  detail: CloudWorkspaceDetail(
-    workspace: CloudWorkspaceSummary(
+  detail: .new(
+    workspace: .new(
       id: 1,
       name: 'Workspace',
       role: role,
       revision: 1,
       sequence: 1,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
     ),
     ownerUserId: 'owner',
-    capabilities: CloudWorkspaceCapabilities(
+    capabilities: .new(
       canViewMembers: canViewMembers,
       canInviteMembers: true,
       canInviteAdmins: true,
@@ -104,12 +104,7 @@ CloudWorkspaceDetailState _cloudDetail({
 );
 
 CloudWorkspaceMemberSummary _member(String userId, {String role = 'owner'}) =>
-    CloudWorkspaceMemberSummary(
-      userId: userId,
-      role: role,
-      revision: 1,
-      createdAt: DateTime(2026),
-    );
+    .new(userId: userId, role: role, revision: 1, createdAt: .new(2026));
 
 CloudWorkspaceInviteSummary _invite() => CloudWorkspaceInviteSummary(
   id: 1,
@@ -117,6 +112,6 @@ CloudWorkspaceInviteSummary _invite() => CloudWorkspaceInviteSummary(
   role: 'member',
   invitedByUserId: 'owner',
   revision: 1,
-  createdAt: DateTime(2026),
-  expiresAt: DateTime(2026, 1, 8),
+  createdAt: .new(2026),
+  expiresAt: .new(2026, 1, 8),
 );

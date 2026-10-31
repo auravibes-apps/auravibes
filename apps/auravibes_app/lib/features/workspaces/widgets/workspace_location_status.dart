@@ -6,10 +6,10 @@ import 'package:material_ui/material_ui.dart';
 
 /// Displays the active workspace location and optional access details action.
 class const WorkspaceLocationStatus({
-  super.key,
-
   /// The location and sharing details to show.
   required final WorkspaceLocationInfo info,
+
+  super.key,
 
   /// Opens details for a cloud workspace when available.
   final VoidCallback? onViewAccess,
