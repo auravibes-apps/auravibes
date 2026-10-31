@@ -114,12 +114,11 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
 
   final plannedCommands = <_PlannedCommand>[];
-  final diagnostics = <String>[];
   final planningExitCode = await runSelectedTests(
     selection,
     rootPath: root.path,
     dryRun: true,
-    onDiagnostic: diagnostics.add,
+    onDiagnostic: (_) {},
     onPlannedCommand: ({
       required String executable,
       required List<String> arguments,
@@ -147,9 +146,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
       final command = plannedCommands[index];
       final package = p.relative(command.workingDirectory, from: root.path);
       stdout.writeln('  Package: $package');
-      stdout.writeln('  ${diagnostics[index]}');
+      final testPaths = command.arguments
+          .where((argument) => argument.startsWith('test/'))
+          .toList();
+      stdout.writeln('    Selected test paths: ${testPaths.join(', ')}');
       stdout.writeln(
-        '    Changed paths causing this selection: '
+        '    Changed paths considered for this selection: '
         '${sortedChanges.map(_changeLabel).join(', ')}',
       );
       final commandName = _fvmCommand(root, command.executable);
