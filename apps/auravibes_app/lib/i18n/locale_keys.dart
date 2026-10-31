@@ -1777,6 +1777,157 @@ abstract class LocaleKeys {
   static const workflow_editor_add_node = 'workflow_editor.add_node';
   static const workflow_editor_add_input = 'workflow_editor.add_input';
   static const workflow_editor_add_output = 'workflow_editor.add_output';
+  static const workflow_editor_nodes = 'workflow_editor.nodes';
+  static const workflow_editor_condition = 'workflow_editor.condition';
+  static const workflow_editor_transform = 'workflow_editor.transform';
+  static const workflow_editor_true = 'workflow_editor.true';
+  static const workflow_editor_false = 'workflow_editor.false';
+  static const workflow_editor_internal_name = 'workflow_editor.internal_name';
+  static const workflow_editor_stable_id = 'workflow_editor.stable_id';
+  static const workflow_editor_close_node_menu =
+      'workflow_editor.close_node_menu';
+  static const workflow_editor_select_step = 'workflow_editor.select_step';
+  static const workflow_editor_delete_confirm_title =
+      'workflow_editor.delete_confirm_title';
+  static const workflow_editor_delete_confirm_message =
+      'workflow_editor.delete_confirm_message';
+  static const workflow_editor_no_links = 'workflow_editor.no_links';
+  static const workflow_editor_cancel = 'workflow_editor.cancel';
+  static const workflow_editor_confirm_delete =
+      'workflow_editor.confirm_delete';
+  static const workflow_editor_input_parameters =
+      'workflow_editor.input_parameters';
+  static const workflow_editor_output_fields = 'workflow_editor.output_fields';
+  static const workflow_editor_field_name = 'workflow_editor.field_name';
+  static const workflow_editor_field_type = 'workflow_editor.field_type';
+  static const workflow_editor_add_field = 'workflow_editor.add_field';
+  static const workflow_editor_field_description =
+      'workflow_editor.field_description';
+  static const workflow_editor_nested_schema = 'workflow_editor.nested_schema';
+  static const workflow_editor_add_nested_field =
+      'workflow_editor.add_nested_field';
+  static const workflow_editor_array_item = 'workflow_editor.array_item';
+  static const workflow_editor_default_value = 'workflow_editor.default_value';
+  static const workflow_editor_nullable = 'workflow_editor.nullable';
+  static const workflow_editor_browse_values = 'workflow_editor.browse_values';
+  static const workflow_editor_static_value = 'workflow_editor.static_value';
+  static const workflow_editor_bound_value = 'workflow_editor.bound_value';
+  static const workflow_editor_source_step = 'workflow_editor.source_step';
+  static const workflow_editor_json_pointer = 'workflow_editor.json_pointer';
+  static const workflow_editor_search_values = 'workflow_editor.search_values';
+  static const workflow_editor_no_values = 'workflow_editor.no_values';
+  static const workflow_editor_binding_unavailable =
+      'workflow_editor.binding_unavailable';
+  static const workflow_editor_binding_incompatible =
+      'workflow_editor.binding_incompatible';
+  static const workflow_editor_condition_mode_all =
+      'workflow_editor.condition_mode_all';
+  static const workflow_editor_condition_mode_any =
+      'workflow_editor.condition_mode_any';
+  static const workflow_editor_add_condition = 'workflow_editor.add_condition';
+  static const workflow_editor_condition_source =
+      'workflow_editor.condition_source';
+  static const workflow_editor_condition_operator =
+      'workflow_editor.condition_operator';
+  static const workflow_editor_operator_equals =
+      'workflow_editor.operator_equals';
+  static const workflow_editor_operator_not_equals =
+      'workflow_editor.operator_not_equals';
+  static const workflow_editor_operator_exists =
+      'workflow_editor.operator_exists';
+  static const workflow_editor_operator_is_empty =
+      'workflow_editor.operator_is_empty';
+  static const workflow_editor_operator_greater_than =
+      'workflow_editor.operator_greater_than';
+  static const workflow_editor_operator_greater_than_or_equal =
+      'workflow_editor.operator_greater_than_or_equal';
+  static const workflow_editor_operator_less_than =
+      'workflow_editor.operator_less_than';
+  static const workflow_editor_operator_less_than_or_equal =
+      'workflow_editor.operator_less_than_or_equal';
+  static const workflow_editor_operator_contains =
+      'workflow_editor.operator_contains';
+  static const workflow_editor_operator_starts_with =
+      'workflow_editor.operator_starts_with';
+  static const workflow_editor_operator_ends_with =
+      'workflow_editor.operator_ends_with';
+  static const workflow_editor_comparison_value =
+      'workflow_editor.comparison_value';
+  static const workflow_editor_transform_fields =
+      'workflow_editor.transform_fields';
+  static const workflow_editor_add_transform_output =
+      'workflow_editor.add_transform_output';
+  static const workflow_editor_operation = 'workflow_editor.operation';
+  static const workflow_editor_operation_template =
+      'workflow_editor.operation_template';
+  static const workflow_editor_add_transform_operand =
+      'workflow_editor.add_transform_operand';
+  static const workflow_editor_operand_name = 'workflow_editor.operand_name';
+  static const workflow_editor_operation_select_field =
+      'workflow_editor.operation_select_field';
+  static const workflow_editor_operation_build_object =
+      'workflow_editor.operation_build_object';
+  static const workflow_editor_operation_build_array =
+      'workflow_editor.operation_build_array';
+  static const workflow_editor_operation_string_template =
+      'workflow_editor.operation_string_template';
+  static const workflow_editor_operation_add = 'workflow_editor.operation_add';
+  static const workflow_editor_operation_subtract =
+      'workflow_editor.operation_subtract';
+  static const workflow_editor_operation_multiply =
+      'workflow_editor.operation_multiply';
+  static const workflow_editor_operation_divide =
+      'workflow_editor.operation_divide';
+  static const workflow_editor_operation_cast_string =
+      'workflow_editor.operation_cast_string';
+  static const workflow_editor_operation_cast_integer =
+      'workflow_editor.operation_cast_integer';
+  static const workflow_editor_operation_cast_number =
+      'workflow_editor.operation_cast_number';
+  static const workflow_editor_operation_cast_boolean =
+      'workflow_editor.operation_cast_boolean';
+  static const workflow_editor_operation_help_select_field =
+      'workflow_editor.operation_help_select_field';
+  static const workflow_editor_operation_help_build_object =
+      'workflow_editor.operation_help_build_object';
+  static const workflow_editor_operation_help_build_array =
+      'workflow_editor.operation_help_build_array';
+  static const workflow_editor_operation_help_string_template =
+      'workflow_editor.operation_help_string_template';
+  static const workflow_editor_operation_help_arithmetic =
+      'workflow_editor.operation_help_arithmetic';
+  static const workflow_editor_operation_help_cast =
+      'workflow_editor.operation_help_cast';
+  static const workflow_editor_transform_output_invalid =
+      'workflow_editor.transform_output_invalid';
+  static const workflow_editor_schema_scope_workflow =
+      'workflow_editor.schema_scope_workflow';
+  static const workflow_editor_schema_scope_shared =
+      'workflow_editor.schema_scope_shared';
+  static const workflow_editor_schema_drift_title =
+      'workflow_editor.schema_drift_title';
+  static const workflow_editor_schema_drift_message =
+      'workflow_editor.schema_drift_message';
+  static const workflow_editor_schema_keep_current =
+      'workflow_editor.schema_keep_current';
+  static const workflow_editor_schema_create_local =
+      'workflow_editor.schema_create_local';
+  static const workflow_editor_schema_edit_shared =
+      'workflow_editor.schema_edit_shared';
+  static const workflow_editor_schema_save_shared =
+      'workflow_editor.schema_save_shared';
+  static const workflow_editor_schema_use_shared =
+      'workflow_editor.schema_use_shared';
+  static const workflow_editor_schema_local_notice =
+      'workflow_editor.schema_local_notice';
+  static const workflow_editor_schema_shared_saved =
+      'workflow_editor.schema_shared_saved';
+  static const workflow_editor_schema_save_failed =
+      'workflow_editor.schema_save_failed';
+  static const workflow_editor_schema_use_shared_title =
+      'workflow_editor.schema_use_shared_title';
+  static const workflow_editor_schema_use_shared_message =
+      'workflow_editor.schema_use_shared_message';
   static const workflow_editor_inputs = 'workflow_editor.inputs';
   static const workflow_editor_outputs = 'workflow_editor.outputs';
   static const workflow_editor_signature = 'workflow_editor.signature';

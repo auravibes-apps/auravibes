@@ -12,7 +12,7 @@ void main() {
       nodes: [
         const WorkflowNode(
           id: 'node-1',
-          kind: .agent,
+          kind: .connectorTool,
           targetId: 'agent-1',
           label: 'Agent',
           x: 4000,

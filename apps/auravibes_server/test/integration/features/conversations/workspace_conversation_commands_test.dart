@@ -197,11 +197,15 @@ void main() {
             'description': 'Summarize sales records',
             'parentId': 'workflow-folder',
             'definition': {
-              'version': 1,
-              'inputs': const <Object?>[],
-              'outputs': const <Object?>[],
-              'nodes': const <Object?>[],
-              'connections': const <Object?>[],
+              'version': 2,
+              'localConnectorSchemas': const <String, Object?>{},
+              'nodes': [
+                _workflowNode('inputs', 'inputs'),
+                _workflowNode('outputs', 'outputs'),
+              ],
+              'connections': const [
+                {'fromNodeId': 'inputs', 'toNodeId': 'outputs'},
+              ],
             },
           }),
           fieldMask: [],
@@ -2380,6 +2384,23 @@ void main() {
     });
   });
 }
+
+Map<String, Object?> _workflowNode(String id, String kind) => {
+  'id': id,
+  'kind': kind,
+  'targetId': kind,
+  'canonicalName': kind,
+  'label': kind,
+  'hasSampledOutputs': false,
+  'x': 0,
+  'y': 0,
+  'inputFields': const <Object?>[],
+  'outputFields': const <Object?>[],
+  'inputBindings': const <String, Object?>{},
+  'conditionMode': 'all',
+  'conditionRules': const <Object?>[],
+  'transformOutputs': const <Object?>[],
+};
 
 class _FileStore extends UnconfiguredObjectStore {
   const _FileStore();

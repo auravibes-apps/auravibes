@@ -9,7 +9,7 @@ void main() {
     );
   });
 
-  test('rejects legacy Skill nodes and missing sampled-output state', () {
+  test('rejects legacy Skill nodes', () {
     expect(
       () => WorkflowNodeCodec.fromJson({
         'id': 'node-1',
@@ -19,27 +19,14 @@ void main() {
         'label': 'Skill',
         'x': 0,
         'y': 0,
-        'inputs': const [],
-        'outputs': const [],
+        'inputFields': const [],
+        'outputFields': const [],
       }),
       throwsArgumentError,
     );
-    expect(
-      () => WorkflowNodeCodec.fromJson({
-        'id': 'node-1',
-        'kind': 'connectorTool',
-        'targetId': 'connector/tool',
-        'label': 'Connector tool',
-        'x': 0,
-        'y': 0,
-        'inputs': const [],
-        'outputs': const [],
-      }),
-      throwsA(isA<TypeError>()),
-    );
   });
 
-  test('preserves Connector tool node identity and typed input ports', () {
+  test('preserves Connector tool identity and schema fields', () {
     final definition = WorkspaceWorkflow.create(
       id: 'workflow-1',
       workspaceId: 'workspace-1',
@@ -69,10 +56,12 @@ void main() {
       updatedAt: .utc(2026),
     );
 
-    final node = WorkspaceWorkflow.decode(definition.encode()).nodes.single;
+    final node = WorkspaceWorkflow.decode(definition.encode()).nodes
+        .singleWhere((item) => item.kind == .connectorTool);
 
     expect(node.kind, WorkflowNodeKind.connectorTool);
     expect(node.targetId, 'connector/brave/web_search');
+    expect(node.canonicalName, 'connector/brave/web_search');
     expect(node.hasSampledOutputs, isTrue);
     expect(node.inputs.single.name, 'query');
     expect(node.inputs.single.type, WorkflowValueType.string);

@@ -110,7 +110,10 @@ void main() {
       final copy = await workflows.getWorkflow('workflow-copy');
       expect(copy?.id, isNot(parent.id));
       expect(copy?.parentId, targetFolder.id);
-      expect(copy?.nodes.single.targetId, child.id);
+      expect(
+        copy?.nodes.where((node) => node.kind == .workflow).single.targetId,
+        child.id,
+      );
 
       final trash = ManageWorkspaceTrashUsecase(
         LocalWorkspaceTrashRepository(database, 'local'),
@@ -126,11 +129,17 @@ void main() {
       expect(batch?.target.kind, WorkspaceTrashKind.workflow);
       expect(await workflows.getWorkflow(child.id), isNull);
       expect(
-        (await workflows.getWorkflow(parent.id))?.nodes.single.targetId,
+        (await workflows.getWorkflow(parent.id))?.nodes
+            .where((node) => node.kind == .workflow)
+            .single
+            .targetId,
         child.id,
       );
       expect(
-        (await workflows.getWorkflow('workflow-copy'))?.nodes.single.targetId,
+        (await workflows.getWorkflow('workflow-copy'))?.nodes
+            .where((node) => node.kind == .workflow)
+            .single
+            .targetId,
         child.id,
       );
 

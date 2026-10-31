@@ -1,202 +1,263 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:uuid/v7.dart';
 
 class const WorkflowPortGroup({
   required final String titleKey,
-  required final List<WorkflowPort> ports,
+  required final List<WorkflowField> ports,
   required final VoidCallback onAdd,
-  required final void Function(String portId, WorkflowPort port) onUpdate,
+  required final void Function(String fieldId, WorkflowField field) onUpdate,
   required final ValueChanged<String> onRemove,
   final bool readOnly = false,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
-    crossAxisAlignment: .stretch,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _WorkflowPortGroupHeader(
-        titleKey: titleKey,
-        onAdd: onAdd,
-        readOnly: readOnly,
-      ),
-      for (final port in ports)
-        _WorkflowPortEditorRow(
-          port: port,
-          onChanged: (updated) => onUpdate(port.id, updated),
-          onRemove: () => onRemove(port.id),
-          readOnly: readOnly,
-        ),
-    ],
-  );
-}
-
-class const _WorkflowPortGroupHeader({
-  required final String titleKey,
-  required final VoidCallback onAdd,
-  required final bool readOnly,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(child: TextLocale(titleKey)),
-      if (!readOnly)
-        IconButton(
-          onPressed: onAdd,
-          tooltip: LocaleKeys.workflow_editor_add_port.tr(context: context),
-          icon: const Icon(Icons.add),
-        ),
-    ],
-  );
-}
-
-class const _WorkflowPortEditorRow({
-  required final WorkflowPort port,
-  required final ValueChanged<WorkflowPort> onChanged,
-  required final VoidCallback onRemove,
-  required final bool readOnly,
-}) extends StatelessWidget {
-  static const _rowSpacing = 8.0;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: _rowSpacing),
-    child: Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        _WorkflowPortNameField(
-          port: port,
-          onChanged: onChanged,
-          onRemove: onRemove,
-          readOnly: readOnly,
-        ),
-        _WorkflowPortTypeField(
-          port: port,
-          onChanged: onChanged,
-          readOnly: readOnly,
-        ),
-        _WorkflowPortRequiredField(
-          port: port,
-          onChanged: onChanged,
-          readOnly: readOnly,
-        ),
-      ],
-    ),
-  );
-}
-
-class const _WorkflowPortNameField({
-  required final WorkflowPort port,
-  required final ValueChanged<WorkflowPort> onChanged,
-  required final VoidCallback onRemove,
-  required final bool readOnly,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: _WorkflowPortNameInput(
-          port: port,
-          onChanged: onChanged,
-          readOnly: readOnly,
-        ),
-      ),
-      if (!readOnly) _WorkflowPortRemoveAction(onRemove: onRemove),
-    ],
-  );
-}
-
-class const _WorkflowPortNameInput({
-  required final WorkflowPort port,
-  required final ValueChanged<WorkflowPort> onChanged,
-  required final bool readOnly,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => TextFormField(
-    key: ValueKey('workflow-port-name-${port.id}'),
-    initialValue: port.name,
-    readOnly: readOnly,
-    decoration: .new(
-      labelText: LocaleKeys.workflow_editor_port_name.tr(context: context),
-      isDense: true,
-    ),
-    onChanged: (name) => onChanged(port.copyWith(name: name)),
-  );
-}
-
-class const _WorkflowPortRemoveAction({required final VoidCallback onRemove})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => IconButton(
-    onPressed: onRemove,
-    tooltip: LocaleKeys.workflow_editor_remove.tr(context: context),
-    icon: const Icon(Icons.close),
-  );
-}
-
-class const _WorkflowPortTypeField({
-  required final WorkflowPort port,
-  required final ValueChanged<WorkflowPort> onChanged,
-  required final bool readOnly,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _WorkflowPortTypeDropdown(
-    port: port,
-    onChanged: onChanged,
-    readOnly: readOnly,
-  );
-}
-
-class const _WorkflowPortTypeDropdown({
-  required final WorkflowPort port,
-  required final ValueChanged<WorkflowPort> onChanged,
-  required final bool readOnly,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      DropdownButtonFormField<WorkflowValueType>(
-        items: [
-          for (final type in WorkflowValueType.values)
-            DropdownMenuItem(
-              value: type,
-              child: Text(WorkflowValueTypeLabel.text(type, context)),
+      Row(
+        children: [
+          Expanded(child: TextLocale(titleKey)),
+          if (!readOnly)
+            IconButton(
+              onPressed: onAdd,
+              tooltip: LocaleKeys.workflow_editor_add_field.tr(
+                context: context,
+              ),
+              icon: const Icon(Icons.add),
             ),
         ],
-        initialValue: port.type,
-        onChanged: readOnly ? null : _updateType,
-        decoration: .new(
-          labelText: LocaleKeys.workflow_editor_port_type.tr(context: context),
-          isDense: true,
+      ),
+      for (final field in ports)
+        _WorkflowFieldEditor(
+          field: field,
+          onChanged: (updated) => onUpdate(field.id, updated),
+          onRemove: () => onRemove(field.id),
+          readOnly: readOnly,
+          depth: 0,
         ),
-      );
-
-  void _updateType(WorkflowValueType? type) {
-    if (type != null) onChanged(port.copyWith(type: type));
-  }
+    ],
+  );
 }
 
-class const _WorkflowPortRequiredField({
-  required final WorkflowPort port,
-  required final ValueChanged<WorkflowPort> onChanged,
+class const _WorkflowFieldEditor({
+  required final WorkflowField field,
+  required final ValueChanged<WorkflowField> onChanged,
+  required final VoidCallback onRemove,
   required final bool readOnly,
+  required final int depth,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => CheckboxListTile(
-    value: port.isRequired,
-    onChanged: readOnly ? null : _updateRequired,
-    title: const TextLocale(LocaleKeys.workflow_editor_required),
-    dense: true,
-    contentPadding: EdgeInsets.zero,
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.only(top: 8, left: depth * 8.0),
+    child: Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  key: ValueKey('workflow-field-name-${field.id}'),
+                  initialValue: field.name,
+                  readOnly: readOnly,
+                  decoration: InputDecoration(
+                    labelText: LocaleKeys.workflow_editor_field_name.tr(
+                      context: context,
+                    ),
+                    isDense: true,
+                  ),
+                  onChanged: (name) => onChanged(field.copyWith(name: name)),
+                ),
+              ),
+              if (!readOnly)
+                IconButton(
+                  onPressed: onRemove,
+                  tooltip: LocaleKeys.workflow_editor_remove.tr(
+                    context: context,
+                  ),
+                  icon: const Icon(Icons.close),
+                ),
+            ],
+          ),
+          DropdownButtonFormField<WorkflowValueType>(
+            initialValue: field.type,
+            items: [
+              for (final type in WorkflowValueType.values)
+                DropdownMenuItem(
+                  value: type,
+                  child: Text(_FieldTypeLabel.text(type, context)),
+                ),
+            ],
+            onChanged: readOnly ? null : _changeType,
+            decoration: InputDecoration(
+              labelText: LocaleKeys.workflow_editor_field_type.tr(
+                context: context,
+              ),
+              isDense: true,
+            ),
+          ),
+          TextFormField(
+            key: ValueKey('workflow-field-description-${field.id}'),
+            initialValue: field.description,
+            readOnly: readOnly,
+            decoration: InputDecoration(
+              labelText: LocaleKeys.workflow_editor_field_description.tr(
+                context: context,
+              ),
+              isDense: true,
+            ),
+            onChanged: (description) =>
+                onChanged(field.copyWith(description: description)),
+          ),
+          TextFormField(
+            key: ValueKey('workflow-field-default-${field.id}'),
+            initialValue: field.hasDefaultValue
+                ? jsonEncode(field.defaultValue)
+                : '',
+            readOnly: readOnly,
+            decoration: InputDecoration(
+              labelText: LocaleKeys.workflow_editor_default_value.tr(
+                context: context,
+              ),
+              isDense: true,
+            ),
+            onChanged: _changeDefault,
+          ),
+          CheckboxListTile(
+            value: field.isRequired,
+            onChanged: readOnly ? null : _changeRequired,
+            title: const TextLocale(LocaleKeys.workflow_editor_required),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          CheckboxListTile(
+            value: field.nullable,
+            onChanged: readOnly ? null : _changeNullable,
+            title: const TextLocale(LocaleKeys.workflow_editor_nullable),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (field.type == .object || field.type == .array)
+            _NestedWorkflowFields(
+              field: field,
+              onChanged: onChanged,
+              readOnly: readOnly,
+              depth: depth,
+            ),
+        ],
+      ),
+    ),
   );
 
-  void _updateRequired(bool? value) {
-    if (value != null) onChanged(port.copyWith(isRequired: value));
+  void _changeType(WorkflowValueType? type) {
+    if (type == null) return;
+    final replacement = switch (type) {
+      .array => field.copyWith(
+        type: type,
+        items: field.items ?? _newField('item'),
+      ),
+      .object => field.copyWith(type: type, clearItems: true),
+      _ => field.copyWith(type: type, properties: const [], clearItems: true),
+    };
+    onChanged(replacement);
+  }
+
+  void _changeDefault(String value) {
+    if (value.trim().isEmpty) {
+      onChanged(field.copyWith(clearDefaultValue: true));
+      return;
+    }
+    try {
+      onChanged(
+        field.copyWith(hasDefaultValue: true, defaultValue: jsonDecode(value)),
+      );
+    } on FormatException {
+      // Keep invalid edits local until JSON is complete.
+    }
+  }
+
+  void _changeRequired(bool? value) {
+    if (value != null) onChanged(field.copyWith(isRequired: value));
+  }
+
+  void _changeNullable(bool? value) {
+    if (value != null) onChanged(field.copyWith(nullable: value));
   }
 }
 
-abstract final class WorkflowValueTypeLabel {
+class const _NestedWorkflowFields({
+  required final WorkflowField field,
+  required final ValueChanged<WorkflowField> onChanged,
+  required final bool readOnly,
+  required final int depth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    tilePadding: EdgeInsets.zero,
+    title: Text(LocaleKeys.workflow_editor_nested_schema.tr(context: context)),
+    children: [
+      if (field.type == .object) ...[
+        for (final child in field.properties)
+          _WorkflowFieldEditor(
+            field: child,
+            onChanged: (updated) => onChanged(
+              field.copyWith(
+                properties: [
+                  for (final item in field.properties)
+                    if (item.id == child.id) updated else item,
+                ],
+              ),
+            ),
+            onRemove: () => onChanged(
+              field.copyWith(
+                properties: field.properties
+                    .where((item) => item.id != child.id)
+                    .toList(),
+              ),
+            ),
+            readOnly: readOnly,
+            depth: depth + 1,
+          ),
+        if (!readOnly)
+          TextButton.icon(
+            onPressed: () => onChanged(
+              field.copyWith(
+                properties: [...field.properties, _newField('field')],
+              ),
+            ),
+            icon: const Icon(Icons.add),
+            label: Text(
+              LocaleKeys.workflow_editor_add_nested_field.tr(context: context),
+            ),
+          ),
+      ],
+      if (field.type == .array)
+        if (field.items case final item?)
+          _WorkflowFieldEditor(
+            field: item,
+            onChanged: (updated) => onChanged(field.copyWith(items: updated)),
+            onRemove: () {},
+            readOnly: readOnly,
+            depth: depth + 1,
+          ),
+    ],
+  );
+}
+
+WorkflowField _newField(String name) => WorkflowField(
+  id: const UuidV7().generate(),
+  name: name,
+  type: WorkflowValueType.any,
+);
+
+abstract final class _FieldTypeLabel {
   static const _keys = <WorkflowValueType, String>{
     .any: LocaleKeys.workflow_editor_type_any,
     .string: LocaleKeys.workflow_editor_type_string,

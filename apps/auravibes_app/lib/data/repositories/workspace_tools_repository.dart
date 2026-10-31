@@ -60,6 +60,31 @@ class WorkspaceToolsRepository(final AppDatabase _database)
   }
 
   @override
+  Future<List<WorkspaceToolEntity>> updateToolOutputSchema(
+    String workspaceId,
+    String toolId,
+    String? outputSchemaJson,
+  ) async {
+    final matching = (await _dao.getWorkspaceTools(workspaceId))
+        .where((tool) => tool.toolId == toolId)
+        .toList();
+    if (matching.isEmpty) {
+      throw StateError('Workspace tool not found: $toolId');
+    }
+    for (final tool in matching) {
+      await _dao.updateOutputSchema(
+        id: tool.id,
+        outputSchemaJson: outputSchemaJson,
+      );
+    }
+
+    return (await _dao.getWorkspaceTools(workspaceId))
+        .where((tool) => tool.toolId == toolId)
+        .map(_tableToEntity)
+        .toList();
+  }
+
+  @override
   Future<WorkspaceToolEntity> setToolEnabledById(
     String id, {
     required bool isEnabled,

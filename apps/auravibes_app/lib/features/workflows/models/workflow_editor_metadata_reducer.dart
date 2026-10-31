@@ -27,7 +27,11 @@ abstract final class WorkflowEditorNodeReducer {
     WorkflowNodeDraft draft,
   ) {
     final workflow = state.workflow;
-    if (workflow == null) return state;
+    if (workflow == null ||
+        draft.kind == .inputs &&
+            workflow.nodes.any((node) => node.kind == .inputs)) {
+      return state;
+    }
 
     return _appendDraft(state, workflow, draft);
   }
@@ -62,17 +66,258 @@ abstract final class WorkflowEditorNodeReducer {
     (node) => node.copyWith(label: label),
   );
 
+  static WorkflowEditorState setInputBinding(
+    WorkflowEditorState state, {
+    required String nodeId,
+    required String fieldId,
+    required WorkflowBinding binding,
+  }) {
+    final workflow = state.workflow;
+    final sourceId = binding.sourceNodeId;
+    if (workflow == null || sourceId == null) {
+      return WorkflowEditorStateReducer.updateNode(
+        state,
+        nodeId,
+        (node) => node.copyWith(
+          inputBindings: {...node.inputBindings, fieldId: binding},
+        ),
+      );
+    }
+    final source = workflow.nodes
+        .where((node) => node.id == sourceId)
+        .firstOrNull;
+    final target = workflow.nodes
+        .where((node) => node.id == nodeId)
+        .firstOrNull;
+    if (source == null ||
+        target == null ||
+        source.kind == .condition ||
+        target.kind == .inputs ||
+        source.kind == .outputs ||
+        _hasPath(workflow, nodeId, sourceId)) {
+      return state;
+    }
+    final hasLink = workflow.connections.any(
+      (item) => item.fromNodeId == sourceId && item.toNodeId == nodeId,
+    );
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) => current.copyWith(
+        nodes: [
+          for (final node in current.nodes)
+            if (node.id == nodeId)
+              node.copyWith(
+                inputBindings: {...node.inputBindings, fieldId: binding},
+              )
+            else
+              node,
+        ],
+        connections: hasLink
+            ? current.connections
+            : [
+                ...current.connections,
+                WorkflowConnection(fromNodeId: sourceId, toNodeId: nodeId),
+              ],
+      ),
+    );
+  }
+
+  static WorkflowEditorState setCondition(
+    WorkflowEditorState state, {
+    required String nodeId,
+    required WorkflowConditionMode mode,
+    required List<WorkflowConditionRule> rules,
+  }) {
+    final workflow = state.workflow;
+    final target = workflow?.nodes
+        .where((node) => node.id == nodeId)
+        .firstOrNull;
+    if (workflow == null || target?.kind != .condition) return state;
+    final connections = [...workflow.connections];
+    final sourceIds = {
+      for (final rule in rules) ...[
+        rule.sourceNodeId,
+        if (rule.comparison.sourceNodeId case final id?) id,
+      ],
+    };
+    for (final sourceId in sourceIds) {
+      final source = workflow.nodes
+          .where((node) => node.id == sourceId)
+          .firstOrNull;
+      if (source == null ||
+          source.kind == .condition ||
+          source.kind == .outputs ||
+          _hasPath(workflow, nodeId, sourceId)) {
+        return state;
+      }
+      if (!connections.any(
+        (connection) =>
+            connection.fromNodeId == sourceId && connection.toNodeId == nodeId,
+      )) {
+        connections.add(
+          WorkflowConnection(fromNodeId: sourceId, toNodeId: nodeId),
+        );
+      }
+    }
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) => current.copyWith(
+        connections: connections,
+        nodes: [
+          for (final node in current.nodes)
+            if (node.id == nodeId)
+              node.copyWith(conditionMode: mode, conditionRules: rules)
+            else
+              node,
+        ],
+      ),
+    );
+  }
+
+  static WorkflowEditorState setTransformOutputs(
+    WorkflowEditorState state,
+    String nodeId,
+    List<WorkflowTransformOutput> outputs,
+  ) {
+    final workflow = state.workflow;
+    final node = workflow?.nodes.where((item) => item.id == nodeId).firstOrNull;
+    if (workflow == null || node == null || node.kind != .transform) {
+      return state;
+    }
+    final sourceIds = {
+      for (final output in outputs)
+        for (final binding in output.operands)
+          if (binding.binding.sourceNodeId case final sourceId?) sourceId,
+    };
+    for (final sourceId in sourceIds) {
+      final source = workflow.nodes
+          .where((item) => item.id == sourceId)
+          .firstOrNull;
+      if (source == null ||
+          source.kind == .condition ||
+          source.kind == .outputs ||
+          _hasPath(workflow, nodeId, sourceId)) {
+        return state;
+      }
+    }
+    final connections = [...workflow.connections];
+    for (final sourceId in sourceIds) {
+      if (!connections.any(
+        (connection) =>
+            connection.fromNodeId == sourceId && connection.toNodeId == nodeId,
+      )) {
+        connections.add(
+          WorkflowConnection(fromNodeId: sourceId, toNodeId: nodeId),
+        );
+      }
+    }
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) => current.copyWith(
+        connections: connections,
+        nodes: [
+          for (final item in current.nodes)
+            if (item.id == nodeId)
+              item.copyWith(
+                transformOutputs: outputs,
+                outputFields: [
+                  for (final output in outputs)
+                    WorkflowField(
+                      id: output.id,
+                      name: output.name,
+                      type: output.type,
+                    ),
+                ],
+              )
+            else
+              item,
+        ],
+      ),
+    );
+  }
+
+  static bool _hasPath(
+    WorkspaceWorkflow workflow,
+    String fromNodeId,
+    String targetNodeId,
+  ) {
+    final pending = <String>[fromNodeId];
+    final seen = <String>{};
+    while (pending.isNotEmpty) {
+      final current = pending.removeLast();
+      if (current == targetNodeId) return true;
+      if (!seen.add(current)) continue;
+      pending.addAll(
+        workflow.connections
+            .where((connection) => connection.fromNodeId == current)
+            .map((connection) => connection.toNodeId),
+      );
+    }
+    return false;
+  }
+
   static WorkflowEditorState inferOutputs(
     WorkflowEditorState state,
     String nodeId,
     List<WorkflowPort> outputs,
-  ) => WorkflowEditorStateReducer.updateNode(
-    state,
-    nodeId,
-    (node) => node.copyWith(outputs: outputs, hasSampledOutputs: true),
-  );
+  ) {
+    final workflow = state.workflow;
+    final node = workflow?.nodes.where((item) => item.id == nodeId).firstOrNull;
+    if (workflow == null || node == null || node.kind != .connectorTool) {
+      return state;
+    }
+    final connectorToolId = node.targetId;
+    final schemas = {
+      ...workflow.definition.localConnectorSchemas,
+      connectorToolId: outputs,
+    };
+
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) => current.copyWith(
+        localConnectorSchemas: schemas,
+        nodes: [
+          for (final item in current.nodes)
+            if (item.kind == .connectorTool && item.targetId == connectorToolId)
+              item.copyWith(outputFields: outputs, hasSampledOutputs: true)
+            else
+              item,
+        ],
+      ),
+    );
+  }
+
+  static WorkflowEditorState useSharedConnectorSchema(
+    WorkflowEditorState state,
+    String nodeId,
+    List<WorkflowField> outputs,
+  ) {
+    final workflow = state.workflow;
+    final node = workflow?.nodes.where((item) => item.id == nodeId).firstOrNull;
+    if (workflow == null || node == null || node.kind != .connectorTool) {
+      return state;
+    }
+    final schemas = {...workflow.definition.localConnectorSchemas}
+      ..remove(node.targetId);
+
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) => current.copyWith(
+        localConnectorSchemas: schemas,
+        nodes: [
+          for (final item in current.nodes)
+            if (item.kind == .connectorTool && item.targetId == node.targetId)
+              item.copyWith(outputFields: outputs)
+            else
+              item,
+        ],
+      ),
+    );
+  }
 
   static WorkflowEditorState remove(WorkflowEditorState state, String nodeId) {
+    final workflow = state.workflow;
+    if (workflow == null || !_canRemove(workflow, nodeId)) return state;
     final updatedState = WorkflowEditorStateReducer.updateWorkflow(
       state,
       (workflow) =>
@@ -89,16 +334,46 @@ abstract final class WorkflowEditorNodeReducer {
     WorkspaceWorkflow workflow,
     WorkflowNodeDraft draft,
   ) {
+    final source = draft.sourceNodeId == null
+        ? null
+        : workflow.nodes
+              .where((node) => node.id == draft.sourceNodeId)
+              .firstOrNull;
+    if (draft.sourceNodeId != null && source == null ||
+        source?.kind == .condition && draft.conditionBranch == null ||
+        source?.kind != .condition && draft.conditionBranch != null) {
+      return state;
+    }
     final node = WorkflowEditorNodeFactory.create(
       draft,
       index: workflow.nodes.length,
+      source: source,
     );
+    final connections = [
+      ...workflow.connections,
+      if (source != null)
+        WorkflowConnection(
+          fromNodeId: source.id,
+          toNodeId: node.id,
+          conditionBranch: draft.conditionBranch,
+        ),
+    ];
     final updatedState = WorkflowEditorStateReducer.updateWorkflow(
       state,
-      (workflow) => workflow.copyWith(nodes: [...workflow.nodes, node]),
+      (workflow) => workflow.copyWith(
+        nodes: [...workflow.nodes, node],
+        connections: connections,
+      ),
     );
 
     return updatedState.withSelection(node.id);
+  }
+
+  static bool _canRemove(WorkspaceWorkflow workflow, String nodeId) {
+    final node = workflow.nodes.where((item) => item.id == nodeId).firstOrNull;
+    if (node == null || node.kind == .inputs) return false;
+    return node.kind != .outputs ||
+        workflow.nodes.where((item) => item.kind == .outputs).length > 1;
   }
 }
 
@@ -150,7 +425,7 @@ abstract final class WorkflowEditorConnectionReducer {
     final pending = state.pendingOutput;
     if (workflow == null || pending == null) return state;
     if (pending.nodeId == null && nodeId == null) return _clearPending(state);
-    final connection = _candidate(workflow, pending, nodeId, portId);
+    final connection = _candidate(workflow, pending.nodeId, nodeId);
     if (connection == null) return _clearPending(state);
 
     return _appendConnection(state, workflow, connection);
@@ -168,35 +443,68 @@ abstract final class WorkflowEditorConnectionReducer {
     ),
   );
 
+  static WorkflowEditorState connect(
+    WorkflowEditorState state, {
+    required String sourceNodeId,
+    required String targetNodeId,
+    WorkflowConditionBranch? branch,
+  }) {
+    final workflow = state.workflow;
+    if (workflow == null ||
+        sourceNodeId == targetNodeId ||
+        !workflow.nodes.any((node) => node.id == sourceNodeId) ||
+        !workflow.nodes.any((node) => node.id == targetNodeId)) {
+      return state;
+    }
+    final source = workflow.nodes
+        .where((node) => node.id == sourceNodeId)
+        .firstOrNull;
+    final target = workflow.nodes
+        .where((node) => node.id == targetNodeId)
+        .firstOrNull;
+    if (source == null ||
+        target == null ||
+        source.kind == .outputs ||
+        target.kind == .inputs ||
+        source.kind == .condition && branch == null ||
+        source.kind != .condition && branch != null ||
+        WorkflowEditorNodeReducer._hasPath(
+          workflow,
+          targetNodeId,
+          sourceNodeId,
+        )) {
+      return state;
+    }
+    final candidate = WorkflowConnection(
+      fromNodeId: sourceNodeId,
+      toNodeId: targetNodeId,
+      conditionBranch: branch,
+    );
+    if (_isDuplicate(workflow, candidate)) return state;
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) =>
+          current.copyWith(connections: [...current.connections, candidate]),
+    );
+  }
+
   static WorkflowEditorState _clearPending(WorkflowEditorState state) =>
       state.copyWith(clearPendingOutput: true);
 
   static WorkflowConnection? _candidate(
     WorkspaceWorkflow workflow,
-    WorkflowPendingOutput pending,
-    String? nodeId,
-    String portId,
-  ) {
-    final endpoints = WorkflowConnectionEndpointResolver.find((
-      workflow: workflow,
-      pending: pending,
-      targetNodeId: nodeId,
-      targetPortId: portId,
-    ));
-    if (endpoints == null ||
-        WorkflowConnectionDraft.isSelfConnection(pending.nodeId, nodeId)) {
-      return null;
-    }
-
-    return WorkflowConnectionDraft.create(pending, nodeId, endpoints);
-  }
+    String? sourceNodeId,
+    String? targetNodeId,
+  ) => sourceNodeId == null || targetNodeId == null
+      ? null
+      : WorkflowConnection(fromNodeId: sourceNodeId, toNodeId: targetNodeId);
 
   static WorkflowEditorState _appendConnection(
     WorkflowEditorState state,
     WorkspaceWorkflow workflow,
     WorkflowConnection connection,
   ) {
-    if (WorkflowConnectionDraft.isDuplicate(workflow, connection)) {
+    if (_isDuplicate(workflow, connection)) {
       return _clearPending(state);
     }
 
@@ -208,113 +516,16 @@ abstract final class WorkflowEditorConnectionReducer {
       ),
     );
   }
-}
 
-typedef _ConnectionPorts = ({WorkflowPort source, WorkflowPort target});
-typedef _ConnectionNodes = ({WorkflowNode? source, WorkflowNode? target});
-typedef WorkflowConnectionRequest = ({
-  WorkspaceWorkflow workflow,
-  WorkflowPendingOutput pending,
-  String? targetNodeId,
-  String targetPortId,
-});
-
-abstract final class WorkflowConnectionEndpointResolver {
-  static _ConnectionPorts? find(WorkflowConnectionRequest request) {
-    final ports = _portsFor(request);
-    if (ports == null) return null;
-
-    return _isCompatible(ports) ? ports : null;
-  }
-
-  static _ConnectionPorts? _portsFor(WorkflowConnectionRequest request) {
-    final nodes = _nodesFor(request);
-    if (nodes == null) return null;
-
-    return _portsForNodes(request, nodes);
-  }
-
-  static _ConnectionNodes? _nodesFor(WorkflowConnectionRequest request) {
-    final sourceNode = _findNode(request.workflow, request.pending.nodeId);
-    final targetNode = _findNode(request.workflow, request.targetNodeId);
-    if ((request.pending.nodeId != null && sourceNode == null) ||
-        (request.targetNodeId != null && targetNode == null)) {
-      return null;
-    }
-
-    return (source: sourceNode, target: targetNode);
-  }
-
-  static _ConnectionPorts? _portsForNodes(
-    WorkflowConnectionRequest request,
-    _ConnectionNodes nodes,
-  ) {
-    final source = _findSourcePort(request, nodes.source);
-    final target = _findTargetPort(request, nodes.target);
-    if (source == null || target == null) return null;
-
-    return (source: source, target: target);
-  }
-
-  static bool _isCompatible(_ConnectionPorts ports) =>
-      WorkflowGraphValidation.workflowPortTypesCompatible(
-        ports.source.type,
-        ports.target.type,
-      );
-
-  static WorkflowNode? _findNode(WorkspaceWorkflow workflow, String? nodeId) =>
-      nodeId == null
-      ? null
-      : workflow.nodes.where((node) => node.id == nodeId).firstOrNull;
-
-  static WorkflowPort? _findSourcePort(
-    WorkflowConnectionRequest request,
-    WorkflowNode? sourceNode,
-  ) => sourceNode == null
-      ? _findPort(request.workflow.inputs, request.pending.portId)
-      : _findPort(sourceNode.outputs, request.pending.portId);
-
-  static WorkflowPort? _findTargetPort(
-    WorkflowConnectionRequest request,
-    WorkflowNode? targetNode,
-  ) => targetNode == null
-      ? _findPort(request.workflow.outputs, request.targetPortId)
-      : _findPort(targetNode.inputs, request.targetPortId);
-
-  static WorkflowPort? _findPort(List<WorkflowPort> ports, String portId) =>
-      ports.where((port) => port.id == portId).firstOrNull;
-}
-
-abstract final class WorkflowConnectionDraft {
-  static bool isSelfConnection(String? sourceNodeId, String? targetNodeId) =>
-      sourceNodeId != null && sourceNodeId == targetNodeId;
-
-  static WorkflowConnection create(
-    WorkflowPendingOutput pending,
-    String? targetNodeId,
-    _ConnectionPorts endpoints,
-  ) => WorkflowConnection(
-    fromPortId: endpoints.source.id,
-    toPortId: endpoints.target.id,
-    fromNodeId: pending.nodeId,
-    toNodeId: targetNodeId,
-  );
-
-  static bool isDuplicate(
+  static bool _isDuplicate(
     WorkspaceWorkflow workflow,
     WorkflowConnection candidate,
   ) => workflow.connections.any(
-    (connection) => _sameEndpoints(connection, candidate),
+    (connection) =>
+        connection.fromNodeId == candidate.fromNodeId &&
+        connection.toNodeId == candidate.toNodeId &&
+        connection.conditionBranch == candidate.conditionBranch,
   );
-
-  static bool _sameEndpoints(
-    WorkflowConnection first,
-    WorkflowConnection second,
-  ) =>
-      first.fromNodeId == second.fromNodeId &&
-      first.fromPortId == second.fromPortId &&
-      first.toNodeId == second.toNodeId &&
-      first.toPortId == second.toPortId;
 }
 
 typedef WorkflowBoundaryPortDraft = ({String id, bool isInput, String name});
@@ -400,35 +611,16 @@ abstract final class _WorkflowPortCollection {
   static WorkspaceWorkflow _removeWorkflowPort(
     WorkspaceWorkflow workflow,
     WorkflowBoundaryPortRemoval removal,
-  ) =>
-      _withWorkflowPorts(
-        workflow,
-        removal.isInput,
-        _portsWithout(
-          _workflowPorts(workflow, removal.isInput),
-          removal.portId,
-        ),
-      ).copyWith(
-        connections: _connectionsWithoutBoundaryPort(
-          workflow.connections,
-          removal,
-        ),
-      );
+  ) => _withWorkflowPorts(
+    workflow,
+    removal.isInput,
+    _portsWithout(_workflowPorts(workflow, removal.isInput), removal.portId),
+  );
 
   static List<WorkflowPort> _portsWithout(
     List<WorkflowPort> ports,
     String portId,
   ) => ports.where((port) => port.id != portId).toList();
-
-  static List<WorkflowConnection> _connectionsWithoutBoundaryPort(
-    List<WorkflowConnection> connections,
-    WorkflowBoundaryPortRemoval removal,
-  ) => connections
-      .where(
-        (connection) =>
-            !_touchesBoundaryPort(connection, removal.isInput, removal.portId),
-      )
-      .toList();
 
   static List<WorkflowPort> _workflowPorts(
     WorkspaceWorkflow workflow,
@@ -451,42 +643,75 @@ abstract final class _WorkflowPortCollection {
     for (final port in ports)
       if (port.id == portId) replacement else port,
   ];
-
-  static bool _touchesBoundaryPort(
-    WorkflowConnection connection,
-    bool isInput,
-    String portId,
-  ) => isInput
-      ? connection.fromNodeId == null && connection.fromPortId == portId
-      : connection.toNodeId == null && connection.toPortId == portId;
 }
 
 abstract final class WorkflowEditorNodePortReducer {
   static WorkflowEditorState addNode(
     WorkflowEditorState state, {
     required WorkflowNodePortDraft draft,
-  }) => WorkflowEditorStateReducer.updateNode(
-    state,
-    draft.nodeId,
-    (node) => _WorkflowNodePortCollection._add(node, draft),
-  );
+  }) {
+    final node = state.workflow?.nodes
+        .where((item) => item.id == draft.nodeId)
+        .firstOrNull;
+    if (draft.isInput && node?.kind == .connectorTool) return state;
+    return WorkflowEditorStateReducer.updateNode(
+      state,
+      draft.nodeId,
+      (node) => _WorkflowNodePortCollection._add(node, draft),
+    );
+  }
 
   static WorkflowEditorState updateNode(
     WorkflowEditorState state, {
     required WorkflowNodePortUpdate update,
-  }) => WorkflowEditorStateReducer.updateNode(
-    state,
-    update.nodeId,
-    (node) => _WorkflowNodePortCollection._update(node, update),
-  );
+  }) {
+    final workflow = state.workflow;
+    final node = workflow?.nodes
+        .where((item) => item.id == update.nodeId)
+        .firstOrNull;
+    if (node == null || update.isInput && node.kind == .connectorTool) {
+      return state;
+    }
+    final replacement = _WorkflowNodePortCollection._update(node, update);
+    if (node.kind != .connectorTool || update.isInput) {
+      return WorkflowEditorStateReducer.updateNode(
+        state,
+        update.nodeId,
+        (_) => replacement,
+      );
+    }
+    final schemas = {
+      ...workflow!.definition.localConnectorSchemas,
+      node.targetId: replacement.outputFields,
+    };
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (current) => current.copyWith(
+        localConnectorSchemas: schemas,
+        nodes: [
+          for (final item in current.nodes)
+            if (item.kind == .connectorTool && item.targetId == node.targetId)
+              item.copyWith(outputFields: replacement.outputFields)
+            else
+              item,
+        ],
+      ),
+    );
+  }
 
   static WorkflowEditorState removeNode(
     WorkflowEditorState state, {
     required WorkflowNodePortRemoval removal,
-  }) => WorkflowEditorStateReducer.updateWorkflow(
-    state,
-    (workflow) => _WorkflowNodePortCollection._remove(workflow, removal),
-  );
+  }) {
+    final node = state.workflow?.nodes
+        .where((item) => item.id == removal.nodeId)
+        .firstOrNull;
+    if (removal.isInput && node?.kind == .connectorTool) return state;
+    return WorkflowEditorStateReducer.updateWorkflow(
+      state,
+      (workflow) => _WorkflowNodePortCollection._remove(workflow, removal),
+    );
+  }
 }
 
 abstract final class _WorkflowNodePortCollection {
@@ -517,10 +742,7 @@ abstract final class _WorkflowNodePortCollection {
   static WorkspaceWorkflow _remove(
     WorkspaceWorkflow workflow,
     WorkflowNodePortRemoval removal,
-  ) => workflow.copyWith(
-    nodes: _replaceNodePort(workflow.nodes, removal),
-    connections: _connectionsWithoutNodePort(workflow.connections, removal),
-  );
+  ) => workflow.copyWith(nodes: _replaceNodePort(workflow.nodes, removal));
 
   static List<WorkflowNode> _replaceNodePort(
     List<WorkflowNode> nodes,
@@ -540,13 +762,6 @@ abstract final class _WorkflowNodePortCollection {
         node,
   ];
 
-  static List<WorkflowConnection> _connectionsWithoutNodePort(
-    List<WorkflowConnection> connections,
-    WorkflowNodePortRemoval removal,
-  ) => connections
-      .where((connection) => !_touchesNodePort(connection, removal))
-      .toList();
-
   static List<WorkflowPort> _nodePorts(WorkflowNode node, bool isInput) =>
       isInput ? node.inputs : node.outputs;
 
@@ -555,15 +770,6 @@ abstract final class _WorkflowNodePortCollection {
     bool isInput,
     List<WorkflowPort> ports,
   ) => isInput ? node.copyWith(inputs: ports) : node.copyWith(outputs: ports);
-
-  static bool _touchesNodePort(
-    WorkflowConnection connection,
-    WorkflowNodePortRemoval removal,
-  ) => removal.isInput
-      ? connection.toNodeId == removal.nodeId &&
-            connection.toPortId == removal.portId
-      : connection.fromNodeId == removal.nodeId &&
-            connection.fromPortId == removal.portId;
 }
 
 abstract final class WorkflowEditorPortFactory {
@@ -624,19 +830,28 @@ abstract final class WorkflowEditorNodeFactory {
   static const _initialNodeTop = 120.0;
   static const _verticalNodeSpacing = 240.0;
 
-  static WorkflowNode create(WorkflowNodeDraft draft, {required int index}) {
+  static WorkflowNode create(
+    WorkflowNodeDraft draft, {
+    required int index,
+    WorkflowNode? source,
+  }) {
     final id = newId();
-    final position = _position(index);
+    final position = source == null
+        ? _position(index)
+        : (x: source.x + _horizontalNodeSpacing, y: source.y);
 
     return WorkflowNode(
       id: id,
       kind: draft.kind,
       targetId: draft.targetId,
+      canonicalName: draft.canonicalName,
       label: draft.label,
       x: position.x,
       y: position.y,
-      inputs: _inputs(draft),
-      outputs: _outputs(draft),
+      inputFields: draft.inputs ?? const [],
+      outputFields: draft.outputs ?? const [],
+      conditionRules: draft.conditionRules,
+      transformOutputs: draft.transformOutputs,
     );
   }
 
@@ -646,19 +861,4 @@ abstract final class WorkflowEditorNodeFactory {
     x: _initialNodeLeft + (index % _nodesPerRow) * _horizontalNodeSpacing,
     y: _initialNodeTop + (index ~/ _nodesPerRow) * _verticalNodeSpacing,
   );
-
-  static List<WorkflowPort> _inputs(WorkflowNodeDraft draft) =>
-      draft.inputs ?? [_defaultPort(draft.defaultInputLabel)];
-
-  static List<WorkflowPort> _outputs(WorkflowNodeDraft draft) =>
-      draft.outputs ??
-      (draft.kind == .connectorTool
-          ? const []
-          : [_defaultOutputPort(draft.defaultOutputLabel)]);
-
-  static WorkflowPort _defaultPort(String name) =>
-      WorkflowPort(id: newId(), name: name, type: .any);
-
-  static WorkflowPort _defaultOutputPort(String name) =>
-      WorkflowPort(id: newId(), name: name, type: .any, isRequired: false);
 }

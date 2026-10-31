@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/service_connections/models/connector_conn
 import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_field_schema_codec.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_connector_output_inference.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
@@ -24,12 +25,14 @@ import 'package:material_ui/material_ui.dart';
 class WorkflowConnectorToolSample extends ConsumerStatefulWidget {
   const new({
     required this.workspaceId,
+    required this.workflow,
     required this.node,
     required this.editor,
     super.key,
   });
 
   final String workspaceId;
+  final WorkspaceWorkflow workflow;
   final WorkflowNode node;
   final WorkflowEditorNotifier editor;
 
@@ -175,7 +178,7 @@ class _WorkflowConnectorToolSampleState
       return;
     }
 
-    _applySample(sample);
+    unawaited(_applySample(sample));
   }
 
   void _startReadSample() => unawaited(_runReadSample());
@@ -213,7 +216,7 @@ class _WorkflowConnectorToolSampleState
         connectionId: connectionId,
       );
       if (!mounted) return;
-      _applySample(result);
+      await _applySample(result);
     } on Object {
       if (mounted) setState(() => _failed = true);
     } finally {
@@ -234,21 +237,106 @@ class _WorkflowConnectorToolSampleState
     };
   }
 
-  void _applySample(Object? sample) {
+  Future<void> _applySample(Object? sample) async {
+    final current = _currentSchema();
     final outputs = WorkflowConnectorOutputInference.merge(
-      current: widget.node.outputs,
+      current: current,
       sample: sample,
       hasSampledOutputs: widget.node.hasSampledOutputs,
     );
-    widget.editor.commands().nodes.inferOutputs(widget.node.id, outputs);
-    _inputs.text = '{}';
-    _outputSample.clear();
-    setState(() {
-      _invalidSample = false;
-      _failed = false;
-    });
+    try {
+      if (current.isEmpty) {
+        widget.editor.commands().nodes.inferOutputs(widget.node.id, outputs);
+      } else if (WorkflowFieldSchemaCodec.encode(current) !=
+          WorkflowFieldSchemaCodec.encode(outputs)) {
+        final choice = await _chooseSchemaScope();
+        if (!mounted) return;
+        switch (choice) {
+          case _SampleSchemaChoice.local:
+            widget.editor.commands().nodes.inferOutputs(
+              widget.node.id,
+              outputs,
+            );
+          case _SampleSchemaChoice.shared:
+            await ref
+                .read(workspaceToolsProvider(widget.workspaceId).notifier)
+                .updateToolOutputSchema(
+                  widget.node.targetId,
+                  WorkflowFieldSchemaCodec.encode(outputs),
+                );
+            if (!widget.workflow.definition.localConnectorSchemas.containsKey(
+              widget.node.targetId,
+            )) {
+              widget.editor.commands().nodes.useSharedConnectorSchema(
+                widget.node.id,
+                outputs,
+              );
+            }
+          case _SampleSchemaChoice.keep || null:
+            break;
+        }
+      }
+      if (mounted) setState(() => _failed = false);
+    } on Object {
+      if (mounted) setState(() => _failed = true);
+    } finally {
+      if (mounted) {
+        _inputs.text = '{}';
+        _outputSample.clear();
+        setState(() => _invalidSample = false);
+      }
+    }
   }
+
+  List<WorkflowField> _currentSchema() {
+    final local =
+        widget.workflow.definition.localConnectorSchemas[widget.node.targetId];
+    if (local != null) return local;
+    final tools = ref.read(workspaceToolsProvider(widget.workspaceId));
+    final tool = switch (tools) {
+      AsyncData(:final value) =>
+        value.where((item) => item.toolId == widget.node.targetId).firstOrNull,
+      AsyncLoading(:final value?) =>
+        value.where((item) => item.toolId == widget.node.targetId).firstOrNull,
+      AsyncLoading() || AsyncError() => null,
+    };
+    return WorkflowFieldSchemaCodec.parse(tool?.outputSchemaJson) ??
+        widget.node.outputFields;
+  }
+
+  Future<_SampleSchemaChoice?> _chooseSchemaScope() => showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const TextLocale(LocaleKeys.workflow_editor_schema_drift_title),
+      content: const TextLocale(
+        LocaleKeys.workflow_editor_schema_drift_message,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_SampleSchemaChoice.keep),
+          child: const TextLocale(
+            LocaleKeys.workflow_editor_schema_keep_current,
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_SampleSchemaChoice.local),
+          child: const TextLocale(
+            LocaleKeys.workflow_editor_schema_create_local,
+          ),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop(_SampleSchemaChoice.shared),
+          child: const TextLocale(
+            LocaleKeys.workflow_editor_schema_edit_shared,
+          ),
+        ),
+      ],
+    ),
+  );
 }
+
+enum _SampleSchemaChoice { keep, local, shared }
 
 class const _WorkflowSampleConnectionPicker({
   required final AsyncValue<List<ConnectorConnectionCandidate>>? connections,

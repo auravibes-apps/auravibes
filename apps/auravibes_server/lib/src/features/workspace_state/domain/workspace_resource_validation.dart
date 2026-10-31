@@ -186,11 +186,9 @@ class WorkspaceResourceValidation {
         description is! String ||
         (parentId != null && (parentId is! String || parentId.isEmpty)) ||
         definition is! Map<String, Object?> ||
-        definition['version'] != 1) {
+        definition['version'] != 2) {
       throw const FormatException();
     }
-    final inputs = _validateWorkflowPorts(definition['inputs']);
-    final outputs = _validateWorkflowPorts(definition['outputs']);
     final rawNodes = definition['nodes'];
     final rawConnections = definition['connections'];
     if (rawNodes is! List<Object?> ||
@@ -201,12 +199,17 @@ class WorkspaceResourceValidation {
     }
 
     final nodes = <String, Map<String, Object?>>{};
+    final inputFields = <String, List<Map<String, Object?>>>{};
+    final outputFields = <String, List<Map<String, Object?>>>{};
+    var inputNodeCount = 0;
+    var outputNodeCount = 0;
     final edges = <String, Set<String>>{};
     for (final value in rawNodes) {
       if (value is! Map<String, Object?>) throw const FormatException();
       final id = value['id'];
       final kind = value['kind'];
       final targetId = value['targetId'];
+      final canonicalName = value['canonicalName'];
       final label = value['label'];
       final hasSampledOutputs = value['hasSampledOutputs'];
       final x = value['x'];
@@ -216,13 +219,16 @@ class WorkspaceResourceValidation {
           nodes.containsKey(id) ||
           kind is! String ||
           !const {
-            'systemTool',
-            'agent',
+            'inputs',
+            'outputs',
             'connectorTool',
+            'condition',
+            'transform',
             'workflow',
           }.contains(kind) ||
           targetId is! String ||
           targetId.isEmpty ||
+          canonicalName is! String ||
           label is! String ||
           label.trim().isEmpty ||
           hasSampledOutputs is! bool ||
@@ -237,94 +243,97 @@ class WorkspaceResourceValidation {
           y > _maxWorkflowNodePosition) {
         throw const FormatException();
       }
-      _validateWorkflowPorts(value['inputs']);
-      _validateWorkflowPorts(value['outputs']);
+      if (kind == 'inputs') inputNodeCount++;
+      if (kind == 'outputs') outputNodeCount++;
+      if (kind == 'connectorTool' &&
+          !hasSampledOutputs &&
+          value['outputFields'] is! List<Object?>) {
+        throw const FormatException();
+      }
+      inputFields[id] = _validateWorkflowFields(value['inputFields']);
+      outputFields[id] = _validateWorkflowFields(value['outputFields']);
+      _validateWorkflowNodeConfiguration(value);
       nodes[id] = value;
       edges[id] = <String>{};
     }
-    final connectionIds =
-        <
-          ({
-            String? fromNodeId,
-            String fromPortId,
-            String? toNodeId,
-            String toPortId,
-          })
-        >{};
+    if (inputNodeCount != 1 || outputNodeCount < 1) {
+      throw const FormatException();
+    }
+    _validateLocalConnectorSchemas(definition['localConnectorSchemas']);
+    final connectionIds = <String>{};
     for (final value in rawConnections) {
       if (value is! Map<String, Object?>) throw const FormatException();
       final fromNodeId = value['fromNodeId'];
-      final fromPortId = value['fromPortId'];
       final toNodeId = value['toNodeId'];
-      final toPortId = value['toPortId'];
-      if ((fromNodeId != null && fromNodeId is! String) ||
-          fromPortId is! String ||
-          (toNodeId != null && toNodeId is! String) ||
-          toPortId is! String ||
-          (fromNodeId == null && toNodeId == null)) {
+      final branch = value['conditionBranch'];
+      if (fromNodeId is! String ||
+          toNodeId is! String ||
+          (branch != null &&
+              !const {'trueBranch', 'falseBranch'}.contains(branch)) ||
+          fromNodeId == toNodeId) {
         throw const FormatException();
       }
-      final connectionIdentity = (
-        fromNodeId: fromNodeId as String?,
-        fromPortId: fromPortId,
-        toNodeId: toNodeId as String?,
-        toPortId: toPortId,
-      );
+      final connectionIdentity = '$fromNodeId\u0000$toNodeId\u0000$branch';
       if (!connectionIds.add(connectionIdentity)) {
         throw const FormatException();
       }
-      final source = fromNodeId == null ? null : nodes[fromNodeId];
-      final target = toNodeId == null ? null : nodes[toNodeId];
-      if ((fromNodeId != null && source == null) ||
-          (toNodeId != null && target == null) ||
-          (fromNodeId != null && fromNodeId == toNodeId)) {
+      final source = nodes[fromNodeId];
+      final target = nodes[toNodeId];
+      if (source == null || target == null) {
         throw const FormatException();
       }
-      final sourcePort = source == null
-          ? _workflowPort(inputs, fromPortId)
-          : _workflowPort(source['outputs'], fromPortId);
-      final targetPort = target == null
-          ? _workflowPort(outputs, toPortId)
-          : _workflowPort(target['inputs'], toPortId);
-      if (sourcePort == null || targetPort == null) {
+      final sourceKind = source['kind'];
+      final targetKind = target['kind'];
+      if (sourceKind == 'condition' && branch == null ||
+          sourceKind != 'condition' && branch != null ||
+          sourceKind == 'outputs' ||
+          targetKind == 'inputs') {
         throw const FormatException();
       }
-      final sourceType = sourcePort['type'];
-      final targetType = targetPort['type'];
-      if (sourceType != targetType &&
-          sourceType != 'any' &&
-          targetType != 'any') {
-        throw const FormatException();
-      }
-      if (source != null && target != null) {
-        edges[fromNodeId as String]!.add(toNodeId as String);
-      }
+      edges[fromNodeId]!.add(toNodeId);
     }
     _rejectWorkflowCycles(edges);
-    if (inputs.length > 100 || outputs.length > 100) {
-      throw const FormatException();
+    for (final node in nodes.values) {
+      _validateWorkflowBindings(
+        node,
+        nodes,
+        inputFields,
+        outputFields,
+        edges,
+      );
     }
   }
 
-  static List<Map<String, Object?>> _validateWorkflowPorts(Object? value) {
-    if (value is! List<Object?> || value.length > 100) {
+  static List<Map<String, Object?>> _validateWorkflowFields(
+    Object? value, {
+    int depth = 0,
+  }) {
+    if (depth > _maxJsonDepth ||
+        value is! List<Object?> ||
+        value.length > _maxCollectionEntries) {
       throw const FormatException();
     }
     final ids = <String>{};
     final names = <String>{};
-    final ports = <Map<String, Object?>>[];
+    final fields = <Map<String, Object?>>[];
     for (final item in value) {
       if (item is! Map<String, Object?>) throw const FormatException();
       final id = item['id'];
       final name = item['name'];
       final type = item['type'];
-      final isRequired = item['isRequired'];
+      final isRequired = item['required'];
+      final description = item['description'];
+      final nullable = item['nullable'];
+      final hasDefault = item['hasDefault'];
+      final properties = item['properties'] ?? const <Object?>[];
+      final arrayItems = item['items'];
       if (id is! String ||
           id.isEmpty ||
           !ids.add(id) ||
           name is! String ||
           name.trim().isEmpty ||
           !names.add(name.trim().toLowerCase()) ||
+          name.length > _maxStringLength ||
           type is! String ||
           !const {
             'any',
@@ -335,23 +344,374 @@ class WorkspaceResourceValidation {
             'object',
             'array',
           }.contains(type) ||
-          (isRequired != null && isRequired is! bool)) {
+          (isRequired != null && isRequired is! bool) ||
+          (description != null && description is! String) ||
+          (nullable != null && nullable is! bool) ||
+          (hasDefault != null && hasDefault is! bool) ||
+          (type == 'object' && properties is! List<Object?>) ||
+          (type != 'object' &&
+              properties is List<Object?> &&
+              properties.isNotEmpty) ||
+          (type == 'array' && arrayItems is! Map<String, Object?>) ||
+          (type != 'array' && arrayItems != null)) {
         throw const FormatException();
       }
-      ports.add(item);
+      final childFields = type == 'object'
+          ? _validateWorkflowFields(properties, depth: depth + 1)
+          : const <Map<String, Object?>>[];
+      final normalizedItems = type == 'array'
+          ? _validateWorkflowFields([arrayItems], depth: depth + 1).single
+          : null;
+      if (hasDefault == true &&
+          !_workflowValueMatchesField(item['default'], item)) {
+        throw const FormatException();
+      }
+      if (hasDefault != true && item.containsKey('default')) {
+        throw const FormatException();
+      }
+      fields.add({
+        ...item,
+        'properties': childFields,
+        if (normalizedItems case final items?) 'items': items,
+      });
     }
 
-    return ports;
+    return fields;
   }
 
-  static Map<String, Object?>? _workflowPort(Object? ports, String id) {
-    if (ports is! List<Object?>) return null;
-    for (final port in ports) {
-      if (port is Map<String, Object?> && port['id'] == id) return port;
+  static void _validateWorkflowNodeConfiguration(
+    Map<String, Object?> node,
+  ) {
+    final kind = node['kind'];
+    final inputBindings = node['inputBindings'];
+    final conditionMode = node['conditionMode'];
+    final conditionRules = node['conditionRules'];
+    final transformOutputs = node['transformOutputs'];
+    if (inputBindings is! Map<String, Object?> ||
+        (conditionMode != 'all' && conditionMode != 'any') ||
+        conditionRules is! List<Object?> ||
+        transformOutputs is! List<Object?> ||
+        conditionRules.length > _maxCollectionEntries ||
+        transformOutputs.length > _maxCollectionEntries) {
+      throw const FormatException();
     }
-
-    return null;
+    if (kind == 'condition') {
+      for (final value in conditionRules) {
+        if (value is! Map<String, Object?> ||
+            value['id'] is! String ||
+            value['sourceNodeId'] is! String ||
+            value['jsonPointer'] is! String ||
+            !const {
+              'equals',
+              'notEquals',
+              'exists',
+              'isEmpty',
+              'greaterThan',
+              'greaterThanOrEqual',
+              'lessThan',
+              'lessThanOrEqual',
+              'contains',
+              'startsWith',
+              'endsWith',
+            }.contains(value['operator']) ||
+            value['comparison'] is! Map<String, Object?>) {
+          throw const FormatException();
+        }
+      }
+    } else if (conditionRules.isNotEmpty) {
+      throw const FormatException();
+    }
+    if (kind == 'transform') {
+      for (final value in transformOutputs) {
+        if (value is! Map<String, Object?> ||
+            value['id'] is! String ||
+            value['name'] is! String ||
+            value['name'].toString().trim().isEmpty ||
+            !const {
+              'any',
+              'string',
+              'integer',
+              'number',
+              'boolean',
+              'object',
+              'array',
+            }.contains(value['type']) ||
+            !const {
+              'selectField',
+              'buildObject',
+              'buildArray',
+              'stringTemplate',
+              'add',
+              'subtract',
+              'multiply',
+              'divide',
+              'castString',
+              'castInteger',
+              'castNumber',
+              'castBoolean',
+            }.contains(value['operation']) ||
+            value['operands'] is! List<Object?> ||
+            (value['template'] != null && value['template'] is! String)) {
+          throw const FormatException();
+        }
+        final operandIds = <String>{};
+        for (final operand in value['operands']! as List<Object?>) {
+          if (operand is! Map<String, Object?> ||
+              operand['id'] is! String ||
+              !operandIds.add(operand['id']! as String) ||
+              operand['name'] is! String ||
+              operand['name']! as String == '' ||
+              operand['binding'] is! Map<String, Object?>) {
+            throw const FormatException();
+          }
+        }
+      }
+    } else if (transformOutputs.isNotEmpty) {
+      throw const FormatException();
+    }
   }
+
+  static void _validateLocalConnectorSchemas(Object? value) {
+    if (value == null) return;
+    if (value is! Map<String, Object?> ||
+        value.length > _maxCollectionEntries) {
+      throw const FormatException();
+    }
+    for (final entry in value.entries) {
+      if (entry.key.trim().isEmpty) throw const FormatException();
+      _validateWorkflowFields(entry.value);
+    }
+  }
+
+  static void _validateWorkflowBindings(
+    Map<String, Object?> node,
+    Map<String, Map<String, Object?>> nodes,
+    Map<String, List<Map<String, Object?>>> inputFields,
+    Map<String, List<Map<String, Object?>>> outputFields,
+    Map<String, Set<String>> edges,
+  ) {
+    final nodeId = node['id']! as String;
+    final fields = inputFields[nodeId] ?? const [];
+    final fieldsById = {for (final field in fields) field['id']: field};
+    final bindings = node['inputBindings']! as Map<String, Object?>;
+    for (final entry in bindings.entries) {
+      final target = fieldsById[entry.key];
+      if (target == null || entry.value is! Map<String, Object?>) {
+        throw const FormatException();
+      }
+      _validateWorkflowBinding(
+        entry.value as Map<String, Object?>,
+        nodes,
+        outputFields,
+        edges,
+        targetNodeId: nodeId,
+        targetField: target,
+      );
+    }
+    for (final value in node['conditionRules']! as List<Object?>) {
+      if (value is! Map<String, Object?>) throw const FormatException();
+      final sourceId = value['sourceNodeId']! as String;
+      final source = nodes[sourceId];
+      if (source == null || !edges[sourceId]!.contains(nodeId)) {
+        throw const FormatException();
+      }
+      final sourceField = _workflowFieldAt(
+        outputFields[sourceId] ?? const [],
+        value['jsonPointer']! as String,
+      );
+      if (sourceField == null) throw const FormatException();
+      final comparison = value['comparison']! as Map<String, Object?>;
+      _validateWorkflowBinding(
+        comparison,
+        nodes,
+        outputFields,
+        edges,
+        targetNodeId: nodeId,
+        targetField: sourceField,
+      );
+    }
+    for (final value in node['transformOutputs']! as List<Object?>) {
+      if (value is! Map<String, Object?> ||
+          value['operands'] is! List<Object?>) {
+        throw const FormatException();
+      }
+      final operands = value['operands']! as List<Object?>;
+      final operandFields = <Map<String, Object?>?>[];
+      for (final operand in operands) {
+        if (operand is! Map<String, Object?> ||
+            operand['binding'] is! Map<String, Object?>) {
+          throw const FormatException();
+        }
+        final binding = operand['binding']! as Map<String, Object?>;
+        _validateWorkflowBinding(
+          binding,
+          nodes,
+          outputFields,
+          edges,
+          targetNodeId: nodeId,
+          targetField: null,
+        );
+        final sourceId = binding['sourceNodeId'];
+        final pointer = binding['jsonPointer'];
+        operandFields.add(
+          sourceId is String && pointer is String
+              ? _workflowFieldAt(outputFields[sourceId] ?? const [], pointer)
+              : null,
+        );
+      }
+      if (!_validWorkflowTransform(value, operands, operandFields)) {
+        throw const FormatException();
+      }
+    }
+  }
+
+  static bool _validWorkflowTransform(
+    Map<String, Object?> output,
+    List<Object?> operands,
+    List<Map<String, Object?>?> operandFields,
+  ) {
+    final type = output['type'];
+    final operation = output['operation'];
+    switch (operation) {
+      case 'selectField':
+        if (operands.length != 1 || operandFields.single == null) return false;
+        final source = operandFields.single!;
+        final sourceType = source['type'];
+        return (sourceType == type ||
+                sourceType == 'integer' && type == 'number') &&
+            (source['nullable'] != true || type == 'any');
+      case 'buildObject':
+        return type == 'object';
+      case 'buildArray':
+        return type == 'array';
+      case 'stringTemplate':
+        return type == 'string';
+      case 'add':
+      case 'subtract':
+      case 'multiply':
+      case 'divide':
+        if ((type != 'integer' && type != 'number') || operands.length != 2) {
+          return false;
+        }
+        for (var index = 0; index < operands.length; index++) {
+          final field = operandFields[index];
+          final operand = operands[index]! as Map<String, Object?>;
+          final binding = operand['binding']! as Map<String, Object?>;
+          if (field == null && binding['sourceNodeId'] == null) {
+            if (binding['value'] is! num) return false;
+          } else if (field?['type'] != 'integer' &&
+              field?['type'] != 'number') {
+            return false;
+          }
+        }
+        return true;
+      case 'castString':
+        return type == 'string' && operands.length == 1;
+      case 'castInteger':
+        return type == 'integer' && operands.length == 1;
+      case 'castNumber':
+        return type == 'number' && operands.length == 1;
+      case 'castBoolean':
+        return type == 'boolean' && operands.length == 1;
+      default:
+        return false;
+    }
+  }
+
+  static void _validateWorkflowBinding(
+    Map<String, Object?> binding,
+    Map<String, Map<String, Object?>> nodes,
+    Map<String, List<Map<String, Object?>>> outputFields,
+    Map<String, Set<String>> edges, {
+    required String targetNodeId,
+    required Map<String, Object?>? targetField,
+  }) {
+    final sourceId = binding['sourceNodeId'];
+    if (sourceId == null) {
+      if (targetField != null &&
+          !_workflowValueMatchesField(binding['value'], targetField)) {
+        throw const FormatException();
+      }
+      return;
+    }
+    final pointer = binding['jsonPointer'];
+    if (sourceId is! String ||
+        pointer is! String ||
+        !nodes.containsKey(sourceId)) {
+      throw const FormatException();
+    }
+    final source = _workflowFieldAt(
+      outputFields[sourceId] ?? const [],
+      pointer,
+    );
+    if (source == null || !edges[sourceId]!.contains(targetNodeId)) {
+      throw const FormatException();
+    }
+    if (targetField != null) {
+      final sourceType = source['type'] as String;
+      final targetType = targetField['type'] as String;
+      final compatible =
+          sourceType == targetType ||
+          sourceType == 'integer' && targetType == 'number';
+      if (!compatible ||
+          source['nullable'] == true && targetField['nullable'] != true) {
+        throw const FormatException();
+      }
+    }
+  }
+
+  static Map<String, Object?>? _workflowFieldAt(
+    List<Map<String, Object?>> fields,
+    String pointer,
+  ) {
+    if (!pointer.startsWith('/')) return null;
+    Map<String, Object?>? current;
+    var currentFields = fields;
+    for (final rawSegment in pointer.substring(1).split('/')) {
+      final segment = rawSegment.replaceAll('~1', '/').replaceAll('~0', '~');
+      if (current?['type'] == 'array') {
+        if (segment != '0' || current?['items'] is! Map<String, Object?>) {
+          return null;
+        }
+        current = current!['items'] as Map<String, Object?>;
+        currentFields = _workflowFieldProperties(current);
+        continue;
+      }
+      current = null;
+      for (final field in currentFields) {
+        if (field['name'] == segment) {
+          current = field;
+          break;
+        }
+      }
+      if (current == null) return null;
+      currentFields = _workflowFieldProperties(current);
+    }
+    return current;
+  }
+
+  static bool _workflowValueMatchesField(
+    Object? value,
+    Map<String, Object?> field,
+  ) {
+    if (value == null) return field['nullable'] == true;
+    return switch (field['type']) {
+      'any' => true,
+      'string' => value is String,
+      'integer' => value is int,
+      'number' => value is num,
+      'boolean' => value is bool,
+      'object' => value is Map,
+      'array' => value is List,
+      _ => false,
+    };
+  }
+
+  static List<Map<String, Object?>> _workflowFieldProperties(
+    Map<String, Object?> field,
+  ) => (field['properties'] as List<Object?>? ?? const [])
+      .whereType<Map<String, Object?>>()
+      .toList();
 
   static void _rejectWorkflowCycles(Map<String, Set<String>> edges) {
     final states = <String, int>{};
@@ -503,17 +863,21 @@ class WorkspaceResourceValidation {
         if (node is! Map<String, Object?>) throw const FormatException();
         final kind = node['kind'];
         final targetKind = switch (kind) {
-          'systemTool' => WorkspaceResourceKind.tool,
-          'connectorTool' => WorkspaceResourceKind.tool,
-          'agent' => WorkspaceResourceKind.agent,
           'workflow' => WorkspaceResourceKind.workflow,
+          'connectorTool' ||
+          'inputs' ||
+          'outputs' ||
+          'condition' ||
+          'transform' => null,
           _ => throw const FormatException(),
         };
         final targetId = node['targetId'];
         if (targetId is! String || targetId.isEmpty) {
           throw const FormatException();
         }
-        references.add(WorkspaceResourceReference(targetKind, targetId));
+        if (targetKind case final target?) {
+          references.add(WorkspaceResourceReference(target, targetId));
+        }
       }
     }
 

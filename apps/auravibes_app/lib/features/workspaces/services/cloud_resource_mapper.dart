@@ -203,7 +203,7 @@ void _validateWorkflowDefinition(
 ) {
   if (kind != WorkspaceResourceKind.workflow) return;
   final definition = data['definition'];
-  if (definition is! Map || definition['version'] != 1) {
+  if (definition is! Map || definition['version'] != 2) {
     throw const FormatException();
   }
 }

@@ -1,13 +1,12 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_field_schema_codec.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_graph_validation.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_node_draft.dart';
 import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
@@ -30,27 +29,31 @@ abstract final class WorkflowNodePicker {
     required BuildContext context,
     required String workspaceId,
     required String? currentWorkflowId,
-  }) => showModalBottomSheet<WorkflowNodeDraft>(
-    context: context,
-    builder: (context) => _WorkflowNodePicker(
-      workspaceId: workspaceId,
-      currentWorkflowId: currentWorkflowId,
-    ),
-    isScrollControlled: true,
-  );
+    String? sourceNodeId,
+    WorkflowConditionBranch? conditionBranch,
+  }) async {
+    final draft = await showModalBottomSheet<WorkflowNodeDraft>(
+      context: context,
+      builder: (context) => _WorkflowNodePicker(
+        workspaceId: workspaceId,
+        currentWorkflowId: currentWorkflowId,
+      ),
+      isScrollControlled: true,
+    );
+    return draft?.copyWith(
+      sourceNodeId: sourceNodeId,
+      conditionBranch: conditionBranch,
+    );
+  }
 }
 
 typedef _WorkflowNodePickerItems = ({
-  List<WorkspaceToolEntity> tools,
-  List<AgentEntity> agents,
   List<ConnectorToolCatalogItem> connectorTools,
   List<WorkspaceWorkflow> workflows,
   bool isLoading,
 });
 
 typedef _WorkflowNodePickerSources = ({
-  AsyncValue<List<WorkspaceToolEntity>> tools,
-  AsyncValue<List<AgentEntity>> agents,
   List<ConnectorToolCatalogItem> connectorTools,
   AsyncValue<List<WorkspaceWorkflow>> workflows,
   String? currentWorkflowId,
@@ -71,8 +74,6 @@ class const _WorkflowNodePicker({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final catalog = WorkflowNodePickerCatalog.fromStates((
-      tools: ref.watch(workspaceToolsProvider(workspaceId)),
-      agents: ref.watch(agentsProvider(workspaceId)),
       connectorTools: ref.watch(connectorToolCatalogProvider),
       workflows: ref.watch(workflowsProvider(workspaceId)),
       currentWorkflowId: currentWorkflowId,
@@ -92,8 +93,6 @@ abstract final class WorkflowNodePickerCatalog {
     final workflows = _values(sources.workflows, (_) => true);
 
     return (
-      tools: _enabledTools(sources.tools),
-      agents: _enabledAgents(sources.agents),
       connectorTools: sources.connectorTools,
       workflows: _eligibleWorkflows(workflows, sources.currentWorkflowId),
       isLoading: _anyLoading(sources),
@@ -106,6 +105,7 @@ abstract final class WorkflowNodePickerCatalog {
   ) => WorkflowNodeDraft(
     kind: fields.kind,
     targetId: fields.targetId,
+    canonicalName: fields.label,
     label: fields.label,
     defaultInputLabel: LocaleKeys.workflow_editor_input.tr(context: context),
     defaultOutputLabel: LocaleKeys.workflow_editor_result.tr(context: context),
@@ -113,27 +113,17 @@ abstract final class WorkflowNodePickerCatalog {
     outputs: fields.outputs,
   );
 
-  static List<WorkflowPort> copyPorts(List<WorkflowPort> ports) => [
-    for (final port in ports)
-      WorkflowPort(
-        id: const UuidV7().generate(),
-        name: port.name,
-        type: port.type,
-        isRequired: port.isRequired,
-      ),
+  static List<WorkflowField> copyFields(List<WorkflowField> fields) => [
+    for (final field in fields) _copyField(field),
   ];
 
-  static List<WorkspaceToolEntity> _enabledTools(
-    AsyncValue<List<WorkspaceToolEntity>> state,
-  ) => _values(state, (tool) => tool.isEnabled);
-
-  static List<AgentEntity> _enabledAgents(
-    AsyncValue<List<AgentEntity>> state,
-  ) => _values(state, (agent) => agent.isEnabled);
+  static WorkflowField _copyField(WorkflowField field) => field.copyWith(
+    id: const UuidV7().generate(),
+    properties: copyFields(field.properties),
+    items: field.items == null ? null : _copyField(field.items!),
+  );
 
   static bool _anyLoading(_WorkflowNodePickerSources sources) =>
-      sources.tools.isLoading ||
-      sources.agents.isLoading ||
       sources.workflows.isLoading;
 
   static List<T> _values<T>(
@@ -215,12 +205,6 @@ _WorkflowNodePickerItems _filterPickerItems(
       values.any((value) => value?.toLowerCase().contains(normalized) ?? false);
 
   return (
-    tools: catalog.tools
-        .where((item) => matches([item.toolId, item.description]))
-        .toList(),
-    agents: catalog.agents
-        .where((item) => matches([item.name, item.description]))
-        .toList(),
     connectorTools: catalog.connectorTools
         .where(
           (item) => matches([
@@ -239,10 +223,7 @@ _WorkflowNodePickerItems _filterPickerItems(
 }
 
 bool _pickerIsEmpty(_WorkflowNodePickerItems items) =>
-    items.tools.isEmpty &&
-    items.agents.isEmpty &&
-    items.connectorTools.isEmpty &&
-    items.workflows.isEmpty;
+    items.connectorTools.isEmpty && items.workflows.isEmpty;
 
 class const _WorkflowPickerHeader() extends StatelessWidget {
   @override
@@ -276,7 +257,7 @@ class const _WorkflowPickerBody({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (catalog.isLoading && _hasNoSimpleItems(catalog)) {
+    if (catalog.isLoading && _pickerIsEmpty(catalog)) {
       return const Expanded(child: Center(child: AuraSpinner()));
     }
 
@@ -288,11 +269,6 @@ class const _WorkflowPickerBody({
           : _WorkflowPickerList(workspaceId: workspaceId, catalog: catalog),
     );
   }
-
-  bool _hasNoSimpleItems(_WorkflowNodePickerItems items) =>
-      items.tools.isEmpty &&
-      items.agents.isEmpty &&
-      items.connectorTools.isEmpty;
 }
 
 class const _WorkflowPickerList({
@@ -303,8 +279,7 @@ class const _WorkflowPickerList({
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
     children: [
-      _WorkflowToolSection(tools: catalog.tools),
-      _WorkflowAgentSection(agents: catalog.agents),
+      const _WorkflowBuiltinNodeSection(),
       _WorkflowConnectorToolSection(
         workspaceId: workspaceId,
         connectorTools: catalog.connectorTools,
@@ -314,66 +289,46 @@ class const _WorkflowPickerList({
   );
 }
 
-class const _WorkflowToolSection({
-  required final List<WorkspaceToolEntity> tools,
-}) extends StatelessWidget {
+class const _WorkflowBuiltinNodeSection() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _WorkflowLibrarySection(
-    titleKey: LocaleKeys.workflow_editor_available_tools,
-    isEmpty: tools.isEmpty,
-    children: [for (final tool in tools) _WorkflowToolPickerItem(tool: tool)],
-  );
-}
-
-class const _WorkflowToolPickerItem({required final WorkspaceToolEntity tool})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _WorkflowLibraryTile(
-    title: tool.toolId,
-    icon: Icons.build_outlined,
-    draft: _draft(context),
-    subtitle: tool.description,
-  );
-
-  WorkflowNodeDraft _draft(BuildContext context) =>
-      WorkflowNodePickerCatalog.draft(context, (
-        kind: .systemTool,
-        targetId: tool.id,
-        label: tool.toolId,
-        inputs: WorkflowSchemaPortParser.parse(tool.inputSchema, isInput: true),
-        outputs: WorkflowSchemaPortParser.parse(
-          tool.outputSchemaJson,
-          isInput: false,
-        ),
-      ));
-}
-
-class const _WorkflowAgentSection({required final List<AgentEntity> agents})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _WorkflowLibrarySection(
-    titleKey: LocaleKeys.workflow_editor_available_agents,
-    isEmpty: agents.isEmpty,
+    titleKey: LocaleKeys.workflow_editor_nodes,
+    isEmpty: false,
     children: [
-      for (final agent in agents) _WorkflowAgentPickerItem(agent: agent),
+      _WorkflowLibraryTile(
+        title: LocaleKeys.workflow_editor_add_output.tr(context: context),
+        icon: Icons.output_outlined,
+        draft: WorkflowNodePickerCatalog.draft(context, (
+          kind: .outputs,
+          targetId: 'outputs',
+          label: LocaleKeys.workflow_editor_add_output.tr(context: context),
+          inputs: const [],
+          outputs: const [],
+        )),
+      ),
+      _WorkflowLibraryTile(
+        title: LocaleKeys.workflow_editor_condition.tr(context: context),
+        icon: Icons.call_split_outlined,
+        draft: WorkflowNodePickerCatalog.draft(context, (
+          kind: .condition,
+          targetId: 'condition',
+          label: LocaleKeys.workflow_editor_condition.tr(context: context),
+          inputs: const [],
+          outputs: const [],
+        )),
+      ),
+      _WorkflowLibraryTile(
+        title: LocaleKeys.workflow_editor_transform.tr(context: context),
+        icon: Icons.transform_outlined,
+        draft: WorkflowNodePickerCatalog.draft(context, (
+          kind: .transform,
+          targetId: 'transform',
+          label: LocaleKeys.workflow_editor_transform.tr(context: context),
+          inputs: const [],
+          outputs: const [],
+        )),
+      ),
     ],
-  );
-}
-
-class const _WorkflowAgentPickerItem({required final AgentEntity agent})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _WorkflowLibraryTile(
-    title: agent.name,
-    icon: Icons.smart_toy_outlined,
-    draft: WorkflowNodePickerCatalog.draft(context, (
-      kind: .agent,
-      targetId: agent.id,
-      label: agent.name,
-      inputs: null,
-      outputs: null,
-    )),
-    subtitle: agent.description,
   );
 }
 
@@ -454,6 +409,19 @@ class const _WorkflowConnectorToolPickerItem({
   Widget build(BuildContext context, WidgetRef ref) {
     final label = connectorTool.title;
     final tools = ref.watch(workspaceToolsProvider(workspaceId));
+    final sharedSchema = switch (tools) {
+      AsyncData(:final value) =>
+        value
+            .where((item) => item.toolId == connectorTool.toolId)
+            .firstOrNull
+            ?.outputSchemaJson,
+      AsyncLoading(:final value?) =>
+        value
+            .where((item) => item.toolId == connectorTool.toolId)
+            .firstOrNull
+            ?.outputSchemaJson,
+      AsyncLoading() || AsyncError() => null,
+    };
     final connectorId = connectorTool.connectorId;
     final connections = connectorTool.requiresConnection && connectorId != null
         ? ref.watch(
@@ -472,7 +440,7 @@ class const _WorkflowConnectorToolPickerItem({
           jsonEncode(connectorTool.inputJsonSchema),
           isInput: true,
         ),
-        outputs: null,
+        outputs: WorkflowSchemaPortParser.parse(sharedSchema, isInput: false),
       )),
       subtitle: _subtitle(
         context,
@@ -602,8 +570,8 @@ class const _WorkflowDefinitionPickerItem({
       kind: .workflow,
       targetId: workflow.id,
       label: workflow.name,
-      inputs: WorkflowNodePickerCatalog.copyPorts(workflow.inputs),
-      outputs: WorkflowNodePickerCatalog.copyPorts(workflow.outputs),
+      inputs: WorkflowNodePickerCatalog.copyFields(workflow.inputs),
+      outputs: WorkflowNodePickerCatalog.copyFields(workflow.outputs),
     )),
     subtitle: workflow.description,
   );
@@ -685,70 +653,11 @@ class const _WorkflowLibraryTileContents({
   }
 }
 
-abstract final class WorkflowSchemaPortParser {
-  static List<WorkflowPort>? parse(String? rawSchema, {required bool isInput}) {
-    if (rawSchema == null || rawSchema.isEmpty) return null;
-    try {
-      return _parseDecoded(jsonDecode(rawSchema), isInput);
-    } on Object {
-      return null;
-    }
-  }
-
-  static List<WorkflowPort>? _parseDecoded(Object? decoded, bool isInput) {
-    final properties = _properties(decoded);
-    if (properties == null) return null;
-    final requiredNames = _requiredNames(decoded);
-
-    return [
-      for (final entry in properties.entries)
-        if (entry.key case final String name)
-          _port(name, entry.value, requiredNames, isInput),
-    ];
-  }
-
-  static Map<Object?, Object?>? _properties(Object? decoded) {
-    if (decoded is! Map<Object?, Object?>) return null;
-    final properties = decoded['properties'];
-
-    return properties is Map<Object?, Object?> ? properties : null;
-  }
-
-  static Set<String> _requiredNames(Object? decoded) {
-    if (decoded is! Map<Object?, Object?>) {
-      return const <String>{};
-    }
-    final requiredValues = decoded['required'];
-    if (requiredValues is! List<Object?>) return const <String>{};
-
-    return requiredValues.whereType<String>().toSet();
-  }
-
-  static WorkflowPort _port(
-    String name,
-    Object? property,
-    Set<String> requiredNames,
-    bool isInput,
-  ) {
-    final schemaType = property is Map<Object?, Object?>
-        ? property['type']
-        : null;
-
-    return WorkflowPort(
-      id: const UuidV7().generate(),
-      name: name,
-      type: _valueType(schemaType),
-      isRequired: isInput && requiredNames.contains(name),
-    );
-  }
-
-  static WorkflowValueType _valueType(Object? value) => switch (value) {
-    'string' => .string,
-    'integer' => .integer,
-    'number' => .number,
-    'boolean' => .boolean,
-    'object' => .object,
-    'array' => .array,
-    _ => .any,
-  };
+abstract final class WorkflowSchemaFieldParser {
+  static List<WorkflowField>? parse(
+    String? rawSchema, {
+    required bool isInput,
+  }) => WorkflowFieldSchemaCodec.parse(rawSchema);
 }
+
+typedef WorkflowSchemaPortParser = WorkflowSchemaFieldParser;

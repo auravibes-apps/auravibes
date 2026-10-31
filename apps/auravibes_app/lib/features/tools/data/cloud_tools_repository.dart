@@ -166,6 +166,17 @@ class CloudToolsRepository extends _CloudToolsRepositoryBase
 }
 
 mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
+  Future<List<WorkspaceToolEntity>> updateToolOutputSchema(
+    String _,
+    String toolId,
+    String? outputSchemaJson,
+  ) async => [
+    await _patchTool(
+      toolId,
+      (data) => data['outputSchemaJson'] = outputSchemaJson,
+    ),
+  ];
+
   Future<WorkspaceToolEntity> setToolEnabledById(
     String id, {
     required bool isEnabled,
@@ -1214,12 +1225,14 @@ _workspaceToolRequiredFields(
   String? config,
   String? description,
   String? inputSchema,
+  String? outputSchemaJson,
   String? workspaceToolsGroupId,
 })
 _workspaceToolOptionalFields(Map<String, dynamic> data) => (
   config: data['config'] is String ? data['config'] as String : null,
   description: data['description'] as String?,
   inputSchema: _inputSchema(data['inputSchema']),
+  outputSchemaJson: _inputSchema(data['outputSchemaJson']),
   workspaceToolsGroupId: data['toolGroupId'] as String?,
 );
 
@@ -1238,6 +1251,7 @@ WorkspaceToolEntity _createWorkspaceToolEntity(
     String? config,
     String? description,
     String? inputSchema,
+    String? outputSchemaJson,
     String? workspaceToolsGroupId,
   })
   optionalFields,
@@ -1252,6 +1266,7 @@ WorkspaceToolEntity _createWorkspaceToolEntity(
   config: optionalFields.config,
   description: optionalFields.description,
   inputSchema: optionalFields.inputSchema,
+  outputSchemaJson: optionalFields.outputSchemaJson,
   workspaceToolsGroupId: optionalFields.workspaceToolsGroupId,
 );
 
@@ -1380,6 +1395,7 @@ Map<String, dynamic> _catalogToolData(WorkspaceToolEntity target) => {
   'name': target.toolId,
   'description': target.description,
   'inputSchema': target.inputSchema,
+  'outputSchemaJson': target.outputSchemaJson,
   'isEnabled': target.isEnabled,
   'permissionMode': target.permissionMode.name,
 };

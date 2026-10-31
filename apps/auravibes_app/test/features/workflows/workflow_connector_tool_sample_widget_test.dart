@@ -60,7 +60,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(
         TestableApp(
-          child: const _SampleHarness(),
+          child: _SampleHarness(workflow: workflow),
           retry: (_, _) => null,
           overrides: [
             connectorToolCatalogProvider.overrideWith((ref) => [catalogItem]),
@@ -105,11 +105,14 @@ void main() {
   });
 }
 
-class const _SampleHarness() extends ConsumerWidget {
+class const _SampleHarness({required this.workflow}) extends ConsumerWidget {
+  final WorkspaceWorkflow workflow;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     body: WorkflowConnectorToolSample(
       workspaceId: 'workspace',
+      workflow: workflow,
       node: const WorkflowNode(
         id: 'search',
         kind: .connectorTool,

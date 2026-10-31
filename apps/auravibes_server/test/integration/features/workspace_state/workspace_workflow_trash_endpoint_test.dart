@@ -66,24 +66,32 @@ void main() {
         }
 
         Map<String, Object?> definition({String? nestedWorkflowId}) => {
-          'version': 1,
-          'inputs': const <Object?>[],
-          'outputs': const <Object?>[],
+          'version': 2,
+          'localConnectorSchemas': const <String, Object?>{},
           'nodes': [
+            _workflowNode('inputs', 'inputs'),
             if (nestedWorkflowId != null)
               {
                 'id': 'nested',
                 'kind': 'workflow',
                 'targetId': nestedWorkflowId,
+                'canonicalName': nestedWorkflowId,
                 'label': 'Nested workflow',
                 'hasSampledOutputs': false,
                 'x': 0,
                 'y': 0,
-                'inputs': const <Object?>[],
-                'outputs': const <Object?>[],
+                'inputFields': const <Object?>[],
+                'outputFields': const <Object?>[],
+                'inputBindings': const <String, Object?>{},
+                'conditionMode': 'all',
+                'conditionRules': const <Object?>[],
+                'transformOutputs': const <Object?>[],
               },
+            _workflowNode('outputs', 'outputs'),
           ],
-          'connections': const <Object?>[],
+          'connections': const [
+            {'fromNodeId': 'inputs', 'toNodeId': 'outputs'},
+          ],
         };
 
         await createWorkflow('child', {
@@ -141,10 +149,12 @@ void main() {
         );
         expect(trashedChild?.deletedAt, isNotNull);
         expect(trashedChild?.resourceId, child.resourceId);
+        final parentNodes =
+            jsonDecode(parent!.data)['definition']['nodes'] as List;
         expect(
-          (jsonDecode(parent!.data)['definition']['nodes'] as List)
-              .single['targetId'],
-          'child',
+          parentNodes
+              .where((node) => (node as Map)['targetId'] == 'child'),
+          hasLength(1),
         );
 
         await endpoints.workspaceTrash.restore(
@@ -166,3 +176,20 @@ void main() {
     );
   });
 }
+
+Map<String, Object?> _workflowNode(String id, String kind) => {
+  'id': id,
+  'kind': kind,
+  'targetId': kind,
+  'canonicalName': kind,
+  'label': kind,
+  'hasSampledOutputs': false,
+  'x': 0,
+  'y': 0,
+  'inputFields': const <Object?>[],
+  'outputFields': const <Object?>[],
+  'inputBindings': const <String, Object?>{},
+  'conditionMode': 'all',
+  'conditionRules': const <Object?>[],
+  'transformOutputs': const <Object?>[],
+};

@@ -18,13 +18,7 @@ void main() {
           data: jsonEncode({
             'name': 'Workflow',
             'description': '',
-            'definition': {
-              'version': 1,
-              'inputs': const <Object?>[],
-              'outputs': const <Object?>[],
-              'nodes': const <Object?>[],
-              'connections': const <Object?>[],
-            },
+            'definition': _emptyDefinition().toJson(),
           }),
           revision: 1,
           createdAt: .utc(2026),
@@ -64,13 +58,7 @@ void main() {
               'description': 'Test',
               'parentId': 'folder-1',
               'canManageWorkflow': true,
-              'definition': {
-                'version': 1,
-                'inputs': const <Object?>[],
-                'outputs': const <Object?>[],
-                'nodes': const <Object?>[],
-                'connections': const <Object?>[],
-              },
+              'definition': _emptyDefinition().toJson(),
             }),
             revision: 4,
             createdAt: now,
@@ -83,13 +71,7 @@ void main() {
             data: jsonEncode({
               'name': 'Deleted',
               'description': '',
-              'definition': {
-                'version': 1,
-                'inputs': const <Object?>[],
-                'outputs': const <Object?>[],
-                'nodes': const <Object?>[],
-                'connections': const <Object?>[],
-              },
+              'definition': _emptyDefinition().toJson(),
             }),
             revision: 2,
             createdAt: now,
@@ -149,13 +131,7 @@ void main() {
               'name': 'Workflow',
               'description': '',
               'canManageWorkflow': false,
-              'definition': {
-                'version': 1,
-                'inputs': const <Object?>[],
-                'outputs': const <Object?>[],
-                'nodes': const <Object?>[],
-                'connections': const <Object?>[],
-              },
+              'definition': _emptyDefinition().toJson(),
             }),
             revision: 1,
             createdAt: now,
@@ -198,13 +174,7 @@ void main() {
             'name': 'Deleted',
             'description': '',
             'canManageWorkflow': true,
-            'definition': {
-              'version': 1,
-              'inputs': const <Object?>[],
-              'outputs': const <Object?>[],
-              'nodes': const <Object?>[],
-              'connections': const <Object?>[],
-            },
+            'definition': _emptyDefinition().toJson(),
           }),
           revision: 2,
           createdAt: now,
@@ -241,3 +211,27 @@ void main() {
     expect(patchCalled, isFalse);
   });
 }
+
+WorkflowDefinition _emptyDefinition() => WorkflowDefinition(
+  nodes: const [
+    WorkflowNode(
+      id: 'inputs',
+      kind: .inputs,
+      targetId: 'inputs',
+      label: 'Inputs',
+      x: 0,
+      y: 0,
+    ),
+    WorkflowNode(
+      id: 'outputs',
+      kind: .outputs,
+      targetId: 'outputs',
+      label: 'Outputs',
+      x: 300,
+      y: 0,
+    ),
+  ],
+  connections: const [
+    WorkflowConnection(fromNodeId: 'inputs', toNodeId: 'outputs'),
+  ],
+);

@@ -26,10 +26,32 @@ typedef WorkflowEditorNodeCommands = ({
   void Function(String nodeId, double x, double y) move,
   void Function(String nodeId, String label) setLabel,
   void Function(String nodeId, List<WorkflowPort> outputs) inferOutputs,
+  void Function(String nodeId, List<WorkflowField> outputs)
+  useSharedConnectorSchema,
+  void Function({
+    required String nodeId,
+    required String fieldId,
+    required WorkflowBinding binding,
+  })
+  setInputBinding,
+  void Function({
+    required String nodeId,
+    required WorkflowConditionMode mode,
+    required List<WorkflowConditionRule> rules,
+  })
+  setCondition,
+  void Function(String nodeId, List<WorkflowTransformOutput> outputs)
+  setTransformOutputs,
   void Function(String nodeId) remove,
 });
 
 typedef WorkflowEditorConnectionCommands = ({
+  void Function({
+    required String sourceNodeId,
+    required String targetNodeId,
+    WorkflowConditionBranch? branch,
+  })
+  connect,
   void Function(String? nodeId, String portId) selectOutput,
   void Function(String? nodeId, String portId) selectInput,
   void Function(WorkflowConnection connection) remove,
@@ -110,6 +132,10 @@ abstract final class WorkflowEditorNodeCommandFactory {
         move: _move(update),
         setLabel: _setLabel(update),
         inferOutputs: _inferOutputs(update),
+        useSharedConnectorSchema: _useSharedConnectorSchema(update),
+        setInputBinding: _setInputBinding(update),
+        setCondition: _setCondition(update),
+        setTransformOutputs: _setTransformOutputs(update),
         remove: _remove(update),
       );
 
@@ -147,6 +173,57 @@ abstract final class WorkflowEditorNodeCommandFactory {
             WorkflowEditorNodeReducer.inferOutputs(state, nodeId, outputs),
       );
 
+  static void Function(String, List<WorkflowField>) _useSharedConnectorSchema(
+    _WorkflowEditorStateUpdate update,
+  ) =>
+      (nodeId, outputs) => update(
+        (state) => WorkflowEditorNodeReducer.useSharedConnectorSchema(
+          state,
+          nodeId,
+          outputs,
+        ),
+      );
+
+  static void Function({
+    required String nodeId,
+    required String fieldId,
+    required WorkflowBinding binding,
+  })
+  _setInputBinding(_WorkflowEditorStateUpdate update) =>
+      ({required nodeId, required fieldId, required binding}) => update(
+        (state) => WorkflowEditorNodeReducer.setInputBinding(
+          state,
+          nodeId: nodeId,
+          fieldId: fieldId,
+          binding: binding,
+        ),
+      );
+
+  static void Function({
+    required String nodeId,
+    required WorkflowConditionMode mode,
+    required List<WorkflowConditionRule> rules,
+  })
+  _setCondition(_WorkflowEditorStateUpdate update) =>
+      ({required nodeId, required mode, required rules}) => update(
+        (state) => WorkflowEditorNodeReducer.setCondition(
+          state,
+          nodeId: nodeId,
+          mode: mode,
+          rules: rules,
+        ),
+      );
+
+  static void Function(String, List<WorkflowTransformOutput>)
+  _setTransformOutputs(_WorkflowEditorStateUpdate update) =>
+      (nodeId, outputs) => update(
+        (state) => WorkflowEditorNodeReducer.setTransformOutputs(
+          state,
+          nodeId,
+          outputs,
+        ),
+      );
+
   static void Function(String) _remove(_WorkflowEditorStateUpdate update) =>
       (nodeId) =>
           update((state) => WorkflowEditorNodeReducer.remove(state, nodeId));
@@ -156,10 +233,26 @@ abstract final class WorkflowEditorConnectionCommandFactory {
   static WorkflowEditorConnectionCommands create(
     _WorkflowEditorStateUpdate update,
   ) => (
+    connect: _connect(update),
     selectOutput: _selectOutput(update),
     selectInput: _selectInput(update),
     remove: _remove(update),
   );
+
+  static void Function({
+    required String sourceNodeId,
+    required String targetNodeId,
+    WorkflowConditionBranch? branch,
+  })
+  _connect(_WorkflowEditorStateUpdate update) =>
+      ({required sourceNodeId, required targetNodeId, branch}) => update(
+        (state) => WorkflowEditorConnectionReducer.connect(
+          state,
+          sourceNodeId: sourceNodeId,
+          targetNodeId: targetNodeId,
+          branch: branch,
+        ),
+      );
 
   static void Function(String?, String) _selectOutput(
     _WorkflowEditorStateUpdate update,

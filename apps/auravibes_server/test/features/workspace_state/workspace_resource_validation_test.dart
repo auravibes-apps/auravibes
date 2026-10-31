@@ -54,52 +54,53 @@ void main() {
     }
   });
 
-  test('workflow resources validate typed workflow boundary connections', () {
-    final data = {
-      'name': 'Workflow',
-      'description': 'Composed workflow',
-      'parentId': 'folder-1',
-      'definition': {
-        'version': 1,
-        'inputs': [
-          {'id': 'workflow-input', 'name': 'query', 'type': 'string'},
-        ],
-        'outputs': [
-          {'id': 'workflow-output', 'name': 'answer', 'type': 'string'},
-        ],
-        'nodes': [
-          {
-            'id': 'agent-node',
-            'kind': 'agent',
-            'targetId': 'agent-1',
-            'label': 'Agent',
-            'hasSampledOutputs': false,
-            'x': 300,
-            'y': 100,
-            'inputs': [
-              {'id': 'agent-input', 'name': 'prompt', 'type': 'string'},
-            ],
-            'outputs': [
-              {'id': 'agent-output', 'name': 'text', 'type': 'string'},
-            ],
+  test('workflow resources validate node links and typed bindings', () {
+    final query = _workflowField('query', 'string');
+    final prompt = _workflowField('prompt', 'string');
+    final text = _workflowField('text', 'string');
+    final answer = _workflowField('answer', 'string');
+    final data = _workflowResource(
+      parentId: 'folder-1',
+      description: 'Composed workflow',
+      nodes: [
+        _workflowNode(
+          id: 'inputs-node',
+          kind: 'inputs',
+          targetId: 'inputs',
+          outputFields: [query],
+        ),
+        _workflowNode(
+          id: 'connector-node',
+          kind: 'connectorTool',
+          targetId: 'connector/example/search',
+          inputFields: [prompt],
+          outputFields: [text],
+          inputBindings: {
+            prompt['id']! as String: {
+              'sourceNodeId': 'inputs-node',
+              'jsonPointer': '/query',
+            },
           },
-        ],
-        'connections': [
-          {
-            'fromNodeId': null,
-            'fromPortId': 'workflow-input',
-            'toNodeId': 'agent-node',
-            'toPortId': 'agent-input',
+          hasSampledOutputs: true,
+        ),
+        _workflowNode(
+          id: 'outputs-node',
+          kind: 'outputs',
+          targetId: 'outputs',
+          inputFields: [answer],
+          inputBindings: {
+            answer['id']! as String: {
+              'sourceNodeId': 'connector-node',
+              'jsonPointer': '/text',
+            },
           },
-          {
-            'fromNodeId': 'agent-node',
-            'fromPortId': 'agent-output',
-            'toNodeId': null,
-            'toPortId': 'workflow-output',
-          },
-        ],
-      },
-    };
+        ),
+      ],
+      connections: [
+        {'fromNodeId': 'inputs-node', 'toNodeId': 'connector-node'},
+        {'fromNodeId': 'connector-node', 'toNodeId': 'outputs-node'},
+      ],
+    );
 
     expect(
       WorkspaceResourceValidation.decode(
@@ -116,55 +117,23 @@ void main() {
     );
     expect(
       references.map((reference) => (reference.kind, reference.id)),
-      [
-        (WorkspaceResourceKind.folder, 'folder-1'),
-        (WorkspaceResourceKind.agent, 'agent-1'),
-      ],
+      [(WorkspaceResourceKind.folder, 'folder-1')],
     );
   });
 
-  test('workflow resources reject node cycles and unknown references', () {
-    final data = {
-      'name': 'Workflow',
-      'description': '',
-      'definition': {
-        'version': 1,
-        'inputs': [],
-        'outputs': [],
-        'nodes': [
-          for (final id in ['one', 'two'])
-            {
-              'id': id,
-              'kind': 'agent',
-              'targetId': '$id-agent',
-              'label': id,
-              'hasSampledOutputs': false,
-              'x': 0,
-              'y': 0,
-              'inputs': [
-                {'id': '$id-input', 'name': 'input', 'type': 'any'},
-              ],
-              'outputs': [
-                {'id': '$id-output', 'name': 'output', 'type': 'any'},
-              ],
-            },
-        ],
-        'connections': [
-          {
-            'fromNodeId': 'one',
-            'fromPortId': 'one-output',
-            'toNodeId': 'two',
-            'toPortId': 'two-input',
-          },
-          {
-            'fromNodeId': 'two',
-            'fromPortId': 'two-output',
-            'toNodeId': 'one',
-            'toPortId': 'one-input',
-          },
-        ],
-      },
-    };
+  test('workflow resources reject node cycles and malformed references', () {
+    final data = _workflowResource(
+      nodes: [
+        _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+        _workflowNode(id: 'one', kind: 'connectorTool', targetId: 'tool-one'),
+        _workflowNode(id: 'two', kind: 'connectorTool', targetId: 'tool-two'),
+        _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+      ],
+      connections: [
+        {'fromNodeId': 'one', 'toNodeId': 'two'},
+        {'fromNodeId': 'two', 'toNodeId': 'one'},
+      ],
+    );
 
     expect(
       () => WorkspaceResourceValidation.decode(
@@ -178,40 +147,25 @@ void main() {
     expect(
       () => WorkspaceResourceValidation.references(
         WorkspaceResourceKind.workflow,
-        {
-          'name': 'Workflow',
-          'description': '',
-          'definition': {},
-        },
+        _workflowResource(definition: {}),
       ),
       throwsFormatException,
     );
   });
 
   test('workflow resources reject node positions outside the canvas limit', () {
-    final data = {
-      'name': 'Workflow',
-      'description': '',
-      'definition': {
-        'version': 1,
-        'inputs': [],
-        'outputs': [],
-        'nodes': [
-          {
-            'id': 'node-1',
-            'kind': 'agent',
-            'targetId': 'agent-1',
-            'label': 'Agent',
-            'hasSampledOutputs': false,
-            'x': 10001,
-            'y': 0,
-            'inputs': [],
-            'outputs': [],
-          },
-        ],
-        'connections': [],
-      },
-    };
+    final data = _workflowResource(
+      nodes: [
+        _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+        _workflowNode(
+          id: 'far',
+          kind: 'connectorTool',
+          targetId: 'tool',
+          x: 10001,
+        ),
+        _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+      ],
+    );
 
     expect(
       () => WorkspaceResourceValidation.decode(
@@ -412,10 +366,7 @@ void main() {
           WorkspaceResourceKind.agent =>
             '{"name":"Agent","description":"Description",'
                 '"content":"Prompt","visibility":"both"}',
-          WorkspaceResourceKind.workflow =>
-            '{"name":"Workflow","description":"",'
-                '"definition":{"version":1,"inputs":[],"outputs":[],'
-                '"nodes":[],"connections":[]}}',
+          WorkspaceResourceKind.workflow => jsonEncode(_workflowResource()),
           _ => '{}',
         },
       );
@@ -430,29 +381,21 @@ void main() {
     Map<String, Object?> workflowNode({
       String kind = 'connectorTool',
       bool? hasSampledOutputs = false,
-    }) => {
-      'name': 'Workflow',
-      'description': '',
-      'definition': {
-        'version': 1,
-        'inputs': const [],
-        'outputs': const [],
-        'nodes': [
-          {
-            'id': 'node-1',
-            'kind': kind,
-            'targetId': 'connector/example/tool',
-            'label': 'Connector tool',
-            'hasSampledOutputs': ?hasSampledOutputs,
-            'x': 0,
-            'y': 0,
-            'inputs': const [],
-            'outputs': const [],
-          },
+    }) {
+      final resource = _workflowResource(
+        nodes: [
+          _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+          _workflowNode(
+            id: 'node-1',
+            kind: kind,
+            targetId: 'connector/example/tool',
+            hasSampledOutputs: hasSampledOutputs,
+          ),
+          _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
         ],
-        'connections': const [],
-      },
-    };
+      );
+      return resource;
+    }
 
     void validate(Map<String, Object?> data) =>
         WorkspaceResourceValidation.decode(
@@ -470,6 +413,7 @@ void main() {
       workflowNode(hasSampledOutputs: null),
       workflowNode(kind: 'skill'),
       workflowNode(kind: 'systemTool', hasSampledOutputs: true),
+      _workflowResource(definition: {'version': 1}),
     ]) {
       expect(() => validate(data), throwsFormatException);
     }
@@ -500,3 +444,70 @@ void main() {
     expect(event.resourceId, 'agent-1');
   });
 }
+
+Map<String, Object?> _workflowResource({
+  String? parentId,
+  String description = '',
+  Map<String, Object?>? definition,
+  List<Map<String, Object?>>? nodes,
+  List<Map<String, Object?>> connections = const [],
+}) => {
+  'name': 'Workflow',
+  'description': description,
+  'parentId': parentId,
+  'definition':
+      definition ??
+      {
+        'version': 2,
+        'localConnectorSchemas': <String, Object?>{},
+        'nodes':
+            nodes ??
+            [
+              _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+              _workflowNode(
+                id: 'outputs',
+                kind: 'outputs',
+                targetId: 'outputs',
+              ),
+            ],
+        'connections': connections,
+      },
+};
+
+Map<String, Object?> _workflowNode({
+  required String id,
+  required String kind,
+  required String targetId,
+  double x = 0,
+  double y = 0,
+  bool? hasSampledOutputs = false,
+  List<Map<String, Object?>> inputFields = const [],
+  List<Map<String, Object?>> outputFields = const [],
+  Map<String, Object?> inputBindings = const {},
+}) => {
+  'id': id,
+  'kind': kind,
+  'targetId': targetId,
+  'canonicalName': kind,
+  'label': id,
+  'hasSampledOutputs': ?hasSampledOutputs,
+  'x': x,
+  'y': y,
+  'inputFields': inputFields,
+  'outputFields': outputFields,
+  'inputBindings': inputBindings,
+  'conditionMode': 'all',
+  'conditionRules': const [],
+  'transformOutputs': const [],
+};
+
+Map<String, Object?> _workflowField(String id, String type) => {
+  'id': id,
+  'name': id,
+  'type': type,
+  'required': true,
+  'description': '',
+  'nullable': false,
+  'hasDefault': false,
+  'properties': const [],
+};

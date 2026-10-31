@@ -248,7 +248,7 @@ void main() {
     );
     expect(find.text('Add step'), findsNothing);
     final metadataFields = tester.widgetList<TextField>(find.byType(TextField));
-    expect(metadataFields, hasLength(2));
+    expect(metadataFields, hasLength(3));
     expect(metadataFields.every((field) => field.readOnly), isTrue);
 
     tester.view.physicalSize = const Size(466, 678);

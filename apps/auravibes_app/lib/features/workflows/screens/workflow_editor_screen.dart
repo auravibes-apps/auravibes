@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/workflows/screens/workflow_editor_save_fl
 import 'package:auravibes_app/features/workflows/widgets/workflow_canvas.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_inspector_panel.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_node_picker.dart';
-import 'package:auravibes_app/features/workflows/widgets/workflow_signature_editor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -45,7 +44,8 @@ typedef _WorkflowEditorActions = ({
   VoidCallback onBack,
   VoidCallback onSave,
   VoidCallback onAddNode,
-  VoidCallback onEditSignature,
+  void Function(String sourceNodeId, WorkflowConditionBranch? branch)
+  onAddNodeAfter,
 });
 typedef _WorkflowEditorPresentation = ({
   DraftExitGuard guard,
@@ -136,6 +136,19 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
     unawaited(_guardedBack(context, onBack));
   }
 
+  void _backFromInspector(BuildContext context) {
+    final provider = workflowEditorProvider(
+      widget.workspaceId,
+      widget.workflowId,
+    );
+    if (ref.read(provider).selectedNodeId != null) {
+      ref.read(provider.notifier).commands().nodes.clearSelection();
+
+      return;
+    }
+    _goBack(context);
+  }
+
   Future<void> _guardedBack(BuildContext context, VoidCallback onBack) async {
     if (!await _exitGuard.canExit(context) || !context.mounted) return;
     onBack();
@@ -171,7 +184,10 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
     showMessage: _showMessage,
   );
 
-  Future<void> _openNodePicker() async {
+  Future<void> _openNodePicker({
+    String? sourceNodeId,
+    WorkflowConditionBranch? conditionBranch,
+  }) async {
     if (ref
             .read(workflowEditorProvider(widget.workspaceId, widget.workflowId))
             .workflow
@@ -183,6 +199,8 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
       context: context,
       workspaceId: widget.workspaceId,
       currentWorkflowId: widget.workflowId,
+      sourceNodeId: sourceNodeId,
+      conditionBranch: conditionBranch,
     );
     if (!mounted || draft == null) return;
     final editor = ref.read(
@@ -249,13 +267,14 @@ abstract final class _WorkflowEditorPresentationFactory {
     BuildContext context,
     WorkflowEditorState state,
   ) => (
-    onBack: () => screen._goBack(context),
+    onBack: () => screen._backFromInspector(context),
     onSave: () => screen._save(state),
     onAddNode: () => unawaited(screen._openNodePicker()),
-    onEditSignature: () => _openSignatureEditor(
-      context,
-      screen.widget.workspaceId,
-      screen.widget.workflowId,
+    onAddNodeAfter: (sourceNodeId, branch) => unawaited(
+      screen._openNodePicker(
+        sourceNodeId: sourceNodeId,
+        conditionBranch: branch,
+      ),
     ),
   );
 }
@@ -280,12 +299,19 @@ class const _WorkflowEditorPage({
   required final _WorkflowEditorPresentation presentation,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => DraftExitScope(
-    guard: presentation.guard,
-    child: presentation.identity.compact
-        ? _WorkflowCompactScaffold(presentation: presentation)
-        : _WorkflowEditorScaffold(presentation: presentation),
-  );
+  Widget build(BuildContext context) {
+    final hasSelectedNode = presentation.document.state.selectedNodeId != null;
+    return DraftExitScope(
+      guard: presentation.guard,
+      onBack: presentation.actions.onBack,
+      child: PopScope<Object?>(
+        canPop: !hasSelectedNode,
+        child: presentation.identity.compact
+            ? _WorkflowCompactScaffold(presentation: presentation)
+            : _WorkflowEditorScaffold(presentation: presentation),
+      ),
+    );
+  }
 }
 
 class const _WorkflowCompactScaffold({
@@ -497,10 +523,7 @@ class const _WorkflowEditorToolbarSection({
   @override
   Widget build(BuildContext context) =>
       presentation.document.state.workflow?.canManage == true
-      ? _WorkflowEditorToolbar(
-          onAddNode: presentation.actions.onAddNode,
-          onEditSignature: presentation.actions.onEditSignature,
-        )
+      ? _WorkflowEditorToolbar(onAddNode: presentation.actions.onAddNode)
       : const SizedBox.shrink();
 }
 
@@ -880,21 +903,14 @@ class const _WorkflowBackToListButton({required final VoidCallback onBack})
   );
 }
 
-class const _WorkflowEditorToolbar({
-  required final VoidCallback onAddNode,
-  required final VoidCallback onEditSignature,
-}) extends StatelessWidget {
-  static const _toolbarSpacing = 8.0;
-
+class const _WorkflowEditorToolbar({required final VoidCallback onAddNode})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-    child: Row(
-      children: [
-        _WorkflowAddNodeButton(onPressed: onAddNode),
-        const SizedBox(width: _toolbarSpacing),
-        _WorkflowEditSignatureButton(onPressed: onEditSignature),
-      ],
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: _WorkflowAddNodeButton(onPressed: onAddNode),
     ),
   );
 }
@@ -918,17 +934,6 @@ class const _WorkflowAddNodeButton({required final VoidCallback onPressed})
   );
 }
 
-class const _WorkflowEditSignatureButton({
-  required final VoidCallback onPressed,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-    onPressed: onPressed,
-    icon: const Icon(Icons.input_outlined),
-    label: const TextLocale(LocaleKeys.workflow_editor_signature),
-  );
-}
-
 class const _WorkflowCanvasView({
   required final _WorkflowEditorPresentation presentation,
   required final WorkspaceWorkflow workflow,
@@ -942,57 +947,29 @@ class const _WorkflowCanvasView({
       workflow: workflow,
       editorState: presentation.document.state,
       onSelectNode: commands.nodes.select,
+      onClearSelection: commands.nodes.clearSelection,
       onMoveNode: canEdit ? commands.nodes.move : _ignoreMove,
-      onSelectOutput: canEdit
-          ? commands.connections.selectOutput
-          : _ignorePortSelection,
-      onSelectInput: canEdit
-          ? commands.connections.selectInput
-          : _ignorePortSelection,
+      onAddNode: canEdit ? presentation.actions.onAddNodeAfter : _ignoreAddNode,
+      onConnect: canEdit ? _connect(commands) : _ignoreConnect,
     );
   }
 
   static void _ignoreMove(String nodeId, double x, double y) {}
 
-  static void _ignorePortSelection(String? nodeId, String portId) {}
-}
+  static void _ignoreAddNode(String nodeId, WorkflowConditionBranch? branch) {}
 
-Future<void> _openSignatureEditor(
-  BuildContext context,
-  String workspaceId,
-  String? workflowId,
-) => showModalBottomSheet<void>(
-  context: context,
-  builder: (context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: _WorkflowSignatureSheet(
-          workspaceId: workspaceId,
-          workflowId: workflowId,
-        ),
-      ),
-    ),
-  ),
-  isScrollControlled: true,
-);
+  static void _ignoreConnect(
+    String sourceNodeId,
+    String targetNodeId,
+    WorkflowConditionBranch? branch,
+  ) {}
 
-class const _WorkflowSignatureSheet({
-  required final String workspaceId,
-  required final String? workflowId,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(workflowEditorProvider(workspaceId, workflowId));
-    final workflow = state.workflow;
-    if (workflow == null) return const SizedBox.shrink();
-
-    return WorkflowSignatureEditor(
-      workflow: workflow,
-      editor: ref.watch(
-        workflowEditorProvider(workspaceId, workflowId).notifier,
-      ),
-      readOnly: !workflow.canManage,
-    );
-  }
+  static void Function(String, String, WorkflowConditionBranch?) _connect(
+    WorkflowEditorCommands commands,
+  ) =>
+      (sourceNodeId, targetNodeId, branch) => commands.connections.connect(
+        sourceNodeId: sourceNodeId,
+        targetNodeId: targetNodeId,
+        branch: branch,
+      );
 }

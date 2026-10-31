@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workflows/models/workflow_editor_metadata
 import 'package:auravibes_app/features/workflows/models/workflow_editor_state.dart';
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_commands_factory.dart';
 import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
+import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'package:auravibes_app/features/workflows/notifiers/workflow_editor_commands_factory.dart';
@@ -20,7 +21,13 @@ class WorkflowEditorNotifier extends _$WorkflowEditorNotifier {
       AsyncData(:final value) =>
         value == null
             ? WorkflowEditorState.missing()
-            : WorkflowEditorState(workflow: value),
+            : WorkflowEditorState(
+                workflow: value,
+                selectedNodeId: value.nodes
+                    .where((node) => node.kind == .inputs)
+                    .firstOrNull
+                    ?.id,
+              ),
       AsyncError() => WorkflowEditorState.loadFailed(),
       AsyncLoading() => WorkflowEditorState.loading(),
     };

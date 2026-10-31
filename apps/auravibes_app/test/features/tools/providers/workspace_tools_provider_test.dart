@@ -53,6 +53,13 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   bool removeResult = true;
 
   @override
+  Future<List<WorkspaceToolEntity>> updateToolOutputSchema(
+    String workspaceId,
+    String toolId,
+    String? outputSchemaJson,
+  ) => throw UnimplementedError();
+
+  @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
   ) async => tools.where((tool) => tool.workspaceId == workspaceId).toList();

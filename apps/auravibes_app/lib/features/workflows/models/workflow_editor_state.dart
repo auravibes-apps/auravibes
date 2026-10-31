@@ -50,16 +50,20 @@ class WorkflowEditorState {
 
   factory newWorkflow(String workspaceId) {
     final now = DateTime.now().toUtc();
+    final workflow = WorkspaceWorkflow.create(
+      id: '',
+      workspaceId: workspaceId,
+      name: '',
+      description: '',
+      createdAt: now,
+      updatedAt: now,
+    );
 
     return WorkflowEditorState(
-      workflow: WorkspaceWorkflow.create(
-        id: '',
-        workspaceId: workspaceId,
-        name: '',
-        description: '',
-        createdAt: now,
-        updatedAt: now,
-      ),
+      workflow: workflow,
+      selectedNodeId: workflow.nodes
+          .firstWhere((node) => node.kind == .inputs)
+          .id,
     );
   }
 

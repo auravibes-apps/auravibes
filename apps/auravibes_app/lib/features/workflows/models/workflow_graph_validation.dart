@@ -14,35 +14,74 @@ abstract final class WorkflowGraphValidation {
     WorkspaceWorkflow workflow,
   ) => _WorkflowGraphValidator(workflow).validate();
 
-  static bool workflowPortTypesCompatible(
+  static bool workflowValueTypesCompatible(
     WorkflowValueType source,
     WorkflowValueType target,
-  ) =>
-      source == target ||
-      source == WorkflowValueType.any ||
-      target == WorkflowValueType.any;
+  ) => source == target || (source == .integer && target == .number);
 
   static bool workflowHasDependencyCycle(
     WorkspaceWorkflow candidate,
     Iterable<WorkspaceWorkflow> existing,
   ) => WorkflowDependencyGraph.withCandidate(candidate, existing).hasAnyCycle();
+
+  static Set<String> availableValueSources(
+    WorkspaceWorkflow workflow,
+    String targetNodeId,
+  ) {
+    final predecessors = workflow.connections
+        .where((connection) => connection.toNodeId == targetNodeId)
+        .map((connection) => connection.fromNodeId)
+        .toSet();
+    Set<String>? common;
+    for (final predecessor in predecessors) {
+      final ancestors = _ancestorsIncluding(workflow, predecessor);
+      common = common == null ? ancestors : common.intersection(ancestors);
+    }
+
+    return common ?? const {};
+  }
+
+  static Set<String> invalidTransformOutputIds(
+    WorkspaceWorkflow workflow,
+    String nodeId,
+  ) => _WorkflowGraphValidator(workflow).invalidTransformOutputIds(nodeId);
+
+  static Set<String> _ancestorsIncluding(
+    WorkspaceWorkflow workflow,
+    String nodeId,
+  ) {
+    final pending = <String>[nodeId];
+    final seen = <String>{};
+    while (pending.isNotEmpty) {
+      final current = pending.removeLast();
+      if (!seen.add(current)) continue;
+      pending.addAll(
+        workflow.connections
+            .where((connection) => connection.toNodeId == current)
+            .map((connection) => connection.fromNodeId),
+      );
+    }
+
+    return seen;
+  }
 }
 
 enum _WorkflowVisitState { visiting, visited }
 
 class WorkflowDependencyGraph {
-  new(Map<String, Set<String>> edges) : _edges = edges;
+  const WorkflowDependencyGraph(this._edges);
 
-  factory fromWorkflows(Iterable<WorkspaceWorkflow> workflows) =>
-      WorkflowDependencyGraph({
-        for (final workflow in workflows)
-          workflow.id: {
-            for (final node in workflow.nodes)
-              if (node.kind == WorkflowNodeKind.workflow) node.targetId,
-          },
-      });
+  factory WorkflowDependencyGraph.fromWorkflows(
+    Iterable<WorkspaceWorkflow> workflows,
+  ) => WorkflowDependencyGraph({
+    for (final workflow in workflows)
+      workflow.id: {
+        for (final node in workflow.nodes)
+          if (node.kind == .workflow) node.targetId,
+      },
+  });
 
-  factory withCandidate(
+  factory WorkflowDependencyGraph.withCandidate(
     WorkspaceWorkflow candidate,
     Iterable<WorkspaceWorkflow> existing,
   ) => WorkflowDependencyGraph.fromWorkflows([
@@ -55,374 +94,395 @@ class WorkflowDependencyGraph {
 
   bool hasAnyCycle() {
     final states = <String, _WorkflowVisitState>{};
-    if (_edges.keys.any((workflowId) => _visit(workflowId, states))) {
-      return true;
+    for (final id in _edges.keys) {
+      if (_visit(id, states)) return true;
     }
-
     return false;
   }
 
-  bool dependsOn(String workflowId, String targetWorkflowId) =>
-      _hasPath(workflowId, targetWorkflowId);
-
-  bool _hasPath(String startId, String targetId) {
-    final pending = Queue<String>()..add(startId);
+  bool dependsOn(String workflowId, String targetWorkflowId) {
+    final pending = Queue<String>()..add(workflowId);
     final visited = <String>{};
-
     while (pending.isNotEmpty) {
-      final currentId = pending.removeFirst();
-      if (currentId == targetId) return true;
-      if (!visited.add(currentId)) continue;
-      _addDependencies(pending, currentId);
+      final current = pending.removeFirst();
+      if (current == targetWorkflowId) return true;
+      if (visited.add(current)) pending.addAll(_edges[current] ?? const {});
     }
-
     return false;
   }
 
-  void _addDependencies(Queue<String> pending, String workflowId) {
-    pending.addAll(_edges[workflowId] ?? const <String>{});
-  }
-
-  bool _visit(String workflowId, Map<String, _WorkflowVisitState> states) {
-    final currentState = states[workflowId];
-    if (currentState == _WorkflowVisitState.visiting) return true;
-    if (currentState == _WorkflowVisitState.visited) return false;
-    states[workflowId] = _WorkflowVisitState.visiting;
-    for (final dependencyId in _edges[workflowId] ?? const <String>{}) {
-      if (_visit(dependencyId, states)) return true;
+  bool _visit(String id, Map<String, _WorkflowVisitState> states) {
+    final state = states[id];
+    if (state == .visiting) return true;
+    if (state == .visited) return false;
+    states[id] = .visiting;
+    for (final dependency in _edges[id] ?? const <String>{}) {
+      if (_visit(dependency, states)) return true;
     }
-    states[workflowId] = _WorkflowVisitState.visited;
-
+    states[id] = .visited;
     return false;
   }
 }
 
 class _WorkflowGraphValidator {
-  new(this.workflow);
-
-  final WorkspaceWorkflow workflow;
-
-  List<WorkflowGraphIssue> validate() {
-    final issues = <WorkflowGraphIssue>[
-      ..._WorkflowDefinitionLimitValidator.validate(workflow),
-      ..._WorkflowNodeValidator.validate(workflow),
-    ];
-    final connectionResult = _WorkflowConnectionValidator(workflow).validate();
-    issues.addAll(connectionResult.issues);
-    if (WorkflowDependencyGraph(connectionResult.edges).hasAnyCycle()) {
-      issues.add(.cycle);
-    }
-
-    return List.unmodifiable(issues);
-  }
-}
-
-abstract final class _WorkflowDefinitionLimitValidator {
-  static List<WorkflowGraphIssue> validate(WorkspaceWorkflow workflow) => [
-    ..._nameIssues(workflow),
-    ..._nodeLimitIssues(workflow),
-    ..._connectionLimitIssues(workflow),
-    ..._boundaryPortIssues(workflow),
-  ];
-
-  static List<WorkflowGraphIssue> _nameIssues(WorkspaceWorkflow workflow) =>
-      workflow.name.trim().isEmpty ? [.emptyName] : const [];
-
-  static List<WorkflowGraphIssue> _nodeLimitIssues(
-    WorkspaceWorkflow workflow,
-  ) => _exceedsCollectionLimit(workflow.nodes.length)
-      ? [.tooManyNodes]
-      : const [];
-
-  static List<WorkflowGraphIssue> _connectionLimitIssues(
-    WorkspaceWorkflow workflow,
-  ) => _exceedsCollectionLimit(workflow.connections.length)
-      ? [.tooManyConnections]
-      : const [];
-
-  static List<WorkflowGraphIssue> _boundaryPortIssues(
-    WorkspaceWorkflow workflow,
-  ) => [
-    ..._WorkflowPortCollectionValidator.validate(workflow.inputs),
-    ..._WorkflowPortCollectionValidator.validate(workflow.outputs),
-    if (_hasTooManyPorts(workflow.inputs, workflow.outputs)) .tooManyPorts,
-  ];
-
-  static bool _exceedsCollectionLimit(int count) =>
-      count > WorkflowGraphValidation.maximumWorkflowCollectionSize;
-
-  static bool _hasTooManyPorts(
-    List<WorkflowPort> inputs,
-    List<WorkflowPort> outputs,
-  ) =>
-      inputs.length > WorkflowGraphValidation.maximumWorkflowCollectionSize ||
-      outputs.length > WorkflowGraphValidation.maximumWorkflowCollectionSize;
-}
-
-abstract final class _WorkflowNodeValidator {
-  static List<WorkflowGraphIssue> validate(WorkspaceWorkflow workflow) {
-    final issues = <WorkflowGraphIssue>[];
-    final nodeIds = <String>{};
-    for (final node in workflow.nodes) {
-      if (!nodeIds.add(node.id)) issues.add(.duplicateNodeId);
-      issues.addAll(_validateNode(node));
-    }
-
-    return issues;
-  }
-
-  static List<WorkflowGraphIssue> _validateNode(WorkflowNode node) => [
-    ..._referenceIssues(node),
-    ..._portIssues(node),
-  ];
-
-  static List<WorkflowGraphIssue> _referenceIssues(WorkflowNode node) => [
-    if (node.targetId.trim().isEmpty) .missingNodeReference,
-    if (node.label.trim().isEmpty) .invalidNodeLabel,
-    if (_hasInvalidPosition(node)) .invalidNodePosition,
-  ];
-
-  static List<WorkflowGraphIssue> _portIssues(WorkflowNode node) => [
-    ..._WorkflowPortCollectionValidator.validate(node.inputs),
-    ..._WorkflowPortCollectionValidator.validate(node.outputs),
-    if (_hasTooManyPorts(node.inputs, node.outputs)) .tooManyPorts,
-  ];
-
-  static bool _hasInvalidPosition(WorkflowNode node) =>
-      !node.x.isFinite ||
-      !node.y.isFinite ||
-      node.x < WorkflowGraphValidation.minimumWorkflowNodePosition ||
-      node.y < WorkflowGraphValidation.minimumWorkflowNodePosition ||
-      node.x > WorkflowGraphValidation.maxWorkflowNodePosition ||
-      node.y > WorkflowGraphValidation.maxWorkflowNodePosition;
-
-  static bool _hasTooManyPorts(
-    List<WorkflowPort> inputs,
-    List<WorkflowPort> outputs,
-  ) =>
-      inputs.length > WorkflowGraphValidation.maximumWorkflowCollectionSize ||
-      outputs.length > WorkflowGraphValidation.maximumWorkflowCollectionSize;
-}
-
-abstract final class _WorkflowPortCollectionValidator {
-  static List<WorkflowGraphIssue> validate(List<WorkflowPort> ports) {
-    final ids = <String>{};
-    final names = <String>{};
-    final issues = <WorkflowGraphIssue>[];
-    for (final port in ports) {
-      _addPortIssues(port, ids, names, issues);
-    }
-
-    return issues;
-  }
-
-  static void _addPortIssues(
-    WorkflowPort port,
-    Set<String> ids,
-    Set<String> names,
-    List<WorkflowGraphIssue> issues,
-  ) {
-    if (!ids.add(port.id)) issues.add(.duplicatePortId);
-    final name = port.name.trim();
-    if (name.isEmpty) issues.add(.invalidPortName);
-    if (!names.add(name.toLowerCase())) issues.add(.duplicatePortName);
-  }
-}
-
-typedef _ConnectionEndpoint = ({
-  WorkflowNode? sourceNode,
-  WorkflowNode? targetNode,
-  WorkflowPort sourcePort,
-  WorkflowPort targetPort,
-});
-
-typedef _ConnectionNodes = ({WorkflowNode? source, WorkflowNode? target});
-typedef _ConnectionNodeResolution = ({
-  _ConnectionNodes? nodes,
-  WorkflowGraphIssue? issue,
-});
-typedef _ConnectionResolution = ({
-  _ConnectionEndpoint? endpoint,
-  WorkflowGraphIssue? issue,
-});
-
-typedef _ConnectionValidationResult = ({
-  List<WorkflowGraphIssue> issues,
-  Map<String, Set<String>> edges,
-});
-
-class _WorkflowConnectionValidator {
-  new(WorkspaceWorkflow workflow)
-    : workflow = workflow,
-      _nodesById = {for (final node in workflow.nodes) node.id: node},
+  _WorkflowGraphValidator(this.workflow)
+    : _nodesById = {for (final node in workflow.nodes) node.id: node},
       _edges = {for (final node in workflow.nodes) node.id: <String>{}};
 
   final WorkspaceWorkflow workflow;
-  final List<WorkflowGraphIssue> _issues = [];
-  final Set<
-    ({String? fromNodeId, String fromPortId, String? toNodeId, String toPortId})
-  >
-  _knownConnections = {};
   final Map<String, WorkflowNode> _nodesById;
   final Map<String, Set<String>> _edges;
+  final List<WorkflowGraphIssue> _issues = [];
+  final Set<({String from, String to, WorkflowConditionBranch? branch})>
+  _knownConnections = {};
 
-  _ConnectionValidationResult validate() {
-    workflow.connections.forEach(_validateConnection);
-
-    return (issues: _issues, edges: _edges);
+  List<WorkflowGraphIssue> validate() {
+    _validateLimitsAndBoundaryNodes();
+    _validateNodes();
+    _validateConnections();
+    _validateBindings();
+    if (WorkflowDependencyGraph(_edges).hasAnyCycle()) _issues.add(.cycle);
+    return List.unmodifiable(_issues);
   }
 
-  void _validateConnection(WorkflowConnection connection) {
-    _recordDuplicate(connection);
-    final endpoints = _resolveEndpoints(connection);
-    if (endpoints == null) return;
-    _validatePortCompatibility(endpoints);
-    _recordEdge(endpoints);
+  Set<String> invalidTransformOutputIds(String nodeId) {
+    final node = _nodesById[nodeId];
+    if (node?.kind != .transform) return const {};
+    return {
+      for (final output in node!.transformOutputs)
+        if (!_validTransformOutputForNode(node, output)) output.id,
+    };
   }
 
-  void _recordDuplicate(WorkflowConnection connection) {
-    final identity = (
-      fromNodeId: connection.fromNodeId,
-      fromPortId: connection.fromPortId,
-      toNodeId: connection.toNodeId,
-      toPortId: connection.toPortId,
-    );
-    if (!_knownConnections.add(identity)) _issues.add(.duplicateConnection);
-  }
-
-  _ConnectionEndpoint? _resolveEndpoints(WorkflowConnection connection) {
-    final resolution = _WorkflowConnectionEndpointResolver.resolve(
-      workflow,
-      _nodesById,
-      connection,
-    );
-    final endpoints = resolution.endpoint;
-    final issue = resolution.issue;
-    if (issue != null) _issues.add(issue);
-
-    return endpoints;
-  }
-
-  void _validatePortCompatibility(_ConnectionEndpoint endpoints) {
-    if (!WorkflowGraphValidation.workflowPortTypesCompatible(
-      endpoints.sourcePort.type,
-      endpoints.targetPort.type,
-    )) {
-      _issues.add(.incompatiblePortTypes);
-    }
-  }
-
-  void _recordEdge(_ConnectionEndpoint endpoints) {
-    final source = endpoints.sourceNode;
-    final target = endpoints.targetNode;
-    if (source != null && target != null) {
-      _edges[source.id] = {..._edges[source.id]!, target.id};
-    }
-  }
-}
-
-abstract final class _WorkflowConnectionEndpointResolver {
-  static _ConnectionResolution resolve(
-    WorkspaceWorkflow workflow,
-    Map<String, WorkflowNode> nodesById,
-    WorkflowConnection connection,
+  bool _validTransformOutputForNode(
+    WorkflowNode node,
+    WorkflowTransformOutput output,
   ) {
-    if (_isBoundaryConnection(connection)) {
-      return (endpoint: null, issue: .invalidBoundaryConnection);
+    final operandFields = <WorkflowField?>[];
+    for (final operand in output.operands) {
+      final binding = operand.binding;
+      if (binding.isStatic) {
+        operandFields.add(null);
+        continue;
+      }
+      final sourceId = binding.sourceNodeId;
+      final source = sourceId == null ? null : _nodesById[sourceId];
+      final field = source == null
+          ? null
+          : _fieldAt(source.outputFields, binding.jsonPointer ?? '');
+      if (sourceId == null ||
+          source == null ||
+          field == null ||
+          source.kind == .condition ||
+          source.kind == .outputs ||
+          !_hasDependency(sourceId, node.id)) {
+        return false;
+      }
+      operandFields.add(field);
     }
-    final nodeResolution = _WorkflowConnectionNodeResolver.resolve(
-      nodesById,
-      connection,
-    );
-    final nodes = nodeResolution.nodes;
-    if (nodes == null) {
-      return (endpoint: null, issue: nodeResolution.issue);
-    }
-
-    return _WorkflowConnectionPortResolver.resolve(workflow, connection, nodes);
+    return _validTransformOutput(output, operandFields);
   }
 
-  static bool _isBoundaryConnection(WorkflowConnection connection) =>
-      connection.fromNodeId == null && connection.toNodeId == null;
-}
+  void _validateLimitsAndBoundaryNodes() {
+    if (workflow.name.trim().isEmpty) _issues.add(.emptyName);
+    if (workflow.nodes.length >
+        WorkflowGraphValidation.maximumWorkflowCollectionSize) {
+      _issues.add(.tooManyNodes);
+    }
+    if (workflow.connections.length >
+        WorkflowGraphValidation.maximumWorkflowCollectionSize) {
+      _issues.add(.tooManyConnections);
+    }
+    final inputs = workflow.nodes.where((node) => node.kind == .inputs).length;
+    final outputs = workflow.nodes
+        .where((node) => node.kind == .outputs)
+        .length;
+    if (inputs == 0) _issues.add(.missingInputsNode);
+    if (inputs > 1) _issues.add(.duplicateInputsNode);
+    if (outputs == 0) _issues.add(.missingOutputsNode);
+  }
 
-abstract final class _WorkflowConnectionNodeResolver {
-  static _ConnectionNodeResolution resolve(
-    Map<String, WorkflowNode> nodesById,
-    WorkflowConnection connection,
+  void _validateNodes() {
+    final nodeIds = <String>{};
+    for (final node in workflow.nodes) {
+      if (!nodeIds.add(node.id)) _issues.add(.duplicateNodeId);
+      if (node.id.trim().isEmpty) _issues.add(.duplicateNodeId);
+      if (node.label.trim().isEmpty) _issues.add(.invalidNodeLabel);
+      if (!_validPosition(node)) _issues.add(.invalidNodePosition);
+      if (_requiresTarget(node.kind) && node.targetId.trim().isEmpty) {
+        _issues.add(.missingNodeReference);
+      }
+      if (node.hasSampledOutputs && node.kind != .connectorTool) {
+        _issues.add(.invalidFieldSchema);
+      }
+      _validateFields(node.inputFields);
+      _validateFields(node.outputFields);
+      if (node.kind == .condition && node.conditionRules.isEmpty) {
+        _issues.add(.invalidCondition);
+      }
+      if (node.kind == .transform && node.transformOutputs.isEmpty) {
+        _issues.add(.invalidTransform);
+      }
+      if (node.kind != .condition && node.conditionRules.isNotEmpty) {
+        _issues.add(.invalidCondition);
+      }
+      if (node.kind != .transform && node.transformOutputs.isNotEmpty) {
+        _issues.add(.invalidTransform);
+      }
+    }
+    for (final schema in workflow.definition.localConnectorSchemas.values) {
+      _validateFields(schema);
+    }
+  }
+
+  void _validateFields(List<WorkflowField> fields) {
+    if (fields.length > WorkflowGraphValidation.maximumWorkflowCollectionSize) {
+      _issues.add(.tooManyFields);
+    }
+    final ids = <String>{};
+    final names = <String>{};
+    for (final field in fields) {
+      if (field.id.trim().isEmpty || !ids.add(field.id)) {
+        _issues.add(.duplicateFieldId);
+      }
+      final name = field.name.trim().toLowerCase();
+      if (name.isEmpty) _issues.add(.invalidFieldName);
+      if (!names.add(name)) _issues.add(.duplicateFieldName);
+      if (field.type == .array && field.items == null) {
+        _issues.add(.invalidFieldSchema);
+      }
+      if (field.type != .object && field.properties.isNotEmpty) {
+        _issues.add(.invalidFieldSchema);
+      }
+      if (field.hasDefaultValue && !_defaultMatchesType(field)) {
+        _issues.add(.invalidFieldSchema);
+      }
+      _validateFields(field.properties);
+      if (field.items case final item?) _validateFields([item]);
+    }
+  }
+
+  void _validateConnections() {
+    for (final connection in workflow.connections) {
+      final identity = (
+        from: connection.fromNodeId,
+        to: connection.toNodeId,
+        branch: connection.conditionBranch,
+      );
+      if (!_knownConnections.add(identity)) _issues.add(.duplicateConnection);
+      final source = _nodesById[connection.fromNodeId];
+      final target = _nodesById[connection.toNodeId];
+      if (source == null || target == null) {
+        _issues.add(.missingConnectionNode);
+        continue;
+      }
+      if (source.id == target.id) {
+        _issues.add(.selfConnection);
+        continue;
+      }
+      if (source.kind == .condition && connection.conditionBranch == null ||
+          source.kind != .condition && connection.conditionBranch != null) {
+        _issues.add(.invalidConnectionBranch);
+      }
+      if (target.kind == .inputs || source.kind == .outputs) {
+        _issues.add(.invalidConnectionBranch);
+      }
+      _edges[source.id]!.add(target.id);
+    }
+  }
+
+  void _validateBindings() {
+    for (final node in workflow.nodes) {
+      final fieldsById = {
+        for (final field in node.inputFields) field.id: field,
+      };
+      for (final entry in node.inputBindings.entries) {
+        final target = fieldsById[entry.key];
+        if (target == null) {
+          _issues.add(.invalidFieldSchema);
+          continue;
+        }
+        _validateBinding(node, entry.value, target);
+      }
+      for (final rule in node.conditionRules) {
+        final source = _nodesById[rule.sourceNodeId];
+        final sourceField = source == null
+            ? null
+            : _fieldAt(source.outputFields, rule.jsonPointer);
+        if (source == null ||
+            sourceField == null ||
+            !_hasDependency(rule.sourceNodeId, node.id)) {
+          _issues.add(.nodeBindingUnavailable);
+        }
+        if (rule.operator != .exists && rule.operator != .isEmpty) {
+          _validateBinding(node, rule.comparison, sourceField);
+        }
+      }
+      for (final output in node.transformOutputs) {
+        final operandFields = <WorkflowField?>[];
+        for (final operand in output.operands) {
+          _validateBinding(node, operand.binding, null);
+          final sourceId = operand.binding.sourceNodeId;
+          operandFields.add(
+            sourceId == null
+                ? null
+                : _fieldAt(
+                    _nodesById[sourceId]?.outputFields ?? const [],
+                    operand.binding.jsonPointer ?? '',
+                  ),
+          );
+        }
+        if (!_validTransformOutput(output, operandFields)) {
+          _issues.add(.invalidTransform);
+        }
+      }
+    }
+  }
+
+  bool _validTransformOutput(
+    WorkflowTransformOutput output,
+    List<WorkflowField?> operandFields,
   ) {
-    final nodes = _findNodes(nodesById, connection);
-    if (_referencesMissingNode(connection, nodes)) {
-      return (nodes: null, issue: .missingConnectionNode);
+    switch (output.operation) {
+      case .selectField:
+        if (output.operands.length != 1) return false;
+        final source = operandFields.single;
+        return source != null &&
+            WorkflowGraphValidation.workflowValueTypesCompatible(
+              source.type,
+              output.type,
+            ) &&
+            (!source.nullable || output.type == .any);
+      case .buildObject:
+        return output.type == .object;
+      case .buildArray:
+        return output.type == .array;
+      case .stringTemplate:
+        return output.type == .string;
+      case .add || .subtract || .multiply || .divide:
+        return (output.type == .integer || output.type == .number) &&
+            output.operands.length == 2 &&
+            output.operands.indexed.every((entry) {
+              final field = operandFields[entry.$1];
+              return field == null
+                  ? entry.$2.binding.value is num
+                  : field.type == .integer || field.type == .number;
+            });
+      case .castString:
+        return output.type == .string && output.operands.length == 1;
+      case .castInteger:
+        return output.type == .integer && output.operands.length == 1;
+      case .castNumber:
+        return output.type == .number && output.operands.length == 1;
+      case .castBoolean:
+        return output.type == .boolean && output.operands.length == 1;
     }
-    if (_isSelfConnection(nodes)) return (nodes: null, issue: .selfConnection);
-
-    return (nodes: nodes, issue: null);
   }
 
-  static _ConnectionNodes _findNodes(
-    Map<String, WorkflowNode> nodesById,
-    WorkflowConnection connection,
-  ) => (
-    source: nodesById[connection.fromNodeId],
-    target: nodesById[connection.toNodeId],
-  );
-
-  static bool _referencesMissingNode(
-    WorkflowConnection connection,
-    _ConnectionNodes nodes,
-  ) =>
-      (connection.fromNodeId != null && nodes.source == null) ||
-      (connection.toNodeId != null && nodes.target == null);
-
-  static bool _isSelfConnection(_ConnectionNodes nodes) =>
-      nodes.source != null && nodes.source?.id == nodes.target?.id;
-}
-
-abstract final class _WorkflowConnectionPortResolver {
-  static _ConnectionResolution resolve(
-    WorkspaceWorkflow workflow,
-    WorkflowConnection connection,
-    _ConnectionNodes nodes,
+  void _validateBinding(
+    WorkflowNode targetNode,
+    WorkflowBinding binding,
+    WorkflowField? targetField,
   ) {
-    final sourcePort = _sourcePort(workflow, connection, nodes.source);
-    final targetPort = _targetPort(workflow, connection, nodes.target);
-    if (sourcePort == null || targetPort == null) {
-      return (endpoint: null, issue: .missingConnectionPort);
+    if (binding.isStatic) {
+      if (targetField != null && !_staticMatches(binding.value, targetField)) {
+        _issues.add(.incompatibleBindingType);
+      }
+      return;
     }
-
-    return (
-      endpoint: (
-        sourceNode: nodes.source,
-        targetNode: nodes.target,
-        sourcePort: sourcePort,
-        targetPort: targetPort,
-      ),
-      issue: null,
-    );
+    final sourceId = binding.sourceNodeId;
+    final source = sourceId == null ? null : _nodesById[sourceId];
+    final sourceField = source == null
+        ? null
+        : _fieldAt(source.outputFields, binding.jsonPointer ?? '');
+    if (sourceId == null ||
+        source == null ||
+        sourceField == null ||
+        !_hasDependency(sourceId, targetNode.id)) {
+      _issues.add(.nodeBindingUnavailable);
+      return;
+    }
+    if (targetField != null &&
+        (!WorkflowGraphValidation.workflowValueTypesCompatible(
+              sourceField.type,
+              targetField.type,
+            ) ||
+            sourceField.nullable && !targetField.nullable)) {
+      _issues.add(.incompatibleBindingType);
+    }
   }
 
-  static WorkflowPort? _sourcePort(
-    WorkspaceWorkflow workflow,
-    WorkflowConnection connection,
-    WorkflowNode? source,
-  ) => source == null
-      ? _findPort(workflow.inputs, connection.fromPortId)
-      : _findPort(source.outputs, connection.fromPortId);
+  bool _hasDependency(String sourceId, String targetId) =>
+      workflow.connections.any(
+        (connection) =>
+            connection.fromNodeId == sourceId &&
+            connection.toNodeId == targetId,
+      );
 
-  static WorkflowPort? _targetPort(
-    WorkspaceWorkflow workflow,
-    WorkflowConnection connection,
-    WorkflowNode? target,
-  ) => target == null
-      ? _findPort(workflow.outputs, connection.toPortId)
-      : _findPort(target.inputs, connection.toPortId);
+  static bool _requiresTarget(WorkflowNodeKind kind) =>
+      kind == .connectorTool || kind == .workflow;
 
-  static WorkflowPort? _findPort(List<WorkflowPort> ports, String id) {
-    for (final port in ports) {
-      if (port.id == id) return port;
+  static bool _validPosition(WorkflowNode node) =>
+      node.x.isFinite &&
+      node.y.isFinite &&
+      node.x >= WorkflowGraphValidation.minimumWorkflowNodePosition &&
+      node.y >= WorkflowGraphValidation.minimumWorkflowNodePosition &&
+      node.x <= WorkflowGraphValidation.maxWorkflowNodePosition &&
+      node.y <= WorkflowGraphValidation.maxWorkflowNodePosition;
+
+  static bool _defaultMatchesType(WorkflowField field) {
+    final value = field.defaultValue;
+    if (value == null) return field.nullable;
+    return switch (field.type) {
+      .any => true,
+      .string => value is String,
+      .integer => value is int,
+      .number => value is num,
+      .boolean => value is bool,
+      .object => value is Map,
+      .array => value is List,
+    };
+  }
+
+  static bool _staticMatches(Object? value, WorkflowField field) =>
+      value == null
+      ? field.nullable
+      : switch (field.type) {
+          .any => true,
+          .string => value is String,
+          .integer => value is int,
+          .number => value is num,
+          .boolean => value is bool,
+          .object => value is Map,
+          .array => value is List,
+        };
+
+  static WorkflowField? _fieldAt(List<WorkflowField> fields, String pointer) {
+    if (pointer.isEmpty) return null;
+    if (!pointer.startsWith('/')) return null;
+    final segments = pointer
+        .substring(1)
+        .split('/')
+        .map((value) => value.replaceAll('~1', '/').replaceAll('~0', '~'));
+    WorkflowField? current;
+    var currentFields = fields;
+    for (final segment in segments) {
+      if (current?.type == .array) {
+        if (segment != '0') return null;
+        current = current!.items;
+        if (current == null) return null;
+        currentFields = current.properties;
+        continue;
+      }
+      for (final field in currentFields) {
+        if (field.name == segment) {
+          current = field;
+          break;
+        }
+      }
+      if (current == null) return null;
+      currentFields = current.properties;
     }
-
-    return null;
+    return current;
   }
 }
