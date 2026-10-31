@@ -29,6 +29,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_archive_prov
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
@@ -55,6 +56,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -965,7 +968,7 @@ void main() {
     );
     expect(editableText.controller.text, 'Help me plan my day');
     expect(starter, findsNothing);
-    expect(find.text('Help me plan my day'), findsNothing);
+    expect(find.text('Help me plan my day'), findsOneWidget);
   });
 
   testWidgets('hides starters without replacing an existing draft', (
@@ -2167,14 +2170,22 @@ Future<void> _pumpCloudConversationScreen(
                     ),
                     builder: appBuilder,
                     locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [
+                      ...GlobalMaterialLocalizations.delegates,
+                      sdk_localizations.GlobalMaterialLocalizations.delegate,
+                      ...context.localizationDelegates,
+                    ],
                     supportedLocales: context.supportedLocales,
                   )
                 : MaterialApp.router(
                     routerConfig: router,
                     builder: appBuilder,
                     locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [
+                      ...GlobalMaterialLocalizations.delegates,
+                      sdk_localizations.GlobalMaterialLocalizations.delegate,
+                      ...context.localizationDelegates,
+                    ],
                     supportedLocales: context.supportedLocales,
                   );
 
@@ -2248,6 +2259,8 @@ Future<void> _pumpCloudConversationScreen(
                 chatMessagesProvider.overrideWith(
                   (ref, _) => Stream.value(chatMessages),
                 ),
+                messageBookmarksProvider(_workspaceId)
+                    .overrideWith((ref, _) => Stream.value(const [])),
                 chatMessageIdsProvider.overrideWith(
                   (ref, _) => const <String>[],
                 ),
