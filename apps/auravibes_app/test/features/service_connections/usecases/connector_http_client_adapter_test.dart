@@ -51,12 +51,12 @@ class _RecordingUrlService extends UrlService {
       ..resolvedAddresses = resolvedAddresses;
 
     return CancelableOperation.fromFuture(
-      Future.value(
+      .value(
         const UrlResponse(
           statusCode: 200,
           body: 'ok',
           headers: {},
-          elapsed: Duration.zero,
+          elapsed: .zero,
         ),
       ),
     );
