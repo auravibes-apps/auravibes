@@ -10,12 +10,11 @@ Future<void> main() async {
 }
 
 List<String> dclDirectoriesForPaths(Iterable<String> paths) {
-  final directories = <String>{};
-  for (final path in paths) {
-    if (dclTargetDirectories.any((root) => path.startsWith('$root/'))) {
-      directories.add(p.dirname(path));
-    }
-  }
+  final directories = {
+    for (final path in paths)
+      if (dclTargetDirectories.any((root) => path.startsWith('$root/')))
+        p.dirname(path),
+  };
 
   return directories.toList()..sort();
 }
@@ -84,13 +83,10 @@ Future<int> _validateChangedDart() async {
     ];
     final analyzeExitCode = await _runDart(dart, analyzeArguments, root);
     final dclDirectories = dclDirectoriesForPaths(paths);
+    final dclArguments = ['run', 'tool/dcl_analyze.dart', ...dclDirectories];
     final dclExitCode = dclDirectories.isEmpty
         ? 0
-        : await _runDart(dart, [
-            'run',
-            'tool/dcl_analyze.dart',
-            ...dclDirectories,
-          ], root);
+        : await _runDart(dart, dclArguments, root);
 
     if (formatExitCode != 0) return formatExitCode;
     if (analyzeExitCode != 0) return analyzeExitCode;
