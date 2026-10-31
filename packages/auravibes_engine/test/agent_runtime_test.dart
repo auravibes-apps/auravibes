@@ -47,9 +47,7 @@ void main() {
     () async {
       final diagnostics = <AgentCancellationCleanupFailure>[];
       final completed = <String>[];
-      final scope = AgentCancellationScope(onCleanupFailure: diagnostics.add);
-
-      scope
+      final scope = AgentCancellationScope(onCleanupFailure: diagnostics.add)
         ..registerCleanup(() {
           throw StateError('prompt=private transcript');
         })

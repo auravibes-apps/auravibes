@@ -50,6 +50,8 @@ abstract interface class AgentCancellationEffects {
 }
 
 class AgentCancellationScope {
+  // The callback is normalized into a private field by the initializer.
+  // ignore: unnecessary_type_name_in_constructor
   AgentCancellationScope({
     AgentCancellationCleanupFailureHandler? onCleanupFailure,
   }) : _onCleanupFailure = onCleanupFailure ?? _logCleanupFailure;
@@ -160,17 +162,16 @@ enum AgentCancellationCleanupPhase { synchronous, asynchronous }
 
 enum AgentCancellationCleanupErrorClassification { error, exception, other }
 
-/// A privacy-safe signal for a cleanup callback that failed during cancellation.
+/// A privacy-safe signal for a cleanup callback that failed during
+/// cancellation.
 ///
 /// This event deliberately carries only its phase and a broad error category;
 /// it never retains the thrown object, message, or stack trace.
 class const AgentCancellationCleanupFailure({
-  required this.phase,
-  required this.errorClassification,
-}) {
-  final AgentCancellationCleanupPhase phase;
-  final AgentCancellationCleanupErrorClassification errorClassification;
-}
+  required final AgentCancellationCleanupPhase phase,
+  required final AgentCancellationCleanupErrorClassification
+  errorClassification,
+});
 
 void _logCleanupFailure(AgentCancellationCleanupFailure failure) {
   developer.log(
