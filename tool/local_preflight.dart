@@ -63,9 +63,7 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   );
 
   stdout
-    ..writeln(
-      'Base: ${options.base} (working tree, including untracked files)',
-    )
+    ..writeln('Base: ${options.base} (working tree, including untracked files)')
     ..writeln('Changed files: ${sortedChanges.length}');
   for (final change in sortedChanges) {
     stdout.writeln('  ${_changeLabel(change)}');
@@ -121,19 +119,16 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     selection,
     rootPath: root.path,
     onDiagnostic: diagnostics.add,
-    onPlannedCommand: ({
-      required executable,
-      required arguments,
-      required workingDirectory,
-    }) {
-      plannedCommands.add(
-        .new(
-          executable: executable,
-          arguments: arguments,
-          workingDirectory: workingDirectory,
-        ),
-      );
-    },
+    onPlannedCommand:
+        ({required executable, required arguments, required workingDirectory}) {
+          plannedCommands.add(
+            .new(
+              executable: executable,
+              arguments: arguments,
+              workingDirectory: workingDirectory,
+            ),
+          );
+        },
     dryRun: true,
   );
   if (planningExitCode != 0) {
@@ -270,8 +265,9 @@ String _changeLabel(ChangedFile change) => switch (change.status) {
 
 String _fvmCommand(Directory root, String executable) {
   final dart = File('${root.path}/.fvm/flutter_sdk/bin/dart').absolute.path;
-  final flutter =
-      File('${root.path}/.fvm/flutter_sdk/bin/flutter').absolute.path;
+  final flutter = File('${root.path}/.fvm/flutter_sdk/bin/flutter')
+      .absolute
+      .path;
   if (p.normalize(executable) == p.normalize(dart)) return 'fvm dart';
   if (p.normalize(executable) == p.normalize(flutter)) return 'fvm flutter';
 
@@ -368,5 +364,4 @@ class const _Options({
       help: help,
     );
   }
-
 }

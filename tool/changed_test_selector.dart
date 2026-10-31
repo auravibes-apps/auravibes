@@ -864,12 +864,7 @@ Future<void> main(List<String> args) async {
     final options = _options(args.skip(1));
     switch (args.firstOrNull) {
       case 'select':
-        _checkOptions(options, const {
-          'base',
-          'head',
-          'output',
-          'worktree',
-        });
+        _checkOptions(options, const {'base', 'head', 'output', 'worktree'});
         final result = await selectRepository(
           rootPath: Directory.current.path,
           base: _requiredOption(options, 'base'),
@@ -1103,10 +1098,9 @@ Future<Map<String, String>> _workspaceSources(List<_Package> packages) async {
     }
     await for (final entity in root.list(recursive: true, followLinks: false)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      sources[
-        '${package.relativeRoot}/'
-        '${_relativePath(package.absoluteRoot, entity.path)}'
-      ] = await entity.readAsString();
+      sources['${package.relativeRoot}/'
+          '${_relativePath(package.absoluteRoot, entity.path)}'] = await entity
+          .readAsString();
     }
   }
 

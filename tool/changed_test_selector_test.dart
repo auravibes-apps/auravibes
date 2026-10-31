@@ -311,9 +311,7 @@ void main() {
         contains('test/behavior_test.dart'),
       );
 
-      final addedTest = File(
-        '${root.path}/packages/core/test/added_test.dart',
-      );
+      final addedTest = File('${root.path}/packages/core/test/added_test.dart');
       final _ = await addedTest.writeAsString('void main() {}\n');
       selection = await selectRepository(
         rootPath: root.path,
@@ -456,7 +454,8 @@ void main() {
         'services/custom-root/test/unit_test.dart':
             '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
         'services/custom-root/test/integration/test_tools/'
-            'serverpod_test_tools.dart': 'class ServerpodMarker {}',
+                'serverpod_test_tools.dart':
+            'class ServerpodMarker {}',
       };
       final result = selectChangedTests(
         changes: [
@@ -914,13 +913,16 @@ void main() {
       ),
       rootPath: root.path,
       onDiagnostic: diagnostics.add,
-      onPlannedCommand: ({
-        required executable,
-        required arguments,
-        required workingDirectory,
-      }) {
-        planned.add('$executable ${arguments.join(' ')} @ $workingDirectory');
-      },
+      onPlannedCommand:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) {
+            planned.add(
+              '$executable ${arguments.join(' ')} @ $workingDirectory',
+            );
+          },
       dryRun: true,
     );
 
