@@ -269,11 +269,11 @@ class _FakeToolProvider
   }) async {}
 
   @override
-  Future<AgentIterationDecision> runAllowedTools({
+  Future<AgentLoopToolResult> runAllowedTools({
     required String conversationId,
     required String workspaceId,
   }) async {
-    return AgentIterationDecision.done;
+    return const AgentLoopToolResult(decision: .done);
   }
 
   @override

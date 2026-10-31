@@ -296,8 +296,9 @@ void _reportFirstMessageAgentStop(
   String conversationId,
   AgentIterationDecision decision,
 ) {
-  if (decision.needsUserNotice)
+  if (decision.needsUserNotice) {
     callbacks.onAgentStop?.call(conversationId, decision);
+  }
 }
 
 bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {

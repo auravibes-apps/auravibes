@@ -5,8 +5,7 @@ import 'package:crypto/crypto.dart';
 String sha256Utf8(String value) {
   final digestSink = _DigestSink();
   final bytes = sha256.startChunkedConversion(digestSink);
-  final strings = utf8.encoder.startChunkedConversion(bytes);
-  strings
+  utf8.encoder.startChunkedConversion(bytes)
     ..add(value)
     ..close();
 

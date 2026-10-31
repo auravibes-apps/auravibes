@@ -5,7 +5,7 @@ import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:crypto/crypto.dart';
 
 const maxAgentToolLoopCycleLength = 4;
-const maxRecentAgentToolLoopFingerprints = maxAgentToolLoopCycleLength * 2;
+const int maxRecentAgentToolLoopFingerprints = maxAgentToolLoopCycleLength * 2;
 
 String agentToolOutcomeFingerprint({
   required String toolName,

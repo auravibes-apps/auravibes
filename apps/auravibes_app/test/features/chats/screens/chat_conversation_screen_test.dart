@@ -1296,7 +1296,7 @@ void main() {
                   ),
                   conversationAgentStopDecisionProvider(_chatId).overrideWith(
                     () => _StaticAgentStopDecisionNotifier(
-                      AgentIterationDecision.iterationLimitReached,
+                      .iterationLimitReached,
                     ),
                   ),
                   chatMessagesProvider.overrideWith(
@@ -1426,7 +1426,8 @@ void main() {
     expect(
       find.text(
         'The agent stopped because the same tool calls kept returning the '
-        'same results. Partial output and completed tool results are available.',
+        'same results. Partial output and completed tool results are '
+        'available.',
       ),
       findsOneWidget,
     );
@@ -2087,11 +2088,14 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
-            final agentStopDecision = repeatedToolLoopDetected
-                ? AgentIterationDecision.repeatedToolLoopDetected
-                : iterationLimitReached
-                ? AgentIterationDecision.iterationLimitReached
-                : null;
+            final AgentIterationDecision? agentStopDecision = switch ((
+              repeatedToolLoopDetected,
+              iterationLimitReached,
+            )) {
+              (true, _) => .repeatedToolLoopDetected,
+              (false, true) => .iterationLimitReached,
+              _ => null,
+            };
             final TransitionBuilder? appBuilder = agentStopDecision != null
                 ? (_, child) =>
                       AuraSnackBarHost(child: child ?? const SizedBox.shrink())

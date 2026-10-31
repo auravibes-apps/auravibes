@@ -366,9 +366,7 @@ class const AgentToolExecutionService<TTool extends Object>({
               ),
           ];
     final fingerprints = [
-      for (final call in orderedCalls)
-        if (outcomeFingerprintsByCallId[call.id] case final fingerprint?)
-          fingerprint,
+      for (final call in orderedCalls) ?outcomeFingerprintsByCallId[call.id],
     ];
     if (fingerprints.isEmpty) return null;
 

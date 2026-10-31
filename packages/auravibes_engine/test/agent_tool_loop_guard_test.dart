@@ -1,5 +1,4 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_engine/src/agent_tool_execution_service.dart';
 import 'package:auravibes_engine/src/agent_tool_loop_guard.dart';
 import 'package:test/test.dart';
 
