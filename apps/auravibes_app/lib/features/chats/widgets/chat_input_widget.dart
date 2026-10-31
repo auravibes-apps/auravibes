@@ -2265,19 +2265,31 @@ class const _ChatInputControlRow({required final _ChatInputState state})
     final isRecording = state.hooks.recording.isRecording.value;
     final compact = MediaQuery.sizeOf(context).width <= 360;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
       children: [
-        _ChatInputLeadingControls(
-          state: state,
-          isRecording: isRecording,
-          compact: compact,
+        Row(
+          children: [
+            _ChatInputLeadingControls(
+              state: state,
+              isRecording: isRecording,
+              compact: compact,
+              showNetworkDisclosure: !compact,
+            ),
+            Expanded(
+              child: _ChatInputModelAndTrailingControls(
+                state: state,
+                isRecording: isRecording,
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          child: _ChatInputModelAndTrailingControls(
-            state: state,
-            isRecording: isRecording,
+        if (compact && state.capabilities.isLocalWorkspace)
+          const Align(
+            alignment: .centerLeft,
+            child: _LocalWorkspaceNetworkDisclosure(),
           ),
-        ),
       ],
     );
   }
@@ -2305,6 +2317,7 @@ class const _ChatInputLeadingControls({
   required final _ChatInputState state,
   required final bool isRecording,
   required final bool compact,
+  required final bool showNetworkDisclosure,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2313,7 +2326,7 @@ class const _ChatInputLeadingControls({
     return Row(
       mainAxisSize: .min,
       children: [
-        if (state.capabilities.isLocalWorkspace)
+        if (showNetworkDisclosure && state.capabilities.isLocalWorkspace)
           const _LocalWorkspaceNetworkDisclosure(),
         if (!isRecording) _ChatInputBrowseControls(state: state),
         if (!isRecording || hasToolAccessMode)
