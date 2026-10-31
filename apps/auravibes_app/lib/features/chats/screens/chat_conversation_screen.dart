@@ -52,6 +52,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_branch_navigation_button.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
@@ -1739,7 +1740,22 @@ class const _ChatConversationAppBar({
 
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: Text(data.conversation.title),
+    title: Row(
+      children: [
+        Expanded(
+          child: Text(
+            data.conversation.title,
+            maxLines: 1,
+            overflow: .ellipsis,
+          ),
+        ),
+        const SizedBox(width: 4),
+        ConversationBranchNavigationButton(
+          workspaceId: data.workspaceId,
+          conversation: data.conversation,
+        ),
+      ],
+    ),
     actions: actions.widgets,
     leading: data.leading,
   );
