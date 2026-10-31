@@ -50,11 +50,11 @@ import 'package:auravibes_app/features/chats/widgets/background_work_header_butt
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_mcp_elicitation_card.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
-import 'package:auravibes_app/features/chats/widgets/empty_conversation_starters.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
+import 'package:auravibes_app/features/chats/widgets/empty_conversation_starters.dart';
 import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -1826,7 +1826,7 @@ class const _ChatConversationBody({
 
     void editDraft(ChatDraft draft) => draftToLoad.value = draft;
 
-    void reportDraftStatus(bool hasDraft) {
+    void reportDraftStatus({required bool hasDraft}) {
       composerHasDraft.value = hasDraft;
       if (hasDraft && draftToLoad.value != null) {
         draftToLoad.value = null;
@@ -1863,7 +1863,7 @@ class const _ChatConversationBody({
       onOpenToolResult: onOpenToolResult,
       draftToLoad: draftToLoad.value,
       onEditDraft: data.showInputComposer ? editDraft : null,
-      onDraftStatusChanged: reportDraftStatus,
+      onDraftStatusChanged: (hasDraft) => reportDraftStatus(hasDraft: hasDraft),
       emptyConversationStarters: (
         enabled:
             data.showInputComposer &&
@@ -2213,8 +2213,8 @@ class const _ChatConversationMessageList({
       isStopRequested: data.isStopRequested,
       onRetryMessage: _onRetryMessage,
       onOpenToolResult: onOpenToolResult,
-      showThinking: _showThinking,
       emptyConversationStarters: emptyConversationStarters,
+      showThinking: _showThinking,
     ),
   );
 }
@@ -2557,6 +2557,7 @@ class _ChatComposerInput extends StatelessWidget {
            onChanged: data.callbacks.selectors.onAgentChanged,
            onCompactTap: onPressed,
          ),
+         onDraftStatusChanged: onDraftStatusChanged,
          conversationId: data.conversation.id,
          toolAccessMode: data.conversation.toolAccessMode,
          onToolAccessModeChanged:
@@ -2564,7 +2565,6 @@ class _ChatComposerInput extends StatelessWidget {
          topPadding: 0,
          reasoningSettingsControl: reasoningSettingsControl,
          draftToLoad: draftToLoad,
-         onDraftStatusChanged: onDraftStatusChanged,
          modalitiesInput: data.state.modalitiesInput,
          onSkillsPress: data.callbacks.selectors.onSkillsPress,
          onContinueAgent: onContinueAgent,
@@ -3824,8 +3824,8 @@ class const _ChatListResult({
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
       isStopRequested: isStopRequested,
-      onRetryMessage: onRetryMessage,
       emptyConversationStarters: emptyConversationStarters,
+      onRetryMessage: onRetryMessage,
     );
   }
 }

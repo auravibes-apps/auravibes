@@ -82,8 +82,8 @@ class const _EmptyConversationStarterButton({
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: onPressed,
+    child: child,
     variant: .outlined,
     isFullWidth: true,
-    child: child,
   );
 }

@@ -1001,9 +1001,9 @@ void main() {
       startLocale: const Locale('es'),
     );
 
-    expect(find.text('¿No sabes por dónde empezar?'), findsOneWidget);
+    expect(find.text('\u00BFNo sabes por d\u00F3nde empezar?'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('Ayúdame a planificar mi día'),
+      find.bySemanticsLabel('Ay\u00FAdame a planificar mi d\u00EDa'),
       findsOneWidget,
     );
   });
