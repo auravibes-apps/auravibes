@@ -5,9 +5,12 @@ import 'package:auravibes_app/features/workflows/models/workflow_definition.dart
 import 'package:auravibes_app/features/workflows/usecases/save_workflow_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workflow_providers.g.dart';
+
+final _logger = Logger('workflow_providers');
 
 @riverpod
 WorkflowRepository workflowRepository(Ref ref, String workspaceId) {
@@ -36,11 +39,20 @@ Future<WorkspaceWorkflow?> workflow(
   String workspaceId,
   String workflowId,
 ) async {
-  final workflow = await ref
-      .watch(workflowRepositoryProvider(workspaceId))
-      .getWorkflow(workflowId);
+  try {
+    final workflow = await ref
+        .watch(workflowRepositoryProvider(workspaceId))
+        .getWorkflow(workflowId);
 
-  return workflow?.workspaceId == workspaceId ? workflow : null;
+    return workflow?.workspaceId == workspaceId ? workflow : null;
+  } on Object catch (error, stackTrace) {
+    _logger.severe(
+      'Workflow load failed: workspace=$workspaceId workflow=$workflowId',
+      error,
+      stackTrace,
+    );
+    rethrow;
+  }
 }
 
 @riverpod

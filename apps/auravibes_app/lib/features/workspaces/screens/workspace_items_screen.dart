@@ -40,7 +40,10 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+
+final _logger = Logger('workspace_items_screen');
 
 class const WorkspaceItemsScreen({required final String workspaceId, super.key})
     extends HookConsumerWidget {
@@ -730,7 +733,13 @@ class const _CreationChoices(
           .call(draft);
       if (!context.mounted) return;
       navigation.actions.open(DirectoryWorkflowLocation(saved.id));
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'Workflow creation failed: workspace=${navigation.workspaceId} '
+        'parent=${navigation._parentId}',
+        error,
+        stackTrace,
+      );
       if (!context.mounted) return;
       AuraSnackBars.show(
         context: context,
