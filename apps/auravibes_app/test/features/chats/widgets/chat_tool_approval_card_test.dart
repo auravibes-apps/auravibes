@@ -15,7 +15,6 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
@@ -143,61 +142,63 @@ void main() {
   }
 
   group('ChatToolApprovalCard', () {
-    testWidgets('renders the recovered pending-approval load error', (
-      tester,
-    ) async {
-      await tester.binding.setSurfaceSize(const Size(640, 240));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets(
+      'renders the recovered pending-approval load error and retry action',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(640, 240));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith(
-              (ref, _) async => throw StateError('pending read failed'),
-            ),
-          ],
-          child: const Center(
-            child: SizedBox(
-              key: ValueKey<String>('tool_approval_capture'),
-              width: 480,
-              height: 160,
-              child: ColoredBox(
-                color: .new(0xFFFFFFFF),
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: ChatToolApprovalCard(
-                    workspaceId: 'ws-1',
-                    conversationId: 'conv-1',
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            overrides: [
+              pendingToolCallsProvider.overrideWith(
+                (ref, _) async => throw StateError('pending read failed'),
+              ),
+            ],
+            child: const Center(
+              child: SizedBox(
+                key: ValueKey<String>('tool_approval_capture'),
+                width: 480,
+                height: 160,
+                child: ColoredBox(
+                  color: .new(0xFFFFFFFF),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: ChatToolApprovalCard(
+                      workspaceId: 'ws-1',
+                      conversationId: 'conv-1',
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final _ = await tester.pumpAndSettle();
-      final capture = find.byKey(
-        const ValueKey<String>('tool_approval_capture'),
-      );
-      expect(
-        find.descendant(
-          of: capture,
-          matching: find.text('Could not load pending tool approvals.'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: capture, matching: find.text('Retry')),
-        findsOneWidget,
-      );
+        final _ = await tester.pumpAndSettle();
+        final capture = find.byKey(
+          const ValueKey<String>('tool_approval_capture'),
+        );
+        expect(
+          find.descendant(
+            of: capture,
+            matching: find.text('Could not load pending tool approvals.'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: capture, matching: find.text('Retry')),
+          findsOneWidget,
+        );
 
-      await expectLater(
-        capture,
-        matchesGoldenFile('goldens/chat_tool_approval_load_error.png'),
-      );
-    }, tags: ['golden']);
+        await expectLater(
+          capture,
+          matchesGoldenFile('goldens/chat_tool_approval_load_error.png'),
+        );
+      },
+      tags: ['golden'],
+    );
 
     testWidgets(
       'shows localized accessible retry UI after initial load failure',
@@ -306,7 +307,9 @@ void main() {
           ),
         );
 
-        final loading = find.text('Loading pending tool approvals\u2026');
+        final loading = find.text(
+          'Loading pending tool approvals${String.fromCharCode(0x2026)}',
+        );
         expect(loading, findsOneWidget);
         expect(
           tester
@@ -351,13 +354,13 @@ void main() {
           ProviderScope.containerOf(
             tester.element(find.byType(ChatToolApprovalCard)),
             listen: false,
-          )..invalidate(pendingToolCallsProvider('ws-1', 'conv-1'));
+          ).invalidate(pendingToolCallsProvider('ws-1', 'conv-1'));
           for (var frame = 0; frame < 2; frame++) {
             final _ = await tester.pump();
           }
 
           final refreshing = find.text(
-            'Refreshing pending tool approvals\u2026',
+            'Refreshing pending tool approvals${String.fromCharCode(0x2026)}',
           );
           expect(providerReads, 2);
           expect(find.text('Read File'), findsOneWidget);
@@ -404,7 +407,7 @@ void main() {
           ProviderScope.containerOf(
             tester.element(find.byType(ChatToolApprovalCard)),
             listen: false,
-          )..invalidate(pendingToolCallsProvider('ws-1', 'conv-1'));
+          ).invalidate(pendingToolCallsProvider('ws-1', 'conv-1'));
           final _ = await tester.pumpAndSettle();
 
           final staleMessage = find.text(
