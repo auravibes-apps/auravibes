@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "scenario": "partial-stream-multi-tool",
+  "events": [
+    {"type": "chunk", "id": "chunk-1", "text": "Checking "},
+    {
+      "type": "chunk",
+      "id": "chunk-2",
+      "text": "the forecast. ",
+      "toolCalls": [
+        {"id": "tool-weather", "name": "weather", "arguments": {"city": "Reykjavik"}},
+        {"id": "tool-clock", "name": "clock", "arguments": {"zone": "UTC"}}
+      ]
+    },
+    {"type": "response", "id": "response-1"},
+    {"type": "toolResult", "id": "result-weather", "callId": "tool-weather", "value": {"celsius": 8}},
+    {"type": "toolResult", "id": "result-clock", "callId": "tool-clock", "value": "10:30 UTC"},
+    {"type": "chunk", "id": "chunk-3", "text": "It is 8°C in Reykjavik at 10:30 UTC."},
+    {"type": "response", "id": "response-2"}
+  ],
+  "expected": {
+    "decision": "done",
+    "errorType": null,
+    "eventOrder": [
+      "request:1", "chunk:chunk-1", "chunk:chunk-2", "complete:response-1",
+      "dispatch:tool-weather", "effect:tool-weather", "result:result-weather",
+      "dispatch:tool-clock", "effect:tool-clock", "result:result-clock",
+      "request:2", "chunk:chunk-3", "complete:response-2"
+    ],
+    "assistantMessages": [
+      {"id": "assistant-1", "text": "Checking the forecast. ", "status": "completed"},
+      {"id": "assistant-2", "text": "It is 8°C in Reykjavik at 10:30 UTC.", "status": "completed"}
+    ],
+    "streamedOutput": [
+      {"eventId": "chunk-1", "text": "Checking "},
+      {"eventId": "chunk-2", "text": "Checking the forecast. "},
+      {"eventId": "chunk-3", "text": "It is 8°C in Reykjavik at 10:30 UTC."}
+    ],
+    "toolDispatches": [
+      {"id": "tool-weather", "name": "weather", "arguments": {"city": "Reykjavik"}},
+      {"id": "tool-clock", "name": "clock", "arguments": {"zone": "UTC"}}
+    ],
+    "toolResults": {"tool-weather": {"celsius": 8}, "tool-clock": "10:30 UTC"},
+    "toolSideEffectCounts": {"tool-weather": 1, "tool-clock": 1},
+    "sentUserMessageIds": ["user-1"],
+    "erroredUserMessageIds": [],
+    "retryEvents": []
+  }
+}
