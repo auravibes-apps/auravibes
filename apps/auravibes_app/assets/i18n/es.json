@@ -1632,6 +1632,14 @@
     "unsupported_configuration": "Esta configuración hace referencia a una habilidad de la aplicación no disponible en el espacio de destino.",
     "error": "No se pudo exportar o importar la configuración del espacio de trabajo."
   },
+  "workspace_location": {
+    "on_device": "En este dispositivo",
+    "personal_cloud": "Nube personal",
+    "team_workspace": "Espacio de equipo",
+    "cloud_workspace": "Espacio en la nube",
+    "view_members": "Miembros y acceso",
+    "view_access": "Detalles de acceso"
+  },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
     "copy_id": "Copiar ID",

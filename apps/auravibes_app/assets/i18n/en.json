@@ -1632,6 +1632,14 @@
     "unsupported_configuration": "This configuration references an app skill unavailable in the target workspace.",
     "error": "Could not export or import the workspace configuration."
   },
+  "workspace_location": {
+    "on_device": "On this device",
+    "personal_cloud": "Personal cloud",
+    "team_workspace": "Team workspace",
+    "cloud_workspace": "Cloud workspace",
+    "view_members": "Members and access",
+    "view_access": "Access details"
+  },
   "workspace_management": {
     "title": "Manage Workspaces",
     "copy_id": "Copy ID",

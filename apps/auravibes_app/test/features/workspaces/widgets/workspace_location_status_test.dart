@@ -1,0 +1,131 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_location_info.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_location_status.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  Widget buildSubject(
+    WorkspaceLocationInfo info, {
+    VoidCallback? onViewAccess,
+    Locale locale = const Locale('en'),
+  }) {
+    return EasyLocalization(
+      child: Builder(
+        builder: (context) => MaterialApp(
+          home: AuraThemeScope(
+            theme: .light,
+            child: AuraLegacyMaterialBridge(
+              child: Material(
+                child: WorkspaceLocationStatus(
+                  info: info,
+                  onViewAccess: onViewAccess,
+                ),
+              ),
+            ),
+          ),
+          locale: context.locale,
+          localizationsDelegates: [
+            ...GlobalMaterialLocalizations.delegates,
+            ...context.localizationDelegates,
+          ],
+          supportedLocales: context.supportedLocales,
+        ),
+      ),
+      supportedLocales: const [Locale('en'), Locale('es')],
+      path: 'assets/i18n',
+      fallbackLocale: const Locale('en'),
+      startLocale: locale,
+      useOnlyLangCode: true,
+      useFallbackTranslations: true,
+      saveLocale: false,
+    );
+  }
+
+  testWidgets('shows local storage location without an access link', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        buildSubject(const WorkspaceLocationInfo(kind: .onDevice)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('On this device'), findsOneWidget);
+      expect(
+        tester
+            .getSemantics(
+              find.bySemanticsIdentifier('workspace_location_status'),
+            )
+            .label,
+        'On this device',
+      );
+      expect(
+        find.byKey(const ValueKey<String>('workspace_location_access')),
+        findsNothing,
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('shows a personal cloud workspace type', (tester) async {
+    await tester.pumpWidget(
+      buildSubject(const WorkspaceLocationInfo(kind: .personalCloud)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Personal cloud'), findsOneWidget);
+  });
+
+  testWidgets('team workspace links to members and access', (tester) async {
+    var opened = false;
+    await tester.pumpWidget(
+      buildSubject(
+        const WorkspaceLocationInfo(kind: .teamWorkspace, canViewMembers: true),
+        onViewAccess: () => opened = true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Team workspace'), findsOneWidget);
+    expect(find.text('Members and access'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('workspace_location_access')),
+    );
+    expect(opened, isTrue);
+  });
+
+  testWidgets('team member without roster access gets access details label', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildSubject(
+        const WorkspaceLocationInfo(
+          kind: .teamWorkspace,
+          canViewMembers: false,
+        ),
+        onViewAccess: () {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Access details'), findsOneWidget);
+  });
+
+  testWidgets('workspace type uses Spanish copy', (tester) async {
+    await tester.pumpWidget(
+      buildSubject(
+        const WorkspaceLocationInfo(kind: .teamWorkspace),
+        locale: const Locale('es'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Espacio de equipo'), findsOneWidget);
+  });
+}

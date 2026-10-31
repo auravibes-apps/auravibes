@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_location_info.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_location_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -237,6 +240,9 @@ class const _WorkspaceSelectorContent({
         onSwitch: onSwitch,
         trailingAction: trailingAction,
       ),
+      _WorkspaceLocationIndicator(
+        workspace: _selectedWorkspace(workspaces, workspaceId),
+      ),
       _WorkspaceActionSelector(
         switchState: switchState,
         isNavigationPending: isNavigationPending,
@@ -245,6 +251,91 @@ class const _WorkspaceSelectorContent({
     ],
     crossAxisAlignment: .stretch,
   );
+}
+
+WorkspaceEntity? _selectedWorkspace(
+  AsyncValue<List<WorkspaceEntity>> workspaces,
+  String workspaceId,
+) {
+  final value = workspaces.value;
+  if (value == null) return null;
+  for (final workspace in value) {
+    if (workspace.id == workspaceId) return workspace;
+  }
+
+  return null;
+}
+
+class const _WorkspaceLocationIndicator({
+  required final WorkspaceEntity? workspace,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final workspace = this.workspace;
+    if (workspace == null) return const SizedBox.shrink();
+
+    final accessRoute = _cloudWorkspaceAccessRoute(workspace);
+    if (accessRoute == null) {
+      return WorkspaceLocationStatus(info: workspaceLocationInfo(workspace));
+    }
+
+    return _CloudWorkspaceLocationIndicator(
+      workspace: workspace,
+      accessRoute: accessRoute,
+    );
+  }
+}
+
+typedef _CloudWorkspaceAccessRoute = ({
+  String serverUrl,
+  String accountId,
+  int cloudWorkspaceId,
+});
+
+_CloudWorkspaceAccessRoute? _cloudWorkspaceAccessRoute(
+  WorkspaceEntity workspace,
+) {
+  if (workspace.type.isLocal) return null;
+  final serverUrl = workspace.url;
+  final accountId = workspace.cloudAccountId;
+  final cloudWorkspaceId = int.tryParse(workspace.cloudWorkspaceId ?? '');
+  if (serverUrl == null || accountId == null || cloudWorkspaceId == null) {
+    return null;
+  }
+
+  return (
+    serverUrl: serverUrl,
+    accountId: accountId,
+    cloudWorkspaceId: cloudWorkspaceId,
+  );
+}
+
+class const _CloudWorkspaceLocationIndicator({
+  required final WorkspaceEntity workspace,
+  required final _CloudWorkspaceAccessRoute accessRoute,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detail = ref.watch(
+      cloudWorkspaceDetailProvider((
+        serverUrl: accessRoute.serverUrl,
+        accountId: accessRoute.accountId,
+        workspaceId: accessRoute.cloudWorkspaceId,
+      )),
+    );
+
+    return WorkspaceLocationStatus(
+      info: workspaceLocationInfo(workspace, cloudDetail: detail.value),
+      onViewAccess: () => context.go(
+        CloudWorkspaceDetailRoute(
+          workspaceId: workspace.id,
+          cloudAccountId: accessRoute.accountId,
+          cloudWorkspaceId: accessRoute.cloudWorkspaceId,
+          serverUrl: accessRoute.serverUrl,
+        ).location,
+      ),
+    );
+  }
 }
 
 class const _WorkspaceSwitchControl({
