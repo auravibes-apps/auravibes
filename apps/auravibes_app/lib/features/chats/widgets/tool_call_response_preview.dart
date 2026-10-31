@@ -200,6 +200,9 @@ class const _ToolCallResponseCopyButton({required final String content})
 class _ToolCallResponseCopyButtonState
     extends State<_ToolCallResponseCopyButton> {
   var _copied = false;
+  var _copyFailed = false;
+  var _copyAttempt = 0;
+  Timer? _copyConfirmationTimer;
 
   IconData get _copyIcon => _copied ? Icons.check : Icons.copy_outlined;
 
@@ -210,25 +213,90 @@ class _ToolCallResponseCopyButtonState
           .tr();
 
   @override
+  void didUpdateWidget(covariant _ToolCallResponseCopyButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content == widget.content) return;
+
+    _copyAttempt++;
+    _copyConfirmationTimer?.cancel();
+    _copyConfirmationTimer = null;
+    _copied = false;
+    _copyFailed = false;
+  }
+
+  @override
+  void dispose() {
+    _copyAttempt++;
+    _copyConfirmationTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-    child: AuraIconButton(
-      icon: _copyIcon,
-      onPressed: () => unawaited(_copyResponse()),
-      size: .small,
-      tooltip: _copyTooltip,
+    child: Column(
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
+      children: [
+        AuraIconButton(
+          icon: _copyIcon,
+          onPressed: () => unawaited(_copyResponse()),
+          size: .small,
+          tooltip: _copyTooltip,
+        ),
+        if (_copyFailed)
+          Padding(
+            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+            child: Semantics(
+              liveRegion: true,
+              child: AuraText(
+                child: const TextLocale(
+                  'chats_screens_chat_conversation_tool_response_copy_failed',
+                ),
+                style: .bodySmall,
+              ),
+            ),
+          ),
+      ],
     ),
   );
 
   Future<void> _copyResponse() async {
-    if (widget.content.isEmpty) return;
+    final content = widget.content;
+    if (content.isEmpty) return;
+
+    final attempt = ++_copyAttempt;
+    _copyConfirmationTimer?.cancel();
+    _copyConfirmationTimer = null;
+    if (_copied || _copyFailed) {
+      setState(() {
+        _copied = false;
+        _copyFailed = false;
+      });
+    }
 
     try {
-      await Clipboard.setData(.new(text: widget.content));
+      await Clipboard.setData(.new(text: content));
     } on Object {
+      if (!mounted || attempt != _copyAttempt || widget.content != content) {
+        return;
+      }
+
+      setState(() => _copyFailed = true);
       return;
     }
 
-    if (mounted) setState(() => _copied = true);
+    if (!mounted || attempt != _copyAttempt || widget.content != content) {
+      return;
+    }
+
+    setState(() => _copied = true);
+    _copyConfirmationTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted || attempt != _copyAttempt || widget.content != content) {
+        return;
+      }
+
+      setState(() => _copied = false);
+    });
   }
 }

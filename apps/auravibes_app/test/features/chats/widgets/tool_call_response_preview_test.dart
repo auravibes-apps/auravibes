@@ -262,9 +262,8 @@ void main() {
           content: content,
           subject: StatefulBuilder(
             builder: (context, setState) {
-              changeContent = () => setState(
-                () => content = 'Updated response',
-              );
+              changeContent = () =>
+                  setState(() => content = 'Updated response');
 
               return ToolCallResponsePreview(
                 content: content,
@@ -291,7 +290,13 @@ void main() {
     testWidgets('localizes copy failure status in Spanish', (tester) async {
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
-        (call) async => throw PlatformException(code: 'clipboard_unavailable'),
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            throw PlatformException(code: 'clipboard_unavailable');
+          }
+
+          return null;
+        },
       );
       addTearDown(
         () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
