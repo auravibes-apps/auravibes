@@ -245,27 +245,47 @@ Future<List<ConversationSummary>> _readAllCloudConversationPages(
   String? cursor;
 
   while (true) {
-    final page = await gateway.client.conversation.listPage(
-      .new(
-        workspaceId: cloud.cloudWorkspaceId,
-        limit: _cloudConversationPageSize,
-        cursor: cursor,
-      ),
+    final page = await _readCloudConversationPageAtCursor(
+      gateway,
+      cloud,
+      cursor,
     );
     conversations.addAll(page.conversations);
 
-    final nextCursor = page.nextCursor;
-    if (nextCursor == null) return conversations;
-    if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
-      throw const CloudAppException(
-        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-        context: .conversation,
-        code: 'invalidCursor',
-      );
-    }
-    cursor = nextCursor;
+    cursor = _nextCloudConversationCursor(page.nextCursor, seenCursors);
+    if (cursor == null) return conversations;
   }
 }
+
+Future<ConversationPage> _readCloudConversationPageAtCursor(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String? cursor,
+) => gateway.client.conversation.listPage(
+  .new(
+    workspaceId: cloud.cloudWorkspaceId,
+    limit: _cloudConversationPageSize,
+    cursor: cursor,
+  ),
+);
+
+String? _nextCloudConversationCursor(
+  String? nextCursor,
+  Set<String> seenCursors,
+) {
+  if (nextCursor == null) return null;
+  if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
+    _throwInvalidCloudConversationCursor();
+  }
+
+  return nextCursor;
+}
+
+Never _throwInvalidCloudConversationCursor() => throw const CloudAppException(
+  localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+  context: .conversation,
+  code: 'invalidCursor',
+);
 
 Future<int> _cloudConversationSequence(
   CloudWorkspaceStateGateway gateway,
