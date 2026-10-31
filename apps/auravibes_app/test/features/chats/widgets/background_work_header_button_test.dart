@@ -280,7 +280,7 @@ void main() {
     final work = _work(
       'cloud-work-1',
       .completed,
-      DateTime.utc(2026, 10, 11, 12),
+      .utc(2026, 10, 11, 12),
     );
     var attempts = 0;
     final _ = await tester.runAsync(() async {
