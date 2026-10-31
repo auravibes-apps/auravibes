@@ -20,6 +20,7 @@ class const AgentToolBatchExecutor<TTool extends Object>({
   required final AgentResolvedToolRunner<TTool> runResolvedTool,
   required final AgentToolCancellationChecker isCancellationRequested,
   required final AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
+  final bool captureOutputDigest = false,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
 }) {
   Future<List<AgentToolBatchResult<TTool>>> call(
@@ -32,6 +33,7 @@ class const AgentToolBatchExecutor<TTool extends Object>({
             runResolvedTool: runResolvedTool,
             isCancellationRequested: isCancellationRequested,
             logToolExecutionError: logToolExecutionError,
+            captureOutputDigest: captureOutputDigest,
             outputPolicyForTool: outputPolicyForTool,
           ).call(
             conversationId: call.conversationId,

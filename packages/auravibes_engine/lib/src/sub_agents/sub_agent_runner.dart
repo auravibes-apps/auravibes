@@ -151,7 +151,7 @@ class const SubAgentRunner({
 
         return await _result(child.id, 'stopped', agentId: request.agentId);
       }
-      if (decision == AgentIterationDecision.iterationLimitReached) {
+      if (decision.isPartial) {
         completionStatus = SubAgentCompletionStatus.partial;
 
         return await _result(child.id, 'partial', agentId: request.agentId);

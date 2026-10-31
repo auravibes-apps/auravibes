@@ -506,7 +506,7 @@ class const _LoadedChatConversationRuntime({
       workspaceId: workspaceId,
       conversation: conversation,
     );
-    _listenForPendingIterationLimitNotice(request);
+    _listenForPendingAgentStopNotice(request);
 
     final runtimeState = _useLoadedChatConversationRuntimeState(request);
 
@@ -520,40 +520,38 @@ class const _LoadedChatConversationRuntime({
   }
 }
 
-void _listenForPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
-  final iterationLimitProvider = conversationIterationLimitProvider(
+void _listenForPendingAgentStopNotice(_LoadedRuntimeRequest request) {
+  final agentStopProvider = conversationAgentStopDecisionProvider(
     request.conversation.id,
   );
-  if (request.ref.read(iterationLimitProvider)) {
-    _schedulePendingIterationLimitNotice(request);
+  if (request.ref.read(agentStopProvider) != null) {
+    _schedulePendingAgentStopNotice(request);
   }
-  request.ref.listen(iterationLimitProvider, (_, pending) {
-    if (pending) _schedulePendingIterationLimitNotice(request);
+  request.ref.listen(agentStopProvider, (_, decision) {
+    if (decision != null) _schedulePendingAgentStopNotice(request);
   });
 }
 
-void _schedulePendingIterationLimitNotice(_LoadedRuntimeRequest request) =>
+void _schedulePendingAgentStopNotice(_LoadedRuntimeRequest request) =>
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _showPendingIterationLimitNotice(request),
+      (_) => _showPendingAgentStopNotice(request),
     );
 
-void _showPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
+void _showPendingAgentStopNotice(_LoadedRuntimeRequest request) {
   if (!request.context.mounted) return;
 
   final conversationId = request.conversation.id;
-  request.ref
-      .read(conversationIterationLimitProvider(conversationId).notifier)
+  final decision = request.ref
+      .read(conversationAgentStopDecisionProvider(conversationId).notifier)
       .consume();
+  if (decision == null) return;
   final conversationContextRequest = (
     context: request.context,
     ref: request.ref,
     workspaceId: request.workspaceId,
     conversationId: conversationId,
   );
-  _showIterationLimitNoticeForConversation(
-    conversationContextRequest,
-    .iterationLimitReached,
-  );
+  _showAgentStopNoticeForConversation(conversationContextRequest, decision);
 }
 
 class const _ChatConversationBackButton() extends StatelessWidget {
@@ -2951,7 +2949,7 @@ Future<void> _continueAgent(_ConversationContextRequest request) async {
   if (!_canContinueConversation(request)) return;
 
   final decision = await _continueAgentTurnWithErrorHandling(request);
-  _showIterationLimitNoticeForConversation(request, decision);
+  _showAgentStopNoticeForConversation(request, decision);
 }
 
 Future<AgentIterationDecision?> _continueAgentTurnWithErrorHandling(
@@ -3059,7 +3057,7 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
 
   try {
     final decision = await _runRetryMessage(request);
-    _showIterationLimitNoticeForConversation(
+    _showAgentStopNoticeForConversation(
       _conversationContextForRetry(request),
       decision,
     );
@@ -3469,7 +3467,7 @@ bool _canStopCloudState(CloudConversationState state) {
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
     final decision = await _sendMessageUsecase(request);
-    _showIterationLimitNoticeForConversation(
+    _showAgentStopNoticeForConversation(
       _conversationContextForSend(request),
       decision,
     );
@@ -3510,30 +3508,34 @@ VoidCallback _conversationContextContinueCallback(
 ) =>
     () => unawaited(_continueAgent(request));
 
-void _showIterationLimitNoticeForConversation(
+void _showAgentStopNoticeForConversation(
   _ConversationContextRequest request,
   AgentIterationDecision? decision,
-) => _showIterationLimitNoticeIfNeeded(
+) => _showAgentStopNoticeIfNeeded(
   context: request.context,
   decision: decision,
   onContinue: _conversationContextContinueCallback(request),
 );
 
-void _showIterationLimitNoticeIfNeeded({
+void _showAgentStopNoticeIfNeeded({
   required BuildContext context,
   required AgentIterationDecision? decision,
   required VoidCallback onContinue,
 }) {
-  if (decision != AgentIterationDecision.iterationLimitReached ||
-      !context.mounted) {
-    return;
-  }
+  final content = switch (decision) {
+    AgentIterationDecision.iterationLimitReached => const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
+    ),
+    AgentIterationDecision.repeatedToolLoopDetected => const TextLocale(
+      'chats.screens.chat_conversation.repeated_tool_loop_detected',
+    ),
+    _ => null,
+  };
+  if (content == null || !context.mounted) return;
 
   final _ = AuraSnackBars.show(
     context: context,
-    content: const TextLocale(
-      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
-    ),
+    content: content,
     duration: const Duration(seconds: 10),
     actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
     onAction: onContinue,

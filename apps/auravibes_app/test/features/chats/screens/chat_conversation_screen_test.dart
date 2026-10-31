@@ -83,21 +83,26 @@ void main() {
     registerFallbackValue(_ContinueConversationRequestFake());
   });
 
-  test('iteration-limit notifier queues only capped decisions', () {
-    final provider = conversationIterationLimitProvider(_chatId);
+  test('agent stop notifier queues only user-visible stop decisions', () {
+    final provider = conversationAgentStopDecisionProvider(_chatId);
     final uncappedContainer = ProviderContainer();
     addTearDown(uncappedContainer.dispose);
-    uncappedContainer
-        .read(provider.notifier)
-        .markIfIterationLimitReached(.done);
-    expect(uncappedContainer.read(provider), isFalse);
+    uncappedContainer.read(provider.notifier).markIfAgentStopDecision(.done);
+    expect(uncappedContainer.read(provider), isNull);
 
     final cappedContainer = ProviderContainer();
     addTearDown(cappedContainer.dispose);
     cappedContainer
         .read(provider.notifier)
-        .markIfIterationLimitReached(.iterationLimitReached);
-    expect(cappedContainer.read(provider), isTrue);
+        .markIfAgentStopDecision(.iterationLimitReached);
+    expect(
+      cappedContainer.read(provider),
+      AgentIterationDecision.iterationLimitReached,
+    );
+    expect(
+      cappedContainer.read(provider.notifier).consume(),
+      AgentIterationDecision.iterationLimitReached,
+    );
   });
 
   setUp(() {
@@ -1289,8 +1294,11 @@ void main() {
                   conversationRateLimitRetryProvider.overrideWith(
                     () => _StaticRateLimitRetryNotifier(retryAt),
                   ),
-                  conversationIterationLimitProvider(_chatId)
-                      .overrideWith(_StaticIterationLimitNotifier.new),
+                  conversationAgentStopDecisionProvider(_chatId).overrideWith(
+                    () => _StaticAgentStopDecisionNotifier(
+                      AgentIterationDecision.iterationLimitReached,
+                    ),
+                  ),
                   chatMessagesProvider.overrideWith(
                     (ref, _) => Stream.value(const <MessageEntity>[]),
                   ),
@@ -1403,6 +1411,26 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows a distinct notice when a repeated tool loop stops', (
+    tester,
+  ) async {
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      repeatedToolLoopDetected: true,
+    );
+
+    expect(
+      find.text(
+        'The agent stopped because the same tool calls kept returning the '
+        'same results. Partial output and completed tool results are available.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Continue agent'), findsOneWidget);
   });
 
   testWidgets('stops retry if route unmounts during cloud lookup', (
@@ -2036,6 +2064,7 @@ Future<void> _pumpCloudConversationScreen(
   CloudTurnUsecase? usecase,
   Future<CloudTurnUsecase?>? usecaseFuture,
   bool iterationLimitReached = false,
+  bool repeatedToolLoopDetected = false,
   String? parentId,
   GoRouter? router,
 }) async {
@@ -2058,7 +2087,12 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
-            final TransitionBuilder? appBuilder = iterationLimitReached
+            final agentStopDecision = repeatedToolLoopDetected
+                ? AgentIterationDecision.repeatedToolLoopDetected
+                : iterationLimitReached
+                ? AgentIterationDecision.iterationLimitReached
+                : null;
+            final TransitionBuilder? appBuilder = agentStopDecision != null
                 ? (_, child) =>
                       AuraSnackBarHost(child: child ?? const SizedBox.shrink())
                 : null;
@@ -2136,9 +2170,10 @@ Future<void> _pumpCloudConversationScreen(
                     hasPendingTools: false,
                   ),
                 ),
-                if (iterationLimitReached)
-                  conversationIterationLimitProvider(_chatId)
-                      .overrideWith(_StaticIterationLimitNotifier.new),
+                if (agentStopDecision case final decision?)
+                  conversationAgentStopDecisionProvider(_chatId).overrideWith(
+                    () => _StaticAgentStopDecisionNotifier(decision),
+                  ),
                 cloudConversationStateProvider.overrideWith((ref, _) async* {
                   yield initialState;
                   yield* updates;
@@ -2368,9 +2403,14 @@ void _activateSnackBarAction(WidgetTester tester, String label) {
   onTap();
 }
 
-class _StaticIterationLimitNotifier extends ConversationIterationLimitNotifier {
+class _StaticAgentStopDecisionNotifier
+    extends ConversationAgentStopDecisionNotifier {
+  _StaticAgentStopDecisionNotifier(this.decision);
+
+  final AgentIterationDecision decision;
+
   @override
-  bool build() => true;
+  AgentIterationDecision? build() => decision;
 }
 
 class _BusyRefreshNotifier extends Notifier<int> {

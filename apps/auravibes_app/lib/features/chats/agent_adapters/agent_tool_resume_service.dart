@@ -148,7 +148,9 @@ class AppAgentToolResumeProvider({
 
     _finishChildIfNeeded(activeSubAgents, (
       conversationId: conversationId,
-      status: decision == agent.AgentIterationDecision.iterationLimitReached
+      status:
+          decision == agent.AgentIterationDecision.iterationLimitReached ||
+              decision == agent.AgentIterationDecision.repeatedToolLoopDetected
           ? .partial
           : .done,
       error: null,

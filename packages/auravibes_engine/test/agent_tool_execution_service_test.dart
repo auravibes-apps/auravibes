@@ -174,6 +174,54 @@ void main() {
     },
   );
 
+  test('changes loop fingerprints when full tool output changes', () async {
+    Future<({String? fingerprint, String? responseRaw})> fingerprintFor(
+      String result,
+    ) async {
+      final provider = _FakeExecutionProvider(
+        latestToolCalls: const LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [
+            AgentToolToCall(
+              tool: 'search',
+              id: 'tool-1',
+              argumentsRaw: '{"query":"cats"}',
+            ),
+          ],
+          notFoundToolCallIds: [],
+          previouslyFailedToolCallIds: [],
+        ),
+        decisions: const {'tool-1': AgentToolPermissionResult.granted},
+        results: {'search': '${'x' * 400}$result'},
+      );
+
+      final loopResult =
+          await AgentToolExecutionService<String>(
+            provider: provider,
+            outputPolicyForTool: (_) =>
+                const AgentToolOutputPolicy(maxBytes: 256),
+          ).runAgentLoopIteration(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          );
+
+      return (
+        fingerprint: loopResult.fingerprint,
+        responseRaw: provider.updates.single.responseRaw,
+      );
+    }
+
+    final first = await fingerprintFor('first result');
+    final unchanged = await fingerprintFor('first result');
+    final changed = await fingerprintFor('other result');
+
+    expect(first.fingerprint, isNotNull);
+    expect(unchanged.fingerprint, first.fingerprint);
+    expect(changed.responseRaw, first.responseRaw);
+    expect(changed.fingerprint, isNot(first.fingerprint));
+  });
+
   test('stores each granted tool result as it finishes', () async {
     final slow = Completer<Object?>();
     final fast = Completer<Object?>();
