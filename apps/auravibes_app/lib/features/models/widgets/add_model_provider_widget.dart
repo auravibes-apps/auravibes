@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/models/models/model_provider_verification
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
+import 'package:auravibes_app/features/models/widgets/model_choice_explanation.dart';
 import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -293,7 +294,9 @@ class const _AddModelProviderChoice({
       .new(
         key: const Key('intro_ai_provider_choice'),
         heading: const _IntroAIHeading(),
-        description: const TextLocale('intro_flow.ai.choose_provider'),
+        description: const ModelChoiceExplanation(
+          descriptionKey: LocaleKeys.intro_flow_ai_choose_provider,
+        ),
         body: choice,
         scrollBody: false,
         actions: _ModelProviderChoiceCancel(request: request),
@@ -2559,6 +2562,10 @@ class const _ModelProviderSearchControls({
     children: [
       if (showHeading) ...[
         const _ModelProviderSearchLabel(),
+        const AuraSizedBox(height: .xs),
+        const ModelChoiceExplanation(
+          descriptionKey: LocaleKeys.intro_flow_ai_choose_provider,
+        ),
         const AuraSizedBox(height: .md),
       ],
       _ModelProviderSearchInput(

@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/recent_model_selections_notifier.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/models/widgets/model_choice_explanation.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -406,6 +407,10 @@ class _ModelSheetContent extends Column {
            _ModelSearchInput(
              controller: controller,
              onChanged: onSearchChanged,
+           ),
+           const AuraSizedBox(height: .xs),
+           const ModelChoiceExplanation(
+             descriptionKey: 'models_screens.model_choice_explanation',
            ),
            const AuraSizedBox(height: .sm),
            Flexible(
@@ -889,12 +894,21 @@ class const _DropdownSearchHeader({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPadding(
-    child: TextField(
-      controller: controller,
-      decoration: _searchDecoration(context),
-      textInputAction: .search,
-      style: .new(color: context.auraColors.onSurface),
-      onChanged: onChanged,
+    child: Column(
+      mainAxisSize: .min,
+      children: [
+        TextField(
+          controller: controller,
+          decoration: _searchDecoration(context),
+          textInputAction: .search,
+          style: .new(color: context.auraColors.onSurface),
+          onChanged: onChanged,
+        ),
+        const AuraSizedBox(height: .xs),
+        const ModelChoiceExplanation(
+          descriptionKey: 'models_screens.model_choice_explanation',
+        ),
+      ],
     ),
     padding: .small,
   );
