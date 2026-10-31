@@ -10,7 +10,7 @@ void main() {
   test('local workspace is stored on this device', () {
     final info = workspaceLocationInfo(_workspace(WorkspaceType.local));
 
-    expect(info.kind, .onDevice);
+    expect(info.kind, WorkspaceLocationKind.onDevice);
   });
 
   test('owner-only cloud workspace is personal', () {
@@ -19,7 +19,7 @@ void main() {
       cloudDetail: _cloudDetail(role: 'owner', members: [_member('owner')]),
     );
 
-    expect(info.kind, .personalCloud);
+    expect(info.kind, WorkspaceLocationKind.personalCloud);
     expect(info.canViewMembers, isTrue);
   });
 
@@ -35,7 +35,7 @@ void main() {
       ),
     );
 
-    expect(info.kind, .teamWorkspace);
+    expect(info.kind, WorkspaceLocationKind.teamWorkspace);
   });
 
   test('pending invites make an owner cloud workspace a team workspace', () {
@@ -48,7 +48,7 @@ void main() {
       ),
     );
 
-    expect(info.kind, .teamWorkspace);
+    expect(info.kind, WorkspaceLocationKind.teamWorkspace);
   });
 
   test('member role shows team even when roster access is unavailable', () {
@@ -57,7 +57,7 @@ void main() {
       cloudDetail: _cloudDetail(role: 'member', canViewMembers: false),
     );
 
-    expect(info.kind, .teamWorkspace);
+    expect(info.kind, WorkspaceLocationKind.teamWorkspace);
     expect(info.canViewMembers, isFalse);
   });
 }
