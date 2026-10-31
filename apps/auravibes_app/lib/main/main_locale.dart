@@ -35,10 +35,10 @@ class const MainLocale({required final Widget child, super.key})
       path: 'assets/i18n',
       fallbackLocale: MainLocale.supportedLocales.firstOrNull,
       startLocale: _languagePreference.locale,
-      saveLocale: false,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
       useFallbackTranslationsForEmptyResources: true,
+      saveLocale: false,
     );
   }
 }
