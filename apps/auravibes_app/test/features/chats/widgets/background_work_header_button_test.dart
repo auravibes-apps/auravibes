@@ -277,11 +277,7 @@ void main() {
       workspaceId: 'workspace-1',
       conversationId: 'conversation-1',
     );
-    final work = _work(
-      'cloud-work-1',
-      .completed,
-      .utc(2026, 10, 11, 12),
-    );
+    final work = _work('cloud-work-1', .completed, .utc(2026, 10, 11, 12));
     var attempts = 0;
     final _ = await tester.runAsync(() async {
       await tester.pumpWidget(
