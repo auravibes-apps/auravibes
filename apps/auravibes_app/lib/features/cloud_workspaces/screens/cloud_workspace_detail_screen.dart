@@ -794,73 +794,78 @@ Future<_InviteRequest?> _invitePrompt(
   BuildContext context, {
   required String title,
   required bool allowAdmin,
-}) async {
-  final controller = TextEditingController();
-  var role = 'member';
+}) {
   FocusManager.instance.primaryFocus?.unfocus();
-  final result = await showDialog<_InviteRequest>(
+  return showDialog<_InviteRequest>(
     context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) {
-        void submit() =>
-            Navigator.of(context).pop((email: controller.text, role: role));
-
-        return AlertDialog(
-          title: Text(title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                textInputAction: .done,
-                onSubmitted: (_) => submit(),
-              ),
-              if (allowAdmin)
-                AuraChoicePicker<String>(
-                  options: const [
-                    AuraChoiceOption(
-                      value: 'member',
-                      label: TextLocale(
-                        LocaleKeys.workspace_management_cloud_role_member,
-                      ),
-                    ),
-                    AuraChoiceOption(
-                      value: 'admin',
-                      label: TextLocale(
-                        LocaleKeys.workspace_management_cloud_role_admin,
-                      ),
-                    ),
-                  ],
-                  value: [role],
-                  onChanged: (values) {
-                    if (values.isEmpty) return;
-                    setState(() => role = values.first);
-                  },
-                ),
-              _WorkspaceRoleDescription(
-                key: const ValueKey('workspace_invite_role_description'),
-                role: role,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const TextLocale(LocaleKeys.common_cancel),
-            ),
-            TextButton(
-              onPressed: submit,
-              child: const TextLocale(LocaleKeys.common_add),
-            ),
-          ],
-        );
-      },
-    ),
+    builder: (context) =>
+        _WorkspaceInvitePrompt(title: title, allowAdmin: allowAdmin),
   );
-  controller.dispose();
-  return result;
+}
+
+class const _WorkspaceInvitePrompt({
+  required final String title,
+  required final bool allowAdmin,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController();
+    final role = useState('member');
+    void submit() =>
+        Navigator.of(context).pop((email: controller.text, role: role.value));
+
+    return AlertDialog(
+      title: Text(title),
+      content: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [
+          TextField(
+            controller: controller,
+            autofocus: true,
+            textInputAction: .done,
+            onSubmitted: (_) => submit(),
+          ),
+          if (allowAdmin)
+            AuraChoicePicker<String>(
+              options: const [
+                AuraChoiceOption(
+                  value: 'member',
+                  label: TextLocale(
+                    LocaleKeys.workspace_management_cloud_role_member,
+                  ),
+                ),
+                AuraChoiceOption(
+                  value: 'admin',
+                  label: TextLocale(
+                    LocaleKeys.workspace_management_cloud_role_admin,
+                  ),
+                ),
+              ],
+              value: [role.value],
+              onChanged: (values) {
+                if (values.isEmpty) return;
+                role.value = values.first;
+              },
+            ),
+          _WorkspaceRoleDescription(
+            key: const ValueKey('workspace_invite_role_description'),
+            role: role.value,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const TextLocale(LocaleKeys.common_cancel),
+        ),
+        TextButton(
+          onPressed: submit,
+          child: const TextLocale(LocaleKeys.common_add),
+        ),
+      ],
+    );
+  }
 }
 
 String _cloudErrorKey(Object error) {
