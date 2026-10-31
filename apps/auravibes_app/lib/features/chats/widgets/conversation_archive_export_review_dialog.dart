@@ -36,11 +36,25 @@ class const _ConversationArchiveExportReviewDialog({
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const TextLocale(_reviewTitleKey),
-    content: _buildContent(),
-    actions: _buildActions(context),
+    content: _ConversationArchiveExportReviewContent(fileName: fileName),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(false),
+        child: const TextLocale(LocaleKeys.common_cancel),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.of(context).pop(true),
+        child: const TextLocale(_reviewContinueKey),
+      ),
+    ],
   );
+}
 
-  Widget _buildContent() => SizedBox(
+class const _ConversationArchiveExportReviewContent({
+  required final String fileName,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
     width: 480,
     child: SingleChildScrollView(
       child: Column(
@@ -58,15 +72,4 @@ class const _ConversationArchiveExportReviewDialog({
       ),
     ),
   );
-
-  List<Widget> _buildActions(BuildContext context) => [
-    TextButton(
-      onPressed: () => Navigator.of(context).pop(false),
-      child: const TextLocale(LocaleKeys.common_cancel),
-    ),
-    FilledButton(
-      onPressed: () => Navigator.of(context).pop(true),
-      child: const TextLocale(_reviewContinueKey),
-    ),
-  ];
 }
