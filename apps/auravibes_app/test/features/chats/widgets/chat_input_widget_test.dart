@@ -2076,6 +2076,7 @@ void main() {
 
     expect(await tester.sendKeyEvent(.tab), isTrue);
     expect(await tester.sendKeyEvent(.tab), isTrue);
+    expect(await tester.sendKeyEvent(.tab), isTrue);
 
     expect(await tester.sendKeyEvent(.enter), isTrue);
     final pumpCount = await tester.pumpAndSettle();
