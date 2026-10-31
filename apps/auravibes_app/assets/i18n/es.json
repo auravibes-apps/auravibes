@@ -575,6 +575,7 @@
       "message_copied": "Mensaje copiado",
       "copy_tool_response": "Copiar respuesta de la herramienta",
       "tool_response_copied": "Respuesta de la herramienta copiada",
+      "tool_response_copy_failed": "No se pudo copiar la respuesta de la herramienta. Usa Copiar respuesta de la herramienta para volver a intentarlo.",
       "copy_tool_arguments": "Copiar argumentos de la herramienta",
       "tool_arguments_copied": "Argumentos de la herramienta copiados",
       "tool_call_fallback_description": "Revisa los argumentos de {tool}",
