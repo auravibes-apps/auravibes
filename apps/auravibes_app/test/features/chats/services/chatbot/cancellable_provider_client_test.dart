@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/services/chatbot/cancellable_provider_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,6 +83,49 @@ void main() {
     );
     expect(source.request, isNull);
     client.close();
+    expect(source.closeCount, 0);
+  });
+
+  test('retains multipart headers added when the original request finalizes',
+      () async {
+    final source = _IgnoringAbortClient(const Stream.empty());
+    final client = CancellableProviderClient(
+      client: source,
+      cancellation: CancellationController().token,
+    );
+    addTearDown(client.close);
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('https://provider.invalid/audio/transcriptions'),
+    )
+      ..headers['content-type'] = 'application/json'
+      ..headers['x-fixture'] = 'preserved'
+      ..fields['model'] = 'whisper-1'
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          [0, 128, 255],
+          filename: 'audio.wav',
+        ),
+      );
+    final response = await client.send(request);
+    final captured = source.request!;
+    final bytes = await captured.finalize().toBytes();
+    final contentType = captured.headers['content-type'];
+
+    expect(contentType, startsWith('multipart/form-data; boundary='));
+    expect(contentType, request.headers['content-type']);
+    final boundary = contentType!.split('boundary=').last;
+    final body = latin1.decode(bytes);
+    expect(body, startsWith('--$boundary\r\n'));
+    expect(body, endsWith('--$boundary--\r\n'));
+    expect(body, contains('name="model"\r\n\r\nwhisper-1'));
+    expect(body, contains('name="file"; filename="audio.wav"'));
+    expect(body, contains('\u0000\u0080\u00ff'));
+    expect(captured.headers['x-fixture'], 'preserved');
+    expect(captured.contentLength, bytes.length);
+    expect(captured, isA<http.Abortable>());
+    expect(await response.stream.toList(), isEmpty);
     expect(source.closeCount, 0);
   });
 

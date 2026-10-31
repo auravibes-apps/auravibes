@@ -65,6 +65,55 @@ void main() {
     expect(client.closeCount, 1);
   });
 
+  test('upstream transcription retains its multipart boundary and audio',
+      () async {
+    final client = ProviderFaultClient([
+      (_) async => http.StreamedResponse(
+        Stream.value(utf8.encode('{"text":"fixture transcript"}')),
+        200,
+        headers: const {'content-type': 'application/json'},
+      ),
+    ]);
+    addTearDown(client.close);
+    final ai = Genkit(
+      plugins: [
+        AppOpenAIPlugin(upstream: _upstream(), httpClient: client),
+      ],
+      isDevEnv: false,
+    );
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('openai/whisper-1'),
+      messages: [
+        Message(
+          role: .user,
+          content: [
+            MediaPart(
+              media: Media(
+                contentType: 'audio/wav',
+                url: 'data:audio/wav;base64,aGk=',
+              ),
+            ),
+          ],
+        ),
+      ],
+      cancel: CancellationController().token,
+    );
+    final request = client.requests.single;
+    final contentType = request.headers['content-type'];
+
+    expect(response.finishReason, FinishReason.stop);
+    expect(response.text, 'fixture transcript');
+    expect(request.url.path, '/v1/audio/transcriptions');
+    expect(request.supportsAbort, isTrue);
+    expect(contentType, startsWith('multipart/form-data; boundary='));
+    final boundary = contentType!.split('boundary=').last;
+    expect(request.body, startsWith('--$boundary\r\n'));
+    expect(request.body, endsWith('--$boundary--\r\n'));
+    expect(request.body, contains('name="model"\r\n\r\nwhisper-1'));
+    expect(request.body, contains('\r\n\r\nhi\r\n'));
+    expect(client.closeCount, 0);
+  });
+
   test('retains upstream failure cause and retry behavior', () async {
     ProviderFaultClient failingClient() => ProviderFaultClient([
       (_) async => http.StreamedResponse(

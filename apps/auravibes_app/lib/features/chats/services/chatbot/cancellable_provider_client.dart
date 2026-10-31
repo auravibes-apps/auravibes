@@ -80,8 +80,13 @@ class _AbortableProviderRequest extends http.BaseRequest
 
   @override
   http.ByteStream finalize() {
+    final body = _request.finalize();
+    // MultipartRequest adds its boundary header during finalization. Copy
+    // those final headers before the HTTP client reads this wrapper's headers.
+    headers.addAll(_request.headers);
+    contentLength = _request.contentLength;
     super.finalize();
-    return _request.finalize();
+    return body;
   }
 }
 
