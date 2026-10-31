@@ -98,7 +98,7 @@ List<_WorkspacePackage> _workspacePackages(
     'melos',
     'list',
     '--json',
-    '--relative-paths',
+    '--relative',
   ], workingDirectory: root.path);
   if (result.exitCode != 0) {
     errors.add('Could not list Melos workspace packages.');
