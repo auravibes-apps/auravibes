@@ -277,7 +277,7 @@ class const _WorkspaceLocationIndicator({
     final accessRoute = _cloudWorkspaceAccessRoute(workspace);
     if (accessRoute == null) {
       return WorkspaceLocationStatus(
-        info: WorkspaceLocationInfo.fromWorkspace(workspace),
+        info: .fromWorkspace(workspace),
       );
     }
 
@@ -327,7 +327,7 @@ class const _CloudWorkspaceLocationIndicator({
     );
 
     return WorkspaceLocationStatus(
-      info: WorkspaceLocationInfo.fromWorkspace(
+      info: .fromWorkspace(
         workspace,
         cloudDetail: detail.value,
       ),
