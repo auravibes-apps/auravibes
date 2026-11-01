@@ -442,7 +442,7 @@ class const _ParentConversationSection({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
-      const _BranchSectionTitle(
+      _BranchSectionTitle(
         title: 'chats_screens.chat_conversation.parent_conversation'.tr(),
       ),
       _ParentConversationStatus(
