@@ -445,8 +445,7 @@ jobs:
       - name: Test changed test selector
         if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
         run: >-
-          dart test
-          tool/changed_test_selector_test.dart
+          dart test tool/changed_test_selector_test.dart
           tool/local_preflight_test.dart
 
       - name: Check changed test selector formatting
