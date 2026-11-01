@@ -37,16 +37,26 @@ class const _ConversationArchiveExportReviewDialog({
   Widget build(BuildContext context) => AlertDialog(
     title: const TextLocale(_reviewTitleKey),
     content: _ConversationArchiveExportReviewContent(fileName: fileName),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(false),
-        child: const TextLocale(LocaleKeys.common_cancel),
-      ),
-      FilledButton(
-        onPressed: () => Navigator.of(context).pop(true),
-        child: const TextLocale(_reviewContinueKey),
-      ),
+    actions: const [
+      _ConversationArchiveExportCancelAction(),
+      _ConversationArchiveExportContinueAction(),
     ],
+  );
+}
+
+class const _ConversationArchiveExportCancelAction() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: () => Navigator.of(context).pop(false),
+    child: const TextLocale(LocaleKeys.common_cancel),
+  );
+}
+
+class const _ConversationArchiveExportContinueAction() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FilledButton(
+    onPressed: () => Navigator.of(context).pop(true),
+    child: const TextLocale(_reviewContinueKey),
   );
 }
 
