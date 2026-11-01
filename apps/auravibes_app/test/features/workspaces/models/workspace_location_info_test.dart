@@ -8,13 +8,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('local workspace is stored on this device', () {
-    final info = workspaceLocationInfo(_workspace(.local));
+    final info = WorkspaceLocationInfo.fromWorkspace(_workspace(.local));
 
     expect(info.kind, WorkspaceLocationKind.onDevice);
   });
 
   test('owner-only cloud workspace is personal', () {
-    final info = workspaceLocationInfo(
+    final info = WorkspaceLocationInfo.fromWorkspace(
       _workspace(.remote),
       cloudDetail: _cloudDetail(role: 'owner', members: [_member('owner')]),
     );
@@ -24,7 +24,7 @@ void main() {
   });
 
   test('cloud workspace with another member is a team workspace', () {
-    final info = workspaceLocationInfo(
+    final info = WorkspaceLocationInfo.fromWorkspace(
       _workspace(.remote),
       cloudDetail: _cloudDetail(
         role: 'owner',
@@ -39,7 +39,7 @@ void main() {
   });
 
   test('pending invites make an owner cloud workspace a team workspace', () {
-    final info = workspaceLocationInfo(
+    final info = WorkspaceLocationInfo.fromWorkspace(
       _workspace(.remote),
       cloudDetail: _cloudDetail(
         role: 'owner',
@@ -52,7 +52,7 @@ void main() {
   });
 
   test('member role shows team even when roster access is unavailable', () {
-    final info = workspaceLocationInfo(
+    final info = WorkspaceLocationInfo.fromWorkspace(
       _workspace(.remote),
       cloudDetail: _cloudDetail(role: 'member', canViewMembers: false),
     );

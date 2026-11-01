@@ -10,39 +10,39 @@ class const WorkspaceLocationInfo({
 
   /// Whether the current account may view the workspace's member list.
   final bool canViewMembers = false,
-});
-
-/// Determines the active workspace's location and current sharing scope.
-WorkspaceLocationInfo workspaceLocationInfo(
-  WorkspaceEntity workspace, {
-  CloudWorkspaceDetailState? cloudDetail,
 }) {
-  if (workspace.type == WorkspaceType.local) {
-    return const WorkspaceLocationInfo(kind: .onDevice);
-  }
-  if (cloudDetail == null) {
-    return const WorkspaceLocationInfo(kind: .cloud);
+  /// Determines the active workspace's location and current sharing scope.
+  static WorkspaceLocationInfo fromWorkspace(
+    WorkspaceEntity workspace, {
+    CloudWorkspaceDetailState? cloudDetail,
+  }) {
+    if (workspace.type == WorkspaceType.local) {
+      return const WorkspaceLocationInfo(kind: .onDevice);
+    }
+    if (cloudDetail == null) {
+      return const WorkspaceLocationInfo(kind: .cloud);
+    }
+
+    final detail = cloudDetail.detail;
+
+    return _fromCloudWorkspace(
+      role: detail.workspace.role,
+      memberCount: cloudDetail.members.length,
+      hasPendingInvites: cloudDetail.invites.isNotEmpty,
+      canViewMembers: detail.capabilities.canViewMembers,
+    );
   }
 
-  final detail = cloudDetail.detail;
-
-  return cloudWorkspaceLocationInfo(
-    role: detail.workspace.role,
-    memberCount: cloudDetail.members.length,
-    hasPendingInvites: cloudDetail.invites.isNotEmpty,
-    canViewMembers: detail.capabilities.canViewMembers,
+  /// Classifies sharing from the server's current role, roster, and invitations.
+  static WorkspaceLocationInfo _fromCloudWorkspace({
+    required String role,
+    required int memberCount,
+    required bool hasPendingInvites,
+    required bool canViewMembers,
+  }) => WorkspaceLocationInfo(
+    kind: role != 'owner' || memberCount > 1 || hasPendingInvites
+        ? .teamWorkspace
+        : .personalCloud,
+    canViewMembers: canViewMembers,
   );
 }
-
-/// Classifies sharing from the server's current role, roster, and invitations.
-WorkspaceLocationInfo cloudWorkspaceLocationInfo({
-  required String role,
-  required int memberCount,
-  required bool hasPendingInvites,
-  required bool canViewMembers,
-}) => WorkspaceLocationInfo(
-  kind: role != 'owner' || memberCount > 1 || hasPendingInvites
-      ? .teamWorkspace
-      : .personalCloud,
-  canViewMembers: canViewMembers,
-);
