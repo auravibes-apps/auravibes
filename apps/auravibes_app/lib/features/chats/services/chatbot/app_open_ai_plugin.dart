@@ -85,18 +85,12 @@ class AppOpenAIPlugin extends GenkitPlugin {
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
     CancellableProviderClient transport,
   ) => http.runWithClient(
-    () => _runModel(model, request, context),
+    () => model.run(
+      request,
+      onChunk: context.streamingRequested ? context.sendChunk : null,
+      context: context.context,
+      cancel: context.cancel,
+    ),
     () => transport,
-  );
-
-  Future<RunResult<ModelResponse>> _runModel(
-    Model<dynamic> model,
-    ModelRequest request,
-    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
-  ) => model.run(
-    request,
-    onChunk: context.streamingRequested ? context.sendChunk : null,
-    context: context.context,
-    cancel: context.cancel,
   );
 }
