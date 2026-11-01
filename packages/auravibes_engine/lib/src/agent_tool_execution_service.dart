@@ -76,6 +76,19 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
   void logToolExecutionError(AgentToolExecutionErrorRequest<TTool> request);
 }
 
+typedef _AgentToolPreparationResult<TTool extends Object> = ({
+  AgentToolToCall<TTool>? grantedTool,
+  bool hasPendingApproval,
+  AgentToolResultUpdate? update,
+});
+
+typedef _PreparedAgentTools<TTool extends Object> = ({
+  List<AgentToolToCall<TTool>> grantedTools,
+  bool hasPendingTools,
+  List<AgentToolResultUpdate> updates,
+  Map<String, String> outcomeFingerprintsByCallId,
+});
+
 class const AgentToolExecutionService<TTool extends Object>({
   required final AgentToolExecutionProvider<TTool> provider,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
@@ -106,18 +119,9 @@ class const AgentToolExecutionService<TTool extends Object>({
     final latestToolCalls = await provider.loadLatestToolCalls(
       conversationId: conversationId,
     );
-    final modelToolNamesByCallId = {
-      for (final call in latestToolCalls.allToolCalls) call.id: call.name,
-    };
-    String toolNameFor(AgentToolToCall<TTool> call) =>
-        modelToolNamesByCallId[call.id] ?? provider.toolIdentifier(call.tool);
-    final updates = <AgentToolResultUpdate>[];
-    var hasPendingTools = latestToolCalls.pendingApprovalToolCallIds.isNotEmpty;
-
     if (!latestToolCalls.hasToolCalls) {
       return const AgentLoopToolResult(decision: .done);
     }
-
     if (provider.isCancellationRequested(conversationId)) {
       await provider.stopPendingTools(
         messageId: latestToolCalls.messageId,
@@ -127,205 +131,297 @@ class const AgentToolExecutionService<TTool extends Object>({
       return const AgentLoopToolResult(decision: .done);
     }
 
-    _addNotFoundToolUpdates(latestToolCalls, updates);
-    _addPreviouslyFailedToolUpdates(latestToolCalls, updates);
-
-    final grantedTools = <AgentToolToCall<TTool>>[];
-    final outcomeFingerprintsByCallId = <String, String>{};
-    for (final toolToCall in latestToolCalls.toolsToRun) {
-      if (provider.isCancellationRequested(conversationId)) {
-        updates.add(
-          AgentToolResultUpdate(
-            toolCallId: toolToCall.id,
-            resultStatus: .stoppedByUser,
-          ),
-        );
-        continue;
-      }
-
-      final decision = await provider.resolveToolApprovalDecision((
-        conversationId: conversationId,
-        workspaceId: workspaceId,
-        toolCallId: toolToCall.id,
-        resolvedTool: toolToCall.tool,
-        argumentsRaw: toolToCall.argumentsRaw,
-      ));
-
-      if (provider.isCancellationRequested(conversationId)) {
-        updates.add(
-          AgentToolResultUpdate(
-            toolCallId: toolToCall.id,
-            resultStatus: .stoppedByUser,
-          ),
-        );
-        continue;
-      }
-
-      switch (decision.permissionResult) {
-        case .granted:
-          grantedTools.add(toolToCall);
-        case .needsConfirmation:
-          hasPendingTools = true;
-          updates.add(
-            AgentToolResultUpdate(
-              toolCallId: toolToCall.id,
-              resultStatus: null,
-              approvalRequested: true,
-            ),
-          );
-        case .disabledInConversation:
-          final update = AgentToolResultUpdate(
-            toolCallId: toolToCall.id,
-            resultStatus: .disabledInConversation,
-            responseRaw:
-                'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
-                'disabled for '
-                'this conversation.',
-          );
-          updates.add(update);
-          if (captureLoopFingerprint) {
-            outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(
-                  toolToCall,
-                  update,
-                  toolName: toolNameFor(toolToCall),
-                );
-          }
-        case .disabledByAgent:
-          final update = AgentToolResultUpdate(
-            toolCallId: toolToCall.id,
-            resultStatus: .disabledByAgent,
-            responseRaw:
-                'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
-                'denied by the selected agent.',
-          );
-          updates.add(update);
-          if (captureLoopFingerprint) {
-            outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(
-                  toolToCall,
-                  update,
-                  toolName: toolNameFor(toolToCall),
-                );
-          }
-        case .disabledInWorkspace:
-          final update = AgentToolResultUpdate(
-            toolCallId: toolToCall.id,
-            resultStatus: .disabledInWorkspace,
-            responseRaw:
-                'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
-                'disabled in '
-                'workspace settings.',
-          );
-          updates.add(update);
-          if (captureLoopFingerprint) {
-            outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(
-                  toolToCall,
-                  update,
-                  toolName: toolNameFor(toolToCall),
-                );
-          }
-        case .notConfigured:
-          final update = AgentToolResultUpdate(
-            toolCallId: toolToCall.id,
-            resultStatus: .notConfigured,
-            responseRaw:
-                'Tool "${provider.toolIdentifier(toolToCall.tool)}" is not '
-                'configured. Enable it in workspace settings to use it.',
-          );
-          updates.add(update);
-          if (captureLoopFingerprint) {
-            outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(
-                  toolToCall,
-                  update,
-                  toolName: toolNameFor(toolToCall),
-                );
-          }
-      }
-    }
-
-    if (updates.isNotEmpty) {
+    final prepared = await _prepareAgentTools(
+      latestToolCalls: latestToolCalls,
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      captureLoopFingerprint: captureLoopFingerprint,
+    );
+    if (prepared.updates.isNotEmpty) {
       await provider.updateToolResults(
         messageId: latestToolCalls.messageId,
         conversationId: conversationId,
-        updates: updates,
+        updates: prepared.updates,
       );
     }
 
-    if (grantedTools.isNotEmpty) {
-      var updateChain = Future<void>.value();
+    await _runGrantedTools(
+      grantedTools: prepared.grantedTools,
+      latestToolCalls: latestToolCalls,
+      conversationId: conversationId,
+      captureLoopFingerprint: captureLoopFingerprint,
+      outcomeFingerprintsByCallId: prepared.outcomeFingerprintsByCallId,
+    );
 
-      Future<void> persistResult(AgentToolResultUpdate update) {
-        final next = updateChain.then(
-          (_) => provider.updateToolResults(
-            messageId: latestToolCalls.messageId,
-            conversationId: conversationId,
-            updates: [update],
-          ),
-        );
-        updateChain = next;
+    return await _agentLoopResult(
+      latestToolCalls: latestToolCalls,
+      conversationId: conversationId,
+      hasPendingTools: prepared.hasPendingTools,
+      captureLoopFingerprint: captureLoopFingerprint,
+      outcomeFingerprintsByCallId: prepared.outcomeFingerprintsByCallId,
+      updates: prepared.updates,
+    );
+  }
 
-        return next;
+  Future<_PreparedAgentTools<TTool>> _prepareAgentTools({
+    required LoadLatestMessageToolCallsResult<TTool> latestToolCalls,
+    required String conversationId,
+    required String workspaceId,
+    required bool captureLoopFingerprint,
+  }) async {
+    final updates = <AgentToolResultUpdate>[];
+    _addNotFoundToolUpdates(latestToolCalls, updates);
+    _addPreviouslyFailedToolUpdates(latestToolCalls, updates);
+
+    final modelToolNamesByCallId = {
+      for (final call in latestToolCalls.allToolCalls) call.id: call.name,
+    };
+    final grantedTools = <AgentToolToCall<TTool>>[];
+    final outcomeFingerprintsByCallId = <String, String>{};
+    var hasPendingTools = latestToolCalls.pendingApprovalToolCallIds.isNotEmpty;
+
+    for (final toolToCall in latestToolCalls.toolsToRun) {
+      final result = await _prepareAgentTool(
+        toolToCall: toolToCall,
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+      );
+      if (result.grantedTool case final grantedTool?) {
+        grantedTools.add(grantedTool);
       }
-
-      await AgentToolBatchExecutor<TTool>(
-        runResolvedTool: provider.runResolvedTool,
-        isCancellationRequested: provider.isCancellationRequested,
-        logToolExecutionError: provider.logToolExecutionError,
-        captureOutputDigest: captureLoopFingerprint,
-        outputPolicyForTool: outputPolicyForTool,
-      ).call(
-        grantedTools.map(
-          (tool) => AgentToolBatchCall(
-            conversationId: conversationId,
-            messageId: latestToolCalls.messageId,
-            toolCallId: tool.id,
-            tool: tool.tool,
-            argumentsRaw: tool.argumentsRaw,
-          ),
-        ),
-        onResult: (batchResult) {
-          final update = AgentToolResultUpdate(
-            toolCallId: batchResult.call.toolCallId,
-            resultStatus: batchResult.result.resultStatus,
-            responseRaw: batchResult.result.responseRaw,
-            responseContextRaw: batchResult.result.responseContextRaw,
-            media: batchResult.result.media,
-            outputTruncated: batchResult.result.outputTruncated,
-            originalResponseBytes: batchResult.result.originalResponseBytes,
-            fullOutputForContext: batchResult.result.fullOutputForContext,
+      if (result.hasPendingApproval) hasPendingTools = true;
+      if (result.update case final update?) {
+        updates.add(update);
+        if (captureLoopFingerprint && update.resultStatus != null) {
+          outcomeFingerprintsByCallId[toolToCall.id] = _fingerprintToolOutcome(
+            toolToCall,
+            update,
+            toolName:
+                modelToolNamesByCallId[toolToCall.id] ??
+                provider.toolIdentifier(toolToCall.tool),
           );
-          if (captureLoopFingerprint) {
-            outcomeFingerprintsByCallId[batchResult.call.toolCallId] =
-                _fingerprintToolOutcome(
-                  AgentToolToCall(
-                    tool: batchResult.call.tool,
-                    id: batchResult.call.toolCallId,
-                    argumentsRaw: batchResult.call.argumentsRaw,
-                  ),
-                  update,
-                  toolName:
-                      modelToolNamesByCallId[batchResult.call.toolCallId] ??
-                      provider.toolIdentifier(batchResult.call.tool),
-                  outputDigest: batchResult.result.outputDigest,
-                );
-          }
-
-          return persistResult(update);
-        },
-      );
+        }
+      }
     }
 
+    return (
+      grantedTools: grantedTools,
+      hasPendingTools: hasPendingTools,
+      updates: updates,
+      outcomeFingerprintsByCallId: outcomeFingerprintsByCallId,
+    );
+  }
+
+  Future<_AgentToolPreparationResult<TTool>> _prepareAgentTool({
+    required AgentToolToCall<TTool> toolToCall,
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    if (provider.isCancellationRequested(conversationId)) {
+      return _stoppedToolResult(toolToCall);
+    }
+
+    final decision = await provider.resolveToolApprovalDecision((
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolCallId: toolToCall.id,
+      resolvedTool: toolToCall.tool,
+      argumentsRaw: toolToCall.argumentsRaw,
+    ));
+    if (provider.isCancellationRequested(conversationId)) {
+      return _stoppedToolResult(toolToCall);
+    }
+
+    return switch (decision.permissionResult) {
+      .granted => (
+        grantedTool: toolToCall,
+        hasPendingApproval: false,
+        update: null,
+      ),
+      .needsConfirmation => (
+        grantedTool: null,
+        hasPendingApproval: true,
+        update: AgentToolResultUpdate(
+          toolCallId: toolToCall.id,
+          resultStatus: null,
+          approvalRequested: true,
+        ),
+      ),
+      .disabledInConversation ||
+      .disabledByAgent ||
+      .disabledInWorkspace ||
+      .notConfigured => (
+        grantedTool: null,
+        hasPendingApproval: false,
+        update: _permissionDeniedUpdate(toolToCall, decision.permissionResult),
+      ),
+    };
+  }
+
+  _AgentToolPreparationResult<TTool> _stoppedToolResult(
+    AgentToolToCall<TTool> toolToCall,
+  ) => (
+    grantedTool: null,
+    hasPendingApproval: false,
+    update: AgentToolResultUpdate(
+      toolCallId: toolToCall.id,
+      resultStatus: .stoppedByUser,
+    ),
+  );
+
+  AgentToolResultUpdate _permissionDeniedUpdate(
+    AgentToolToCall<TTool> toolToCall,
+    AgentToolPermissionResult permissionResult,
+  ) {
+    final toolName = provider.toolIdentifier(toolToCall.tool);
+
+    return switch (permissionResult) {
+      .disabledInConversation => AgentToolResultUpdate(
+        toolCallId: toolToCall.id,
+        resultStatus: .disabledInConversation,
+        responseRaw: 'Tool "$toolName" is disabled for this conversation.',
+      ),
+      .disabledByAgent => AgentToolResultUpdate(
+        toolCallId: toolToCall.id,
+        resultStatus: .disabledByAgent,
+        responseRaw: 'Tool "$toolName" is denied by the selected agent.',
+      ),
+      .disabledInWorkspace => AgentToolResultUpdate(
+        toolCallId: toolToCall.id,
+        resultStatus: .disabledInWorkspace,
+        responseRaw: 'Tool "$toolName" is disabled in workspace settings.',
+      ),
+      .notConfigured => AgentToolResultUpdate(
+        toolCallId: toolToCall.id,
+        resultStatus: .notConfigured,
+        responseRaw:
+            'Tool "$toolName" is not configured. Enable it in workspace '
+            'settings to use it.',
+      ),
+      .granted || .needsConfirmation => throw StateError(
+        'Expected a permission-denied result.',
+      ),
+    };
+  }
+
+  Future<void> _runGrantedTools({
+    required List<AgentToolToCall<TTool>> grantedTools,
+    required LoadLatestMessageToolCallsResult<TTool> latestToolCalls,
+    required String conversationId,
+    required bool captureLoopFingerprint,
+    required Map<String, String> outcomeFingerprintsByCallId,
+  }) async {
+    if (grantedTools.isEmpty) return;
+
+    final modelToolNamesByCallId = {
+      for (final call in latestToolCalls.allToolCalls) call.id: call.name,
+    };
+    var updateChain = Future<void>.value();
+
+    Future<void> persistResult(AgentToolResultUpdate update) {
+      final next = updateChain.then(
+        (_) => provider.updateToolResults(
+          messageId: latestToolCalls.messageId,
+          conversationId: conversationId,
+          updates: [update],
+        ),
+      );
+      updateChain = next;
+
+      return next;
+    }
+
+    await AgentToolBatchExecutor<TTool>(
+      runResolvedTool: provider.runResolvedTool,
+      isCancellationRequested: provider.isCancellationRequested,
+      logToolExecutionError: provider.logToolExecutionError,
+      captureOutputDigest: captureLoopFingerprint,
+      outputPolicyForTool: outputPolicyForTool,
+    ).call(
+      grantedTools.map(
+        (tool) => AgentToolBatchCall(
+          conversationId: conversationId,
+          messageId: latestToolCalls.messageId,
+          toolCallId: tool.id,
+          tool: tool.tool,
+          argumentsRaw: tool.argumentsRaw,
+        ),
+      ),
+      onResult: (batchResult) => _persistGrantedToolResult(
+        batchResult: batchResult,
+        captureLoopFingerprint: captureLoopFingerprint,
+        modelToolNamesByCallId: modelToolNamesByCallId,
+        outcomeFingerprintsByCallId: outcomeFingerprintsByCallId,
+        persistResult: persistResult,
+      ),
+    );
+  }
+
+  Future<void> _persistGrantedToolResult({
+    required AgentToolBatchResult<TTool> batchResult,
+    required bool captureLoopFingerprint,
+    required Map<String, String> modelToolNamesByCallId,
+    required Map<String, String> outcomeFingerprintsByCallId,
+    required Future<void> Function(AgentToolResultUpdate) persistResult,
+  }) {
+    final update = AgentToolResultUpdate(
+      toolCallId: batchResult.call.toolCallId,
+      resultStatus: batchResult.result.resultStatus,
+      responseRaw: batchResult.result.responseRaw,
+      responseContextRaw: batchResult.result.responseContextRaw,
+      media: batchResult.result.media,
+      outputTruncated: batchResult.result.outputTruncated,
+      originalResponseBytes: batchResult.result.originalResponseBytes,
+      fullOutputForContext: batchResult.result.fullOutputForContext,
+    );
+    if (captureLoopFingerprint) {
+      outcomeFingerprintsByCallId[batchResult.call.toolCallId] =
+          _fingerprintToolOutcome(
+            AgentToolToCall(
+              tool: batchResult.call.tool,
+              id: batchResult.call.toolCallId,
+              argumentsRaw: batchResult.call.argumentsRaw,
+            ),
+            update,
+            toolName:
+                modelToolNamesByCallId[batchResult.call.toolCallId] ??
+                provider.toolIdentifier(batchResult.call.tool),
+            outputDigest: batchResult.result.outputDigest,
+          );
+    }
+
+    return persistResult(update);
+  }
+
+  Future<AgentLoopToolResult> _agentLoopResult({
+    required LoadLatestMessageToolCallsResult<TTool> latestToolCalls,
+    required String conversationId,
+    required bool hasPendingTools,
+    required bool captureLoopFingerprint,
+    required Map<String, String> outcomeFingerprintsByCallId,
+    required List<AgentToolResultUpdate> updates,
+  }) async {
     if (hasPendingTools) {
       return const AgentLoopToolResult(decision: .waitForToolApproval);
     }
-
     if (provider.isCancellationRequested(conversationId)) {
       return const AgentLoopToolResult(decision: .done);
     }
 
+    return await _resultForIterationDecision(
+      latestToolCalls: latestToolCalls,
+      captureLoopFingerprint: captureLoopFingerprint,
+      outcomeFingerprintsByCallId: outcomeFingerprintsByCallId,
+      updates: updates,
+    );
+  }
+
+  Future<AgentLoopToolResult> _resultForIterationDecision({
+    required LoadLatestMessageToolCallsResult<TTool> latestToolCalls,
+    required bool captureLoopFingerprint,
+    required Map<String, String> outcomeFingerprintsByCallId,
+    required List<AgentToolResultUpdate> updates,
+  }) async {
     final decision = await provider.getAgentIterationDecision(
       messageId: latestToolCalls.messageId,
     );
