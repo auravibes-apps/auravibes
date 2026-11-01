@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_location_kind.dart';
 
@@ -15,7 +16,7 @@ class const WorkspaceLocationInfo({
     WorkspaceEntity workspace, {
     CloudWorkspaceDetailState? cloudDetail,
   }) {
-    if (workspace.isLocal) {
+    if (workspace.type.isLocal) {
       return const WorkspaceLocationInfo(kind: .onDevice);
     }
     if (cloudDetail == null) {
