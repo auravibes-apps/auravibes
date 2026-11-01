@@ -106,6 +106,11 @@ class const AgentToolExecutionService<TTool extends Object>({
     final latestToolCalls = await provider.loadLatestToolCalls(
       conversationId: conversationId,
     );
+    final modelToolNamesByCallId = {
+      for (final call in latestToolCalls.allToolCalls) call.id: call.name,
+    };
+    String toolNameFor(AgentToolToCall<TTool> call) =>
+        modelToolNamesByCallId[call.id] ?? provider.toolIdentifier(call.tool);
     final updates = <AgentToolResultUpdate>[];
     var hasPendingTools = latestToolCalls.pendingApprovalToolCallIds.isNotEmpty;
 
@@ -180,7 +185,11 @@ class const AgentToolExecutionService<TTool extends Object>({
           updates.add(update);
           if (captureLoopFingerprint) {
             outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(toolToCall, update);
+                _fingerprintToolOutcome(
+                  toolToCall,
+                  update,
+                  toolName: toolNameFor(toolToCall),
+                );
           }
         case .disabledByAgent:
           final update = AgentToolResultUpdate(
@@ -193,7 +202,11 @@ class const AgentToolExecutionService<TTool extends Object>({
           updates.add(update);
           if (captureLoopFingerprint) {
             outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(toolToCall, update);
+                _fingerprintToolOutcome(
+                  toolToCall,
+                  update,
+                  toolName: toolNameFor(toolToCall),
+                );
           }
         case .disabledInWorkspace:
           final update = AgentToolResultUpdate(
@@ -207,7 +220,11 @@ class const AgentToolExecutionService<TTool extends Object>({
           updates.add(update);
           if (captureLoopFingerprint) {
             outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(toolToCall, update);
+                _fingerprintToolOutcome(
+                  toolToCall,
+                  update,
+                  toolName: toolNameFor(toolToCall),
+                );
           }
         case .notConfigured:
           final update = AgentToolResultUpdate(
@@ -220,7 +237,11 @@ class const AgentToolExecutionService<TTool extends Object>({
           updates.add(update);
           if (captureLoopFingerprint) {
             outcomeFingerprintsByCallId[toolToCall.id] =
-                _fingerprintToolOutcome(toolToCall, update);
+                _fingerprintToolOutcome(
+                  toolToCall,
+                  update,
+                  toolName: toolNameFor(toolToCall),
+                );
           }
       }
     }
@@ -285,6 +306,9 @@ class const AgentToolExecutionService<TTool extends Object>({
                     argumentsRaw: batchResult.call.argumentsRaw,
                   ),
                   update,
+                  toolName:
+                      modelToolNamesByCallId[batchResult.call.toolCallId] ??
+                      provider.toolIdentifier(batchResult.call.tool),
                   outputDigest: batchResult.result.outputDigest,
                 );
           }
@@ -376,9 +400,10 @@ class const AgentToolExecutionService<TTool extends Object>({
   String _fingerprintToolOutcome(
     AgentToolToCall<TTool> call,
     AgentToolResultUpdate update, {
+    required String toolName,
     String? outputDigest,
   }) => agentToolOutcomeFingerprint(
-    toolName: provider.toolIdentifier(call.tool),
+    toolName: toolName,
     argumentsRaw: call.argumentsRaw,
     resultStatus: update.resultStatus!,
     responseRaw: update.responseRaw,

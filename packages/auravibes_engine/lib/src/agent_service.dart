@@ -83,10 +83,14 @@ class const AgentService({
 
       final _AgentIterationStep result;
       try {
+        final previousContext = currentContext;
         currentContext = await _withQueuedDrafts(
           conversationId: conversationId,
           context: currentContext,
         );
+        if (currentContext != previousContext) {
+          recentToolFingerprints.clear();
+        }
         result = await _runIteration(
           conversationId: conversationId,
           workspaceId: workspaceId,
@@ -119,7 +123,10 @@ class const AgentService({
         return result.decision;
       }
       final fingerprint = result.toolFingerprint;
-      if (fingerprint == null) continue;
+      if (fingerprint == null) {
+        recentToolFingerprints.clear();
+        continue;
+      }
       if (hasRepeatedNoProgressToolCycle(recentToolFingerprints, fingerprint)) {
         return AgentIterationDecision.repeatedToolLoopDetected;
       }
