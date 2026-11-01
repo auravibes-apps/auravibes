@@ -370,26 +370,29 @@ void main() {
       completer.complete();
     });
 
-    test('reports an iteration limit from a first message', () async {
-      final iterationLimitReported = Completer<void>();
+    test('reports an agent stop from a first message', () async {
+      final agentStopReported = Completer<void>();
       when(
         () => fixture.runAgentIterationUsecase.call(
           conversationId: any(named: 'conversationId'),
           context: any(named: 'context'),
         ),
-      ).thenAnswer((_) async => AgentIterationDecision.iterationLimitReached);
+      ).thenAnswer(
+        (_) async => AgentIterationDecision.repeatedToolLoopDetected,
+      );
 
       await fixture.usecase.sendFirstMessage(
         conversationId: 'conversation-1',
         draft: const ChatDraft(text: 'Hello'),
         onContinueError: (error, stackTrace) =>
             fail('Unexpected continuation error: $error'),
-        onIterationLimit: (conversationId) {
+        onAgentStop: (conversationId, decision) {
           expect(conversationId, 'conversation-1');
-          iterationLimitReported.complete();
+          expect(decision, AgentIterationDecision.repeatedToolLoopDetected);
+          agentStopReported.complete();
         },
       );
-      await iterationLimitReported.future;
+      await agentStopReported.future;
     });
   });
 }

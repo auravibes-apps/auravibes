@@ -1,6 +1,6 @@
 # Agent operations
 
-Read only the section relevant to PR check monitoring, GitHub CLI merge preflight, CI failure diagnosis, Codemagic release triage, database queries, or native Flutter driver control.
+Read only the section relevant to PR delivery and review, PR check monitoring, GitHub CLI merge preflight, CI failure diagnosis, Codemagic release triage, database queries, or native Flutter driver control.
 
 ## CI failure triage
 
@@ -46,6 +46,53 @@ gh pr checks <number> --json name,bucket \
 - `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
+
+## PR delivery and review
+
+Local diff review is the default. A request to review code before creating a Draft PR authorizes review work; by itself, it does not authorize sharing the diff with an external reviewer. Do not infer consent from an installed integration or from a general request to review.
+
+Before invoking a third-party review service, tell the user which service will receive the material and exactly what it will receive: the full diff or selected files, repository and branch, commit identifiers, and any additional comments or context. Get explicit consent for that provider and scope before sending it. If the user already named the service and explicitly authorized the exact material and scope, proceed without asking again.
+
+Keep local and external review results separate. Report local findings independently from provider findings. If an external review is declined, skipped, or unavailable, state that status and its reason; do not count it as a completed review.
+
+## Local validation evidence
+
+`tool/validation_evidence.py` records a command against its Git commit and a
+fingerprint of tracked changes, untracked files, renames, and deletions. The
+fingerprint is a digest; source contents and command output are not stored.
+Command arguments are saved in redacted form, and inherited environment
+variables are never recorded. Evidence lives in the user's local state
+directory, outside tracked source.
+
+Run a check and reuse a matching successful result when the command, toolchain,
+and source snapshot are unchanged:
+
+```sh
+cd apps/auravibes_app
+python3 ../../tool/validation_evidence.py run --reuse --package . -- \
+  fvm dart analyze lib --fatal-infos --fatal-warnings
+```
+
+Use `--toolchain-version` when the tool cannot be identified safely from its
+standard version switch. Use `--redact-arg INDEX` for a command argument that
+must be omitted from the saved command; indexes start at zero after `--`.
+Redacted commands are not eligible for evidence reuse because their arguments
+cannot be compared safely.
+
+Record an intentional skip without claiming validation, then inspect evidence
+in human or machine-readable form:
+
+```sh
+cd apps/auravibes_app
+python3 ../../tool/validation_evidence.py skip --reason "not applicable" -- \
+  fvm dart analyze lib --fatal-infos --fatal-warnings
+python3 ../../tool/validation_evidence.py list
+python3 ../../tool/validation_evidence.py list --json
+```
+
+An interrupted or timed out command remains `incomplete` without a known exit
+code. `cancelled` and `skipped` are separate states. `list` marks successful
+results `stale` when HEAD or the source fingerprint no longer matches.
 
 ## GitHub CLI merge preflight
 

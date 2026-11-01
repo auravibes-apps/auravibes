@@ -16,6 +16,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/models/resolved_chat_message.dart';
 import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -319,7 +320,7 @@ class const ChatMessagesWidget({
       for (final message in targetMessages ?? const <MessageEntity>[])
         message.id: message,
     };
-    final resolvedMessages = <_ResolvedChatMessage?>[];
+    final resolvedMessages = <ResolvedChatMessage?>[];
     final focusedMessageId = GoRouter.maybeOf(context) == null
         ? null
         : GoRouterState.of(context).uri.queryParameters['message-id'] ??
@@ -352,13 +353,13 @@ class const ChatMessagesWidget({
       resolvedMessages.add(
         message == null
             ? null
-            : _ResolvedChatMessage(message: message, isStreaming: isStreaming),
+            : ResolvedChatMessage(message: message, isStreaming: isStreaming),
       );
     }
     if (focusedMessage != null &&
         !effectiveMessageIds.contains(focusedMessage.id)) {
       resolvedMessages.add(
-        _ResolvedChatMessage(message: focusedMessage, isStreaming: false),
+        ResolvedChatMessage(message: focusedMessage, isStreaming: false),
       );
     }
     if (targetMessageId != null &&
@@ -408,13 +409,16 @@ class const ChatMessagesWidget({
         ),
       );
     }
-    final data = _buildChatTimelineItems(
+    final data = ChatTimelineProjection.buildChatTimelineItems(
       resolvedMessages,
       submittedA2uiReplayPayloads,
       searchTargetMessageId: targetMessageId,
       pendingToolCallKeys: {
         for (final pendingCall in pendingToolCalls)
-          _activityToolCallKey(pendingCall.messageId, pendingCall.toolCall.id),
+          ChatTimelineProjection.activityToolCallKey(
+            pendingCall.messageId,
+            pendingCall.toolCall.id,
+          ),
       },
     ).reversed.toList(growable: false);
     final assistantResponseProgress = <ChatAssistantResponseProgress>[
@@ -428,16 +432,18 @@ class const ChatMessagesWidget({
             messageId: source.message.id,
             isStreaming: source.isStreaming,
             status: source.message.status,
-            hasResponse: _hasAssistantResponseCandidate(
+            hasResponse: ChatTimelineProjection.hasAssistantResponseCandidate(
               source,
               submittedA2uiReplayPayloads,
             ),
             isAwaitingUserAction:
                 source.message.status == MessageStatus.unfinished &&
-                _hasA2uiMessageState(source.message),
+                ChatTimelineMessagePolicy.hasA2uiMessageState(source.message),
           ),
     ];
-    final retryableMessageId = _retryableUserMessageId(resolvedMessages);
+    final retryableMessageId = ChatTimelineRetryPolicy.retryableUserMessageId(
+      resolvedMessages,
+    );
 
     void updateDisclosure(VoidCallback update) => update();
 
@@ -792,7 +798,7 @@ void _showConversationSkillPicker(
 Widget _buildChatTimelineItem({
   required BuildContext context,
   required int index,
-  required List<_ChatTimelineItem> data,
+  required List<ChatTimelineItem> data,
   required String? focusedMessageId,
   required bool showThinking,
   required bool isCompacting,
@@ -826,11 +832,11 @@ Widget _buildChatTimelineItem({
   final isTopLevelConversation =
       conversation != null && conversation.parentConversationId == null;
   final messageId = switch (item) {
-    _ActivityRunTimelineItem(:final run) => run.responseMessageId,
-    _MessageTimelineItem(:final source) => source.message.id,
+    ActivityRunTimelineItem(:final run) => run.responseMessageId,
+    MessageTimelineItem(:final source) => source.message.id,
   };
   final child = switch (item) {
-    _ActivityRunTimelineItem(:final run) => _AssistantActivityRun(
+    ActivityRunTimelineItem(:final run) => _AssistantActivityRun(
       key: ValueKey('activity_trace_${run.id}'),
       run: run,
       onDisclosureChanged: onDisclosureChanged,
@@ -849,7 +855,7 @@ Widget _buildChatTimelineItem({
       onRetryMessage: onRetryMessage,
       onOpenToolResult: onOpenToolResult,
     ),
-    _MessageTimelineItem(
+    MessageTimelineItem(
       :final source,
       :final activityRenderedInSession,
       :final showResponseActions,
@@ -909,12 +915,12 @@ Widget _buildChatTimelineItem({
   return focused;
 }
 
-bool _timelineItemContainsMessageId(_ChatTimelineItem item, String messageId) =>
+bool _timelineItemContainsMessageId(ChatTimelineItem item, String messageId) =>
     switch (item) {
-      _ActivityRunTimelineItem(:final run) => run.sources.any(
+      ActivityRunTimelineItem(:final run) => run.sources.any(
         (source) => source.message.id == messageId,
       ),
-      _MessageTimelineItem(:final source) => source.message.id == messageId,
+      MessageTimelineItem(:final source) => source.message.id == messageId,
     };
 
 VoidCallback? _focusMessageEffect({
@@ -1004,328 +1010,15 @@ Future<void> _focusMessage({
   }
 }
 
-class _ResolvedChatMessage {
-  const _ResolvedChatMessage({
-    required this.message,
-    required this.isStreaming,
-  });
-
-  final MessageEntity message;
-  final bool isStreaming;
-}
-
-sealed class _ChatTimelineItem {
-  const _ChatTimelineItem();
-}
-
-class _ActivityRunTimelineItem extends _ChatTimelineItem {
-  const _ActivityRunTimelineItem(this.run);
-
-  final _ActivityRun run;
-}
-
-class _MessageTimelineItem extends _ChatTimelineItem {
-  const _MessageTimelineItem(
-    this.source, {
-    this.activityRenderedInSession = false,
-    this.showResponseActions = true,
-  });
-
-  final _ResolvedChatMessage source;
-  final bool activityRenderedInSession;
-  final bool showResponseActions;
-}
-
-class _ActivityRun {
-  const _ActivityRun(
-    this.sources, {
-    this.activityContentMessageIds = const {},
-    this.richResponseMessageIds = const {},
-    this.pendingToolCallKeys = const {},
-    this.responseMessageId,
-  });
-
-  final List<_ResolvedChatMessage> sources;
-  final Set<String> activityContentMessageIds;
-  final Set<String> richResponseMessageIds;
-  final Set<String> pendingToolCallKeys;
-  final String? responseMessageId;
-
-  String get id => sources.first.message.id;
-}
-
-typedef _ActivityToolCall = ({
-  String messageId,
-  MessageToolCallEntity toolCall,
-  bool isForkReference,
-  bool isStreaming,
-  bool hideArguments,
-});
-
-String _activityToolCallKey(String messageId, String toolCallId) =>
-    '$messageId:$toolCallId';
-
-sealed class _ActivityRunEntry {
-  const _ActivityRunEntry();
-}
-
-class _ActivityNarrativeEntry extends _ActivityRunEntry {
-  const _ActivityNarrativeEntry({
-    required this.messageId,
-    required this.content,
-  });
-
-  final String messageId;
-  final String content;
-}
-
-class _ActivityThinkingEntry extends _ActivityRunEntry {
-  const _ActivityThinkingEntry({
-    required this.messageId,
-    required this.content,
-  });
-
-  final String messageId;
-  final String content;
-}
-
-class _ActivityResponseEntry extends _ActivityRunEntry {
-  const _ActivityResponseEntry(this.source, {required this.isFinal});
-
-  final _ResolvedChatMessage source;
-  final bool isFinal;
-}
-
-class _ActivityToolGroupEntry extends _ActivityRunEntry {
-  const _ActivityToolGroupEntry(this.toolCalls);
-
-  final List<_ActivityToolCall> toolCalls;
-}
-
-List<_ActivityRunEntry> _buildActivityRunEntries(_ActivityRun run) {
-  final entries = <_ActivityRunEntry>[];
-  final toolCalls = <_ActivityToolCall>[];
-
-  void addToolGroup() {
-    if (toolCalls.isEmpty) return;
-    entries.add(_ActivityToolGroupEntry(List.of(toolCalls)));
-    toolCalls.clear();
-  }
-
-  for (final source in run.sources) {
-    final messageId = source.message.id;
-
-    final thinking = source.message.metadata?.thinking?.trim();
-    if (thinking != null && thinking.isNotEmpty) {
-      addToolGroup();
-      entries.add(
-        _ActivityThinkingEntry(messageId: messageId, content: thinking),
-      );
-    }
-
-    if (run.responseMessageId == messageId) {
-      entries.add(_ActivityResponseEntry(source, isFinal: true));
-    } else if (run.richResponseMessageIds.contains(messageId)) {
-      addToolGroup();
-      entries.add(_ActivityResponseEntry(source, isFinal: false));
-    } else if (run.activityContentMessageIds.contains(messageId)) {
-      final content = source.message.content.trim();
-      if (content.isNotEmpty) {
-        addToolGroup();
-        entries.add(
-          _ActivityNarrativeEntry(messageId: messageId, content: content),
-        );
-      }
-    }
-
-    for (final toolCall
-        in source.message.metadata?.toolCalls ??
-            const <MessageToolCallEntity>[]) {
-      toolCalls.add((
-        messageId: messageId,
-        toolCall: toolCall,
-        isForkReference: source.message.isForkReference,
-        isStreaming: source.isStreaming,
-        hideArguments: run.pendingToolCallKeys.contains(
-          _activityToolCallKey(messageId, toolCall.id),
-        ),
-      ));
-    }
-  }
-  addToolGroup();
-
-  return entries;
-}
-
-String _activityToolGroupId(_ActivityToolGroupEntry entry) =>
+String _activityToolGroupId(ActivityToolGroupEntry entry) =>
     entry.toolCalls.first.messageId;
 
-bool _isLiveActivityToolGroup(_ActivityToolGroupEntry entry) =>
+bool _isLiveActivityToolGroup(ActivityToolGroupEntry entry) =>
     entry.toolCalls.any(
       (item) =>
           !item.isForkReference &&
           (item.isStreaming || item.toolCall.isPending),
     );
-
-List<_ChatTimelineItem> _buildChatTimelineItems(
-  List<_ResolvedChatMessage?> messages,
-  Map<String, List<String>> replayPayloadsByMessageId, {
-  Set<String> pendingToolCallKeys = const {},
-  String? searchTargetMessageId,
-}) {
-  final items = <_ChatTimelineItem>[];
-  final activitySources = <_ResolvedChatMessage>[];
-  final activityContentMessageIds = <String>{};
-  final richResponseMessageIds = <String>{};
-
-  void addActivityRun({String? responseMessageId}) {
-    if (activitySources.isEmpty) return;
-    final run = _ActivityRun(
-      List.of(activitySources),
-      activityContentMessageIds: Set.of(activityContentMessageIds),
-      richResponseMessageIds: Set.of(richResponseMessageIds),
-      pendingToolCallKeys: pendingToolCallKeys,
-      responseMessageId: responseMessageId,
-    );
-    if (_buildActivityRunEntries(run).isNotEmpty) {
-      items.add(_ActivityRunTimelineItem(run));
-    }
-    activitySources.clear();
-    activityContentMessageIds.clear();
-    richResponseMessageIds.clear();
-  }
-
-  for (var index = 0; index < messages.length; index++) {
-    final source = messages[index];
-    if (source == null) {
-      addActivityRun();
-      continue;
-    }
-
-    final message = source.message;
-    if (message.id == searchTargetMessageId) {
-      addActivityRun();
-      items.add(_MessageTimelineItem(source));
-      continue;
-    }
-    final hasVisibleResponse = _hasVisibleAssistantResponse(
-      message,
-      replayPayloadsByMessageId,
-    );
-    final hasFollowingAssistantActivity = _hasFollowingAssistantActivity(
-      messages,
-      index,
-    );
-    final hasToolCalls = message.metadata?.toolCalls.isNotEmpty == true;
-    final requiresMessageItem = _requiresMessageTimelineItem(
-      message,
-      replayPayloadsByMessageId,
-    );
-    final hasActivity =
-        !_isTimelineBoundary(message) &&
-        (_hasAssistantActivity(message) ||
-            (hasVisibleResponse && hasFollowingAssistantActivity));
-
-    if (hasActivity) {
-      final awaitsA2uiAction =
-          message.status == MessageStatus.unfinished &&
-          _hasA2uiMessageState(message);
-      final isFinalResponse =
-          message.status == MessageStatus.sent &&
-          hasVisibleResponse &&
-          !hasFollowingAssistantActivity &&
-          !hasToolCalls;
-      if (requiresMessageItem && (awaitsA2uiAction || isFinalResponse)) {
-        activitySources.add(source);
-        addActivityRun();
-        items.add(
-          _MessageTimelineItem(
-            source,
-            activityRenderedInSession: true,
-            showResponseActions: isFinalResponse && !source.isStreaming,
-          ),
-        );
-        continue;
-      }
-      activitySources.add(source);
-      if (hasVisibleResponse && !isFinalResponse) {
-        if (requiresMessageItem) {
-          richResponseMessageIds.add(message.id);
-        } else {
-          activityContentMessageIds.add(message.id);
-        }
-      }
-      if (isFinalResponse) {
-        addActivityRun(responseMessageId: message.id);
-      }
-      continue;
-    }
-
-    addActivityRun();
-    items.add(
-      _MessageTimelineItem(
-        source,
-        showResponseActions:
-            message.isUser ||
-            (!source.isStreaming && message.status == MessageStatus.sent),
-      ),
-    );
-  }
-  addActivityRun();
-
-  return items;
-}
-
-bool _hasFollowingAssistantActivity(
-  List<_ResolvedChatMessage?> messages,
-  int index,
-) {
-  if (index + 1 >= messages.length) return false;
-  final next = messages[index + 1];
-
-  return next == null || !_isTimelineBoundary(next.message);
-}
-
-bool _hasAssistantActivity(MessageEntity message) =>
-    _hasAssistantThinking(message) ||
-    message.metadata?.toolCalls.isNotEmpty == true;
-
-bool _hasAssistantThinking(MessageEntity message) =>
-    message.metadata?.thinking?.trim().isNotEmpty == true;
-
-bool _hasVisibleAssistantResponse(
-  MessageEntity message,
-  Map<String, List<String>> replayPayloadsByMessageId,
-) =>
-    message.content.trim().isNotEmpty ||
-    _requiresMessageTimelineItem(message, replayPayloadsByMessageId);
-
-bool _hasAssistantResponseCandidate(
-  _ResolvedChatMessage source,
-  Map<String, List<String>> replayPayloadsByMessageId,
-) {
-  if (_hasVisibleAssistantResponse(source.message, replayPayloadsByMessageId)) {
-    return true;
-  }
-
-  return source.isStreaming &&
-      source.message.metadata?.toolCalls.isNotEmpty != true;
-}
-
-bool _requiresMessageTimelineItem(
-  MessageEntity message,
-  Map<String, List<String>> replayPayloadsByMessageId,
-) =>
-    message.attachments.isNotEmpty ||
-    _hasA2uiMessageState(message) ||
-    replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
-    message.metadata?.modelMetadata['a2uiDiagnosticPayloads'] is List;
-
-bool _isTimelineBoundary(MessageEntity message) =>
-    message.isUser ||
-    message.messageType == MessageType.system ||
-    message.status == MessageStatus.error ||
-    message.metadata?.isCompactionSummary == true;
 
 bool _isErrorMessage(MessageEntity message) =>
     _isErrorSystemMessage(message) ||
@@ -1343,27 +1036,8 @@ bool _isProviderErrorMessage(MessageEntity message) =>
         .providerErrorKey] ==
     true;
 
-String? _retryableUserMessageId(List<_ResolvedChatMessage?> messages) {
-  for (final source in messages.reversed) {
-    final message = source?.message;
-    if (message?.isUser != true) continue;
-
-    return _canRetryUserMessage(message!) ? message.id : null;
-  }
-
-  return null;
-}
-
-bool _canRetryUserMessage(MessageEntity message) =>
-    message.isUser &&
-    !message.isForkReference &&
-    message.hasValidContent &&
-    (message.status == MessageStatus.unfinished ||
-        (message.status == MessageStatus.error &&
-            ProviderRecoveryMetadata.isRetryEligible(message)));
-
 class const _ChatMessageTimelineItem({
-  required final _ResolvedChatMessage source,
+  required final ResolvedChatMessage source,
   final bool isSearchTarget = false,
   final bool activityRenderedInSession = false,
   required final void Function(VoidCallback update) onDisclosureChanged,
@@ -1404,8 +1078,8 @@ class const _ChatMessageTimelineItem({
 
     final showActivity =
         !activityRenderedInSession &&
-        !_isTimelineBoundary(message) &&
-        _hasAssistantActivity(message);
+        !ChatTimelineMessagePolicy.isTimelineBoundary(message) &&
+        ChatTimelineMessagePolicy.hasAssistantActivity(message);
     final content = AuraColumn(
       crossAxisAlignment: message.isUser
           ? CrossAxisAlignment.end
@@ -1414,7 +1088,7 @@ class const _ChatMessageTimelineItem({
         if (showActivity)
           _AssistantActivityRun(
             key: ValueKey('activity_trace_${message.id}'),
-            run: _ActivityRun([source]),
+            run: ActivityRun([source]),
             onDisclosureChanged: onDisclosureChanged,
             parentConversationId: parentConversationId,
             childConversations: childConversations,
@@ -1471,7 +1145,7 @@ class const _ChatMessageContent({
       message: message,
       isStreaming: isStreaming,
       hasContent: hasContent,
-      hasActivity: _hasAssistantActivity(message),
+      hasActivity: ChatTimelineMessagePolicy.hasAssistantActivity(message),
     );
     final status = _messageDeliveryStatus(message, isStreaming);
     final hasA2uiResponse =
@@ -1657,7 +1331,7 @@ String? _latestA2uiMessageId(
   for (var index = messageIds.length - 1; index > latestUserIndex; index--) {
     final id = messageIds[index];
     final message = messages[id];
-    if (_hasA2uiMessageState(message)) return id;
+    if (ChatTimelineMessagePolicy.hasA2uiMessageState(message)) return id;
   }
 
   return null;
@@ -1672,16 +1346,6 @@ int _latestUserMessageIndex(
     if (messages[messageIds[index]]?.isUser == true) latestUserIndex = index;
   }
   return latestUserIndex;
-}
-
-bool _hasA2uiMessageState(MessageEntity? message) {
-  if (message == null || message.isUser || message.isForkReference)
-    return false;
-  final metadata = message.metadata;
-  if (metadata == null) return false;
-  return metadata.a2uiMessages.isNotEmpty ||
-      metadata.a2uiIssuesBySurface.isNotEmpty ||
-      metadata.a2uiMessageIssues.isNotEmpty;
 }
 
 class const _MessageAttachments({
@@ -1718,8 +1382,8 @@ Future<void> _submitA2uiAction(
   required String languageCode,
 }) async {
   try {
-    final iterationLimitNotifier = ref.read(
-      conversationIterationLimitProvider(conversationId).notifier,
+    final agentStopNotifier = ref.read(
+      conversationAgentStopDecisionProvider(conversationId).notifier,
     );
     final decision = await ref
         .read(sendMessageUsecaseProvider(workspaceId))
@@ -1731,7 +1395,7 @@ Future<void> _submitA2uiAction(
             languageCode: languageCode,
           ),
         );
-    iterationLimitNotifier.markIfIterationLimitReached(decision);
+    agentStopNotifier.markIfAgentStopDecision(decision);
   } on Object catch (error, stackTrace) {
     runtime.rejectFormSubmission(action.surfaceId);
     _a2uiLogger.warning(
@@ -2192,7 +1856,7 @@ class const _AiMessageContent({
 }
 
 class const _AssistantActivityRun({
-  required final _ActivityRun run,
+  required final ActivityRun run,
   required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
@@ -2213,25 +1877,24 @@ class const _AssistantActivityRun({
     final mcpAppControllers = useMemoized(
       () => <String, McpAppToolResultController>{},
     );
-    final activityEntries = _buildActivityRunEntries(run);
+    final activityEntries = run.buildEntries();
     final responseEntryIndex = activityEntries.indexWhere(
-      (entry) => entry is _ActivityResponseEntry && entry.isFinal,
+      (entry) => entry is ActivityResponseEntry && entry.isFinal,
     );
     final entriesBeforeResponse = responseEntryIndex < 0
         ? activityEntries
         : activityEntries.take(responseEntryIndex).toList(growable: false);
     final entriesAfterResponse = responseEntryIndex < 0
-        ? const <_ActivityRunEntry>[]
+        ? const <ActivityRunEntry>[]
         : activityEntries.skip(responseEntryIndex + 1).toList(growable: false);
     final responseSource = responseEntryIndex < 0
         ? null
-        : (activityEntries[responseEntryIndex] as _ActivityResponseEntry)
-              .source;
+        : (activityEntries[responseEntryIndex] as ActivityResponseEntry).source;
     final toolGroupEntries = [
       for (final entry in activityEntries)
-        if (entry is _ActivityToolGroupEntry) entry,
+        if (entry is ActivityToolGroupEntry) entry,
     ];
-    final toolCalls = <_ActivityToolCall>[
+    final toolCalls = <ActivityToolCall>[
       for (final entry in toolGroupEntries) ...entry.toolCalls,
     ];
     final expandableToolGroupIds = {
@@ -2576,11 +2239,8 @@ class const _AssistantActivityRun({
       },
     );
 
-    Widget activityEntry(_ActivityRunEntry entry) {
-      if (entry case _ActivityNarrativeEntry(
-        :final messageId,
-        :final content,
-      )) {
+    Widget activityEntry(ActivityRunEntry entry) {
+      if (entry case ActivityNarrativeEntry(:final messageId, :final content)) {
         return Padding(
           padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
           child: _ActivityNarrative(
@@ -2589,7 +2249,7 @@ class const _AssistantActivityRun({
           ),
         );
       }
-      if (entry case _ActivityThinkingEntry(:final messageId, :final content)) {
+      if (entry case ActivityThinkingEntry(:final messageId, :final content)) {
         return Padding(
           padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
           child: _ActivityThinkingCard(
@@ -2598,7 +2258,7 @@ class const _AssistantActivityRun({
           ),
         );
       }
-      if (entry case _ActivityResponseEntry(:final source)) {
+      if (entry case ActivityResponseEntry(:final source)) {
         return _ChatMessageContent(
           message: source.message,
           isStreaming: source.isStreaming,
@@ -2613,11 +2273,11 @@ class const _AssistantActivityRun({
         );
       }
       final toolContent =
-          toolContents[_activityToolGroupId(entry as _ActivityToolGroupEntry)]!;
+          toolContents[_activityToolGroupId(entry as ActivityToolGroupEntry)]!;
       return toolContent;
     }
 
-    Widget activityContent(Iterable<_ActivityRunEntry> entries) => AuraColumn(
+    Widget activityContent(Iterable<ActivityRunEntry> entries) => AuraColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [for (final entry in entries) activityEntry(entry)],
     );

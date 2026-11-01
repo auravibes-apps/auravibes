@@ -833,6 +833,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.copy_tool_response';
   static const chats_screens_chat_conversation_tool_response_copied =
       'chats_screens.chat_conversation.tool_response_copied';
+  static const chats_screens_chat_conversation_tool_response_copy_failed =
+      'chats_screens.chat_conversation.tool_response_copy_failed';
   static const chats_screens_chat_conversation_copy_tool_arguments =
       'chats_screens.chat_conversation.copy_tool_arguments';
   static const chats_screens_chat_conversation_tool_arguments_copied =

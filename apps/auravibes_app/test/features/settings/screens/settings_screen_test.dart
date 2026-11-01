@@ -1,11 +1,14 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/settings/models/app_language_preference.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
+import 'package:auravibes_app/features/settings/providers/app_language_preference_notifier.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -19,6 +22,49 @@ import '../../../helpers/test_app.dart';
 class _MockThemeNotifier extends ThemeNotifier {
   @override
   Future<AppTheme> build() async => AppTheme.system;
+}
+
+Future<void> _pumpSettingsScreen(
+  WidgetTester tester, {
+  bool initializeLocalization = false,
+}) async {
+  await tester.runAsync(() async {
+    if (initializeLocalization) await EasyLocalization.ensureInitialized();
+    await tester.pumpWidget(
+      TestableApp(
+        child: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: const SettingsScreen(workspaceId: 'test-ws'),
+          ),
+        ),
+        overrides: [
+          themeProvider.overrideWith(_MockThemeNotifier.new),
+          compactionSettingsProvider('test-ws')
+              .overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
+          listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+              .overrideWith((ref) => Stream.value(const [])),
+        ],
+      ),
+    );
+  });
+  final _ = await tester.pumpAndSettle();
+}
+
+Future<void> _waitForLanguagePreference(
+  WidgetTester tester,
+  String expected,
+) async {
+  await tester.runAsync(() async {
+    final preferences = await SharedPreferences.getInstance();
+    final stopwatch = Stopwatch()..start();
+    while (preferences.getString(AppLanguagePreference.preferenceKey) !=
+            expected &&
+        stopwatch.elapsed < const Duration(seconds: 2)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  });
 }
 
 void main() {
@@ -35,28 +81,7 @@ void main() {
   group('render', () {
     testWidgets('renders SettingsScreen', (tester) async {
       final semantics = tester.ensureSemantics();
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          TestableApp(
-            child: AuraThemeScope(
-              theme: .light,
-              child: Theme(
-                data: .new(),
-                child: const SettingsScreen(workspaceId: 'test-ws'),
-              ),
-            ),
-            overrides: [
-              themeProvider.overrideWith(_MockThemeNotifier.new),
-              compactionSettingsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(CompactionSettings.defaults),
-              ),
-              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
-                  .overrideWith((ref) => Stream.value(const [])),
-            ],
-          ),
-        );
-      });
-      final _ = await tester.pumpAndSettle();
+      await _pumpSettingsScreen(tester);
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(CompactionSettingsSection), findsNothing);
       expect(find.byType(AuraScreen), findsOneWidget);
@@ -111,6 +136,75 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('settings_compaction_save')),
         findsNothing,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('selects a language, persists it, and clears the override', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      SharedPreferences.setMockInitialValues({});
+
+      await _pumpSettingsScreen(tester, initializeLocalization: true);
+
+      expect(find.text('Device language'), findsOneWidget);
+      await tester.tap(find.bySemanticsIdentifier('settings_language'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('App language'), findsOneWidget);
+
+      await tester.tap(find.text('English'));
+      final _ = await tester.pumpAndSettle();
+
+      var preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(AppLanguagePreference.preferenceKey),
+        'english',
+      );
+
+      await tester.tap(find.bySemanticsIdentifier('settings_language'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Spanish'));
+      final _ = await tester.pumpAndSettle();
+      await _waitForLanguagePreference(tester, 'spanish');
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Idioma'), findsOneWidget);
+      expect(find.text('Apariencia'), findsOneWidget);
+      preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(AppLanguagePreference.preferenceKey),
+        'spanish',
+      );
+
+      final restoredContainer = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWith((ref) async => preferences),
+        ],
+      );
+      addTearDown(restoredContainer.dispose);
+      expect(
+        await restoredContainer.read(appLanguagePreferenceProvider.future),
+        AppLanguagePreference.spanish,
+      );
+
+      await tester.tap(find.bySemanticsIdentifier('settings_language'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Idioma del dispositivo'));
+      final _ = await tester.pumpAndSettle();
+      await _waitForLanguagePreference(tester, 'system');
+      final _ = await tester.pumpAndSettle();
+
+      preferences = await SharedPreferences.getInstance();
+      expect(
+        preferences.getString(AppLanguagePreference.preferenceKey),
+        'system',
+      );
+      expect(
+        preferences.getString(
+          AppLanguagePreference.easyLocalizationPreferenceKey,
+        ),
+        isNull,
       );
       semantics.dispose();
     });
