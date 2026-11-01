@@ -4,8 +4,8 @@ import 'package:serverpod_auth_idp_server/core.dart';
 import '../../generated/protocol.dart';
 import '../workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
-import 'authenticated_account_resolver.dart';
 import 'auth_user_lock.dart';
+import 'authenticated_account_resolver.dart';
 
 class AccountEndpoint extends Endpoint {
   Future<AccountSummary> currentUser(Session session) {
