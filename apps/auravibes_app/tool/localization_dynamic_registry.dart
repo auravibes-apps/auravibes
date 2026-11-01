@@ -490,6 +490,9 @@ const _settingsScreenDynamicKeys = <String>{
   'settings_screen.legal.privacy',
   'settings_screen.legal.terms',
   'settings_screen.legal.title',
+  'settings_screen.language.device',
+  'settings_screen.language.english',
+  'settings_screen.language.spanish',
   'settings_screen.theme.dark',
   'settings_screen.theme.light',
   'settings_screen.theme.system',
@@ -1408,25 +1411,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
-    family: 'settings-tile-trailing-labels',
-    sites: [
-      DynamicTranslationSite(
-        file: 'features/settings/screens/settings_screen.dart',
-        method: 'TextLocale',
-        keyExpression: 'labelKey',
-      ),
-    ],
-    keys: {
-      'settings_screen.language.device',
-      'settings_screen.language.english',
-      'settings_screen.language.spanish',
-      'settings_screen.theme.dark',
-      'settings_screen.theme.light',
-      'settings_screen.theme.system',
-    },
-  ),
-
-  LocalizationDynamicRegistry(
     family: 'cloud-workspace-error-and-action-keys',
     sites: [
       DynamicTranslationSite(
@@ -1670,6 +1654,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/settings/widgets/legal_links_section.dart',
         method: 'TextLocale',
         keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/settings/screens/settings_screen.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
       ),
     ],
     keys: {..._compactionDynamicKeys, ..._settingsScreenDynamicKeys},
