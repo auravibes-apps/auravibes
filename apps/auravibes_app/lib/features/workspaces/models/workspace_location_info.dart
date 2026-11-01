@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_location_kind.dart';
 
@@ -26,14 +25,6 @@ class const WorkspaceLocationInfo({
     return WorkspaceLocationInfo._fromCloudWorkspace(cloudDetail: cloudDetail);
   }
 
-  /// Returns the localization key for this workspace's location label.
-  String labelKey() => switch (kind) {
-    .onDevice => 'workspace_location.on_device',
-    .personalCloud => 'workspace_location.personal_cloud',
-    .teamWorkspace => 'workspace_location.team_workspace',
-    .cloud => 'workspace_location.cloud_workspace',
-  };
-
   /// Classifies sharing from the server's current role, roster, and
   /// invitations.
   factory _fromCloudWorkspace({
@@ -51,4 +42,12 @@ class const WorkspaceLocationInfo({
       canViewMembers: detail.capabilities.canViewMembers,
     );
   }
+
+  /// Returns the localization key for this workspace's location label.
+  String labelKey() => switch (kind) {
+    .onDevice => 'workspace_location.on_device',
+    .personalCloud => 'workspace_location.personal_cloud',
+    .teamWorkspace => 'workspace_location.team_workspace',
+    .cloud => 'workspace_location.cloud_workspace',
+  };
 }

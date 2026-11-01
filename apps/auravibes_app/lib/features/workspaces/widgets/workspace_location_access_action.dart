@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 class const WorkspaceLocationAccessAction({
   required final bool canViewMembers,
   required final VoidCallback onPressed,
+  super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

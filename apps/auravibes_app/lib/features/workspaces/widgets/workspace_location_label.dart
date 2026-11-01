@@ -3,7 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
 /// Displays a workspace location label with its semantic description.
-class const WorkspaceLocationLabel({required final String labelKey})
+class const WorkspaceLocationLabel({required final String labelKey, super.key})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(
