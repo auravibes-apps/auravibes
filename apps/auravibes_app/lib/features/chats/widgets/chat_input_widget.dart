@@ -2266,8 +2266,8 @@ class const _ChatInputControlRow({required final _ChatInputState state})
     final compact = MediaQuery.sizeOf(context).width <= 360;
 
     return Column(
-      crossAxisAlignment: .start,
       mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
         Row(
           children: [
