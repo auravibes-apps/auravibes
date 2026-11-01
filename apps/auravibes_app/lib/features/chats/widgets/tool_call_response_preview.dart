@@ -200,6 +200,34 @@ class const _ToolCallResponseCopyButton({required final String content})
       _ToolCallResponseCopyButtonState();
 }
 
+class const _ToolCallResponseCopyAction({
+  required final IconData icon,
+  required final String tooltip,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: onPressed,
+    size: .small,
+    tooltip: tooltip,
+  );
+}
+
+class const _ToolCallResponseCopyFailureStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+    child: Semantics(
+      child: const AuraText(
+        child: TextLocale(_toolResponseCopyFailedKey),
+        style: .bodySmall,
+      ),
+      liveRegion: true,
+    ),
+  );
+}
+
 class _ToolCallResponseCopyButtonState
     extends State<_ToolCallResponseCopyButton> {
   var _copied = false;
@@ -245,23 +273,12 @@ class _ToolCallResponseCopyButtonState
       mainAxisSize: .min,
       crossAxisAlignment: .start,
       children: [
-        AuraIconButton(
+        _ToolCallResponseCopyAction(
           icon: _copyIcon,
           onPressed: () => unawaited(_copyResponse()),
-          size: .small,
           tooltip: _copyTooltip,
         ),
-        if (_copyFailed)
-          Padding(
-            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-            child: Semantics(
-              child: const AuraText(
-                child: TextLocale(_toolResponseCopyFailedKey),
-                style: .bodySmall,
-              ),
-              liveRegion: true,
-            ),
-          ),
+        if (_copyFailed) const _ToolCallResponseCopyFailureStatus(),
       ],
     ),
   );
@@ -270,6 +287,13 @@ class _ToolCallResponseCopyButtonState
     final content = widget.content;
     if (content.isEmpty) return;
 
+    final attempt = _beginCopyAttempt();
+    if (!await _writeToClipboard(content, attempt)) return;
+
+    _showCopyConfirmation(attempt, content);
+  }
+
+  int _beginCopyAttempt() {
     final attempt = ++_copyAttempt;
     _copyConfirmationTimer?.cancel();
     _copyConfirmationTimer = null;
@@ -282,22 +306,26 @@ class _ToolCallResponseCopyButtonState
       });
     }
 
+    return attempt;
+  }
+
+  Future<bool> _writeToClipboard(String content, int attempt) async {
     try {
       await Clipboard.setData(.new(text: content));
     } on Object {
       if (!mounted || attempt != _copyAttempt || widget.content != content) {
-        return;
+        return false;
       }
 
       setState(() => _copyFailed = true);
 
-      return;
+      return false;
     }
 
-    if (!mounted || attempt != _copyAttempt || widget.content != content) {
-      return;
-    }
+    return mounted && attempt == _copyAttempt && widget.content == content;
+  }
 
+  void _showCopyConfirmation(int attempt, String content) {
     setState(() => _copied = true);
     _pendingConfirmationAttempt = attempt;
     _pendingConfirmationContent = content;
