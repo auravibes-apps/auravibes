@@ -140,7 +140,6 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final now = DateTime.utc(2026, 10, 11, 12);
     final stream = StreamController<List<AgentBackgroundWork>>();
     final _ = await tester.runAsync(() async {
@@ -188,7 +187,6 @@ void main() {
       tester.getSemantics(header).getSemanticsData().label,
       'Background work, 1 active',
     );
-
     stream.addError(StateError('private failure detail'));
     final _ = await tester.pumpAndSettle();
     final errorSemantics = tester.getSemantics(header).getSemanticsData();
@@ -197,6 +195,7 @@ void main() {
       'Background work could not refresh. Last known count: 1 active. '
       'Open the list to retry.',
     );
+    semantics.dispose();
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('private failure detail'), findsNothing);
@@ -209,7 +208,6 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     final now = DateTime.utc(2026, 10, 11, 12);
     final work = _work('work-1', .completed, now);
     final failedLoad = StreamController<List<AgentBackgroundWork>>();
@@ -256,6 +254,7 @@ void main() {
       tester.getSemantics(header).getSemanticsData().label,
       'Background work could not load. Open the list to retry.',
     );
+    semantics.dispose();
     expect(find.text('Could not load background work.'), findsOneWidget);
     final retry = find.byKey(const ValueKey('background_work_retry'));
     expect(retry, findsOneWidget);
