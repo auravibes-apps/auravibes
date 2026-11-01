@@ -83,43 +83,47 @@ Stream<List<int>> _withAbort(
   final controller = StreamController<List<int>>();
   StreamSubscription<List<int>>? subscription;
   var finished = false;
-  controller
-    ..onListen = () {
-      subscription = source.listen(
-        controller.add,
-        onError: controller.addError,
-        onDone: () {
-          finished = true;
-          unawaited(controller.close());
-        },
-      );
-      unawaited(
-        abort.then((_) async {
-          if (finished) return;
-          finished = true;
-          controller.addError(http.RequestAbortedException(url));
-          await subscription?.cancel();
-          unawaited(controller.close());
-        }),
-      );
-    }
-    ..onPause = () => subscription?.pause()
-    ..onResume = () => subscription?.resume()
-    ..onCancel = () async {
-      finished = true;
-      await subscription?.cancel();
-    };
+  controller.onListen = () {
+    subscription = source.listen(
+      controller.add,
+      onError: controller.addError,
+      onDone: () {
+        finished = true;
+        unawaited(controller.close());
+      },
+    );
+    unawaited(
+      abort.then((_) async {
+        if (finished) return;
+        finished = true;
+        controller.addError(http.RequestAbortedException(url));
+        await subscription?.cancel();
+        unawaited(controller.close());
+      }),
+    );
+  };
+  controller.onPause = () {
+    subscription?.pause();
+  };
+  controller.onResume = () {
+    subscription?.resume();
+  };
+  controller.onCancel = () async {
+    finished = true;
+    await subscription?.cancel();
+  };
   return controller.stream;
 }
 
 final class ProviderFaultBody {
   ProviderFaultBody() {
-    _controller
-      ..onListen = () => _listened.complete()
-      ..onCancel = () {
-        cancellationCount++;
-        _cancelled.complete();
-      };
+    _controller.onListen = () {
+      _listened.complete();
+    };
+    _controller.onCancel = () {
+      cancellationCount++;
+      _cancelled.complete();
+    };
   }
 
   final StreamController<List<int>> _controller = .new();

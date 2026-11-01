@@ -33,7 +33,8 @@ class AppOpenAIPlugin extends GenkitPlugin {
   }
 
   @override
-  Future<List<ActionMetadata>> list() => _upstream.list();
+  Future<List<ActionMetadata<dynamic, dynamic, dynamic, dynamic>>> list() =>
+      _upstream.list();
 
   @override
   List<GenerateMiddlewareDef> middleware() => _upstream.middleware();

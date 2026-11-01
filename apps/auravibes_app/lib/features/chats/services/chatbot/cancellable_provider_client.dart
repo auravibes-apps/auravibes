@@ -92,11 +92,14 @@ class _AbortableProviderRequest extends http.BaseRequest
 
 class _CancellableProviderBody {
   _CancellableProviderBody(this._source, this._cancellation, this._url) {
-    _controller
-      ..onListen = _listen
-      ..onPause = () => _subscription?.pause()
-      ..onResume = () => _subscription?.resume()
-      ..onCancel = _finish;
+    _controller.onListen = _listen;
+    _controller.onPause = () {
+      _subscription?.pause();
+    };
+    _controller.onResume = () {
+      _subscription?.resume();
+    };
+    _controller.onCancel = _finish;
   }
 
   final Stream<List<int>> _source;

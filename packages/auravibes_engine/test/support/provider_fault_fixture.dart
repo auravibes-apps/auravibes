@@ -29,12 +29,13 @@ final class ProviderFaultFixture {
 /// A manually released response stream, with observable subscription cleanup.
 final class ProviderFaultBody {
   ProviderFaultBody() {
-    _controller
-      ..onListen = () => _listened.complete()
-      ..onCancel = () {
-        cancellationCount++;
-        _cancelled.complete();
-      };
+    _controller.onListen = () {
+      _listened.complete();
+    };
+    _controller.onCancel = () {
+      cancellationCount++;
+      _cancelled.complete();
+    };
   }
 
   final StreamController<List<int>> _controller = .new();
