@@ -1,7 +1,20 @@
+import 'package:auravibes_app/benchmark/workspace_search_benchmark.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_search_index.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('WorkspaceSearchBenchmark', () {
+    test('runs against a compact synthetic catalog', () {
+      expect(
+        () => const WorkspaceSearchBenchmark(
+          catalogSizes: [4],
+          sampleCount: 1,
+        ).run(),
+        returnsNormally,
+      );
+    });
+  });
+
   group('WorkspaceSearchIndex', () {
     test('folds accents and compatibility characters for matching', () {
       final eAcute = String.fromCharCode(0xe9);

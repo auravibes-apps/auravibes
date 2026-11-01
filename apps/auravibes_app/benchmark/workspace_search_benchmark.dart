@@ -16,16 +16,23 @@ var _resultSink = 0;
 
 void main() => const WorkspaceSearchBenchmark().run();
 
-final class const WorkspaceSearchBenchmark() {
+final class const WorkspaceSearchBenchmark({
+  final List<int> catalogSizes = _catalogSizes,
+  final int sampleCount = _sampleCount,
+  final String query = _query,
+}) {
   void run() {
-    final results = [for (final size in _catalogSizes) _measureCatalog(size)];
+    final results = [
+      for (final size in catalogSizes)
+        _measureCatalog(size, sampleCount: sampleCount, query: query),
+    ];
     stdout.writeln(
       jsonEncode({
         'benchmark': 'synthetic_workspace_search',
         'dart': Platform.version.split(' ').first,
         'os': Platform.operatingSystem,
-        'samples': _sampleCount,
-        'query': _query,
+        'samples': sampleCount,
+        'query': query,
         'resultSink': _resultSink,
         'results': results,
       }),
@@ -33,7 +40,11 @@ final class const WorkspaceSearchBenchmark() {
   }
 }
 
-Map<String, Object?> _measureCatalog(int size) {
+Map<String, Object?> _measureCatalog(
+  int size, {
+  required int sampleCount,
+  required String query,
+}) {
   final catalog = [
     for (var index = 0; index < size; index++)
       _CatalogItem(
@@ -46,37 +57,59 @@ Map<String, Object?> _measureCatalog(int size) {
         },
       ),
   ];
-  final baselineMatches = _baselineFilter(catalog, _query);
+  final baselineMatches = _baselineFilter(catalog, query);
   final index = _newIndex(catalog);
-  final indexedMatches = index.matching(_query);
+  final indexedMatches = index.matching(query);
 
   final before = <String, int>{
-    'normalizeAllUs': _measure(() => _baselineNormalizeAll(catalog)),
-    'filterUs': _measure(() => _baselineFilter(catalog, _query).length),
-    'sortUs': _measure(() => _baselineSort(baselineMatches).length),
+    'normalizeAllUs': _measure(
+      () => _baselineNormalizeAll(catalog),
+      sampleCount: sampleCount,
+    ),
+    'filterUs': _measure(
+      () => _baselineFilter(catalog, query).length,
+      sampleCount: sampleCount,
+    ),
+    'sortUs': _measure(
+      () => _baselineSort(baselineMatches).length,
+      sampleCount: sampleCount,
+    ),
     'searchUs': _measure(
-      () => _baselineSort(_baselineFilter(catalog, _query)).length,
+      () => _baselineSort(_baselineFilter(catalog, query)).length,
+      sampleCount: sampleCount,
     ),
   };
 
   var measuredIndex = _newIndex(catalog);
   final after = <String, int>{
-    'normalizeAllUs': _measure(() => _indexedNormalizeAll(catalog)),
+    'normalizeAllUs': _measure(
+      () => _indexedNormalizeAll(catalog),
+      sampleCount: sampleCount,
+    ),
     'indexBuildUs': _measure(() {
       measuredIndex = _newIndex(catalog);
 
       return catalog.length;
-    }),
-    'cacheCheckUs': _measure(() => measuredIndex.hasSameItems(catalog) ? 1 : 0),
-    'filterUs': _measure(() => measuredIndex.matching(_query).length),
-    'sortUs': _measure(() => measuredIndex.sort(indexedMatches).length),
+    }, sampleCount: sampleCount),
+    'cacheCheckUs': _measure(
+      () => measuredIndex.hasSameItems(catalog) ? 1 : 0,
+      sampleCount: sampleCount,
+    ),
+    'filterUs': _measure(
+      () => measuredIndex.matching(query).length,
+      sampleCount: sampleCount,
+    ),
+    'sortUs': _measure(
+      () => measuredIndex.sort(indexedMatches).length,
+      sampleCount: sampleCount,
+    ),
     'warmSearchUs': _measure(() {
       if (!measuredIndex.hasSameItems(catalog)) {
         measuredIndex = _newIndex(catalog);
       }
 
-      return measuredIndex.search(_query).length;
-    }),
+      return measuredIndex.search(query).length;
+    }, sampleCount: sampleCount),
   };
   final perSearchSavings = before['searchUs']! - after['warmSearchUs']!;
   final rebuildCost = after['indexBuildUs']!;
@@ -99,10 +132,10 @@ WorkspaceSearchIndex<_CatalogItem> _newIndex(List<_CatalogItem> catalog) =>
       idOf: (item) => item.id,
     );
 
-int _measure(int Function() operation) {
+int _measure(int Function() operation, {required int sampleCount}) {
   final samples = <int>[];
   _resultSink = operation();
-  for (var sample = 0; sample < _sampleCount; sample++) {
+  for (var sample = 0; sample < sampleCount; sample++) {
     final timer = Stopwatch()..start();
     _resultSink = operation();
     timer.stop();
