@@ -350,7 +350,7 @@ void main() {
         final generation = harness.run(cancellation: cancellation);
         addTearDown(() async {
           if (!response.isCompleted) response.complete(_success(adapter));
-          await generation;
+          await expectLater(generation, completes);
         });
         final request = await harness.client.requestAt(0);
         cancellation.cancel();
@@ -382,7 +382,7 @@ void main() {
           );
           addTearDown(() async {
             body.dispose();
-            await generation;
+            await expectLater(generation, completes);
           });
           await body.listened;
           body.add([
@@ -523,10 +523,14 @@ void main() {
 
         test('enforces a zero header deadline without a real sleep', () async {
           final response = Completer<http.StreamedResponse>();
-          final harness = _Harness.create(adapter, [
-            (_) => response.future,
-            (_) => response.future,
-          ], requestTimeout: .zero);
+          final harness = _Harness.create(
+            adapter,
+            [
+              (_) => response.future,
+              (_) => response.future,
+            ],
+            requestTimeout: .zero,
+          );
           addTearDown(() {
             if (!response.isCompleted) response.complete(_success(adapter));
           });
@@ -553,9 +557,7 @@ final class _Harness(
   final List<Duration> retryDelays,
   final List<String> effects,
 ) {
-  final List<String> _text = [];
-
-  factory _Harness.create(
+  factory create(
     ProviderAdapterCase adapter,
     List<ProviderFaultAttempt> attempts, {
     Future<void> Function(Duration)? retryWait,
@@ -599,6 +601,8 @@ final class _Harness(
 
     return _Harness(adapter, client, ai, tool, retryDelays, effects);
   }
+
+  final List<String> _text = [];
 
   String get text => _text.join();
 
