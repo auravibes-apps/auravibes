@@ -37,33 +37,33 @@ void main() {
       helpDetails: 'Un proveedor es el servicio o servidor configurado',
     ),
   ]) {
-    testWidgets('localizes provider choice guidance in ${locale.code}', (
-      tester,
-    ) async {
-      await _expectExplanation(
-        tester,
-        localeCode: locale.code,
+    for (final guidance in [
+      (
+        name: 'provider',
         descriptionKey: 'intro_flow.ai.choose_provider',
         description: locale.providerDescription,
-        helpLabel: locale.helpLabel,
-        helpTitle: locale.helpTitle,
-        helpDetailsPrefix: locale.helpDetails,
-      );
-    });
-
-    testWidgets('localizes model choice guidance in ${locale.code}', (
-      tester,
-    ) async {
-      await _expectExplanation(
-        tester,
-        localeCode: locale.code,
+      ),
+      (
+        name: 'model',
         descriptionKey: 'models_screens.model_choice_explanation',
         description: locale.modelDescription,
-        helpLabel: locale.helpLabel,
-        helpTitle: locale.helpTitle,
-        helpDetailsPrefix: locale.helpDetails,
+      ),
+    ]) {
+      testWidgets(
+        'localizes ${guidance.name} choice guidance in ${locale.code}',
+        (tester) async {
+          await _expectExplanation(
+            tester,
+            localeCode: locale.code,
+            descriptionKey: guidance.descriptionKey,
+            description: guidance.description,
+            helpLabel: locale.helpLabel,
+            helpTitle: locale.helpTitle,
+            helpDetailsPrefix: locale.helpDetails,
+          );
+        },
       );
-    });
+    }
   }
 }
 
