@@ -304,6 +304,8 @@ def _redact_json_argument(argument):
         return value
 
     sanitized = redact(value)
+    if sanitized == value:
+        return argument
     return json.dumps(sanitized, separators=(",", ":"), ensure_ascii=False)
 
 
@@ -336,6 +338,10 @@ def sanitize_command(command, redact_indices=()):
             nested_assignment = ASSIGNMENT.match(value)
             if nested_assignment and SENSITIVE_NAME.search(nested_assignment.group(1)):
                 sanitized.append(f"{prefix}={nested_assignment.group(1)}=<redacted>")
+                continue
+            redacted_json = _redact_json_argument(value)
+            if redacted_json != value:
+                sanitized.append(f"{prefix}={redacted_json}")
                 continue
 
         argument = _safe_summary(argument)

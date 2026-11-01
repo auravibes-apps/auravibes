@@ -366,6 +366,18 @@ class ValidationEvidenceTest(unittest.TestCase):
         self.assertIn("ssh://<redacted>@example.invalid/repository.git", summary)
         self.assertIn("https://example.invalid/public?mode=safe", summary)
 
+    def test_command_summary_redacts_secrets_in_option_json(self):
+        command = ['--config={"apiKey":"private-json-token","mode":"safe"}']
+
+        self.assertEqual(
+            validation_evidence.sanitize_command(command),
+            ['--config={"apiKey":"<redacted>","mode":"safe"}'],
+        )
+        self.assertEqual(
+            validation_evidence.sanitize_command(['--config={"mode": "safe"}']),
+            ['--config={"mode": "safe"}'],
+        )
+
     def test_toolchain_detection_is_limited_to_known_version_commands(self):
         with patch(
             "validation_evidence._tool_version",
