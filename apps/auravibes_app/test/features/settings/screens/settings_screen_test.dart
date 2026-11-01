@@ -24,6 +24,34 @@ class _MockThemeNotifier extends ThemeNotifier {
   Future<AppTheme> build() async => AppTheme.system;
 }
 
+Future<void> _pumpSettingsScreen(
+  WidgetTester tester, {
+  bool initializeLocalization = false,
+}) async {
+  await tester.runAsync(() async {
+    if (initializeLocalization) await EasyLocalization.ensureInitialized();
+    await tester.pumpWidget(
+      TestableApp(
+        child: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: const SettingsScreen(workspaceId: 'test-ws'),
+          ),
+        ),
+        overrides: [
+          themeProvider.overrideWith(_MockThemeNotifier.new),
+          compactionSettingsProvider('test-ws')
+              .overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
+          listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+              .overrideWith((ref) => Stream.value(const [])),
+        ],
+      ),
+    );
+  });
+  final _ = await tester.pumpAndSettle();
+}
+
 Future<void> _waitForLanguagePreference(
   WidgetTester tester,
   String expected,
@@ -53,28 +81,7 @@ void main() {
   group('render', () {
     testWidgets('renders SettingsScreen', (tester) async {
       final semantics = tester.ensureSemantics();
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          TestableApp(
-            child: AuraThemeScope(
-              theme: .light,
-              child: Theme(
-                data: .new(),
-                child: const SettingsScreen(workspaceId: 'test-ws'),
-              ),
-            ),
-            overrides: [
-              themeProvider.overrideWith(_MockThemeNotifier.new),
-              compactionSettingsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(CompactionSettings.defaults),
-              ),
-              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
-                  .overrideWith((ref) => Stream.value(const [])),
-            ],
-          ),
-        );
-      });
-      final _ = await tester.pumpAndSettle();
+      await _pumpSettingsScreen(tester);
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(CompactionSettingsSection), findsNothing);
       expect(find.byType(AuraScreen), findsOneWidget);
@@ -139,29 +146,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       SharedPreferences.setMockInitialValues({});
 
-      await tester.runAsync(() async {
-        await EasyLocalization.ensureInitialized();
-        await tester.pumpWidget(
-          TestableApp(
-            child: AuraThemeScope(
-              theme: .light,
-              child: Theme(
-                data: .new(),
-                child: const SettingsScreen(workspaceId: 'test-ws'),
-              ),
-            ),
-            overrides: [
-              themeProvider.overrideWith(_MockThemeNotifier.new),
-              compactionSettingsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(CompactionSettings.defaults),
-              ),
-              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
-                  .overrideWith((ref) => Stream.value(const [])),
-            ],
-          ),
-        );
-      });
-      final _ = await tester.pumpAndSettle();
+      await _pumpSettingsScreen(tester, initializeLocalization: true);
 
       expect(find.text('Device language'), findsOneWidget);
       await tester.tap(find.bySemanticsIdentifier('settings_language'));
