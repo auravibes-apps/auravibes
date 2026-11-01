@@ -1,7 +1,7 @@
 // ignore_for_file: type=lint, type=warning
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_a2ui_historical_surface.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_historical_surface.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_warning.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';

@@ -1,6 +1,6 @@
-import 'package:auravibes_server/src/features/sync/stream/workspace_stream_service.dart';
-import 'package:auravibes_server/src/features/sync/stream/sync_wakeups.dart';
 import 'package:auravibes_server/src/features/conversations/conversation_stream_service.dart';
+import 'package:auravibes_server/src/features/sync/stream/sync_wakeups.dart';
+import 'package:auravibes_server/src/features/sync/stream/workspace_stream_service.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 

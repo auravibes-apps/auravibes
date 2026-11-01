@@ -16,23 +16,49 @@ void main() {
     test(
       'members cannot read skills, context, or execute commands after erasure is requested',
       () async {
-        final userId = const Uuid().v4().toString();
-        final authenticated = builder.copyWith(
+        final ownerUserId = const Uuid().v4().toString();
+        final ownerAuthenticated = builder.copyWith(
           authentication: AuthenticationOverride.authenticationInfo(
-            userId,
+            ownerUserId,
             const {},
           ),
         );
-        final session = authenticated.build();
+        final session = ownerAuthenticated.build();
         await AuthUser.db.insertRow(
           session,
-          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+          AuthUser(
+            id: UuidValue.fromString(ownerUserId),
+            scopeNames: const {},
+          ),
         );
         await EmailAccount.db.insertRow(
           session,
           EmailAccount(
-            authUserId: UuidValue.fromString(userId),
-            email: '$userId@example.invalid',
+            authUserId: UuidValue.fromString(ownerUserId),
+            email: '$ownerUserId@example.invalid',
+            passwordHash: 'unused',
+          ),
+        );
+        final memberUserId = const Uuid().v4().toString();
+        final memberAuthenticated = builder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            memberUserId,
+            const {},
+          ),
+        );
+        final memberSession = memberAuthenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(
+            id: UuidValue.fromString(memberUserId),
+            scopeNames: const {},
+          ),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(memberUserId),
+            email: '$memberUserId@example.invalid',
             passwordHash: 'unused',
           ),
         );
@@ -41,9 +67,20 @@ void main() {
             .createWorkspace(
               session,
               name: 'Retained during erasure',
-              ownerUserId: userId,
+              ownerUserId: ownerUserId,
               now: now,
             );
+        await WorkspaceMember.db.insertRow(
+          session,
+          WorkspaceMember(
+            workspaceId: workspace.id!,
+            userId: memberUserId,
+            role: 'member',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
         final conversation = await Conversation.db.insertRow(
           session,
           Conversation(
@@ -62,7 +99,7 @@ void main() {
             conversationId: conversation.id!,
             requestId: 'erasure-access-turn',
             requestHash: 'fixture',
-            initiatorUserId: userId,
+            initiatorUserId: memberUserId,
             status: 'running',
             revision: 1,
             acceptedSequence: 1,
@@ -102,20 +139,20 @@ void main() {
         );
         expect(
           (await endpoints.skillResource.list(
-            authenticated,
+            memberAuthenticated,
             skillRequest,
           )).single.id,
           skill.resourceId,
         );
         expect(
           (await endpoints.skillResource.get(
-            authenticated,
+            memberAuthenticated,
             skillViewRequest,
           ))?.id,
           skill.resourceId,
         );
         await endpoints.workspaceContext.save(
-          authenticated,
+          memberAuthenticated,
           workspace.id!,
           conversation.stableId,
           'before-erasure',
@@ -124,7 +161,7 @@ void main() {
         expect(
           jsonDecode(
             await endpoints.workspaceContext.read(
-              authenticated,
+              memberAuthenticated,
               workspace.id!,
               conversation.stableId,
             ),
@@ -146,7 +183,7 @@ void main() {
             session,
             where: (row) =>
                 row.workspaceId.equals(workspace.id!) &
-                row.userId.equals(userId) &
+                row.userId.equals(memberUserId) &
                 row.removedAt.equals(null),
           ),
           1,
@@ -163,7 +200,7 @@ void main() {
             session,
             where: (row) =>
                 row.workspaceId.equals(workspace.id!) &
-                row.actorUserId.equals(userId),
+                row.actorUserId.equals(memberUserId),
           ),
           1,
         );
@@ -174,16 +211,16 @@ void main() {
           CloudWorkspaceErrorCode.permissionDenied,
         );
         await expectLater(
-          endpoints.skillResource.list(authenticated, skillRequest),
+          endpoints.skillResource.list(memberAuthenticated, skillRequest),
           throwsA(permissionDenied),
         );
         await expectLater(
-          endpoints.skillResource.get(authenticated, skillViewRequest),
+          endpoints.skillResource.get(memberAuthenticated, skillViewRequest),
           throwsA(permissionDenied),
         );
         await expectLater(
           endpoints.workspaceContext.read(
-            authenticated,
+            memberAuthenticated,
             workspace.id!,
             conversation.stableId,
           ),
@@ -191,7 +228,7 @@ void main() {
         );
         await expectLater(
           endpoints.workspaceContext.save(
-            authenticated,
+            memberAuthenticated,
             workspace.id!,
             conversation.stableId,
             'after-erasure',
@@ -201,7 +238,7 @@ void main() {
         );
         await expectLater(
           const WorkspaceConversationCommands().call(
-            session,
+            memberSession,
             turn,
             'after-erasure',
             {'action': 'createFolder', 'name': 'Must remain blocked'},

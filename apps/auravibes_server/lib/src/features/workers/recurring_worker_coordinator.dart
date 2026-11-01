@@ -8,8 +8,8 @@ import '../conversations/workers/conversation_worker.dart';
 import '../model_connections/workers/model_catalog_sync_worker.dart';
 import '../objects/object_cleanup_service.dart';
 import '../sync/stream/sync_wakeups.dart';
-import 'worker_coordinator_repository.dart';
 import 'recurring_worker_timer_set.dart';
+import 'worker_coordinator_repository.dart';
 
 class RecurringWorkerCoordinator(
   final Serverpod pod, {

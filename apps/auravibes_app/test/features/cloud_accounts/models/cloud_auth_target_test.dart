@@ -58,6 +58,35 @@ void main() {
       );
     }
   });
+
+  test('legacy same-workspace task return filters canonical query keys', () {
+    const path =
+        '/workspaces/w/more/service-connections/new'
+        '?type=connector&connectorId=jina&view=providers&discard=1';
+
+    expect(
+      TaskReturn.validate(path, workspaceId: 'w'),
+      '/workspaces/w/service-connections/new?type=connector&connectorId=jina',
+    );
+  });
+
+  test('rejects unsafe or unrecognized legacy task returns', () {
+    for (final path in [
+      '/workspaces/w/more/../chat/new',
+      '/workspaces/w/more/%2e%2e/chat/new',
+      '/workspaces/w/more/%252e%252e/chat/new',
+      '/workspaces/w/more/skills/skill%2Fother',
+      '/workspaces/w/more/skills/skill%252Fother',
+      '/workspaces/w/more/chat/new#fragment',
+      'https://evil.test/workspaces/w/more/chat/new',
+      '//evil.test/workspaces/w/more/chat/new',
+      '/workspaces/other/more/chat/new',
+      '/workspaces/w/more/unknown',
+    ]) {
+      expect(TaskReturn.validate(path, workspaceId: 'w'), isNull, reason: path);
+    }
+  });
+
   test('return rejects unsafe, unknown and other-workspace paths', () {
     for (final path in [
       'https://evil.test/workspaces/w/chat/new',

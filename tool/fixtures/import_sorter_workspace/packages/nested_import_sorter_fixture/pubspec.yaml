@@ -1,0 +1,4 @@
+name: nested_import_sorter_fixture
+publish_to: none
+environment:
+  sdk: ^3.13.0

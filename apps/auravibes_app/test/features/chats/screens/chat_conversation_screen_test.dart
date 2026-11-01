@@ -10,7 +10,6 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/entities/model_usage_aggregation.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -632,8 +631,6 @@ void main() {
     ];
     when(() => modelUsageRepository.getRecordsForConversation(_chatId))
         .thenAnswer((_) async => usageRecords);
-    when(() => modelUsageRepository.getTotalsForConversation(_chatId))
-        .thenAnswer((_) async => ModelUsageAggregation.aggregate(usageRecords));
 
     final conversation = ConversationEntity(
       id: _chatId,
@@ -762,8 +759,9 @@ void main() {
     );
     verify(() => modelUsageRepository.getRecordsForConversation(_chatId))
         .called(1);
-    verify(() => modelUsageRepository.getTotalsForConversation(_chatId))
-        .called(1);
+    final _ = verifyNever(
+      () => modelUsageRepository.getTotalsForConversation(_chatId),
+    );
   });
 
   testWidgets('opens saved messages scoped to the loaded conversation', (
