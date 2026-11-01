@@ -188,7 +188,7 @@ class const AppAgentLoopToolProvider(
   final AgentToolExecutionService _toolExecutionService,
 ) implements AgentLoopToolProvider {
   @override
-  Future<AgentLoopToolResult> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   }) {

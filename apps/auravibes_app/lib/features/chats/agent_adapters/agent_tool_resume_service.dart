@@ -43,7 +43,10 @@ class AppAgentToolResumeProvider({
   required final AgentToolExecutionService toolExecutionService,
   required final agent.AgentLoopRunner agentLoop,
   required final ActiveSubAgentRuntime? activeSubAgents,
-  final void Function(String conversationId, agent.AgentIterationDecision decision)?
+  final void Function(
+    String conversationId,
+    agent.AgentIterationDecision decision,
+  )?
   onAgentStop,
 }) implements agent.AgentToolResumeProvider {
   final _activeContinuations = <String, Future<agent.AgentIterationDecision>>{};

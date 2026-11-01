@@ -12,7 +12,7 @@ const defaultAgentRateLimitRetryCount = 1;
 const defaultAgentIterationLimit = 16;
 
 abstract interface class AgentLoopToolProvider {
-  Future<AgentLoopToolResult> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   });
@@ -179,7 +179,7 @@ class const AgentService({
       );
     }
 
-    final toolResult = await tools.runAllowedTools(
+    final toolResult = await tools.runAgentLoopIteration(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );

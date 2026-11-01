@@ -680,7 +680,7 @@ class _FakeAgentConversationDataProvider
   }
 
   @override
-  Future<AgentLoopToolResult> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   }) async {

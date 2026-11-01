@@ -2088,12 +2088,14 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
-            final AgentIterationDecision? agentStopDecision = switch ((
-              repeatedToolLoopDetected,
-              iterationLimitReached,
+            final agentStopDecision = switch ((
+              repeatedToolLoopDetected: repeatedToolLoopDetected,
+              iterationLimitReached: iterationLimitReached,
             )) {
-              (true, _) => .repeatedToolLoopDetected,
-              (false, true) => .iterationLimitReached,
+              (repeatedToolLoopDetected: true, iterationLimitReached: _) =>
+                .repeatedToolLoopDetected,
+              (repeatedToolLoopDetected: false, iterationLimitReached: true) =>
+                .iterationLimitReached,
               _ => null,
             };
             final TransitionBuilder? appBuilder = agentStopDecision != null
@@ -2407,12 +2409,8 @@ void _activateSnackBarAction(WidgetTester tester, String label) {
   onTap();
 }
 
-class _StaticAgentStopDecisionNotifier
+class _StaticAgentStopDecisionNotifier(final AgentIterationDecision decision)
     extends ConversationAgentStopDecisionNotifier {
-  _StaticAgentStopDecisionNotifier(this.decision);
-
-  final AgentIterationDecision decision;
-
   @override
   AgentIterationDecision? build() => decision;
 }
