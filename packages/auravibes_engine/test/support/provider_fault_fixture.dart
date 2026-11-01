@@ -6,7 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 /// An ordered, offline transport. Extra sends always fail rather than reaching
 /// a provider or accidentally replaying the last successful response.
 final class ProviderFaultFixture {
-  ProviderFaultFixture(this.attempts);
+  new(this.attempts);
 
   final List<Future<ProviderTransportResponse> Function()> attempts;
   final List<String> _requests = [];
@@ -28,10 +28,8 @@ final class ProviderFaultFixture {
 
 /// A manually released response stream, with observable subscription cleanup.
 final class ProviderFaultBody {
-  ProviderFaultBody() {
-    _controller.onListen = () {
-      _listened.complete();
-    };
+  new() {
+    _controller.onListen = _listened.complete;
     _controller.onCancel = () {
       cancellationCount++;
       _cancelled.complete();

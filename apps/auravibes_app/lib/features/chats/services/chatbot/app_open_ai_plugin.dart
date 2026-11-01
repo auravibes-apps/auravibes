@@ -8,19 +8,17 @@ import 'package:http/http.dart' as http;
 /// The upstream plugin must create its clients inside the model action. Supply
 /// a shared client through this wrapper's `httpClient` constructor parameter.
 class AppOpenAIPlugin extends GenkitPlugin {
-  AppOpenAIPlugin({required GenkitPlugin upstream, http.Client? httpClient})
-    : _upstream = upstream,
-      _httpClient = httpClient;
+  new({required this.upstream, this.httpClient});
 
-  final GenkitPlugin _upstream;
-  final http.Client? _httpClient;
+  final GenkitPlugin upstream;
+  final http.Client? httpClient;
 
   @override
-  String get name => _upstream.name;
+  String get name => upstream.name;
 
   @override
   Future<List<Action<dynamic, dynamic, dynamic, dynamic>>> init() async => [
-    for (final action in await _upstream.init()) _wrap(action),
+    for (final action in await upstream.init()) _wrap(action),
   ];
 
   @override
@@ -28,25 +26,26 @@ class AppOpenAIPlugin extends GenkitPlugin {
     ActionType actionType,
     String name,
   ) {
-    final action = _upstream.resolve(actionType, name);
+    final action = upstream.resolve(actionType, name);
+
     return action == null ? null : _wrap(action);
   }
 
   @override
   Future<List<ActionMetadata<dynamic, dynamic, dynamic, dynamic>>> list() =>
-      _upstream.list();
+      upstream.list();
 
   @override
-  List<GenerateMiddlewareDef> middleware() => _upstream.middleware();
+  List<GenerateMiddlewareDef> middleware() => upstream.middleware();
 
   Action<dynamic, dynamic, dynamic, dynamic> _wrap(
     Action<dynamic, dynamic, dynamic, dynamic> action,
   ) => action is Model<dynamic>
       ? Model<dynamic>(
           name: action.name,
-          metadata: Map.of(action.metadata),
-          customOptions: action.customOptions,
           fn: (request, context) => _generate(action, request, context),
+          metadata: .of(action.metadata),
+          customOptions: action.customOptions,
         )
       : action;
 
@@ -58,9 +57,9 @@ class AppOpenAIPlugin extends GenkitPlugin {
     // Create the underlying client before entering the zone. Calling
     // http.Client() inside its own factory would recursively create wrappers.
     final transport = CancellableProviderClient(
-      client: _httpClient ?? http.Client(),
+      client: httpClient ?? http.Client(),
       cancellation: context.cancel,
-      ownsClient: _httpClient == null,
+      ownsClient: httpClient == null,
     );
     try {
       final response = await http.runWithClient(
@@ -72,6 +71,7 @@ class AppOpenAIPlugin extends GenkitPlugin {
         ),
         () => transport,
       );
+
       return response.result;
     } finally {
       transport.close();

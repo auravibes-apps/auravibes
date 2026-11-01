@@ -7,29 +7,27 @@ import 'package:http/http.dart' as http;
 /// The caller still owns an injected client; a generation owns only clients
 /// it creates. Encoding and retry decisions remain with the upstream SDK.
 class CancellableProviderClient extends http.BaseClient {
-  CancellableProviderClient({
-    required http.Client client,
-    required CancellationToken? cancellation,
-    bool ownsClient = false,
-  }) : _client = client,
-       _cancellation = cancellation,
-       _ownsClient = ownsClient;
+  new({
+    required this.client,
+    required this.cancellation,
+    this.ownsClient = false,
+  });
 
-  final http.Client _client;
-  final CancellationToken? _cancellation;
-  final bool _ownsClient;
+  final http.Client client;
+  final CancellationToken? cancellation;
+  final bool ownsClient;
   bool _closed = false;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (_closed) throw StateError('Provider client is closed');
-    final cancellation = _cancellation;
     cancellation?.throwIfCancelled();
-    if (cancellation == null) return _client.send(request);
+    if (cancellation == null) return await client.send(request);
 
-    final response = await _client.send(
+    final response = await client.send(
       _AbortableProviderRequest(request, cancellation.whenCancelled),
     );
+
     return http.StreamedResponse(
       _CancellableProviderBody(
         response.stream,
@@ -37,9 +35,9 @@ class CancellableProviderClient extends http.BaseClient {
         request.url,
       ).stream,
       response.statusCode,
-      headers: response.headers,
       contentLength: response.contentLength,
       request: response.request,
+      headers: response.headers,
       isRedirect: response.isRedirect,
       persistentConnection: response.persistentConnection,
       reasonPhrase: response.reasonPhrase,
@@ -50,7 +48,7 @@ class CancellableProviderClient extends http.BaseClient {
   void close() {
     if (_closed) return;
     _closed = true;
-    if (_ownsClient) _client.close();
+    if (ownsClient) client.close();
   }
 }
 
@@ -58,7 +56,7 @@ class CancellableProviderClient extends http.BaseClient {
 /// content type. Reading and re-encoding the body would change SDK requests.
 class _AbortableProviderRequest extends http.BaseRequest
     implements http.Abortable {
-  _AbortableProviderRequest(this._request, Future<void> cancellation)
+  new(this._request, Future<void> cancellation)
     : abortTrigger = switch (_request) {
         http.Abortable(:final abortTrigger?) => Future.any([
           cancellation,
@@ -74,9 +72,9 @@ class _AbortableProviderRequest extends http.BaseRequest
     contentLength = _request.contentLength;
   }
 
-  final http.BaseRequest _request;
   @override
   final Future<void> abortTrigger;
+  final http.BaseRequest _request;
 
   @override
   http.ByteStream finalize() {
@@ -85,20 +83,17 @@ class _AbortableProviderRequest extends http.BaseRequest
     // those final headers before the HTTP client reads this wrapper's headers.
     headers.addAll(_request.headers);
     contentLength = _request.contentLength;
-    super.finalize();
+    final _ = super.finalize();
+
     return body;
   }
 }
 
 class _CancellableProviderBody {
-  _CancellableProviderBody(this._source, this._cancellation, this._url) {
+  new(this._source, this._cancellation, this._url) {
     _controller.onListen = _listen;
-    _controller.onPause = () {
-      _subscription?.pause();
-    };
-    _controller.onResume = () {
-      _subscription?.resume();
-    };
+    _controller.onPause = () => _subscription?.pause();
+    _controller.onResume = () => _subscription?.resume();
     _controller.onCancel = _finish;
   }
 
@@ -120,7 +115,7 @@ class _CancellableProviderBody {
       onDone: () => unawaited(_finish()),
     );
     _removeCancellation = _cancellation.onCancel(
-      () => _error(http.RequestAbortedException(_url), StackTrace.current),
+      () => _error(http.RequestAbortedException(_url), .current),
     );
   }
 
@@ -135,7 +130,9 @@ class _CancellableProviderBody {
     if (cleanup != null) return cleanup;
     _finished = true;
     _removeCancellation?.call();
-    return _cleanup = _cancelSource();
+    final cancelled = _cancelSource();
+
+    return _cleanup = cancelled;
   }
 
   Future<void> _cancelSource() async {

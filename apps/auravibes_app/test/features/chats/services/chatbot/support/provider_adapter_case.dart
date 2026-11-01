@@ -14,12 +14,10 @@ enum ProviderPluginPath { upstreamOpenAi, appChatCompletions, codex, anthropic }
 
 /// A runtime alone does not identify its adapter. Default OpenAI and OpenAI
 /// with explicit tool sampling select different production plugins.
-final class ProviderAdapterCase {
-  const ProviderAdapterCase(this.runtime, this.path);
-
-  final ProviderRuntime runtime;
-  final ProviderPluginPath path;
-
+final class const ProviderAdapterCase(
+  final ProviderRuntime runtime,
+  final ProviderPluginPath path,
+) {
   String get name => '${runtime.name}/${path.name}';
   bool get retriesTransport => path == ProviderPluginPath.appChatCompletions;
   bool get losesHttpMetadata =>
@@ -27,17 +25,17 @@ final class ProviderAdapterCase {
       path == ProviderPluginPath.anthropic;
 
   ProviderFaultProtocol get protocol => switch (path) {
-    ProviderPluginPath.codex => .codex,
-    ProviderPluginPath.anthropic => .anthropic,
+    .codex => .codex,
+    .anthropic => .anthropic,
     _ => .chat,
   };
 
   String get namespace => switch (runtime) {
-    ProviderRuntime.openAi => 'openai',
-    ProviderRuntime.openRouter => 'openrouter',
-    ProviderRuntime.openAiReasoning => 'openai_reasoning',
-    ProviderRuntime.codexOAuth => 'openai_codex',
-    ProviderRuntime.anthropic => 'anthropic',
+    .openAi => 'openai',
+    .openRouter => 'openrouter',
+    .openAiReasoning => 'openai_reasoning',
+    .codexOAuth => 'openai_codex',
+    .anthropic => 'anthropic',
   };
 
   String get modelName => '$namespace/contract-model';
@@ -62,7 +60,7 @@ final class ProviderAdapterCase {
     Future<void> Function(Duration)? retryWait,
     Duration requestTimeout = const Duration(seconds: 30),
   }) => switch (path) {
-    ProviderPluginPath.upstreamOpenAi => AppOpenAIPlugin(
+    .upstreamOpenAi => AppOpenAIPlugin(
       upstream: openAI(
         apiKey: 'fixture-key',
         baseUrl: 'https://provider.invalid/v1',
@@ -70,33 +68,30 @@ final class ProviderAdapterCase {
       // Factory supplies no client normally. The contract supplies its fake
       // through http.runWithClient, retaining generation client ownership.
     ),
-    ProviderPluginPath.codex => AppOpenAICodexPlugin(
+    .codex => AppOpenAICodexPlugin(
       accessToken: 'fixture-key',
       sessionId: 'session-contract',
       baseUrl: 'https://provider.invalid/responses',
       httpClient: client,
       requestTimeout: requestTimeout,
     ),
-    ProviderPluginPath.anthropic => AppAnthropicPlugin(
+    .anthropic => AppAnthropicPlugin(
       apiKey: 'fixture-key',
-      baseUrl: 'https://provider.invalid',
       encoder: const AnthropicRequestEncoder(),
+      baseUrl: 'https://provider.invalid',
       httpClient: client,
     ),
-    ProviderPluginPath.appChatCompletions => AppChatCompletionsPlugin(
+    .appChatCompletions => AppChatCompletionsPlugin(
       name: namespace,
-      apiKey: 'fixture-key',
       baseUrl: 'https://provider.invalid/v1',
+      apiKey: 'fixture-key',
+      codec: .new(errorLabel: namespace, customize: _customize),
+      headers: runtime == .openRouter
+          ? const {'x-session-id': 'session-contract'}
+          : null,
       httpClient: client,
       requestTimeout: requestTimeout,
       retryWait: retryWait,
-      headers: runtime == ProviderRuntime.openRouter
-          ? const {'x-session-id': 'session-contract'}
-          : null,
-      codec: ChatCompletionsCodec(
-        errorLabel: namespace,
-        customize: (model, config) => _customize(model, config),
-      ),
     ),
   };
 
@@ -104,18 +99,17 @@ final class ProviderAdapterCase {
     String model,
     Map<String, dynamic>? config,
   ) {
-    if (runtime == ProviderRuntime.openAiReasoning) {
+    if (runtime == .openAiReasoning) {
       final options = OpenAICompatReasoningOptions.fromJson(config);
+
       return (
         model: options.version ?? model,
-        extraBody: {
-          ...options.toSamplingBody(),
-          ...options.toReasoningBody(),
-        },
+        extraBody: {...options.toSamplingBody(), ...options.toReasoningBody()},
       );
     }
-    if (runtime == ProviderRuntime.openRouter) {
+    if (runtime == .openRouter) {
       final options = OpenRouterOptions.fromJson(config);
+
       return (
         model: model,
         extraBody: {

@@ -10,7 +10,7 @@ import '../support/provider_fault_fixture.dart';
 void main() {
   test('fixture snapshots requests and rejects unscripted attempts', () async {
     final fixture = ProviderFaultFixture([
-      () async => ProviderTransportResponse(
+      () async => const ProviderTransportResponse(
         statusCode: 200,
         body: const Stream.empty(),
       ),
@@ -66,10 +66,7 @@ void main() {
         final split = unicode.indexOf(0xf0) + 2;
         body
           ..add(unicode.sublist(0, split))
-          ..add([
-            ...unicode.sublist(split),
-            ...adapter.done(),
-          ]);
+          ..add([...unicode.sublist(split), ...adapter.done()]);
         await body.close();
         final response = await pending;
 
@@ -226,7 +223,7 @@ typedef _StreamCodec = Future<ModelResponse> Function(
 );
 
 final class _CodecCase {
-  const _CodecCase(this.name, this.stream, this.build, {this.codex = false});
+  const new(this.name, this.stream, this.build, {this.codex = false});
 
   final String name;
   final _StreamCodec stream;
@@ -319,7 +316,7 @@ final class _CodecCase {
 List<int> _event(Map<String, Object?> event) =>
     utf8.encode('data: ${jsonEncode(event)}\n\n');
 
-final _adapters = [
+final List<_CodecCase> _adapters = [
   for (final runtime in [
     ProviderRuntime.openAi,
     ProviderRuntime.openRouter,

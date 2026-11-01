@@ -15,18 +15,31 @@ import 'support/provider_fault_client.dart';
 void main() {
   test('covers every selected runtime and production plugin path', () {
     final actual = {
-      for (final adapter in providerAdapterCases) (adapter.runtime, adapter.path),
+      for (final adapter in providerAdapterCases)
+        (runtime: adapter.runtime, path: adapter.path),
     };
     expect(actual, {
-      (ProviderRuntime.openAi, ProviderPluginPath.upstreamOpenAi),
-      (ProviderRuntime.openAi, ProviderPluginPath.appChatCompletions),
-      (ProviderRuntime.openRouter, ProviderPluginPath.appChatCompletions),
-      (ProviderRuntime.openAiReasoning, ProviderPluginPath.appChatCompletions),
-      (ProviderRuntime.codexOAuth, ProviderPluginPath.codex),
-      (ProviderRuntime.anthropic, ProviderPluginPath.anthropic),
+      (
+        runtime: ProviderRuntime.openAi,
+        path: ProviderPluginPath.upstreamOpenAi,
+      ),
+      (
+        runtime: ProviderRuntime.openAi,
+        path: ProviderPluginPath.appChatCompletions,
+      ),
+      (
+        runtime: ProviderRuntime.openRouter,
+        path: ProviderPluginPath.appChatCompletions,
+      ),
+      (
+        runtime: ProviderRuntime.openAiReasoning,
+        path: ProviderPluginPath.appChatCompletions,
+      ),
+      (runtime: ProviderRuntime.codexOAuth, path: ProviderPluginPath.codex),
+      (runtime: ProviderRuntime.anthropic, path: ProviderPluginPath.anthropic),
     });
     expect(
-      actual.map((selection) => selection.$1).toSet(),
+      actual.map((selection) => selection.runtime).toSet(),
       ProviderRuntime.values.toSet(),
     );
     expect(providerAdapterCases, hasLength(actual.length));
@@ -37,7 +50,9 @@ void main() {
       test('decodes partial and delayed chunks exactly once', () async {
         final body = ProviderFaultBody();
         addTearDown(body.dispose);
-        final harness = _Harness(adapter, [(_) async => _stream(body.stream)]);
+        final harness = _Harness.create(adapter, [
+          (_) async => _stream(body.stream),
+        ]);
         final firstChunk = Completer<void>();
         final generation = harness.run(onText: firstChunk.complete);
         await body.listened;
@@ -49,7 +64,8 @@ void main() {
         await firstChunk.future;
         expect(harness.text, 'Hello ');
 
-        final bytes = adapter.protocol.text('\u{1f30d}');
+        final globe = String.fromCharCode(0x1f30d);
+        final bytes = adapter.protocol.text(globe);
         final split = bytes.indexOf(0xf0) + 2;
         body
           ..add(bytes.sublist(0, split))
@@ -58,7 +74,7 @@ void main() {
         final result = await generation;
 
         expect(result.finishReason, FinishReason.stop);
-        expect(result.text, 'Hello \u{1f30d}');
+        expect(result.text, 'Hello $globe');
         expect(harness.text, result.text);
         expect(harness.client.requests, hasLength(1));
         expect(harness.effects, isEmpty);
@@ -71,7 +87,7 @@ void main() {
           final failure = timeout
               ? TimeoutException('fixture timeout')
               : http.ClientException('fixture disconnect');
-          final harness = _Harness(adapter, [
+          final harness = _Harness.create(adapter, [
             (_) async => throw failure,
             (_) async => _success(adapter),
           ]);
@@ -99,7 +115,7 @@ void main() {
           () async {
             final body = ProviderFaultBody();
             addTearDown(body.dispose);
-            final harness = _Harness(adapter, [
+            final harness = _Harness.create(adapter, [
               (_) async => _stream(body.stream),
             ]);
             final firstChunk = Completer<void>();
@@ -131,7 +147,7 @@ void main() {
 
       for (final status in [401, 403]) {
         test('authentication HTTP $status never retries', () async {
-          final harness = _Harness(adapter, [
+          final harness = _Harness.create(adapter, [
             (_) async => _error(status),
           ]);
           final result = await harness.run();
@@ -139,7 +155,8 @@ void main() {
 
           expect(result.finishReason, FinishReason.failed);
           expect(failure, isNotNull);
-          final cause = failure!;
+          if (failure == null) fail('Expected provider HTTP failure');
+          final cause = failure;
           _expectHttpCause(adapter, cause, status);
           final recovery = ProviderFailureRecovery.fromError(cause);
           expect(recovery.retryable, isFalse);
@@ -157,26 +174,29 @@ void main() {
 
       for (final header in [null, 'invalid', '-1', '12', '120']) {
         test('rate limit Retry-After=$header has explicit policy', () async {
-          final harness = _Harness(adapter, [
+          final harness = _Harness.create(adapter, [
             (_) async => _error(429, retryAfter: header),
           ]);
           final result = await harness.run();
           final failure = result.cause;
           expect(result.finishReason, FinishReason.failed);
           expect(failure, isNotNull);
-          final cause = failure!;
+          if (failure == null) fail('Expected provider HTTP failure');
+          final cause = failure;
           _expectHttpCause(adapter, cause, 429);
           final recovery = ProviderFailureRecovery.fromError(cause);
           final seconds = int.tryParse(header ?? '');
-          final delay = seconds == null
-              ? null
-              : Duration(
-                  seconds: seconds < 0
-                      ? 0
-                      : adapter.path == ProviderPluginPath.codex && seconds > 60
-                      ? 60
-                      : seconds,
-                );
+          Duration? delay;
+          if (seconds != null) {
+            if (seconds < 0) {
+              delay = Duration.zero;
+            } else if (adapter.path == ProviderPluginPath.codex &&
+                seconds > 60) {
+              delay = const Duration(seconds: 60);
+            } else {
+              delay = Duration(seconds: seconds);
+            }
+          }
 
           expect(
             recovery.category,
@@ -184,10 +204,7 @@ void main() {
                 ? ProviderFailureCategory.unknown
                 : ProviderFailureCategory.quotaRateLimit,
           );
-          expect(
-            recovery.retryAfter,
-            adapter.losesHttpMetadata ? null : delay,
-          );
+          expect(recovery.retryAfter, adapter.losesHttpMetadata ? null : delay);
           expect(
             recovery.retryable,
             !adapter.losesHttpMetadata && delay != null,
@@ -204,12 +221,13 @@ void main() {
       }
 
       test('non-stream authentication remains non-retryable', () async {
-        final harness = _Harness(adapter, [(_) async => _error(401)]);
+        final harness = _Harness.create(adapter, [(_) async => _error(401)]);
         final result = await harness.run(streaming: false);
         final failure = result.cause;
         expect(result.finishReason, FinishReason.failed);
         expect(failure, isNotNull);
-        final recovery = ProviderFailureRecovery.fromError(failure!);
+        if (failure == null) fail('Expected provider HTTP failure');
+        final recovery = ProviderFailureRecovery.fromError(failure);
         expect(recovery.retryable, isFalse);
         expect(
           recovery.category,
@@ -223,32 +241,36 @@ void main() {
 
       for (final status in [500, 502, 503, 504]) {
         for (final structured in [false, true]) {
-          test('HTTP $status structured=$structured obeys retry rule', () async {
-            final harness = _Harness(adapter, [
-              (_) async => _error(status, structured: structured),
-              (_) async => _success(adapter),
-            ]);
-            final retries = adapter.retriesTransport ||
-                (adapter.path == ProviderPluginPath.codex &&
-                    status == 500 &&
-                    structured);
-            final result = await harness.run();
+          test(
+            'HTTP $status structured=$structured obeys retry rule',
+            () async {
+              final harness = _Harness.create(adapter, [
+                (_) async => _error(status, structured: structured),
+                (_) async => _success(adapter),
+              ]);
+              final retries =
+                  adapter.retriesTransport ||
+                  (adapter.path == ProviderPluginPath.codex &&
+                      status == 500 &&
+                      structured);
+              final result = await harness.run();
 
-            expect(
-              result.finishReason,
-              retries ? FinishReason.stop : FinishReason.failed,
-            );
-            expect(harness.client.requests, hasLength(retries ? 2 : 1));
-            expect(harness.effects, isEmpty);
-            if (retries) _expectStableRequests(harness.client.requests);
-          });
+              expect(
+                result.finishReason,
+                retries ? FinishReason.stop : FinishReason.failed,
+              );
+              expect(harness.client.requests, hasLength(retries ? 2 : 1));
+              expect(harness.effects, isEmpty);
+              if (retries) _expectStableRequests(harness.client.requests);
+            },
+          );
         }
       }
 
       test('preserves one complete tool-call identity', () async {
-        final harness = _Harness(adapter, [
+        final harness = _Harness.create(adapter, [
           (_) async => _stream(
-            Stream.fromIterable([
+            .fromIterable([
               adapter.protocol.start(),
               adapter.protocol.tool(),
               adapter.protocol.done(tool: true),
@@ -269,7 +291,9 @@ void main() {
       test('a failed tool-bearing stream has zero side effects', () async {
         final body = ProviderFaultBody();
         addTearDown(body.dispose);
-        final harness = _Harness(adapter, [(_) async => _stream(body.stream)]);
+        final harness = _Harness.create(adapter, [
+          (_) async => _stream(body.stream),
+        ]);
         final firstChunk = Completer<void>();
         final generation = harness.run(
           executeTools: true,
@@ -293,12 +317,13 @@ void main() {
       });
 
       test('a successful tool exchange applies its side effect once', () async {
-        final retries = adapter.retriesTransport ||
+        final retries =
+            adapter.retriesTransport ||
             adapter.path == ProviderPluginPath.codex;
-        final harness = _Harness(adapter, [
+        final harness = _Harness.create(adapter, [
           if (retries) (_) async => _error(500, structured: true),
           (_) async => _stream(
-            Stream.fromIterable([
+            .fromIterable([
               adapter.protocol.start(),
               adapter.protocol.tool(),
               adapter.protocol.done(tool: true),
@@ -320,12 +345,12 @@ void main() {
 
       test('cancellation before headers aborts the actual transport', () async {
         final response = Completer<http.StreamedResponse>();
-        final harness = _Harness(adapter, [(_) => response.future]);
+        final harness = _Harness.create(adapter, [(_) => response.future]);
         final cancellation = CancellationController();
         final generation = harness.run(cancellation: cancellation);
         addTearDown(() async {
           if (!response.isCompleted) response.complete(_success(adapter));
-          await generation;
+          _ = await generation;
         });
         final request = await harness.client.requestAt(0);
         cancellation.cancel();
@@ -340,55 +365,59 @@ void main() {
         expect(harness.effects, isEmpty);
       });
 
-      test('cancellation closes an idle stream and rejects later tool effects',
-          () async {
-        final body = ProviderFaultBody();
-        addTearDown(body.dispose);
-        final harness = _Harness(adapter, [(_) async => _stream(body.stream)]);
-        final cancellation = CancellationController();
-        final firstChunk = Completer<void>();
-        final generation = harness.run(
-          executeTools: true,
-          cancellation: cancellation,
-          onText: firstChunk.complete,
-        );
-        addTearDown(() async {
-          body.dispose();
-          await generation;
-        });
-        await body.listened;
-        body.add([
-          ...adapter.protocol.start(),
-          ...adapter.protocol.text('partial'),
-        ]);
-        await firstChunk.future;
-        cancellation.cancel();
+      test(
+        'cancellation closes an idle stream and rejects later tool effects',
+        () async {
+          final body = ProviderFaultBody();
+          addTearDown(body.dispose);
+          final harness = _Harness.create(adapter, [
+            (_) async => _stream(body.stream),
+          ]);
+          final cancellation = CancellationController();
+          final firstChunk = Completer<void>();
+          final generation = harness.run(
+            executeTools: true,
+            cancellation: cancellation,
+            onText: firstChunk.complete,
+          );
+          addTearDown(() async {
+            body.dispose();
+            _ = await generation;
+          });
+          await body.listened;
+          body.add([
+            ...adapter.protocol.start(),
+            ...adapter.protocol.text('partial'),
+          ]);
+          await firstChunk.future;
+          cancellation.cancel();
 
-        expect(harness.client.requests.single.supportsAbort, isTrue);
-        final result = await generation;
-        await body.cancelled;
-        body.add([
-          ...adapter.protocol.text('late'),
-          ...adapter.protocol.tool(),
-          ...adapter.protocol.done(tool: true),
-        ]);
-        expect(result.finishReason, FinishReason.aborted);
-        expect(harness.text, 'partial');
-        expect(harness.effects, isEmpty);
-        expect(body.cancellationCount, 1);
-        expect(harness.client.requests, hasLength(1));
-        expect(
-          harness.client.closeCount,
-          adapter.path == ProviderPluginPath.upstreamOpenAi ? 1 : 0,
-        );
-      });
+          expect(harness.client.requests.single.supportsAbort, isTrue);
+          final result = await generation;
+          await body.cancelled;
+          body.add([
+            ...adapter.protocol.text('late'),
+            ...adapter.protocol.tool(),
+            ...adapter.protocol.done(tool: true),
+          ]);
+          expect(result.finishReason, FinishReason.aborted);
+          expect(harness.text, 'partial');
+          expect(harness.effects, isEmpty);
+          expect(body.cancellationCount, 1);
+          expect(harness.client.requests, hasLength(1));
+          expect(
+            harness.client.closeCount,
+            adapter.path == ProviderPluginPath.upstreamOpenAi ? 1 : 0,
+          );
+        },
+      );
 
       if (adapter.retriesTransport) {
         for (final retryAfter in ['12', '120', 'invalid', '-1']) {
           test('server retry waits for Retry-After=$retryAfter', () async {
             final waiting = Completer<void>();
             final release = Completer<void>();
-            final harness = _Harness(
+            final harness = _Harness.create(
               adapter,
               [
                 (_) async => _error(503, retryAfter: retryAfter),
@@ -396,6 +425,7 @@ void main() {
               ],
               retryWait: (_) {
                 waiting.complete();
+
                 return release.future;
               },
             );
@@ -424,7 +454,7 @@ void main() {
           final waiting = Completer<void>();
           final release = Completer<void>();
           final waitSettled = Completer<void>();
-          final harness = _Harness(
+          final harness = _Harness.create(
             adapter,
             [(_) async => _error(503, retryAfter: '12')],
             retryWait: (_) async {
@@ -453,32 +483,33 @@ void main() {
         });
       }
 
-      if (adapter.retriesTransport || adapter.path == ProviderPluginPath.codex) {
-        test('cancellation prevents an otherwise permitted server retry',
-            () async {
-          final body = ProviderFaultBody();
-          addTearDown(body.dispose);
-          final harness = _Harness(adapter, [
-            (_) async => http.StreamedResponse(body.stream, 500),
-          ]);
-          final cancellation = CancellationController();
-          final generation = harness.run(cancellation: cancellation);
-          await body.listened;
-          cancellation.cancel();
-          final result = await generation;
-          await body.cancelled;
-          body.add(
-            utf8.encode('{"error":{"type":"server_error"}}'),
-          );
+      if (adapter.retriesTransport ||
+          adapter.path == ProviderPluginPath.codex) {
+        test(
+          'cancellation prevents an otherwise permitted server retry',
+          () async {
+            final body = ProviderFaultBody();
+            addTearDown(body.dispose);
+            final harness = _Harness.create(adapter, [
+              (_) async => http.StreamedResponse(body.stream, 500),
+            ]);
+            final cancellation = CancellationController();
+            final generation = harness.run(cancellation: cancellation);
+            await body.listened;
+            cancellation.cancel();
+            final result = await generation;
+            await body.cancelled;
+            body.add(utf8.encode('{"error":{"type":"server_error"}}'));
 
-          expect(result.finishReason, FinishReason.aborted);
-          expect(harness.client.requests, hasLength(1));
-          expect(harness.retryDelays, isEmpty);
-          expect(harness.effects, isEmpty);
-        });
+            expect(result.finishReason, FinishReason.aborted);
+            expect(harness.client.requests, hasLength(1));
+            expect(harness.retryDelays, isEmpty);
+            expect(harness.effects, isEmpty);
+          },
+        );
 
         test('stops after its one permitted server retry', () async {
-          final harness = _Harness(adapter, [
+          final harness = _Harness.create(adapter, [
             (_) async => _error(500, structured: true),
             (_) async => _error(500, structured: true),
           ]);
@@ -492,11 +523,10 @@ void main() {
 
         test('enforces a zero header deadline without a real sleep', () async {
           final response = Completer<http.StreamedResponse>();
-          final harness = _Harness(
-            adapter,
-            [(_) => response.future, (_) => response.future],
-            requestTimeout: Duration.zero,
-          );
+          final harness = _Harness.create(adapter, [
+            (_) => response.future,
+            (_) => response.future,
+          ], requestTimeout: .zero);
           addTearDown(() {
             if (!response.isCompleted) response.complete(_success(adapter));
           });
@@ -515,14 +545,24 @@ void main() {
   }
 }
 
-final class _Harness {
-  _Harness(
-    this.adapter,
+final class _Harness(
+  final ProviderAdapterCase adapter,
+  final ProviderFaultClient client,
+  final Genkit ai,
+  final Tool<Map<String, Object?>, Object?> tool,
+  final List<Duration> retryDelays,
+  final List<String> effects,
+) {
+  static _Harness create(
+    ProviderAdapterCase adapter,
     List<ProviderFaultAttempt> attempts, {
     Future<void> Function(Duration)? retryWait,
     Duration requestTimeout = const Duration(seconds: 30),
-  }) : client = ProviderFaultClient(attempts) {
-    ai = adapter.createGenkit(
+  }) {
+    final client = ProviderFaultClient(attempts);
+    final retryDelays = <Duration>[];
+    final effects = <String>[];
+    final ai = adapter.createGenkit(
       client,
       requestTimeout: requestTimeout,
       retryWait: (delay) {
@@ -530,7 +570,7 @@ final class _Harness {
         return retryWait?.call(delay) ?? Future.value();
       },
     );
-    tool = ai.defineTool<Map<String, Object?>, Object?>(
+    final tool = ai.defineTool<Map<String, Object?>, Object?>(
       name: 'count_effect',
       description: 'Count one fixture effect.',
       inputSchema: SchemanticType.from<Map<String, Object?>>(
@@ -545,19 +585,17 @@ final class _Harness {
         parse: (value) => value as Map<String, Object?>,
       ),
       fn: (input, context) async {
-        effects.add('${context.toolRequest?.toolRequest.ref}:${input['value']}');
+        effects.add(
+          '${context.toolRequest?.toolRequest.ref}:${input['value']}',
+        );
         return const ToolResponseResult<Object?>('effect applied');
       },
     );
     addTearDown(client.close);
+
+    return _Harness(adapter, client, ai, tool, retryDelays, effects);
   }
 
-  final ProviderAdapterCase adapter;
-  final ProviderFaultClient client;
-  late final Genkit ai;
-  late final Tool<Map<String, Object?>, Object?> tool;
-  final List<Duration> retryDelays = [];
-  final List<String> effects = [];
   final List<String> _text = [];
 
   String get text => _text.join();
@@ -599,14 +637,14 @@ http.StreamedResponse _stream(Stream<List<int>> stream) =>
     );
 
 http.StreamedResponse _success(ProviderAdapterCase adapter) =>
-    _stream(Stream.value(adapter.protocol.success('ready')));
+    _stream(.value(adapter.protocol.success('ready')));
 
 http.StreamedResponse _error(
   int status, {
   bool structured = false,
   String? retryAfter,
 }) => http.StreamedResponse(
-  Stream.value(
+  .value(
     utf8.encode(
       jsonEncode({
         'type': 'error',
@@ -618,38 +656,35 @@ http.StreamedResponse _error(
     ),
   ),
   status,
-  headers: {
-    'content-type': 'application/json',
-    if (retryAfter != null) 'retry-after': retryAfter,
-  },
+  headers: {'content-type': 'application/json', 'retry-after': ?retryAfter},
 );
 
 void _expectRequest(ProviderAdapterCase adapter, ProviderFaultRequest request) {
   expect(request.method, 'POST');
   expect(request.url.host, 'provider.invalid');
-  expect(
-    request.url.path,
-    switch (adapter.path) {
-      ProviderPluginPath.codex => '/responses',
-      ProviderPluginPath.anthropic => '/v1/messages',
-      _ => '/v1/chat/completions',
-    },
-  );
+  expect(request.url.path, switch (adapter.path) {
+    .codex => '/responses',
+    .anthropic => '/v1/messages',
+    _ => '/v1/chat/completions',
+  });
   expect(request.json['model'], 'contract-model');
   expect(request.json['stream'], isTrue);
 }
 
 void _expectStableRequests(List<ProviderFaultRequest> requests) {
   expect(requests, hasLength(2));
-  expect(requests.last.method, requests.first.method);
-  expect(requests.last.url, requests.first.url);
-  expect(requests.last.json, requests.first.json);
-  expect(requests.last.headers, requests.first.headers);
+  final first = requests.firstOrNull;
+  if (first == null) fail('Expected a first provider request');
+  final last = requests.last;
+  expect(last.method, first.method);
+  expect(last.url, first.url);
+  expect(last.json, first.json);
+  expect(last.headers, first.headers);
 }
 
 void _expectHttpCause(ProviderAdapterCase adapter, Object error, int status) {
   switch (adapter.path) {
-    case ProviderPluginPath.anthropic:
+    case .anthropic:
       expect(
         error,
         isA<AnthropicRequestException>().having(
@@ -658,7 +693,7 @@ void _expectHttpCause(ProviderAdapterCase adapter, Object error, int status) {
           'provider_failure',
         ),
       );
-    case ProviderPluginPath.upstreamOpenAi:
+    case .upstreamOpenAi:
       expect(error, isA<GenkitException>());
       final genkit = error as GenkitException;
       expect(genkit.status, StatusCode.unknown);
@@ -670,7 +705,7 @@ void _expectHttpCause(ProviderAdapterCase adapter, Object error, int status) {
           status,
         ),
       );
-    case ProviderPluginPath.appChatCompletions:
+    case .appChatCompletions:
       final providerError = switch (error) {
         AgentRateLimitRetryException(:final providerException) =>
           providerException,
@@ -684,7 +719,7 @@ void _expectHttpCause(ProviderAdapterCase adapter, Object error, int status) {
           status,
         ),
       );
-    case ProviderPluginPath.codex:
+    case .codex:
       expect(
         error,
         isA<ProviderHttpFailureException>().having(
