@@ -1718,6 +1718,10 @@ class const _LoadedChatConversationMain({
   Widget build(BuildContext context, WidgetRef ref) => _ChatConversationBody(
     data: data,
     onOpenToolResult: (tab) => _open(ref, tab),
+    key: ValueKey((
+      workspaceId: data.workspaceId,
+      conversationId: data.conversation.id,
+    )),
   );
   void _open(WidgetRef ref, SidebarToolResultTab tab) {
     ref
@@ -1813,6 +1817,7 @@ class const _LoadedChatBrowserPanel({
 class const _ChatConversationBody({
   required final _LoadedChatConversationData data,
   required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
+  super.key,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
