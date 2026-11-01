@@ -703,7 +703,7 @@ void _expectHttpCause(ProviderAdapterCase adapter, Object error, int status) {
     case .upstreamOpenAi:
       expect(error, isA<GenkitException>());
       final genkit = error as GenkitException;
-      expect(genkit.status, StatusCode.unknown);
+      expect(genkit.status, StatusCode.internal);
       expect(
         genkit.cause,
         isA<sdk.ApiException>().having(

@@ -106,6 +106,7 @@ void main() {
           final response = await ai.generate<Object?, Object?>(
             model: providerFactory.getModelReference(config),
             prompt: 'Use the selected adapter.',
+            onChunk: (_) {},
             cancel: CancellationController().token,
           );
 

@@ -171,6 +171,7 @@ Future<GenerateResult<Object?>> _generate(
           user: 'fixture-user',
         ),
         prompt: 'Preserve the upstream request.',
+        onChunk: (_) {},
         cancel: CancellationController().token,
       ),
   () => client,

@@ -189,13 +189,14 @@ void main() {
       final response = await client.send(
         http.Request('POST', .parse('https://provider.invalid')),
       );
+      final aborted = Completer<Object>();
       final subscription = response.stream.listen(
         (_) => fail('Unexpected response body data'),
-        onError: (Object error) =>
-            fail('Unexpected response body error: $error'),
+        onError: aborted.complete,
       );
       cancellation.cancel();
       await cleanupStarted.future;
+      expect(await aborted.future, isA<http.RequestAbortedException>());
       var finished = false;
       final cleanup = () async {
         await subscription.cancel();
