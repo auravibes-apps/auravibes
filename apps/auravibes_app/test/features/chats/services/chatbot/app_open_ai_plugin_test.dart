@@ -104,7 +104,7 @@ void main() {
       final request = client.requests.single;
       final contentType = request.headers['content-type'];
 
-      expect(response.finishReason, .stop);
+      expect(response.finishReason, FinishReason.stop);
       expect(response.text, 'fixture transcript');
       expect(request.url.path, '/v1/audio/transcriptions');
       expect(request.supportsAbort, isTrue);
