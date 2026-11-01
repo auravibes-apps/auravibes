@@ -11,6 +11,8 @@ const _nestedFixturePath =
     'tool/fixtures/import_sorter_workspace/packages/'
     'nested_import_sorter_fixture';
 const _generatedPluginRegistrant = 'lib/generated_plugin_registrant.dart';
+const _generatedServerpodHeader =
+    '/* AUTOMATICALLY GENERATED CODE DO NOT MODIFY */';
 // Keep checks aligned with the repository's separator-free import style.
 const _noImportGroupComments = true;
 // Make import_sorter treat Flutter and workspace package URIs as one group.
@@ -67,7 +69,9 @@ void main() {
     }
 
     for (final entry in files.entries) {
-      if (_hasUnsortedImports(entry.value.readAsStringSync())) {
+      final source = entry.value.readAsStringSync();
+      if (source.startsWith(_generatedServerpodHeader)) continue;
+      if (_hasUnsortedImports(source)) {
         errors.add(
           '${p.relative(entry.key, from: root.path)} has unsorted imports.',
         );
