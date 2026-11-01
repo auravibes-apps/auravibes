@@ -906,15 +906,28 @@ class const _DropdownSearchHeader({
           style: .new(color: context.auraColors.onSurface),
           onChanged: onChanged,
         ),
-        if (controller.text.isEmpty) ...[
-          const AuraSizedBox(height: .xs),
-          const ModelChoiceExplanation(
-            descriptionKey: 'models_screens.model_choice_explanation',
-          ),
-        ],
+        _DropdownSearchExplanation(controller: controller),
       ],
     ),
     padding: .small,
+  );
+}
+
+class const _DropdownSearchExplanation({required this.controller})
+    extends StatelessWidget {
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      if (controller.text.isEmpty) ...[
+        const AuraSizedBox(height: .xs),
+        const ModelChoiceExplanation(
+          descriptionKey: 'models_screens.model_choice_explanation',
+        ),
+      ],
+    ],
   );
 }
 

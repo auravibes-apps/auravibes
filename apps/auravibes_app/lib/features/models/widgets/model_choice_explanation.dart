@@ -20,14 +20,7 @@ class const ModelChoiceExplanation({
           child: AuraText(child: TextLocale(descriptionKey), style: .bodySmall),
         ),
         const AuraSizedBox(width: .xs),
-        AuraIconButton(
-          icon: Icons.info_outline,
-          onPressed: () =>
-              unawaited(ModelChoiceExplanation._showModelChoiceHelp(context)),
-          size: .small,
-          semanticLabel: helpLabel,
-          tooltip: helpLabel,
-        ),
+        _ModelChoiceHelpButton(label: helpLabel),
       ],
     );
   }
@@ -39,4 +32,19 @@ class const ModelChoiceExplanation({
         message: const TextLocale('models_screens.choice_help.details'),
         dismissLabel: const TextLocale('common.close'),
       );
+}
+
+class const _ModelChoiceHelpButton({required this.label})
+    extends StatelessWidget {
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.info_outline,
+    onPressed: () =>
+        unawaited(ModelChoiceExplanation._showModelChoiceHelp(context)),
+    size: .small,
+    semanticLabel: label,
+    tooltip: label,
+  );
 }
