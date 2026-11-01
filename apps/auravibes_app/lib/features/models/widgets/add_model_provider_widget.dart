@@ -294,15 +294,20 @@ class const _AddModelProviderChoice({
       .new(
         key: const Key('intro_ai_provider_choice'),
         heading: const _IntroAIHeading(),
-        description: const ModelChoiceExplanation(
-          description: TextLocale(LocaleKeys.intro_flow_ai_choose_provider),
-        ),
+        description: const _ModelProviderChoiceExplanation(),
         body: choice,
         scrollBody: false,
         actions: _ModelProviderChoiceCancel(request: request),
       ),
     );
   }
+}
+
+class const _ModelProviderChoiceExplanation() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const ModelChoiceExplanation(
+    description: TextLocale(LocaleKeys.intro_flow_ai_choose_provider),
+  );
 }
 
 class const _IntroAIHeading() extends StatelessWidget {
@@ -2563,9 +2568,7 @@ class const _ModelProviderSearchControls({
       if (showHeading) ...[
         const _ModelProviderSearchLabel(),
         const AuraSizedBox(height: .xs),
-        const ModelChoiceExplanation(
-          description: TextLocale(LocaleKeys.intro_flow_ai_choose_provider),
-        ),
+        const _ModelProviderChoiceExplanation(),
         const AuraSizedBox(height: .md),
       ],
       _ModelProviderSearchInput(
