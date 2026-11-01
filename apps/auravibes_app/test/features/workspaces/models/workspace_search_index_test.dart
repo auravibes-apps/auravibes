@@ -1,6 +1,7 @@
-import 'package:auravibes_app/benchmark/workspace_search_benchmark.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_search_index.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../benchmark/workspace_search_benchmark.dart';
 
 void main() {
   group('WorkspaceSearchBenchmark', () {
