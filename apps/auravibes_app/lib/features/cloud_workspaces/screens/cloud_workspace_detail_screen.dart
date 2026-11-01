@@ -27,6 +27,12 @@ import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 final _logger = Logger('cloud_workspace_detail_screen');
+const _ownerRoleDescriptionKey =
+    'workspace_management.cloud_role_owner_description';
+const _adminRoleDescriptionKey =
+    'workspace_management.cloud_role_admin_description';
+const _memberRoleDescriptionKey =
+    'workspace_management.cloud_role_member_description';
 
 class const CloudWorkspaceDetailScreen({
   required final String workspaceId,
@@ -179,6 +185,7 @@ class const _DetailBody({
       children: [
         AuraText(child: Text(workspace.name), style: AuraTextStyle.heading4),
         Text(_roleLabel(workspace.role).tr()),
+        _WorkspaceRoleDescription(role: workspace.role),
         Text(
           ref
                   .watch(cloudAccountsProvider)
@@ -325,8 +332,10 @@ class const _DetailBody({
     if (mirror != null &&
         !await _confirm(
           context,
-          LocaleKeys.cloud_workspaces_remove_confirm,
-          namedArgs: {'name': workspace.name},
+          message: TextLocale(
+            LocaleKeys.cloud_workspaces_remove_confirm,
+            namedArgs: {'name': workspace.name},
+          ),
         )) {
       return;
     }
@@ -390,7 +399,10 @@ class const _DetailBody({
     WidgetRef ref,
     CloudWorkspaceSummary workspace,
   ) async {
-    if (!await _confirm(context, LocaleKeys.cloud_workspaces_leave_confirm)) {
+    if (!await _confirm(
+      context,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_leave_confirm),
+    )) {
       return;
     }
     await _runCloudAction(context, ref, account, () async {
@@ -469,6 +481,7 @@ class const _MemberTile({
       children: [
         Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
         TextLocale(_roleLabel(member.role)),
+        _WorkspaceRoleDescription(role: member.role),
       ],
       spacing: .xs,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,7 +495,7 @@ class const _MemberTile({
             tooltip: LocaleKeys.cloud_workspaces_transfer_ownership.tr(),
             onPressed: () => _transfer(context, ref),
           ),
-        if (_canManage)
+        if (_canChangeRole)
           AuraIconButton(
             icon: member.role == 'admin'
                 ? Icons.person_outline
@@ -490,7 +503,7 @@ class const _MemberTile({
             tooltip: LocaleKeys.cloud_workspaces_change_role.tr(),
             onPressed: () => _changeRole(context, ref),
           ),
-        if (_canManage)
+        if (_canRemove)
           AuraIconButton(
             icon: Icons.person_remove_outlined,
             tooltip: LocaleKeys.common_remove.tr(),
@@ -500,7 +513,11 @@ class const _MemberTile({
     ),
   );
 
-  bool get _canManage => member.role == 'admin'
+  bool get _canChangeRole =>
+      capabilities.canManageAdmins &&
+      (member.role == 'admin' || member.role == 'member');
+
+  bool get _canRemove => member.role == 'admin'
       ? capabilities.canManageAdmins
       : member.role == 'member' && capabilities.canManageMembers;
 
@@ -516,14 +533,20 @@ class const _MemberTile({
   }
 
   Future<void> _changeRole(BuildContext context, WidgetRef ref) async {
-    if (!await _confirm(context, LocaleKeys.cloud_workspaces_change_role)) {
+    final nextRole = member.role == 'admin' ? 'member' : 'admin';
+    if (!await _confirm(
+      context,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_change_role),
+      title: _roleLabel(nextRole).tr(context: context),
+      detail: _WorkspaceRoleDescription(role: nextRole, showRoleLabel: true),
+    )) {
       return;
     }
     await _runCloudAction(context, ref, account, () async {
       await (await _useCases(ref)).updateMemberRole(
         workspaceId: workspace.id,
         userId: member.userId,
-        role: member.role == 'admin' ? 'member' : 'admin',
+        role: nextRole,
         expectedMemberRevision: member.revision,
       );
       onChanged();
@@ -531,7 +554,10 @@ class const _MemberTile({
   }
 
   Future<void> _remove(BuildContext context, WidgetRef ref) async {
-    if (!await _confirm(context, LocaleKeys.cloud_workspaces_remove_member)) {
+    if (!await _confirm(
+      context,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_remove_member),
+    )) {
       return;
     }
     await _runCloudAction(context, ref, account, () async {
@@ -547,7 +573,7 @@ class const _MemberTile({
   Future<void> _transfer(BuildContext context, WidgetRef ref) async {
     if (!await _confirm(
       context,
-      LocaleKeys.cloud_workspaces_transfer_confirm,
+      message: const TextLocale(LocaleKeys.cloud_workspaces_transfer_confirm),
     )) {
       return;
     }
@@ -622,6 +648,49 @@ class const _OutgoingInviteTile({
   }
 }
 
+class const _WorkspaceRoleDescription({
+  required final String role,
+  final bool showRoleLabel = false,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (role) {
+    'owner' => _roleDescriptionContent(
+      label: const TextLocale(LocaleKeys.workspace_management_cloud_role_owner),
+      description: const TextLocale(_ownerRoleDescriptionKey),
+      showRoleLabel: showRoleLabel,
+    ),
+    'admin' => _roleDescriptionContent(
+      label: const TextLocale(LocaleKeys.workspace_management_cloud_role_admin),
+      description: const TextLocale(_adminRoleDescriptionKey),
+      showRoleLabel: showRoleLabel,
+    ),
+    _ => _roleDescriptionContent(
+      label: const TextLocale(
+        LocaleKeys.workspace_management_cloud_role_member,
+      ),
+      description: const TextLocale(_memberRoleDescriptionKey),
+      showRoleLabel: showRoleLabel,
+    ),
+  };
+}
+
+Widget _roleDescriptionContent({
+  required Widget label,
+  required Widget description,
+  required bool showRoleLabel,
+}) => showRoleLabel
+    ? AuraColumn(
+        crossAxisAlignment: .start,
+        mainAxisSize: .min,
+        spacing: .xs,
+        children: [
+          AuraText(child: label, style: .body),
+          AuraText(child: description),
+        ],
+      )
+    : description;
+
 String _roleLabel(String role) => switch (role) {
   'owner' => LocaleKeys.workspace_management_cloud_role_owner,
   'admin' => LocaleKeys.workspace_management_cloud_role_admin,
@@ -685,15 +754,24 @@ class const _WorkspaceNamePrompt({
 }
 
 Future<bool> _confirm(
-  BuildContext context,
-  String key, {
-  Map<String, String>? namedArgs,
+  BuildContext context, {
+  required Widget message,
+  String? title,
+  Widget? detail,
 }) async {
   FocusManager.instance.primaryFocus?.unfocus();
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      content: Text(key.tr(namedArgs: namedArgs)),
+      title: title == null ? null : Text(title),
+      content: detail == null
+          ? message
+          : AuraColumn(
+              crossAxisAlignment: .start,
+              mainAxisSize: .min,
+              spacing: .sm,
+              children: [message, detail],
+            ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
@@ -715,68 +793,78 @@ Future<_InviteRequest?> _invitePrompt(
   BuildContext context, {
   required String title,
   required bool allowAdmin,
-}) async {
-  final controller = TextEditingController();
-  var role = 'member';
+}) {
   FocusManager.instance.primaryFocus?.unfocus();
-  final result = await showDialog<_InviteRequest>(
+  return showDialog<_InviteRequest>(
     context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) {
-        void submit() =>
-            Navigator.of(context).pop((email: controller.text, role: role));
-
-        return AlertDialog(
-          title: Text(title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                textInputAction: .done,
-                onSubmitted: (_) => submit(),
-              ),
-              if (allowAdmin)
-                AuraChoicePicker<String>(
-                  options: const [
-                    AuraChoiceOption(
-                      value: 'member',
-                      label: TextLocale(
-                        LocaleKeys.workspace_management_cloud_role_member,
-                      ),
-                    ),
-                    AuraChoiceOption(
-                      value: 'admin',
-                      label: TextLocale(
-                        LocaleKeys.workspace_management_cloud_role_admin,
-                      ),
-                    ),
-                  ],
-                  value: [role],
-                  onChanged: (values) {
-                    if (values.isEmpty) return;
-                    setState(() => role = values.first);
-                  },
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const TextLocale(LocaleKeys.common_cancel),
-            ),
-            TextButton(
-              onPressed: submit,
-              child: const TextLocale(LocaleKeys.common_add),
-            ),
-          ],
-        );
-      },
-    ),
+    builder: (context) =>
+        _WorkspaceInvitePrompt(title: title, allowAdmin: allowAdmin),
   );
-  controller.dispose();
-  return result;
+}
+
+class const _WorkspaceInvitePrompt({
+  required final String title,
+  required final bool allowAdmin,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController();
+    final role = useState('member');
+    void submit() =>
+        Navigator.of(context).pop((email: controller.text, role: role.value));
+
+    return AlertDialog(
+      title: Text(title),
+      content: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [
+          TextField(
+            controller: controller,
+            autofocus: true,
+            textInputAction: .done,
+            onSubmitted: (_) => submit(),
+          ),
+          if (allowAdmin)
+            AuraChoicePicker<String>(
+              options: const [
+                AuraChoiceOption(
+                  value: 'member',
+                  label: TextLocale(
+                    LocaleKeys.workspace_management_cloud_role_member,
+                  ),
+                ),
+                AuraChoiceOption(
+                  value: 'admin',
+                  label: TextLocale(
+                    LocaleKeys.workspace_management_cloud_role_admin,
+                  ),
+                ),
+              ],
+              value: [role.value],
+              onChanged: (values) {
+                if (values.isEmpty) return;
+                role.value = values.first;
+              },
+            ),
+          _WorkspaceRoleDescription(
+            key: const ValueKey('workspace_invite_role_description'),
+            role: role.value,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const TextLocale(LocaleKeys.common_cancel),
+        ),
+        TextButton(
+          onPressed: submit,
+          child: const TextLocale(LocaleKeys.common_add),
+        ),
+      ],
+    );
+  }
 }
 
 String _cloudErrorKey(Object error) {

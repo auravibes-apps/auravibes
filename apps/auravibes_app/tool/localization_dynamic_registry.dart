@@ -1428,11 +1428,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         method: 'TextLocale',
         keyExpression: '_cloudErrorKey(error)',
       ),
-      DynamicTranslationSite(
-        file: 'features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart',
-        method: 'tr',
-        keyExpression: 'key',
-      ),
     ],
     keys: {..._cloudAppErrorKeys, ..._cloudWorkspacesDynamicKeys},
   ),
