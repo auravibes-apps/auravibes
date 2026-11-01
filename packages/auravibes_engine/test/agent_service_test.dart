@@ -454,6 +454,61 @@ void main() {
     expect(dataProvider.continuationContexts, hasLength(1));
   });
 
+  test(
+    'preserves acknowledgement identity until the exact retry delay',
+    () async {
+      final started = DateTime.utc(2026);
+      var currentTime = started;
+      final sleeps = <Duration>[];
+      final dataProvider = _FakeAgentConversationDataProvider(
+        continueErrors: [
+          AgentRateLimitRetryException(
+            providerException: ProviderHttpFailureException(
+              429,
+              'Rate limited.',
+            ),
+            retryAfter: const Duration(seconds: 12),
+          ),
+        ],
+        continueResults: const [
+          ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+        ],
+        onRunAllowedTools: () async {
+          expect(currentTime.difference(started), const Duration(seconds: 12));
+        },
+      );
+      final usecase = _buildAgentService(
+        dataProvider,
+        now: () => currentTime,
+        sleep: (duration) async {
+          expect(dataProvider.continuationContexts, hasLength(1));
+          expect(dataProvider.allowedToolRuns, isEmpty);
+          sleeps.add(duration);
+          currentTime = currentTime.add(duration);
+        },
+      );
+
+      final result = await usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: .userMessage,
+          ackMessageIds: ['original-user'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(
+        sleeps.fold(Duration.zero, (total, duration) => total + duration),
+        const Duration(seconds: 12),
+      );
+      expect(dataProvider.continuationContexts, hasLength(2));
+      for (final context in dataProvider.continuationContexts) {
+        expect(context?.ackMessageIds, ['original-user']);
+      }
+      expect(dataProvider.allowedToolRuns, ['conversation-1:workspace-1']);
+    },
+  );
+
   test('caps explicit Retry-After delays at 60 seconds', () async {
     for (final retryAfter in [
       const Duration(seconds: 120),
