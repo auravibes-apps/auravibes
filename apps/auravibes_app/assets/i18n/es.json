@@ -501,6 +501,13 @@
         "restore_default": "Restaurar predeterminado del proveedor"
       },
       "message_placeholder": "Escribe tu mensaje...",
+      "empty_starters": {
+        "title": "¿No sabes por dónde empezar?",
+        "helper": "Elige un ejemplo para añadirlo al borrador. Puedes editarlo antes de enviarlo.",
+        "plan_day": "Ayúdame a planificar mi día",
+        "shopping_list": "Prepara una lista de compras para una cena sencilla",
+        "personal_message": "Redacta un mensaje amable para alguien con quien hace tiempo que no hablo"
+      },
       "bookmark_message": "Guardar mensaje",
       "unbookmark_message": "Quitar mensaje guardado",
       "bookmark_error": "No se pudo actualizar el mensaje guardado. Inténtalo de nuevo.",

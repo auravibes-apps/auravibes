@@ -18,6 +18,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
@@ -39,6 +40,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_shared_asset.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/empty_conversation_starters.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result.dart';
 import 'package:auravibes_app/features/chats/widgets/mcp_app_tool_result_controller.dart';
 import 'package:auravibes_app/features/chats/widgets/shared_chat_attachment_image.dart';
@@ -152,6 +154,7 @@ class const ChatMessagesWidget({
   final List<PendingToolCall> pendingToolCalls = const [],
   final bool showThinking = false,
   final bool isStopRequested = false,
+  final EmptyConversationStarterRequest? emptyConversationStarters,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
 }) extends HookConsumerWidget {
@@ -163,6 +166,18 @@ class const ChatMessagesWidget({
         PrimaryScrollController.of(context) as _DisclosureScrollController;
     final parentConversationId = conversationId;
     final targetMessageId = _searchTargetMessageId(context);
+    final conversationDraft = emptyConversationStarters == null
+        ? null
+        : ref.watch(conversationDraftProvider(workspaceId, conversationId));
+    final starterRequest = emptyConversationStarters;
+    final showConversationStarters =
+        starterRequest != null &&
+        starterRequest.enabled &&
+        !starterRequest.hasDraftToLoad &&
+        !starterRequest.composerHasDraft &&
+        conversationDraft?.isEmpty != false &&
+        messages.isEmpty &&
+        targetMessageId == null;
     final isTargetInLiveMessages =
         targetMessageId != null && messages.contains(targetMessageId);
     final isCloudWorkspace =
@@ -532,6 +547,12 @@ class const ChatMessagesWidget({
           scrollCacheExtent: const ScrollCacheExtent.pixels(500),
           keyboardDismissBehavior: .manual,
         ),
+        if (showConversationStarters)
+          Positioned.fill(
+            child: EmptyConversationStarters(
+              onSelect: starterRequest!.onSelect,
+            ),
+          ),
         ChatAssistantResponseAnnouncement(
           key: ValueKey('assistant_response_announcements_$conversationId'),
           conversationId: conversationId,

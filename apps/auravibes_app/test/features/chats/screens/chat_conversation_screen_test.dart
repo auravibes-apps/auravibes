@@ -28,6 +28,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_archive_prov
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
@@ -54,6 +55,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -939,6 +942,103 @@ void main() {
           .widget<ChatInputWidget>(find.byType(ChatInputWidget))
           .toolAccessMode,
       ConversationToolAccessMode.allowAll,
+    );
+  });
+
+  testWidgets('starter fills the empty composer without sending', (
+    tester,
+  ) async {
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+    );
+    await tester.pump();
+
+    final starter = find.byKey(const ValueKey('chat_empty_starter_plan_day'));
+    expect(starter, findsOneWidget);
+    await tester.tap(starter);
+    await tester.pump();
+    await tester.pump();
+
+    final editableText = tester.widget<EditableText>(
+      find.byType(EditableText).first,
+    );
+    expect(editableText.controller.text, 'Help me plan my day');
+    expect(starter, findsNothing);
+    expect(find.text('Help me plan my day'), findsOneWidget);
+  });
+
+  testWidgets('hides starters without replacing an existing draft', (
+    tester,
+  ) async {
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+    );
+    final editableText = find.byType(EditableText).first;
+    await tester.enterText(editableText, 'Keep this draft');
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('chat_empty_starter_plan_day')),
+      findsNothing,
+    );
+    expect(
+      tester.widget<EditableText>(editableText).controller.text,
+      'Keep this draft',
+    );
+  });
+
+  testWidgets('localizes starter copy and accessible labels', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(projectionRevision: 1),
+        updates: const Stream.empty(),
+        startLocale: const Locale('es'),
+      );
+
+      final spanishStarterTitle = [
+        String.fromCharCode(0xbf),
+        'No sabes por d',
+        String.fromCharCode(0xf3),
+        'nde empezar?',
+      ].join();
+      final spanishPlanDay =
+          'Ay${String.fromCharCode(0xfa)}dame a planificar '
+          'mi d${String.fromCharCode(0xed)}a';
+
+      expect(find.text(spanishStarterTitle), findsOneWidget);
+      expect(find.bySemanticsLabel(spanishPlanDay), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('hides starters after a message exists', (tester) async {
+    final message = MessageEntity(
+      id: 'existing-message',
+      conversationId: _chatId,
+      content: 'Hello',
+      messageType: .text,
+      isUser: true,
+      status: .sent,
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
+    );
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 1),
+      updates: const Stream.empty(),
+      chatMessages: [message],
+    );
+
+    expect(
+      find.byKey(const ValueKey('chat_empty_starter_plan_day')),
+      findsNothing,
     );
   });
 
@@ -2035,6 +2135,7 @@ Future<void> _pumpCloudConversationScreen(
   Future<CloudTurnUsecase?>? usecaseFuture,
   bool iterationLimitReached = false,
   String? parentId,
+  Locale startLocale = const Locale('en'),
   GoRouter? router,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
@@ -2069,14 +2170,22 @@ Future<void> _pumpCloudConversationScreen(
                     ),
                     builder: appBuilder,
                     locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [
+                      ...GlobalMaterialLocalizations.delegates,
+                      sdk_localizations.GlobalMaterialLocalizations.delegate,
+                      ...context.localizationDelegates,
+                    ],
                     supportedLocales: context.supportedLocales,
                   )
                 : MaterialApp.router(
                     routerConfig: router,
                     builder: appBuilder,
                     locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
+                    localizationsDelegates: [
+                      ...GlobalMaterialLocalizations.delegates,
+                      sdk_localizations.GlobalMaterialLocalizations.delegate,
+                      ...context.localizationDelegates,
+                    ],
                     supportedLocales: context.supportedLocales,
                   );
 
@@ -2150,6 +2259,8 @@ Future<void> _pumpCloudConversationScreen(
                 chatMessagesProvider.overrideWith(
                   (ref, _) => Stream.value(chatMessages),
                 ),
+                messageBookmarksProvider(_workspaceId)
+                    .overrideWith((ref) => Stream.value(const [])),
                 chatMessageIdsProvider.overrideWith(
                   (ref, _) => const <String>[],
                 ),
@@ -2168,10 +2279,10 @@ Future<void> _pumpCloudConversationScreen(
             );
           },
         ),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: startLocale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),

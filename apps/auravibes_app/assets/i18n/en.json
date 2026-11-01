@@ -501,6 +501,13 @@
         "restore_default": "Restore provider default"
       },
       "message_placeholder": "Type your message...",
+      "empty_starters": {
+        "title": "Not sure where to start?",
+        "helper": "Choose an example to add it to your draft. You can edit it before sending.",
+        "plan_day": "Help me plan my day",
+        "shopping_list": "Make a shopping list for an easy dinner",
+        "personal_message": "Draft a friendly message to someone I haven't spoken to in a while"
+      },
       "bookmark_message": "Save message",
       "unbookmark_message": "Remove saved message",
       "bookmark_error": "Could not update saved message. Try again.",
