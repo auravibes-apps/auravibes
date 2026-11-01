@@ -110,62 +110,69 @@ void main() {
     }
   }
 
-  testWidgets('captures the compact intro onboarding goldens', (tester) async {
-    await tester.binding.setSurfaceSize(const ui.Size(420, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final fixture = _IntroFixture();
-    addTearDown(fixture.dispose);
+  testWidgets(
+    'captures compact onboarding goldens across the intro flow stages',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const ui.Size(420, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final fixture = _IntroFixture();
+      addTearDown(fixture.dispose);
 
-    await tester.runAsync(
-      () => tester.pumpWidget(fixture.buildApp(reducedMotion: true)),
-    );
-    await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
+      await tester.runAsync(
+        () => tester.pumpWidget(fixture.buildApp(reducedMotion: true)),
+      );
+      await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
 
-    await expectLater(
-      find.byType(IntroScreen),
-      matchesGoldenFile('goldens/intro_welcome.png'),
-    );
+      await expectLater(
+        find.byType(IntroScreen),
+        matchesGoldenFile('goldens/intro_welcome.png'),
+      );
 
-    await tester.tap(find.byKey(_welcomeNextKey));
-    final _ = await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(IntroScreen),
-      matchesGoldenFile('goldens/intro_workspace_context.png'),
-    );
-
-    for (var page = 0; page < 2; page++) {
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
-    }
-    await _pumpUntilFound(tester, find.byKey(_localRouteKey));
-    await expectLater(
-      find.byType(IntroScreen),
-      matchesGoldenFile('goldens/intro_workspace_choice.png'),
-    );
+      await expectLater(
+        find.byType(IntroScreen),
+        matchesGoldenFile('goldens/intro_workspace_context.png'),
+      );
 
-    await _tapVisible(tester, find.byKey(_localRouteKey));
-    await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
-    await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
-    await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
-    await expectLater(
-      find.byType(IntroScreen),
-      matchesGoldenFile('goldens/intro_workspace_create.png'),
-    );
+      for (var page = 0; page < 2; page++) {
+        await tester.tap(find.byKey(_welcomeNextKey));
+        final _ = await tester.pumpAndSettle();
+      }
+      await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+      await expectLater(
+        find.byType(IntroScreen),
+        matchesGoldenFile('goldens/intro_workspace_choice.png'),
+      );
 
-    await tester.enterText(find.byType(AuraInput), 'Design studio');
-    await _tapVisible(tester, find.byKey(_createWorkspaceKey));
-    await _pumpUntilFound(tester, find.text('Workspace created'));
-    await _pumpUntilFound(tester, find.text('chat_readiness.no_provider'.tr()));
-    final _ = await tester.pumpAndSettle();
-    expect(find.text('Design studio'), findsOneWidget);
-    await expectLater(
-      find.byType(IntroScreen),
-      matchesGoldenFile('goldens/intro_ready.png'),
-    );
+      await _tapVisible(tester, find.byKey(_localRouteKey));
+      await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+      await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+      await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+      await expectLater(
+        find.byType(IntroScreen),
+        matchesGoldenFile('goldens/intro_workspace_create.png'),
+      );
 
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-  }, tags: ['golden']);
+      await tester.enterText(find.byType(AuraInput), 'Design studio');
+      await _tapVisible(tester, find.byKey(_createWorkspaceKey));
+      await _pumpUntilFound(tester, find.text('Workspace created'));
+      await _pumpUntilFound(
+        tester,
+        find.text('chat_readiness.no_provider'.tr()),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Design studio'), findsOneWidget);
+      await expectLater(
+        find.byType(IntroScreen),
+        matchesGoldenFile('goldens/intro_ready.png'),
+      );
+
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+    tags: ['golden'],
+  );
 
   testWidgets('outgoing forms lose focus and completion slides to readiness', (
     tester,
