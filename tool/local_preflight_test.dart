@@ -33,12 +33,12 @@ name: core
         .writeAsString('void main() {}\n');
 
     final script = '${Directory.current.path}/tool/local_preflight.dart';
-    final result = await Process.run(Platform.resolvedExecutable, [
-      script,
-      '--dry-run',
-      '--base',
-      base,
-    ], workingDirectory: root.path);
+    final arguments = [script, '--dry-run', '--base', base];
+    final result = await Process.run(
+      Platform.resolvedExecutable,
+      arguments,
+      workingDirectory: root.path,
+    );
 
     expect(result.exitCode, 0, reason: result.stderr.toString());
     final output = result.stdout.toString();
