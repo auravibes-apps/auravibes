@@ -160,22 +160,28 @@ ProviderFaultClient _client() => ProviderFaultClient([
 Future<GenerateResult<Object?>> _generate(
   GenkitPlugin plugin,
   ProviderFaultClient client,
-) => http.runWithClient(
-  () => Genkit(plugins: [plugin], isDevEnv: false)
-      .generate<OpenAIChatOptions, Object?>(
-        model: modelRef<OpenAIChatOptions>('openai/contract-model'),
-        config: OpenAIChatOptions(
-          temperature: 0.25,
-          topP: 0.75,
-          maxTokens: 20,
-          user: 'fixture-user',
+) async {
+  final chunks = <ModelResponseChunk>[];
+  final result = await http.runWithClient(
+    () => Genkit(plugins: [plugin], isDevEnv: false)
+        .generate<OpenAIChatOptions, Object?>(
+          model: modelRef<OpenAIChatOptions>('openai/contract-model'),
+          config: OpenAIChatOptions(
+            temperature: 0.25,
+            topP: 0.75,
+            maxTokens: 20,
+            user: 'fixture-user',
+          ),
+          prompt: 'Preserve the upstream request.',
+          onChunk: chunks.add,
+          cancel: CancellationController().token,
         ),
-        prompt: 'Preserve the upstream request.',
-        onChunk: (_) {},
-        cancel: CancellationController().token,
-      ),
-  () => client,
-);
+    () => client,
+  );
+  expect(chunks.map((chunk) => chunk.text).join(), result.text);
+
+  return result;
+}
 
 Model<dynamic> _model(GenkitPlugin plugin) {
   final action = plugin.resolve(.model, 'contract-model');

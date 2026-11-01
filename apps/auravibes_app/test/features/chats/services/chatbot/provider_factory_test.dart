@@ -102,11 +102,12 @@ void main() {
             providerUrl: 'https://provider.invalid/v1',
             toolSamplingPolicy: explicitPolicy ? ToolSamplingPolicy.off : null,
           );
+          final streamedText = <String>[];
           final ai = await providerFactory.createGenkit(config);
           final response = await ai.generate<Object?, Object?>(
             model: providerFactory.getModelReference(config),
             prompt: 'Use the selected adapter.',
-            onChunk: (_) {},
+            onChunk: (chunk) => streamedText.add(chunk.text),
             cancel: CancellationController().token,
           );
 
@@ -114,6 +115,12 @@ void main() {
             response.finishReason,
             explicitPolicy ? FinishReason.stop : FinishReason.failed,
           );
+          if (explicitPolicy) {
+            expect(response.text, 'ready');
+            expect(streamedText.join(), 'ready');
+          } else {
+            expect(streamedText, isEmpty);
+          }
           expect(client.requests, hasLength(explicitPolicy ? 2 : 1));
           expect(client.requests.first.supportsAbort, isTrue);
           expect(client.requests.first.url.host, 'provider.invalid');
