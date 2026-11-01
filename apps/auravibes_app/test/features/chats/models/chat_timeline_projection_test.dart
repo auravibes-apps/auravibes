@@ -15,7 +15,10 @@ void main() {
         isStreaming: true,
       );
 
-      final items = buildChatTimelineItems([source], const {});
+      final items = ChatTimelineProjection.buildChatTimelineItems(
+        [source],
+        const {},
+      );
 
       expect(items, hasLength(1));
       expect(items.single, isA<MessageTimelineItem>());
@@ -24,7 +27,10 @@ void main() {
         (items.single as MessageTimelineItem).showResponseActions,
         isFalse,
       );
-      expect(hasAssistantResponseCandidate(source, const {}), isTrue);
+      expect(
+        ChatTimelineProjection.hasAssistantResponseCandidate(source, const {}),
+        isTrue,
+      );
     });
 
     test('projects thinking and forked tool calls into activity entries', () {
@@ -45,15 +51,18 @@ void main() {
         isStreaming: true,
       );
 
-      final items = buildChatTimelineItems(
+      final items = ChatTimelineProjection.buildChatTimelineItems(
         [source],
         const {},
         pendingToolCallKeys: {
-          activityToolCallKey('forked-activity', 'search-call'),
+          ChatTimelineProjection.activityToolCallKey(
+            'forked-activity',
+            'search-call',
+          ),
         },
       );
       final item = items.single as ActivityRunTimelineItem;
-      final entries = buildActivityRunEntries(item.run);
+      final entries = ChatTimelineProjection.buildActivityRunEntries(item.run);
 
       expect(item.run.id, 'forked-activity');
       expect(entries, hasLength(2));
@@ -77,14 +86,14 @@ void main() {
       );
       final source = ResolvedChatMessage(message: message, isStreaming: false);
 
-      final items = buildChatTimelineItems(
+      final items = ChatTimelineProjection.buildChatTimelineItems(
         [source],
         const {
           'a2ui-response': ['submitted-answer'],
         },
       );
 
-      expect(hasA2uiMessageState(message), isTrue);
+      expect(ChatTimelineProjection.hasA2uiMessageState(message), isTrue);
       expect(items, hasLength(1));
       expect(items.single, isA<MessageTimelineItem>());
       expect((items.single as MessageTimelineItem).source, source);
@@ -125,7 +134,10 @@ void main() {
         isStreaming: false,
       );
 
-      final items = buildChatTimelineItems([before, summary, after], const {});
+      final items = ChatTimelineProjection.buildChatTimelineItems(
+        [before, summary, after],
+        const {},
+      );
 
       expect(items, hasLength(3));
       expect(items.firstOrNull, isA<ActivityRunTimelineItem>());
@@ -164,8 +176,14 @@ void main() {
         isStreaming: false,
       );
 
-      expect(retryableUserMessageId([retryable, response]), 'retryable-user');
-      expect(retryableUserMessageId([forkReference]), isNull);
+      expect(
+        ChatTimelineProjection.retryableUserMessageId([retryable, response]),
+        'retryable-user',
+      );
+      expect(
+        ChatTimelineProjection.retryableUserMessageId([forkReference]),
+        isNull,
+      );
     });
   });
 }

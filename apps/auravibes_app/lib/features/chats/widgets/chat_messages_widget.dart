@@ -409,13 +409,16 @@ class const ChatMessagesWidget({
         ),
       );
     }
-    final data = buildChatTimelineItems(
+    final data = ChatTimelineProjection.buildChatTimelineItems(
       resolvedMessages,
       submittedA2uiReplayPayloads,
       searchTargetMessageId: targetMessageId,
       pendingToolCallKeys: {
         for (final pendingCall in pendingToolCalls)
-          activityToolCallKey(pendingCall.messageId, pendingCall.toolCall.id),
+          ChatTimelineProjection.activityToolCallKey(
+            pendingCall.messageId,
+            pendingCall.toolCall.id,
+          ),
       },
     ).reversed.toList(growable: false);
     final assistantResponseProgress = <ChatAssistantResponseProgress>[
@@ -429,16 +432,17 @@ class const ChatMessagesWidget({
             messageId: source.message.id,
             isStreaming: source.isStreaming,
             status: source.message.status,
-            hasResponse: hasAssistantResponseCandidate(
+            hasResponse: ChatTimelineProjection.hasAssistantResponseCandidate(
               source,
               submittedA2uiReplayPayloads,
             ),
             isAwaitingUserAction:
                 source.message.status == MessageStatus.unfinished &&
-                hasA2uiMessageState(source.message),
+                ChatTimelineProjection.hasA2uiMessageState(source.message),
           ),
     ];
-    final retryableMessageId = retryableUserMessageId(resolvedMessages);
+    final retryableMessageId =
+        ChatTimelineProjection.retryableUserMessageId(resolvedMessages);
 
     void updateDisclosure(VoidCallback update) => update();
 
@@ -1073,8 +1077,8 @@ class const _ChatMessageTimelineItem({
 
     final showActivity =
         !activityRenderedInSession &&
-        !isTimelineBoundary(message) &&
-        hasAssistantActivity(message);
+        !ChatTimelineProjection.isTimelineBoundary(message) &&
+        ChatTimelineProjection.hasAssistantActivity(message);
     final content = AuraColumn(
       crossAxisAlignment: message.isUser
           ? CrossAxisAlignment.end
@@ -1140,7 +1144,7 @@ class const _ChatMessageContent({
       message: message,
       isStreaming: isStreaming,
       hasContent: hasContent,
-      hasActivity: hasAssistantActivity(message),
+      hasActivity: ChatTimelineProjection.hasAssistantActivity(message),
     );
     final status = _messageDeliveryStatus(message, isStreaming);
     final hasA2uiResponse =
@@ -1326,7 +1330,7 @@ String? _latestA2uiMessageId(
   for (var index = messageIds.length - 1; index > latestUserIndex; index--) {
     final id = messageIds[index];
     final message = messages[id];
-    if (hasA2uiMessageState(message)) return id;
+    if (ChatTimelineProjection.hasA2uiMessageState(message)) return id;
   }
 
   return null;
@@ -1872,7 +1876,7 @@ class const _AssistantActivityRun({
     final mcpAppControllers = useMemoized(
       () => <String, McpAppToolResultController>{},
     );
-    final activityEntries = buildActivityRunEntries(run);
+    final activityEntries = ChatTimelineProjection.buildActivityRunEntries(run);
     final responseEntryIndex = activityEntries.indexWhere(
       (entry) => entry is ActivityResponseEntry && entry.isFinal,
     );
