@@ -161,14 +161,26 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
   );
   if (selectedMessages == null) return null;
 
-  return (
-    activeCheckpoint: activeCheckpoint,
-    conversationRevision: history.conversationRevision,
+  return _createCheckpointRestorePreview(
     checkpoint: checkpoint,
-    replayMessages: List<MessageEntity>.unmodifiable(selectedMessages.skip(1)),
-    transcriptMessages: List<MessageEntity>.unmodifiable(history.messages),
+    history: history,
+    activeCheckpoint: activeCheckpoint,
+    selectedMessages: selectedMessages,
   );
 }
+
+_CheckpointRestorePreview _createCheckpointRestorePreview({
+  required MessageEntity checkpoint,
+  required CompactionCheckpointHistory history,
+  required MessageEntity activeCheckpoint,
+  required List<MessageEntity> selectedMessages,
+}) => (
+  activeCheckpoint: activeCheckpoint,
+  conversationRevision: history.conversationRevision,
+  checkpoint: checkpoint,
+  replayMessages: List<MessageEntity>.unmodifiable(selectedMessages.skip(1)),
+  transcriptMessages: List<MessageEntity>.unmodifiable(history.messages),
+);
 
 MessageEntity? _activeCheckpointSummary(CompactionCheckpointHistory history) =>
     history.summaries
