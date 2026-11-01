@@ -2419,25 +2419,6 @@ class _AvailableCloudAccountItemsState
       widget.data,
     );
 
-    return _content(accounts, accountStates, matchingAccountIds);
-  }
-
-  List<_CloudAccountWorkspaceState> _accountStates(
-    List<CloudAccountSession> accounts,
-  ) {
-    final activeAccountKeys = accounts.map((account) => account.key).toSet();
-    _workspaceSearchIndexes.removeWhere(
-      (key, _) => !activeAccountKeys.contains(key),
-    );
-
-    return _watchCloudAccountStates(ref, accounts, _searchIndexFor);
-  }
-
-  Widget _content(
-    List<CloudAccountSession> accounts,
-    List<_CloudAccountWorkspaceState> accountStates,
-    Set<CloudAccountKey> matchingAccountIds,
-  ) {
     if (_shouldShowNoSearchResults(
       widget.data,
       matchingAccountIds,
@@ -2455,6 +2436,17 @@ class _AvailableCloudAccountItemsState
       data: widget.data,
       actions: widget.actions,
     );
+  }
+
+  List<_CloudAccountWorkspaceState> _accountStates(
+    List<CloudAccountSession> accounts,
+  ) {
+    final activeAccountKeys = accounts.map((account) => account.key).toSet();
+    _workspaceSearchIndexes.removeWhere(
+      (key, _) => !activeAccountKeys.contains(key),
+    );
+
+    return _watchCloudAccountStates(ref, accounts, _searchIndexFor);
   }
 
   WorkspaceSearchIndex<CloudWorkspaceSummary> _searchIndexFor(
