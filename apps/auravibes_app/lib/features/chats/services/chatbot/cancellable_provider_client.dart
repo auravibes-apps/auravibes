@@ -21,6 +21,7 @@ class CancellableProviderClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     if (_closed) throw StateError('Provider client is closed');
+    final cancellation = this.cancellation;
     cancellation?.throwIfCancelled();
     if (cancellation == null) return await client.send(request);
 
