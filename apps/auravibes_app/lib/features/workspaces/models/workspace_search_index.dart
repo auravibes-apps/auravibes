@@ -76,15 +76,24 @@ class WorkspaceSearchIndex<T>(
     List<WorkspaceSearchEntry<T>> entries, {
     required bool descending,
   }) {
-    entries.sort((left, right) {
-      final nameComparison = left.sortName.compareTo(right.sortName);
-      final comparison = nameComparison != 0
-          ? nameComparison
-          : left.stableId.compareTo(right.stableId);
-
-      return descending ? -comparison : comparison;
-    });
+    entries.sort(
+      (left, right) =>
+          _compareWorkspaceSearchEntries(left, right, descending: descending),
+    );
   }
+}
+
+int _compareWorkspaceSearchEntries<T>(
+  WorkspaceSearchEntry<T> left,
+  WorkspaceSearchEntry<T> right, {
+  required bool descending,
+}) {
+  final nameComparison = left.sortName.compareTo(right.sortName);
+  final comparison = nameComparison != 0
+      ? nameComparison
+      : left.stableId.compareTo(right.stableId);
+
+  return descending ? -comparison : comparison;
 }
 
 /// An item plus the name keys calculated once when a search index is built.

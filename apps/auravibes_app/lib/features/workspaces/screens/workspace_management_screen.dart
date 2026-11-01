@@ -227,19 +227,6 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
     );
   }
 
-  WorkspaceSearchIndex<WorkspaceEntity> _searchIndexFor(
-    List<WorkspaceEntity> workspaces,
-  ) {
-    final current = _workspaceSearchIndex;
-    if (current != null && current.hasSameItems(workspaces)) return current;
-
-    return _workspaceSearchIndex = .new(
-      workspaces,
-      nameOf: (workspace) => workspace.name,
-      idOf: (workspace) => workspace.id,
-    );
-  }
-
   void _updateSearchQuery(String query) {
     setState(() => _searchQuery = query);
   }
@@ -318,6 +305,21 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
     });
 
     return failed;
+  }
+}
+
+extension _WorkspaceListViewSearchIndex on _WorkspaceListViewState {
+  WorkspaceSearchIndex<WorkspaceEntity> _searchIndexFor(
+    List<WorkspaceEntity> workspaces,
+  ) {
+    final current = _workspaceSearchIndex;
+    if (current != null && current.hasSameItems(workspaces)) return current;
+
+    return _workspaceSearchIndex = .new(
+      workspaces,
+      nameOf: (workspace) => workspace.name,
+      idOf: (workspace) => workspace.id,
+    );
   }
 }
 
@@ -659,28 +661,38 @@ bool _hasMatchingWorkspace(
   _WorkspaceListData data,
 ) {
   final searchIndex = accountState.searchIndex;
-  if (searchIndex == null) {
-    return state.workspaces.any(
-      (workspace) =>
-          _matchesWorkspaceName(workspace.name, data.searchQuery) &&
-          _isAvailableCloudWorkspace(
-            workspace,
-            accountState.account.key,
-            data.workspaces,
-          ),
-    );
-  }
-
-  return searchIndex
-      .matching(data.searchQuery)
-      .any(
-        (entry) => _isAvailableCloudWorkspace(
-          entry.item,
-          accountState.account.key,
-          data.workspaces,
-        ),
-      );
+  return searchIndex == null
+      ? _hasMatchingUnindexedWorkspace(state, accountState, data)
+      : _hasMatchingIndexedWorkspace(searchIndex, accountState, data);
 }
+
+bool _hasMatchingUnindexedWorkspace(
+  CloudWorkspaceViewState state,
+  _CloudAccountWorkspaceState accountState,
+  _WorkspaceListData data,
+) => state.workspaces.any(
+  (workspace) =>
+      _matchesWorkspaceName(workspace.name, data.searchQuery) &&
+      _isAvailableCloudWorkspace(
+        workspace,
+        accountState.account.key,
+        data.workspaces,
+      ),
+);
+
+bool _hasMatchingIndexedWorkspace(
+  WorkspaceSearchIndex<CloudWorkspaceSummary> searchIndex,
+  _CloudAccountWorkspaceState accountState,
+  _WorkspaceListData data,
+) => searchIndex
+    .matching(data.searchQuery)
+    .any(
+      (entry) => _isAvailableCloudWorkspace(
+        entry.item,
+        accountState.account.key,
+        data.workspaces,
+      ),
+    );
 
 bool _hasMatchingInvite(CloudWorkspaceViewState state, String query) => state
     .pendingInvites
@@ -2400,19 +2412,30 @@ class _AvailableCloudAccountItemsState
   @override
   Widget build(BuildContext context) {
     final accounts = widget.accounts;
-    final activeAccountKeys = accounts.map((account) => account.key).toSet();
-    _workspaceSearchIndexes.removeWhere(
-      (key, _) => !activeAccountKeys.contains(key),
-    );
-    final accountStates = _watchCloudAccountStates(
-      ref,
-      accounts,
-      _searchIndexFor,
-    );
+    final accountStates = _accountStates(accounts);
     final matchingAccountIds = _matchingCloudAccountIds(
       accountStates,
       widget.data,
     );
+    return _content(accounts, accountStates, matchingAccountIds);
+  }
+
+  List<_CloudAccountWorkspaceState> _accountStates(
+    List<CloudAccountSession> accounts,
+  ) {
+    final activeAccountKeys = accounts.map((account) => account.key).toSet();
+    _workspaceSearchIndexes.removeWhere(
+      (key, _) => !activeAccountKeys.contains(key),
+    );
+
+    return _watchCloudAccountStates(ref, accounts, _searchIndexFor);
+  }
+
+  Widget _content(
+    List<CloudAccountSession> accounts,
+    List<_CloudAccountWorkspaceState> accountStates,
+    Set<CloudAccountKey> matchingAccountIds,
+  ) {
     if (_shouldShowNoSearchResults(
       widget.data,
       matchingAccountIds,
@@ -2913,13 +2936,11 @@ class const _AvailableCloudWorkspaceList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final matching = [
-      for (final entry in searchIndex.search(
-        searchQuery,
-        descending: actions.sort == _WorkspaceSort.nameDescending,
-      ))
-        entry.item,
-    ];
+    final matching = _matchingCloudWorkspaceItems(
+      searchIndex,
+      searchQuery,
+      actions.sort,
+    );
     final available = _availableCloudWorkspaces(
       matching,
       account,
@@ -2938,6 +2959,18 @@ class const _AvailableCloudWorkspaceList({
     );
   }
 }
+
+List<CloudWorkspaceSummary> _matchingCloudWorkspaceItems(
+  WorkspaceSearchIndex<CloudWorkspaceSummary> searchIndex,
+  String searchQuery,
+  _WorkspaceSort sort,
+) => [
+  for (final entry in searchIndex.search(
+    searchQuery,
+    descending: sort == _WorkspaceSort.nameDescending,
+  ))
+    entry.item,
+];
 
 class const _AvailableCloudWorkspaceResults({
   required final CloudAccountSession account,
