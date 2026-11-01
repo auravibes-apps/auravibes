@@ -129,7 +129,7 @@ void main() {
       );
 
       await tester.tap(find.byKey(_welcomeNextKey));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       await expectLater(
         find.byType(IntroScreen),
         matchesGoldenFile('goldens/intro_workspace_context.png'),
@@ -137,7 +137,7 @@ void main() {
 
       for (var page = 0; page < 2; page++) {
         await tester.tap(find.byKey(_welcomeNextKey));
-        await tester.pumpAndSettle();
+        final _ = await tester.pumpAndSettle();
       }
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       await expectLater(
@@ -161,7 +161,7 @@ void main() {
         tester,
         find.text('chat_readiness.no_provider'.tr()),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('Design studio'), findsOneWidget);
       await expectLater(
         find.byType(IntroScreen),
