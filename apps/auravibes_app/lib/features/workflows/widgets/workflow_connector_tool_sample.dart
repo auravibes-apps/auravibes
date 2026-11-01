@@ -6,9 +6,9 @@ import 'package:auravibes_app/features/service_connections/models/connector_conn
 import 'package:auravibes_app/features/service_connections/models/connector_tool_catalog_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/connector_tool_catalog_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
-import 'package:auravibes_app/features/workflows/models/workflow_field_schema_codec.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_connector_output_inference.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_field_schema_codec.dart';
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
 import 'package:auravibes_app/features/workflows/usecases/workflow_connector_tool_sample_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';

@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_editor_state.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_field_schema_codec.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_graph_validation.dart';
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
 import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
-import 'package:auravibes_app/features/workflows/widgets/workflow_connector_tool_sample.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_connection_text.dart';
+import 'package:auravibes_app/features/workflows/widgets/workflow_connector_tool_sample.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_port_group.dart';
-import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:collection/collection.dart';

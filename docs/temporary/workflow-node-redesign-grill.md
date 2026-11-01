@@ -691,6 +691,8 @@ accepted.
   any finite signed coordinates and reject non-finite values.
 - Focused app and server tests pass. `validate:changed` still reports
   info-level diagnostics and DCL warnings in the workflow feature.
+- Merged `origin/main` at `3cd812447` cleanly in merge commit `58db0b297`.
+  The merged CI import-sort check passes across all 3,004 Dart files.
 - Rendered app capture was not available; verification used source review and
   widget tests.
 
