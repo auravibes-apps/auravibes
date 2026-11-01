@@ -540,10 +540,10 @@ void main() {
             'Can invite members and admins, change roles, rename or delete '
                 'the workspace, and transfer ownership.',
           'admin' =>
-            "Can view, invite, and remove members, but can't manage admins, "
+            'Can view, invite, and remove members, but can\'t manage admins, '
                 'rename the workspace, or transfer ownership.',
           _ =>
-            "Can use workspace content, but can't view the member list or "
+            'Can use workspace content, but can\'t view the member list or '
                 'manage people.',
         };
         expect(find.text(roleDescription), findsOneWidget);
@@ -570,7 +570,7 @@ void main() {
             find.descendant(
               of: inviteDescription,
               matching: find.text(
-                "Can use workspace content, but can't view the member list or "
+                'Can use workspace content, but can\'t view the member list or '
                 'manage people.',
               ),
             ),
@@ -583,7 +583,7 @@ void main() {
               find.descendant(
                 of: inviteDescription,
                 matching: find.text(
-                  "Can view, invite, and remove members, but can't manage "
+                  'Can view, invite, and remove members, but can\'t manage '
                   'admins, rename the workspace, or transfer ownership.',
                 ),
               ),
@@ -601,7 +601,7 @@ void main() {
           final _ = await tester.pumpAndSettle();
           expect(
             find.text(
-              "Can view, invite, and remove members, but can't manage admins, "
+              'Can view, invite, and remove members, but can\'t manage admins, '
               'rename the workspace, or transfer ownership.',
             ),
             findsOneWidget,
@@ -616,73 +616,78 @@ void main() {
 
   testWidgets('localizes role effects for screen readers', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await tester.binding.setSurfaceSize(const Size(800, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.runAsync(() async {
-      await tester.pumpWidget(
-        TestableApp(
-          child: const CloudWorkspaceDetailScreen(
-            workspaceId: 'local',
-            cloudAccountId: 'same',
-            cloudWorkspaceId: 11,
-            serverUrl: 'https://two.example',
-          ),
-          overrides: [
-            cloudAccountsProvider.overrideWith(
-              (ref) async => const [
-                CloudAccountSession(
-                  serverUrl: 'https://two.example',
-                  userId: 'same',
-                  email: 'right@example.test',
-                ),
-              ],
+    try {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: const CloudWorkspaceDetailScreen(
+              workspaceId: 'local',
+              cloudAccountId: 'same',
+              cloudWorkspaceId: 11,
+              serverUrl: 'https://two.example',
             ),
-            allWorkspacesProvider.overrideWith((ref) => Stream.value([])),
-            cloudAccountHealthProvider.overrideWith(
-              (ref, key) async =>
-                  CloudAccountHealth(status: .verified, checkedAt: .new(2026)),
-            ),
-            cloudWorkspaceDetailProvider.overrideWith(
-              (ref, key) async => CloudWorkspaceDetailState(
-                detail: .new(
-                  workspace: .new(
-                    id: 11,
-                    name: 'Team Studio',
-                    role: 'owner',
-                    revision: 8,
-                    sequence: 9,
-                    createdAt: .new(2026),
-                    updatedAt: .new(2026),
+            overrides: [
+              cloudAccountsProvider.overrideWith(
+                (ref) async => const [
+                  CloudAccountSession(
+                    serverUrl: 'https://two.example',
+                    userId: 'same',
+                    email: 'right@example.test',
                   ),
-                  ownerUserId: 'owner',
-                  capabilities: .new(
-                    canViewMembers: true,
-                    canInviteMembers: true,
-                    canInviteAdmins: true,
-                    canManageMembers: true,
-                    canManageAdmins: true,
-                    canRename: true,
-                    canTransferOwnership: true,
-                    canLeave: false,
-                    canDelete: true,
-                  ),
-                ),
-                members: [],
-                invites: [],
+                ],
               ),
-            ),
-          ],
-          startLocale: const Locale('es'),
-        ),
-      );
-    });
-    final _ = await tester.pumpAndSettle();
+              allWorkspacesProvider.overrideWith((ref) => Stream.value([])),
+              cloudAccountHealthProvider.overrideWith(
+                (ref, key) async => CloudAccountHealth(
+                  status: .verified,
+                  checkedAt: .new(2026),
+                ),
+              ),
+              cloudWorkspaceDetailProvider.overrideWith(
+                (ref, key) async => CloudWorkspaceDetailState(
+                  detail: .new(
+                    workspace: .new(
+                      id: 11,
+                      name: 'Team Studio',
+                      role: 'owner',
+                      revision: 8,
+                      sequence: 9,
+                      createdAt: .new(2026),
+                      updatedAt: .new(2026),
+                    ),
+                    ownerUserId: 'owner',
+                    capabilities: .new(
+                      canViewMembers: true,
+                      canInviteMembers: true,
+                      canInviteAdmins: true,
+                      canManageMembers: true,
+                      canManageAdmins: true,
+                      canRename: true,
+                      canTransferOwnership: true,
+                      canLeave: false,
+                      canDelete: true,
+                    ),
+                  ),
+                  members: [],
+                  invites: [],
+                ),
+              ),
+            ],
+            startLocale: const Locale('es'),
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
 
-    const ownerDescription =
-        'Puede invitar a miembros y administradores, cambiar roles, cambiar '
-        'el nombre o borrar el espacio de trabajo y transferir la propiedad.';
-    expect(find.bySemanticsLabel(ownerDescription), findsOneWidget);
+      const ownerDescription =
+          'Puede invitar a miembros y administradores, cambiar roles, cambiar '
+          'el nombre o borrar el espacio de trabajo y transferir la propiedad.';
+      expect(find.bySemanticsLabel(ownerDescription), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 }
