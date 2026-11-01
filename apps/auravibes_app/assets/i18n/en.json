@@ -1279,6 +1279,10 @@
   "workspace_capabilities": {
     "unsupported_error": "This feature is not available in this workspace."
   },
+  "workspace_network_disclosure": {
+    "title": "Local storage does not mean offline.",
+    "description": "Sending a message sends its text and conversation context to the configured model service. Supported attachments may be included, and the request uses that service's configured credentials. Connected tool calls send their inputs to the configured tool service and may use that connection's credentials. Services can be on the internet or your local network."
+  },
   "tools_names": {
     "calculator": {
       "name": "Calculator",

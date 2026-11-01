@@ -26,7 +26,6 @@ void main() {
       WorkspaceMcpAuthentication.values,
     );
     expect(local.capabilities.conversationToolOverrides, isTrue);
-    expect(local.capabilities.offline, isTrue);
 
     expect(cloud.capabilities.modelProviderIds, {
       'openai',
@@ -48,7 +47,6 @@ void main() {
     expect(cloud.capabilities.skills, isTrue);
     expect(cloud.capabilities.attachments, isTrue);
     expect(cloud.capabilities.conversationToolOverrides, isFalse);
-    expect(cloud.capabilities.offline, isFalse);
     expect(cloud.capabilities.agentExecution, isTrue);
   });
 
