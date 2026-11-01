@@ -26,7 +26,8 @@ void main() {
     (
       code: 'es',
       providerDescription:
-          'Elige el servicio que recibe las solicitudes de tu modelo',
+          'Elige qu${String.fromCharCode(0xe9)} servicio recibe '
+          'las solicitudes de tu modelo',
       modelDescription:
           'Los modelos var${String.fromCharCode(0xed)}an en calidad',
       helpLabel:
@@ -76,31 +77,34 @@ Future<void> _expectExplanation(
   required String helpDetailsPrefix,
 }) async {
   final semantics = tester.ensureSemantics();
-  addTearDown(semantics.dispose);
-  await tester.pumpWidget(
-    TestableApp(
-      child: Scaffold(
-        body: ModelChoiceExplanation(descriptionKey: descriptionKey),
+  try {
+    await tester.pumpWidget(
+      TestableApp(
+        child: Scaffold(
+          body: ModelChoiceExplanation(descriptionKey: descriptionKey),
+        ),
+        startLocale: .new(localeCode),
       ),
-      startLocale: .new(localeCode),
-    ),
-  );
-  final _ = await tester.pumpAndSettle();
-  final translationLoaded = await tester.runAsync(() async {
-    for (var attempt = 0; attempt < 50; attempt++) {
-      if (descriptionKey.tr().contains(description)) return true;
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-    }
+    );
+    final _ = await tester.pumpAndSettle();
+    final translationLoaded = await tester.runAsync(() async {
+      for (var attempt = 0; attempt < 50; attempt++) {
+        if (descriptionKey.tr().contains(description)) return true;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
 
-    return false;
-  });
-  expect(translationLoaded, isTrue);
-  final _ = await tester.pumpAndSettle();
-  expect(find.textContaining(description), findsOneWidget);
-  expect(find.bySemanticsLabel(helpLabel), findsOneWidget);
+      return false;
+    });
+    expect(translationLoaded, isTrue);
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining(description), findsOneWidget);
+    expect(find.bySemanticsLabel(helpLabel), findsOneWidget);
 
-  await tester.tap(find.bySemanticsLabel(helpLabel));
-  final _ = await tester.pumpAndSettle();
-  expect(find.text(helpTitle), findsOneWidget);
-  expect(find.textContaining(helpDetailsPrefix), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel(helpLabel));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text(helpTitle), findsOneWidget);
+    expect(find.textContaining(helpDetailsPrefix), findsOneWidget);
+  } finally {
+    semantics.dispose();
+  }
 }
