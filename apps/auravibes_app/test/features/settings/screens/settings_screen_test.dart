@@ -24,6 +24,21 @@ class _MockThemeNotifier extends ThemeNotifier {
   Future<AppTheme> build() async => AppTheme.system;
 }
 
+Future<void> _waitForLanguagePreference(
+  WidgetTester tester,
+  String expected,
+) async {
+  await tester.runAsync(() async {
+    final preferences = await SharedPreferences.getInstance();
+    final stopwatch = Stopwatch()..start();
+    while (preferences.getString(AppLanguagePreference.preferenceKey) !=
+            expected &&
+        stopwatch.elapsed < const Duration(seconds: 2)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  });
+}
+
 void main() {
   test('constructor sets workspaceId', () {
     const screen = SettingsScreen(workspaceId: 'test-ws');
@@ -166,15 +181,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Spanish'));
       final _ = await tester.pumpAndSettle();
-      await tester.runAsync(() async {
-        final preferences = await SharedPreferences.getInstance();
-        final stopwatch = Stopwatch()..start();
-        while (preferences.getString(AppLanguagePreference.preferenceKey) !=
-                'spanish' &&
-            stopwatch.elapsed < const Duration(seconds: 2)) {
-          await Future<void>.delayed(const Duration(milliseconds: 10));
-        }
-      });
+      await _waitForLanguagePreference(tester, 'spanish');
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Idioma'), findsOneWidget);
@@ -199,6 +206,8 @@ void main() {
       await tester.tap(find.bySemanticsIdentifier('settings_language'));
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Idioma del dispositivo'));
+      final _ = await tester.pumpAndSettle();
+      await _waitForLanguagePreference(tester, 'system');
       final _ = await tester.pumpAndSettle();
 
       preferences = await SharedPreferences.getInstance();

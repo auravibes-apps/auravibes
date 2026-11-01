@@ -200,44 +200,39 @@ class const _AppearanceCard({
   required final VoidCallback onReset,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          _appearanceHeader,
-          _ThemeTile(theme: currentTheme, onTap: onThemeTap),
-          _LanguageTile(
-            preference:
-                ref.watch(appLanguagePreferenceProvider).asData?.value ??
-                AppLanguagePreference.system,
-            onTap: () => _showLanguageDialog(context, ref),
-          ),
-          const AccentColorSection(),
-          if (_hasAppearanceChanges(ref, currentTheme))
-            _AppearanceResetButton(onPressed: onReset),
-          const AuraSizedBox(height: .md),
-          const AppAppearanceProfileSection(),
-        ],
-        spacing: .none,
-        crossAxisAlignment: .start,
-      ),
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => AuraCard(
+    child: _AppearanceCardContent(
+      currentTheme: currentTheme,
+      languagePreference:
+          ref.watch(appLanguagePreferenceProvider).asData?.value ??
+          AppLanguagePreference.system,
+      onThemeTap: onThemeTap,
+      onLanguageTap: () => _showLanguageDialog(context, ref),
+      onReset: onReset,
+      showReset: _hasAppearanceChanges(ref, currentTheme),
+    ),
+  );
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref) {
-    final preference =
-        ref.read(appLanguagePreferenceProvider).asData?.value ??
-        AppLanguagePreference.system;
     AuraDialogs.alert(
       context: context,
       title: const TextLocale(_languageDialogTitleKey),
-      message: _LanguageChoicePicker(
-        preference: preference,
-        onChanged: (values) => _handleLanguageChanged(context, ref, values),
-      ),
+      message: _languageChoicePicker(context, ref),
       dismissLabel: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
     );
   }
+
+  _LanguageChoicePicker _languageChoicePicker(
+    BuildContext context,
+    WidgetRef ref,
+  ) => _LanguageChoicePicker(
+    preference: _languagePreference(ref),
+    onChanged: (values) => _handleLanguageChanged(context, ref, values),
+  );
+
+  AppLanguagePreference _languagePreference(WidgetRef ref) =>
+      ref.read(appLanguagePreferenceProvider).asData?.value ??
+      AppLanguagePreference.system;
 
   void _handleLanguageChanged(
     BuildContext context,
@@ -249,6 +244,38 @@ class const _AppearanceCard({
     Navigator.of(context, rootNavigator: true).pop();
     unawaited(_applyLanguagePreference(context, ref, preference));
   }
+}
+
+class const _AppearanceCardContent({
+  required final AppTheme currentTheme,
+  required final AppLanguagePreference languagePreference,
+  required final VoidCallback onThemeTap,
+  required final VoidCallback onLanguageTap,
+  required final VoidCallback onReset,
+  required final bool showReset,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      ..._appearancePreferenceWidgets(),
+      ..._appearanceProfileWidgets(),
+    ],
+    spacing: .none,
+    crossAxisAlignment: .start,
+  );
+
+  List<Widget> _appearancePreferenceWidgets() => [
+    _appearanceHeader,
+    _ThemeTile(theme: currentTheme, onTap: onThemeTap),
+    _LanguageTile(preference: languagePreference, onTap: onLanguageTap),
+  ];
+
+  List<Widget> _appearanceProfileWidgets() => [
+    const AccentColorSection(),
+    if (showReset) _AppearanceResetButton(onPressed: onReset),
+    const AuraSizedBox(height: .md),
+    const AppAppearanceProfileSection(),
+  ];
 }
 
 Future<void> _applyLanguagePreference(
@@ -367,11 +394,16 @@ class const _LanguageTileTrailing({
   required final AppLanguagePreference preference,
   required final Color color,
 }) extends StatelessWidget {
+  static const _fontSize = 14.0;
+
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: .min,
     children: [
-      TextLocale(preference.labelKey, style: .new(color: color, fontSize: 14)),
+      TextLocale(
+        preference.labelKey,
+        style: .new(color: color, fontSize: _fontSize),
+      ),
       const SizedBox(width: 8),
       _ThemeTileArrow(color: color),
     ],
