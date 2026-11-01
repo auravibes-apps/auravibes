@@ -431,19 +431,26 @@ extension _ProviderFactoryPlugins on ProviderFactory {
     final profile = request.toolSampling.profile;
     if (profile == null &&
         request.config.workspaceModelSelection.toolSamplingPolicy == null) {
-      return AppOpenAIPlugin(
+      return _upstreamOpenAIPlugin(request);
+    }
+
+    return _openAICompatPlugin(request, _openAICompatPluginOptions(request));
+  }
+
+  GenkitPlugin _upstreamOpenAIPlugin(_ProviderRequest request) =>
+      AppOpenAIPlugin(
         upstream: openAI(apiKey: request.apiKey, baseUrl: request.baseUrl),
         httpClient: httpClient,
       );
-    }
 
-    return _openAICompatPlugin(request, (
-      name: 'openai',
-      codec: _openAICodec(profile),
-      modelSupportsStrictToolSampling: request.toolSampling.strictToolSampling,
-      httpClient: httpClient,
-    ));
-  }
+  _OpenAICompatPluginOptions _openAICompatPluginOptions(
+    _ProviderRequest request,
+  ) => (
+    name: 'openai',
+    codec: _openAICodec(request.toolSampling.profile),
+    modelSupportsStrictToolSampling: request.toolSampling.strictToolSampling,
+    httpClient: httpClient,
+  );
 
   AppChatCompletionsPlugin _openAICompatPlugin(
     _ProviderRequest request,

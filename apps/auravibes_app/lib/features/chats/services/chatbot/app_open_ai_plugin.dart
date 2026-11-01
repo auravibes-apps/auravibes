@@ -54,22 +54,13 @@ class AppOpenAIPlugin extends GenkitPlugin {
     ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
-    // Create the underlying client before entering the zone. Calling
-    // http.Client() inside its own factory would recursively create wrappers.
-    final transport = CancellableProviderClient(
-      client: httpClient ?? http.Client(),
-      cancellation: context.cancel,
-      ownsClient: httpClient == null,
-    );
+    final transport = _createTransport(context);
     try {
-      final response = await http.runWithClient(
-        () => model.run(
-          request,
-          onChunk: context.streamingRequested ? context.sendChunk : null,
-          context: context.context,
-          cancel: context.cancel,
-        ),
-        () => transport,
+      final response = await _runModelWithTransport(
+        model,
+        request,
+        context,
+        transport,
       );
 
       return response.result;
@@ -77,4 +68,35 @@ class AppOpenAIPlugin extends GenkitPlugin {
       transport.close();
     }
   }
+
+  CancellableProviderClient _createTransport(
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) => CancellableProviderClient(
+    // Create the underlying client before entering the zone. Calling
+    // http.Client() inside its own factory would recursively create wrappers.
+    client: httpClient ?? http.Client(),
+    cancellation: context.cancel,
+    ownsClient: httpClient == null,
+  );
+
+  Future<ModelResponse> _runModelWithTransport(
+    Model<dynamic> model,
+    ModelRequest request,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+    CancellableProviderClient transport,
+  ) => http.runWithClient(
+    () => _runModel(model, request, context),
+    () => transport,
+  );
+
+  Future<ModelResponse> _runModel(
+    Model<dynamic> model,
+    ModelRequest request,
+    ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  ) => model.run(
+    request,
+    onChunk: context.streamingRequested ? context.sendChunk : null,
+    context: context.context,
+    cancel: context.cancel,
+  );
 }

@@ -26,15 +26,30 @@ class CancellableProviderClient extends http.BaseClient {
     if (cancellation == null) return await client.send(request);
 
     final response = await client.send(
-      _AbortableProviderRequest(request, cancellation.whenCancelled),
+      _abortableRequest(request, cancellation),
+    );
+
+    return _withCancellableBody(response, cancellation, request.url);
+  }
+
+  http.BaseRequest _abortableRequest(
+    http.BaseRequest request,
+    CancellationToken cancellation,
+  ) => _AbortableProviderRequest(request, cancellation.whenCancelled);
+
+  http.StreamedResponse _withCancellableBody(
+    http.StreamedResponse response,
+    CancellationToken cancellation,
+    Uri requestUrl,
+  ) {
+    final body = _CancellableProviderBody(
+      response.stream,
+      cancellation,
+      requestUrl,
     );
 
     return http.StreamedResponse(
-      _CancellableProviderBody(
-        response.stream,
-        cancellation,
-        request.url,
-      ).stream,
+      body._stream,
       response.statusCode,
       contentLength: response.contentLength,
       request: response.request,
@@ -107,7 +122,7 @@ class _CancellableProviderBody {
   Future<void>? _cleanup;
   bool _finished = false;
 
-  Stream<List<int>> get stream => _controller.stream;
+  Stream<List<int>> get _stream => _controller.stream;
 
   void _listen() {
     _subscription = _source.listen(
