@@ -42,6 +42,7 @@ void main() {
     await _openBranchPicker(tester);
 
     expect(find.text('Original conversation'), findsOneWidget);
+    expect(find.text('Parent conversation'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey<String>('conversation-branch-source')),
     );

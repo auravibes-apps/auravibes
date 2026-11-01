@@ -443,7 +443,7 @@ class const _ParentConversationSection({
     crossAxisAlignment: .stretch,
     children: [
       const _BranchSectionTitle(
-        title: 'chats_screens.chat_conversation.parent_conversation',
+        title: 'chats_screens.chat_conversation.parent_conversation'.tr(),
       ),
       _ParentConversationStatus(
         sourceTitle: conversation.forkSourceTitle,
