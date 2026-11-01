@@ -395,9 +395,12 @@ class AgentRunReplayHarness(final AgentRunReplayFixture fixture) {
           ackMessageIds: ['user-1'],
         ),
       );
+    } on FormatException {
+      rethrow;
     } on Object catch (error) {
       runError = error;
     }
+    cursor.ensureExhausted();
 
     return AgentRunReplayResult(
       decision: decision?.name,
@@ -938,6 +941,15 @@ class const _ReplayEvent({
 
 class _ReplayEventCursor(final AgentRunReplayFixture fixture) {
   int _index = 0;
+
+  void ensureExhausted() {
+    if (_index == fixture._events.length) return;
+
+    final event = fixture._events[_index];
+    throw FormatException(
+      '${_eventLabel(fixture.scenario, _index, event.id)} was not consumed.',
+    );
+  }
 
   _ReplayEvent get peek => _index < fixture._events.length
       ? fixture._events[_index]
