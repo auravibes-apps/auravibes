@@ -458,6 +458,7 @@ def _stop_process(process):
     try:
         process.terminate()
     except OSError:
+        # The process may exit after the poll above but before terminate.
         pass
     try:
         process.wait(timeout=2)
@@ -465,6 +466,7 @@ def _stop_process(process):
         try:
             process.kill()
         except OSError:
+            # Preserve the original timeout if the process exited during cleanup.
             pass
         process.wait()
 

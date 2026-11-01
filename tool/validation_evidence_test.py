@@ -339,9 +339,9 @@ class ValidationEvidenceTest(unittest.TestCase):
         command = validation_evidence.sanitize_command(
             [
                 "https://private-user:private-url-password"
-                "@example.invalid/api?mode=safe",
+                + "@example.invalid/api?mode=safe",
                 "postgresql://db-user:private-dsn-password"
-                "@db.example.invalid/app?sslmode=require",
+                + "@db.example.invalid/app?sslmode=require",
                 "ssh://private-username@example.invalid/repository.git",
                 "https://example.invalid/public?mode=safe",
             ]
