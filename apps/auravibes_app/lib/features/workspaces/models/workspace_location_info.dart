@@ -25,7 +25,7 @@ class const WorkspaceLocationInfo({
 
     final detail = cloudDetail.detail;
 
-    return _fromCloudWorkspace(
+    return WorkspaceLocationInfo._fromCloudWorkspace(
       role: detail.workspace.role,
       memberCount: cloudDetail.members.length,
       hasPendingInvites: cloudDetail.invites.isNotEmpty,
