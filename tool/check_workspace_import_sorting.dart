@@ -8,10 +8,11 @@ import 'package:path/path.dart' as p;
 const _nestedFixturePath =
     'tool/fixtures/import_sorter_workspace/packages/'
     'nested_import_sorter_fixture';
-const _nestedFixturePackageName = 'nested_import_sorter_fixture';
 const _generatedPluginRegistrant = 'lib/generated_plugin_registrant.dart';
 // Keep checks aligned with the repository's separator-free import style.
 const _noImportGroupComments = true;
+// Keep local and third-party package URIs in one alphabetical import group.
+const _sorterPackageNameForWorkspace = '';
 
 void main() {
   final root = Directory.current.absolute;
@@ -66,7 +67,7 @@ void main() {
     for (final entry in files.entries) {
       final result = import_sorter.sortImports(
         entry.value.readAsLinesSync(),
-        package.name,
+        _sorterPackageNameForWorkspace,
         false,
         false,
         _noImportGroupComments,
@@ -177,7 +178,7 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
     final fixture = files.values.single;
     final result = import_sorter.sortImports(
       fixture.readAsLinesSync(),
-      _nestedFixturePackageName,
+      _sorterPackageNameForWorkspace,
       false,
       false,
       _noImportGroupComments,
