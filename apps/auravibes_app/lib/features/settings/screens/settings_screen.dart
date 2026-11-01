@@ -316,34 +316,31 @@ class const _ThemeTile({
     onTap: onTap,
     variant: .ghost,
     leading: _ThemeTileIcon(color: context.auraColors.secondary),
-    trailing: _ThemeTileTrailing(theme: theme),
+    trailing: _SettingsTileTrailing(
+      labelKey: _themeName(theme),
+      color: context.auraColors.onSurfaceVariant,
+    ),
     identifier: 'settings_theme',
   );
 }
 
-class const _ThemeTileTrailing({required final AppTheme theme})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: .min,
-    children: [
-      _ThemeTileLabel(theme: theme, color: context.auraColors.onSurfaceVariant),
-      const SizedBox(width: 8),
-      _ThemeTileArrow(color: context.auraColors.onSurfaceVariant),
-    ],
-  );
-}
-
-class const _ThemeTileLabel({
-  required final AppTheme theme,
+class const _SettingsTileTrailing({
+  required final String labelKey,
   required final Color color,
 }) extends StatelessWidget {
   static const _fontSize = 14.0;
 
   @override
-  Widget build(BuildContext context) => TextLocale(
-    _themeName(theme),
-    style: .new(color: color, fontSize: _fontSize),
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      TextLocale(
+        labelKey,
+        style: .new(color: color, fontSize: _fontSize),
+      ),
+      const SizedBox(width: 8),
+      _ThemeTileArrow(color: color),
+    ],
   );
 }
 
@@ -374,31 +371,11 @@ class const _LanguageTile({
     onTap: onTap,
     variant: .ghost,
     leading: Icon(Icons.language, color: context.auraColors.secondary),
-    trailing: _LanguageTileTrailing(
-      preference: preference,
+    trailing: _SettingsTileTrailing(
+      labelKey: preference.labelKey,
       color: context.auraColors.onSurfaceVariant,
     ),
     identifier: 'settings_language',
-  );
-}
-
-class const _LanguageTileTrailing({
-  required final AppLanguagePreference preference,
-  required final Color color,
-}) extends StatelessWidget {
-  static const _fontSize = 14.0;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: .min,
-    children: [
-      TextLocale(
-        preference.labelKey,
-        style: .new(color: color, fontSize: _fontSize),
-      ),
-      const SizedBox(width: 8),
-      _ThemeTileArrow(color: color),
-    ],
   );
 }
 
