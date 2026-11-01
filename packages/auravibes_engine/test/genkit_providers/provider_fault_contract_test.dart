@@ -12,7 +12,7 @@ void main() {
     final fixture = ProviderFaultFixture([
       () async => const ProviderTransportResponse(
         statusCode: 200,
-        body: const Stream.empty(),
+        body: Stream.empty(),
       ),
     ]);
     final request = <String, dynamic>{
@@ -175,10 +175,7 @@ void main() {
           ),
         ]);
         final response = await adapter.stream(fixture.send, const {}, (_) {});
-        final requests = response.message!.content
-            .whereType<ToolRequestPart>()
-            .map((part) => part.toolRequest)
-            .toList();
+        final requests = response.message!.toolRequests;
         expect(requests, hasLength(1));
         final tool = requests.single;
         expect(tool.ref, 'call-contract-1');

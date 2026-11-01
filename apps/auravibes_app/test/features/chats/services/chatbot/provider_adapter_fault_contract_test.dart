@@ -350,7 +350,7 @@ void main() {
         final generation = harness.run(cancellation: cancellation);
         addTearDown(() async {
           if (!response.isCompleted) response.complete(_success(adapter));
-          _ = await generation;
+          await generation;
         });
         final request = await harness.client.requestAt(0);
         cancellation.cancel();
@@ -382,7 +382,7 @@ void main() {
           );
           addTearDown(() async {
             body.dispose();
-            _ = await generation;
+            await generation;
           });
           await body.listened;
           body.add([
@@ -553,7 +553,9 @@ final class _Harness(
   final List<Duration> retryDelays,
   final List<String> effects,
 ) {
-  static _Harness create(
+  final List<String> _text = [];
+
+  factory _Harness.create(
     ProviderAdapterCase adapter,
     List<ProviderFaultAttempt> attempts, {
     Future<void> Function(Duration)? retryWait,
@@ -567,6 +569,7 @@ final class _Harness(
       requestTimeout: requestTimeout,
       retryWait: (delay) {
         retryDelays.add(delay);
+
         return retryWait?.call(delay) ?? Future.value();
       },
     );
@@ -588,6 +591,7 @@ final class _Harness(
         effects.add(
           '${context.toolRequest?.toolRequest.ref}:${input['value']}',
         );
+
         return const ToolResponseResult<Object?>('effect applied');
       },
     );
@@ -595,8 +599,6 @@ final class _Harness(
 
     return _Harness(adapter, client, ai, tool, retryDelays, effects);
   }
-
-  final List<String> _text = [];
 
   String get text => _text.join();
 

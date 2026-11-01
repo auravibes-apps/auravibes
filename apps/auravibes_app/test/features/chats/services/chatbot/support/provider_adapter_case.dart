@@ -119,6 +119,7 @@ final class const ProviderAdapterCase(
         },
       );
     }
+
     return (
       model: model,
       extraBody: OpenAICompatChatOptions.fromJson(config).toSamplingBody(),

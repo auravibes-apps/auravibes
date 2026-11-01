@@ -90,7 +90,7 @@ void main() {
           Message(
             role: .user,
             content: [
-              .new(
+              MediaPart(
                 media: .new(
                   contentType: 'audio/wav',
                   url: 'data:audio/wav;base64,aGk=',
@@ -171,7 +171,7 @@ Future<GenerateResult<Object?>> _generate(
           user: 'fixture-user',
         ),
         prompt: 'Preserve the upstream request.',
-        onChunk: (_) => null,
+        onChunk: (_) {},
         cancel: CancellationController().token,
       ),
   () => client,

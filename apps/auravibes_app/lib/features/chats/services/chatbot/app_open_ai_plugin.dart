@@ -36,7 +36,7 @@ class AppOpenAIPlugin extends GenkitPlugin {
       upstream.list();
 
   @override
-  List<GenerateMiddlewareDef> middleware() => upstream.middleware();
+  List<GenerateMiddlewareDef<dynamic>> middleware() => upstream.middleware();
 
   Action<dynamic, dynamic, dynamic, dynamic> _wrap(
     Action<dynamic, dynamic, dynamic, dynamic> action,

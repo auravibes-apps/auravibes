@@ -97,6 +97,7 @@ void main() {
         cancellation: CancellationController().token,
       );
       addTearDown(client.close);
+      const audioBytes = [0, 128, 255];
       final request =
           http.MultipartRequest(
               'POST',
@@ -106,11 +107,11 @@ void main() {
             ..headers['x-fixture'] = 'preserved'
             ..fields['model'] = 'whisper-1'
             ..files.add(
-              http.MultipartFile.fromBytes('file', [
-                0,
-                128,
-                255,
-              ], filename: 'audio.wav'),
+              http.MultipartFile.fromBytes(
+                'file',
+                audioBytes,
+                filename: 'audio.wav',
+              ),
             );
       final response = await client.send(request);
       final captured = source.request;
