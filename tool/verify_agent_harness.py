@@ -29,6 +29,83 @@ SKILL_NAME_MAX_LENGTH = 64
 SKILL_DESCRIPTION_MAX_LENGTH = 1024
 
 
+def _skill_frontmatter_value(frontmatter, key):
+    """Read a simple YAML frontmatter scalar, including literal/folded blocks."""
+    lines = frontmatter.splitlines()
+    for index, line in enumerate(lines):
+        match = re.match(rf"^(?P<indent> *){re.escape(key)}:[ \t]*(?P<value>.*)$", line)
+        if not match:
+            continue
+
+        raw_value = match.group("value").strip()
+        block = re.fullmatch(r"([>|])([+-]?[1-9]?|[1-9][+-]?)(?:[ \t]+#.*)?", raw_value)
+        if not block:
+            return raw_value.strip("\"'")
+
+        style, indicators = block.groups()
+        parent_indent = len(match.group("indent"))
+        explicit_indent_match = re.search(r"[1-9]", indicators)
+        content_indent = (
+            parent_indent + int(explicit_indent_match.group())
+            if explicit_indent_match
+            else None
+        )
+        leading_blanks = 0
+        content = []
+        for candidate in lines[index + 1 :]:
+            if not candidate.strip():
+                if content_indent is None:
+                    leading_blanks += 1
+                else:
+                    content.append(("", False))
+                continue
+
+            indent = len(candidate) - len(candidate.lstrip(" "))
+            if indent <= parent_indent:
+                break
+            if content_indent is None:
+                content_indent = indent
+                content.extend(("", False) for _ in range(leading_blanks))
+            if indent < content_indent:
+                break
+            content.append((candidate[content_indent:], indent > content_indent))
+
+        if not content:
+            return ""
+
+        trailing_blanks = 0
+        while content and not content[-1][0]:
+            content.pop()
+            trailing_blanks += 1
+        if not content:
+            return ""
+
+        value_parts = [content[0][0]]
+        for previous, current in zip(content, content[1:]):
+            previous_text, previous_indented = previous
+            current_text, current_indented = current
+            if style == "|" or previous_indented or current_indented:
+                separator = "\n"
+            elif previous_text and current_text:
+                separator = " "
+            elif previous_text:
+                separator = ""
+            else:
+                separator = "\n"
+            value_parts.extend((separator, current_text))
+
+        value = "".join(value_parts)
+        chomp = "+" if "+" in indicators else "-" if "-" in indicators else "clip"
+        value = value.rstrip("\n")
+        if chomp == "+":
+            value += "\n" * (trailing_blanks + 1)
+        elif chomp == "clip":
+            value += "\n"
+        return value
+
+    return ""
+
+
 def _without_yaml_code_blocks(text):
     """Preserve line numbers while omitting fenced YAML configuration examples."""
     lines = []
@@ -444,8 +521,7 @@ def verify(root):
         else:
             fields = {}
             for key in ("name", "description"):
-                match = re.search(rf"^{key}:\s*(.+)$", frontmatter.group(1), re.M)
-                fields[key] = match.group(1).strip().strip("\"'") if match else ""
+                fields[key] = _skill_frontmatter_value(frontmatter.group(1), key)
                 if not fields[key]:
                     fail(path, f"Missing {key}. Describe the skill's task trigger.")
             name = fields["name"]

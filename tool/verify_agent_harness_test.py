@@ -450,6 +450,11 @@ class HarnessVerificationTest(unittest.TestCase):
     def test_skill_metadata_accepts_spec_length_boundaries(self):
         self._write_skill("a", "x")
         self._write_skill("b" * 64, "x" * 1024)
+        self._write_skill(
+            "folded-description-boundary",
+            ">-\n  " + "x" * 512 + "\n  " + "y" * 511,
+        )
+        self._write_skill("literal-description-boundary", "|-\n  " + "z" * 1024)
 
         self.assertEqual(verify(self.root), [])
 
@@ -479,6 +484,7 @@ class HarnessVerificationTest(unittest.TestCase):
         too_long_name = "a" * 65
         self._write_skill(too_long_name, "A valid description.")
         self._write_skill("long-description", "x" * 1025)
+        self._write_skill("long-block-description", ">-\n  " + "x" * 1025)
 
         errors = verify(self.root)
 
@@ -499,15 +505,33 @@ class HarnessVerificationTest(unittest.TestCase):
             ),
             errors,
         )
+        self.assertTrue(
+            any(
+                ".agents/skills/long-block-description/SKILL.md" in item
+                and "Skill description must be at most 1024 characters (got 1025)"
+                in item
+                for item in errors
+            ),
+            errors,
+        )
 
     def test_empty_skill_description_is_rejected(self):
         self._write_skill("empty-description", "")
+        self._write_skill("empty-block-description", ">-\n")
 
         errors = verify(self.root)
 
         self.assertTrue(
             any(
                 ".agents/skills/empty-description/SKILL.md" in item
+                and "Missing description" in item
+                for item in errors
+            ),
+            errors,
+        )
+        self.assertTrue(
+            any(
+                ".agents/skills/empty-block-description/SKILL.md" in item
                 and "Missing description" in item
                 for item in errors
             ),
