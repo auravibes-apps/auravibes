@@ -2281,12 +2281,12 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       DynamicTranslationSite(
         file: 'features/chats/widgets/empty_conversation_starters.dart',
         method: 'tr',
-        keyExpression: 'starter.localizationKey',
+        keyExpression: 'localizationKey',
       ),
       DynamicTranslationSite(
         file: 'features/chats/widgets/empty_conversation_starters.dart',
         method: 'TextLocale',
-        keyExpression: 'starter.localizationKey',
+        keyExpression: 'localizationKey',
       ),
     ],
     keys: {

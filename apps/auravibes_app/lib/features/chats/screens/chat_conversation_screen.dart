@@ -1823,7 +1823,7 @@ class const _ChatConversationBody({
     );
     final savedDraft = ref.watch(draftProvider);
     final composerHasDraft = useState(savedDraft?.isEmpty == false);
-    void updateDraftStatus(bool hasDraft) {
+    void updateDraftStatus({required bool hasDraft}) {
       composerHasDraft.value = hasDraft;
       if (hasDraft && draftToLoad.value != null) {
         draftToLoad.value = null;
@@ -1835,7 +1835,8 @@ class const _ChatConversationBody({
       onEditDraft: data.showInputComposer
           ? (draft) => draftToLoad.value = draft
           : null,
-      onDraftStatusChanged: updateDraftStatus,
+      onDraftStatusChanged: (hasDraft) =>
+          updateDraftStatus(hasDraft: hasDraft),
       emptyConversationStarters: _ChatConversationDraftSelection.request(
         data: data,
         draftToLoad: draftToLoad.value,
@@ -1874,7 +1875,7 @@ class const _ChatConversationDraftState({
   required final ValueChanged<ChatDraft>? onEditDraft,
   required final ValueChanged<bool> onDraftStatusChanged,
   required final EmptyConversationStarterRequest emptyConversationStarters,
-}) {}
+});
 
 class _ChatConversationDraftSelection {
   static EmptyConversationStarterRequest request({
