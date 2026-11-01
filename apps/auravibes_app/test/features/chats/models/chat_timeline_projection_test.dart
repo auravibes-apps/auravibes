@@ -28,7 +28,10 @@ void main() {
         isFalse,
       );
       expect(
-        ChatTimelineProjection.hasAssistantResponseCandidate(source, const {}),
+        ChatTimelineProjection.hasAssistantResponseCandidate(
+          source,
+          const {},
+        ),
         isTrue,
       );
     });
@@ -62,7 +65,9 @@ void main() {
         },
       );
       final item = items.single as ActivityRunTimelineItem;
-      final entries = ChatTimelineProjection.buildActivityRunEntries(item.run);
+      final entries = ChatTimelineProjection.buildActivityRunEntries(
+        item.run,
+      );
 
       expect(item.run.id, 'forked-activity');
       expect(entries, hasLength(2));
@@ -177,11 +182,15 @@ void main() {
       );
 
       expect(
-        ChatTimelineProjection.retryableUserMessageId([retryable, response]),
+        ChatTimelineProjection.retryableUserMessageId(
+          [retryable, response],
+        ),
         'retryable-user',
       );
       expect(
-        ChatTimelineProjection.retryableUserMessageId([forkReference]),
+        ChatTimelineProjection.retryableUserMessageId(
+          [forkReference],
+        ),
         isNull,
       );
     });

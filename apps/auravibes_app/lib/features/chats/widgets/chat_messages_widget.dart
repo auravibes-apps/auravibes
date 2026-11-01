@@ -1876,7 +1876,9 @@ class const _AssistantActivityRun({
     final mcpAppControllers = useMemoized(
       () => <String, McpAppToolResultController>{},
     );
-    final activityEntries = ChatTimelineProjection.buildActivityRunEntries(run);
+    final activityEntries = ChatTimelineProjection.buildActivityRunEntries(
+      run,
+    );
     final responseEntryIndex = activityEntries.indexWhere(
       (entry) => entry is ActivityResponseEntry && entry.isFinal,
     );
