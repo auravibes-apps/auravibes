@@ -15,6 +15,7 @@ import 'dart:async' as _ida;
 import 'dart:convert' as _idc;
 import 'dart:io' as _idi;
 
+import 'package:auravibes_server/src/generated/endpoints.dart';
 import 'package:auravibes_server/src/generated/features/accounts/models/account_summary.dart'
     as _iq1nzpg1;
 import 'package:auravibes_server/src/generated/features/agents/models/agent_catalog_page.dart'
@@ -281,12 +282,11 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/transf
     as _iz1a25vz;
 import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
     as _iekbk1on;
+import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
 import 'package:serverpod_test/serverpod_test.dart' as _ist;
-import 'package:auravibes_server/src/generated/protocol.dart';
-import 'package:auravibes_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
 
 /// Creates a new test group that takes a callback that can be used to write tests.

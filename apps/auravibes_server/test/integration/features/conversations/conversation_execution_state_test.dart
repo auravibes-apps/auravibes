@@ -2,31 +2,29 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server/src/features/conversations/conversation_stream_service.dart';
+import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
+import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
+import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
+    as conversation_repo;
+import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
+import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
+import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
+    as workspace_repo;
+import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:genkit/plugin.dart' show GenkitException;
 import 'package:serverpod/serverpod.dart';
 import 'package:serverpod_auth_idp_server/core.dart';
 import 'package:test/test.dart';
 
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
-import 'package:auravibes_server/src/features/conversations/conversation_stream_service.dart';
-import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
-import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
-import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
-import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
-import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
-import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
-import 'package:auravibes_server/src/generated/protocol.dart';
-
 import '../../test_tools/auth_services_test_helper.dart';
 import '../../test_tools/serverpod_test_tools.dart';
-
-import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
-    as conversation_repo;
-import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
-    as workspace_repo;
 
 void main() {
   withServerpod('ConversationExecutionState', (sessionBuilder, endpoints) {

@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:serverpod/serverpod.dart';
-import 'package:auravibes_engine/auravibes_engine.dart'
-    show A2uiChatContract, a2uiChatFormCatalogId, fallbackConversationTitle;
 import 'package:auravibes_engine/auravibes_engine.dart'
     as shared
     show A2uiIssueCode, A2uiOperationKind, baselineA2uiChatComponents;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show A2uiChatContract, a2uiChatFormCatalogId, fallbackConversationTitle;
+import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../objects/object_store.dart';
