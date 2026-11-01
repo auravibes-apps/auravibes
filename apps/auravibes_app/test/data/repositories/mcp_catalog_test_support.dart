@@ -16,15 +16,22 @@ final class McpCatalogFixture {
   static const groupId = 'catalog-group';
   static final seededAt = DateTime.utc(2026);
 
-  final CatalogSqlMetrics metrics;
-  final AppDatabase database;
-  final McpServersRepository repository;
-  final Directory? _directory;
-
   new(this.database, this.metrics, this._directory)
     : repository = McpServersRepository(database);
 
   factory memory() => ._connect(NativeDatabase.memory(), null);
+
+  factory _connect(QueryExecutor executor, Directory? directory) {
+    final metrics = CatalogSqlMetrics();
+    final database = AppDatabase(connection: executor.interceptWith(metrics));
+
+    return .new(database, metrics, directory);
+  }
+
+  final CatalogSqlMetrics metrics;
+  final AppDatabase database;
+  final McpServersRepository repository;
+  final Directory? _directory;
 
   static String toolName(int index) =>
       'tool_${index.toString().padLeft(5, '0')}';
@@ -50,7 +57,7 @@ final class McpCatalogFixture {
     final directory = await Directory.systemTemp.createTemp('mcp-catalog-');
 
     return ._connect(
-      NativeDatabase.createInBackground(File('${directory.path}/catalog.db')),
+      NativeDatabase.createInBackground(.new('${directory.path}/catalog.db')),
       directory,
     );
   }
@@ -105,13 +112,6 @@ final class McpCatalogFixture {
     if (directory != null) {
       final _ = await directory.delete(recursive: true);
     }
-  }
-
-  factory _connect(QueryExecutor executor, Directory? directory) {
-    final metrics = CatalogSqlMetrics();
-    final database = AppDatabase(connection: executor.interceptWith(metrics));
-
-    return .new(database, metrics, directory);
   }
 
   ToolsCompanion _companion(int index) {

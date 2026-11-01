@@ -251,7 +251,7 @@ void main() {
   );
 }
 
-final class _CatalogObserver(this.fixture) {
+final class _CatalogObserver(McpCatalogFixture this.fixture) {
   final McpCatalogFixture fixture;
   final List<List<ToolsTable>> snapshots = [];
   StreamSubscription<List<ToolsTable>>? _subscription;
@@ -260,6 +260,14 @@ final class _CatalogObserver(this.fixture) {
   static Future<_CatalogObserver> start(McpCatalogFixture fixture) async {
     final observer = _CatalogObserver(fixture);
     final first = Completer<void>();
+
+    void onRows(List<ToolsTable> rows) {
+      observer.snapshots.add(rows);
+      if (!first.isCompleted) first.complete();
+      final pending = observer._drained;
+      if (pending != null && !pending.isCompleted) pending.complete();
+    }
+
     observer._subscription =
         (fixture.database.select(fixture.database.tools)
               ..where(
@@ -268,12 +276,7 @@ final class _CatalogObserver(this.fixture) {
               )
               ..orderBy([(row) => OrderingTerm(expression: row.toolId)]))
             .watch()
-            .listen((rows) {
-              observer.snapshots.add(rows);
-              if (!first.isCompleted) first.complete();
-              final pending = observer._drained;
-              if (pending != null && !pending.isCompleted) pending.complete();
-            }, onError: first.completeError);
+            .listen(onRows, onError: first.completeError);
     await first.future;
 
     return observer;
