@@ -523,10 +523,15 @@ void main() {
 
         test('enforces a zero header deadline without a real sleep', () async {
           final response = Completer<http.StreamedResponse>();
-          final harness = _Harness.create(adapter, [
+          final attempts = <ProviderFaultAttempt>[
             (_) => response.future,
             (_) => response.future,
-          ], requestTimeout: .zero);
+          ];
+          final harness = _Harness.create(
+            adapter,
+            attempts,
+            requestTimeout: .zero,
+          );
           addTearDown(() {
             if (!response.isCompleted) response.complete(_success(adapter));
           });

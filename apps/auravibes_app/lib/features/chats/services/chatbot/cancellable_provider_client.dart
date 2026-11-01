@@ -32,6 +32,13 @@ class CancellableProviderClient extends http.BaseClient {
     return _withCancellableBody(response, cancellation, request.url);
   }
 
+  @override
+  void close() {
+    if (_closed) return;
+    _closed = true;
+    if (ownsClient) client.close();
+  }
+
   http.BaseRequest _abortableRequest(
     http.BaseRequest request,
     CancellationToken cancellation,
@@ -58,13 +65,6 @@ class CancellableProviderClient extends http.BaseClient {
       persistentConnection: response.persistentConnection,
       reasonPhrase: response.reasonPhrase,
     );
-  }
-
-  @override
-  void close() {
-    if (_closed) return;
-    _closed = true;
-    if (ownsClient) client.close();
   }
 }
 
