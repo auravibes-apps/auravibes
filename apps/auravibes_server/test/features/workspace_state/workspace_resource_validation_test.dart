@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_server/src/features/workspace_state/domain/workspace_resource_validation.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
@@ -50,6 +52,158 @@ void main() {
         throwsFormatException,
       );
     }
+  });
+
+  test('workflow resources validate node links and typed bindings', () {
+    final query = _workflowField('query', 'string');
+    final prompt = _workflowField('prompt', 'string');
+    final text = _workflowField('text', 'string');
+    final answer = _workflowField('answer', 'string');
+    final data = _workflowResource(
+      parentId: 'folder-1',
+      description: 'Composed workflow',
+      nodes: [
+        _workflowNode(
+          id: 'inputs-node',
+          kind: 'inputs',
+          targetId: 'inputs',
+          outputFields: [query],
+        ),
+        _workflowNode(
+          id: 'connector-node',
+          kind: 'connectorTool',
+          targetId: 'connector/example/search',
+          inputFields: [prompt],
+          outputFields: [text],
+          inputBindings: {
+            prompt['id']! as String: {
+              'sourceNodeId': 'inputs-node',
+              'jsonPointer': '/query',
+            },
+          },
+          hasSampledOutputs: true,
+        ),
+        _workflowNode(
+          id: 'outputs-node',
+          kind: 'outputs',
+          targetId: 'outputs',
+          inputFields: [answer],
+          inputBindings: {
+            answer['id']! as String: {
+              'sourceNodeId': 'connector-node',
+              'jsonPointer': '/text',
+            },
+          },
+        ),
+      ],
+      connections: [
+        {'fromNodeId': 'inputs-node', 'toNodeId': 'connector-node'},
+        {'fromNodeId': 'connector-node', 'toNodeId': 'outputs-node'},
+      ],
+    );
+
+    expect(
+      WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: jsonEncode(data),
+      ),
+      containsPair('name', 'Workflow'),
+    );
+    final references = WorkspaceResourceValidation.references(
+      WorkspaceResourceKind.workflow,
+      data,
+    );
+    expect(
+      references.map((reference) => (reference.kind, reference.id)),
+      [(WorkspaceResourceKind.folder, 'folder-1')],
+    );
+  });
+
+  test('workflow resources reject node cycles and malformed references', () {
+    final data = _workflowResource(
+      nodes: [
+        _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+        _workflowNode(id: 'one', kind: 'connectorTool', targetId: 'tool-one'),
+        _workflowNode(id: 'two', kind: 'connectorTool', targetId: 'tool-two'),
+        _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+      ],
+      connections: [
+        {'fromNodeId': 'one', 'toNodeId': 'two'},
+        {'fromNodeId': 'two', 'toNodeId': 'one'},
+      ],
+    );
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: jsonEncode(data),
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.workflow,
+        _workflowResource(definition: {}),
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('workflow resources accept any finite signed node position', () {
+    final data = _workflowResource(
+      nodes: [
+        _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+        _workflowNode(
+          id: 'far',
+          kind: 'connectorTool',
+          targetId: 'tool',
+          x: -10001,
+          y: 25000,
+        ),
+        _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+      ],
+    );
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: jsonEncode(data),
+      ),
+      returnsNormally,
+    );
+  });
+
+  test('workflow resources reject non-finite node positions', () {
+    final data = jsonEncode(
+      _workflowResource(
+        nodes: [
+          _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+          _workflowNode(
+            id: 'far',
+            kind: 'connectorTool',
+            targetId: 'tool',
+            x: -10001,
+          ),
+          _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+        ],
+      ),
+    ).replaceFirst('"x":-10001.0', '"x":1e999');
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: data,
+      ),
+      throwsFormatException,
+    );
   });
 
   test('rejects model metadata resources', () {
@@ -119,13 +273,10 @@ void main() {
       {'agentId': 'agent-1', 'skillId': 'skill-1'},
     );
 
-    expect(
-      references.map((reference) => (reference.kind, reference.id)),
-      [
-        (WorkspaceResourceKind.agent, 'agent-1'),
-        (WorkspaceResourceKind.skill, 'skill-1'),
-      ],
-    );
+    expect(references.map((reference) => (reference.kind, reference.id)), [
+      (WorkspaceResourceKind.agent, 'agent-1'),
+      (WorkspaceResourceKind.skill, 'skill-1'),
+    ]);
   });
 
   test('agent tool associations reference agent and tool', () {
@@ -138,29 +289,18 @@ void main() {
       },
     );
 
-    expect(
-      references.map((reference) => (reference.kind, reference.id)),
-      [
-        (WorkspaceResourceKind.agent, 'agent-1'),
-        (WorkspaceResourceKind.tool, 'tool-1'),
-      ],
-    );
+    expect(references.map((reference) => (reference.kind, reference.id)), [
+      (WorkspaceResourceKind.agent, 'agent-1'),
+      (WorkspaceResourceKind.tool, 'tool-1'),
+    ]);
   });
 
   test('agent associations require exactly one typed target', () {
     for (final data in [
       {'agentId': 'agent-1'},
       {'agentId': 'agent-1', 'toolId': 'tool-1'},
-      {
-        'agentId': 'agent-1',
-        'toolId': 'tool-1',
-        'permissionMode': 'invalid',
-      },
-      {
-        'agentId': 'agent-1',
-        'skillId': 'skill-1',
-        'toolId': 'tool-1',
-      },
+      {'agentId': 'agent-1', 'toolId': 'tool-1', 'permissionMode': 'invalid'},
+      {'agentId': 'agent-1', 'skillId': 'skill-1', 'toolId': 'tool-1'},
       {'toolId': 'tool-1'},
     ]) {
       expect(
@@ -254,6 +394,7 @@ void main() {
           WorkspaceResourceKind.agent =>
             '{"name":"Agent","description":"Description",'
                 '"content":"Prompt","visibility":"both"}',
+          WorkspaceResourceKind.workflow => jsonEncode(_workflowResource()),
           _ => '{}',
         },
       );
@@ -261,6 +402,48 @@ void main() {
         () => WorkspaceResourceValidation.references(kind, data),
         returnsNormally,
       );
+    }
+  });
+
+  test('requires current workflow node state and rejects Skill nodes', () {
+    Map<String, Object?> workflowNode({
+      String kind = 'connectorTool',
+      bool? hasSampledOutputs = false,
+    }) {
+      final resource = _workflowResource(
+        nodes: [
+          _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+          _workflowNode(
+            id: 'node-1',
+            kind: kind,
+            targetId: 'connector/example/tool',
+            hasSampledOutputs: hasSampledOutputs,
+          ),
+          _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+        ],
+      );
+      return resource;
+    }
+
+    void validate(Map<String, Object?> data) =>
+        WorkspaceResourceValidation.decode(
+          kind: WorkspaceResourceKind.workflow,
+          resourceId: 'workflow-1',
+          workspaceId: 1,
+          data: jsonEncode(data),
+        );
+
+    expect(
+      () => validate(workflowNode(hasSampledOutputs: true)),
+      returnsNormally,
+    );
+    for (final data in [
+      workflowNode(hasSampledOutputs: null),
+      workflowNode(kind: 'skill'),
+      workflowNode(kind: 'systemTool', hasSampledOutputs: true),
+      _workflowResource(definition: {'version': 1}),
+    ]) {
+      expect(() => validate(data), throwsFormatException);
     }
   });
 
@@ -289,3 +472,70 @@ void main() {
     expect(event.resourceId, 'agent-1');
   });
 }
+
+Map<String, Object?> _workflowResource({
+  String? parentId,
+  String description = '',
+  Map<String, Object?>? definition,
+  List<Map<String, Object?>>? nodes,
+  List<Map<String, Object?>> connections = const [],
+}) => {
+  'name': 'Workflow',
+  'description': description,
+  'parentId': parentId,
+  'definition':
+      definition ??
+      {
+        'version': 2,
+        'localConnectorSchemas': <String, Object?>{},
+        'nodes':
+            nodes ??
+            [
+              _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+              _workflowNode(
+                id: 'outputs',
+                kind: 'outputs',
+                targetId: 'outputs',
+              ),
+            ],
+        'connections': connections,
+      },
+};
+
+Map<String, Object?> _workflowNode({
+  required String id,
+  required String kind,
+  required String targetId,
+  double x = 0,
+  double y = 0,
+  bool? hasSampledOutputs = false,
+  List<Map<String, Object?>> inputFields = const [],
+  List<Map<String, Object?>> outputFields = const [],
+  Map<String, Object?> inputBindings = const {},
+}) => {
+  'id': id,
+  'kind': kind,
+  'targetId': targetId,
+  'canonicalName': kind,
+  'label': id,
+  'hasSampledOutputs': ?hasSampledOutputs,
+  'x': x,
+  'y': y,
+  'inputFields': inputFields,
+  'outputFields': outputFields,
+  'inputBindings': inputBindings,
+  'conditionMode': 'all',
+  'conditionRules': const [],
+  'transformOutputs': const [],
+};
+
+Map<String, Object?> _workflowField(String id, String type) => {
+  'id': id,
+  'name': id,
+  'type': type,
+  'required': true,
+  'description': '',
+  'nullable': false,
+  'hasDefault': false,
+  'properties': const [],
+};

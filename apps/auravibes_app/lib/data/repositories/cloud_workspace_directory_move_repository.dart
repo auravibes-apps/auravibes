@@ -67,6 +67,7 @@ class const _DirectoryResources(final WorkspaceResourceRead readState) {
       WorkspaceDirectoryItemKind.folder,
       WorkspaceDirectoryItemKind.table,
       WorkspaceDirectoryItemKind.file,
+      WorkspaceDirectoryItemKind.workflow,
     ]) {
       final ids = _ids(items, kind);
       if (ids.isNotEmpty) resources.addAll(await _kind(kind, ids));
@@ -99,6 +100,7 @@ class const _DirectoryResources(final WorkspaceResourceRead readState) {
             .folder => .folder,
             .table => .table,
             .file => .file,
+            .workflow => .workflow,
             .view => throw const WorkspaceTableException(),
           },
           afterResourceId: cursor,
@@ -148,6 +150,7 @@ Map<String, dynamic> _permittedData(
   final permission = switch (item.key.kind) {
     .folder => 'canManageFolder',
     .file => 'canManageFile',
+    .workflow => 'canManageWorkflow',
     _ => 'canManageTable',
   };
   if (data[permission] != true) {
@@ -164,6 +167,7 @@ const _projectionFields = {
   'canManageTable',
   'canEditRecords',
   'canManageFile',
+  'canManageWorkflow',
   'asset',
 };
 

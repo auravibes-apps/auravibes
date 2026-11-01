@@ -32,7 +32,34 @@ class const LocalWorkspaceDirectoryMoveRepository(
         await _FileMove(this).call(item, parentId);
       case .view:
         await _view(item, parentId);
+      case .workflow:
+        await _workflow(item, parentId);
     }
+  }
+
+  Future<void> _workflow(
+    WorkspaceDirectoryMoveItem item,
+    String? parentId,
+  ) async {
+    if (parentId != null) {
+      final _ = await _currentFolder(parentId);
+    }
+    final query = database.update(database.workspaceWorkflows)
+      ..where(
+        (row) =>
+            row.workspaceId.equals(workspaceId) &
+            row.id.equals(item.key.id) &
+            row.revision.equals(item.revision) &
+            row.deletedAt.isNull(),
+      );
+    final changed = await query.write(
+      WorkspaceWorkflowsCompanion(
+        parentId: .new(parentId),
+        updatedAt: .new(DateTime.now().toUtc()),
+        revision: .new(item.revision + 1),
+      ),
+    );
+    if (changed != 1) throw const WorkspaceTableException(conflict: true);
   }
 
   Future<void> _view(WorkspaceDirectoryMoveItem item, String? parentId) async {

@@ -65,6 +65,17 @@ void main() {
       },
       .compactionSetting: {},
       .workspaceSetting: {},
+      .workflow: {
+        'name': 'Workflow',
+        'description': '',
+        'definition': {
+          'version': 1,
+          'inputs': const <Object?>[],
+          'outputs': const <Object?>[],
+          'nodes': const <Object?>[],
+          'connections': const <Object?>[],
+        },
+      },
     };
 
     expect(

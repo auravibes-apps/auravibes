@@ -5,11 +5,13 @@ import 'package:auravibes_app/data/repositories/local_workspace_record_batch_rec
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_view_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_view_mapper.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_item_duplication.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_view_validation.dart';
 import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart';
 
 class const LocalWorkspaceItemDuplicationRepository(
   final AppDatabase database,
@@ -21,8 +23,46 @@ class const LocalWorkspaceItemDuplicationRepository(
     request.validate();
 
     return database.transaction(
-      () => request.kind == .table ? _table(request) : _view(request),
+      () => switch (request.kind) {
+        .table => _table(request),
+        .view => _view(request),
+        .workflow => _workflow(request),
+      },
     );
+  }
+
+  Future<void> _workflow(WorkspaceItemDuplication request) async {
+    if (await _replayed(request)) return;
+    final source =
+        await (database.select(database.workspaceWorkflows)..where(
+              (row) =>
+                  row.workspaceId.equals(workspaceId) &
+                  row.id.equals(request.sourceId) &
+                  row.deletedAt.isNull(),
+            ))
+            .getSingleOrNull();
+    if (source == null) throw const WorkspaceTableException(denied: true);
+    if (source.revision != request.expectedRevision) {
+      throw const WorkspaceTableException(conflict: true);
+    }
+    final graph = WorkflowDefinition.decode(source.definitionJson);
+    await database.workspaceWorkflowsDao.save(
+      WorkspaceWorkflowsCompanion.insert(
+        id: .new(request.targetId),
+        workspaceId: workspaceId,
+        parentId: .new(request.parentId),
+        name: request.name.trim(),
+        description: .new(source.description),
+        revision: const .new(1),
+        definitionJson: graph.encode(),
+        createdAt: .new(DateTime.now().toUtc()),
+        updatedAt: .new(DateTime.now().toUtc()),
+      ),
+    );
+    await LocalWorkspaceRecordBatchReceipt(
+      database,
+      workspaceId,
+    ).save(request.requestId, _digest(request));
   }
 
   Future<void> _table(WorkspaceItemDuplication request) async {

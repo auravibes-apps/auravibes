@@ -50,7 +50,10 @@ class const WorkspaceTrashAccess(
     WorkspaceResource resource,
   ) async {
     if (member.role == WorkspaceRoles.owner) return true;
-    if (member.role == WorkspaceRoles.admin && resource.resourceKind == .file) {
+    if (member.role == WorkspaceRoles.admin &&
+        {WorkspaceResourceKind.file, WorkspaceResourceKind.workflow}.contains(
+          resource.resourceKind,
+        )) {
       return true;
     }
     if (resource.resourceKind != .tableRecord) return false;
@@ -63,7 +66,10 @@ class const WorkspaceTrashAccess(
     WorkspaceResource resource,
   ) async {
     if (member.role == WorkspaceRoles.owner) return true;
-    if (member.role == WorkspaceRoles.admin && resource.resourceKind == .file) {
+    if (member.role == WorkspaceRoles.admin &&
+        {WorkspaceResourceKind.file, WorkspaceResourceKind.workflow}.contains(
+          resource.resourceKind,
+        )) {
       return true;
     }
     if (resource.resourceKind != .tableRecord &&

@@ -18,6 +18,16 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
   bool validateResult = true;
 
   @override
+  Future<List<WorkspaceToolEntity>> updateToolOutputSchema(
+    String workspaceId,
+    String toolId,
+    String? outputSchemaJson,
+  ) async => tools
+      .where((tool) => tool.workspaceId == workspaceId && tool.toolId == toolId)
+      .map((tool) => tool.copyWith(outputSchemaJson: outputSchemaJson))
+      .toList();
+
+  @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
   ) async {

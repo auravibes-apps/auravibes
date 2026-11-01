@@ -16,6 +16,7 @@ import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_d
 import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/workflows_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
@@ -42,6 +43,7 @@ import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/data/database/drift/tables/workflows.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_attachment_deletions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
@@ -78,6 +80,7 @@ export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
 export 'daos/model_usage_records_dao.dart';
 export 'daos/recent_model_selections_dao.dart';
+export 'daos/workflows_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
 export 'daos/workspace_tools_dao.dart';
@@ -114,6 +117,7 @@ part 'app_database.g.dart';
     RecentModelSelections,
     ModelUsageRecords,
     BackgroundWorks,
+    WorkspaceWorkflows,
     WorkspaceFolders,
     WorkspaceTables,
     WorkspaceTableRecords,
@@ -154,6 +158,7 @@ part 'app_database.g.dart';
     AppSkillWorkspaceSettingsDao,
     RecentModelSelectionsDao,
     ModelUsageRecordsDao,
+    WorkspaceWorkflowsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -235,8 +240,11 @@ class AppDatabase extends _$AppDatabase {
       _workspaceCredentialDeletionsSchemaVersion + 1;
   static const int _workspaceAssetDeletionOwnerSchemaVersion =
       _workspaceAttachmentDeletionsSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _workspaceAssetDeletionOwnerSchemaVersion;
+  static const int _workflowSchemaVersion =
+      _workspaceAssetDeletionOwnerSchemaVersion + 1;
+  static const int _workspaceWorkflowItemSchemaVersion =
+      _workflowSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceWorkflowItemSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -287,6 +295,7 @@ extension on AppDatabase {
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
     await _runWorkspaceUpgrades(m, from);
+    await _upgradeWorkflowSchema(m, from);
   }
 
   Future<void> _runWorkspaceUpgrades(Migrator m, int from) async {
@@ -407,10 +416,14 @@ extension on AppDatabase {
 
   Future<void> _upgradeWorkspaceItemsSchema(Migrator m, int from) async {
     if (from < AppDatabase._workspaceTablesSchemaVersion) {
-      await m.createTable(workspaceTables);
-      await m.createTable(workspaceTableRecords);
+      if (!await _tableExists('workspace_tables')) {
+        await m.createTable(workspaceTables);
+      }
+      if (!await _tableExists('workspace_table_records')) {
+        await m.createTable(workspaceTableRecords);
+      }
     }
-    if (from < AppDatabase._workspaceFoldersSchemaVersion) {
+    if (!await _tableExists('workspace_folders')) {
       await m.createTable(workspaceFolders);
     }
   }
@@ -499,6 +512,14 @@ extension on AppDatabase {
     }
     if (!await _tableExists('model_usage_records')) {
       await m.createTable(modelUsageRecords);
+    }
+  }
+
+  Future<void> _upgradeWorkflowSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceWorkflowItemSchemaVersion) return;
+    await customStatement('DROP TABLE IF EXISTS workflows');
+    if (!await _tableExists('workspace_workflows')) {
+      await m.createTable(workspaceWorkflows);
     }
   }
 

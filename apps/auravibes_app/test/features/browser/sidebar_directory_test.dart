@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/browser/screens/sidebar_directory.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -68,6 +72,9 @@ void main() {
                         revision: 1,
                       ),
                     ],
+            ),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
             ),
           ],
           workspaceId: 'one',

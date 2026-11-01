@@ -143,6 +143,7 @@ String _table(String kind) => switch (kind) {
   'record' => 'workspace_table_records',
   'view' => 'workspace_views',
   'file' => 'workspace_files',
+  'workflow' => 'workspace_workflows',
   _ => throw const WorkspaceTableException(),
 };
 Expression<bool> _revisionMatches(
