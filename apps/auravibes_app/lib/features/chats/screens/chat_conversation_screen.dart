@@ -3499,6 +3499,26 @@ abstract final class _AgentStopNoticePresenter {
     _consumePendingDecision(request, conversationId);
   }
 
+  static void showForConversation(
+    _ConversationContextRequest request,
+    AgentIterationDecision? decision,
+    VoidCallback onContinue,
+  ) {
+    if (!request.context.mounted) return;
+
+    final content = _contentFor(decision);
+    if (content == null) return;
+
+    final _ = AuraSnackBars.show(
+      context: request.context,
+      content: content,
+      duration: const Duration(seconds: 10),
+      actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent
+          .tr(),
+      onAction: onContinue,
+    );
+  }
+
   static void _consumePendingDecision(
     _LoadedRuntimeRequest request,
     String conversationId,
@@ -3518,26 +3538,6 @@ abstract final class _AgentStopNoticePresenter {
       conversationContextRequest,
       decision,
       _conversationContextContinueCallback(conversationContextRequest),
-    );
-  }
-
-  static void showForConversation(
-    _ConversationContextRequest request,
-    AgentIterationDecision? decision,
-    VoidCallback onContinue,
-  ) {
-    if (!request.context.mounted) return;
-
-    final content = _contentFor(decision);
-    if (content == null) return;
-
-    final _ = AuraSnackBars.show(
-      context: request.context,
-      content: content,
-      duration: const Duration(seconds: 10),
-      actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent
-          .tr(),
-      onAction: onContinue,
     );
   }
 
