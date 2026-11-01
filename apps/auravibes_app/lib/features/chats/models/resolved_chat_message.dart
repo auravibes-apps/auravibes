@@ -61,10 +61,7 @@ class const ActivityResponseEntry(
 class const ActivityToolGroupEntry(final List<ActivityToolCall> toolCalls)
     extends ActivityRunEntry;
 
-class _ActivityRunEntryBuilder {
-  _ActivityRunEntryBuilder(this.run);
-
-  final ActivityRun run;
+class _ActivityRunEntryBuilder(final ActivityRun run) {
   final _entries = <ActivityRunEntry>[];
   final _toolCalls = <ActivityToolCall>[];
 
@@ -165,6 +162,18 @@ abstract final class ChatTimelineProjection {
         source.message.metadata?.toolCalls.isNotEmpty != true;
   }
 
+  static List<ChatTimelineItem> buildChatTimelineItems(
+    List<ResolvedChatMessage?> messages,
+    Map<String, List<String>> replayPayloadsByMessageId, {
+    Set<String> pendingToolCallKeys = const {},
+    String? searchTargetMessageId,
+  }) => _ChatTimelineBuilder(
+    messages: messages,
+    replayPayloadsByMessageId: replayPayloadsByMessageId,
+    pendingToolCallKeys: pendingToolCallKeys,
+    searchTargetMessageId: searchTargetMessageId,
+  ).build();
+
   static bool _shouldRenderMessageForActivity(
     bool requiresMessageItem,
     bool awaitsA2uiAction,
@@ -219,18 +228,6 @@ abstract final class ChatTimelineProjection {
         ),
     hasToolCalls: message.metadata?.toolCalls.isNotEmpty == true,
   );
-
-  static List<ChatTimelineItem> buildChatTimelineItems(
-    List<ResolvedChatMessage?> messages,
-    Map<String, List<String>> replayPayloadsByMessageId, {
-    Set<String> pendingToolCallKeys = const {},
-    String? searchTargetMessageId,
-  }) => _ChatTimelineBuilder(
-    messages: messages,
-    replayPayloadsByMessageId: replayPayloadsByMessageId,
-    pendingToolCallKeys: pendingToolCallKeys,
-    searchTargetMessageId: searchTargetMessageId,
-  ).build();
 }
 
 abstract final class ChatTimelineMessagePolicy {
@@ -339,10 +336,7 @@ typedef _MessageProjection = ({
   bool isFinalResponse,
 });
 
-class _ActivityRunBuffer {
-  _ActivityRunBuffer(this.pendingToolCallKeys);
-
-  final Set<String> pendingToolCallKeys;
+class _ActivityRunBuffer(final Set<String> pendingToolCallKeys) {
   final sources = <ResolvedChatMessage>[];
   final activityContentMessageIds = <String>{};
   final richResponseMessageIds = <String>{};
@@ -364,19 +358,15 @@ class _ActivityRunBuffer {
   }
 }
 
-class _ChatTimelineBuilder {
-  _ChatTimelineBuilder({
-    required this.messages,
-    required this.replayPayloadsByMessageId,
-    required this.pendingToolCallKeys,
-    required this.searchTargetMessageId,
-  }) : _activityRun = _ActivityRunBuffer(pendingToolCallKeys);
-
-  final List<ResolvedChatMessage?> messages;
-  final Map<String, List<String>> replayPayloadsByMessageId;
-  final Set<String> pendingToolCallKeys;
-  final String? searchTargetMessageId;
-  final _ActivityRunBuffer _activityRun;
+class _ChatTimelineBuilder({
+  required final List<ResolvedChatMessage?> messages,
+  required final Map<String, List<String>> replayPayloadsByMessageId,
+  required final Set<String> pendingToolCallKeys,
+  required final String? searchTargetMessageId,
+}) {
+  late final _ActivityRunBuffer _activityRun = _ActivityRunBuffer(
+    pendingToolCallKeys,
+  );
   final _items = <ChatTimelineItem>[];
 
   List<ChatTimelineItem> build() {
@@ -391,11 +381,13 @@ class _ChatTimelineBuilder {
   void _projectMessage(ResolvedChatMessage? source, int index) {
     if (source == null) {
       _flushActivityRun();
+
       return;
     }
     if (source.message.id == searchTargetMessageId) {
       _flushActivityRun();
       _items.add(MessageTimelineItem(source));
+
       return;
     }
 
@@ -406,6 +398,7 @@ class _ChatTimelineBuilder {
     final projection = _messageProjection(source, index);
     if (projection.hasActivity) {
       _projectActivityMessage(source, projection);
+
       return;
     }
 
