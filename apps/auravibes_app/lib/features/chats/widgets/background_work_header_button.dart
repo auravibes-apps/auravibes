@@ -322,35 +322,32 @@ class const _BackgroundWorkListStateView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = _backgroundWorkListDisplay(worksAsync);
-    if (display.hasError) return _errorState();
-    if (display.works case final works?) return _worksState(works);
-    if (display.isLoading) return _loadingState();
-
-    return _emptyState();
-  }
-
-  Widget _errorState() => _BackgroundWorkMessage(
-    message: _BackgroundWorkLoadError(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-    ),
-  );
-
-  Widget _worksState(List<AgentBackgroundWork> works) =>
-      _BackgroundWorkListContent(
+    if (display.hasError) {
+      return _BackgroundWorkMessage(
+        message: _BackgroundWorkLoadError(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+      );
+    }
+    if (display.works case final works?) {
+      return _BackgroundWorkListContent(
         works: works,
         workspaceId: workspaceId,
         conversationId: conversationId,
       );
+    }
+    if (display.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  Widget _loadingState() => const Center(child: CircularProgressIndicator());
-
-  Widget _emptyState() => const _BackgroundWorkMessage(
-    message: TextLocale(
-      LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-      textAlign: .center,
-    ),
-  );
+    return const _BackgroundWorkMessage(
+      message: TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+        textAlign: .center,
+      ),
+    );
+  }
 }
 
 class const _BackgroundWorkLoadError({
