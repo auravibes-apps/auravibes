@@ -2276,6 +2276,27 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
+    family: 'empty-conversation-starter-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/empty_conversation_starters.dart',
+        method: 'tr',
+        keyExpression: 'starter.localizationKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/chats/widgets/empty_conversation_starters.dart',
+        method: 'TextLocale',
+        keyExpression: 'starter.localizationKey',
+      ),
+    ],
+    keys: {
+      'chats_screens.chat_conversation.empty_starters.plan_day',
+      'chats_screens.chat_conversation.empty_starters.shopping_list',
+      'chats_screens.chat_conversation.empty_starters.personal_message',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
     family: 'mcp-elicitation-error-keys',
     sites: [
       DynamicTranslationSite(
