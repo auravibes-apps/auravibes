@@ -147,6 +147,8 @@ void main() {
 
       await _tapVisible(tester, find.byKey(_localRouteKey));
       await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+      await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
+      await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
       await expectLater(
         find.byType(IntroScreen),
         matchesGoldenFile('goldens/intro_workspace_create.png'),
@@ -154,6 +156,7 @@ void main() {
 
       await tester.enterText(find.byType(AuraInput), 'Design studio');
       await _tapVisible(tester, find.byKey(_createWorkspaceKey));
+      await _pumpUntilFound(tester, find.text('Workspace created'));
       await _pumpUntilFound(
         tester,
         find.byKey(const Key('intro_readiness')),
