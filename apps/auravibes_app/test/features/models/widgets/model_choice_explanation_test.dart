@@ -16,7 +16,7 @@ void main() {
     (
       code: 'en',
       providerDescription:
-          "Choose which service receives your model's requests",
+          'Choose which service receives your model\'s requests',
       modelDescription: 'Models vary in quality',
       helpLabel: 'Learn about providers and models',
       helpTitle: 'About providers and models',
@@ -26,7 +26,8 @@ void main() {
       code: 'es',
       providerDescription:
           'Elige el servicio que recibe las solicitudes de tu modelo',
-      modelDescription: 'Los modelos varían en calidad',
+      modelDescription:
+          'Los modelos var${String.fromCharCode(0xed)}an en calidad',
       helpLabel:
           'M${String.fromCharCode(0xe1)}s informaci'
           '${String.fromCharCode(0xf3)}n sobre proveedores y modelos',
