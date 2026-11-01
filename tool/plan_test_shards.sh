@@ -87,11 +87,11 @@ if jq -e '
     break
   done <<< "$artifact_candidates"
 
+  lookup_duration_ms=$(( $(date +%s%3N) - lookup_started_ms ))
   if [ "$timing_source" = 'fixed shard fallback' ]; then
     log '::warning::No usable historical test timing artifact found; using fixed shards. See test-plan/timing-lookup.txt.'
     matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
   fi
-  lookup_duration_ms=$(( $(date +%s%3N) - lookup_started_ms ))
 else
   log 'No app tests selected; historical timing lookup skipped.'
   matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
