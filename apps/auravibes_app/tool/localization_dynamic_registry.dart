@@ -1408,18 +1408,21 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
-    family: 'app-language-preference-labels',
+    family: 'settings-tile-trailing-labels',
     sites: [
       DynamicTranslationSite(
         file: 'features/settings/screens/settings_screen.dart',
         method: 'TextLocale',
-        keyExpression: 'preference.labelKey',
+        keyExpression: 'labelKey',
       ),
     ],
     keys: {
       'settings_screen.language.device',
       'settings_screen.language.english',
       'settings_screen.language.spanish',
+      'settings_screen.theme.dark',
+      'settings_screen.theme.light',
+      'settings_screen.theme.system',
     },
   ),
 
