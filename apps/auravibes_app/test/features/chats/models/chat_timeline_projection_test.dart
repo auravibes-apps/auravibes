@@ -58,7 +58,7 @@ void main() {
       expect(item.run.id, 'forked-activity');
       expect(entries, hasLength(2));
       expect(
-        (entries.first as ActivityThinkingEntry).content,
+        (entries.firstOrNull as ActivityThinkingEntry).content,
         'Searching sources',
       );
       final toolGroup = entries.last as ActivityToolGroupEntry;
@@ -132,7 +132,7 @@ void main() {
       expect((items[1] as MessageTimelineItem).source, summary);
       expect(items[2], isA<ActivityRunTimelineItem>());
       expect(
-        (items.first as ActivityRunTimelineItem).run.id,
+        (items.firstOrNull as ActivityRunTimelineItem).run.id,
         'before-summary',
       );
       expect((items[2] as ActivityRunTimelineItem).run.id, 'after-summary');
