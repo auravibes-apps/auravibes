@@ -92,9 +92,10 @@ void main() {
 
 List<String> _inOnePackageUriGroup(List<String> lines) => [
   for (final line in lines)
-    line.startsWith('import ')
-        ? line.replaceAll('package:', _packageUriSortGroup)
-        : line,
+    if (line.startsWith('import '))
+      line.replaceAll('package:', _packageUriSortGroup)
+    else
+      line,
 ];
 
 List<_WorkspacePackage> _workspacePackages(
