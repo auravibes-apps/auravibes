@@ -719,3 +719,274 @@ accepted.
   screen-position tie-breaks as agreed. Enter/Space activate; Escape clears.
 - **Completion:** User can see the new link, target selection, deletion
   confirmation, and invalid-target recovery without whole-Workflow execution.
+
+## Aura and Material UI review — interview start, 2026-11-01
+
+### User question
+
+The Workflow UI uses many Material widgets. Decide whether to replace them
+with Aura UI components, and whether missing Aura components should be added.
+
+### Repository evidence
+
+- `material_ui` 1.2.0 re-exports Flutter's Material Design library. It is not an
+  Aura component package.
+- Workflow canvas, editor screen, node picker, Connector sample, inspector,
+  and schema editor were audited. The save flow imports `material_ui` for
+  Flutter types but renders no controls. The signature editor has no call site
+  and stays outside the active-surface scope.
+- Before migration, visible Material controls included `Card`, `IconButton`,
+  text fields, `AlertDialog`, `TextButton`, `FilledButton`, `ListTile`,
+  `DropdownButtonFormField`, `ExpansionTile`, `CheckboxListTile`, `Divider`,
+  and `InkWell`.
+- Aura already provides `AuraCard`, `AuraIconButton`, `AuraInput`,
+  `AuraButton`, `AuraDialogs`, `AuraConfirmDialog`, `AuraDivider`,
+  `AuraDropdownSelector`, `AuraAccordion`, `AuraTile`, `AuraCheckboxListTile`,
+  `AuraPopupMenu`, and `AuraTooltip`. The Connector sample already uses
+  several public Aura components.
+- App `ThemeData` uses Aura colors and typography and styles Material dialogs,
+  icon buttons, and feedback. It does not define Material card, input, list-tile,
+  or expansion-tile themes, so those still use Flutter Material defaults.
+- `AuraCard` exposes border/elevated/glass styles and padding, but no selected
+  state or externally supplied focus node. The canvas uses `AuraContainer` for
+  its custom selected/focused border. `AuraAccordionItem.title` is text, so the
+  binding tree keeps canonical names in expanded content.
+- Canvas layout, `FocusNode`, `Semantics`, gestures, `CustomPaint`, and graph
+  hit-testing are Flutter behavior/layout primitives, not Material-styled
+  controls.
+- Aura UI package instructions require domain-neutral, reusable components
+  with minimal public APIs. It already implements some public Aura components
+  using Flutter Material internally, while owning the Aura appearance and
+  interaction contract.
+- Audit evidence is source-only so far; no rendered Workflow capture was
+  available or inspected.
+
+### Round 1 — questions and decisions
+
+1. **Meaning of “replace Material”:** Use Aura's public visual/interaction
+   components where available, while retaining Flutter mechanics and allowing
+   Aura internals to use Flutter Material? **Answer:** yes, use Aura-facing
+   controls.
+2. **Audit scope:** Apply across all active Workflow surfaces. **Resolved by
+   “apply”:** yes.
+3. **Missing components:** Add only reusable, domain-neutral Aura controls when
+   a real gap exists; keep Workflow-specific visuals app-owned. **Resolved by
+   “apply”:** yes.
+
+### Round 1 — resolved by “apply”
+
+- Audit and apply to all active Workflow surfaces.
+- Use existing public Aura controls wherever they preserve behavior and
+  accessibility. Keep Flutter canvas, focus, layout, and gesture primitives.
+- Add no one-off Aura APIs for Workflow-specific graph visuals. Consider a
+  shared component only if the current feature proves a domain-neutral gap.
+- No generic Aura component gap blocked this migration, so no package API was
+  added. Existing controls cover the Workflow fields, selectors, cards, tiles,
+  accordions, buttons, icons, dividers, confirmations, and notifications.
+- Keep `showDialog`, `showModalBottomSheet`, focus, layout, and gesture systems
+  as Flutter mechanics. Give their visible content Aura styling and controls.
+- Material-backed Aura internals are allowed. The check targets app-owned
+  visible controls, not the UI package's implementation dependencies.
+
+### Implementation outcome
+
+- Replaced visible Material controls across canvas, editor, picker, inspector,
+  port/schema editor, and Connector sample with public Aura controls.
+- Replaced Workflow feedback snackbars with `AuraSnackBars`.
+- Direct Material control scan over active Workflow widgets/screens returns no
+  matches. Framework route, focus, layout, icon, and theme APIs remain.
+- No final glossary or ADR was needed: this is a scoped UI component choice,
+  not a domain term or architecture-boundary change.
+
+### Verification and limits
+
+- `fvm dart format` on six changed Dart files and `git diff --check` pass.
+- Targeted app analyzer exits 0 with no errors, warnings, or hints. Info-level
+  diagnostics were not used as a gate.
+- Hot reload succeeded on the macOS `auravibes_app` attached to this worktree.
+- The first app-wide fatal analyzer pass caught an undefined snackbar
+  controller type. The code now stores its `close` callback; app-wide fatal
+  analysis was not rerun.
+- No tests or rendered captures were run. Visual audit remains source-only.
+
+## Workflow value binding chooser — UX audit and grill
+
+**Date:** 2026-11-01
+
+**Status:** Audit complete from source; design questions open. Do not implement
+or create final docs until the design is closed and the user confirms the
+shared understanding.
+
+### Goal and success
+
+People can enter a static value or choose a value produced by an earlier node.
+The input shows a chip for a chosen reference and no chip for a static value.
+People do not need to read JSON Schema or JSON paths. The previous-node value
+chooser is grouped by source node and easy to find without keeping a large list
+open all the time.
+
+### Evidence and scope
+
+- Target users include people with no coding knowledge. Product guidance asks
+  for useful results with little friction and clear language
+  (`docs/product/target-users.md`).
+- UX guidance says to defer secondary controls, keep compact layouts focused,
+  preserve persistent field labels, and avoid implementation terms unless
+  needed (`.agents/skills/ux-view-clarity/references/interaction-rules.md`,
+  lines 16-19, 53-61, 64-77).
+- Connector input fields show a field name and type, a separate Static/Bound
+  selector, JSON-encoded static input, and a search/tree browser grouped under
+  node accordions. The accordions show node labels and canonical names
+  (`workflow_inspector_panel.dart`, lines 555-695).
+- Condition and Transform editors expose editable JSON Pointer fields next to
+  a separate field browser (`workflow_inspector_panel.dart`, lines 1030-1065,
+  1255-1272, 1892-1930).
+- `AuraInput` supports arbitrary prefix and suffix widgets; `AuraBadge` is a
+  public Aura component. This can support an in-field binding chip without a
+  new package API (`packages/auravibes_ui/lib/src/organisms/aura_input.dart`,
+  lines 14-78, 247-261; `packages/auravibes_ui/lib/src/molecules/aura_badge.dart`).
+  `AuraTagInput` is for multiple free-text tags and does not fit one bound
+  value.
+- No rendered capture or usability session was available. Findings below are
+  source-based; they describe what the current code presents, not observed
+  user behavior.
+
+### Findings
+
+1. **Raw paths make a data-binding task technical.** Condition and Transform
+   forms show editable JSON Pointer strings. The Connector field browser also
+   exposes schema-like field types and requires JSON syntax for static values.
+   **Severity:** Medium. **Confidence:** High for visibility, medium for user
+   impact. **Recommendation:** Store stable node ID and JSON Pointer internally,
+   but show human field names and a bound-value chip. Keep raw paths and schema
+   serialization out of the normal binding flow. Use type-aware static controls
+   only where a field requires them. **Verify:** users can set, change, and
+   repair bindings without seeing or entering a path or JSON document.
+
+2. **The current selection state is separated from the value input.** Users
+   choose Static or Bound, then use a separate search field and node accordion;
+   a completed binding has no compact chip in the input. **Severity:** Medium.
+   **Confidence:** High. **Recommendation:** Present one value field with either
+   an editable static value or a chip naming the selected source and field.
+   Make changing the binding available from that field. **Verify:** select a
+   deep value, see its source and readable field label in the input, then change
+   it without reopening a separate mode control.
+
+3. **Always-visible values would compete with the node configuration.** Each
+   input can have many output fields, and the current form already groups those
+   fields by source. Keeping that browser open beside every value field would
+   repeat a large optional control, especially in a compact inspector.
+   **Severity:** Medium. **Confidence:** Medium; this is a source-based UX
+   judgment, not a usability result. **Recommendation:** Reveal a searchable,
+   source-grouped chooser only after the user activates the value field's
+   picker affordance. Keep the selected chip visible after the chooser closes.
+   **Verify:** inspect compact and expanded layouts with many nodes, many nested
+   values, no eligible values, and long node names.
+
+### Draft direction
+
+Use the same value field for static and referenced values. Show a readable chip
+for a reference, such as `Find customer · Email`; show no chip for a static
+value. Open the grouped, searchable list on demand. Keep node identity and field
+path internal. Retain user-facing type guidance only when needed to explain why
+a value is unavailable or incompatible. The list should show labels a person
+can recognize, not JSON paths.
+
+### Design questions
+
+1. **Chooser visibility and trigger:** User delegated the layout decision to
+   UX judgment for different screen sizes. Resolve as on-demand: keep static
+   text editable, and open the previous-value chooser from an in-field picker
+   control. Do not leave the values list open.
+2. **Responsive presentation:** Use one searchable, grouped chooser with a
+   presentation that fits the current Workflow layout. The editor switches at
+   980 logical pixels; its wide inspector is 340 pixels, while its compact
+   inspector is 260 pixels tall (`workflow_editor_screen.dart`, lines
+   552-560, 575-638). Use a tall, scrollable bottom sheet in the compact editor
+   and a bounded dialog in the wide editor. Keep search at the top and result
+   groups scrollable. `AuraPopupMenu` is a poor fit: its surface caps width at
+   320 pixels and renders entries in an unbounded Column without scrolling
+   (`aura_popup_menu_controller.dart`, lines 330-393). The chooser should return
+   focus to its field when dismissed.
+3. **Chip label:** **User answer:** node label plus readable field label. Do
+   not show JSON paths or stable IDs. Include readable parent labels for nested
+   values. Keep the full label accessible when visible text needs truncation.
+4. **Switching to a reference:** **User answer:** replace the displayed static
+   value with a chip and restore the static draft when switching back. The
+   current `WorkflowBinding` stores either a static value or a node/path, not
+   both (`workflow_definition.dart`, lines 388-407). It cannot retain the
+   inactive static draft in the saved model without a data-model change.
+5. **Static object/array values:** Open. The current static editor encodes all
+   values as JSON text (`workflow_inspector_panel.dart`, lines 611-633). Decide
+   whether this UX change also replaces raw JSON entry for complex static
+   values with a guided editor.
+
+### Binding interaction design
+
+- In static mode, show the value as editable content and no chip. A clearly
+  labeled in-field control opens the chooser without stealing taps used to edit
+  the static content.
+- In reference mode, show `Node label · readable field label` as the chip. Tapping
+  the chip or picker control opens the same chooser. Offer an explicit return to
+  static entry; restore the previous static draft.
+- Show only eligible prior nodes and their readable output fields, grouped by
+  node label. Search may find nested values, but the UI does not show JSON paths
+  or schema documents. Explain incompatible or unavailable values in plain
+  language.
+- Use a scrollable bottom sheet in compact Workflow layout and a bounded dialog
+  in wide layout. Close on selection, outside dismissal, Back, or Escape, and
+  restore focus to the field. Do not keep the candidate list permanently visible.
+- Handle long labels without hiding which node supplied a value: allow chip text
+  to wrap or truncate with a full accessible label. Verify touch, keyboard,
+  screen-reader, compact, and expanded behavior with long and nested names.
+
+### Answers recorded — 2026-11-01
+
+1. **Inactive static draft lifetime:** **User answer:** persist with the
+   Workflow. When a user selects a reference, save the previous static value as
+   inactive draft data. Restore it when the user switches back, including after
+   save, close, and reopen. Show only the active value in the field.
+2. **Complex static values:** **User answer:** use guided fields and rows; do
+   not ask users to type raw JSON.
+
+### Confirmed consensus
+
+- Apply the value experience consistently to Connector inputs, Condition source
+  and comparison values, and Transform operands. Keep schema editing separate.
+- In static mode, show the value in a type-appropriate editor and no chip. Use
+  text input for strings, numeric input for numbers, and a toggle for booleans.
+  Build objects from labeled schema fields and arrays from addable/removable
+  rows; recursively edit nested values. Use labels, descriptions, defaults,
+  required markers, explicit null controls, and plain validation messages. Keep
+  an unset optional value distinct from null. Never expose JSON Schema, JSON
+  Pointer, or raw JSON value text in this flow.
+- In reference mode, show a chip labeled `Node label · readable field label`.
+  Use parent field labels to identify nested values. Keep full text accessible
+  when the visual chip must wrap or truncate. Tapping the chip or its picker
+  control opens the value chooser.
+- Keep the chooser closed until the user asks for it. The static value remains
+  directly editable. The chooser shows only earlier eligible nodes, grouped by
+  the user's node labels. Search covers nested field labels. Compatible values
+  are selectable; incompatible ones are blocked with a plain-language reason.
+  Do not show raw paths or internal node IDs.
+- Adapt the same chooser to the current Workflow layout: a tall, scrollable
+  bottom sheet for the compact editor, and a bounded dialog for the wide editor.
+  The existing 980-pixel editor breakpoint and 260-pixel compact inspector make
+  the sheet usable; the 340-pixel wide inspector makes a bounded dialog more
+  suitable for search and nested results. Keep search and groups reachable,
+  support keyboard and touch, and return focus to the value field on dismissal.
+- Choosing a reference replaces the displayed static value with a chip and
+  retains the static draft in the saved Workflow. Choosing “Use static value”
+  restores that draft, or the schema default when no draft exists. The stored
+  draft is inactive while a reference is selected. Source deletion or schema
+  changes must not silently discard it;
+  preserve it and flag invalid data for repair. The binding codec/model and
+  local/cloud serialization must preserve the draft, including explicit `null`.
+- Verify static and bound switching across save/reopen; nested object and array
+  editing; null/default/required behavior; long and duplicate labels; deep
+  search; incompatible bindings; empty results; keyboard focus; and compact and
+  wide layouts. No raw JSON or JSON path should appear in these flows.
+
+**Confirmed:** The user approved this consensus on 2026-11-01. Final Workflow
+specification, ADR, glossary, app context, and UX audit now record the resolved
+binding UX. Implementation remains a separate step.

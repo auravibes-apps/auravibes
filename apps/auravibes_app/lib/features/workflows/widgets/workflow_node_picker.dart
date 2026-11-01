@@ -174,12 +174,13 @@ class const _WorkflowNodePickerContent({
             const _WorkflowPickerHeader(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: TextField(
+              child: AuraInput(
                 onChanged: (value) => query.value = value,
-                decoration: InputDecoration(
-                  hintText: LocaleKeys.workflow_editor_picker_search.tr(),
-                  prefixIcon: const Icon(Icons.search),
+                placeholder: Text(
+                  LocaleKeys.workflow_editor_picker_search.tr(context: context),
                 ),
+                prefixIcon: const Icon(Icons.search),
+                size: .small,
               ),
             ),
             _WorkflowPickerBody(
@@ -232,10 +233,11 @@ class const _WorkflowPickerHeader() extends StatelessWidget {
     child: Row(
       children: [
         const Expanded(child: _WorkflowPickerTitle()),
-        IconButton(
+        AuraIconButton(
           onPressed: () => Navigator.of(context).pop(),
           tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          icon: const Icon(Icons.close),
+          semanticLabel: MaterialLocalizations.of(context).closeButtonTooltip,
+          icon: Icons.close,
         ),
       ],
     ),
@@ -380,23 +382,22 @@ class const _WorkflowConnectorGroup({
   required final List<ConnectorToolCatalogItem> tools,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: .stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-            child: Text(name, style: Theme.of(context).textTheme.titleSmall),
+  Widget build(BuildContext context) => AuraCard(
+    padding: .small,
+    style: .border,
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+          child: Text(name, style: Theme.of(context).textTheme.titleSmall),
+        ),
+        for (final tool in tools)
+          _WorkflowConnectorToolPickerItem(
+            workspaceId: workspaceId,
+            connectorTool: tool,
           ),
-          for (final tool in tools)
-            _WorkflowConnectorToolPickerItem(
-              workspaceId: workspaceId,
-              connectorTool: tool,
-            ),
-        ],
-      ),
+      ],
     ),
   );
 }
@@ -624,7 +625,9 @@ class const _WorkflowLibraryTile({
   final String? subtitle,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => AuraCard(
+    padding: .none,
+    style: .border,
     child: _WorkflowLibraryTileContents(
       title: title,
       icon: icon,
@@ -644,10 +647,21 @@ class const _WorkflowLibraryTileContents({
   Widget build(BuildContext context) {
     final subtitle = this.subtitle;
 
-    return ListTile(
+    return AuraTile(
       leading: Icon(icon),
-      title: Text(title),
-      subtitle: subtitle == null || subtitle.isEmpty ? null : Text(subtitle),
+      variant: .ghost,
+      size: .small,
+      semanticLabel: subtitle == null || subtitle.isEmpty
+          ? title
+          : '$title, $subtitle',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title),
+          if (subtitle != null && subtitle.isNotEmpty) Text(subtitle),
+        ],
+      ),
       onTap: () => Navigator.of(context).pop(draft),
     );
   }

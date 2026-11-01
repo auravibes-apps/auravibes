@@ -1849,6 +1849,41 @@ abstract class LocaleKeys {
   static const workflow_editor_browse_values = 'workflow_editor.browse_values';
   static const workflow_editor_static_value = 'workflow_editor.static_value';
   static const workflow_editor_bound_value = 'workflow_editor.bound_value';
+  static const workflow_editor_choose_value = 'workflow_editor.choose_value';
+  static const workflow_editor_use_static_value =
+      'workflow_editor.use_static_value';
+  static const workflow_editor_close_picker = 'workflow_editor.close_picker';
+  static const workflow_editor_no_matching_values =
+      'workflow_editor.no_matching_values';
+  static const workflow_editor_static_draft_saved =
+      'workflow_editor.static_draft_saved';
+  static const workflow_editor_static_draft_invalid =
+      'workflow_editor.static_draft_invalid';
+  static const workflow_editor_value_type = 'workflow_editor.value_type';
+  static const workflow_editor_value_unset = 'workflow_editor.value_unset';
+  static const workflow_editor_set_null = 'workflow_editor.set_null';
+  static const workflow_editor_value_is_null = 'workflow_editor.value_is_null';
+  static const workflow_editor_enter_value = 'workflow_editor.enter_value';
+  static const workflow_editor_compatible_value_hint =
+      'workflow_editor.compatible_value_hint';
+  static const workflow_editor_value_not_compatible =
+      'workflow_editor.value_not_compatible';
+  static const workflow_editor_value_schema_changed =
+      'workflow_editor.value_schema_changed';
+  static const workflow_editor_repair_value = 'workflow_editor.repair_value';
+  static const workflow_editor_unknown_object_field =
+      'workflow_editor.unknown_object_field';
+  static const workflow_editor_leave_empty = 'workflow_editor.leave_empty';
+  static const workflow_editor_use_default = 'workflow_editor.use_default';
+  static const workflow_editor_start_object = 'workflow_editor.start_object';
+  static const workflow_editor_add_array_item =
+      'workflow_editor.add_array_item';
+  static const workflow_editor_remove_item = 'workflow_editor.remove_item';
+  static const workflow_editor_array_item_number =
+      'workflow_editor.array_item_number';
+  static const workflow_editor_nested_values = 'workflow_editor.nested_values';
+  static const workflow_editor_no_nested_fields =
+      'workflow_editor.no_nested_fields';
   static const workflow_editor_source_step = 'workflow_editor.source_step';
   static const workflow_editor_json_pointer = 'workflow_editor.json_pointer';
   static const workflow_editor_search_values = 'workflow_editor.search_values';

@@ -82,7 +82,7 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
   final _descriptionController = TextEditingController();
   String? _controllerWorkflowKey;
   bool _saving = false;
-  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _messageController;
+  VoidCallback? _closeMessage;
 
   @override
   void dispose() {
@@ -211,10 +211,12 @@ class _WorkflowEditorScreenState extends ConsumerState<WorkflowEditorScreen> {
   }
 
   void _showMessage(String messageKey) {
-    final current = _messageController;
-    if (current != null) current.close();
-    _messageController = ScaffoldMessenger.of(context)
-        .showSnackBar(.new(content: Text(messageKey.tr(context: context))));
+    _closeMessage?.call();
+    final controller = AuraSnackBars.show(
+      context: context,
+      content: Text(messageKey.tr(context: context)),
+    );
+    _closeMessage = controller.close;
   }
 }
 
@@ -588,7 +590,7 @@ class const _WorkflowWideEditor({
             workflow: workflow,
           ),
         ),
-        const VerticalDivider(width: 1),
+        const AuraDivider.vertical(thickness: 1),
         SizedBox(
           width: _inspectorWidth,
           child: WorkflowInspectorPanel(
@@ -596,6 +598,7 @@ class const _WorkflowWideEditor({
             editorState: document.state,
             editor: document.editor,
             canEdit: workflow.canManage,
+            isWide: true,
           ),
         ),
       ],
@@ -629,6 +632,7 @@ class const _WorkflowCompactEditor({
               editorState: document.state,
               editor: document.editor,
               canEdit: workflow.canManage,
+              isWide: false,
             ),
           ),
       ],
@@ -834,9 +838,10 @@ class const _WorkflowMetadataField({
   required final bool readOnly,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TextField(
+  Widget build(BuildContext context) => AuraInput(
     controller: controller,
-    decoration: .new(labelText: labelKey.tr(context: context), isDense: true),
+    label: Text(labelKey.tr(context: context)),
+    size: .small,
     textInputAction: textInputAction,
     onChanged: onChanged,
     readOnly: readOnly,
@@ -895,8 +900,10 @@ class const _WorkflowRecoveryActions({
 class const _WorkflowRetryButton({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TextButton(
+  Widget build(BuildContext context) => AuraButton(
     onPressed: onPressed,
+    variant: .text,
+    size: .small,
     child: const TextLocale(LocaleKeys.workflow_editor_retry),
   );
 }
@@ -904,8 +911,10 @@ class const _WorkflowRetryButton({required final VoidCallback onPressed})
 class const _WorkflowBackToListButton({required final VoidCallback onBack})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TextButton(
+  Widget build(BuildContext context) => AuraButton(
     onPressed: onBack,
+    variant: .text,
+    size: .small,
     child: const TextLocale(LocaleKeys.common_back),
   );
 }

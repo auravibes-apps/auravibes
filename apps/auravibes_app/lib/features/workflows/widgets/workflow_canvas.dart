@@ -486,41 +486,36 @@ class _WorkflowCanvasState extends State<WorkflowCanvas> {
   }
 
   Future<void> _confirmDeleteConnection(WorkflowConnection connection) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          LocaleKeys.workflow_editor_delete_connection_confirm_title.tr(
-            context: context,
-          ),
+      title: Text(
+        LocaleKeys.workflow_editor_delete_connection_confirm_title.tr(
+          context: context,
         ),
-        content: Text(
-          LocaleKeys.workflow_editor_delete_connection_confirm_message.tr(
-            context: context,
-            namedArgs: {
-              'connection': WorkflowConnectionText.description(
-                widget.workflow,
-                connection,
-                context,
-              ),
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(LocaleKeys.workflow_editor_cancel.tr(context: context)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              LocaleKeys.workflow_editor_confirm_delete_connection.tr(
-                context: context,
-              ),
-            ),
-          ),
-        ],
       ),
+      message: Text(
+        LocaleKeys.workflow_editor_delete_connection_confirm_message.tr(
+          context: context,
+          namedArgs: {
+            'connection': WorkflowConnectionText.description(
+              widget.workflow,
+              connection,
+              context,
+            ),
+          },
+        ),
+      ),
+      actions: AuraConfirmDialogActions(
+        cancelLabel: Text(
+          LocaleKeys.workflow_editor_cancel.tr(context: context),
+        ),
+        confirmLabel: Text(
+          LocaleKeys.workflow_editor_confirm_delete_connection.tr(
+            context: context,
+          ),
+        ),
+      ),
+      isDestructive: true,
     );
     if (confirmed == true) widget.onRemoveConnection(connection);
   }
@@ -875,20 +870,21 @@ class const _WorkflowCanvasNode({
                             button: true,
                             focused: focused,
                             label: '${node.label}, ${node.canonicalName}',
-                            child: Card(
-                              clipBehavior: Clip.antiAlias,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: AuraContainer(
+                                variant: .surface,
+                                borderRadius: 12,
+                                border: Border.all(
                                   color: selected || candidates.isNotEmpty
                                       ? primary
                                       : rejectedDrag != null
-                                      ? Theme.of(context).colorScheme.error
-                                      : Theme.of(context).dividerColor,
+                                      ? context.auraColors.error
+                                      : context.auraColors.outline,
                                   width: selected ? 2 : 1,
                                 ),
+                                child: _WorkflowCanvasNodeContents(node: node),
                               ),
-                              child: _WorkflowCanvasNodeContents(node: node),
                             ),
                           ),
                         );
@@ -970,16 +966,15 @@ class const _WorkflowConnectionRejectionNotice({
     final key = _connectionRejectionKey(rejection);
     if (key == null) return const SizedBox.shrink();
 
-    return Material(
-      color: Theme.of(context).colorScheme.errorContainer,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        child: TextLocale(
-          key,
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.onErrorContainer),
-        ),
+    return AuraContainer(
+      variant: .surfaceVariant,
+      borderRadius: 8,
+      border: Border.all(color: context.auraColors.error),
+      padding: .small,
+      child: TextLocale(
+        key,
+        style: Theme.of(context).textTheme.bodySmall
+            ?.copyWith(color: context.auraColors.error),
       ),
     );
   }
@@ -1075,25 +1070,22 @@ class const _WorkflowNodeAddHandle({
               const Icon(Icons.add, size: 16),
             ],
           );
-    final handle = Material(
-      color: context.auraColors.surface,
-      shape: const StadiumBorder(),
-      elevation: 2,
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: labelKey == null ? 10 : 8,
-            vertical: 8,
-          ),
-          child: content,
+    final handle = GestureDetector(
+      onTap: onTap,
+      child: AuraContainer(
+        variant: .surface,
+        borderRadius: 999,
+        shadow: .sm,
+        padding: .symmetric(
+          horizontal: labelKey == null ? .md : .sm,
+          vertical: .sm,
         ),
+        child: content,
       ),
     );
     final drag = (sourceNodeId: node.id, branch: branch);
 
-    return Tooltip(
+    return AuraTooltip(
       message: LocaleKeys.workflow_editor_add_node.tr(),
       child: Draggable<_WorkflowLinkDrag>(
         data: drag,
@@ -1103,24 +1095,21 @@ class const _WorkflowNodeAddHandle({
           onDragEnd();
         },
         onDragEnd: (_) => onDragEnd(),
-        feedback: Material(
-          color: Colors.transparent,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_circle, color: context.auraColors.primary),
-              if (branch != null) ...[
-                const SizedBox(width: 6),
-                TextLocale(
-                  branch == .trueBranch
-                      ? LocaleKeys.workflow_editor_true
-                      : LocaleKeys.workflow_editor_false,
-                  style: Theme.of(context).textTheme.labelMedium
-                      ?.copyWith(color: context.auraColors.primary),
-                ),
-              ],
+        feedback: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_circle, color: context.auraColors.primary),
+            if (branch != null) ...[
+              const SizedBox(width: 6),
+              TextLocale(
+                branch == .trueBranch
+                    ? LocaleKeys.workflow_editor_true
+                    : LocaleKeys.workflow_editor_false,
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: context.auraColors.primary),
+              ),
             ],
-          ),
+          ],
         ),
         childWhenDragging: Opacity(opacity: 0.4, child: handle),
         child: handle,
@@ -1282,19 +1271,20 @@ class const _SelectedConnectionDeleteButton({
         top: position.dy - 24,
         child: FocusTraversalOrder(
           order: NumericFocusOrder(traversalOrder),
-          child: Material(
-            elevation: 3,
-            shape: const CircleBorder(),
-            color: Theme.of(context).colorScheme.surface,
-            child: IconButton(
+          child: AuraContainer(
+            variant: .surface,
+            borderRadius: 999,
+            shadow: .sm,
+            child: AuraIconButton(
               tooltip: LocaleKeys.workflow_editor_confirm_delete_connection.tr(
                 context: context,
               ),
+              semanticLabel: LocaleKeys
+                  .workflow_editor_confirm_delete_connection
+                  .tr(context: context),
+              tint: .error,
               onPressed: () => onDelete(connection),
-              icon: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
+              icon: Icons.delete_outline,
             ),
           ),
         ),

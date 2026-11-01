@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-31
-- Amended: 2026-11-01 (canvas interaction and coordinate bounds)
+- Amended: 2026-11-01 (canvas interaction, coordinate bounds, and value binding UX)
 - Supersedes: Workflow node and output-schema decisions in the previous version
 
 ## Context
@@ -45,14 +45,6 @@ or prototype-data contract to preserve.
 - Fan-out successors run independently for each incoming event. Any incoming
   route can trigger a node; the same node can receive separate events from
   several routes.
-- Connector fields are configured inside the node menu. Connector parameter
-  names and types follow the Connector tool schema and are not user-editable.
-  Data bindings use a stable source node ID and JSON Pointer path. Inputs may
-  also use static values. Show a searchable, expandable result tree when schema
-  is known; allow JSON Pointer entry when users know a path without sampling.
-- Show only source values available on every incoming route to one node. An
-  unknown (`any`) value needs an explicit Transform cast before it binds to a
-  typed Connector input.
 - Each Workflow starts with one required, non-deletable Inputs node and one
   Output node. Users can add Outputs but cannot delete the last one. Each
   Output is an independent named result contract and a terminal node. One
@@ -63,6 +55,38 @@ or prototype-data contract to preserve.
   are not supported.
 - A node has a customizable canvas label. Its menu keeps the canonical node or
   Connector/tool name visible; show the stable tool ID in details.
+
+### Value binding and editing
+
+- Connector parameter names and types follow the Connector tool schema and are
+  not user-editable. Configure values inside the node menu.
+- A data binding stores the stable source node ID and JSON Pointer path
+  internally. Do not display the path or a JSON Schema document in the normal
+  binding flow. Present a reference as a chip labeled with the source node and
+  readable field names. A static value has no chip.
+- Keep previous-node values hidden until the user opens the in-field picker.
+  Group eligible values by source node and search readable field names,
+  including nested fields. Show only values available on every incoming route.
+  Block incompatible values with a plain-language explanation. An unknown
+  (`any`) value needs an explicit Transform cast before it binds to a typed
+  Connector input.
+- Static values use controls that match their declared type: text and numeric
+  fields, a Boolean toggle, guided object fields, and editable array rows.
+  Nested values use the same controls. Show schema descriptions, defaults,
+  required markers, and an explicit null option when the field is nullable; an
+  unset optional value remains distinct from null. Do not require users to enter
+  raw JSON values in these node input, Condition comparison, or Transform
+  operand flows.
+- When a static value becomes a node binding, preserve it as an inactive static
+  draft with the binding. Persist it through local and cloud save, close, and
+  reopen. Switching back to static restores the draft, or uses the field's
+  schema default when no draft exists. Draft presence must be distinct from its
+  value so an explicit `null` survives round trips. Source
+  deletion or schema changes do not silently discard the draft; preserve it and
+  flag incompatible values for repair.
+- Use a scrollable bottom sheet in the compact Workflow editor and a bounded
+  dialog in the wide editor. Keep the value list on demand, searchable, and
+  grouped by node. Restore focus to the value field when the chooser closes.
 
 ### Branches and transforms
 
@@ -146,6 +170,9 @@ or prototype-data contract to preserve.
 
 - Local and cloud storage need Directory-owned Workflow metadata, graph
   persistence, and standard item lifecycle operations.
+- Binding persistence must store the active value mode and an optional,
+  presence-aware static draft. Save, restore, source deletion, and schema repair
+  paths must retain it, including when its value is `null`.
 - Connector tool schema storage needs a shared per-tool schema and an optional
   Workflow-local override. Sampling paths must return shape-only results and
   discard raw values.

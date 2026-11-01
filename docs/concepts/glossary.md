@@ -102,9 +102,10 @@ deleted independently of the nodes they connect.
 
 ## Data binding
 
-A node input's reference to a value produced by an earlier node. The reference
-uses a stable source node ID and JSON Pointer field path. An input can instead
-use a static value.
+A node input's use of a value produced by an earlier node. In the editor, a
+reference appears as a chip with the source node and readable field labels. A
+static value appears without a chip. The stored reference uses a stable source
+node ID and field path; users do not need to enter or read that path.
 
 ## Workflow-local schema
 

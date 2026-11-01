@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-31
+- Amended: 2026-11-01 (value binding and static value UX)
 - Decision: [ADR 0002](../adr/0002-workflow-connector-tool-nodes.md)
 
 ## Goal
@@ -13,8 +14,8 @@ Choose input values without guessing at hidden ports or requiring a sample run.
 ## Scope
 
 This change covers the Workflow item model, local and cloud storage, Directory
-actions, chat item tabs, AI Directory reads, node editing, schemas, sampling,
-and the UX audit.
+actions, chat item tabs, AI Directory reads, node editing, value binding, static
+value editors, schemas, sampling, and the UX audit.
 
 Whole-Workflow execution is out of scope. The editor may run one read-only
 Connector tool to infer its output shape. It never runs a write tool for
@@ -63,14 +64,31 @@ sampling.
 - Connector parameter names and types come from the Connector tool schema and
   cannot be changed in a Workflow. Configure values as node attributes in the
   node menu; do not show data input/output ports.
-- A data binding stores stable source node ID and JSON Pointer path. The field
-  picker is searchable, expandable, grouped by source node, and shows field
-  type. It includes schema-known fields without requiring sampling. After
-  selecting a source node, allow users who know the shape to type a JSON
-  Pointer. An input can instead use a static value.
-- Show only source values available on every incoming route to one node. An
-  `any` source cannot bind to a typed Connector input until a Transform node
-  casts it. Explain incompatible types and block invalid bindings.
+- A data binding stores stable source node ID and JSON Pointer path internally.
+  The user-facing flow does not show JSON paths, JSON Schema documents, or raw
+  JSON value text. A selected value appears as a chip labeled `Node label ·
+  readable field label`; static values appear without a chip.
+- Keep the previous-value chooser closed until a user opens it from the value
+  field. Search readable field names, group results by eligible earlier node,
+  and include nested fields without showing their JSON paths. Show only values
+  available on every incoming route. Block incompatible values with a plain
+  explanation; an `any` value needs an explicit Transform cast before it binds
+  to a typed Connector input.
+- Use type-appropriate static controls: text and numeric fields, a Boolean
+  toggle, guided fields for objects, and addable/removable rows for arrays.
+  Edit nested values recursively. Show descriptions, defaults, required
+  markers, and an explicit null option for nullable fields; keep unset optional
+  fields distinct from null. Keep schema editing separate from entering a
+  value. Do not ask users to type raw JSON for static values.
+- When switching a static value to a binding, preserve its static draft with
+  the Workflow and restore it when users switch back, including after save,
+  close, and reopen. If no draft exists, use the schema default. Persist draft
+  presence separately from the nullable value so an explicit `null` round-trips
+  correctly. Source deletion or schema drift must not silently discard the
+  draft; flag incompatible values for repair.
+- Present the same searchable chooser as a scrollable bottom sheet in the
+  compact editor and a bounded dialog in the wide editor. Support keyboard and
+  touch, dismiss through outside tap/Back/Escape, and return focus to the field.
 - Deleting a source node removes its links. Retain dependent bindings as
   visible broken references and require repair. Do not silently clear them.
 
@@ -211,8 +229,9 @@ this integration.
    tool identity, support bindings/static values, and close through every
    approved method.
 8. Selecting a source field creates/confirms a node dependency link. Bindings
-   store stable source node IDs and JSON Pointer paths. Incompatible and
-   unknown types require repair or explicit Transform casts.
+   store stable source node IDs and JSON Pointer paths internally. Users see a
+   source-and-field chip, not a path. Incompatible and unknown types require
+   repair or explicit Transform casts.
 9. Canvas add items create/connect nodes by click or drag. Condition nodes show
    only True/False handles. Plus dragging previews links, validates targets,
    explains rejected drops, and selects the target after connection.
@@ -241,3 +260,9 @@ this integration.
 17. The UX audit records evidence, severity, confidence, recommendations, and
     verification scenarios. Rendered checks are used where available.
 18. No whole-Workflow execution or legacy Skill-node compatibility is added.
+19. Static values use type-appropriate controls; object and array values use
+    guided editors without raw JSON. Editors honor defaults, required and
+    nullable fields, and distinguish unset from null. A bound value retains its
+    inactive static draft across save/reopen. The on-demand grouped chooser
+    works in compact and wide layouts and shows no JSON paths or schema
+    documents.

@@ -386,18 +386,30 @@ class WorkflowConnection {
 }
 
 class WorkflowBinding {
-  const WorkflowBinding.staticValue(this.value)
+  const WorkflowBinding.staticValue(this.value, {this.hasValue = true})
     : sourceNodeId = null,
-      jsonPointer = null;
+      jsonPointer = null,
+      staticDraft = null,
+      hasStaticDraft = false,
+      staticDraftHasValue = false;
 
   const WorkflowBinding.fromNode({
     required this.sourceNodeId,
     required this.jsonPointer,
-  }) : value = null;
+    this.staticDraft,
+    this.hasStaticDraft = false,
+    this.staticDraftHasValue = true,
+  }) : value = null,
+       hasValue = false,
+       assert(hasStaticDraft || staticDraft == null);
 
   final Object? value;
+  final bool hasValue;
   final String? sourceNodeId;
   final String? jsonPointer;
+  final Object? staticDraft;
+  final bool hasStaticDraft;
+  final bool staticDraftHasValue;
 
   bool get isStatic => sourceNodeId == null;
 
@@ -765,20 +777,39 @@ abstract final class WorkflowConnectionCodec {
 }
 
 abstract final class WorkflowBindingCodec {
-  static WorkflowBinding fromJson(Map<String, Object?> json) =>
-      json['sourceNodeId'] is String
-      ? WorkflowBinding.fromNode(
-          sourceNodeId: json['sourceNodeId']! as String,
-          jsonPointer: json['jsonPointer']! as String,
-        )
-      : WorkflowBinding.staticValue(json['value']);
+  static WorkflowBinding fromJson(Map<String, Object?> json) {
+    final sourceNodeId = json['sourceNodeId'];
+    if (sourceNodeId is String) {
+      return WorkflowBinding.fromNode(
+        sourceNodeId: sourceNodeId,
+        jsonPointer: json['jsonPointer']! as String,
+        staticDraft: json['staticDraft'],
+        hasStaticDraft:
+            json.containsKey('staticDraft') ||
+            json.containsKey('staticDraftHasValue'),
+        staticDraftHasValue: json['staticDraftHasValue'] != false,
+      );
+    }
+
+    return WorkflowBinding.staticValue(
+      json['value'],
+      hasValue: json.containsKey('value') && json['hasValue'] != false,
+    );
+  }
 
   static Map<String, Object?> toJson(WorkflowBinding binding) =>
       binding.isStatic
-      ? {'value': binding.value}
+      ? {
+          if (binding.hasValue) 'value': binding.value,
+          if (!binding.hasValue) 'hasValue': false,
+        }
       : {
           'sourceNodeId': binding.sourceNodeId,
           'jsonPointer': binding.jsonPointer,
+          if (binding.hasStaticDraft) ...{
+            if (binding.staticDraftHasValue) 'staticDraft': binding.staticDraft,
+            if (!binding.staticDraftHasValue) 'staticDraftHasValue': false,
+          },
         };
 }
 

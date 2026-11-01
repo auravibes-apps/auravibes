@@ -18,6 +18,73 @@ abstract final class WorkflowGraphValidation {
     WorkflowValueType target,
   ) => source == target || (source == .integer && target == .number);
 
+  static bool workflowFieldsCompatible(
+    WorkflowField source,
+    WorkflowField target,
+  ) {
+    if (target.type == .any) return true;
+    if (!workflowValueTypesCompatible(source.type, target.type) ||
+        source.nullable && !target.nullable) {
+      return false;
+    }
+    if (target.type == .object) {
+      for (final field in target.properties) {
+        final sourceField = source.properties
+            .where((item) => item.name == field.name)
+            .firstOrNull;
+        if (sourceField == null) {
+          if (field.isRequired && !field.hasDefaultValue) return false;
+        } else if (!workflowFieldsCompatible(sourceField, field)) {
+          return false;
+        }
+      }
+    }
+    if (target.type == .array && target.items != null) {
+      final sourceItems = source.items;
+      if (sourceItems == null ||
+          !workflowFieldsCompatible(sourceItems, target.items!)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool workflowValueMatchesField(Object? value, WorkflowField field) {
+    if (value == null) return field.nullable;
+    return switch (field.type) {
+      .any => true,
+      .string => value is String,
+      .integer => value is int,
+      .number => value is num,
+      .boolean => value is bool,
+      .object =>
+        value is Map && _objectMatches(value as Map<Object?, Object?>, field),
+      .array =>
+        value is List &&
+            (field.items == null ||
+                value.every(
+                  (item) => workflowValueMatchesField(item, field.items!),
+                )),
+    };
+  }
+
+  static bool _objectMatches(Map<Object?, Object?> value, WorkflowField field) {
+    if (field.properties.isEmpty) return true;
+    for (final entry in value.entries) {
+      if (entry.key is! String) return false;
+    }
+    for (final child in field.properties) {
+      if (!value.containsKey(child.name)) {
+        if (child.isRequired && !child.hasDefaultValue) return false;
+        continue;
+      }
+      if (!workflowValueMatchesField(value[child.name], child)) return false;
+    }
+    return value.keys.every(
+      (name) => field.properties.any((child) => child.name == name),
+    );
+  }
+
   static bool nodePositionIsFinite(WorkflowNode node) =>
       node.x.isFinite && node.y.isFinite;
 
@@ -447,7 +514,10 @@ class _WorkflowGraphValidator {
     WorkflowField? targetField,
   ) {
     if (binding.isStatic) {
-      if (targetField != null && !_staticMatches(binding.value, targetField)) {
+      if (targetField != null &&
+          (binding.hasValue
+              ? !_staticMatches(binding.value, targetField)
+              : targetField.isRequired && !targetField.hasDefaultValue)) {
         _issues.add(.incompatibleBindingType);
       }
       return;
@@ -465,11 +535,10 @@ class _WorkflowGraphValidator {
       return;
     }
     if (targetField != null &&
-        (!WorkflowGraphValidation.workflowValueTypesCompatible(
-              sourceField.type,
-              targetField.type,
-            ) ||
-            sourceField.nullable && !targetField.nullable)) {
+        !WorkflowGraphValidation.workflowFieldsCompatible(
+          sourceField,
+          targetField,
+        )) {
       _issues.add(.incompatibleBindingType);
     }
   }
@@ -488,31 +557,12 @@ class _WorkflowGraphValidator {
       WorkflowGraphValidation.nodePositionIsFinite(node);
 
   static bool _defaultMatchesType(WorkflowField field) {
-    final value = field.defaultValue;
-    if (value == null) return field.nullable;
-    return switch (field.type) {
-      .any => true,
-      .string => value is String,
-      .integer => value is int,
-      .number => value is num,
-      .boolean => value is bool,
-      .object => value is Map,
-      .array => value is List,
-    };
+    return _staticMatches(field.defaultValue, field);
   }
 
-  static bool _staticMatches(Object? value, WorkflowField field) =>
-      value == null
-      ? field.nullable
-      : switch (field.type) {
-          .any => true,
-          .string => value is String,
-          .integer => value is int,
-          .number => value is num,
-          .boolean => value is bool,
-          .object => value is Map,
-          .array => value is List,
-        };
+  static bool _staticMatches(Object? value, WorkflowField field) {
+    return WorkflowGraphValidation.workflowValueMatchesField(value, field);
+  }
 
   static WorkflowField? _fieldAt(List<WorkflowField> fields, String pointer) {
     if (pointer.isEmpty) return null;

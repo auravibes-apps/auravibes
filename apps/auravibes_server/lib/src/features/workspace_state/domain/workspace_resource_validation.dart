@@ -623,11 +623,30 @@ class WorkspaceResourceValidation {
   }) {
     final sourceId = binding['sourceNodeId'];
     if (sourceId == null) {
+      final hasValue =
+          binding.containsKey('value') && binding['hasValue'] != false;
+      if (binding.containsKey('hasValue') && binding['hasValue'] is! bool ||
+          binding['hasValue'] == true && !binding.containsKey('value') ||
+          binding['hasValue'] == false && binding.containsKey('value') ||
+          binding.containsKey('staticDraft') ||
+          binding.containsKey('staticDraftHasValue')) {
+        throw const FormatException();
+      }
       if (targetField != null &&
-          !_workflowValueMatchesField(binding['value'], targetField)) {
+          (hasValue
+              ? !_workflowValueMatchesField(binding['value'], targetField)
+              : targetField['required'] == true &&
+                    targetField['hasDefault'] != true)) {
         throw const FormatException();
       }
       return;
+    }
+    final staticDraftHasValue = binding['staticDraftHasValue'];
+    if (binding.containsKey('staticDraftHasValue') &&
+            staticDraftHasValue is! bool ||
+        staticDraftHasValue == true && !binding.containsKey('staticDraft') ||
+        staticDraftHasValue == false && binding.containsKey('staticDraft')) {
+      throw const FormatException();
     }
     final pointer = binding['jsonPointer'];
     if (sourceId is! String ||
@@ -645,11 +664,8 @@ class WorkspaceResourceValidation {
     if (targetField != null) {
       final sourceType = source['type'] as String;
       final targetType = targetField['type'] as String;
-      final compatible =
-          sourceType == targetType ||
-          sourceType == 'integer' && targetType == 'number';
-      if (!compatible ||
-          source['nullable'] == true && targetField['nullable'] != true) {
+      if (!_workflowFieldsCompatible(source, targetField) ||
+          sourceType == 'any' && targetType != 'any') {
         throw const FormatException();
       }
     }
@@ -696,10 +712,82 @@ class WorkspaceResourceValidation {
       'integer' => value is int,
       'number' => value is num,
       'boolean' => value is bool,
-      'object' => value is Map,
-      'array' => value is List,
+      'object' => value is Map && _workflowObjectMatches(value, field),
+      'array' =>
+        value is List &&
+            (field['items'] is! Map<String, Object?> ||
+                value.every(
+                  (item) => _workflowValueMatchesField(
+                    item,
+                    field['items']! as Map<String, Object?>,
+                  ),
+                )),
       _ => false,
     };
+  }
+
+  static bool _workflowObjectMatches(
+    Map value,
+    Map<String, Object?> field,
+  ) {
+    final properties = _workflowFieldProperties(field);
+    if (properties.isEmpty) return true;
+    for (final child in properties) {
+      final name = child['name']! as String;
+      if (!value.containsKey(name)) {
+        if (child['required'] == true && child['hasDefault'] != true) {
+          return false;
+        }
+        continue;
+      }
+      if (!_workflowValueMatchesField(value[name], child)) return false;
+    }
+    return value.keys.every(
+      (name) => properties.any((child) => child['name'] == name),
+    );
+  }
+
+  static bool _workflowFieldsCompatible(
+    Map<String, Object?> source,
+    Map<String, Object?> target,
+  ) {
+    final sourceType = source['type'];
+    final targetType = target['type'];
+    if (targetType == 'any') return true;
+    final typeCompatible =
+        sourceType == targetType ||
+        sourceType == 'integer' && targetType == 'number';
+    if (!typeCompatible ||
+        source['nullable'] == true && target['nullable'] != true) {
+      return false;
+    }
+    if (targetType == 'object') {
+      for (final targetChild in _workflowFieldProperties(target)) {
+        final name = targetChild['name'];
+        final sourceChild = _workflowFieldProperties(source)
+            .where((item) => item['name'] == name)
+            .firstOrNull;
+        if (sourceChild == null) {
+          if (targetChild['required'] == true &&
+              targetChild['hasDefault'] != true) {
+            return false;
+          }
+        } else if (!_workflowFieldsCompatible(sourceChild, targetChild)) {
+          return false;
+        }
+      }
+    }
+    if (targetType == 'array' && target['items'] is Map<String, Object?>) {
+      final sourceItems = source['items'];
+      if (sourceItems is! Map<String, Object?> ||
+          !_workflowFieldsCompatible(
+            sourceItems,
+            target['items']! as Map<String, Object?>,
+          )) {
+        return false;
+      }
+    }
+    return true;
   }
 
   static List<Map<String, Object?>> _workflowFieldProperties(

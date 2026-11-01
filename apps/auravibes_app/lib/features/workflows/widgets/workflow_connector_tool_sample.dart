@@ -95,7 +95,7 @@ class _WorkflowConnectorToolSampleState
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        const Divider(),
+        const AuraDivider(),
         const TextLocale(LocaleKeys.workflow_editor_sample_outputs),
         const TextLocale(LocaleKeys.workflow_editor_samples_not_saved),
         const SizedBox(height: 8),
@@ -306,32 +306,57 @@ class _WorkflowConnectorToolSampleState
 
   Future<_SampleSchemaChoice?> _chooseSchemaScope() => showDialog(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const TextLocale(LocaleKeys.workflow_editor_schema_drift_title),
-      content: const TextLocale(
-        LocaleKeys.workflow_editor_schema_drift_message,
+    builder: (context) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 440),
+      child: AuraContainer(
+        variant: .surface,
+        borderRadius: 16,
+        shadow: .lg,
+        padding: .medium,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const TextLocale(LocaleKeys.workflow_editor_schema_drift_title),
+            const SizedBox(height: 12),
+            const TextLocale(LocaleKeys.workflow_editor_schema_drift_message),
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                AuraButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(_SampleSchemaChoice.keep),
+                  variant: .text,
+                  size: .small,
+                  child: const TextLocale(
+                    LocaleKeys.workflow_editor_schema_keep_current,
+                  ),
+                ),
+                AuraButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(_SampleSchemaChoice.local),
+                  variant: .text,
+                  size: .small,
+                  child: const TextLocale(
+                    LocaleKeys.workflow_editor_schema_create_local,
+                  ),
+                ),
+                AuraButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(_SampleSchemaChoice.shared),
+                  size: .small,
+                  child: const TextLocale(
+                    LocaleKeys.workflow_editor_schema_edit_shared,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_SampleSchemaChoice.keep),
-          child: const TextLocale(
-            LocaleKeys.workflow_editor_schema_keep_current,
-          ),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_SampleSchemaChoice.local),
-          child: const TextLocale(
-            LocaleKeys.workflow_editor_schema_create_local,
-          ),
-        ),
-        FilledButton(
-          onPressed: () =>
-              Navigator.of(context).pop(_SampleSchemaChoice.shared),
-          child: const TextLocale(
-            LocaleKeys.workflow_editor_schema_edit_shared,
-          ),
-        ),
-      ],
     ),
   );
 }
@@ -356,8 +381,10 @@ class const _WorkflowSampleConnectionPicker({
         const Expanded(
           child: TextLocale(LocaleKeys.workflow_editor_sample_failed),
         ),
-        TextButton(
+        AuraButton(
           onPressed: onRetry,
+          variant: .text,
+          size: .small,
           child: const TextLocale(LocaleKeys.workflow_editor_retry),
         ),
       ],
