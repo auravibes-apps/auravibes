@@ -161,7 +161,7 @@ Future<GenerateResult<Object?>> _generate(
   GenkitPlugin plugin,
   ProviderFaultClient client,
 ) async {
-  final chunks = <ModelResponseChunk>[];
+  final chunks = <String>[];
   final result = await http.runWithClient(
     () => Genkit(plugins: [plugin], isDevEnv: false)
         .generate<OpenAIChatOptions, Object?>(
@@ -173,12 +173,12 @@ Future<GenerateResult<Object?>> _generate(
             user: 'fixture-user',
           ),
           prompt: 'Preserve the upstream request.',
-          onChunk: chunks.add,
+          onChunk: (chunk) => chunks.add(chunk.text),
           cancel: CancellationController().token,
         ),
     () => client,
   );
-  expect(chunks.map((chunk) => chunk.text).join(), result.text);
+  expect(chunks.join(), result.text);
 
   return result;
 }
