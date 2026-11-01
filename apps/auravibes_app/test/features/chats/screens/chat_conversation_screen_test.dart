@@ -2100,6 +2100,8 @@ Future<void> _pumpCloudConversationScreen(
             };
             Widget appBuilder(BuildContext _, Widget? child) =>
                 AuraSnackBarHost(child: child ?? const SizedBox.shrink());
+            final appBuilderOrNull =
+                agentStopDecision != null ? appBuilder : null;
             final app = router == null
                 ? MaterialApp(
                     home: ChatConversationScreen(
@@ -2107,14 +2109,14 @@ Future<void> _pumpCloudConversationScreen(
                       chatId: _chatId,
                       showInputComposer: parentId == null,
                     ),
-                    builder: agentStopDecision != null ? appBuilder : null,
+                    builder: appBuilderOrNull,
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
                     supportedLocales: context.supportedLocales,
                   )
                 : MaterialApp.router(
                     routerConfig: router,
-                    builder: agentStopDecision != null ? appBuilder : null,
+                    builder: appBuilderOrNull,
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
                     supportedLocales: context.supportedLocales,
