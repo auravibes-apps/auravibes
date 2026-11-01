@@ -27,26 +27,23 @@ name: core
     final _ = await _git(root, ['add', '.']);
     final _ = await _git(root, ['commit', '--quiet', '-m', 'base']);
     final base = await _git(root, ['rev-parse', 'HEAD']);
-    final _ = await File('${package.path}/lib/changed.dart').writeAsString(
-      'class Changed {}\n',
-    );
+    final _ = await File('${package.path}/lib/changed.dart')
+        .writeAsString('class Changed {}\n');
     final _ = await File('${package.path}/test/changed_test.dart')
         .writeAsString('void main() {}\n');
 
     final script = '${Directory.current.path}/tool/local_preflight.dart';
-    final result = await Process.run(
-      Platform.resolvedExecutable,
-      [script, '--dry-run', '--base', base],
-      workingDirectory: root.path,
-    );
+    final result = await Process.run(Platform.resolvedExecutable, [
+      script,
+      '--dry-run',
+      '--base',
+      base,
+    ], workingDirectory: root.path);
 
     expect(result.exitCode, 0, reason: result.stderr.toString());
     final output = result.stdout.toString();
     expect(output, contains('fvm dart format --line-length 80'));
-    expect(
-      output,
-      contains('fvm dart analyze --fatal-infos --fatal-warnings'),
-    );
+    expect(output, contains('fvm dart analyze --fatal-infos --fatal-warnings'));
     expect(output, contains('packages/core/lib/changed.dart'));
     expect(output, contains('packages/core/test/changed_test.dart'));
   });
