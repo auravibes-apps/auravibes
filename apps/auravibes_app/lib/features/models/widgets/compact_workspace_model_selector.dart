@@ -411,7 +411,9 @@ class _ModelSheetContent extends Column {
            if (controller.text.isEmpty) ...[
              const AuraSizedBox(height: .xs),
              const ModelChoiceExplanation(
-               descriptionKey: 'models_screens.model_choice_explanation',
+               description: TextLocale(
+                 'models_screens.model_choice_explanation',
+               ),
              ),
              const AuraSizedBox(height: .sm),
            ],
@@ -923,7 +925,7 @@ class const _DropdownSearchExplanation({
       if (controller.text.isEmpty) ...[
         const AuraSizedBox(height: .xs),
         const ModelChoiceExplanation(
-          descriptionKey: 'models_screens.model_choice_explanation',
+          description: TextLocale('models_screens.model_choice_explanation'),
         ),
       ],
     ],

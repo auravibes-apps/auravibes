@@ -295,7 +295,7 @@ class const _AddModelProviderChoice({
         key: const Key('intro_ai_provider_choice'),
         heading: const _IntroAIHeading(),
         description: const ModelChoiceExplanation(
-          descriptionKey: LocaleKeys.intro_flow_ai_choose_provider,
+          description: TextLocale(LocaleKeys.intro_flow_ai_choose_provider),
         ),
         body: choice,
         scrollBody: false,
@@ -2564,7 +2564,7 @@ class const _ModelProviderSearchControls({
         const _ModelProviderSearchLabel(),
         const AuraSizedBox(height: .xs),
         const ModelChoiceExplanation(
-          descriptionKey: LocaleKeys.intro_flow_ai_choose_provider,
+          description: TextLocale(LocaleKeys.intro_flow_ai_choose_provider),
         ),
         const AuraSizedBox(height: .md),
       ],

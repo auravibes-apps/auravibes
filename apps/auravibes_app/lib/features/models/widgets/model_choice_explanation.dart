@@ -6,7 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const ModelChoiceExplanation({
-  required final String descriptionKey,
+  required final Widget description,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -17,7 +17,7 @@ class const ModelChoiceExplanation({
       crossAxisAlignment: .start,
       children: [
         Expanded(
-          child: AuraText(child: TextLocale(descriptionKey), style: .bodySmall),
+          child: AuraText(child: description, style: .bodySmall),
         ),
         const AuraSizedBox(width: .xs),
         _ModelChoiceHelpButton(label: helpLabel),

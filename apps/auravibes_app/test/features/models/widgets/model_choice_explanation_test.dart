@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/models/widgets/model_choice_explanation.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -81,7 +82,7 @@ Future<void> _expectExplanation(
     await tester.pumpWidget(
       TestableApp(
         child: Scaffold(
-          body: ModelChoiceExplanation(descriptionKey: descriptionKey),
+          body: ModelChoiceExplanation(description: TextLocale(descriptionKey)),
         ),
         startLocale: .new(localeCode),
       ),
