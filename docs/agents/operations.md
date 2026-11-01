@@ -47,6 +47,45 @@ gh pr checks <number> --json name,bucket \
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
 
+## Local validation evidence
+
+`tool/validation_evidence.py` records a command against its Git commit and a
+fingerprint of tracked changes, untracked files, renames, and deletions. The
+fingerprint is a digest; source contents and command output are not stored.
+Command arguments are saved in redacted form, and inherited environment
+variables are never recorded. Evidence lives in the user's local state
+directory, outside tracked source.
+
+Run a check and reuse a matching successful result when the command, toolchain,
+and source snapshot are unchanged:
+
+```sh
+cd apps/auravibes_app
+python3 ../../tool/validation_evidence.py run --reuse --package . -- \
+  fvm dart analyze lib --fatal-infos --fatal-warnings
+```
+
+Use `--toolchain-version` when the tool cannot be identified safely from its
+standard version switch. Use `--redact-arg INDEX` for a command argument that
+must be omitted from the saved command; indexes start at zero after `--`.
+Redacted commands are not eligible for evidence reuse because their arguments
+cannot be compared safely.
+
+Record an intentional skip without claiming validation, then inspect evidence
+in human or machine-readable form:
+
+```sh
+cd apps/auravibes_app
+python3 ../../tool/validation_evidence.py skip --reason "not applicable" -- \
+  fvm dart analyze lib --fatal-infos --fatal-warnings
+python3 ../../tool/validation_evidence.py list
+python3 ../../tool/validation_evidence.py list --json
+```
+
+An interrupted or timed out command remains `incomplete` without a known exit
+code. `cancelled` and `skipped` are separate states. `list` marks successful
+results `stale` when HEAD or the source fingerprint no longer matches.
+
 ## GitHub CLI merge preflight
 
 - `gh pr merge` has no dry-run; treat it as a remote write. Before invoking it, inspect the current head and merge requirements:
