@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_location_info.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_location_status.dart';
