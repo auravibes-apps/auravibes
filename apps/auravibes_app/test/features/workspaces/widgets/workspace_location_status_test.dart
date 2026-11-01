@@ -3,10 +3,17 @@ import 'package:auravibes_app/features/workspaces/widgets/workspace_location_sta
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
   Widget buildSubject(
     WorkspaceLocationInfo info, {
     VoidCallback? onViewAccess,
@@ -44,15 +51,27 @@ void main() {
     );
   }
 
+  Future<void> pumpSubject(
+    WidgetTester tester,
+    WorkspaceLocationInfo info, {
+    VoidCallback? onViewAccess,
+    Locale locale = const Locale('en'),
+  }) async {
+    await tester.runAsync(() async {
+      expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
+      await tester.pumpWidget(
+        buildSubject(info, onViewAccess: onViewAccess, locale: locale),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+  }
+
   testWidgets('shows local storage location without an access link', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     try {
-      await tester.pumpWidget(
-        buildSubject(const WorkspaceLocationInfo(kind: .onDevice)),
-      );
-      final _ = await tester.pumpAndSettle();
+      await pumpSubject(tester, const WorkspaceLocationInfo(kind: .onDevice));
 
       expect(find.text('On this device'), findsOneWidget);
       expect(
@@ -73,23 +92,21 @@ void main() {
   });
 
   testWidgets('shows a personal cloud workspace type', (tester) async {
-    await tester.pumpWidget(
-      buildSubject(const WorkspaceLocationInfo(kind: .personalCloud)),
+    await pumpSubject(
+      tester,
+      const WorkspaceLocationInfo(kind: .personalCloud),
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Personal cloud'), findsOneWidget);
   });
 
   testWidgets('team workspace links to members and access', (tester) async {
     var opened = false;
-    await tester.pumpWidget(
-      buildSubject(
-        const WorkspaceLocationInfo(kind: .teamWorkspace, canViewMembers: true),
-        onViewAccess: () => opened = true,
-      ),
+    await pumpSubject(
+      tester,
+      const WorkspaceLocationInfo(kind: .teamWorkspace, canViewMembers: true),
+      onViewAccess: () => opened = true,
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Team workspace'), findsOneWidget);
     expect(find.text('Members and access'), findsOneWidget);
@@ -103,13 +120,11 @@ void main() {
     tester,
   ) async {
     var opened = false;
-    await tester.pumpWidget(
-      buildSubject(
-        const WorkspaceLocationInfo(kind: .teamWorkspace),
-        onViewAccess: () => opened = true,
-      ),
+    await pumpSubject(
+      tester,
+      const WorkspaceLocationInfo(kind: .teamWorkspace),
+      onViewAccess: () => opened = true,
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Access details'), findsOneWidget);
     await tester.tap(
@@ -119,13 +134,11 @@ void main() {
   });
 
   testWidgets('workspace type uses Spanish copy', (tester) async {
-    await tester.pumpWidget(
-      buildSubject(
-        const WorkspaceLocationInfo(kind: .teamWorkspace),
-        locale: const Locale('es'),
-      ),
+    await pumpSubject(
+      tester,
+      const WorkspaceLocationInfo(kind: .teamWorkspace),
+      locale: const Locale('es'),
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Espacio de equipo'), findsOneWidget);
   });
