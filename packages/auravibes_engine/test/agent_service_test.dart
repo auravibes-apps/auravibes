@@ -266,6 +266,111 @@ void main() {
     expect(dataProvider.allowedToolRuns, hasLength(3));
   });
 
+  test(
+    'stops an identical no-progress tool call before another model call',
+    () async {
+      final dataProvider = _FakeAgentConversationDataProvider(
+        continueResults: List.filled(
+          3,
+          const ContinueAgentResult(
+            messageId: 'assistant-1',
+            hasToolCalls: true,
+          ),
+        ),
+        toolResults: const [
+          AgentLoopToolResult(
+            decision: .continueIteration,
+            fingerprint: 'same-call-same-result',
+          ),
+          AgentLoopToolResult(
+            decision: .continueIteration,
+            fingerprint: 'same-call-same-result',
+          ),
+        ],
+      );
+      final usecase = _buildAgentService(dataProvider);
+
+      final result = await usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(origin: .userMessage),
+      );
+
+      expect(result, AgentIterationDecision.repeatedToolLoopDetected);
+      expect(dataProvider.continuationContexts, hasLength(2));
+      expect(dataProvider.allowedToolRuns, hasLength(2));
+    },
+  );
+
+  test('stops a repeated two-batch tool cycle', () async {
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueResults: List.filled(
+        5,
+        const ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+      ),
+      toolResults: const [
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-a',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-b',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-a',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-b',
+        ),
+      ],
+    );
+    final usecase = _buildAgentService(dataProvider);
+
+    final result = await usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+
+    expect(result, AgentIterationDecision.repeatedToolLoopDetected);
+    expect(dataProvider.continuationContexts, hasLength(4));
+    expect(dataProvider.allowedToolRuns, hasLength(4));
+  });
+
+  test('does not stop a repeated call when its result changes', () async {
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueResults: [
+        const ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+        const ContinueAgentResult(messageId: 'assistant-2', hasToolCalls: true),
+        const ContinueAgentResult(
+          messageId: 'assistant-3',
+          hasToolCalls: false,
+        ),
+      ],
+      toolResults: const [
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'same-call-first-result',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'same-call-updated-result',
+        ),
+      ],
+    );
+    final usecase = _buildAgentService(dataProvider);
+
+    final result = await usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+
+    expect(result, AgentIterationDecision.done);
+    expect(dataProvider.continuationContexts, hasLength(3));
+    expect(dataProvider.allowedToolRuns, hasLength(2));
+  });
+
   test('does not retry rate limits inferred from message text', () async {
     final error = Exception('RateLimitException: retry after 2 seconds');
     final dataProvider = _FakeAgentConversationDataProvider(
@@ -637,6 +742,7 @@ class _FakeAgentConversationDataProvider
     List<ContinueAgentResult>? continueResults,
     List<Object>? continueErrors,
     List<AgentIterationDecision>? toolDecisions,
+    List<AgentLoopToolResult>? toolResults,
     this.onAutoCompact,
     this.onRunAllowedTools,
     this.workspaceIdForConversation,
@@ -651,14 +757,17 @@ class _FakeAgentConversationDataProvider
              ],
        ),
        continueErrors = List.of(continueErrors ?? const []),
-       toolDecisions = List.of(
-         toolDecisions ?? const [AgentIterationDecision.done],
+       toolResults = List.of(
+         toolResults ??
+             (toolDecisions ?? const [AgentIterationDecision.done]).map(
+               (decision) => AgentLoopToolResult(decision: decision),
+             ),
        );
 
   final String? workspaceId;
   final List<ContinueAgentResult> continueResults;
   final List<Object> continueErrors;
-  final List<AgentIterationDecision> toolDecisions;
+  final List<AgentLoopToolResult> toolResults;
   final void Function()? onAutoCompact;
   final Future<void> Function()? onRunAllowedTools;
   final String? Function(String conversationId)? workspaceIdForConversation;
@@ -696,7 +805,7 @@ class _FakeAgentConversationDataProvider
   }
 
   @override
-  Future<AgentIterationDecision> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   }) async {
@@ -704,9 +813,9 @@ class _FakeAgentConversationDataProvider
     final wait = onRunAllowedTools;
     if (wait != null) await wait();
 
-    return toolDecisions.isEmpty
-        ? AgentIterationDecision.done
-        : toolDecisions.removeAt(0);
+    return toolResults.isEmpty
+        ? const AgentLoopToolResult(decision: .done)
+        : toolResults.removeAt(0);
   }
 
   @override

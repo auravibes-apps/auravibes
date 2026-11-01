@@ -561,6 +561,7 @@
       "send_error": "Could not send the message. Please try again.",
       "continue_agent": "Continue agent",
       "iteration_limit_reached": "The agent reached its iteration limit. Partial output and completed tool results are available.",
+      "repeated_tool_loop_detected": "The agent stopped because the same tool calls kept returning the same results. Partial output and completed tool results are available.",
       "retry_message": "Retry message",
       "background_work": {
         "running_task": "A task is running in this conversation.",

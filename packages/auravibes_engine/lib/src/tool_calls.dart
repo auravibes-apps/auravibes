@@ -86,6 +86,7 @@ class const LoadLatestMessageToolCallsResult<TTool extends Object>({
   required final List<String> notFoundToolCallIds,
   required final List<String> previouslyFailedToolCallIds,
   final List<String> pendingApprovalToolCallIds = const [],
+  final List<AgentMessageToolCall> allToolCalls = const [],
 });
 
 abstract interface class AgentToolCallProvider<TTool extends Object> {
@@ -165,6 +166,7 @@ class const AgentToolCallLoader<TTool extends Object>({
       notFoundToolCallIds: notFoundToolCallIds,
       previouslyFailedToolCallIds: previouslyFailedToolCallIds,
       pendingApprovalToolCallIds: pendingApprovalToolCallIds,
+      allToolCalls: toolCalls,
     );
   }
 

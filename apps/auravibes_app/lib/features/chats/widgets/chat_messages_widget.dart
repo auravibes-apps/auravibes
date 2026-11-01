@@ -1382,8 +1382,8 @@ Future<void> _submitA2uiAction(
   required String languageCode,
 }) async {
   try {
-    final iterationLimitNotifier = ref.read(
-      conversationIterationLimitProvider(conversationId).notifier,
+    final agentStopNotifier = ref.read(
+      conversationAgentStopDecisionProvider(conversationId).notifier,
     );
     final decision = await ref
         .read(sendMessageUsecaseProvider(workspaceId))
@@ -1395,7 +1395,7 @@ Future<void> _submitA2uiAction(
             languageCode: languageCode,
           ),
         );
-    iterationLimitNotifier.markIfIterationLimitReached(decision);
+    agentStopNotifier.markIfAgentStopDecision(decision);
   } on Object catch (error, stackTrace) {
     runtime.rejectFormSubmission(action.surfaceId);
     _a2uiLogger.warning(

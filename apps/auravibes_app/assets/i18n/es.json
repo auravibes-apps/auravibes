@@ -561,6 +561,7 @@
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
       "continue_agent": "Continuar agente",
       "iteration_limit_reached": "El agente alcanzó su límite de iteraciones. La respuesta parcial y los resultados de herramientas completados están disponibles.",
+      "repeated_tool_loop_detected": "El agente se detuvo porque las mismas llamadas a herramientas seguían devolviendo los mismos resultados. La respuesta parcial y los resultados de herramientas completados están disponibles.",
       "retry_message": "Reintentar mensaje",
       "background_work": {
         "running_task": "Hay una tarea en curso en esta conversación.",
