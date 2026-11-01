@@ -441,8 +441,9 @@ class const ChatMessagesWidget({
                 ChatTimelineProjection.hasA2uiMessageState(source.message),
           ),
     ];
-    final retryableMessageId =
-        ChatTimelineProjection.retryableUserMessageId(resolvedMessages);
+    final retryableMessageId = ChatTimelineProjection.retryableUserMessageId(
+      resolvedMessages,
+    );
 
     void updateDisclosure(VoidCallback update) => update();
 
@@ -1876,9 +1877,7 @@ class const _AssistantActivityRun({
     final mcpAppControllers = useMemoized(
       () => <String, McpAppToolResultController>{},
     );
-    final activityEntries = ChatTimelineProjection.buildActivityRunEntries(
-      run,
-    );
+    final activityEntries = ChatTimelineProjection.buildActivityRunEntries(run);
     final responseEntryIndex = activityEntries.indexWhere(
       (entry) => entry is ActivityResponseEntry && entry.isFinal,
     );

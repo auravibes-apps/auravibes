@@ -15,10 +15,9 @@ void main() {
         isStreaming: true,
       );
 
-      final items = ChatTimelineProjection.buildChatTimelineItems(
-        [source],
-        const {},
-      );
+      final items = ChatTimelineProjection.buildChatTimelineItems([
+        source,
+      ], const {});
 
       expect(items, hasLength(1));
       expect(items.single, isA<MessageTimelineItem>());
@@ -28,10 +27,7 @@ void main() {
         isFalse,
       );
       expect(
-        ChatTimelineProjection.hasAssistantResponseCandidate(
-          source,
-          const {},
-        ),
+        ChatTimelineProjection.hasAssistantResponseCandidate(source, const {}),
         isTrue,
       );
     });
@@ -65,9 +61,7 @@ void main() {
         },
       );
       final item = items.single as ActivityRunTimelineItem;
-      final entries = ChatTimelineProjection.buildActivityRunEntries(
-        item.run,
-      );
+      final entries = ChatTimelineProjection.buildActivityRunEntries(item.run);
 
       expect(item.run.id, 'forked-activity');
       expect(entries, hasLength(2));
@@ -139,10 +133,11 @@ void main() {
         isStreaming: false,
       );
 
-      final items = ChatTimelineProjection.buildChatTimelineItems(
-        [before, summary, after],
-        const {},
-      );
+      final items = ChatTimelineProjection.buildChatTimelineItems([
+        before,
+        summary,
+        after,
+      ], const {});
 
       expect(items, hasLength(3));
       expect(items.firstOrNull, isA<ActivityRunTimelineItem>());
@@ -182,15 +177,11 @@ void main() {
       );
 
       expect(
-        ChatTimelineProjection.retryableUserMessageId(
-          [retryable, response],
-        ),
+        ChatTimelineProjection.retryableUserMessageId([retryable, response]),
         'retryable-user',
       );
       expect(
-        ChatTimelineProjection.retryableUserMessageId(
-          [forkReference],
-        ),
+        ChatTimelineProjection.retryableUserMessageId([forkReference]),
         isNull,
       );
     });
