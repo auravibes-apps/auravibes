@@ -84,6 +84,16 @@ Future<void> _expectExplanation(
     ),
   );
   final _ = await tester.pumpAndSettle();
+  final translationLoaded = await tester.runAsync(() async {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      if (descriptionKey.tr().contains(description)) return true;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    return false;
+  });
+  expect(translationLoaded, isTrue);
+  final _ = await tester.pumpAndSettle();
   expect(find.textContaining(description), findsOneWidget);
   expect(find.bySemanticsLabel(helpLabel), findsOneWidget);
 
