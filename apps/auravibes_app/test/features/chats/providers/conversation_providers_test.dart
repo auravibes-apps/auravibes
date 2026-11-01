@@ -432,12 +432,13 @@ void main() {
           subAgent,
         ];
 
-        final branches = await fixture.container.read(
-          forkedConversationsStreamProvider((
-            workspaceId: 'ws1',
-            sourceConversationId: source.id,
-          )).future,
-        );
+        final provider = forkedConversationsStreamProvider((
+          workspaceId: 'ws1',
+          sourceConversationId: source.id,
+        ));
+        final subscription = fixture.container.listen(provider, (_, _) {});
+        final branches = await fixture.container.read(provider.future);
+        subscription.close();
 
         expect(branches, equals([firstBranch, siblingBranch]));
       },

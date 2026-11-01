@@ -131,21 +131,22 @@ Stream<List<ConversationEntity>> childConversationsStream(
 // ignore: specify_nonobvious_property_types - Riverpod family type is verbose.
 final forkedConversationsStreamProvider =
     StreamProvider.family<List<ConversationEntity>, _ForkedConversationRequest>(
-      (ref, request) {
-        final session = ref
-            .watch(workspaceSessionForRouteProvider(request.workspaceId))
-            .value;
-        if (session == null) return const Stream.empty();
+      (ref, request) async* {
+        final repository = ref.watch(conversationRepositoryProvider);
+        final session = await ref.watch(
+          workspaceSessionForRouteProvider(request.workspaceId).future,
+        );
+        if (!ref.mounted) return;
         if (session.cloud case final cloud?) {
-          return _cloudForkedConversations(
+          yield* _cloudForkedConversations(
             ref,
             cloud,
             request.sourceConversationId,
           );
+          return;
         }
 
-        return ref
-            .watch(conversationRepositoryProvider)
+        yield* repository
             .watchConversationsByWorkspace(request.workspaceId)
             .map(
               (conversations) => conversations
@@ -170,23 +171,32 @@ Stream<List<ConversationEntity>> _cloudForkedConversations(
   );
   if (!ref.mounted || gateway == null) return;
 
-  yield* gateway.watch({'conversation'}, () async {
-    final conversations = _mapCloudConversations(
-      await _readAllCloudConversationPages(gateway, cloud),
-      cloud.localWorkspaceId,
-    );
-    final currentSequence = await _cloudConversationSequence(gateway);
+  yield* gateway.watch({
+    'conversation',
+  }, () => _readForkedCloudConversations(gateway, cloud, sourceConversationId));
+}
 
-    return (
-      value: conversations
-          .where(
-            (conversation) =>
-                conversation.forkSourceConversationId == sourceConversationId,
-          )
-          .toList(),
-      currentSequence: currentSequence,
-    );
-  });
+Future<({List<ConversationEntity> value, int currentSequence})>
+_readForkedCloudConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String sourceConversationId,
+) async {
+  final conversations = _mapCloudConversations(
+    await _readAllCloudConversationPages(gateway, cloud),
+    cloud.localWorkspaceId,
+  );
+  final currentSequence = await _cloudConversationSequence(gateway);
+
+  return (
+    value: conversations
+        .where(
+          (conversation) =>
+              conversation.forkSourceConversationId == sourceConversationId,
+        )
+        .toList(),
+    currentSequence: currentSequence,
+  );
 }
 
 Duration? _childConversationRetry(int retryCount, Object error) {

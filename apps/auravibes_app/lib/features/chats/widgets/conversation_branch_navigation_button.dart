@@ -28,6 +28,10 @@ class const ConversationBranchNavigationButton({
 
   void _showBranchNavigation(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
+    _presentBranchNavigation(context);
+  }
+
+  void _presentBranchNavigation(BuildContext context) {
     final _ = showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -55,143 +59,304 @@ class const ConversationBranchNavigationButton({
   }
 }
 
+typedef _BranchNavigationState = ({
+  AsyncValue<List<ConversationEntity>> childBranches,
+  AsyncValue<ConversationEntity?>? parentConversation,
+  AsyncValue<List<ConversationEntity>>? siblingBranches,
+  VoidCallback onRetryChildren,
+  VoidCallback? onRetryParent,
+  VoidCallback? onRetrySiblings,
+});
+
+typedef _BranchConversationState = ({
+  AsyncValue<List<ConversationEntity>> childBranches,
+  AsyncValue<ConversationEntity?>? parentConversation,
+  AsyncValue<List<ConversationEntity>>? siblingBranches,
+});
+
+typedef _BranchNavigationActions = ({
+  VoidCallback onRetryChildren,
+  VoidCallback? onRetryParent,
+  VoidCallback? onRetrySiblings,
+});
+
 class const _ConversationBranchNavigationSheet({
   required final String workspaceId,
   required final ConversationEntity conversation,
   required final ValueChanged<ConversationEntity> onOpenConversation,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final childBranches = ref.watch(
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _BranchNavigationContents(
+        conversation: conversation,
+        navigation: _watchBranchNavigationState(ref, workspaceId, conversation),
+        onOpenConversation: onOpenConversation,
+      );
+}
+
+_BranchNavigationState _watchBranchNavigationState(
+  WidgetRef ref,
+  String workspaceId,
+  ConversationEntity conversation,
+) {
+  final branchState = _watchBranchConversations(ref, workspaceId, conversation);
+  final actions = _branchNavigationActions(ref, workspaceId, conversation);
+
+  return (
+    childBranches: branchState.childBranches,
+    parentConversation: branchState.parentConversation,
+    siblingBranches: branchState.siblingBranches,
+    onRetryChildren: actions.onRetryChildren,
+    onRetryParent: actions.onRetryParent,
+    onRetrySiblings: actions.onRetrySiblings,
+  );
+}
+
+_BranchConversationState _watchBranchConversations(
+  WidgetRef ref,
+  String workspaceId,
+  ConversationEntity conversation,
+) {
+  final parentId = conversation.forkSourceConversationId;
+
+  return (
+    childBranches: ref.watch(
       forkedConversationsStreamProvider((
         workspaceId: workspaceId,
         sourceConversationId: conversation.id,
       )),
-    );
-    final sourceConversationId = conversation.forkSourceConversationId;
-    final parentConversation = sourceConversationId == null
-        ? null
-        : ref.watch(
-            conversationByIdStreamProvider(
-              workspaceId,
-              conversationId: sourceConversationId,
-            ),
-          );
-    final siblingBranches = sourceConversationId == null
-        ? null
-        : ref.watch(
-            forkedConversationsStreamProvider((
-              workspaceId: workspaceId,
-              sourceConversationId: sourceConversationId,
-            )),
-          );
+    ),
+    parentConversation: _watchParentConversation(ref, workspaceId, parentId),
+    siblingBranches: _watchSiblingBranches(ref, workspaceId, parentId),
+  );
+}
 
-    return _ConversationBranchNavigationSheetContents(
-      conversation: conversation,
-      childBranches: childBranches,
-      parentConversation: parentConversation,
-      siblingBranches: siblingBranches,
-      onOpenConversation: onOpenConversation,
-      onRetryChildren: () => ref.invalidate(
+_BranchNavigationActions _branchNavigationActions(
+  WidgetRef ref,
+  String workspaceId,
+  ConversationEntity conversation,
+) {
+  final parentId = conversation.forkSourceConversationId;
+
+  return (
+    onRetryChildren: _retryForkedConversations(
+      ref,
+      workspaceId,
+      conversation.id,
+    ),
+    onRetryParent: _retryParentConversation(ref, workspaceId, parentId),
+    onRetrySiblings: parentId == null
+        ? null
+        : _retryForkedConversations(ref, workspaceId, parentId),
+  );
+}
+
+AsyncValue<ConversationEntity?>? _watchParentConversation(
+  WidgetRef ref,
+  String workspaceId,
+  String? parentId,
+) => parentId == null
+    ? null
+    : ref.watch(
+        conversationByIdStreamProvider(workspaceId, conversationId: parentId),
+      );
+
+AsyncValue<List<ConversationEntity>>? _watchSiblingBranches(
+  WidgetRef ref,
+  String workspaceId,
+  String? parentId,
+) => parentId == null
+    ? null
+    : ref.watch(
         forkedConversationsStreamProvider((
           workspaceId: workspaceId,
-          sourceConversationId: conversation.id,
+          sourceConversationId: parentId,
         )),
+      );
+
+VoidCallback _retryForkedConversations(
+  WidgetRef ref,
+  String workspaceId,
+  String sourceConversationId,
+) =>
+    () => ref.invalidate(
+      forkedConversationsStreamProvider((
+        workspaceId: workspaceId,
+        sourceConversationId: sourceConversationId,
+      )),
+    );
+
+VoidCallback? _retryParentConversation(
+  WidgetRef ref,
+  String workspaceId,
+  String? parentId,
+) => parentId == null
+    ? null
+    : () => ref.invalidate(
+        conversationByIdStreamProvider(workspaceId, conversationId: parentId),
+      );
+
+class const _BranchNavigationContents({
+  required final ConversationEntity conversation,
+  required final _BranchNavigationState navigation,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: MediaQuery.sizeOf(context).height * 0.8,
+    child: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: _BranchNavigationSections(
+          conversation: conversation,
+          navigation: navigation,
+          onOpenConversation: onOpenConversation,
+        ),
       ),
-      onRetryParent: sourceConversationId == null
-          ? null
-          : () => ref.invalidate(
-              conversationByIdStreamProvider(
-                workspaceId,
-                conversationId: sourceConversationId,
-              ),
-            ),
-      onRetrySiblings: sourceConversationId == null
-          ? null
-          : () => ref.invalidate(
-              forkedConversationsStreamProvider((
-                workspaceId: workspaceId,
-                sourceConversationId: sourceConversationId,
-              )),
-            ),
+    ),
+  );
+}
+
+class const _BranchNavigationSections({
+  required final ConversationEntity conversation,
+  required final _BranchNavigationState navigation,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    children: [
+      const _BranchNavigationTitle(),
+      _CurrentConversationBranchSection(conversation: conversation),
+      _RelatedBranchSections(
+        conversation: conversation,
+        navigation: navigation,
+        onOpenConversation: onOpenConversation,
+      ),
+      _ChildConversationBranches(
+        conversation: conversation,
+        navigation: navigation,
+        onOpenConversation: onOpenConversation,
+      ),
+      const SizedBox(height: 8),
+    ],
+  );
+}
+
+class const _RelatedBranchSections({
+  required final ConversationEntity conversation,
+  required final _BranchNavigationState navigation,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (conversation.forkSourceConversationId == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        _ParentConversationSection(
+          conversation: conversation,
+          navigation: navigation,
+          onOpenConversation: onOpenConversation,
+        ),
+        _SiblingConversationBranches(
+          conversation: conversation,
+          navigation: navigation,
+          onOpenConversation: onOpenConversation,
+        ),
+      ],
     );
   }
 }
 
-class const _ConversationBranchNavigationSheetContents({
+class const _BranchNavigationTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      Text(
+        'chats_screens.chat_conversation.branch_navigation'.tr(),
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+      const SizedBox(height: 16),
+    ],
+  );
+}
+
+class const _CurrentConversationBranchSection({
   required final ConversationEntity conversation,
-  required final AsyncValue<List<ConversationEntity>> childBranches,
-  required final AsyncValue<ConversationEntity?>? parentConversation,
-  required final AsyncValue<List<ConversationEntity>>? siblingBranches,
-  required final ValueChanged<ConversationEntity> onOpenConversation,
-  required final VoidCallback onRetryChildren,
-  required final VoidCallback? onRetryParent,
-  required final VoidCallback? onRetrySiblings,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final noRelatedBranches =
-        conversation.forkSourceConversationId == null &&
-        switch (childBranches) {
-          AsyncData() => _branchChoices(childBranches, conversation.id).isEmpty,
-          _ => false,
-        };
-
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.8,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: ListView(
-            children: [
-              Text(
-                'chats_screens.chat_conversation.branch_navigation'.tr(),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              _BranchSectionTitle(
-                title: 'chats_screens.chat_conversation.current_branch'.tr(),
-              ),
-              _CurrentBranchTile(conversation: conversation),
-              if (conversation.forkSourceConversationId != null)
-                _ParentConversationSection(
-                  sourceTitle: conversation.forkSourceTitle,
-                  parentConversation: parentConversation!,
-                  onOpenConversation: onOpenConversation,
-                  onRetry: onRetryParent!,
-                ),
-              if (conversation.forkSourceConversationId != null)
-                _BranchChoicesSection(
-                  label: 'chats_screens.chat_conversation.other_branches'.tr(),
-                  branches: siblingBranches!,
-                  currentConversationId: conversation.id,
-                  onOpenConversation: onOpenConversation,
-                  onRetry: onRetrySiblings!,
-                ),
-              _BranchChoicesSection(
-                label: 'chats_screens.chat_conversation.branches_from_this_conversation'
-                    .tr(),
-                branches: childBranches,
-                currentConversationId: conversation.id,
-                onOpenConversation: onOpenConversation,
-                onRetry: onRetryChildren,
-              ),
-              if (noRelatedBranches)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: TextLocale(
-                    'chats_screens.chat_conversation.no_other_branches',
-                    textAlign: .center,
-                  ),
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _BranchSectionTitle(
+        title: 'chats_screens.chat_conversation.current_branch'.tr(),
       ),
-    );
-  }
+      _CurrentBranchTile(conversation: conversation),
+    ],
+  );
+}
+
+class const _SiblingConversationBranches({
+  required final ConversationEntity conversation,
+  required final _BranchNavigationState navigation,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _BranchChoicesSection(
+    label: 'chats_screens.chat_conversation.other_branches'.tr(),
+    branches: navigation.siblingBranches!,
+    currentConversationId: conversation.id,
+    onOpenConversation: onOpenConversation,
+    onRetry: navigation.onRetrySiblings!,
+  );
+}
+
+class const _ChildConversationBranches({
+  required final ConversationEntity conversation,
+  required final _BranchNavigationState navigation,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+}) extends StatelessWidget {
+  bool get _noRelatedBranches =>
+      conversation.forkSourceConversationId == null &&
+      switch (navigation.childBranches) {
+        AsyncData() => _branchChoices(
+          navigation.childBranches,
+          conversation.id,
+        ).isEmpty,
+        _ => false,
+      };
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _BranchChoicesSection(
+        label: 'chats_screens.chat_conversation.branches_from_this_conversation'
+            .tr(),
+        branches: navigation.childBranches,
+        currentConversationId: conversation.id,
+        onOpenConversation: onOpenConversation,
+        onRetry: navigation.onRetryChildren,
+      ),
+      if (_noRelatedBranches) const _NoRelatedBranchesMessage(),
+    ],
+  );
+}
+
+class const _NoRelatedBranchesMessage() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(vertical: 16),
+    child: TextLocale(
+      'chats_screens.chat_conversation.no_other_branches',
+      textAlign: .center,
+    ),
+  );
 }
 
 List<ConversationEntity> _branchChoices(
@@ -234,10 +399,9 @@ class const _CurrentBranchTile({required final ConversationEntity conversation})
 }
 
 class const _ParentConversationSection({
-  required final String? sourceTitle,
-  required final AsyncValue<ConversationEntity?> parentConversation,
+  required final ConversationEntity conversation,
+  required final _BranchNavigationState navigation,
   required final ValueChanged<ConversationEntity> onOpenConversation,
-  required final VoidCallback onRetry,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
@@ -246,20 +410,33 @@ class const _ParentConversationSection({
       const _BranchSectionTitle(
         title: 'chats_screens.chat_conversation.parent_conversation',
       ),
-      switch (parentConversation) {
-        AsyncData(value: final parent?) => _BranchConversationTile(
-          conversation: parent,
-          leadingIcon: Icons.arrow_upward_outlined,
-          onTap: () => onOpenConversation(parent),
-        ),
-        AsyncData() => _UnavailableParentTile(sourceTitle: sourceTitle),
-        AsyncLoading() => _ParentConversationLoadingTile(
-          sourceTitle: sourceTitle,
-        ),
-        AsyncError() => _BranchLoadError(onRetry: onRetry),
-      },
+      _ParentConversationStatus(
+        sourceTitle: conversation.forkSourceTitle,
+        parentConversation: navigation.parentConversation!,
+        onOpenConversation: onOpenConversation,
+        onRetry: navigation.onRetryParent!,
+      ),
     ],
   );
+}
+
+class const _ParentConversationStatus({
+  required final String? sourceTitle,
+  required final AsyncValue<ConversationEntity?> parentConversation,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (parentConversation) {
+    AsyncData(value: final parent?) => _BranchConversationTile(
+      conversation: parent,
+      leadingIcon: Icons.arrow_upward_outlined,
+      onTap: () => onOpenConversation(parent),
+    ),
+    AsyncData() => _UnavailableParentTile(sourceTitle: sourceTitle),
+    AsyncLoading() => _ParentConversationLoadingTile(sourceTitle: sourceTitle),
+    AsyncError() => _BranchLoadError(onRetry: onRetry),
+  };
 }
 
 class const _UnavailableParentTile({required final String? sourceTitle})
@@ -319,23 +496,35 @@ class const _BranchChoicesSection({
 
     return switch (branches) {
       AsyncData() when choices.isEmpty => const SizedBox.shrink(),
-      AsyncData() => Column(
-        crossAxisAlignment: .stretch,
-        children: [
-          _BranchSectionTitle(title: label),
-          ...choices.map(
-            (conversation) => _BranchConversationTile(
-              conversation: conversation,
-              leadingIcon: Icons.subdirectory_arrow_right_outlined,
-              onTap: () => onOpenConversation(conversation),
-            ),
-          ),
-        ],
+      AsyncData() => _BranchChoicesList(
+        label: label,
+        choices: choices,
+        onOpenConversation: onOpenConversation,
       ),
       AsyncLoading() => _BranchLoadingSection(label: label),
       AsyncError() => _BranchLoadErrorSection(label: label, onRetry: onRetry),
     };
   }
+}
+
+class const _BranchChoicesList({
+  required final String label,
+  required final List<ConversationEntity> choices,
+  required final ValueChanged<ConversationEntity> onOpenConversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _BranchSectionTitle(title: label),
+      for (final conversation in choices)
+        _BranchConversationTile(
+          conversation: conversation,
+          leadingIcon: Icons.subdirectory_arrow_right_outlined,
+          onTap: () => onOpenConversation(conversation),
+        ),
+    ],
+  );
 }
 
 class const _BranchConversationTile({

@@ -1,11 +1,13 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_branch_navigation_button.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-
-import '../../../helpers/test_app.dart';
 
 const _workspaceId = 'test-workspace';
 final _sourceConversation = _conversation('source', 'Original conversation');
@@ -74,25 +76,49 @@ void main() {
 }
 
 Future<void> _pumpBranchNavigation(WidgetTester tester, GoRouter router) async {
-  await tester.pumpWidget(
-    TestableApp(
-      overrides: [
-        conversationByIdStreamProvider(
-          _workspaceId,
-          conversationId: _sourceConversation.id,
-        ).overrideWith((ref) => Stream.value(_sourceConversation)),
-        forkedConversationsStreamProvider((
-          workspaceId: _workspaceId,
-          sourceConversationId: _sourceConversation.id,
-        )).overrideWith(
-          (ref) => Stream.value([_currentConversation, _siblingConversation]),
+  final container = ProviderContainer(
+    overrides: [
+      conversationByIdStreamProvider(
+        _workspaceId,
+        conversationId: _sourceConversation.id,
+      ).overrideWith((ref) => Stream.value(_sourceConversation)),
+      forkedConversationsStreamProvider((
+        workspaceId: _workspaceId,
+        sourceConversationId: _sourceConversation.id,
+      )).overrideWith(
+        (ref) => Stream.value([_currentConversation, _siblingConversation]),
+      ),
+      forkedConversationsStreamProvider((
+        workspaceId: _workspaceId,
+        sourceConversationId: _currentConversation.id,
+      )).overrideWith((ref) => Stream.value([_childConversation])),
+    ],
+  );
+  addTearDown(container.dispose);
+
+  await tester.runAsync(
+    () => tester.pumpWidget(
+      EasyLocalization(
+        child: Builder(
+          builder: (context) => UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp.router(
+              routerConfig: router,
+              builder: (_, child) => AuraLegacyMaterialBridge(
+                child: AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            ),
+          ),
         ),
-        forkedConversationsStreamProvider((
-          workspaceId: _workspaceId,
-          sourceConversationId: _currentConversation.id,
-        )).overrideWith((ref) => Stream.value([_childConversation])),
-      ],
-      child: MaterialApp.router(routerConfig: router),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        startLocale: const Locale('en'),
+      ),
     ),
   );
   await tester.pumpAndSettle();
