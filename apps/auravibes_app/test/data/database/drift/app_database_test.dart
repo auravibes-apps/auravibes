@@ -170,7 +170,11 @@ void main() {
           .getSingle();
       expect(retained.read<String>('name'), 'Retained');
       expect(retained.read<String>('asset_id'), 'asset');
-      expect(sqliteDb.userVersion, 47);
+      expect(sqliteDb.userVersion, 49);
+      expect(
+        await database.select(database.workspaceAgentHookSettings).get(),
+        isEmpty,
+      );
       final revision = await database
           .customSelect(
             '''

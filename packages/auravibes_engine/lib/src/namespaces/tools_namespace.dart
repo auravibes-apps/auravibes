@@ -1,4 +1,5 @@
 import 'package:auravibes_engine/src/agent_runtime.dart';
+import 'package:auravibes_engine/src/agent_tool_lifecycle_hooks.dart';
 import 'package:auravibes_engine/src/tool_call_actions.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:auravibes_engine/src/tool_resume_service.dart';
@@ -10,10 +11,12 @@ class ToolsNamespace<TTool extends Object>({
   required AgentToolResumeProvider resume,
   required final AgentCancellationEffects cancellationEffects,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
+  final AgentToolLifecycleHookRunner<TTool>? lifecycleHookRunner,
 }) {
   final ApproveToolCallService<TTool> _approve = .new(
     provider: approvals,
     outputPolicyForTool: outputPolicyForTool,
+    lifecycleHookRunner: lifecycleHookRunner,
   );
   final SkipToolCallService _skip = .new(provider: skips);
   final AgentToolResumeService _resume = .new(provider: resume);

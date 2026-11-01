@@ -33,7 +33,7 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     /// App-only result data that is never sent to the model.
     @JsonKey(includeIfNull: false) Map<String, Object?>? appData,
 
-    /// The bounded response projection used in model context, when different.
+    /// The response sent in model context when it differs from the raw result.
     @JsonKey(includeIfNull: false) String? responseContextRaw,
 
     /// Whether output was truncated for model context or persistence.
@@ -75,7 +75,7 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     final response = responseRaw;
     if (response == null) return resultStatus?.toResponseString() ?? '';
 
-    if (fullOutputForContext) return response;
+    if (fullOutputForContext) return responseContextRaw ?? response;
 
     return projectToolOutput(responseContextRaw ?? response).text;
   }

@@ -491,6 +491,226 @@ void main() {
           ),
     ]);
   });
+
+  test('a pre-tool block is persisted and prevents tool execution', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.granted},
+      results: const {'tool-a': 'must not run'},
+    );
+    final service = AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: _FakeLifecycleHookRunner(
+        beforeResult: const AgentPreToolHookResult(
+          outcome: AgentToolHookOutcome.block,
+          reason: 'Policy denied this call.',
+        ),
+      ),
+    );
+
+    await service(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    expect(provider.executedTools, isEmpty);
+    final update = provider.updates.single;
+    expect(update.resultStatus, AgentToolResultStatus.executionError);
+    final response = jsonDecode(update.responseRaw!) as Map<String, dynamic>;
+    expect(response['code'], 'hook_blocked');
+    expect(response['reason'], 'Policy denied this call.');
+  });
+
+  test('an allowing hook still requires the existing tool approval', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.needsConfirmation},
+      results: const {'tool-a': 'must wait'},
+    );
+    final hooks = _FakeLifecycleHookRunner();
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: hooks,
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    expect(hooks.events, isEmpty);
+    expect(provider.executedTools, isEmpty);
+    expect(provider.updates.single.approvalRequested, isTrue);
+  });
+
+  test('pre and post hooks run around an approved tool in order', () async {
+    final events = <String>[];
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.granted},
+      results: const {'tool-a': 'tool result'},
+      events: events,
+    );
+    final hooks = _FakeLifecycleHookRunner(events: events);
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: hooks,
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    expect(events, ['approval', 'pre', 'execute', 'post']);
+  });
+
+  test(
+    'post-hook context is bounded and does not rewrite tool output',
+    () async {
+      final provider = _FakeExecutionProvider(
+        latestToolCalls: _singleToolCall(),
+        decisions: const {'tool-1': AgentToolPermissionResult.granted},
+        results: const {'tool-a': 'tool result'},
+      );
+      final hooks = _FakeLifecycleHookRunner(
+        afterResult: AgentPostToolHookResult(
+          outcome: AgentToolHookOutcome.success,
+          context: 'h' * (4096 + 1),
+        ),
+      );
+
+      await AgentToolExecutionService<String>(
+        provider: provider,
+        lifecycleHookRunner: hooks,
+      )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+      final update = provider.updates.single;
+      expect(update.responseRaw, 'tool result');
+      expect(
+        utf8.encode(update.responseContextRaw!).length,
+        lessThanOrEqualTo(defaultToolOutputBytes),
+      );
+      expect(update.responseContextRaw, startsWith('Post-tool hook context:'));
+      expect(update.responseContextRaw, contains('h' * 4096));
+      expect(update.responseContextRaw, contains('Tool output:\ntool result'));
+    },
+  );
+
+  test('post-hook context appends to explicitly full tool output', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.granted},
+      results: const {'tool-a': 'full tool result'},
+    );
+    final hooks = _FakeLifecycleHookRunner(
+      afterResult: const AgentPostToolHookResult(
+        outcome: AgentToolHookOutcome.success,
+        context: 'additional context',
+      ),
+    );
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: hooks,
+      outputPolicyForTool: (_) =>
+          AgentToolOutputPolicy.full(justification: 'test fixture'),
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    final update = provider.updates.single;
+    expect(update.responseRaw, 'full tool result');
+    expect(update.fullOutputForContext, isTrue);
+    expect(update.responseContextRaw, contains('additional context'));
+    expect(update.responseContextRaw, contains('full tool result'));
+  });
+
+  test('post-hook failure leaves successful tool result intact', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.granted},
+      results: const {'tool-a': 'completed'},
+    );
+    final hooks = _FakeLifecycleHookRunner(
+      afterResult: const AgentPostToolHookResult(
+        outcome: AgentToolHookOutcome.timedOut,
+      ),
+    );
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: hooks,
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    final update = provider.updates.single;
+    expect(update.resultStatus, AgentToolResultStatus.success);
+    expect(update.responseRaw, 'completed');
+    expect(update.responseContextRaw, isNull);
+    expect(provider.loggedHookFailures, ['lifecycle_hook_post_timeout']);
+  });
+
+  test(
+    'post-hook logging failure leaves successful tool result intact',
+    () async {
+      final provider = _FakeExecutionProvider(
+        latestToolCalls: _singleToolCall(),
+        decisions: const {'tool-1': AgentToolPermissionResult.granted},
+        results: const {'tool-a': 'completed'},
+        throwOnErrorLog: true,
+      );
+
+      await AgentToolExecutionService<String>(
+        provider: provider,
+        lifecycleHookRunner: _FakeLifecycleHookRunner(
+          afterResult: const AgentPostToolHookResult(
+            outcome: AgentToolHookOutcome.timedOut,
+          ),
+        ),
+      )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+      expect(
+        provider.updates.single.resultStatus,
+        AgentToolResultStatus.success,
+      );
+      expect(provider.updates.single.responseRaw, 'completed');
+    },
+  );
+
+  test('pre-hook failure stays fail-closed when logging fails', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.granted},
+      results: const {'tool-a': 'must not run'},
+      throwOnErrorLog: true,
+    );
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: _FakeLifecycleHookRunner(
+        beforeResult: const AgentPreToolHookResult(
+          outcome: AgentToolHookOutcome.timedOut,
+        ),
+      ),
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    expect(provider.executedTools, isEmpty);
+    expect(
+      provider.updates.single.resultStatus,
+      AgentToolResultStatus.executionError,
+    );
+  });
+
+  test('cancellation returned by a pre-hook prevents tool execution', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: _singleToolCall(),
+      decisions: const {'tool-1': AgentToolPermissionResult.granted},
+      results: const {'tool-a': 'must not run'},
+    );
+    final hooks = _FakeLifecycleHookRunner(
+      beforeResult: const AgentPreToolHookResult(
+        outcome: AgentToolHookOutcome.cancelled,
+      ),
+    );
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      lifecycleHookRunner: hooks,
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    expect(provider.executedTools, isEmpty);
+    expect(
+      provider.updates.single.resultStatus,
+      AgentToolResultStatus.stoppedByUser,
+    );
+  });
 }
 
 Future<void> _flushMicrotasks() async {
@@ -511,6 +731,54 @@ LoadLatestMessageToolCallsResult<String> _latestToolCalls() {
   );
 }
 
+LoadLatestMessageToolCallsResult<String> _singleToolCall() =>
+    const LoadLatestMessageToolCallsResult(
+      messageId: 'message-1',
+      hasToolCalls: true,
+      toolsToRun: [
+        AgentToolToCall(tool: 'tool-a', id: 'tool-1', argumentsRaw: '{}'),
+      ],
+      notFoundToolCallIds: [],
+      previouslyFailedToolCallIds: [],
+    );
+
+class _FakeLifecycleHookRunner implements AgentToolLifecycleHookRunner<String> {
+  _FakeLifecycleHookRunner({
+    this.beforeResult = const AgentPreToolHookResult(
+      outcome: AgentToolHookOutcome.allow,
+    ),
+    this.afterResult = const AgentPostToolHookResult(
+      outcome: AgentToolHookOutcome.success,
+    ),
+    this.events,
+  });
+
+  final AgentPreToolHookResult beforeResult;
+  final AgentPostToolHookResult afterResult;
+  final List<String>? events;
+
+  @override
+  Future<AgentPreToolHookResult> beforeTool({
+    required AgentToolLifecycleHookRequest<String> request,
+    required AgentToolHookCancellationChecker isCancellationRequested,
+  }) async {
+    events?.add('pre');
+
+    return beforeResult;
+  }
+
+  @override
+  Future<AgentPostToolHookResult> afterTool({
+    required AgentToolLifecycleHookRequest<String> request,
+    required bool toolSucceeded,
+    required AgentToolHookCancellationChecker isCancellationRequested,
+  }) async {
+    events?.add('post');
+
+    return afterResult;
+  }
+}
+
 class _FakeExecutionProvider({
   required final LoadLatestMessageToolCallsResult<String> latestToolCalls,
   final bool cancellationRequested = false,
@@ -520,11 +788,14 @@ class _FakeExecutionProvider({
       const {},
   final Map<String, Object?> results = const {},
   final Map<String, Future<Object?>> resultFutures = const {},
+  final List<String>? events,
+  final bool throwOnErrorLog = false,
 }) implements AgentToolExecutionProvider<String> {
   final stoppedMessageIds = <String>[];
   final updateBatches = <List<AgentToolResultUpdate>>[];
   final updates = <AgentToolResultUpdate>[];
   final loggedErrors = <String>[];
+  final loggedHookFailures = <String>[];
   final approvalArgumentsRaw = <String, String>{};
   final executedTools = <String>[];
 
@@ -540,6 +811,7 @@ class _FakeExecutionProvider({
     AgentToolApprovalRequest<String> request,
   ) async {
     approvalArgumentsRaw[request.toolCallId] = request.argumentsRaw ?? '{}';
+    events?.add('approval');
     final decisionFuture = decisionFutures[request.toolCallId];
     if (decisionFuture != null) return await decisionFuture;
 
@@ -558,6 +830,7 @@ class _FakeExecutionProvider({
     required Map<String, dynamic> arguments,
   }) async {
     executedTools.add(tool);
+    events?.add('execute');
     final future = resultFutures[tool];
     if (future != null) return await future;
 
@@ -608,6 +881,12 @@ class _FakeExecutionProvider({
 
   @override
   void logToolExecutionError(AgentToolExecutionErrorRequest<String> request) {
+    if (throwOnErrorLog) throw StateError('logger failed');
+
     loggedErrors.add(request.toolCallId);
+    final phase = request.failurePhase;
+    if (phase != null && phase.startsWith('lifecycle_hook_post_')) {
+      loggedHookFailures.add(phase);
+    }
   }
 }

@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart'
 import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/workspace_lifecycle_hook_runner_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -23,6 +24,7 @@ final batchToolApprovalUsecaseProvider = Provider<BatchToolApprovalActions>(
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
     resolveCloudTurn: (workspaceId) =>
         ref.read(cloudTurnUsecaseProvider(workspaceId).future),
+    lifecycleHookRunner: ref.watch(workspaceLifecycleHookRunnerProvider),
     onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
   ),
   dependencies: [agentToolResumeServiceProvider],

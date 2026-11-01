@@ -16,6 +16,7 @@ import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_d
 import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/workspace_agent_hook_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
@@ -42,6 +43,7 @@ import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_agent_hook_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_assets.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_attachment_deletions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_command_receipts.dart';
@@ -78,6 +80,7 @@ export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
 export 'daos/model_usage_records_dao.dart';
 export 'daos/recent_model_selections_dao.dart';
+export 'daos/workspace_agent_hook_settings_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
 export 'daos/workspace_tools_dao.dart';
@@ -130,6 +133,7 @@ part 'app_database.g.dart';
     WorkspaceCredentialDeletions,
     WorkspaceCommandReceipts,
     WorkspaceContextSelections,
+    WorkspaceAgentHookSettings,
     WorkspaceContentReports,
   ],
   daos: [
@@ -148,6 +152,7 @@ part 'app_database.g.dart';
     ConversationToolsDao,
     McpServersDao,
     WorkspaceCompactionSettingsDao,
+    WorkspaceAgentHookSettingsDao,
     SkillsDao,
     SkillResourcesDao,
     ConversationSkillsDao,
@@ -237,7 +242,10 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAttachmentDeletionsSchemaVersion + 1;
   static const int _conversationTaskBriefSchemaVersion =
       _workspaceAssetDeletionOwnerSchemaVersion + 1;
-  static const int _currentSchemaVersion = _conversationTaskBriefSchemaVersion;
+  static const int _workspaceAgentHookSettingsSchemaVersion =
+      _conversationTaskBriefSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _workspaceAgentHookSettingsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -294,6 +302,15 @@ extension on AppDatabase {
     await _upgradeWorkspaceContentSchema(m, from);
     await _upgradeWorkspaceAttachmentDeletionsSchema(m, from);
     await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
+    await _upgradeWorkspaceAgentHookSettingsSchema(m, from);
+  }
+
+  Future<void> _upgradeWorkspaceAgentHookSettingsSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._workspaceAgentHookSettingsSchemaVersion) return;
+    await m.createTable(workspaceAgentHookSettings);
   }
 
   Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {

@@ -21,6 +21,33 @@ class _MockCloudTurnUsecase extends Mock implements CloudTurnUsecase;
 
 class _MockResolvedToolService extends Mock implements ResolvedToolService;
 
+class _RecordingWorkspaceHookRunner
+    implements agent.AgentToolLifecycleHookRunner<ResolvedTool> {
+  final beforeWorkspaceIds = <String>[];
+  final afterWorkspaceIds = <String>[];
+
+  @override
+  Future<agent.AgentPreToolHookResult> beforeTool({
+    required agent.AgentToolLifecycleHookRequest<ResolvedTool> request,
+    required agent.AgentToolHookCancellationChecker isCancellationRequested,
+  }) async {
+    beforeWorkspaceIds.add(request.workspaceId);
+
+    return const agent.AgentPreToolHookResult(outcome: .allow);
+  }
+
+  @override
+  Future<agent.AgentPostToolHookResult> afterTool({
+    required agent.AgentToolLifecycleHookRequest<ResolvedTool> request,
+    required bool toolSucceeded,
+    required agent.AgentToolHookCancellationChecker isCancellationRequested,
+  }) async {
+    afterWorkspaceIds.add(request.workspaceId);
+
+    return const agent.AgentPostToolHookResult(outcome: .success);
+  }
+}
+
 void main() {
   setUpAll(() {
     registerTestFallbackValues();
@@ -62,6 +89,7 @@ void main() {
 
   BatchToolApprovalUsecase createUsecase({
     CloudTurnResolver? resolveCloudTurn,
+    agent.AgentToolLifecycleHookRunner<ResolvedTool>? lifecycleHookRunner,
   }) => BatchToolApprovalUsecase(
     messageRepository: messageRepository,
     conversationRepository: conversationRepository,
@@ -73,6 +101,7 @@ void main() {
     loadToolSpecs: (_) => loadToolSpecs,
     resolveCloudTurn: resolveCloudTurn ?? (_) async => null,
     onToolCallChanged: () => changeCount++,
+    lifecycleHookRunner: lifecycleHookRunner,
   );
 
   test(
@@ -193,6 +222,12 @@ void main() {
 
       expect(result.claimed, hasLength(1));
       expect(changeCount, 2);
+      verifyNever(
+        () => loadToolSpecs.buildCatalog(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+        ),
+      );
       final updates =
           verify(
                 () =>
@@ -308,6 +343,58 @@ void main() {
       verify(() => resumeService.call(messageId: 'msg-1')).called(1);
       verify(() => resumeService.call(messageId: 'child-two-message'))
           .called(1);
+    },
+  );
+
+  test(
+    'runs lifecycle hooks with each source conversation workspace',
+    () async {
+      final call = _pending(sourceConversationId: 'child');
+      final resolved = ResolvedTool.builtIn(
+        tableId: 'tool',
+        toolIdentifier: 'tool',
+        tooltype: .calculator,
+      );
+      final catalog = agent.buildToolCatalog<ResolvedTool>([
+        agent.ToolCatalogCandidate.reserved(
+          spec: .new(
+            name: 'tool',
+            description: 'test tool',
+            inputJsonSchema: const {},
+          ),
+          target: resolved,
+        ),
+      ]);
+      final hooks = _RecordingWorkspaceHookRunner();
+      when(() => messageRepository.claimToolCallBatch(any(), approve: true))
+          .thenAnswer((_) async => [_claim(call, .claimed)]);
+      when(() => conversationRepository.getConversationById('child'))
+          .thenAnswer((_) async => _conversation('child', 'child-workspace'));
+      when(
+        () => loadToolSpecs.buildCatalog(
+          conversationId: 'child',
+          workspaceId: 'child-workspace',
+        ),
+      ).thenAnswer((_) async => catalog);
+      when(
+        () => resolvedToolService.call(
+          conversationId: 'child',
+          tool: resolved,
+          arguments: any(named: 'arguments'),
+          toolCallId: call.toolCall.id,
+        ),
+      ).thenAnswer((_) async => 'done');
+      when(() => messageRepository.persistToolCallBatchResults(any()))
+          .thenAnswer((_) => Future<void>.value());
+
+      await createUsecase(lifecycleHookRunner: hooks).approveOnce(
+        rootConversationId: 'root',
+        workspaceId: 'root-workspace',
+        pendingCalls: [call],
+      );
+
+      expect(hooks.beforeWorkspaceIds, ['child-workspace']);
+      expect(hooks.afterWorkspaceIds, ['child-workspace']);
     },
   );
 

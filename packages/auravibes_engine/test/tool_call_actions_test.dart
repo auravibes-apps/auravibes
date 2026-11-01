@@ -1,8 +1,18 @@
+import 'dart:convert';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/tool_call_actions.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('hook text truncation respects UTF-8 byte limits', () {
+    const text = 'éé';
+    final truncated = truncateAgentToolHookText(text, 3);
+
+    expect(truncated, 'é');
+    expect(utf8.encode(truncated), hasLength(2));
+  });
+
   group('ApproveToolCallService', () {
     test('marks unresolved tool as not found and resumes', () async {
       final provider = _FakeApproveToolCallProvider(resolvedTool: null);
@@ -74,6 +84,40 @@ void main() {
         'update:AgentToolResultStatus.success:2',
         'resume:message-1',
       ]);
+    });
+
+    test('runs pre-tool hook after approval and blocks dispatch', () async {
+      final provider = _FakeApproveToolCallProvider(
+        resolvedTool: 'calculator',
+        runResult: '2',
+      );
+      final hookRunner = _BlockingPreToolHookRunner(provider.calls);
+      final usecase = ApproveToolCallService<String>(
+        provider: provider,
+        lifecycleHookRunner: hookRunner,
+      );
+
+      await usecase.call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
+        level: .once,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
+      );
+
+      expect(provider.calls, [
+        'resolve:conversation-1:calculator:{"input": "1+1"}',
+        'running:message-1:tool-1',
+        'pre:workspace-1:tool-1:input',
+        'update:AgentToolResultStatus.executionError:{"outcome":"blocked","code":"hook_blocked","reason":"Policy blocked this tool call."}',
+        'resume:message-1',
+      ]);
+      expect(provider.updates, [AgentToolResultStatus.executionError]);
+      expect(hookRunner.afterToolCalled, isFalse);
     });
 
     test('does not resume after cancelled execution', () async {
@@ -213,6 +257,7 @@ class _FakeApproveToolCallProvider({
       conversationId: 'conversation-1',
       name: toolName,
       argumentsRaw: '{"input": "1+1"}',
+      workspaceId: 'workspace-1',
     );
   }
 
@@ -281,6 +326,38 @@ class _FakeApproveToolCallProvider({
 
   @override
   void logToolExecutionError(AgentToolExecutionErrorRequest<String> request) {}
+}
+
+class _BlockingPreToolHookRunner(List<String> calls)
+    implements AgentToolLifecycleHookRunner<String> {
+  bool afterToolCalled = false;
+
+  @override
+  Future<AgentPreToolHookResult> beforeTool({
+    required AgentToolLifecycleHookRequest<String> request,
+    required AgentToolHookCancellationChecker isCancellationRequested,
+  }) async {
+    calls.add(
+      'pre:${request.workspaceId}:${request.toolCallId}:'
+      '${request.argumentNames.join(',')}',
+    );
+
+    return const AgentPreToolHookResult(
+      outcome: AgentToolHookOutcome.block,
+      reason: 'Policy blocked this tool call.',
+    );
+  }
+
+  @override
+  Future<AgentPostToolHookResult> afterTool({
+    required AgentToolLifecycleHookRequest<String> request,
+    required bool toolSucceeded,
+    required AgentToolHookCancellationChecker isCancellationRequested,
+  }) async {
+    afterToolCalled = true;
+
+    return const AgentPostToolHookResult(outcome: AgentToolHookOutcome.success);
+  }
 }
 
 class _FakeSkipToolCallProvider({required final bool shouldSkip})

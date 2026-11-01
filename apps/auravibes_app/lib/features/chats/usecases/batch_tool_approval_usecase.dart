@@ -44,6 +44,7 @@ class const BatchToolApprovalUsecase({
   required final ToolSpecsResolver loadToolSpecs,
   required final CloudTurnResolver resolveCloudTurn,
   required final void Function() onToolCallChanged,
+  final agent.AgentToolLifecycleHookRunner<ResolvedTool>? lifecycleHookRunner,
 }) implements BatchToolApprovalActions {
   @override
   Future<BatchToolApprovalResult> approveOnce({
@@ -122,29 +123,25 @@ extension on BatchToolApprovalUsecase {
     Iterable<ToolCallApprovalBatchClaim> claims, {
     required String workspaceId,
   }) async {
-    final resolved = await _resolveClaimedTools(
-      claims,
-      workspaceId: workspaceId,
-    );
+    final resolved = await _resolveClaimedTools(claims);
     final plan = _prepareBatchExecution(resolved);
     final executionResults = await _executeResolvedTools(
       plan.executable,
       runResolvedTool: runResolvedTool,
       isCancellationRequested: cancellationRuntime.isCancellationRequested,
+      lifecycleHookRunner: lifecycleHookRunner,
+      workspaceId: workspaceId,
     );
     await _persistBatchExecutionResults(this, plan, executionResults);
     onToolCallChanged();
   }
 
   Future<List<_ResolvedBatchClaim>> _resolveClaimedTools(
-    Iterable<ToolCallApprovalBatchClaim> claims, {
-    required String workspaceId,
-  }) async {
+    Iterable<ToolCallApprovalBatchClaim> claims,
+  ) async {
     final grouped = _groupClaimsByConversation(claims);
     final resolved = await Future.wait(
-      grouped.entries.map(
-        (entry) => _resolveConversationClaims(entry, workspaceId),
-      ),
+      grouped.entries.map(_resolveConversationClaims),
     );
 
     return resolved.expand((claims) => claims).toList(growable: false);
@@ -152,19 +149,25 @@ extension on BatchToolApprovalUsecase {
 
   Future<List<_ResolvedBatchClaim>> _resolveConversationClaims(
     MapEntry<String, List<ToolCallApprovalBatchClaim>> entry,
-    String workspaceId,
   ) async {
     final conversation = await conversationRepository.getConversationById(
       entry.key,
     );
-    final sourceWorkspaceId = conversation?.workspaceId ?? workspaceId;
+    if (conversation == null) {
+      return _failedResolutionClaims(entry.value, workspaceId: '');
+    }
+
+    final sourceWorkspaceId = conversation.workspaceId;
     try {
       return await _resolveClaimsForConversation(
         entry,
         workspaceId: sourceWorkspaceId,
       );
     } on Object {
-      return _failedResolutionClaims(entry.value);
+      return _failedResolutionClaims(
+        entry.value,
+        workspaceId: sourceWorkspaceId,
+      );
     }
   }
 
@@ -176,22 +179,32 @@ extension on BatchToolApprovalUsecase {
         .buildCatalog(conversationId: entry.key, workspaceId: workspaceId);
 
     return await Future.wait(
-      entry.value.map((claim) => _resolveClaim(claim, catalog: catalog)),
+      entry.value.map(
+        (claim) =>
+            _resolveClaim(claim, catalog: catalog, workspaceId: workspaceId),
+      ),
     );
   }
 
   Future<_ResolvedBatchClaim> _resolveClaim(
     ToolCallApprovalBatchClaim claim, {
     required agent.ToolCatalog<ResolvedTool> catalog,
+    required String workspaceId,
   }) async {
     final toolCall = claim.toolCall;
     if (toolCall == null) {
       throw StateError('Claimed tool call is missing its metadata.');
     }
     final resolved = toolResolver.resolveTool(toolCall.name, catalog);
-    if (resolved == null) return _missingResolvedTool(claim);
+    if (resolved == null) {
+      return _missingResolvedTool(claim, workspaceId: workspaceId);
+    }
 
-    return _ResolvedBatchClaim(claim: claim, tool: resolved);
+    return _ResolvedBatchClaim(
+      claim: claim,
+      workspaceId: workspaceId,
+      tool: resolved,
+    );
   }
 
   Future<void> _resumeSources(
@@ -319,6 +332,7 @@ abstract interface class BatchToolApprovalActions {
 
 class const _ResolvedBatchClaim({
   required final ToolCallApprovalBatchClaim claim,
+  required final String workspaceId,
   final ResolvedTool? tool,
   final ToolCallResultStatus? resultStatus,
   final String? responseRaw,
@@ -395,11 +409,18 @@ agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
     toolCallId: item.toolCallId,
     tool: tool,
     argumentsRaw: toolCall.argumentsRaw,
+    workspaceId: entry.workspaceId,
   );
 }
 
-_ResolvedBatchClaim _missingResolvedTool(ToolCallApprovalBatchClaim claim) =>
-    .new(claim: claim, resultStatus: .toolNotFound);
+_ResolvedBatchClaim _missingResolvedTool(
+  ToolCallApprovalBatchClaim claim, {
+  required String workspaceId,
+}) => _ResolvedBatchClaim(
+  claim: claim,
+  workspaceId: workspaceId,
+  resultStatus: .toolNotFound,
+);
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,
@@ -516,11 +537,13 @@ Map<String, List<ToolCallApprovalBatchClaim>> _groupClaimsByConversation(
 }
 
 List<_ResolvedBatchClaim> _failedResolutionClaims(
-  Iterable<ToolCallApprovalBatchClaim> claims,
-) => [
+  Iterable<ToolCallApprovalBatchClaim> claims, {
+  required String workspaceId,
+}) => [
   for (final claim in claims)
     .new(
       claim: claim,
+      workspaceId: workspaceId,
       resultStatus: .executionError,
       responseRaw: 'Tool execution failed.',
     ),
@@ -544,10 +567,15 @@ Future<List<agent.AgentToolBatchResult<ResolvedTool>>> _executeResolvedTools(
   Iterable<agent.AgentToolBatchCall<ResolvedTool>> calls, {
   required ResolvedToolService runResolvedTool,
   required agent.AgentToolCancellationChecker isCancellationRequested,
+  required agent.AgentToolLifecycleHookRunner<ResolvedTool>?
+  lifecycleHookRunner,
+  required String workspaceId,
 }) => agent.AgentToolBatchExecutor<ResolvedTool>(
   runResolvedTool: _resolvedToolBatchRunner(runResolvedTool),
   isCancellationRequested: isCancellationRequested,
   logToolExecutionError: _logToolExecutionError,
+  lifecycleHookRunner: lifecycleHookRunner,
+  workspaceId: workspaceId,
 ).call(calls);
 
 agent.AgentResolvedToolRunner<ResolvedTool> _resolvedToolBatchRunner(

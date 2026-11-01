@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycle_hooks_section.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -28,6 +29,10 @@ void main() {
     'loading and failed refresh preserve the named workspace draft through '
     'retry',
     (tester) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
       final stream = StreamController<CompactionSettings>.broadcast();
       addTearDown(stream.close);
       final guard = DraftExitGuard();
@@ -36,6 +41,7 @@ void main() {
           TestableApp(
             child: WorkspaceSettingsScreen(workspaceId: 'A', guard: guard),
             overrides: [
+              appDatabaseProvider.overrideWithValue(database),
               allWorkspacesProvider.overrideWith(
                 (_) => Stream.value([
                   WorkspaceEntity(
@@ -167,6 +173,7 @@ void main() {
     expect(find.text('Local Alpha'), findsOneWidget);
     expect(find.byType(WorkspaceSettingsScreen), findsOneWidget);
     expect(find.byType(CompactionSettingsSection), findsOneWidget);
+    expect(find.byType(WorkspaceAgentLifecycleHooksSection), findsOneWidget);
     final field = find.byType(EditableText).first;
     await tester.enterText(field, '456');
     await tester.tap(

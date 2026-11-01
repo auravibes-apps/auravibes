@@ -1,6 +1,7 @@
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
 import 'package:auravibes_engine/src/agent_loop_tool_result.dart';
 import 'package:auravibes_engine/src/agent_tool_batch_executor.dart';
+import 'package:auravibes_engine/src/agent_tool_lifecycle_hooks.dart';
 import 'package:auravibes_engine/src/agent_tool_loop_guard.dart';
 import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
@@ -92,6 +93,7 @@ typedef _PreparedAgentTools<TTool extends Object> = ({
 class const AgentToolExecutionService<TTool extends Object>({
   required final AgentToolExecutionProvider<TTool> provider,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
+  final AgentToolLifecycleHookRunner<TTool>? lifecycleHookRunner,
 }) {
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -146,6 +148,7 @@ class const AgentToolExecutionService<TTool extends Object>({
     }
 
     await _runGrantedTools(
+      workspaceId: workspaceId,
       grantedTools: prepared.grantedTools,
       latestToolCalls: latestToolCalls,
       conversationId: conversationId,
@@ -305,6 +308,7 @@ class const AgentToolExecutionService<TTool extends Object>({
   }
 
   Future<void> _runGrantedTools({
+    required String workspaceId,
     required List<AgentToolToCall<TTool>> grantedTools,
     required LoadLatestMessageToolCallsResult<TTool> latestToolCalls,
     required String conversationId,
@@ -337,6 +341,8 @@ class const AgentToolExecutionService<TTool extends Object>({
       logToolExecutionError: provider.logToolExecutionError,
       captureOutputDigest: captureLoopFingerprint,
       outputPolicyForTool: outputPolicyForTool,
+      lifecycleHookRunner: lifecycleHookRunner,
+      workspaceId: workspaceId,
     ).call(
       grantedTools.map(
         (tool) => AgentToolBatchCall(

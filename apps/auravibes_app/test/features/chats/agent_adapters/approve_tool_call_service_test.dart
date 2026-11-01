@@ -113,6 +113,8 @@ void main() {
     test('loads approvable tool call from message metadata', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => conversation);
 
       final result = await provider.loadToolCall(
         messageId: messageId,
@@ -121,6 +123,7 @@ void main() {
       );
 
       expect(result?.conversationId, conversationId);
+      expect(result?.workspaceId, workspaceId);
       expect(result?.name, 'calculator');
       expect(result?.argumentsRaw, '{"input":"1+1"}');
     });

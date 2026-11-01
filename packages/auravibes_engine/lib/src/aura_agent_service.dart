@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/src/agent_runtime.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
+import 'package:auravibes_engine/src/agent_tool_lifecycle_hooks.dart';
 import 'package:auravibes_engine/src/namespaces/agent_namespace.dart';
 import 'package:auravibes_engine/src/namespaces/conversations_namespace.dart';
 import 'package:auravibes_engine/src/namespaces/tools_namespace.dart';
@@ -21,6 +22,7 @@ class AuraAgentService<TTool extends Object>({
   required AgentCancellationEffects cancellationEffects,
   required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
   AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
+  AgentToolLifecycleHookRunner<TTool>? lifecycleHookRunner,
 }) {
   final AgentNamespace agent = .new(
     data: data,
@@ -38,5 +40,6 @@ class AuraAgentService<TTool extends Object>({
     resume: resume,
     cancellationEffects: cancellationEffects,
     outputPolicyForTool: outputPolicyForTool,
+    lifecycleHookRunner: lifecycleHookRunner,
   );
 }

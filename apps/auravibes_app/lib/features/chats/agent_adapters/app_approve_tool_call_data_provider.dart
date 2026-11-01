@@ -139,7 +139,7 @@ class const AppApproveToolCallDataProvider({
     required String toolCallId,
     required String conversationId,
   }) {
-    return _loadToolCall(messageRepository, (
+    return _loadToolCall(messageRepository, conversationRepository, (
       conversationId: conversationId,
       messageId: messageId,
       toolCallId: toolCallId,
@@ -256,6 +256,7 @@ bool _successfulToolCall(agent.AgentToolCallResultUpdateRequest request) =>
 
 Future<agent.AgentApprovableToolCall?> _loadToolCall(
   MessageRepository messageRepository,
+  ConversationRepository conversationRepository,
   _ToolCallLookupRequest request,
 ) async {
   final message = await messageRepository.getMessageById(request.messageId);
@@ -267,8 +268,18 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
 
   final toolCall = _findToolCall(message.metadata, request.toolCallId);
   if (toolCall == null) return null;
+  final conversation = await conversationRepository.getConversationById(
+    request.conversationId,
+  );
+  if (conversation == null) {
+    throw StateError('Tool call conversation is unavailable.');
+  }
 
-  return _toApprovableToolCall(message.conversationId, toolCall);
+  return _toApprovableToolCall(
+    message.conversationId,
+    conversation.workspaceId,
+    toolCall,
+  );
 }
 
 void _logToolApprovalOwnershipMismatch(
@@ -293,9 +304,11 @@ MessageToolCallEntity? _findToolCall(
 
 agent.AgentApprovableToolCall _toApprovableToolCall(
   String conversationId,
+  String workspaceId,
   MessageToolCallEntity toolCall,
 ) => agent.AgentApprovableToolCall(
   conversationId: conversationId,
+  workspaceId: workspaceId,
   name: toolCall.name,
   argumentsRaw: toolCall.argumentsRaw,
 );

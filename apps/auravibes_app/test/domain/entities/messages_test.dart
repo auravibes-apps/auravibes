@@ -166,6 +166,23 @@ void main() {
       expect(toolCall.getResponseForAI(), 'custom response');
     });
 
+    test('full output context includes explicit lifecycle hook context', () {
+      const toolCall = MessageToolCallEntity(
+        id: 'call_7',
+        name: 'test_tool',
+        argumentsRaw: '{}',
+        responseRaw: 'tool result',
+        responseContextRaw: 'Post-tool hook context:\nadditional context\n\nTool output:\ntool result',
+        fullOutputForContext: true,
+        resultStatus: .success,
+      );
+
+      expect(
+        toolCall.getResponseForAI(),
+        'Post-tool hook context:\nadditional context\n\nTool output:\ntool result',
+      );
+    });
+
     test('getResponseForAI falls back to resultStatus response', () {
       const toolCall = MessageToolCallEntity(
         id: 'call_8',
