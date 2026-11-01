@@ -1,13 +1,5 @@
 // ignore_for_file: type=lint
 
-import 'package:auravibes_server_client/auravibes_server_client.dart';
-import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:material_ui/material_ui.dart';
-import 'package:riverpod/experimental/mutation.dart';
-
 import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
@@ -24,6 +16,13 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:riverpod/experimental/mutation.dart';
 
 class const CloudAccountsScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {

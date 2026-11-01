@@ -1,11 +1,11 @@
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../workspaces/workspace_erasure_cleanup.dart';
 import 'object_deletion_guard.dart';
 import 'object_gateway_storage.dart';
 import 'object_repository.dart';
 import 'object_store.dart';
-import '../workspaces/workspace_erasure_cleanup.dart';
 
 typedef _Run = ({
   bool Function()? isActive,

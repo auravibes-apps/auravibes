@@ -3,10 +3,10 @@
 
 import 'dart:io';
 
-import 'package:aws_client/credential_providers.dart';
-import 'package:aws_client/s3.dart';
 import 'package:auravibes_server/src/features/objects/object_bucket_audit.dart';
 import 'package:auravibes_server/src/features/objects/object_gateway_config.dart';
+import 'package:aws_client/credential_providers.dart';
+import 'package:aws_client/s3.dart';
 
 void main() async {
   final config = S3ObjectConfig.fromEnvironment();
