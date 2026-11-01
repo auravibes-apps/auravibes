@@ -111,6 +111,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 ## PR Gates
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
+- Local review is the default. A request to review code before creating a Draft PR does not authorize sending code to a third-party reviewer; follow [PR delivery and review](docs/agents/operations.md#pr-delivery-and-review) before any external review.
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
 - Local commits do not publish changes and need no separate user authorization; `git push` and `gh pr merge` require explicit user authorization.
 - If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.
