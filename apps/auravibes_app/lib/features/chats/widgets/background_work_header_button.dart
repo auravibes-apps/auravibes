@@ -337,17 +337,21 @@ class const _BackgroundWorkListStateView({
         conversationId: conversationId,
       );
     }
-    if (display.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return const _BackgroundWorkMessage(
-      message: TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-        textAlign: .center,
-      ),
-    );
+    return _BackgroundWorkListPendingState(isLoading: display.isLoading);
   }
+}
+
+class const _BackgroundWorkListPendingState({required final bool isLoading})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : const _BackgroundWorkMessage(
+          message: TextLocale(
+            LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+            textAlign: .center,
+          ),
+        );
 }
 
 class const _BackgroundWorkLoadError({
