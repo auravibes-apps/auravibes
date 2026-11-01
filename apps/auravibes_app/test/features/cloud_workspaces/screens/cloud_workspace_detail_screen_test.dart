@@ -535,16 +535,15 @@ void main() {
         expect(find.text('wrong@example.test'), findsNothing);
         expect(find.text('https://two.example'), findsOneWidget);
         expect(find.text('Not connected to this app'), findsOneWidget);
-        // Unicode escapes keep contractions compatible with both quote lints.
         final roleDescription = switch (role) {
           'owner' =>
             'Can invite members and admins, change roles, rename or delete '
                 'the workspace, and transfer ownership.',
           'admin' =>
-            'Can view, invite, and remove members, but can\u0027t manage admins, '
+            'Can view, invite, and remove members, but cannot manage admins, '
                 'rename the workspace, or transfer ownership.',
           _ =>
-            'Can use workspace content, but can\u0027t view the member list or '
+            'Can use workspace content, but cannot view the member list or '
                 'manage people.',
         };
         expect(find.text(roleDescription), findsOneWidget);
@@ -571,7 +570,7 @@ void main() {
             find.descendant(
               of: inviteDescription,
               matching: find.text(
-                'Can use workspace content, but can\u0027t view the member list or '
+                'Can use workspace content, but cannot view the member list or '
                 'manage people.',
               ),
             ),
@@ -584,7 +583,7 @@ void main() {
               find.descendant(
                 of: inviteDescription,
                 matching: find.text(
-                  'Can view, invite, and remove members, but can\u0027t manage '
+                  'Can view, invite, and remove members, but cannot manage '
                   'admins, rename the workspace, or transfer ownership.',
                 ),
               ),
@@ -602,7 +601,7 @@ void main() {
           final _ = await tester.pumpAndSettle();
           expect(
             find.text(
-              'Can view, invite, and remove members, but can\u0027t manage admins, '
+              'Can view, invite, and remove members, but cannot manage admins, '
               'rename the workspace, or transfer ownership.',
             ),
             findsOneWidget,
