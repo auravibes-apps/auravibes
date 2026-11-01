@@ -7,6 +7,12 @@ on:
     branches: [main, dev, stage]
   merge_group:
   workflow_dispatch:
+    inputs:
+      capture_context_benchmark:
+        description: Capture five offline context assembly benchmark runs
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -30,11 +36,63 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
+      - name: Capture context assembly benchmark
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_context_benchmark }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          capture_directory="$RUNNER_TEMP/context-assembly-benchmark"
+          mkdir -p "$capture_directory"
+
+          {
+            printf 'collected_utc='
+            date -u '+%Y-%m-%dT%H:%M:%SZ'
+            printf 'checkout_sha='
+            git rev-parse HEAD
+            printf 'benchmark_source_blob='
+            git rev-parse HEAD:packages/auravibes_engine/benchmark/agent_context_assembly_benchmark.dart
+            printf 'workflow_ref=%s\n' "$GITHUB_WORKFLOW_REF"
+            printf 'run_id=%s\n' "$GITHUB_RUN_ID"
+            printf 'run_attempt=%s\n' "$GITHUB_RUN_ATTEMPT"
+            printf 'run_url=%s/%s/actions/runs/%s/attempts/%s\n' \
+              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+            printf 'flutter_pin='
+            python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])'
+            printf 'dart_version='
+            dart --version
+            printf 'command=dart run benchmark/agent_context_assembly_benchmark.dart\n'
+            printf 'working_directory=packages/auravibes_engine\n'
+            printf 'mode=Dart VM JIT\n'
+            printf 'process_runs=5\nwarmup_iterations=5\nmeasured_iterations=15\n'
+            printf 'os_kernel_architecture='
+            uname -a
+            printf 'logical_cpus='
+            nproc
+            printf '\nCPU details:\n'
+            lscpu
+          } > "$capture_directory/provenance.txt" 2>&1
+
+          cd packages/auravibes_engine
+          for run in 1 2 3 4 5; do
+            dart run benchmark/agent_context_assembly_benchmark.dart \
+              > "$capture_directory/run-$run.csv" \
+              2> "$capture_directory/run-$run.stderr.txt"
+          done
+
+      - name: Upload context assembly benchmark
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.capture_context_benchmark }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: context-assembly-benchmark-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/context-assembly-benchmark
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Check formatting
         run: melos run format:check
 
       - name: Check import sorting
-        run: dart run import_sorter:main --exit-if-changed
+        run: dart run tool/check_workspace_import_sorting.dart
       - name: Check workspace benchmark imports
         run: dart run tool/check_benchmark_imports.dart
 

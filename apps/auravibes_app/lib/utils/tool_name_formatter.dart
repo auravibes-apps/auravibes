@@ -1,6 +1,7 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing argument values intentionally repeat.
 // Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';

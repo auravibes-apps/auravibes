@@ -8,9 +8,9 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../../accounts/auth_user_lock.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
-import '../domain/virtual_workspace_model_selection.dart';
-import '../../workspaces/domain/workspace_roles.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
+import '../../workspaces/domain/workspace_roles.dart';
+import '../domain/virtual_workspace_model_selection.dart';
 import '../repositories/model_connection_repository.dart';
 
 typedef ModelCatalogFetcher = Future<Object?> Function(

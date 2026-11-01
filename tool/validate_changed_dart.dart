@@ -3,8 +3,20 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:path/path.dart' as p;
 
+import 'dcl_analyze.dart' show dclTargetDirectories;
+
 Future<void> main() async {
   exitCode = await _validateChangedDart();
+}
+
+List<String> dclDirectoriesForPaths(Iterable<String> paths) {
+  final directories = {
+    for (final path in paths)
+      if (dclTargetDirectories.any((root) => path.startsWith('$root/')))
+        p.dirname(path),
+  };
+
+  return directories.toList()..sort();
 }
 
 Future<int> _validateChangedDart() async {
@@ -70,8 +82,16 @@ Future<int> _validateChangedDart() async {
       ...analyzePaths,
     ];
     final analyzeExitCode = await _runDart(dart, analyzeArguments, root);
+    final dclDirectories = dclDirectoriesForPaths(paths);
+    final dclArguments = ['run', 'tool/dcl_analyze.dart', ...dclDirectories];
+    final dclExitCode = dclDirectories.isEmpty
+        ? 0
+        : await _runDart(dart, dclArguments, root);
 
-    return formatExitCode != 0 ? formatExitCode : analyzeExitCode;
+    if (formatExitCode != 0) return formatExitCode;
+    if (analyzeExitCode != 0) return analyzeExitCode;
+
+    return dclExitCode;
   } on Object catch (error) {
     stderr.writeln('Changed Dart preflight failed: $error');
 

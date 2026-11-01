@@ -2,10 +2,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:genui/genui.dart';

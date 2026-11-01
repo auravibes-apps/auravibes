@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/router/workspace_route_normalizer.dart';
 import 'package:collection/collection.dart';
 
 const _workspacePathSegmentCount = 2;
@@ -50,7 +51,7 @@ abstract final class WorkspaceRouteResolver {
       return _legacyRedirect(currentUri, context.fallbackWorkspaceId);
     }
 
-    return _redirectForMatchedWorkspace(context);
+    return _redirectForMatchedWorkspace(currentUri, context);
   }
 
   static String _legacyRedirect(Uri uri, String fallbackWorkspaceId) =>
@@ -144,6 +145,7 @@ String _fallbackWorkspaceId(
     firstWorkspaceId;
 
 String? _redirectForMatchedWorkspace(
+  Uri currentUri,
   ({
     List<WorkspaceEntity> workspaces,
     String? workspaceMatch,
@@ -151,12 +153,17 @@ String? _redirectForMatchedWorkspace(
     String firstWorkspaceId,
   })
   context,
-) =>
-    context.workspaces.any(
-      (workspace) => workspace.id == context.workspaceMatch,
-    )
-    ? null
-    : NewChatRoute(workspaceId: context.firstWorkspaceId).location;
+) {
+  if (context.workspaces.any(
+    (workspace) => workspace.id == context.workspaceMatch,
+  )) {
+    return WorkspaceRouteNormalizer.normalizeLegacyMoreLocation(
+      currentUri.toString(),
+    );
+  }
+
+  return NewChatRoute(workspaceId: context.firstWorkspaceId).location;
+}
 
 String _preserveRouteSuffix(Uri uri, String location) {
   if (!uri.hasQuery && uri.fragment.isEmpty) return location;

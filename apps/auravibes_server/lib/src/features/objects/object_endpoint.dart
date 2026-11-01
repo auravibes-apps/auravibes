@@ -9,8 +9,8 @@ import 'object_store.dart';
 import 'object_use_cases.dart';
 
 class ObjectEndpoint extends Endpoint {
-  ObjectUseCases get _useCases => ObjectUseCases(
-    store: _objectStore,
+  ObjectUseCases _useCases(Session session) => ObjectUseCases(
+    store: objectStoreForSession(session),
     scanner: _objectScanner,
   );
 
@@ -23,14 +23,12 @@ class ObjectEndpoint extends Endpoint {
     );
   }
 
-  ObjectStore get _objectStore => HttpObjectStore.fromEnvironment();
-
   Future<BeginUploadResult> beginUpload(
     Session session,
     BeginUploadRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return _useCases.beginUpload(
+    return _useCases(session).beginUpload(
       session,
       userId: account.userId,
       request: request,
@@ -42,7 +40,7 @@ class ObjectEndpoint extends Endpoint {
     CompleteUploadRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return _useCases.completeUpload(
+    return _useCases(session).completeUpload(
       session,
       userId: account.userId,
       request: request,
@@ -54,7 +52,7 @@ class ObjectEndpoint extends Endpoint {
     GetDownloadRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return _useCases.getDownload(
+    return _useCases(session).getDownload(
       session,
       userId: account.userId,
       request: request,
@@ -66,7 +64,7 @@ class ObjectEndpoint extends Endpoint {
     GetDownloadRequest request,
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    return _useCases.describe(
+    return _useCases(session).describe(
       session,
       userId: account.userId,
       request: request,
@@ -75,6 +73,10 @@ class ObjectEndpoint extends Endpoint {
 
   Future<void> delete(Session session, DeleteObjectRequest request) async {
     final account = await const AuthenticatedAccountResolver()(session);
-    await _useCases.delete(session, userId: account.userId, request: request);
+    await _useCases(session).delete(
+      session,
+      userId: account.userId,
+      request: request,
+    );
   }
 }
