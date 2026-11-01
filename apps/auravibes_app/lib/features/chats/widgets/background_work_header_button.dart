@@ -337,6 +337,7 @@ class const _BackgroundWorkListStateView({
         conversationId: conversationId,
       );
     }
+
     return _BackgroundWorkListPendingState(isLoading: display.isLoading);
   }
 }
