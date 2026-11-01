@@ -661,6 +661,7 @@ bool _hasMatchingWorkspace(
   _WorkspaceListData data,
 ) {
   final searchIndex = accountState.searchIndex;
+
   return searchIndex == null
       ? _hasMatchingUnindexedWorkspace(state, accountState, data)
       : _hasMatchingIndexedWorkspace(searchIndex, accountState, data);
@@ -2417,6 +2418,7 @@ class _AvailableCloudAccountItemsState
       accountStates,
       widget.data,
     );
+
     return _content(accounts, accountStates, matchingAccountIds);
   }
 
