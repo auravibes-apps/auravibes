@@ -2088,21 +2088,21 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
-            final AgentIterationDecision? agentStopDecision = switch ((
+            final agentStopDecision = switch ((
               repeatedToolLoopDetected: repeatedToolLoopDetected,
               iterationLimitReached: iterationLimitReached,
             )) {
               (repeatedToolLoopDetected: true, iterationLimitReached: _) =>
-                .repeatedToolLoopDetected,
+                AgentIterationDecision.repeatedToolLoopDetected,
               (repeatedToolLoopDetected: false, iterationLimitReached: true) =>
-                .iterationLimitReached,
+                AgentIterationDecision.iterationLimitReached,
               _ => null,
             };
             final appBuilder = agentStopDecision != null
-                ? (_, child) =>
+                ? (BuildContext _, Widget? child) =>
                       AuraSnackBarHost(child: child ?? const SizedBox.shrink())
                 : null;
-            final Widget app = router == null
+            final app = router == null
                 ? MaterialApp(
                     home: ChatConversationScreen(
                       workspaceId: _workspaceId,
