@@ -132,9 +132,7 @@ class AppAgentToolResumeProvider({
         context: context,
       );
       _finishChildAfterDecision(conversationId, decision);
-      if (decision.needsUserNotice) {
-        onAgentStop?.call(conversationId, decision);
-      }
+      _reportAgentStopIfNeeded(conversationId, decision);
 
       return decision;
     } on Object catch (error, stackTrace) {
@@ -146,6 +144,15 @@ class AppAgentToolResumeProvider({
       ));
       rethrow;
     }
+  }
+
+  void _reportAgentStopIfNeeded(
+    String conversationId,
+    agent.AgentIterationDecision decision,
+  ) {
+    if (!decision.needsUserNotice) return;
+
+    onAgentStop?.call(conversationId, decision);
   }
 
   void _finishChildAfterDecision(

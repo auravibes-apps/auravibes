@@ -534,25 +534,8 @@ void _listenForPendingAgentStopNotice(_LoadedRuntimeRequest request) {
 
 void _schedulePendingAgentStopNotice(_LoadedRuntimeRequest request) =>
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _showPendingAgentStopNotice(request),
+      (_) => _AgentStopNoticePresenter.showPending(request),
     );
-
-void _showPendingAgentStopNotice(_LoadedRuntimeRequest request) {
-  if (!request.context.mounted) return;
-
-  final conversationId = request.conversation.id;
-  final decision = request.ref
-      .read(conversationAgentStopDecisionProvider(conversationId).notifier)
-      .consume();
-  if (decision == null) return;
-  final conversationContextRequest = (
-    context: request.context,
-    ref: request.ref,
-    workspaceId: request.workspaceId,
-    conversationId: conversationId,
-  );
-  _showAgentStopNoticeForConversation(conversationContextRequest, decision);
-}
 
 class const _ChatConversationBackButton() extends StatelessWidget {
   @override
@@ -3508,39 +3491,76 @@ VoidCallback _conversationContextContinueCallback(
 ) =>
     () => unawaited(_continueAgent(request));
 
+abstract final class _AgentStopNoticePresenter {
+  static void showPending(_LoadedRuntimeRequest request) {
+    if (!request.context.mounted) return;
+
+    final conversationId = request.conversation.id;
+    _consumePendingDecision(request, conversationId);
+  }
+
+  static void _consumePendingDecision(
+    _LoadedRuntimeRequest request,
+    String conversationId,
+  ) {
+    final decision = request.ref
+        .read(conversationAgentStopDecisionProvider(conversationId).notifier)
+        .consume();
+    if (decision == null) return;
+
+    final conversationContextRequest = (
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      conversationId: conversationId,
+    );
+    showForConversation(
+      conversationContextRequest,
+      decision,
+      _conversationContextContinueCallback(conversationContextRequest),
+    );
+  }
+
+  static void showForConversation(
+    _ConversationContextRequest request,
+    AgentIterationDecision? decision,
+    VoidCallback onContinue,
+  ) {
+    if (!request.context.mounted) return;
+
+    final content = _contentFor(decision);
+    if (content == null) return;
+
+    final _ = AuraSnackBars.show(
+      context: request.context,
+      content: content,
+      duration: const Duration(seconds: 10),
+      actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent
+          .tr(),
+      onAction: onContinue,
+    );
+  }
+
+  static TextLocale? _contentFor(AgentIterationDecision? decision) =>
+      switch (decision) {
+        .iterationLimitReached => const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
+        ),
+        .repeatedToolLoopDetected => const TextLocale(
+          'chats_screens.chat_conversation.repeated_tool_loop_detected',
+        ),
+        _ => null,
+      };
+}
+
 void _showAgentStopNoticeForConversation(
   _ConversationContextRequest request,
   AgentIterationDecision? decision,
-) => _showAgentStopNoticeIfNeeded(
-  context: request.context,
-  decision: decision,
-  onContinue: _conversationContextContinueCallback(request),
+) => _AgentStopNoticePresenter.showForConversation(
+  request,
+  decision,
+  _conversationContextContinueCallback(request),
 );
-
-void _showAgentStopNoticeIfNeeded({
-  required BuildContext context,
-  required AgentIterationDecision? decision,
-  required VoidCallback onContinue,
-}) {
-  final content = switch (decision) {
-    .iterationLimitReached => const TextLocale(
-      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
-    ),
-    .repeatedToolLoopDetected => const TextLocale(
-      'chats_screens.chat_conversation.repeated_tool_loop_detected',
-    ),
-    _ => null,
-  };
-  if (content == null || !context.mounted) return;
-
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: content,
-    duration: const Duration(seconds: 10),
-    actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
-    onAction: onContinue,
-  );
-}
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,
