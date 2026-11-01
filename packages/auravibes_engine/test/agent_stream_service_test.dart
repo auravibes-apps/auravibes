@@ -247,8 +247,7 @@ void main() {
             }
             completionRelease.complete();
           } else {
-            final events = ['close', 'cancel', 'cancel']
-              ..shuffle(Random(seed));
+            final events = ['close', 'cancel', 'cancel']..shuffle(Random(seed));
             final raceStart = Completer<void>();
             final scheduledEvents = events.map((event) async {
               await raceStart.future;
@@ -265,6 +264,7 @@ void main() {
             }).toList();
             raceStart.complete();
             await Future.wait(scheduledEvents);
+            completionRelease.complete();
           }
           final result = await run;
           await cancellationScope.cleanupCompletion;
