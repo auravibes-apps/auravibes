@@ -271,6 +271,16 @@ abstract final class ChatTimelineProjection {
         metadata.a2uiMessageIssues.isNotEmpty;
   }
 
+  static bool hasAssistantActivity(MessageEntity message) =>
+      message.metadata?.thinking?.trim().isNotEmpty == true ||
+      message.metadata?.toolCalls.isNotEmpty == true;
+
+  static bool isTimelineBoundary(MessageEntity message) =>
+      message.isUser ||
+      message.messageType == .system ||
+      message.status == .error ||
+      message.metadata?.isCompactionSummary == true;
+
   static bool _hasFollowingAssistantActivity(
     List<ResolvedChatMessage?> messages,
     int index,
@@ -280,10 +290,6 @@ abstract final class ChatTimelineProjection {
 
     return next == null || !isTimelineBoundary(next.message);
   }
-
-  static bool hasAssistantActivity(MessageEntity message) =>
-      message.metadata?.thinking?.trim().isNotEmpty == true ||
-      message.metadata?.toolCalls.isNotEmpty == true;
 
   static bool _hasVisibleAssistantResponse(
     MessageEntity message,
@@ -300,10 +306,4 @@ abstract final class ChatTimelineProjection {
       hasA2uiMessageState(message) ||
       replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
       message.metadata?.modelMetadata['a2uiDiagnosticPayloads'] is List;
-
-  static bool isTimelineBoundary(MessageEntity message) =>
-      message.isUser ||
-      message.messageType == .system ||
-      message.status == .error ||
-      message.metadata?.isCompactionSummary == true;
 }

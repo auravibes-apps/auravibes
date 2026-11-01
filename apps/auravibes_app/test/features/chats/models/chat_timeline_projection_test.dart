@@ -15,9 +15,11 @@ void main() {
         isStreaming: true,
       );
 
-      final items = ChatTimelineProjection.buildChatTimelineItems([
-        source,
-      ], const {});
+      final messages = <ResolvedChatMessage?>[source];
+      final items = ChatTimelineProjection.buildChatTimelineItems(
+        messages,
+        const {},
+      );
 
       expect(items, hasLength(1));
       expect(items.single, isA<MessageTimelineItem>());
@@ -133,11 +135,11 @@ void main() {
         isStreaming: false,
       );
 
-      final items = ChatTimelineProjection.buildChatTimelineItems([
-        before,
-        summary,
-        after,
-      ], const {});
+      final messages = <ResolvedChatMessage?>[before, summary, after];
+      final items = ChatTimelineProjection.buildChatTimelineItems(
+        messages,
+        const {},
+      );
 
       expect(items, hasLength(3));
       expect(items.firstOrNull, isA<ActivityRunTimelineItem>());
