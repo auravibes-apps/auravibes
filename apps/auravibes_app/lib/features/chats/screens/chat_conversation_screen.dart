@@ -1823,17 +1823,19 @@ class const _ChatConversationBody({
     );
     final savedDraft = ref.watch(draftProvider);
     final composerHasDraft = useState(savedDraft?.isEmpty == false);
+    void updateDraftStatus(bool hasDraft) {
+      composerHasDraft.value = hasDraft;
+      if (hasDraft && draftToLoad.value != null) {
+        draftToLoad.value = null;
+      }
+    }
+
     final draftState = _ChatConversationDraftState(
       draftToLoad: draftToLoad.value,
       onEditDraft: data.showInputComposer
           ? (draft) => draftToLoad.value = draft
           : null,
-      onDraftStatusChanged: (hasDraft) {
-        composerHasDraft.value = hasDraft;
-        if (hasDraft && draftToLoad.value != null) {
-          draftToLoad.value = null;
-        }
-      },
+      onDraftStatusChanged: updateDraftStatus,
       emptyConversationStarters: _ChatConversationDraftSelection.request(
         data: data,
         draftToLoad: draftToLoad.value,
@@ -1867,19 +1869,12 @@ class const _ChatConversationBody({
   }
 }
 
-class _ChatConversationDraftState {
-  const _ChatConversationDraftState({
-    required this.draftToLoad,
-    required this.onEditDraft,
-    required this.onDraftStatusChanged,
-    required this.emptyConversationStarters,
-  });
-
-  final ChatDraft? draftToLoad;
-  final ValueChanged<ChatDraft>? onEditDraft;
-  final ValueChanged<bool> onDraftStatusChanged;
-  final EmptyConversationStarterRequest emptyConversationStarters;
-}
+class const _ChatConversationDraftState({
+  required final ChatDraft? draftToLoad,
+  required final ValueChanged<ChatDraft>? onEditDraft,
+  required final ValueChanged<bool> onDraftStatusChanged,
+  required final EmptyConversationStarterRequest emptyConversationStarters,
+}) {}
 
 class _ChatConversationDraftSelection {
   static EmptyConversationStarterRequest request({
@@ -1935,6 +1930,7 @@ class _ChatConversationBodyStatusCalculator {
   use(WidgetRef ref, _LoadedChatConversationData data) {
     final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
     final hasOtherStatus = _hasChatConversationStatus(data);
+
     return (
       backgroundWorkStatus: backgroundWorkStatus,
       hasOtherStatus: hasOtherStatus,
