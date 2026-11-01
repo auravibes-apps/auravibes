@@ -30,8 +30,9 @@ name: core
     final _ = await File('${package.path}/lib/changed.dart').writeAsString(
       'class Changed {}\n',
     );
-    final _ = await File('${package.path}/test/changed_test.dart')
-        .writeAsString('void main() {}\n');
+    final _ = await File(
+      '${package.path}/test/changed_test.dart',
+    ).writeAsString('void main() {}\n');
 
     final script = '${Directory.current.path}/tool/local_preflight.dart';
     final result = await Process.run(
