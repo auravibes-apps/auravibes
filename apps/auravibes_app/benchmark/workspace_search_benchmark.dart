@@ -81,16 +81,26 @@ Map<String, Object?> _measureCatalog(
   };
 
   var measuredIndex = _newIndex(catalog);
+  int buildIndex() {
+    measuredIndex = _newIndex(catalog);
+
+    return catalog.length;
+  }
+
+  int warmSearch() {
+    if (!measuredIndex.hasSameItems(catalog)) {
+      measuredIndex = _newIndex(catalog);
+    }
+
+    return measuredIndex.search(query).length;
+  }
+
   final after = <String, int>{
     'normalizeAllUs': _measure(
       () => _indexedNormalizeAll(catalog),
       sampleCount: sampleCount,
     ),
-    'indexBuildUs': _measure(() {
-      measuredIndex = _newIndex(catalog);
-
-      return catalog.length;
-    }, sampleCount: sampleCount),
+    'indexBuildUs': _measure(buildIndex, sampleCount: sampleCount),
     'cacheCheckUs': _measure(
       () => measuredIndex.hasSameItems(catalog) ? 1 : 0,
       sampleCount: sampleCount,
@@ -103,13 +113,7 @@ Map<String, Object?> _measureCatalog(
       () => measuredIndex.sort(indexedMatches).length,
       sampleCount: sampleCount,
     ),
-    'warmSearchUs': _measure(() {
-      if (!measuredIndex.hasSameItems(catalog)) {
-        measuredIndex = _newIndex(catalog);
-      }
-
-      return measuredIndex.search(query).length;
-    }, sampleCount: sampleCount),
+    'warmSearchUs': _measure(warmSearch, sampleCount: sampleCount),
   };
   final perSearchSavings = before['searchUs']! - after['warmSearchUs']!;
   final rebuildCost = after['indexBuildUs']!;
