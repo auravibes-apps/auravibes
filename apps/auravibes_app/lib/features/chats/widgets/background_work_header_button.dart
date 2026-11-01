@@ -21,11 +21,14 @@ import 'package:uuid/v7.dart';
 const String _backgroundWorkTitleKey =
     LocaleKeys.chats_screens_chat_conversation_background_work_title;
 const String _backgroundWorkLoadingAccessibleLabelKey =
-    'chats_screens.chat_conversation.background_work_loading_accessible_label';
+    'chats_screens.chat_conversation.'
+    'background_work_loading_accessible_label';
 const String _backgroundWorkRefreshErrorAccessibleLabelKey =
-    'chats_screens.chat_conversation.background_work_refresh_error_accessible_label';
+    'chats_screens.chat_conversation.'
+    'background_work_refresh_error_accessible_label';
 const String _backgroundWorkLoadErrorAccessibleLabelKey =
-    'chats_screens.chat_conversation.background_work_load_error_accessible_label';
+    'chats_screens.chat_conversation.'
+    'background_work_load_error_accessible_label';
 const String _backgroundWorkRetryKey =
     'chats_screens.chat_conversation.background_work_retry';
 const double _backgroundWorkSheetHeightFactor = 0.78;
@@ -127,10 +130,10 @@ class const _BackgroundWorkButton({
   required final bool hasError,
   required final String workspaceId,
   required final String conversationId,
-}) extends ConsumerWidget {
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    void openList() => _openBackgroundWorkList(context, ref);
+  Widget build(BuildContext context) {
+    void openList() => _openBackgroundWorkList(context);
 
     return AuraButton(
       onPressed: openList,
@@ -144,7 +147,7 @@ class const _BackgroundWorkButton({
     );
   }
 
-  void _openBackgroundWorkList(BuildContext context, WidgetRef ref) {
+  void _openBackgroundWorkList(BuildContext context) {
     _showBackgroundWorkList(
       context: context,
       workspaceId: workspaceId,
@@ -163,8 +166,8 @@ class const _BackgroundWorkButtonContent({
     children: [
       if (isLoading)
         const SizedBox.square(
-          dimension: 16,
           child: CircularProgressIndicator(strokeWidth: 2),
+          dimension: 16,
         )
       else
         AuraIcon(
@@ -368,10 +371,10 @@ class const _BackgroundWorkLoadError({
       ),
       const AuraSizedBox(height: .sm),
       AuraButton(
-        key: const ValueKey('background_work_retry'),
         onPressed: () =>
             _invalidateBackgroundWorks(ref, workspaceId, conversationId),
         child: const TextLocale(_backgroundWorkRetryKey),
+        key: const ValueKey('background_work_retry'),
         variant: .outlined,
         size: .small,
       ),

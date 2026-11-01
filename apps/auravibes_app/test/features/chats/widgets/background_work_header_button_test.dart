@@ -161,7 +161,7 @@ void main() {
         ),
       );
     });
-    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
 
     final header = find.byKey(const ValueKey('background_work_header_button'));
     expect(
@@ -235,7 +235,7 @@ void main() {
         ),
       );
     });
-    final _ = await tester.pumpAndSettle();
+    final _ = await tester.pump();
 
     await tester.tap(
       find.byKey(const ValueKey('background_work_header_button')),
