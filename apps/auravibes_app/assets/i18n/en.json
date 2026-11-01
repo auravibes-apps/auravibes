@@ -575,6 +575,7 @@
       "message_copied": "Message copied",
       "copy_tool_response": "Copy tool response",
       "tool_response_copied": "Tool response copied",
+      "tool_response_copy_failed": "Couldn't copy the tool response. Use Copy tool response to try again.",
       "copy_tool_arguments": "Copy tool arguments",
       "tool_arguments_copied": "Tool arguments copied",
       "tool_call_fallback_description": "Review the arguments for {tool}",
