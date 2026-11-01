@@ -2269,28 +2269,54 @@ class const _ChatInputControlRow({required final _ChatInputState state})
       mainAxisSize: .min,
       crossAxisAlignment: .start,
       children: [
-        Row(
-          children: [
-            _ChatInputLeadingControls(
-              state: state,
-              isRecording: isRecording,
-              compact: compact,
-              showNetworkDisclosure: !compact,
-            ),
-            Expanded(
-              child: _ChatInputModelAndTrailingControls(
-                state: state,
-                isRecording: isRecording,
-              ),
-            ),
-          ],
+        _ChatInputPrimaryControls(
+          state: state,
+          isRecording: isRecording,
+          compact: compact,
         ),
-        if (compact && state.capabilities.isLocalWorkspace)
-          const Align(
-            alignment: .centerLeft,
-            child: _LocalWorkspaceNetworkDisclosure(),
-          ),
+        _ChatInputCompactDisclosure(compact: compact, state: state),
       ],
+    );
+  }
+}
+
+class const _ChatInputPrimaryControls({
+  required final _ChatInputState state,
+  required final bool isRecording,
+  required final bool compact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      _ChatInputLeadingControls(
+        state: state,
+        isRecording: isRecording,
+        compact: compact,
+        showNetworkDisclosure: !compact,
+      ),
+      Expanded(
+        child: _ChatInputModelAndTrailingControls(
+          state: state,
+          isRecording: isRecording,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _ChatInputCompactDisclosure({
+  required final bool compact,
+  required final _ChatInputState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!compact || !state.capabilities.isLocalWorkspace) {
+      return const SizedBox.shrink();
+    }
+
+    return const Align(
+      alignment: .centerLeft,
+      child: _LocalWorkspaceNetworkDisclosure(),
     );
   }
 }
