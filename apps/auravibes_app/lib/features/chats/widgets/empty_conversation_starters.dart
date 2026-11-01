@@ -25,17 +25,39 @@ class const EmptyConversationStarters({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => SingleChildScrollView(
-      padding: const .all(24),
-      primary: false,
+    builder: (context, constraints) => _EmptyConversationStarterViewport(
+      minHeight: constraints.maxHeight,
+      onSelect: onSelect,
+    ),
+  );
+}
+
+class const _EmptyConversationStarterViewport({
+  required final double minHeight,
+  required final ValueChanged<ChatDraft> onSelect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: const .all(24),
+    primary: false,
+    child: _EmptyConversationStarterFrame(
+      minHeight: minHeight,
+      onSelect: onSelect,
+    ),
+  );
+}
+
+class const _EmptyConversationStarterFrame({
+  required final double minHeight,
+  required final ValueChanged<ChatDraft> onSelect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: .new(minHeight: minHeight),
+    child: Center(
       child: ConstrainedBox(
-        constraints: .new(minHeight: constraints.maxHeight),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: _EmptyConversationStarterContent(onSelect: onSelect),
-          ),
-        ),
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: _EmptyConversationStarterContent(onSelect: onSelect),
       ),
     ),
   );
@@ -44,34 +66,36 @@ class const EmptyConversationStarters({
 class const _EmptyConversationStarterContent({
   required final ValueChanged<ChatDraft> onSelect,
 }) extends StatelessWidget {
+  static const _starters = [
+    (id: 'chat_empty_starter_plan_day', localizationKey: _planDayKey),
+    (id: 'chat_empty_starter_shopping_list', localizationKey: _shoppingListKey),
+    (
+      id: 'chat_empty_starter_personal_message',
+      localizationKey: _personalMessageKey,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const AuraText(child: TextLocale(_titleKey), style: .heading5),
       const AuraText(child: TextLocale(_helperKey), style: .bodySmall),
       const AuraSizedBox(height: .xs),
-      _EmptyConversationStarterButton(
-        onPressed: () =>
-            onSelect(ChatDraft(text: _planDayKey.tr(context: context))),
-        child: const TextLocale(_planDayKey),
-        key: const ValueKey('chat_empty_starter_plan_day'),
-      ),
-      _EmptyConversationStarterButton(
-        onPressed: () =>
-            onSelect(ChatDraft(text: _shoppingListKey.tr(context: context))),
-        child: const TextLocale(_shoppingListKey),
-        key: const ValueKey('chat_empty_starter_shopping_list'),
-      ),
-      _EmptyConversationStarterButton(
-        onPressed: () =>
-            onSelect(ChatDraft(text: _personalMessageKey.tr(context: context))),
-        child: const TextLocale(_personalMessageKey),
-        key: const ValueKey('chat_empty_starter_personal_message'),
-      ),
+      for (final starter in _starters) _starterButton(context, starter),
     ],
     spacing: .sm,
     crossAxisAlignment: .stretch,
     mainAxisSize: .min,
+  );
+
+  Widget _starterButton(
+    BuildContext context,
+    ({String id, String localizationKey}) starter,
+  ) => _EmptyConversationStarterButton(
+    onPressed: () =>
+        onSelect(ChatDraft(text: starter.localizationKey.tr(context: context))),
+    child: TextLocale(starter.localizationKey),
+    key: ValueKey(starter.id),
   );
 }
 

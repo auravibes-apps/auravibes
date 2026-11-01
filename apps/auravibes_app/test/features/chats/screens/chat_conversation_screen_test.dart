@@ -995,27 +995,29 @@ void main() {
 
   testWidgets('localizes starter copy and accessible labels', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
+    try {
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(projectionRevision: 1),
+        updates: const Stream.empty(),
+        startLocale: const Locale('es'),
+      );
 
-    await _pumpCloudConversationScreen(
-      tester,
-      initialState: _cloudState(projectionRevision: 1),
-      updates: const Stream.empty(),
-      startLocale: const Locale('es'),
-    );
+      final spanishStarterTitle = [
+        String.fromCharCode(0xbf),
+        'No sabes por d',
+        String.fromCharCode(0xf3),
+        'nde empezar?',
+      ].join();
+      final spanishPlanDay =
+          'Ay${String.fromCharCode(0xfa)}dame a planificar '
+          'mi d${String.fromCharCode(0xed)}a';
 
-    final spanishStarterTitle = [
-      String.fromCharCode(0xbf),
-      'No sabes por d',
-      String.fromCharCode(0xf3),
-      'nde empezar?',
-    ].join();
-    final spanishPlanDay =
-        'Ay${String.fromCharCode(0xfa)}dame a planificar '
-        'mi d${String.fromCharCode(0xed)}a';
-
-    expect(find.text(spanishStarterTitle), findsOneWidget);
-    expect(find.bySemanticsLabel(spanishPlanDay), findsOneWidget);
+      expect(find.text(spanishStarterTitle), findsOneWidget);
+      expect(find.bySemanticsLabel(spanishPlanDay), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('hides starters after a message exists', (tester) async {

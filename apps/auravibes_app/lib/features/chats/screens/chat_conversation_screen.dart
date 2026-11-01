@@ -1823,63 +1823,183 @@ class const _ChatConversationBody({
     );
     final savedDraft = ref.watch(draftProvider);
     final composerHasDraft = useState(savedDraft?.isEmpty == false);
+    final draftState = _ChatConversationDraftState(
+      draftToLoad: draftToLoad.value,
+      onEditDraft: data.showInputComposer
+          ? (draft) => draftToLoad.value = draft
+          : null,
+      onDraftStatusChanged: (hasDraft) {
+        composerHasDraft.value = hasDraft;
+        if (hasDraft && draftToLoad.value != null) {
+          draftToLoad.value = null;
+        }
+      },
+      emptyConversationStarters: _ChatConversationDraftSelection.request(
+        data: data,
+        draftToLoad: draftToLoad.value,
+        composerHasDraft: composerHasDraft.value,
+        onSelect: (draft) {
+          final existingDraft = ref.read(draftProvider);
+          if (!_ChatConversationDraftSelection.canSelect(
+            data: data,
+            draftToLoad: draftToLoad.value,
+            composerHasDraft: composerHasDraft.value,
+            existingDraft: existingDraft,
+          )) {
+            return;
+          }
 
-    void editDraft(ChatDraft draft) => draftToLoad.value = draft;
-
-    void reportDraftStatus({required bool hasDraft}) {
-      composerHasDraft.value = hasDraft;
-      if (hasDraft && draftToLoad.value != null) {
-        draftToLoad.value = null;
-      }
-    }
-
-    void selectStarter(ChatDraft draft) {
-      final existingDraft = ref.read(draftProvider);
-      if (!data.showInputComposer ||
-          data.state.isInputBusy ||
-          data.state.isCompacting ||
-          data.state.hasPendingApprovals ||
-          data.state.queuedDrafts.isNotEmpty ||
-          composerHasDraft.value ||
-          draftToLoad.value != null ||
-          (existingDraft != null && !existingDraft.isEmpty)) {
-        return;
-      }
-
-      draftToLoad.value = draft;
-    }
-
-    final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
-    final hasOtherStatus = _hasChatConversationStatus(data);
-    final hasStatusArea = _hasChatConversationStatusArea(
+          draftToLoad.value = draft;
+        },
+      ),
+    );
+    final conversationStatus = _ChatConversationBodyStatusCalculator.use(
       ref,
       data,
-      backgroundWorkStatus,
-      hasOtherStatus,
     );
 
     return _ChatConversationBodyLayout(
       data: data,
       onOpenToolResult: onOpenToolResult,
-      draftToLoad: draftToLoad.value,
-      onEditDraft: data.showInputComposer ? editDraft : null,
-      onDraftStatusChanged: (hasDraft) => reportDraftStatus(hasDraft: hasDraft),
-      emptyConversationStarters: (
-        enabled:
-            data.showInputComposer &&
-            !data.state.isInputBusy &&
-            !data.state.isCompacting &&
-            !data.state.hasPendingApprovals &&
-            data.state.queuedDrafts.isEmpty,
-        hasDraftToLoad: draftToLoad.value != null,
-        composerHasDraft: composerHasDraft.value,
-        onSelect: selectStarter,
-      ),
-      backgroundWorkStatus: backgroundWorkStatus,
-      hasOtherStatus: hasOtherStatus,
-      hasStatusArea: hasStatusArea,
+      draftState: draftState,
+      bodyStatus: conversationStatus,
     );
   }
+}
+
+class _ChatConversationDraftState {
+  const _ChatConversationDraftState({
+    required this.draftToLoad,
+    required this.onEditDraft,
+    required this.onDraftStatusChanged,
+    required this.emptyConversationStarters,
+  });
+
+  final ChatDraft? draftToLoad;
+  final ValueChanged<ChatDraft>? onEditDraft;
+  final ValueChanged<bool> onDraftStatusChanged;
+  final EmptyConversationStarterRequest emptyConversationStarters;
+}
+
+class _ChatConversationDraftSelection {
+  static EmptyConversationStarterRequest request({
+    required _LoadedChatConversationData data,
+    required ChatDraft? draftToLoad,
+    required bool composerHasDraft,
+    required ValueChanged<ChatDraft> onSelect,
+  }) => (
+    enabled: _selectionIsAvailable(data),
+    hasDraftToLoad: draftToLoad != null,
+    composerHasDraft: composerHasDraft,
+    onSelect: onSelect,
+  );
+
+  static bool canSelect({
+    required _LoadedChatConversationData data,
+    required ChatDraft? draftToLoad,
+    required bool composerHasDraft,
+    required ChatDraft? existingDraft,
+  }) =>
+      _selectionIsAvailable(data) &&
+      !_composerAlreadyHasDraft(draftToLoad, composerHasDraft, existingDraft);
+
+  static bool _selectionIsAvailable(_LoadedChatConversationData data) =>
+      data.showInputComposer &&
+      !data.state.isInputBusy &&
+      !data.state.isCompacting &&
+      !data.state.hasPendingApprovals &&
+      data.state.queuedDrafts.isEmpty;
+
+  static bool _composerAlreadyHasDraft(
+    ChatDraft? draftToLoad,
+    bool composerHasDraft,
+    ChatDraft? existingDraft,
+  ) =>
+      composerHasDraft ||
+      draftToLoad != null ||
+      (existingDraft != null && !existingDraft.isEmpty);
+}
+
+typedef _ChatConversationBodyStatus = ({
+  _BackgroundWorkStatusPresence backgroundWorkStatus,
+  bool hasOtherStatus,
+  bool hasStatusArea,
+});
+
+class _ChatConversationBodyStatusCalculator {
+  static ({
+    _BackgroundWorkStatusPresence backgroundWorkStatus,
+    bool hasOtherStatus,
+    bool hasStatusArea,
+  })
+  use(WidgetRef ref, _LoadedChatConversationData data) {
+    final backgroundWorkStatus = _backgroundWorkStatusPresence(ref, data);
+    final hasOtherStatus = _hasChatConversationStatus(data);
+    return (
+      backgroundWorkStatus: backgroundWorkStatus,
+      hasOtherStatus: hasOtherStatus,
+      hasStatusArea: _hasChatConversationStatusArea(
+        ref,
+        data,
+        backgroundWorkStatus,
+        hasOtherStatus,
+      ),
+    );
+  }
+}
+
+class const _ChatConversationBodyHeader({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ConversationOrientation(data: data),
+      _IncompleteImportedAgentContextNotice(data: data),
+      _ChatConversationControls(data: data),
+      _CloudConversationStreamRecovery(
+        conversationKey: (
+          workspaceId: data.workspaceId,
+          conversationId: data.conversation.id,
+        ),
+      ),
+    ],
+    spacing: .none,
+  );
+}
+
+class const _ChatConversationBodyLayout({
+  required final _LoadedChatConversationData data,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
+  required final _ChatConversationDraftState draftState,
+  required final _ChatConversationBodyStatus bodyStatus,
+}) extends StatelessWidget {
+  Widget? get _statusArea => bodyStatus.hasStatusArea
+      ? _ChatConversationStatusArea(
+          data: data,
+          backgroundWorkStatus: bodyStatus.backgroundWorkStatus,
+          hasOtherStatus: bodyStatus.hasOtherStatus,
+          draftToLoad: draftState.draftToLoad,
+          onEditDraft: draftState.onEditDraft,
+          onDraftStatusChanged: draftState.onDraftStatusChanged,
+        )
+      : null;
+
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ChatConversationBodyHeader(data: data),
+      Expanded(
+        child: _ChatConversationBodyContent(
+          data: data,
+          onOpenToolResult: onOpenToolResult,
+          emptyConversationStarters: draftState.emptyConversationStarters,
+          statusArea: _statusArea,
+        ),
+      ),
+    ],
+    spacing: .none,
+  );
 }
 
 bool _hasChatConversationStatusArea(
@@ -1913,49 +2033,6 @@ _BackgroundWorkStatusPresence _backgroundWorkStatusPresence(
   );
 }
 
-class const _ChatConversationBodyLayout({
-  required final _LoadedChatConversationData data,
-  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
-  required final ChatDraft? draftToLoad,
-  required final ValueChanged<ChatDraft>? onEditDraft,
-  required final ValueChanged<bool> onDraftStatusChanged,
-  required final EmptyConversationStarterRequest emptyConversationStarters,
-  required final _BackgroundWorkStatusPresence backgroundWorkStatus,
-  required final bool hasOtherStatus,
-  required final bool hasStatusArea,
-}) extends StatelessWidget {
-  CloudConversationKey get _conversationKey =>
-      (workspaceId: data.workspaceId, conversationId: data.conversation.id);
-
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      _ConversationOrientation(data: data),
-      _IncompleteImportedAgentContextNotice(data: data),
-      _ChatConversationControls(data: data),
-      _CloudConversationStreamRecovery(conversationKey: _conversationKey),
-      Expanded(
-        child: _ChatConversationBodyContent(
-          data: data,
-          onOpenToolResult: onOpenToolResult,
-          emptyConversationStarters: emptyConversationStarters,
-          statusArea: hasStatusArea
-              ? _ChatConversationStatusArea(
-                  data: data,
-                  backgroundWorkStatus: backgroundWorkStatus,
-                  hasOtherStatus: hasOtherStatus,
-                  draftToLoad: draftToLoad,
-                  onEditDraft: onEditDraft,
-                  onDraftStatusChanged: onDraftStatusChanged,
-                )
-              : null,
-        ),
-      ),
-    ],
-    spacing: .none,
-  );
-}
-
 class const _ChatConversationBodyContent({
   required final _LoadedChatConversationData data,
   required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
@@ -1964,20 +2041,34 @@ class const _ChatConversationBodyContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => AuraColumn(
-      children: [
-        _ChatConversationMessageList(
-          data: data,
-          onOpenToolResult: onOpenToolResult,
-          emptyConversationStarters: emptyConversationStarters,
-        ),
-        _ScrollableConversationStatus(
-          maxHeight: constraints.maxHeight,
-          child: statusArea,
-        ),
-      ],
-      spacing: .none,
+    builder: (context, constraints) => _ChatConversationBodyContentLayout(
+      data: data,
+      onOpenToolResult: onOpenToolResult,
+      emptyConversationStarters: emptyConversationStarters,
+      maxHeight: constraints.maxHeight,
+      statusArea: statusArea,
     ),
+  );
+}
+
+class const _ChatConversationBodyContentLayout({
+  required final _LoadedChatConversationData data,
+  required final ValueChanged<SidebarToolResultTab> onOpenToolResult,
+  required final EmptyConversationStarterRequest emptyConversationStarters,
+  required final double maxHeight,
+  required final Widget? statusArea,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ChatConversationMessageList(
+        data: data,
+        onOpenToolResult: onOpenToolResult,
+        emptyConversationStarters: emptyConversationStarters,
+      ),
+      _ScrollableConversationStatus(maxHeight: maxHeight, child: statusArea),
+    ],
+    spacing: .none,
   );
 }
 
