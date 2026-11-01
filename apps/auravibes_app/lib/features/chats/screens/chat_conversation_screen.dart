@@ -3523,10 +3523,10 @@ void _showAgentStopNoticeIfNeeded({
   required VoidCallback onContinue,
 }) {
   final content = switch (decision) {
-    .iterationLimitReached => const .new(
+    .iterationLimitReached => const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
     ),
-    .repeatedToolLoopDetected => const .new(
+    .repeatedToolLoopDetected => const TextLocale(
       'chats_screens.chat_conversation.repeated_tool_loop_detected',
     ),
     _ => null,
