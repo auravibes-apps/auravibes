@@ -364,9 +364,7 @@ class _ChatTimelineBuilder({
   required final Set<String> pendingToolCallKeys,
   required final String? searchTargetMessageId,
 }) {
-  late final _ActivityRunBuffer _activityRun = _ActivityRunBuffer(
-    pendingToolCallKeys,
-  );
+  final _ActivityRunBuffer _activityRun = .new(pendingToolCallKeys);
   final _items = <ChatTimelineItem>[];
 
   List<ChatTimelineItem> build() {
