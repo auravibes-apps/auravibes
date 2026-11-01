@@ -63,7 +63,7 @@ void main() {
         },
       );
       final item = items.single as ActivityRunTimelineItem;
-      final entries = ChatTimelineProjection.buildActivityRunEntries(item.run);
+      final entries = item.run.buildEntries();
 
       expect(item.run.id, 'forked-activity');
       expect(entries, hasLength(2));
@@ -94,7 +94,7 @@ void main() {
         },
       );
 
-      expect(ChatTimelineProjection.hasA2uiMessageState(message), isTrue);
+      expect(ChatTimelineMessagePolicy.hasA2uiMessageState(message), isTrue);
       expect(items, hasLength(1));
       expect(items.single, isA<MessageTimelineItem>());
       expect((items.single as MessageTimelineItem).source, source);
@@ -179,11 +179,11 @@ void main() {
       );
 
       expect(
-        ChatTimelineProjection.retryableUserMessageId([retryable, response]),
+        ChatTimelineRetryPolicy.retryableUserMessageId([retryable, response]),
         'retryable-user',
       );
       expect(
-        ChatTimelineProjection.retryableUserMessageId([forkReference]),
+        ChatTimelineRetryPolicy.retryableUserMessageId([forkReference]),
         isNull,
       );
     });

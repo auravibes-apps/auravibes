@@ -28,6 +28,9 @@ class const ActivityRun(
   String get id =>
       sources.firstOrNull?.message.id ??
       (throw StateError('An activity run must contain a message source.'));
+
+  List<ActivityRunEntry> buildEntries() =>
+      _ActivityRunEntryBuilder(this).build();
 }
 
 typedef ActivityToolCall = ({
@@ -58,178 +61,100 @@ class const ActivityResponseEntry(
 class const ActivityToolGroupEntry(final List<ActivityToolCall> toolCalls)
     extends ActivityRunEntry;
 
+class _ActivityRunEntryBuilder {
+  _ActivityRunEntryBuilder(this.run);
+
+  final ActivityRun run;
+  final _entries = <ActivityRunEntry>[];
+  final _toolCalls = <ActivityToolCall>[];
+
+  List<ActivityRunEntry> build() {
+    for (final source in run.sources) {
+      _appendThinkingEntry(source);
+      _appendResponseEntries(source);
+      _appendToolCalls(source);
+    }
+    _appendToolGroup();
+
+    return _entries;
+  }
+
+  void _appendThinkingEntry(ResolvedChatMessage source) {
+    final thinking = source.message.metadata?.thinking?.trim();
+    if (thinking == null || thinking.isEmpty) return;
+    _appendToolGroup();
+    _entries.add(
+      ActivityThinkingEntry(messageId: source.message.id, content: thinking),
+    );
+  }
+
+  void _appendResponseEntries(ResolvedChatMessage source) {
+    if (_appendFinalResponse(source)) return;
+    if (_appendRichResponse(source)) return;
+    _appendNarrative(source);
+  }
+
+  bool _appendFinalResponse(ResolvedChatMessage source) {
+    if (run.responseMessageId != source.message.id) return false;
+    _entries.add(ActivityResponseEntry(source, isFinal: true));
+
+    return true;
+  }
+
+  bool _appendRichResponse(ResolvedChatMessage source) {
+    if (!run.richResponseMessageIds.contains(source.message.id)) return false;
+    _appendToolGroup();
+    _entries.add(ActivityResponseEntry(source, isFinal: false));
+
+    return true;
+  }
+
+  void _appendNarrative(ResolvedChatMessage source) {
+    final entry = ChatTimelineProjection._activityNarrativeEntry(run, source);
+    if (entry == null) return;
+    _appendToolGroup();
+    _entries.add(entry);
+  }
+
+  void _appendToolCalls(ResolvedChatMessage source) {
+    final messageId = source.message.id;
+    for (final toolCall
+        in source.message.metadata?.toolCalls ??
+            const <MessageToolCallEntity>[]) {
+      _toolCalls.add(_activityToolCall(source, toolCall, messageId));
+    }
+  }
+
+  ActivityToolCall _activityToolCall(
+    ResolvedChatMessage source,
+    MessageToolCallEntity toolCall,
+    String messageId,
+  ) => (
+    messageId: messageId,
+    toolCall: toolCall,
+    isForkReference: source.message.isForkReference,
+    isStreaming: source.isStreaming,
+    hideArguments: run.pendingToolCallKeys.contains(
+      ChatTimelineProjection.activityToolCallKey(messageId, toolCall.id),
+    ),
+  );
+
+  void _appendToolGroup() {
+    if (_toolCalls.isEmpty) return;
+    _entries.add(ActivityToolGroupEntry(.of(_toolCalls)));
+    _toolCalls.clear();
+  }
+}
+
 abstract final class ChatTimelineProjection {
   static String activityToolCallKey(String messageId, String toolCallId) =>
       '$messageId:$toolCallId';
-
-  static List<ActivityRunEntry> buildActivityRunEntries(ActivityRun run) {
-    final entries = <ActivityRunEntry>[];
-    final toolCalls = <ActivityToolCall>[];
-
-    void addToolGroup() {
-      if (toolCalls.isEmpty) return;
-      entries.add(ActivityToolGroupEntry(.of(toolCalls)));
-      toolCalls.clear();
-    }
-
-    for (final source in run.sources) {
-      final messageId = source.message.id;
-
-      final thinking = source.message.metadata?.thinking?.trim();
-      if (thinking != null && thinking.isNotEmpty) {
-        addToolGroup();
-        entries.add(
-          ActivityThinkingEntry(messageId: messageId, content: thinking),
-        );
-      }
-
-      if (run.responseMessageId == messageId) {
-        entries.add(ActivityResponseEntry(source, isFinal: true));
-      } else if (run.richResponseMessageIds.contains(messageId)) {
-        addToolGroup();
-        entries.add(ActivityResponseEntry(source, isFinal: false));
-      } else if (run.activityContentMessageIds.contains(messageId)) {
-        final content = source.message.content.trim();
-        if (content.isNotEmpty) {
-          addToolGroup();
-          entries.add(
-            ActivityNarrativeEntry(messageId: messageId, content: content),
-          );
-        }
-      }
-
-      for (final toolCall
-          in source.message.metadata?.toolCalls ??
-              const <MessageToolCallEntity>[]) {
-        toolCalls.add((
-          messageId: messageId,
-          toolCall: toolCall,
-          isForkReference: source.message.isForkReference,
-          isStreaming: source.isStreaming,
-          hideArguments: run.pendingToolCallKeys.contains(
-            activityToolCallKey(messageId, toolCall.id),
-          ),
-        ));
-      }
-    }
-    addToolGroup();
-
-    return entries;
-  }
-
-  static List<ChatTimelineItem> buildChatTimelineItems(
-    List<ResolvedChatMessage?> messages,
-    Map<String, List<String>> replayPayloadsByMessageId, {
-    Set<String> pendingToolCallKeys = const {},
-    String? searchTargetMessageId,
-  }) {
-    final items = <ChatTimelineItem>[];
-    final activitySources = <ResolvedChatMessage>[];
-    final activityContentMessageIds = <String>{};
-    final richResponseMessageIds = <String>{};
-
-    void addActivityRun({String? responseMessageId}) {
-      if (activitySources.isEmpty) return;
-      final run = ActivityRun(
-        .of(activitySources),
-        activityContentMessageIds: .of(activityContentMessageIds),
-        richResponseMessageIds: .of(richResponseMessageIds),
-        pendingToolCallKeys: pendingToolCallKeys,
-        responseMessageId: responseMessageId,
-      );
-      if (buildActivityRunEntries(run).isNotEmpty) {
-        items.add(ActivityRunTimelineItem(run));
-      }
-      activitySources.clear();
-      activityContentMessageIds.clear();
-      richResponseMessageIds.clear();
-    }
-
-    for (var index = 0; index < messages.length; index++) {
-      final source = messages[index];
-      if (source == null) {
-        addActivityRun();
-        continue;
-      }
-
-      final message = source.message;
-      if (message.id == searchTargetMessageId) {
-        addActivityRun();
-        items.add(MessageTimelineItem(source));
-        continue;
-      }
-      final hasVisibleResponse = _hasVisibleAssistantResponse(
-        message,
-        replayPayloadsByMessageId,
-      );
-      final hasFollowingAssistantActivity = _hasFollowingAssistantActivity(
-        messages,
-        index,
-      );
-      final hasToolCalls = message.metadata?.toolCalls.isNotEmpty == true;
-      final requiresMessageItem = _requiresMessageTimelineItem(
-        message,
-        replayPayloadsByMessageId,
-      );
-      final hasActivity =
-          !isTimelineBoundary(message) &&
-          (hasAssistantActivity(message) ||
-              (hasVisibleResponse && hasFollowingAssistantActivity));
-
-      if (hasActivity) {
-        final awaitsA2uiAction =
-            message.status == .unfinished && hasA2uiMessageState(message);
-        final isFinalResponse =
-            message.status == .sent &&
-            hasVisibleResponse &&
-            !hasFollowingAssistantActivity &&
-            !hasToolCalls;
-        if (requiresMessageItem && (awaitsA2uiAction || isFinalResponse)) {
-          activitySources.add(source);
-          addActivityRun();
-          items.add(
-            MessageTimelineItem(
-              source,
-              activityRenderedInSession: true,
-              showResponseActions: isFinalResponse && !source.isStreaming,
-            ),
-          );
-          continue;
-        }
-        activitySources.add(source);
-        if (hasVisibleResponse && !isFinalResponse) {
-          if (requiresMessageItem) {
-            final _ = richResponseMessageIds.add(message.id);
-          } else {
-            final _ = activityContentMessageIds.add(message.id);
-          }
-        }
-        if (isFinalResponse) {
-          addActivityRun(responseMessageId: message.id);
-        }
-        continue;
-      }
-
-      addActivityRun();
-      items.add(
-        MessageTimelineItem(
-          source,
-          showResponseActions:
-              message.isUser ||
-              (!source.isStreaming && message.status == .sent),
-        ),
-      );
-    }
-    addActivityRun();
-
-    return items;
-  }
 
   static bool hasAssistantResponseCandidate(
     ResolvedChatMessage source,
     Map<String, List<String>> replayPayloadsByMessageId,
   ) {
-    if (_hasVisibleAssistantResponse(
+    if (ChatTimelineMessagePolicy._hasVisibleAssistantResponse(
       source.message,
       replayPayloadsByMessageId,
     )) {
@@ -240,25 +165,75 @@ abstract final class ChatTimelineProjection {
         source.message.metadata?.toolCalls.isNotEmpty != true;
   }
 
-  static String? retryableUserMessageId(List<ResolvedChatMessage?> messages) {
-    for (final source in messages.reversed) {
-      final message = source?.message;
-      if (message == null || !message.isUser) continue;
+  static bool _shouldRenderMessageForActivity(
+    bool requiresMessageItem,
+    bool awaitsA2uiAction,
+    bool isFinalResponse,
+  ) => requiresMessageItem && (awaitsA2uiAction || isFinalResponse);
 
-      return canRetryUserMessage(message) ? message.id : null;
+  static MessageTimelineItem _activityMessageItem(
+    ResolvedChatMessage source,
+    bool isFinalResponse,
+  ) => MessageTimelineItem(
+    source,
+    activityRenderedInSession: true,
+    showResponseActions: isFinalResponse && !source.isStreaming,
+  );
+
+  static ActivityNarrativeEntry? _activityNarrativeEntry(
+    ActivityRun run,
+    ResolvedChatMessage source,
+  ) {
+    final messageId = source.message.id;
+    final content = source.message.content.trim();
+    if (!run.activityContentMessageIds.contains(messageId) || content.isEmpty) {
+      return null;
     }
 
-    return null;
+    return ActivityNarrativeEntry(messageId: messageId, content: content);
   }
 
-  static bool canRetryUserMessage(MessageEntity message) =>
-      message.isUser &&
-      !message.isForkReference &&
-      message.hasValidContent &&
-      (message.status == .unfinished ||
-          (message.status == .error &&
-              ProviderRecoveryMetadata.isRetryEligible(message)));
+  static _ResponseFacts _responseFacts(
+    MessageEntity message,
+    Map<String, List<String>> replayPayloadsByMessageId,
+  ) => (
+    hasVisibleResponse: ChatTimelineMessagePolicy._hasVisibleAssistantResponse(
+      message,
+      replayPayloadsByMessageId,
+    ),
+    requiresMessageItem: ChatTimelineMessagePolicy._requiresMessageTimelineItem(
+      message,
+      replayPayloadsByMessageId,
+    ),
+  );
 
+  static _MessageSequenceFacts _messageSequenceFacts(
+    MessageEntity message,
+    List<ResolvedChatMessage?> messages,
+    int index,
+  ) => (
+    hasFollowingAssistantActivity:
+        ChatTimelineMessagePolicy._hasFollowingAssistantActivity(
+          messages,
+          index,
+        ),
+    hasToolCalls: message.metadata?.toolCalls.isNotEmpty == true,
+  );
+
+  static List<ChatTimelineItem> buildChatTimelineItems(
+    List<ResolvedChatMessage?> messages,
+    Map<String, List<String>> replayPayloadsByMessageId, {
+    Set<String> pendingToolCallKeys = const {},
+    String? searchTargetMessageId,
+  }) => _ChatTimelineBuilder(
+    messages: messages,
+    replayPayloadsByMessageId: replayPayloadsByMessageId,
+    pendingToolCallKeys: pendingToolCallKeys,
+    searchTargetMessageId: searchTargetMessageId,
+  ).build();
+}
+
+abstract final class ChatTimelineMessagePolicy {
   static bool hasA2uiMessageState(MessageEntity? message) {
     if (message == null || message.isUser || message.isForkReference) {
       return false;
@@ -270,6 +245,9 @@ abstract final class ChatTimelineProjection {
         metadata.a2uiIssuesBySurface.isNotEmpty ||
         metadata.a2uiMessageIssues.isNotEmpty;
   }
+
+  static bool isAwaitingA2uiAction(MessageEntity message) =>
+      message.status == .unfinished && hasA2uiMessageState(message);
 
   static bool hasAssistantActivity(MessageEntity message) =>
       message.metadata?.thinking?.trim().isNotEmpty == true ||
@@ -306,4 +284,233 @@ abstract final class ChatTimelineProjection {
       hasA2uiMessageState(message) ||
       replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
       message.metadata?.modelMetadata['a2uiDiagnosticPayloads'] is List;
+
+  static bool _hasActivity(MessageEntity message, _MessageFacts facts) =>
+      !isTimelineBoundary(message) &&
+      (hasAssistantActivity(message) ||
+          (facts.hasVisibleResponse && facts.hasFollowingAssistantActivity));
+
+  static bool _isFinalResponse(MessageEntity message, _MessageFacts facts) =>
+      message.status == .sent &&
+      facts.hasVisibleResponse &&
+      !facts.hasFollowingAssistantActivity &&
+      !facts.hasToolCalls;
+}
+
+abstract final class ChatTimelineRetryPolicy {
+  static String? retryableUserMessageId(List<ResolvedChatMessage?> messages) {
+    for (final source in messages.reversed) {
+      final message = source?.message;
+      if (message == null || !message.isUser) continue;
+
+      return canRetryUserMessage(message) ? message.id : null;
+    }
+
+    return null;
+  }
+
+  static bool canRetryUserMessage(MessageEntity message) =>
+      message.isUser &&
+      !message.isForkReference &&
+      message.hasValidContent &&
+      (message.status == .unfinished ||
+          (message.status == .error &&
+              ProviderRecoveryMetadata.isRetryEligible(message)));
+}
+
+typedef _MessageFacts = ({
+  bool hasVisibleResponse,
+  bool hasFollowingAssistantActivity,
+  bool hasToolCalls,
+  bool requiresMessageItem,
+});
+
+typedef _ResponseFacts = ({bool hasVisibleResponse, bool requiresMessageItem});
+
+typedef _MessageSequenceFacts = ({
+  bool hasFollowingAssistantActivity,
+  bool hasToolCalls,
+});
+
+typedef _MessageProjection = ({
+  _MessageFacts facts,
+  bool hasActivity,
+  bool awaitsA2uiAction,
+  bool isFinalResponse,
+});
+
+class _ActivityRunBuffer {
+  _ActivityRunBuffer(this.pendingToolCallKeys);
+
+  final Set<String> pendingToolCallKeys;
+  final sources = <ResolvedChatMessage>[];
+  final activityContentMessageIds = <String>{};
+  final richResponseMessageIds = <String>{};
+
+  bool get isEmpty => sources.isEmpty;
+
+  ActivityRun build({String? responseMessageId}) => ActivityRun(
+    .of(sources),
+    activityContentMessageIds: .of(activityContentMessageIds),
+    richResponseMessageIds: .of(richResponseMessageIds),
+    pendingToolCallKeys: pendingToolCallKeys,
+    responseMessageId: responseMessageId,
+  );
+
+  void clear() {
+    sources.clear();
+    activityContentMessageIds.clear();
+    richResponseMessageIds.clear();
+  }
+}
+
+class _ChatTimelineBuilder {
+  _ChatTimelineBuilder({
+    required this.messages,
+    required this.replayPayloadsByMessageId,
+    required this.pendingToolCallKeys,
+    required this.searchTargetMessageId,
+  }) : _activityRun = _ActivityRunBuffer(pendingToolCallKeys);
+
+  final List<ResolvedChatMessage?> messages;
+  final Map<String, List<String>> replayPayloadsByMessageId;
+  final Set<String> pendingToolCallKeys;
+  final String? searchTargetMessageId;
+  final _ActivityRunBuffer _activityRun;
+  final _items = <ChatTimelineItem>[];
+
+  List<ChatTimelineItem> build() {
+    for (var index = 0; index < messages.length; index++) {
+      _projectMessage(messages[index], index);
+    }
+    _flushActivityRun();
+
+    return _items;
+  }
+
+  void _projectMessage(ResolvedChatMessage? source, int index) {
+    if (source == null) {
+      _flushActivityRun();
+      return;
+    }
+    if (source.message.id == searchTargetMessageId) {
+      _flushActivityRun();
+      _items.add(MessageTimelineItem(source));
+      return;
+    }
+
+    _projectResolvedMessage(source, index);
+  }
+
+  void _projectResolvedMessage(ResolvedChatMessage source, int index) {
+    final projection = _messageProjection(source, index);
+    if (projection.hasActivity) {
+      _projectActivityMessage(source, projection);
+      return;
+    }
+
+    _flushActivityRun();
+    final message = source.message;
+    _items.add(
+      MessageTimelineItem(
+        source,
+        showResponseActions:
+            message.isUser || (!source.isStreaming && message.status == .sent),
+      ),
+    );
+  }
+
+  _MessageProjection _messageProjection(ResolvedChatMessage source, int index) {
+    final message = source.message;
+    final facts = _messageFacts(source, index);
+
+    return (
+      facts: facts,
+      hasActivity: ChatTimelineMessagePolicy._hasActivity(message, facts),
+      awaitsA2uiAction: ChatTimelineMessagePolicy.isAwaitingA2uiAction(message),
+      isFinalResponse: ChatTimelineMessagePolicy._isFinalResponse(
+        message,
+        facts,
+      ),
+    );
+  }
+
+  _MessageFacts _messageFacts(ResolvedChatMessage source, int index) {
+    final message = source.message;
+    final responseFacts = ChatTimelineProjection._responseFacts(
+      message,
+      replayPayloadsByMessageId,
+    );
+    final sequenceFacts = ChatTimelineProjection._messageSequenceFacts(
+      message,
+      messages,
+      index,
+    );
+
+    return (
+      hasVisibleResponse: responseFacts.hasVisibleResponse,
+      hasFollowingAssistantActivity:
+          sequenceFacts.hasFollowingAssistantActivity,
+      hasToolCalls: sequenceFacts.hasToolCalls,
+      requiresMessageItem: responseFacts.requiresMessageItem,
+    );
+  }
+
+  void _projectActivityMessage(
+    ResolvedChatMessage source,
+    _MessageProjection projection,
+  ) {
+    final message = source.message;
+    if (_appendMessageItemForActivity(source, projection)) return;
+
+    _activityRun.sources.add(source);
+    _appendActivityContent(source, projection);
+    if (projection.isFinalResponse) {
+      _flushActivityRun(responseMessageId: message.id);
+    }
+  }
+
+  bool _appendMessageItemForActivity(
+    ResolvedChatMessage source,
+    _MessageProjection projection,
+  ) {
+    final shouldAppend = ChatTimelineProjection._shouldRenderMessageForActivity(
+      projection.facts.requiresMessageItem,
+      projection.awaitsA2uiAction,
+      projection.isFinalResponse,
+    );
+    if (!shouldAppend) return false;
+
+    _activityRun.sources.add(source);
+    _flushActivityRun();
+    _items.add(
+      ChatTimelineProjection._activityMessageItem(
+        source,
+        projection.isFinalResponse,
+      ),
+    );
+
+    return true;
+  }
+
+  void _appendActivityContent(
+    ResolvedChatMessage source,
+    _MessageProjection projection,
+  ) {
+    if (!projection.facts.hasVisibleResponse || projection.isFinalResponse) {
+      return;
+    }
+    if (projection.facts.requiresMessageItem) {
+      final _ = _activityRun.richResponseMessageIds.add(source.message.id);
+    } else {
+      final _ = _activityRun.activityContentMessageIds.add(source.message.id);
+    }
+  }
+
+  void _flushActivityRun({String? responseMessageId}) {
+    if (_activityRun.isEmpty) return;
+    final run = _activityRun.build(responseMessageId: responseMessageId);
+    if (run.buildEntries().isNotEmpty) _items.add(ActivityRunTimelineItem(run));
+    _activityRun.clear();
+  }
 }

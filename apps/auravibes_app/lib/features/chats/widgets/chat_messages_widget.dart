@@ -438,10 +438,10 @@ class const ChatMessagesWidget({
             ),
             isAwaitingUserAction:
                 source.message.status == MessageStatus.unfinished &&
-                ChatTimelineProjection.hasA2uiMessageState(source.message),
+                ChatTimelineMessagePolicy.hasA2uiMessageState(source.message),
           ),
     ];
-    final retryableMessageId = ChatTimelineProjection.retryableUserMessageId(
+    final retryableMessageId = ChatTimelineRetryPolicy.retryableUserMessageId(
       resolvedMessages,
     );
 
@@ -1078,8 +1078,8 @@ class const _ChatMessageTimelineItem({
 
     final showActivity =
         !activityRenderedInSession &&
-        !ChatTimelineProjection.isTimelineBoundary(message) &&
-        ChatTimelineProjection.hasAssistantActivity(message);
+        !ChatTimelineMessagePolicy.isTimelineBoundary(message) &&
+        ChatTimelineMessagePolicy.hasAssistantActivity(message);
     final content = AuraColumn(
       crossAxisAlignment: message.isUser
           ? CrossAxisAlignment.end
@@ -1145,7 +1145,7 @@ class const _ChatMessageContent({
       message: message,
       isStreaming: isStreaming,
       hasContent: hasContent,
-      hasActivity: ChatTimelineProjection.hasAssistantActivity(message),
+      hasActivity: ChatTimelineMessagePolicy.hasAssistantActivity(message),
     );
     final status = _messageDeliveryStatus(message, isStreaming);
     final hasA2uiResponse =
@@ -1331,7 +1331,7 @@ String? _latestA2uiMessageId(
   for (var index = messageIds.length - 1; index > latestUserIndex; index--) {
     final id = messageIds[index];
     final message = messages[id];
-    if (ChatTimelineProjection.hasA2uiMessageState(message)) return id;
+    if (ChatTimelineMessagePolicy.hasA2uiMessageState(message)) return id;
   }
 
   return null;
@@ -1877,7 +1877,7 @@ class const _AssistantActivityRun({
     final mcpAppControllers = useMemoized(
       () => <String, McpAppToolResultController>{},
     );
-    final activityEntries = ChatTimelineProjection.buildActivityRunEntries(run);
+    final activityEntries = run.buildEntries();
     final responseEntryIndex = activityEntries.indexWhere(
       (entry) => entry is ActivityResponseEntry && entry.isFinal,
     );
