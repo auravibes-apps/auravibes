@@ -540,10 +540,10 @@ void main() {
             'Can invite members and admins, change roles, rename or delete '
                 'the workspace, and transfer ownership.',
           'admin' =>
-            'Can view, invite, and remove members, but can\'t manage admins, '
+            "Can view, invite, and remove members, but can't manage admins, "
                 'rename the workspace, or transfer ownership.',
           _ =>
-            'Can use workspace content, but can\'t view the member list or '
+            "Can use workspace content, but can't view the member list or "
                 'manage people.',
         };
         expect(find.text(roleDescription), findsOneWidget);
@@ -570,7 +570,7 @@ void main() {
             find.descendant(
               of: inviteDescription,
               matching: find.text(
-                'Can use workspace content, but can\'t view the member list or '
+                "Can use workspace content, but can't view the member list or "
                 'manage people.',
               ),
             ),
@@ -583,7 +583,7 @@ void main() {
               find.descendant(
                 of: inviteDescription,
                 matching: find.text(
-                  'Can view, invite, and remove members, but can\'t manage '
+                  "Can view, invite, and remove members, but can't manage "
                   'admins, rename the workspace, or transfer ownership.',
                 ),
               ),
@@ -601,7 +601,7 @@ void main() {
           final _ = await tester.pumpAndSettle();
           expect(
             find.text(
-              'Can view, invite, and remove members, but can\'t manage admins, '
+              "Can view, invite, and remove members, but can't manage admins, "
               'rename the workspace, or transfer ownership.',
             ),
             findsOneWidget,
