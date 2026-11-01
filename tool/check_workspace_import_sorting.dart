@@ -49,13 +49,13 @@ void main() {
       continue;
     }
 
-    final files = import_files.dartFiles(packageRoot.path, const []);
     final generatedPluginRegistrant = p.normalize(
       p.join(packageRoot.path, _generatedPluginRegistrant),
     );
-    files.removeWhere(
-      (path, _) => p.normalize(path) == generatedPluginRegistrant,
-    );
+    final files = import_files.dartFiles(
+      packageRoot.path,
+      const [],
+    )..removeWhere((path, _) => p.normalize(path) == generatedPluginRegistrant);
     totalDartFiles += files.length;
     stdout.writeln('Checking ${package.location}: ${files.length} Dart files');
     if (files.isEmpty) {
@@ -85,9 +85,9 @@ void main() {
   }
 }
 
-// import_sorter is line-based and treats pre-import comments as source text.
-// Feed it normalized AST directives so comments and multiline imports do not
-// create false positives.
+// The import sorter is line-based and treats comments before imports as source
+// text. Feed it normalized AST directives so comments and multiline imports do
+// not create false positives.
 bool _hasUnsortedImports(String source) {
   final directives = parseString(content: source).unit.directives
       .whereType<ImportDirective>();
@@ -99,10 +99,10 @@ bool _hasUnsortedImports(String source) {
     if (previousGroup != null && group != previousGroup) {
       sorterLines.add('');
     }
-    final singleLineDirective = source
-        .substring(directive.offset, directive.end)
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    // Analyzer offsets are UTF-16 code-unit offsets, so preserve that indexing.
+    final singleLineDirective = String.fromCharCodes(
+      source.codeUnits.getRange(directive.offset, directive.end),
+    ).replaceAll(RegExp(r'\s+'), ' ').trim();
     sorterLines.addAll(_inOnePackageUriGroup([singleLineDirective]));
     previousGroup = group;
   }
