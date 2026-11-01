@@ -1507,12 +1507,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         method: 'TextLocale',
         keyExpression: 'hint',
       ),
-    ],
-    keys: {..._modelsScreensDynamicKeys},
-  ),
-  LocalizationDynamicRegistry(
-    family: 'model-choice-explanation-keys',
-    sites: [
+      // This shared choice message serves both model screens and intro setup.
       DynamicTranslationSite(
         file: 'features/models/widgets/model_choice_explanation.dart',
         method: 'TextLocale',
@@ -1520,6 +1515,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       ),
     ],
     keys: {
+      ..._modelsScreensDynamicKeys,
       'intro_flow.ai.choose_provider',
       'models_screens.model_choice_explanation',
     },
