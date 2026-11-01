@@ -12,7 +12,7 @@ class const WorkspaceLocationInfo({
   final bool canViewMembers = false,
 }) {
   /// Determines the active workspace's location and current sharing scope.
-  factory WorkspaceLocationInfo.fromWorkspace(
+  factory fromWorkspace(
     WorkspaceEntity workspace, {
     CloudWorkspaceDetailState? cloudDetail,
   }) {
@@ -25,7 +25,7 @@ class const WorkspaceLocationInfo({
 
     final detail = cloudDetail.detail;
 
-    return WorkspaceLocationInfo._fromCloudWorkspace(
+    return _fromCloudWorkspace(
       role: detail.workspace.role,
       memberCount: cloudDetail.members.length,
       hasPendingInvites: cloudDetail.invites.isNotEmpty,
@@ -35,7 +35,7 @@ class const WorkspaceLocationInfo({
 
   /// Classifies sharing from the server's current role, roster, and
   /// invitations.
-  factory WorkspaceLocationInfo._fromCloudWorkspace({
+  factory _fromCloudWorkspace({
     required String role,
     required int memberCount,
     required bool hasPendingInvites,
