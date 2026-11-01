@@ -150,8 +150,10 @@ sampling.
 
 - Use Flutter `FocusNode`s for canvas nodes and links. Selecting/focusing a
   node marks it selected and opens its inspector. Keep that selection while
-  keyboard focus moves into inspector controls. Selecting/focusing a link
-  highlights it and shows no node inspector.
+  keyboard focus moves into inspector controls. The node focus ring follows
+  actual keyboard focus and disappears when an inspector field receives
+  focus; the selected outline and inspector stay open. Selecting/focusing a
+  link highlights it and shows no node inspector.
 - Tab/Shift-Tab follows Workflow order: Inputs, upstream-to-downstream nodes,
   each node's outgoing links, Condition True before False, and Outputs last.
   Use canvas position to order peers. Enter/Space activates the focused item;

@@ -121,7 +121,9 @@ or prototype-data contract to preserve.
 
 - Use Flutter `FocusNode`s for Workflow nodes and links. Keep editor selection
   separate from keyboard focus in inspector controls so users can edit a node
-  without closing its menu.
+  without closing its menu. The node focus ring follows actual keyboard focus
+  and disappears when an inspector field receives focus; the selected outline
+  and inspector stay open.
 - Node focus selects the node and opens its inspector. Link focus selects the
   link without opening the inspector. Show a floating delete action at the
   link midpoint and confirm using its source, Condition branch when present,

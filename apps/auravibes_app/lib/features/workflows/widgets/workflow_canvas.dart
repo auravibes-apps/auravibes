@@ -607,9 +607,7 @@ class const _WorkflowCanvasScene({
               node: node,
               focusNode: nodeFocusNodes[node.id]!,
               focusOrder: focusOrders.nodeOrders[node.id] ?? 0,
-              selected:
-                  editorState.selectedNodeId == node.id ||
-                  nodeFocusNodes[node.id]!.hasFocus,
+              selected: editorState.selectedNodeId == node.id,
               canEdit: workflow.canManage,
               workflow: workflow,
               onSelect: () => onSelectNode(node.id, requestFocus: true),
@@ -857,25 +855,44 @@ class const _WorkflowCanvasNode({
                         : null,
                     onPanEnd: canEdit ? (_) => onMoveEnd() : null,
                     onPanCancel: canEdit ? onMoveEnd : null,
-                    child: Semantics(
-                      button: true,
-                      selected: selected,
-                      label: '${node.label}, ${node.canonicalName}',
-                      child: Card(
-                        clipBehavior: Clip.antiAlias,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: selected || candidates.isNotEmpty
-                                ? context.auraColors.primary
-                                : rejectedDrag != null
-                                ? Theme.of(context).colorScheme.error
-                                : Theme.of(context).dividerColor,
-                            width: selected ? 2 : 1,
+                    child: ListenableBuilder(
+                      listenable: focusNode,
+                      builder: (context, _) {
+                        final focused = focusNode.hasPrimaryFocus;
+                        final primary = context.auraColors.primary;
+
+                        return DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(14),
+                            ),
+                            boxShadow: focused
+                                ? [BoxShadow(color: primary, spreadRadius: 2)]
+                                : null,
                           ),
-                        ),
-                        child: _WorkflowCanvasNodeContents(node: node),
-                      ),
+                          child: Semantics(
+                            selected: selected,
+                            button: true,
+                            focused: focused,
+                            label: '${node.label}, ${node.canonicalName}',
+                            child: Card(
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: selected || candidates.isNotEmpty
+                                      ? primary
+                                      : rejectedDrag != null
+                                      ? Theme.of(context).colorScheme.error
+                                      : Theme.of(context).dividerColor,
+                                  width: selected ? 2 : 1,
+                                ),
+                              ),
+                              child: _WorkflowCanvasNodeContents(node: node),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

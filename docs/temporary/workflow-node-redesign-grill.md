@@ -661,6 +661,9 @@ Output may accept several routes and binds only values common to those routes.
 - Focusing a node selects it and opens its inspector. Moving keyboard focus
   into that inspector does not clear the node selection. Another canvas item,
   an empty-canvas tap, or Escape clears/replaces selection.
+- The visible node focus ring follows Flutter keyboard focus. When an
+  inspector field or another outside input receives focus, remove that ring
+  while retaining the selected outline and inspector.
 - Focusing an edge selects and highlights it. It never opens the side
   inspector. Show a floating trash button at the edge midpoint. Confirm
   deletion by naming the source, Condition branch when present, and target.
@@ -682,7 +685,8 @@ accepted.
 - Node and connection focus, ordered keyboard traversal, activation, and
   Escape clearing are implemented.
 - Empty taps clear selection; pan gestures preserve it. Inspector focus keeps
-  the selected node active.
+  the selected node active. Its focus ring disappears when a field receives
+  focus, while its selected outline and inspector remain.
 - Selected connections show a midpoint delete action with source, branch, and
   target confirmation.
 - Plus handles open the picker by click and preview links by drag. Valid drops
