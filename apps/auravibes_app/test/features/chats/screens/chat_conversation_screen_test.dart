@@ -2098,7 +2098,7 @@ Future<void> _pumpCloudConversationScreen(
                 .iterationLimitReached,
               _ => null,
             };
-            final TransitionBuilder? appBuilder = agentStopDecision != null
+            final appBuilder = agentStopDecision != null
                 ? (_, child) =>
                       AuraSnackBarHost(child: child ?? const SizedBox.shrink())
                 : null;

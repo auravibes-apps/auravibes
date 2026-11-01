@@ -175,7 +175,7 @@ void main() {
   );
 
   test('changes loop fingerprints when full tool output changes', () async {
-    Future<({String? fingerprint, String? responseRaw})> fingerprintFor(
+    Future<({String? fingerprint, String? responseContextRaw})> fingerprintFor(
       String result,
     ) async {
       final provider = _FakeExecutionProvider(
@@ -208,7 +208,7 @@ void main() {
 
       return (
         fingerprint: loopResult.fingerprint,
-        responseRaw: provider.updates.single.responseRaw,
+        responseContextRaw: provider.updates.single.responseContextRaw,
       );
     }
 
@@ -218,7 +218,7 @@ void main() {
 
     expect(first.fingerprint, isNotNull);
     expect(unchanged.fingerprint, first.fingerprint);
-    expect(changed.responseRaw, first.responseRaw);
+    expect(changed.responseContextRaw, first.responseContextRaw);
     expect(changed.fingerprint, isNot(first.fingerprint));
   });
 
