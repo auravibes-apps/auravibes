@@ -194,7 +194,10 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('replay-user'), findsNWidgets(2));
+    expect(
+      find.text('Compacted Range: replay-user to replay-assistant'),
+      findsNWidgets(2),
+    );
     expect(find.textContaining('before-user'), findsNWidgets(2));
     expect(find.textContaining('before-assistant'), findsNWidgets(3));
     expect(find.textContaining('openai/gpt-test'), findsNWidgets(2));
