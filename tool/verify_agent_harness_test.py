@@ -62,6 +62,13 @@ class HarnessVerificationTest(unittest.TestCase):
             "name: example\nmelos:\n  scripts:\n" + scripts + "\n"
         )
 
+    def _write_skill(self, name, description):
+        skill = self.root / ".agents/skills" / name
+        skill.mkdir(parents=True, exist_ok=True)
+        (skill / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: {description}\n---\n"
+        )
+
     def test_new_indexed_scope_alias_needs_no_scope_registration(self):
         instructions = self.root / "AGENTS.md"
         instructions.write_text(
@@ -439,6 +446,97 @@ class HarnessVerificationTest(unittest.TestCase):
         self.assertTrue(any("Expected symlink" in item for item in errors))
         self.assertTrue(any("Missing description" in item for item in errors))
         self.assertTrue(any("differs from directory" in item for item in errors))
+
+    def test_skill_metadata_accepts_spec_length_boundaries(self):
+        self._write_skill("a", "x")
+        self._write_skill("b" * 64, "x" * 1024)
+        self._write_skill(
+            "folded-description-boundary",
+            ">-\n  " + "x" * 512 + "\n  " + "y" * 511,
+        )
+        self._write_skill("literal-description-boundary", "|-\n  " + "z" * 1024)
+
+        self.assertEqual(verify(self.root), [])
+
+    def test_invalid_skill_name_characters_have_actionable_errors(self):
+        invalid_names = (
+            "Uppercase",
+            "two words",
+            "under_score",
+            "-leading-hyphen",
+            "trailing-hyphen-",
+            "two--hyphens",
+        )
+        for name in invalid_names:
+            with self.subTest(name=name):
+                self._write_skill(name, "A valid description.")
+                errors = verify(self.root)
+                self.assertTrue(
+                    any(
+                        f".agents/skills/{name}/SKILL.md" in item
+                        and "Skill name must use lowercase letters" in item
+                        for item in errors
+                    ),
+                    errors,
+                )
+
+    def test_skill_name_and_description_over_limits_are_rejected(self):
+        too_long_name = "a" * 65
+        self._write_skill(too_long_name, "A valid description.")
+        self._write_skill("long-description", "x" * 1025)
+        self._write_skill("long-block-description", ">-\n  " + "x" * 1025)
+
+        errors = verify(self.root)
+
+        self.assertTrue(
+            any(
+                ".agents/skills/" + too_long_name in item
+                and "Skill name must contain 1 to 64 characters (got 65)" in item
+                for item in errors
+            ),
+            errors,
+        )
+        self.assertTrue(
+            any(
+                ".agents/skills/long-description/SKILL.md" in item
+                and "Skill description must be at most 1024 characters (got 1025)"
+                in item
+                for item in errors
+            ),
+            errors,
+        )
+        self.assertTrue(
+            any(
+                ".agents/skills/long-block-description/SKILL.md" in item
+                and "Skill description must be at most 1024 characters (got 1025)"
+                in item
+                for item in errors
+            ),
+            errors,
+        )
+
+    def test_empty_skill_description_is_rejected(self):
+        self._write_skill("empty-description", "")
+        self._write_skill("empty-block-description", ">-\n")
+
+        errors = verify(self.root)
+
+        self.assertTrue(
+            any(
+                ".agents/skills/empty-description/SKILL.md" in item
+                and "Missing description" in item
+                for item in errors
+            ),
+            errors,
+        )
+        self.assertTrue(
+            any(
+                ".agents/skills/empty-block-description/SKILL.md" in item
+                and "Missing description" in item
+                for item in errors
+            ),
+            errors,
+        )
 
     def test_duplicate_evaluation_ids_fail(self):
         (self.skill / "evals").mkdir()
