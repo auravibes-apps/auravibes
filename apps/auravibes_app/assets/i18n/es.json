@@ -88,7 +88,7 @@
       "model": "Tu modelo elegido"
     },
     "ai": {
-      "choose_provider": "Elige un proveedor. Sus credenciales se gestionan al configurar la conexión.",
+      "choose_provider": "Elige qué servicio recibe las solicitudes de tu modelo.",
       "start_chat": "Comenzar a chatear",
       "explore": "Explorar espacio",
       "explore_hint": "Puedes explorar ahora. Para chatear necesitas una conexión de IA y un modelo disponible.",
@@ -98,6 +98,12 @@
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Modelo",
+    "model_choice_explanation": "Los modelos varían en calidad, velocidad y tareas compatibles.",
+    "choice_help": {
+      "title": "Sobre proveedores y modelos",
+      "label": "Más información sobre proveedores y modelos",
+      "details": "Un proveedor es el servicio o servidor configurado en tu conexión; recibe los datos de las solicitudes que envías. El modelo es la IA que genera la respuesta. Los modelos pueden diferir en la calidad y velocidad de las respuestas y en las tareas compatibles. El comportamiento y el tratamiento de datos exactos dependen del modelo y del proveedor. Consulta al proveedor para conocer los detalles actuales."
+    },
     "recent_models": "Modelos recientes",
     "all_models": "Todos los modelos",
     "select_provider_first": "Selecciona proveedor primero",
