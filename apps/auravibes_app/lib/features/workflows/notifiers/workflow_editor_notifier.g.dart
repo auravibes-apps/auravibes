@@ -60,7 +60,7 @@ final class WorkflowEditorNotifierProvider
 }
 
 String _$workflowEditorNotifierHash() =>
-    r'c175cba770f5ab208b1afe498c0d9a378813ec90';
+    r'b5810e775d31cdd27971d4404079339791c9967b';
 
 final class WorkflowEditorNotifierFamily extends $Family
     with

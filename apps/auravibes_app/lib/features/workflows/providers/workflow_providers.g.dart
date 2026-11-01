@@ -227,7 +227,7 @@ final class WorkflowProvider
   }
 }
 
-String _$workflowHash() => r'10be5f6fa9d72e3d59449aa7f5222b5794102448';
+String _$workflowHash() => r'4e45f68fa620f389b340c29b811779851f1075ae';
 
 final class WorkflowFamily extends $Family
     with
