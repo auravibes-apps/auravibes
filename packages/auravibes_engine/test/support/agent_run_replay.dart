@@ -553,7 +553,7 @@ class _ReplayLoopTools(
   final sideEffectCounts = <String, int>{};
 
   @override
-  Future<AgentIterationDecision> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   }) async {
@@ -587,7 +587,9 @@ class _ReplayLoopTools(
       results[call.id] = resultEvent.value;
     }
 
-    return AgentIterationDecision.continueIteration;
+    return const AgentLoopToolResult(
+      decision: AgentIterationDecision.continueIteration,
+    );
   }
 }
 
