@@ -143,6 +143,7 @@ final forkedConversationsStreamProvider =
             cloud,
             request.sourceConversationId,
           );
+
           return;
         }
 
@@ -171,9 +172,18 @@ Stream<List<ConversationEntity>> _cloudForkedConversations(
   );
   if (!ref.mounted || gateway == null) return;
 
-  yield* gateway.watch({
-    'conversation',
-  }, () => _readForkedCloudConversations(gateway, cloud, sourceConversationId));
+  yield* _watchCloudForkedConversations(gateway, cloud, sourceConversationId);
+}
+
+Stream<List<ConversationEntity>> _watchCloudForkedConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String sourceConversationId,
+) {
+  Future<({List<ConversationEntity> value, int currentSequence})> read() =>
+      _readForkedCloudConversations(gateway, cloud, sourceConversationId);
+
+  return gateway.watch(const {'conversation'}, read);
 }
 
 Future<({List<ConversationEntity> value, int currentSequence})>

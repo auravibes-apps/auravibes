@@ -1740,24 +1740,117 @@ class const _ChatConversationAppBar({
 
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: Row(
+    title: _ChatConversationAppBarTitle(data: data),
+    actions: actions.widgets,
+    leading: data.leading,
+  );
+}
+
+class const _ChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _ResponsiveChatConversationAppBarTitle(
+      data: data,
+      titleWidth: constraints.maxWidth,
+      buttonWidth: _branchButtonWidth(context),
+    ),
+  );
+
+  double _branchButtonWidth(BuildContext context) =>
+      AuraIconButton.buttonSizeFor(.large).clamp(
+        context.auraTheme.interactionSizes.minimumTargetSize,
+        double.infinity,
+      );
+}
+
+class const _ResponsiveChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+  required final double titleWidth,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  static const _buttonGap = 4.0;
+
+  @override
+  Widget build(BuildContext context) => titleWidth >= buttonWidth + _buttonGap
+      ? _WideChatConversationAppBarTitle(data: data)
+      : _CompactChatConversationAppBarTitle(
+          data: data,
+          titleWidth: titleWidth,
+          buttonWidth: buttonWidth,
+        );
+}
+
+class const _WideChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(data.conversation.title, overflow: .ellipsis, maxLines: 1),
+      ),
+      const SizedBox(width: _ResponsiveChatConversationAppBarTitle._buttonGap),
+      ConversationBranchNavigationButton(
+        workspaceId: data.workspaceId,
+        conversation: data.conversation,
+      ),
+    ],
+  );
+}
+
+class const _CompactChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+  required final double titleWidth,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: titleWidth,
+    height: buttonWidth,
+    child: Stack(
+      clipBehavior: .none,
       children: [
-        Expanded(
-          child: Text(
-            data.conversation.title,
-            maxLines: 1,
-            overflow: .ellipsis,
-          ),
+        _CompactChatConversationTitleText(
+          title: data.conversation.title,
+          buttonWidth: buttonWidth,
         ),
-        const SizedBox(width: 4),
-        ConversationBranchNavigationButton(
-          workspaceId: data.workspaceId,
-          conversation: data.conversation,
+        _CompactChatConversationBranchButton(
+          data: data,
+          titleWidth: titleWidth,
+          buttonWidth: buttonWidth,
         ),
       ],
     ),
-    actions: actions.widgets,
-    leading: data.leading,
+  );
+}
+
+class const _CompactChatConversationTitleText({
+  required final String title,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+    child: Padding(
+      padding: EdgeInsets.only(right: buttonWidth),
+      child: Text(title, overflow: .ellipsis, maxLines: 1),
+    ),
+  );
+}
+
+class const _CompactChatConversationBranchButton({
+  required final _LoadedChatConversationData data,
+  required final double titleWidth,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: (titleWidth - buttonWidth) / 2,
+    child: ConversationBranchNavigationButton(
+      workspaceId: data.workspaceId,
+      conversation: data.conversation,
+    ),
   );
 }
 

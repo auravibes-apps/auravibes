@@ -436,8 +436,12 @@ void main() {
           workspaceId: 'ws1',
           sourceConversationId: source.id,
         ));
-        final subscription = fixture.container.listen(provider, (_, _) {});
+        var providerChanged = false;
+        final subscription = fixture.container.listen(provider, (_, _) {
+          providerChanged = true;
+        });
         final branches = await fixture.container.read(provider.future);
+        expect(providerChanged, isTrue);
         subscription.close();
 
         expect(branches, equals([firstBranch, siblingBranch]));

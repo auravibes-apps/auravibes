@@ -10,19 +10,22 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _workspaceId = 'test-workspace';
-final _sourceConversation = _conversation('source', 'Original conversation');
-final _currentConversation = _conversation(
+final ConversationEntity _sourceConversation = _conversation(
+  'source',
+  'Original conversation',
+);
+final ConversationEntity _currentConversation = _conversation(
   'current',
   'Current branch',
   forkSourceConversationId: _sourceConversation.id,
   forkSourceTitle: _sourceConversation.title,
 );
-final _siblingConversation = _conversation(
+final ConversationEntity _siblingConversation = _conversation(
   'sibling',
   'Sibling branch',
   forkSourceConversationId: _sourceConversation.id,
 );
-final _childConversation = _conversation(
+final ConversationEntity _childConversation = _conversation(
   'child',
   'Child branch',
   forkSourceConversationId: _currentConversation.id,
@@ -42,7 +45,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('conversation-branch-source')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Opened source'), findsOneWidget);
   });
@@ -69,7 +72,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey<String>('conversation-branch-sibling')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Opened sibling'), findsOneWidget);
   });
@@ -121,18 +124,17 @@ Future<void> _pumpBranchNavigation(WidgetTester tester, GoRouter router) async {
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
 }
 
 Future<void> _openBranchPicker(WidgetTester tester) async {
   await tester.tap(
     find.byKey(const ValueKey<String>('conversation-branch-navigation')),
   );
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
 }
 
 GoRouter _router() => GoRouter(
-  initialLocation: '/workspaces/$_workspaceId/chats/${_currentConversation.id}',
   routes: [
     GoRoute(
       path: '/workspaces/:workspaceId/chats/:chatId',
@@ -153,6 +155,7 @@ GoRouter _router() => GoRouter(
       },
     ),
   ],
+  initialLocation: '/workspaces/$_workspaceId/chats/${_currentConversation.id}',
 );
 
 ConversationEntity _conversation(

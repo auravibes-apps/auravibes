@@ -17,10 +17,10 @@ class const ConversationBranchNavigationButton({
     final label = 'chats_screens.chat_conversation.branch_navigation'.tr();
 
     return AuraIconButton(
-      key: key ?? const ValueKey<String>('conversation-branch-navigation'),
       icon: Icons.account_tree_outlined,
-      size: .large,
       onPressed: () => _showBranchNavigation(context),
+      key: key ?? const ValueKey<String>('conversation-branch-navigation'),
+      size: .large,
       semanticLabel: label,
       tooltip: label,
     );
@@ -34,14 +34,14 @@ class const ConversationBranchNavigationButton({
   void _presentBranchNavigation(BuildContext context) {
     final _ = showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
       builder: (sheetContext) => _ConversationBranchNavigationSheet(
         workspaceId: workspaceId,
         conversation: conversation,
         onOpenConversation: (target) =>
             _openConversation(context, sheetContext, target),
       ),
+      isScrollControlled: true,
+      useSafeArea: true,
     );
   }
 
@@ -250,26 +250,57 @@ class const _RelatedBranchSections({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (conversation.forkSourceConversationId == null) {
-      return const SizedBox.shrink();
-    }
+    final relatedBranches = _relatedBranchSectionsData(navigation);
+    if (relatedBranches == null) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: .stretch,
       children: [
         _ParentConversationSection(
           conversation: conversation,
-          navigation: navigation,
+          parentConversation: relatedBranches.parentConversation,
+          onRetry: relatedBranches.onRetryParent,
           onOpenConversation: onOpenConversation,
         ),
         _SiblingConversationBranches(
           conversation: conversation,
-          navigation: navigation,
+          branches: relatedBranches.siblingBranches,
+          onRetry: relatedBranches.onRetrySiblings,
           onOpenConversation: onOpenConversation,
         ),
       ],
     );
   }
+}
+
+typedef _RelatedBranchSectionsData = ({
+  AsyncValue<ConversationEntity?> parentConversation,
+  AsyncValue<List<ConversationEntity>> siblingBranches,
+  VoidCallback onRetryParent,
+  VoidCallback onRetrySiblings,
+});
+
+_RelatedBranchSectionsData? _relatedBranchSectionsData(
+  _BranchNavigationState navigation,
+) {
+  final parentConversation = navigation.parentConversation;
+  final siblingBranches = navigation.siblingBranches;
+  final onRetryParent = navigation.onRetryParent;
+  final onRetrySiblings = navigation.onRetrySiblings;
+
+  if (parentConversation == null ||
+      siblingBranches == null ||
+      onRetryParent == null ||
+      onRetrySiblings == null) {
+    return null;
+  }
+
+  return (
+    parentConversation: parentConversation,
+    siblingBranches: siblingBranches,
+    onRetryParent: onRetryParent,
+    onRetrySiblings: onRetrySiblings,
+  );
 }
 
 class const _BranchNavigationTitle() extends StatelessWidget {
@@ -303,16 +334,17 @@ class const _CurrentConversationBranchSection({
 
 class const _SiblingConversationBranches({
   required final ConversationEntity conversation,
-  required final _BranchNavigationState navigation,
+  required final AsyncValue<List<ConversationEntity>> branches,
+  required final VoidCallback onRetry,
   required final ValueChanged<ConversationEntity> onOpenConversation,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _BranchChoicesSection(
     label: 'chats_screens.chat_conversation.other_branches'.tr(),
-    branches: navigation.siblingBranches!,
+    branches: branches,
     currentConversationId: conversation.id,
     onOpenConversation: onOpenConversation,
-    onRetry: navigation.onRetrySiblings!,
+    onRetry: onRetry,
   );
 }
 
@@ -328,7 +360,8 @@ class const _ChildConversationBranches({
           navigation.childBranches,
           conversation.id,
         ).isEmpty,
-        _ => false,
+        AsyncLoading() => false,
+        AsyncError() => false,
       };
 
   @override
@@ -365,7 +398,8 @@ List<ConversationEntity> _branchChoices(
 ) => switch (branches) {
   AsyncData(value: final values) =>
     values.where((value) => value.id != currentConversationId).toList(),
-  _ => const <ConversationEntity>[],
+  AsyncLoading() => const <ConversationEntity>[],
+  AsyncError() => const <ConversationEntity>[],
 };
 
 class const _BranchSectionTitle({required final String title})
@@ -385,22 +419,23 @@ class const _CurrentBranchTile({required final ConversationEntity conversation})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
-    selected: true,
     child: ListTile(
       key: const ValueKey<String>('conversation-current-branch'),
-      selected: true,
       leading: const Icon(Icons.check_circle_outline),
-      title: Text(conversation.title, maxLines: 1, overflow: .ellipsis),
+      title: Text(conversation.title, overflow: .ellipsis, maxLines: 1),
       subtitle: const TextLocale(
         'chats_screens.chat_conversation.current_branch',
       ),
+      selected: true,
     ),
+    selected: true,
   );
 }
 
 class const _ParentConversationSection({
   required final ConversationEntity conversation,
-  required final _BranchNavigationState navigation,
+  required final AsyncValue<ConversationEntity?> parentConversation,
+  required final VoidCallback onRetry,
   required final ValueChanged<ConversationEntity> onOpenConversation,
 }) extends StatelessWidget {
   @override
@@ -412,9 +447,9 @@ class const _ParentConversationSection({
       ),
       _ParentConversationStatus(
         sourceTitle: conversation.forkSourceTitle,
-        parentConversation: navigation.parentConversation!,
+        parentConversation: parentConversation,
         onOpenConversation: onOpenConversation,
-        onRetry: navigation.onRetryParent!,
+        onRetry: onRetry,
       ),
     ],
   );
@@ -444,12 +479,12 @@ class const _UnavailableParentTile({required final String? sourceTitle})
   @override
   Widget build(BuildContext context) => ListTile(
     key: const ValueKey<String>('conversation-branch-parent-unavailable'),
-    enabled: false,
     leading: const Icon(Icons.link_off_outlined),
     title: _SourceConversationTitle(sourceTitle: sourceTitle),
     subtitle: const TextLocale(
       'chats_screens.chat_conversation.parent_unavailable',
     ),
+    enabled: false,
   );
 }
 
@@ -460,8 +495,8 @@ class const _ParentConversationLoadingTile({required final String? sourceTitle})
     leading: const Icon(Icons.arrow_upward_outlined),
     title: _SourceConversationTitle(sourceTitle: sourceTitle),
     trailing: const SizedBox.square(
-      dimension: 20,
       child: CircularProgressIndicator(strokeWidth: 2),
+      dimension: 20,
     ),
   );
 }
@@ -474,12 +509,12 @@ class const _SourceConversationTitle({required final String? sourceTitle})
     if (title == null || title.isEmpty) {
       return const TextLocale(
         'chats_screens.chat_conversation.parent_conversation',
-        maxLines: 1,
         overflow: .ellipsis,
+        maxLines: 1,
       );
     }
 
-    return Text(title, maxLines: 1, overflow: .ellipsis);
+    return Text(title, overflow: .ellipsis, maxLines: 1);
   }
 }
 
@@ -536,7 +571,7 @@ class const _BranchConversationTile({
   Widget build(BuildContext context) => ListTile(
     key: ValueKey<String>('conversation-branch-${conversation.id}'),
     leading: Icon(leadingIcon),
-    title: Text(conversation.title, maxLines: 1, overflow: .ellipsis),
+    title: Text(conversation.title, overflow: .ellipsis, maxLines: 1),
     trailing: const Icon(Icons.chevron_right),
     onTap: onTap,
   );
@@ -575,7 +610,7 @@ class const _BranchLoadError({required final VoidCallback onRetry})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     child: Column(
       crossAxisAlignment: .start,
       children: [
