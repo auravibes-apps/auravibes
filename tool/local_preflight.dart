@@ -102,7 +102,7 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   } else {
     stdout
       ..writeln('  Paths causing selection: ${changedDartPaths.join(', ')}')
-      ..writeln('  ${_formatCommand('fvm dart', formatArguments.skip(1))}');
+      ..writeln('  ${_formatCommand('fvm dart', formatArguments)}');
   }
   stdout.writeln('Analyzer (${analyzePaths.length} analyzed Dart files):');
   if (analyzePaths.isEmpty) {
@@ -110,7 +110,7 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   } else {
     stdout
       ..writeln('  Paths causing selection: ${analyzePaths.join(', ')}')
-      ..writeln('  ${_formatCommand('fvm dart', analyzeArguments.skip(1))}');
+      ..writeln('  ${_formatCommand('fvm dart', analyzeArguments)}');
   }
 
   final plannedCommands = <_PlannedCommand>[];
