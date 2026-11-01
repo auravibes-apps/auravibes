@@ -99,6 +99,14 @@ abstract class LocaleKeys {
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
+  static const models_screens_model_choice_explanation =
+      'models_screens.model_choice_explanation';
+  static const models_screens_choice_help_title =
+      'models_screens.choice_help.title';
+  static const models_screens_choice_help_label =
+      'models_screens.choice_help.label';
+  static const models_screens_choice_help_details =
+      'models_screens.choice_help.details';
   static const models_screens_recent_models = 'models_screens.recent_models';
   static const models_screens_all_models = 'models_screens.all_models';
   static const models_screens_select_provider_first =
@@ -649,6 +657,18 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.archive_export';
   static const chats_screens_chat_conversation_archive_exported =
       'chats_screens.chat_conversation.archive_exported';
+  static const chats_screens_chat_conversation_archive_export_review_title =
+      'chats_screens.chat_conversation.archive_export_review_title';
+  static const chats_screens_chat_conversation_archive_export_review_description =
+      'chats_screens.chat_conversation.archive_export_review_description';
+  static const chats_screens_chat_conversation_archive_export_review_contents =
+      'chats_screens.chat_conversation.archive_export_review_contents';
+  static const chats_screens_chat_conversation_archive_export_review_privacy =
+      'chats_screens.chat_conversation.archive_export_review_privacy';
+  static const chats_screens_chat_conversation_archive_export_review_destination =
+      'chats_screens.chat_conversation.archive_export_review_destination';
+  static const chats_screens_chat_conversation_archive_export_review_continue =
+      'chats_screens.chat_conversation.archive_export_review_continue';
   static const chats_screens_chat_conversation_archive_invalid =
       'chats_screens.chat_conversation.archive_invalid';
   static const chats_screens_chat_conversation_archive_unsupported_version =
@@ -785,6 +805,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.continue_agent';
   static const chats_screens_chat_conversation_iteration_limit_reached =
       'chats_screens.chat_conversation.iteration_limit_reached';
+  static const chats_screens_chat_conversation_repeated_tool_loop_detected =
+      'chats_screens.chat_conversation.repeated_tool_loop_detected';
   static const chats_screens_chat_conversation_retry_message =
       'chats_screens.chat_conversation.retry_message';
   static const chats_screens_chat_conversation_background_work_running_task =
@@ -1037,6 +1059,14 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.background_work_empty';
   static const chats_screens_chat_conversation_background_work_load_error =
       'chats_screens.chat_conversation.background_work_load_error';
+  static const chats_screens_chat_conversation_background_work_load_error_accessible_label =
+      'chats_screens.chat_conversation.background_work_load_error_accessible_label';
+  static const chats_screens_chat_conversation_background_work_loading_accessible_label =
+      'chats_screens.chat_conversation.background_work_loading_accessible_label';
+  static const chats_screens_chat_conversation_background_work_refresh_error_accessible_label =
+      'chats_screens.chat_conversation.background_work_refresh_error_accessible_label';
+  static const chats_screens_chat_conversation_background_work_retry =
+      'chats_screens.chat_conversation.background_work_retry';
   static const chats_screens_chat_conversation_background_work_elapsed =
       'chats_screens.chat_conversation.background_work_elapsed';
   static const chats_screens_chat_conversation_background_work_elapsed_seconds =
@@ -1695,6 +1725,10 @@ abstract class LocaleKeys {
   static const common_keep_editing = 'common.keep_editing';
   static const workspace_capabilities_unsupported_error =
       'workspace_capabilities.unsupported_error';
+  static const workspace_network_disclosure_title =
+      'workspace_network_disclosure.title';
+  static const workspace_network_disclosure_description =
+      'workspace_network_disclosure.description';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =
       'tools_names.calculator.description';
@@ -1739,6 +1773,16 @@ abstract class LocaleKeys {
       'settings_screen.app_settings.title';
   static const settings_screen_app_settings_subtitle =
       'settings_screen.app_settings.subtitle';
+  static const settings_screen_language_title =
+      'settings_screen.language.title';
+  static const settings_screen_language_dialog_title =
+      'settings_screen.language.dialog_title';
+  static const settings_screen_language_device =
+      'settings_screen.language.device';
+  static const settings_screen_language_english =
+      'settings_screen.language.english';
+  static const settings_screen_language_spanish =
+      'settings_screen.language.spanish';
   static const settings_screen_theme_title = 'settings_screen.theme.title';
   static const settings_screen_theme_light = 'settings_screen.theme.light';
   static const settings_screen_theme_dark = 'settings_screen.theme.dark';
@@ -2351,6 +2395,12 @@ abstract class LocaleKeys {
       'compaction.compacted.history_preview_title';
   static const compaction_compacted_history_preview_summary =
       'compaction.compacted.history_preview_summary';
+  static const compaction_compacted_history_preview_target_checkpoint =
+      'compaction.compacted.history_preview_target_checkpoint';
+  static const compaction_compacted_history_preview_summary_same =
+      'compaction.compacted.history_preview_summary_same';
+  static const compaction_compacted_history_preview_summaries_different =
+      'compaction.compacted.history_preview_summaries_different';
   static const compaction_compacted_history_preview_created =
       'compaction.compacted.history_preview_created';
   static const compaction_compacted_history_preview_replay_boundary =
@@ -2458,6 +2508,17 @@ abstract class LocaleKeys {
   static const workspace_archive_unsupported_configuration =
       'workspace_archive.unsupported_configuration';
   static const workspace_archive_error = 'workspace_archive.error';
+  static const workspace_location_on_device = 'workspace_location.on_device';
+  static const workspace_location_personal_cloud =
+      'workspace_location.personal_cloud';
+  static const workspace_location_team_workspace =
+      'workspace_location.team_workspace';
+  static const workspace_location_cloud_workspace =
+      'workspace_location.cloud_workspace';
+  static const workspace_location_view_members =
+      'workspace_location.view_members';
+  static const workspace_location_view_access =
+      'workspace_location.view_access';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_copy_id = 'workspace_management.copy_id';
   static const workspace_management_id_copied =
@@ -2603,6 +2664,12 @@ abstract class LocaleKeys {
       'workspace_management.cloud_role_admin';
   static const workspace_management_cloud_role_member =
       'workspace_management.cloud_role_member';
+  static const workspace_management_cloud_role_owner_description =
+      'workspace_management.cloud_role_owner_description';
+  static const workspace_management_cloud_role_admin_description =
+      'workspace_management.cloud_role_admin_description';
+  static const workspace_management_cloud_role_member_description =
+      'workspace_management.cloud_role_member_description';
   static const workspace_management_cloud_invite =
       'workspace_management.cloud_invite';
   static const workspace_management_cloud_error =
