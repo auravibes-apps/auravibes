@@ -14,7 +14,7 @@ void main() {
         test(
           '$backend catalog=$size changed=$changedPercent%',
           () => _measure(backend, size, size * changedPercent ~/ 100),
-          timeout: const Timeout(Duration(minutes: 2)),
+          timeout: const Timeout(.new(minutes: 2)),
           skip: Platform.environment['AURAVIBES_MCP_CATALOG_BENCHMARK'] == '1'
               ? false
               : 'Set AURAVIBES_MCP_CATALOG_BENCHMARK=1 to measure refresh',
@@ -68,16 +68,21 @@ Future<void> _measure(String backend, int size, int changedCount) async {
       if (index >= changedCount) expect(after, before);
     }
   }
-  final elapsed = samples
-      .map((sample) => sample['refreshUs'] ?? (throw StateError('No timing')))
-      .toList()
-    ..sort();
+  final elapsed =
+      samples
+          .map(
+            (sample) => sample['refreshUs'] ?? (throw StateError('No timing')),
+          )
+          .toList()
+        ..sort();
   debugPrint(
     jsonEncode({
       'workload': 'mcp_catalog_refresh',
-      'revision': Platform.environment['AURAVIBES_MCP_BENCHMARK_REVISION'] ??
+      'revision':
+          Platform.environment['AURAVIBES_MCP_BENCHMARK_REVISION'] ??
           'unrecorded',
-      'run': Platform.environment['AURAVIBES_MCP_BENCHMARK_RUN'] ?? 'unrecorded',
+      'run':
+          Platform.environment['AURAVIBES_MCP_BENCHMARK_RUN'] ?? 'unrecorded',
       'baselineRevision': 'f00fc7b9159cc35713db498ad319200a5ed4052e',
       'backend': backend,
       'os': Platform.operatingSystem,

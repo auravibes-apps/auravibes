@@ -11,40 +11,23 @@ import 'package:drift/native.dart';
 
 /// Real persistence shared by refresh correctness tests and measurements.
 final class McpCatalogFixture {
-  McpCatalogFixture._(this.database, this.metrics, this._directory)
-    : repository = McpServersRepository(database);
-
-  factory McpCatalogFixture.memory() =>
-      _connect(NativeDatabase.memory(), null);
-
-  static McpCatalogFixture _connect(
-    QueryExecutor executor,
-    Directory? directory,
-  ) {
-    final metrics = CatalogSqlMetrics();
-    final database = AppDatabase(connection: executor.interceptWith(metrics));
-    return McpCatalogFixture._(database, metrics, directory);
-  }
-
-  static Future<McpCatalogFixture> backgroundFile() async {
-    final directory = await Directory.systemTemp.createTemp('mcp-catalog-');
-    return _connect(
-      NativeDatabase.createInBackground(File('${directory.path}/catalog.db')),
-      directory,
-    );
-  }
-
   static const workspaceId = 'catalog-workspace';
   static const serverId = 'catalog-server';
   static const groupId = 'catalog-group';
   static final seededAt = DateTime.utc(2026);
 
-  final Directory? _directory;
   final CatalogSqlMetrics metrics;
   final AppDatabase database;
   final McpServersRepository repository;
+  final Directory? _directory;
 
-  static String toolName(int index) => 'tool_${index.toString().padLeft(5, '0')}';
+  new(this.database, this.metrics, this._directory)
+    : repository = McpServersRepository(database);
+
+  factory memory() => ._connect(NativeDatabase.memory(), null);
+
+  static String toolName(int index) =>
+      'tool_${index.toString().padLeft(5, '0')}';
 
   static McpToolInfo tool(int index, {int version = 0}) => McpToolInfo(
     toolName: toolName(index),
@@ -62,6 +45,15 @@ final class McpCatalogFixture {
       },
     },
   );
+
+  static Future<McpCatalogFixture> backgroundFile() async {
+    final directory = await Directory.systemTemp.createTemp('mcp-catalog-');
+
+    return ._connect(
+      NativeDatabase.createInBackground(File('${directory.path}/catalog.db')),
+      directory,
+    );
+  }
 
   Future<void> seed(int toolCount) async {
     await database.batch((batch) {
@@ -101,35 +93,44 @@ final class McpCatalogFixture {
     metrics.reset();
   }
 
-  ToolsCompanion _companion(int index) {
-    final metadata = tool(index);
-    return ToolsCompanion.insert(
-      id: Value('catalog-row-$index'),
-      createdAt: Value(seededAt),
-      updatedAt: Value(seededAt),
-      workspaceId: workspaceId,
-      workspaceToolsGroupId: const Value(groupId),
-      toolId: metadata.toolName,
-      description: Value(metadata.description),
-      inputSchema: Value(jsonEncode(metadata.inputSchema)),
-      outputSchema: Value(jsonEncode(metadata.outputSchema)),
-      config: Value('{"index":$index}'),
-      permissions: Value(PermissionAccess.values[index % 3]),
-      isEnabled: Value(index.isEven),
-    );
-  }
-
   Future<List<ToolsTable>> rows() =>
       database.workspaceToolsDao.getToolsByGroupId(groupId);
 
-  Future<void> refresh(List<McpToolInfo> tools) => repository.syncMcpTools(
-    mcpServerId: serverId,
-    currentTools: tools,
-  );
+  Future<void> refresh(List<McpToolInfo> tools) =>
+      repository.syncMcpTools(mcpServerId: serverId, currentTools: tools);
 
   Future<void> close() async {
     await database.close();
-    await _directory?.delete(recursive: true);
+    final directory = _directory;
+    if (directory != null) {
+      final _ = await directory.delete(recursive: true);
+    }
+  }
+
+  factory _connect(QueryExecutor executor, Directory? directory) {
+    final metrics = CatalogSqlMetrics();
+    final database = AppDatabase(connection: executor.interceptWith(metrics));
+
+    return .new(database, metrics, directory);
+  }
+
+  ToolsCompanion _companion(int index) {
+    final metadata = tool(index);
+
+    return ToolsCompanion.insert(
+      id: .new('catalog-row-$index'),
+      createdAt: .new(seededAt),
+      updatedAt: .new(seededAt),
+      workspaceId: workspaceId,
+      workspaceToolsGroupId: const .new(groupId),
+      toolId: metadata.toolName,
+      description: .new(metadata.description),
+      config: .new('{"index":$index}'),
+      inputSchema: .new(jsonEncode(metadata.inputSchema)),
+      outputSchema: .new(jsonEncode(metadata.outputSchema)),
+      isEnabled: .new(index.isEven),
+      permissions: .new(PermissionAccess.values[index % 3]),
+    );
   }
 }
 
@@ -165,9 +166,6 @@ final class CatalogSqlMetrics extends QueryInterceptor {
     'commits': commits,
     'rollbacks': rollbacks,
   };
-
-  bool _metadataUpdate(String sql) =>
-      RegExp(r'^UPDATE\s+"?tools"?\s', caseSensitive: false).hasMatch(sql);
 
   @override
   Future<int> runUpdate(
@@ -219,6 +217,7 @@ final class CatalogSqlMetrics extends QueryInterceptor {
     List<Object?> args,
   ) {
     selectCalls++;
+
     return executor.runSelect(statement, args);
   }
 
@@ -229,6 +228,7 @@ final class CatalogSqlMetrics extends QueryInterceptor {
     List<Object?> args,
   ) {
     mutationRows++;
+
     return executor.runInsert(statement, args);
   }
 
@@ -239,6 +239,7 @@ final class CatalogSqlMetrics extends QueryInterceptor {
     List<Object?> args,
   ) {
     mutationRows++;
+
     return executor.runDelete(statement, args);
   }
 
@@ -253,4 +254,7 @@ final class CatalogSqlMetrics extends QueryInterceptor {
     await inner.rollback();
     rollbacks++;
   }
+
+  bool _metadataUpdate(String sql) =>
+      RegExp(r'^UPDATE\s+"?tools"?\s', caseSensitive: false).hasMatch(sql);
 }
