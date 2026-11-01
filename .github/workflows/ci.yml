@@ -78,10 +78,6 @@ jobs:
               > "$capture_directory/run-$run.csv" \
               2> "$capture_directory/run-$run.stderr.txt"
           done
-          dart format --line-length 80 --output=show --summary=none \
-            test/agent_context_assembly_benchmark_test.dart \
-            > "$capture_directory/agent_context_assembly_benchmark_test.formatted.dart" \
-            2> "$capture_directory/formatter.stderr.txt"
 
       - name: Upload context assembly benchmark
         if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.capture_context_benchmark }}
