@@ -153,7 +153,7 @@ void main() {
     );
   });
 
-  test('workflow resources reject node positions outside the canvas limit', () {
+  test('workflow resources accept any finite signed node position', () {
     final data = _workflowResource(
       nodes: [
         _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
@@ -161,7 +161,8 @@ void main() {
           id: 'far',
           kind: 'connectorTool',
           targetId: 'tool',
-          x: 10001,
+          x: -10001,
+          y: 25000,
         ),
         _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
       ],
@@ -173,6 +174,33 @@ void main() {
         resourceId: 'workflow-1',
         workspaceId: 1,
         data: jsonEncode(data),
+      ),
+      returnsNormally,
+    );
+  });
+
+  test('workflow resources reject non-finite node positions', () {
+    final data = jsonEncode(
+      _workflowResource(
+        nodes: [
+          _workflowNode(id: 'inputs', kind: 'inputs', targetId: 'inputs'),
+          _workflowNode(
+            id: 'far',
+            kind: 'connectorTool',
+            targetId: 'tool',
+            x: -10001,
+          ),
+          _workflowNode(id: 'outputs', kind: 'outputs', targetId: 'outputs'),
+        ],
+      ),
+    ).replaceFirst('"x":-10001.0', '"x":1e999');
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.workflow,
+        resourceId: 'workflow-1',
+        workspaceId: 1,
+        data: data,
       ),
       throwsFormatException,
     );

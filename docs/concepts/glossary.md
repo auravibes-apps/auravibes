@@ -59,6 +59,12 @@ its menu also shows its canonical type or Connector/tool name. Data inputs and
 outputs are schema fields configured inside the node, not visible connection
 ports. Condition nodes have visible True and False branch handles.
 
+## Canvas selection
+
+The Workflow node or node link currently active in the editor. Selecting a node
+opens its configuration menu; selecting a link exposes its delete action. An
+empty-canvas tap or Escape clears the selection.
+
 ## Inputs node
 
 The single required source node in each Workflow. It declares the Workflow's
@@ -91,7 +97,8 @@ and explicit casts. It does not execute arbitrary user code.
 
 A directed connection between Workflow nodes. It controls which step follows
 an incoming event; data values are selected through node fields. A Condition
-link also identifies the True or False outcome.
+link also identifies the True or False outcome. Links can be selected and
+deleted independently of the nodes they connect.
 
 ## Data binding
 

@@ -47,14 +47,14 @@ abstract final class WorkflowEditorNodeReducer {
     String nodeId,
     double x,
     double y,
-  ) => WorkflowEditorStateReducer.updateNode(
-    state,
-    nodeId,
-    (node) => node.copyWith(
-      x: WorkflowEditorStateReducer.boundedPosition(x),
-      y: WorkflowEditorStateReducer.boundedPosition(y),
-    ),
-  );
+  ) {
+    if (!x.isFinite || !y.isFinite) return state;
+    return WorkflowEditorStateReducer.updateNode(
+      state,
+      nodeId,
+      (node) => node.copyWith(x: x, y: y),
+    );
+  }
 
   static WorkflowEditorState setLabel(
     WorkflowEditorState state,
@@ -94,7 +94,7 @@ abstract final class WorkflowEditorNodeReducer {
         source.kind == .condition ||
         target.kind == .inputs ||
         source.kind == .outputs ||
-        _hasPath(workflow, nodeId, sourceId)) {
+        WorkflowGraphValidation.hasNodePath(workflow, nodeId, sourceId)) {
       return state;
     }
     final hasLink = workflow.connections.any(
@@ -147,7 +147,7 @@ abstract final class WorkflowEditorNodeReducer {
       if (source == null ||
           source.kind == .condition ||
           source.kind == .outputs ||
-          _hasPath(workflow, nodeId, sourceId)) {
+          WorkflowGraphValidation.hasNodePath(workflow, nodeId, sourceId)) {
         return state;
       }
       if (!connections.any(
@@ -196,7 +196,7 @@ abstract final class WorkflowEditorNodeReducer {
       if (source == null ||
           source.kind == .condition ||
           source.kind == .outputs ||
-          _hasPath(workflow, nodeId, sourceId)) {
+          WorkflowGraphValidation.hasNodePath(workflow, nodeId, sourceId)) {
         return state;
       }
     }
@@ -234,26 +234,6 @@ abstract final class WorkflowEditorNodeReducer {
         ],
       ),
     );
-  }
-
-  static bool _hasPath(
-    WorkspaceWorkflow workflow,
-    String fromNodeId,
-    String targetNodeId,
-  ) {
-    final pending = <String>[fromNodeId];
-    final seen = <String>{};
-    while (pending.isNotEmpty) {
-      final current = pending.removeLast();
-      if (current == targetNodeId) return true;
-      if (!seen.add(current)) continue;
-      pending.addAll(
-        workflow.connections
-            .where((connection) => connection.fromNodeId == current)
-            .map((connection) => connection.toNodeId),
-      );
-    }
-    return false;
   }
 
   static WorkflowEditorState inferOutputs(
@@ -451,28 +431,13 @@ abstract final class WorkflowEditorConnectionReducer {
   }) {
     final workflow = state.workflow;
     if (workflow == null ||
-        sourceNodeId == targetNodeId ||
-        !workflow.nodes.any((node) => node.id == sourceNodeId) ||
-        !workflow.nodes.any((node) => node.id == targetNodeId)) {
-      return state;
-    }
-    final source = workflow.nodes
-        .where((node) => node.id == sourceNodeId)
-        .firstOrNull;
-    final target = workflow.nodes
-        .where((node) => node.id == targetNodeId)
-        .firstOrNull;
-    if (source == null ||
-        target == null ||
-        source.kind == .outputs ||
-        target.kind == .inputs ||
-        source.kind == .condition && branch == null ||
-        source.kind != .condition && branch != null ||
-        WorkflowEditorNodeReducer._hasPath(
-          workflow,
-          targetNodeId,
-          sourceNodeId,
-        )) {
+        WorkflowGraphValidation.connectionRejection(
+              workflow,
+              sourceNodeId: sourceNodeId,
+              targetNodeId: targetNodeId,
+              branch: branch,
+            ) !=
+            null) {
       return state;
     }
     final candidate = WorkflowConnection(
@@ -480,7 +445,6 @@ abstract final class WorkflowEditorConnectionReducer {
       toNodeId: targetNodeId,
       conditionBranch: branch,
     );
-    if (_isDuplicate(workflow, candidate)) return state;
     return WorkflowEditorStateReducer.updateWorkflow(
       state,
       (current) =>
@@ -815,11 +779,6 @@ abstract final class WorkflowEditorStateReducer {
           if (node.id == nodeId) update(node) else node,
       ],
     ),
-  );
-
-  static double boundedPosition(double value) => value.clamp(
-    WorkflowGraphValidation.minimumWorkflowNodePosition,
-    WorkflowGraphValidation.maxWorkflowNodePosition,
   );
 }
 

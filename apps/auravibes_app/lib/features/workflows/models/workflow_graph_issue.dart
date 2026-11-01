@@ -25,3 +25,16 @@ enum WorkflowGraphIssue {
   workflowDependencyCycle,
   cycle,
 }
+
+enum WorkflowConnectionRejection {
+  missingSource,
+  missingTarget,
+  maximumConnections,
+  selfConnection,
+  outputsSource,
+  inputsTarget,
+  missingConditionBranch,
+  unexpectedConditionBranch,
+  duplicate,
+  cycle,
+}

@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workflows/models/workflow_graph_validatio
 import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
 import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_connector_tool_sample.dart';
+import 'package:auravibes_app/features/workflows/widgets/workflow_connection_text.dart';
 import 'package:auravibes_app/features/workflows/widgets/workflow_port_group.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -2000,24 +2001,6 @@ class const _WorkflowConnectionList({
                 : null,
           ),
       ],
-    );
-  }
-}
-
-abstract final class WorkflowConnectionText {
-  static String description(
-    WorkspaceWorkflow workflow,
-    WorkflowConnection connection,
-    BuildContext context,
-  ) {
-    String label(String id) =>
-        workflow.nodes.where((node) => node.id == id).firstOrNull?.label ?? id;
-    return LocaleKeys.workflow_editor_connection_label.tr(
-      context: context,
-      namedArgs: {
-        'from': label(connection.fromNodeId),
-        'to': label(connection.toNodeId),
-      },
     );
   }
 }

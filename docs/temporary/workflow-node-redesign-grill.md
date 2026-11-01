@@ -1,7 +1,7 @@
 # Workflow node redesign — grill notes
 
-**Status:** Design tree complete; awaiting user confirmation. Temporary working
-log, not an accepted spec.
+**Status:** Core and canvas interaction designs confirmed; final docs and
+implementation complete. Temporary decision log, not the accepted spec.
 **Started:** 2026-10-29
 **Branch baseline:** `codex/workflow-builder-managed-20261013` at `3285a926`
 
@@ -35,7 +35,7 @@ is closed and the user confirms the shared understanding.
 - Whole-workflow execution was previously out of scope. Reconfirm this because
   the new design describes nodes as the next action step.
 
-## Current code facts
+## Implementation baseline facts
 
 - `WorkflowNode` stores `kind`, `targetId`, editable `label`, `inputs` and
   `outputs` in `apps/auravibes_app/lib/features/workflows/models/workflow_definition.dart`.
@@ -82,12 +82,12 @@ is closed and the user confirms the shared understanding.
 - Output nodes may receive multiple routes but can bind only values common to
   all incoming routes. Distinct branch results use separate Output nodes.
 - Ordinary node connections and post-pick behavior are defined in Round 5/6.
-- Confirm whether each Output owns its own result schema and whether a shared
-  schema is shared per Connector tool or across every tool in a Connector.
+- Round 11 confirmed each Output's result schema and one shared schema per
+  Connector tool.
 
-## Open question tree
+## Interview record — answered rounds
 
-### Round 1 — current frontier
+### Round 1 — answered at interview
 
 1. **What does a node link mean?**
    Open: order only, data dependency, or both. Recommended: link means the
@@ -134,7 +134,7 @@ is closed and the user confirms the shared understanding.
    **Answer:** Keep whole-workflow execution out of scope; allow isolated
    Connector read sampling.
 
-## Round 2 — current frontier
+## Round 2 — answered at interview
 
 1. **How does a value reference affect node links?**
    Recommended: a binding to an earlier node creates or requires a dependency
@@ -183,13 +183,12 @@ is closed and the user confirms the shared understanding.
    **Answer:** Include name, type, required state, description and optional
    default. Support nested objects and arrays.
 
-## Future decision areas
+## Future decision areas — resolved in later rounds
 
-Possible remaining topics: canvas link gestures, conditional port rendering,
-field-path syntax, optional endpoint nodes, Transform node schema, and fan-out
-semantics. Do not assume answers from recommendations.
+Canvas link gestures, branch rendering, field-path syntax, endpoint nodes,
+Transform schema, and fan-out semantics were resolved in later rounds below.
 
-## Round 3 — current frontier
+## Round 3 — answered at interview
 
 1. **How should users type a binding they know?**
    Recommended: choose a source node, then browse or type a field path; store
@@ -237,7 +236,7 @@ semantics. Do not assume answers from recommendations.
    transformations later through explicit nodes, not hidden expressions.
    **Answer:** Add an explicit Transform node in this redesign.
 
-## Round 4 — current frontier
+## Round 4 — answered at interview
 
 1. **What does “Inputs only out node, Outputs only inner” mean?**
    Recommended interpretation: Inputs is a source with no incoming links and
@@ -278,7 +277,7 @@ semantics. Do not assume answers from recommendations.
    **Answer:** Yes. Model node types now; keep isolated Connector read sampling
    and defer whole-Workflow execution.
 
-## Round 5 — current frontier
+## Round 5 — answered at interview
 
 1. **How should True/False ports appear and connect?**
    Recommended: show two small labeled handles only on Condition nodes. Users
@@ -324,7 +323,7 @@ semantics. Do not assume answers from recommendations.
    **Answer:** Select a source field, operator and static or bound comparison
    value.
 
-## Round 6 — current frontier
+## Round 6 — answered at interview
 
 1. **How should required Inputs and Outputs nodes enter a new Workflow?**
    Recommended: insert both automatically when creating the Workflow; users
@@ -362,11 +361,10 @@ semantics. Do not assume answers from recommendations.
    array indices or escaped names; store an unambiguous canonical path.
    **Answer:** Use JSON Pointer only.
 
-**Open interaction:** one shared binding map plus values common to every path
-may prevent branch-specific Connector results from reaching the required
-Outputs node. Resolve before writing final graph semantics.
+**Resolved in Rounds 7–8:** branch results use multiple Output nodes; each
+Output may accept several routes and binds only values common to those routes.
 
-## Round 7 — current frontier
+## Round 7 — answered at interview
 
 1. **What does changing a Workflow output field's type do?**
    Recommended: it changes only the Workflow contract. Do not pretend the
@@ -406,7 +404,7 @@ Outputs node. Resolve before writing final graph semantics.
    matching; show the grouping in plain language.
    **Answer:** Yes. Group multiple rules with explicit All/Any matching.
 
-## Round 8 — current frontier
+## Round 8 — answered at interview
 
 1. **Which node kinds belong in the picker?**
    Recommended: Connector tools, Inputs, Outputs, Condition, Transform and
@@ -449,7 +447,7 @@ Outputs node. Resolve before writing final graph semantics.
    values. Use nested editors for objects/arrays.
    **Answer:** String, integer, number, boolean, object, array and nullable.
 
-## Round 9 — current frontier
+## Round 9 — answered at interview
 
 1. **How should shared and Workflow-local Connector schemas interact?**
    Recommended: declared/shared Connector schema is the default for every
@@ -490,7 +488,7 @@ Outputs node. Resolve before writing final graph semantics.
    Recommended: yes; keep the field in the output object with JSON `null`.
    **Answer:** Yes. Include the field with JSON `null`.
 
-## Round 10 — current frontier
+## Round 10 — answered at interview
 
 1. **When sample schema differs, what should the override prompt offer?**
    Recommended: keep current schema, create/update a Workflow-local override,
@@ -504,7 +502,7 @@ Outputs node. Resolve before writing final graph semantics.
    conflicts for repair. Preserve user-authored names/types until confirmed.
    **Answer:** Replace current schema with inferred shape after approval.
 
-## Round 11 — current frontier
+## Round 11 — answered at interview
 
 1. **Does each Output node own its own result schema?**
    Recommended: yes. Each Output is a named terminal result contract; its
@@ -581,3 +579,137 @@ Outputs node. Resolve before writing final graph semantics.
   flows. Record evidence, severity, confidence, recommendations and
   verification scenarios; apply integration recommendations. Use rendered
   captures where available and label source-only findings.
+
+## Canvas interaction addendum — 2026-11-01
+
+### User-stated direction
+
+- Make edges selectable with Flutter `FocusNode`s. Selecting an edge shows no
+  side menu; show a trash action and confirm before deleting the edge.
+- Use each node's `FocusNode` to show node selection and its menu.
+- Clicking canvas space outside nodes and edges unfocuses the node.
+- Dragging a node's external plus handle previews an edge that can be dropped
+  on another node.
+- Make the canvas appear infinite; grid lines should continue beyond nodes.
+
+### Canvas implementation baseline facts
+
+- Nodes select through `selectedNodeId` and `GestureDetector.onTap`; canvas
+  background taps clear that selection. No per-node `FocusNode` exists.
+- Edges are drawn by `_WorkflowConnectionPainter`; they have no hit target,
+  selection state, or delete action.
+- `WorkflowConnection` has source node ID, target node ID and optional
+  Condition branch. It has no persistent connection ID.
+- Plus handles are `Draggable`s with an icon-only feedback. Dropping on a
+  `DragTarget` creates a node connection; no edge preview is painted.
+- `InteractiveViewer` has a fixed 320-pixel boundary margin. The scene derives
+  its finite size from node extents, the grid paints only that size, and node
+  positions are capped.
+- App and server validation both restrict node coordinates to finite values
+  from 0 through 10,000. The app also clamps drag and render positions.
+- The expanded inspector is a sibling of the canvas and has its own autofocus
+  `Focus`; compact layout places it below the canvas. Selected node identity
+  currently lives in editor state, not in Flutter focus state.
+
+### Canvas interaction decisions
+
+**Round 12 — answered 2026-11-01**
+
+1. **Keyboard focus:** Traverse nodes and edges with Tab/Shift-Tab; activate
+   with Enter/Space; Escape clears selection.
+2. **Edge delete action:** Show floating trash at edge midpoint. Confirmation
+   names source, Condition branch when present, and target.
+3. **Plus drag:** Click still opens the picker. Drag previews a branch-aware
+   edge. A valid node drop connects and focuses the target; invalid or empty
+   drop cancels.
+4. **Infinite canvas:** Keep the grid visible while panning in any direction;
+   show no canvas edge; do not impose internal coordinate safety limits.
+
+### Resolved canvas interaction rounds
+
+**Round 13 — answered 2026-11-01**
+
+1. **Coordinate domain:** Allow any finite X/Y value, including negative
+   values. Reject NaN and infinity. Remove the current 0-to-10,000 coordinate
+   range from app and server validation; retain the separate 100-node limit.
+
+**Round 14 — answered 2026-11-01**
+
+1. **Clear focus:** Empty-canvas taps clear node or edge focus. Pan gestures
+   preserve focus.
+
+**Round 15 — answered 2026-11-01**
+
+1. **Inspector focus:** When keyboard focus moves from a canvas node into its
+   inspector controls, should the node remain selected and its menu stay open
+   until explicit clear (empty tap, Escape, or another canvas item)?
+   Answer: yes; selection persists until empty tap, Escape, or another canvas
+   item, while inspector controls take normal keyboard focus.
+2. **Traversal order:** Tab/Shift-Tab follows Inputs, upstream-to-downstream
+   nodes, each node's outgoing edges, Condition True before False, and Outputs
+   last. Use canvas position to order peers.
+3. **Invalid link drops:** Show a brief reason when a target cannot accept a
+   dragged link; cancel the link on release.
+
+## Canvas interaction consensus — confirmed 2026-11-01
+
+- Each Workflow node and connection can receive Flutter keyboard focus.
+  Tab/Shift-Tab follows workflow order: Inputs, upstream-to-downstream nodes,
+  each node's outgoing edges, Condition True before False, then Outputs. Use
+  canvas position to order peers. Enter/Space activates the focused item;
+  Escape clears selection.
+- Focusing a node selects it and opens its inspector. Moving keyboard focus
+  into that inspector does not clear the node selection. Another canvas item,
+  an empty-canvas tap, or Escape clears/replaces selection.
+- Focusing an edge selects and highlights it. It never opens the side
+  inspector. Show a floating trash button at the edge midpoint. Confirm
+  deletion by naming the source, Condition branch when present, and target.
+- Clicking a node's plus handle keeps opening the node picker. Dragging it
+  previews a branch-aware edge. Dropping on a valid node connects and focuses
+  the target; an invalid target explains why and cancels on release; an empty
+  drop cancels. Panning preserves selection; an empty-canvas tap clears it.
+- The canvas pans in any direction with a continuous grid and no visible edge.
+  Node X/Y coordinates may be any finite value, including negatives. Reject
+  NaN and infinity. Remove app and server 0-to-10,000 coordinate bounds; keep
+  the separate 100-node Workflow limit.
+
+The user confirmed this addendum and authorized final glossary, ADR, spec, and
+implementation on 2026-11-01. The existing core Workflow consensus remains
+accepted.
+
+## Canvas implementation result — 2026-11-01
+
+- Node and connection focus, ordered keyboard traversal, activation, and
+  Escape clearing are implemented.
+- Empty taps clear selection; pan gestures preserve it. Inspector focus keeps
+  the selected node active.
+- Selected connections show a midpoint delete action with source, branch, and
+  target confirmation.
+- Plus handles open the picker by click and preview links by drag. Valid drops
+  connect and focus the target; invalid drops show a reason and cancel.
+- Canvas uses a continuous grid with no visible boundary. App and server accept
+  any finite signed coordinates and reject non-finite values.
+- Focused app and server tests pass. `validate:changed` still reports
+  info-level diagnostics and DCL warnings in the workflow feature.
+- Rendered app capture was not available; verification used source review and
+  widget tests.
+
+## UX view and flow brief
+
+- **Goal:** Build and understand a Workflow graph without guessing which node
+  or link is active, what a drag will connect, or why a link was rejected.
+- **Entry:** Existing Workflow editor in its Directory/chat item tab.
+- **Canvas:** Continuous grid fills the viewport while users pan without a
+  visible boundary. Nodes and links remain the primary content.
+- **Selection:** Focusing a node selects it and opens its inspector. Focus can
+  move into inspector fields without closing the menu. Focusing a link selects
+  it and reveals one midpoint delete action, never the node inspector.
+- **Add/link flow:** Click plus opens the current node picker. Drag plus shows
+  a branch-aware link preview. A valid drop links and focuses the target; an
+  invalid target explains why and cancels on release; empty drop cancels.
+- **Clear/exit:** Empty-canvas tap and Escape clear selection. Panning keeps
+  selection. Existing compact and expanded inspector layouts remain.
+- **Keyboard:** Tab/Shift-Tab follows Workflow order, with branch order and
+  screen-position tie-breaks as agreed. Enter/Space activate; Escape clears.
+- **Completion:** User can see the new link, target selection, deletion
+  confirmation, and invalid-target recovery without whole-Workflow execution.

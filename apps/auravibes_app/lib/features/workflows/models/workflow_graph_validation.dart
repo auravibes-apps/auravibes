@@ -2,13 +2,12 @@ import 'dart:collection';
 
 import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workflows/models/workflow_graph_issue.dart';
+import 'package:collection/collection.dart';
 
 export 'package:auravibes_app/features/workflows/models/workflow_graph_issue.dart';
 
 abstract final class WorkflowGraphValidation {
   static const maximumWorkflowCollectionSize = 100;
-  static const minimumWorkflowNodePosition = 0.0;
-  static const maxWorkflowNodePosition = 10000.0;
 
   static List<WorkflowGraphIssue> validateWorkflowDefinition(
     WorkspaceWorkflow workflow,
@@ -18,6 +17,69 @@ abstract final class WorkflowGraphValidation {
     WorkflowValueType source,
     WorkflowValueType target,
   ) => source == target || (source == .integer && target == .number);
+
+  static bool nodePositionIsFinite(WorkflowNode node) =>
+      node.x.isFinite && node.y.isFinite;
+
+  static WorkflowConnectionRejection? connectionRejection(
+    WorkspaceWorkflow workflow, {
+    required String sourceNodeId,
+    required String targetNodeId,
+    WorkflowConditionBranch? branch,
+  }) {
+    final source = workflow.nodes
+        .where((node) => node.id == sourceNodeId)
+        .firstOrNull;
+    if (source == null) return .missingSource;
+    final target = workflow.nodes
+        .where((node) => node.id == targetNodeId)
+        .firstOrNull;
+    if (target == null) return .missingTarget;
+    if (workflow.connections.length >= maximumWorkflowCollectionSize) {
+      return .maximumConnections;
+    }
+    if (sourceNodeId == targetNodeId) return .selfConnection;
+    if (source.kind == .outputs) return .outputsSource;
+    if (target.kind == .inputs) return .inputsTarget;
+    if (source.kind == .condition && branch == null) {
+      return .missingConditionBranch;
+    }
+    if (source.kind != .condition && branch != null) {
+      return .unexpectedConditionBranch;
+    }
+    if (workflow.connections.any(
+      (connection) =>
+          connection.fromNodeId == sourceNodeId &&
+          connection.toNodeId == targetNodeId &&
+          connection.conditionBranch == branch,
+    )) {
+      return .duplicate;
+    }
+    if (hasNodePath(workflow, targetNodeId, sourceNodeId)) return .cycle;
+
+    return null;
+  }
+
+  static bool hasNodePath(
+    WorkspaceWorkflow workflow,
+    String fromNodeId,
+    String targetNodeId,
+  ) {
+    final pending = <String>[fromNodeId];
+    final seen = <String>{};
+    while (pending.isNotEmpty) {
+      final current = pending.removeLast();
+      if (current == targetNodeId) return true;
+      if (!seen.add(current)) continue;
+      pending.addAll(
+        workflow.connections
+            .where((connection) => connection.fromNodeId == current)
+            .map((connection) => connection.toNodeId),
+      );
+    }
+
+    return false;
+  }
 
   static bool workflowHasDependencyCycle(
     WorkspaceWorkflow candidate,
@@ -423,12 +485,7 @@ class _WorkflowGraphValidator {
       kind == .connectorTool || kind == .workflow;
 
   static bool _validPosition(WorkflowNode node) =>
-      node.x.isFinite &&
-      node.y.isFinite &&
-      node.x >= WorkflowGraphValidation.minimumWorkflowNodePosition &&
-      node.y >= WorkflowGraphValidation.minimumWorkflowNodePosition &&
-      node.x <= WorkflowGraphValidation.maxWorkflowNodePosition &&
-      node.y <= WorkflowGraphValidation.maxWorkflowNodePosition;
+      WorkflowGraphValidation.nodePositionIsFinite(node);
 
   static bool _defaultMatchesType(WorkflowField field) {
     final value = field.defaultValue;

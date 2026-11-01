@@ -14,7 +14,6 @@ class WorkspaceResourceValidation {
   static const _maxJsonDepth = 16;
   static const _maxCollectionEntries = 100;
   static const _maxStringLength = 16 * 1024;
-  static const _maxWorkflowNodePosition = 10000;
 
   static const dedicatedKinds = {
     WorkspaceResourceKind.view,
@@ -235,12 +234,8 @@ class WorkspaceResourceValidation {
           (hasSampledOutputs && kind != 'connectorTool') ||
           x is! num ||
           !x.isFinite ||
-          x < 0 ||
-          x > _maxWorkflowNodePosition ||
           y is! num ||
-          !y.isFinite ||
-          y < 0 ||
-          y > _maxWorkflowNodePosition) {
+          !y.isFinite) {
         throw const FormatException();
       }
       if (kind == 'inputs') inputNodeCount++;

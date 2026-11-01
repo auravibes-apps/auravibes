@@ -2048,6 +2048,34 @@ abstract class LocaleKeys {
       'workflow_editor.connection_hint';
   static const workflow_editor_connection_label =
       'workflow_editor.connection_label';
+  static const workflow_editor_connection_label_branch =
+      'workflow_editor.connection_label_branch';
+  static const workflow_editor_delete_connection_confirm_title =
+      'workflow_editor.delete_connection_confirm_title';
+  static const workflow_editor_delete_connection_confirm_message =
+      'workflow_editor.delete_connection_confirm_message';
+  static const workflow_editor_confirm_delete_connection =
+      'workflow_editor.confirm_delete_connection';
+  static const workflow_editor_connection_rejected_missing_source =
+      'workflow_editor.connection_rejected_missing_source';
+  static const workflow_editor_connection_rejected_missing_target =
+      'workflow_editor.connection_rejected_missing_target';
+  static const workflow_editor_connection_rejected_maximum =
+      'workflow_editor.connection_rejected_maximum';
+  static const workflow_editor_connection_rejected_self =
+      'workflow_editor.connection_rejected_self';
+  static const workflow_editor_connection_rejected_outputs =
+      'workflow_editor.connection_rejected_outputs';
+  static const workflow_editor_connection_rejected_inputs =
+      'workflow_editor.connection_rejected_inputs';
+  static const workflow_editor_connection_rejected_branch_required =
+      'workflow_editor.connection_rejected_branch_required';
+  static const workflow_editor_connection_rejected_branch_unexpected =
+      'workflow_editor.connection_rejected_branch_unexpected';
+  static const workflow_editor_connection_rejected_duplicate =
+      'workflow_editor.connection_rejected_duplicate';
+  static const workflow_editor_connection_rejected_cycle =
+      'workflow_editor.connection_rejected_cycle';
   static const workflow_editor_connections = 'workflow_editor.connections';
   static const workflow_editor_kind = 'workflow_editor.kind';
   static const workflow_editor_port_name = 'workflow_editor.port_name';

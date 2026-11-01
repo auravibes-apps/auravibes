@@ -148,10 +148,29 @@ sampling.
 
 ## Canvas, menus, and recovery
 
+- Use Flutter `FocusNode`s for canvas nodes and links. Selecting/focusing a
+  node marks it selected and opens its inspector. Keep that selection while
+  keyboard focus moves into inspector controls. Selecting/focusing a link
+  highlights it and shows no node inspector.
+- Tab/Shift-Tab follows Workflow order: Inputs, upstream-to-downstream nodes,
+  each node's outgoing links, Condition True before False, and Outputs last.
+  Use canvas position to order peers. Enter/Space activates the focused item;
+  Escape clears selection. Empty-canvas taps clear node or link selection;
+  panning preserves selection.
+- A selected link has one floating trash button at its midpoint. Confirm link
+  deletion by naming the source, Condition branch when present, and target.
 - Put an external add item on ordinary nodes. Clicking it opens node selection.
   Choosing a type creates a linked node beside the source, selects it, and
-  opens its menu. Dragging the item onto an existing node creates a link.
+  opens its menu. Dragging an add item previews a branch-aware link. Dropping
+  it on a valid target creates the link and focuses the target. An invalid
+  target shows why it rejects the link and cancels on release. An empty drop
+  cancels without creating a link.
 - Condition True/False handles visibly connect outcomes to target nodes.
+- Let users pan in any direction without a visible canvas edge. Keep the grid
+  continuous across the viewport. Node X/Y positions may be any finite value,
+  including negative values; reject NaN and infinity. Remove app/server
+  0-to-10,000 coordinate bounds and keep the existing 100-node and 100-link
+  Workflow limits.
 - Node menus close with an explicit close button, Escape/back, or outside tap.
 - Every node deletion requires confirmation naming the node and links removed.
   If deletion breaks data bindings, preserve them and show repair state.
@@ -193,7 +212,9 @@ this integration.
    store stable source node IDs and JSON Pointer paths. Incompatible and
    unknown types require repair or explicit Transform casts.
 9. Canvas add items create/connect nodes by click or drag. Condition nodes show
-   only True/False handles. Fan-in/fan-out graph rules are validated.
+   only True/False handles. Plus dragging previews links, validates targets,
+   explains rejected drops, and selects the target after connection.
+   Fan-in/fan-out graph rules are validated.
 10. Inputs schemas support requested fields and nested JSON types. Multiple
     named Outputs have independent schemas, require common values across their
     incoming routes, and serialize missing fields as null.
@@ -209,6 +230,12 @@ this integration.
     conflicts.
 14. Node deletion confirms affected links, removes links, and retains broken
     bindings for repair.
-15. The UX audit records evidence, severity, confidence, recommendations, and
+15. Nodes and links follow the agreed keyboard focus order. Node inspector
+   selection survives inspector input focus; blank taps and Escape clear it.
+   Link selection shows a midpoint delete action with endpoint confirmation.
+16. The infinite canvas keeps a continuous grid while panning without bounds.
+   App and server accept signed finite node coordinates and reject non-finite
+   coordinates while retaining collection limits.
+17. The UX audit records evidence, severity, confidence, recommendations, and
     verification scenarios. Rendered checks are used where available.
-16. No whole-Workflow execution or legacy Skill-node compatibility is added.
+18. No whole-Workflow execution or legacy Skill-node compatibility is added.

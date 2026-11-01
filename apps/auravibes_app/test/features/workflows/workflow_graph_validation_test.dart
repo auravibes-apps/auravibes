@@ -336,15 +336,93 @@ void main() {
     );
   });
 
-  test('node positions stay within the scrollable canvas limit', () {
+  test('node-link validation reports the reason a candidate is rejected', () {
     final workflow = _workflow(
-      nodes: [_node(id: 'far-away').copyWith(x: 10001, y: 10001)],
+      nodes: [
+        _node(id: 'inputs', kind: .inputs),
+        _node(id: 'condition', kind: .condition),
+        _node(id: 'step'),
+        _node(id: 'outputs', kind: .outputs),
+      ],
+      connections: const [
+        WorkflowConnection(fromNodeId: 'inputs', toNodeId: 'condition'),
+        WorkflowConnection(
+          fromNodeId: 'condition',
+          toNodeId: 'step',
+          conditionBranch: WorkflowConditionBranch.trueBranch,
+        ),
+        WorkflowConnection(fromNodeId: 'step', toNodeId: 'outputs'),
+      ],
     );
 
     expect(
-      WorkflowGraphValidation.validateWorkflowDefinition(workflow),
-      contains(WorkflowGraphIssue.invalidNodePosition),
+      WorkflowGraphValidation.connectionRejection(
+        workflow,
+        sourceNodeId: 'condition',
+        targetNodeId: 'step',
+        branch: WorkflowConditionBranch.trueBranch,
+      ),
+      WorkflowConnectionRejection.duplicate,
     );
+    expect(
+      WorkflowGraphValidation.connectionRejection(
+        workflow,
+        sourceNodeId: 'condition',
+        targetNodeId: 'outputs',
+      ),
+      WorkflowConnectionRejection.missingConditionBranch,
+    );
+    expect(
+      WorkflowGraphValidation.connectionRejection(
+        workflow,
+        sourceNodeId: 'step',
+        targetNodeId: 'condition',
+      ),
+      WorkflowConnectionRejection.cycle,
+    );
+  });
+
+  test('node positions accept signed finite values and reject non-finite', () {
+    final workflow = _boundWorkflow();
+    final connector = workflow.nodes.firstWhere(
+      (node) => node.id == 'connector',
+    );
+    for (final position in [
+      const Offset(-100000, -100000),
+      const Offset(100000, 100000),
+    ]) {
+      final candidate = workflow.copyWith(
+        nodes: [
+          for (final node in workflow.nodes)
+            node.id == connector.id
+                ? node.copyWith(x: position.dx, y: position.dy)
+                : node,
+        ],
+      );
+      expect(
+        WorkflowGraphValidation.validateWorkflowDefinition(candidate),
+        isNot(contains(WorkflowGraphIssue.invalidNodePosition)),
+      );
+    }
+
+    for (final position in [
+      const Offset(double.nan, 0),
+      const Offset(0, double.infinity),
+      const Offset(double.negativeInfinity, 0),
+    ]) {
+      final candidate = workflow.copyWith(
+        nodes: [
+          for (final node in workflow.nodes)
+            node.id == connector.id
+                ? node.copyWith(x: position.dx, y: position.dy)
+                : node,
+        ],
+      );
+      expect(
+        WorkflowGraphValidation.validateWorkflowDefinition(candidate),
+        contains(WorkflowGraphIssue.invalidNodePosition),
+      );
+    }
   });
 }
 

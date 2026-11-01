@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-31
+- Amended: 2026-11-01 (canvas interaction and coordinate bounds)
 - Supersedes: Workflow node and output-schema decisions in the previous version
 
 ## Context
@@ -116,6 +117,29 @@ or prototype-data contract to preserve.
   Connector read sampling is the only execution in this scope. Output nodes
   are modeled as terminal contracts for a future runtime.
 
+### Canvas selection and navigation
+
+- Use Flutter `FocusNode`s for Workflow nodes and links. Keep editor selection
+  separate from keyboard focus in inspector controls so users can edit a node
+  without closing its menu.
+- Node focus selects the node and opens its inspector. Link focus selects the
+  link without opening the inspector. Show a floating delete action at the
+  link midpoint and confirm using its source, Condition branch when present,
+  and target.
+- Keyboard traversal follows Workflow order: Inputs, upstream-to-downstream
+  nodes, each node's outgoing links, Condition True before False, and Outputs
+  last. Use canvas position to order peers. Enter/Space activates; Escape
+  clears selection. Empty-canvas taps clear node or link selection; panning
+  preserves it.
+- Clicking a node's plus handle keeps opening node selection. Dragging it
+  previews a branch-aware link. Valid drop creates the link and focuses its
+  target. Invalid targets explain why and cancel on release; empty drops
+  cancel.
+- The canvas has no visible boundary and keeps its grid continuous while
+  panning. Node positions accept any finite signed coordinates. App and server
+  reject NaN and infinity but do not impose a coordinate range. Keep the
+  existing 100-node and 100-link Workflow limits.
+
 ## Consequences
 
 - Local and cloud storage need Directory-owned Workflow metadata, graph
@@ -125,6 +149,11 @@ or prototype-data contract to preserve.
   discard raw values.
 - The graph model no longer uses data-port IDs. Condition branch outcomes are
   the only visible connection handles.
+- Infinite canvas rendering is viewport-relative; scene size must not depend
+  on the largest stored node coordinate. App and server accept signed finite
+  coordinates and retain finite-number validation plus collection limits.
+- Canvas focus is transient editor state. Links need no new persisted ID; the
+  existing source, target, and optional Condition branch identify a link.
 - Multiple named Output contracts support branching without a port-mapping UI.
   Routes into one Output must share the fields it binds.
 - Existing AI Directory commands and chat tabs can reach Workflows without

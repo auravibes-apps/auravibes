@@ -16,6 +16,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -484,19 +485,25 @@ class const _WorkflowEditorReadyView({
   required final WorkspaceWorkflow workflow,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      _WorkflowEditorMetadataSection(presentation: presentation),
-      if (!workflow.canManage) const _WorkflowReadOnlyNotice(),
-      _WorkflowEditorToolbarSection(presentation: presentation),
-      Expanded(
-        child: _WorkflowEditorResponsiveSection(
-          presentation: presentation,
-          workflow: workflow,
+  Widget build(BuildContext context) => CallbackShortcuts(
+    bindings: {
+      const SingleActivator(LogicalKeyboardKey.escape):
+          presentation.document.commands.nodes.clearSelection,
+    },
+    child: Column(
+      children: [
+        _WorkflowEditorMetadataSection(presentation: presentation),
+        if (!workflow.canManage) const _WorkflowReadOnlyNotice(),
+        _WorkflowEditorToolbarSection(presentation: presentation),
+        Expanded(
+          child: _WorkflowEditorResponsiveSection(
+            presentation: presentation,
+            workflow: workflow,
+          ),
         ),
-      ),
-      const _WorkflowExecutionNotice(),
-    ],
+        const _WorkflowExecutionNotice(),
+      ],
+    ),
   );
 }
 
@@ -951,6 +958,9 @@ class const _WorkflowCanvasView({
       onMoveNode: canEdit ? commands.nodes.move : _ignoreMove,
       onAddNode: canEdit ? presentation.actions.onAddNodeAfter : _ignoreAddNode,
       onConnect: canEdit ? _connect(commands) : _ignoreConnect,
+      onRemoveConnection: canEdit
+          ? commands.connections.remove
+          : _ignoreRemoveConnection,
     );
   }
 
@@ -963,6 +973,8 @@ class const _WorkflowCanvasView({
     String targetNodeId,
     WorkflowConditionBranch? branch,
   ) {}
+
+  static void _ignoreRemoveConnection(WorkflowConnection connection) {}
 
   static void Function(String, String, WorkflowConditionBranch?) _connect(
     WorkflowEditorCommands commands,
