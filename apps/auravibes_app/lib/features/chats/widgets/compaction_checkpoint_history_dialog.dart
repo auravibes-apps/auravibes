@@ -149,9 +149,7 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
   MessageEntity checkpoint,
   CompactionCheckpointHistory history,
 ) {
-  final activeCheckpoint = history.summaries
-      .where((summary) => summary.id == history.activeCheckpointId)
-      .firstOrNull;
+  final activeCheckpoint = _activeCheckpointSummary(history);
   if (activeCheckpoint == null) return null;
 
   final transcriptMessages = SelectPromptMessagesUsecase.promptEligibleMessages(
@@ -171,6 +169,11 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
     transcriptMessages: List<MessageEntity>.unmodifiable(history.messages),
   );
 }
+
+MessageEntity? _activeCheckpointSummary(CompactionCheckpointHistory history) =>
+    history.summaries
+        .where((summary) => summary.id == history.activeCheckpointId)
+        .firstOrNull;
 
 List<MessageEntity>? _selectedCheckpointMessages(
   String checkpointId,
@@ -456,36 +459,47 @@ class const _CheckpointRestorePreviewDetails({
   required final _CheckpointRestorePreview preview,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    final activeCheckpoint = preview.activeCheckpoint;
-    final targetCheckpoint = preview.checkpoint;
-    final summariesMatch = activeCheckpoint.content == targetCheckpoint.content;
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      _ActiveCheckpointPreview(checkpoint: preview.activeCheckpoint),
+      _TargetCheckpointPreview(
+        activeCheckpoint: preview.activeCheckpoint,
+        targetCheckpoint: preview.checkpoint,
+      ),
+      _CheckpointReplayPlan(preview: preview),
+    ],
+    crossAxisAlignment: .stretch,
+  );
+}
 
-    return AuraColumn(
-      children: [
-        _CheckpointPreviewSection(
-          checkpoint: activeCheckpoint,
-          heading: const TextLocale(
-            LocaleKeys.compaction_compacted_history_active,
-            style: .new(fontWeight: FontWeight.bold),
-          ),
-          isActive: true,
-          summaryMatchesActive: true,
-        ),
-        _CheckpointPreviewSection(
-          checkpoint: targetCheckpoint,
-          heading: const TextLocale(
-            _targetCheckpointLabelKey,
-            style: .new(fontWeight: FontWeight.bold),
-          ),
-          isActive: false,
-          summaryMatchesActive: summariesMatch,
-        ),
-        _CheckpointReplayPlan(preview: preview),
-      ],
-      crossAxisAlignment: .stretch,
-    );
-  }
+class const _ActiveCheckpointPreview({required final MessageEntity checkpoint})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _CheckpointPreviewSection(
+    checkpoint: checkpoint,
+    heading: const TextLocale(
+      LocaleKeys.compaction_compacted_history_active,
+      style: .new(fontWeight: FontWeight.bold),
+    ),
+    isActive: true,
+    summaryMatchesActive: true,
+  );
+}
+
+class const _TargetCheckpointPreview({
+  required final MessageEntity activeCheckpoint,
+  required final MessageEntity targetCheckpoint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _CheckpointPreviewSection(
+    checkpoint: targetCheckpoint,
+    heading: const TextLocale(
+      _targetCheckpointLabelKey,
+      style: .new(fontWeight: FontWeight.bold),
+    ),
+    isActive: false,
+    summaryMatchesActive: activeCheckpoint.content == targetCheckpoint.content,
+  );
 }
 
 class const _CheckpointPreviewSection({
