@@ -2283,11 +2283,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         method: 'tr',
         keyExpression: 'localizationKey',
       ),
-      DynamicTranslationSite(
-        file: 'features/chats/widgets/empty_conversation_starters.dart',
-        method: 'TextLocale',
-        keyExpression: 'localizationKey',
-      ),
     ],
     keys: {
       'chats_screens.chat_conversation.empty_starters.plan_day',

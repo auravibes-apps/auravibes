@@ -127,10 +127,14 @@ class const _EmptyConversationStarterButton({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: () => onSelect(.new(text: localizationKey.tr(context: context))),
-    child: TextLocale(localizationKey),
-    variant: .outlined,
-    isFullWidth: true,
-  );
+  Widget build(BuildContext context) {
+    final text = localizationKey.tr(context: context);
+
+    return AuraButton(
+      onPressed: () => onSelect(.new(text: text)),
+      child: Text(text),
+      variant: .outlined,
+      isFullWidth: true,
+    );
+  }
 }
