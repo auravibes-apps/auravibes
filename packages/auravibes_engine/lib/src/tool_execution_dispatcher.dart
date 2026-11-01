@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:auravibes_engine/src/tool_calls.dart';
+import 'package:auravibes_engine/src/tool_content_digest.dart';
 import 'package:auravibes_engine/src/tool_output_policy.dart';
 
 enum AgentToolResultStatus {
@@ -43,6 +44,7 @@ class const AgentToolExecutionResult({
   required final AgentToolResultStatus resultStatus,
   final String? responseRaw,
   final String? responseContextRaw,
+  final String? outputDigest,
   final List<AgentToolResultMedia> media = const [],
   final bool outputTruncated = false,
   final int? originalResponseBytes,
@@ -99,6 +101,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
   required final AgentResolvedToolRunner<TTool> runResolvedTool,
   required final AgentToolCancellationChecker isCancellationRequested,
   required final AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
+  final bool captureOutputDigest = false,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
 }) {
   Future<AgentToolExecutionResult> call({
@@ -137,6 +140,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         final List<Object?> value => jsonEncode(value),
         final Object value => value.toString(),
       };
+      final outputDigest = captureOutputDigest ? sha256Utf8(responseRaw) : null;
       final projection = projectToolOutput(
         responseRaw,
         policy:
@@ -147,6 +151,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
           resultStatus: .stoppedByUser,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
+          outputDigest: outputDigest,
           media: executionOutput.media,
           outputTruncated: projection.truncated,
           originalResponseBytes: projection.truncated
@@ -160,6 +165,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         resultStatus: .success,
         responseRaw: projection.persistedText,
         responseContextRaw: _responseContext(projection),
+        outputDigest: outputDigest,
         media: executionOutput.media,
         outputTruncated: projection.truncated,
         originalResponseBytes: projection.truncated
@@ -204,6 +210,9 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
           resultStatus: failure.resultStatus,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
+          outputDigest: captureOutputDigest
+              ? sha256Utf8(failure.responseRaw)
+              : null,
           outputTruncated: projection.truncated,
           originalResponseBytes: projection.truncated
               ? projection.originalBytes

@@ -1819,7 +1819,7 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
     });
 
-    testWidgets('keeps unfinished A2UI controls and queues cap notice', (
+    testWidgets('keeps A2UI controls and queues a no-progress loop notice', (
       tester,
     ) async {
       final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
@@ -1872,7 +1872,7 @@ void main() {
           overrides: [
             chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
             sendMessageUsecaseProvider('ws-1')
-                .overrideWithValue(_IterationLimitSendMessageUsecase()),
+                .overrideWithValue(_RepeatedToolLoopSendMessageUsecase()),
             ..._messageOverrides({message.id: message}),
           ],
         ),
@@ -1904,8 +1904,8 @@ void main() {
         listen: false,
       );
       expect(
-        container.read(conversationIterationLimitProvider('conv-1')),
-        isTrue,
+        container.read(conversationAgentStopDecisionProvider('conv-1')),
+        AgentIterationDecision.repeatedToolLoopDetected,
       );
       expect(tester.takeException(), isNull);
     });
@@ -6844,13 +6844,13 @@ class _MockConversationRepository extends Mock
 class _MockMessageRepository extends Mock implements MessageRepository;
 class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;
 
-class _IterationLimitSendMessageUsecase extends Fake
+class _RepeatedToolLoopSendMessageUsecase extends Fake
     implements SendMessageUsecase {
   @override
   Future<AgentIterationDecision?> call({
     required String conversationId,
     required ChatDraft draft,
-  }) async => AgentIterationDecision.iterationLimitReached;
+  }) async => AgentIterationDecision.repeatedToolLoopDetected;
 }
 
 class const _ChatMessagesTestSubject({

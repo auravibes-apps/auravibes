@@ -247,6 +247,7 @@ jobs:
         run: >-
           dart test
           tool/changed_test_selector_test.dart
+          tool/local_preflight_test.dart
           tool/merge_lcov_test.dart
           tool/marionette_run_test.dart
           tool/check_test_credentials_test.dart
@@ -258,6 +259,7 @@ jobs:
           python3 tool/sonar_workflow_test.py
           python3 tool/plan_test_shards_test.py
           python3 tool/validation_lease_test.py
+          python3 tool/validation_evidence_test.py
           python3 tool/test_server_test.py
           python3 tool/agent_worktree_test.py
 
@@ -622,12 +624,16 @@ jobs:
           dart analyze
           tool/changed_test_selector.dart
           tool/changed_test_selector_test.dart
+          tool/local_preflight.dart
+          tool/local_preflight_test.dart
           --fatal-infos
           --fatal-warnings
 
       - name: Test changed test selector
         if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
-        run: dart test tool/changed_test_selector_test.dart
+        run: >-
+          dart test tool/changed_test_selector_test.dart
+          tool/local_preflight_test.dart
 
       - name: Check changed test selector formatting
         if: ${{ needs.change.outputs.run_ci_selector_checks == 'true' }}
@@ -635,6 +641,8 @@ jobs:
           dart format --line-length 80 -o none --set-exit-if-changed
           tool/changed_test_selector.dart
           tool/changed_test_selector_test.dart
+          tool/local_preflight.dart
+          tool/local_preflight_test.dart
 
   platform-builds:
     name: platform builds
@@ -1033,8 +1041,10 @@ jobs:
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         needs.coverage.result == 'skipped' &&
-        needs.change.outputs.run_code_checks == 'true' &&
-        needs.test-plan.outputs.mode == 'none'
+        (
+          needs.change.outputs.run_code_checks != 'true' ||
+          needs.test-plan.outputs.mode == 'none'
+        )
       }}
     runs-on: ubuntu-latest
     steps:

@@ -269,12 +269,18 @@ class _FakeToolProvider
   }) async {}
 
   @override
-  Future<AgentIterationDecision> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   }) async {
-    return AgentIterationDecision.done;
+    return const AgentLoopToolResult(decision: .done);
   }
+
+  @override
+  Future<AgentIterationDecision> runAllowedTools({
+    required String conversationId,
+    required String workspaceId,
+  }) async => AgentIterationDecision.done;
 
   @override
   bool isCancellationRequested(String conversationId) =>

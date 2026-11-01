@@ -65,22 +65,21 @@ class ConversationRateLimitRetryNotifier
   }
 }
 
-class ConversationIterationLimitNotifier extends Notifier<bool> {
+class ConversationAgentStopDecisionNotifier
+    extends Notifier<AgentIterationDecision?> {
   @override
-  bool build() => false;
+  AgentIterationDecision? build() => null;
 
-  void markReached() {
-    state = true;
+  void markIfAgentStopDecision(AgentIterationDecision? decision) {
+    if (decision?.needsUserNotice != true) return;
+    state = decision;
   }
 
-  void markIfIterationLimitReached(AgentIterationDecision? decision) {
-    if (decision != AgentIterationDecision.iterationLimitReached) return;
-    markReached();
-  }
+  AgentIterationDecision? consume() {
+    final decision = state;
+    state = null;
 
-  void consume() {
-    if (!state) return;
-    state = false;
+    return decision;
   }
 }
 
@@ -127,11 +126,17 @@ final conversationRateLimitRetryProvider =
       ConversationRateLimitRetryNotifier.new,
     );
 
-final NotifierProviderFamily<ConversationIterationLimitNotifier, bool, String>
-conversationIterationLimitProvider =
-    NotifierProvider.family<ConversationIterationLimitNotifier, bool, String>(
-      (_) => ConversationIterationLimitNotifier(),
-    );
+final NotifierProviderFamily<
+  ConversationAgentStopDecisionNotifier,
+  AgentIterationDecision?,
+  String
+>
+conversationAgentStopDecisionProvider =
+    NotifierProvider.family<
+      ConversationAgentStopDecisionNotifier,
+      AgentIterationDecision?,
+      String
+    >((_) => ConversationAgentStopDecisionNotifier());
 
 final conversationRateLimitRetryRuntimeProvider =
     Provider<ConversationRateLimitRetryRuntime>((ref) {

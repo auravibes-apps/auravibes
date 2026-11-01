@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
@@ -104,6 +105,119 @@ void main() {
     expect(dataProvider.allowedToolRuns, ['conversation-1:workspace-1']);
   });
 
+  test('seeded cancellation handoffs keep late continuations scoped', () async {
+    for (var seed = 1; seed <= 16; seed++) {
+      final trace = <String>[];
+      try {
+        final cancellationRuntime = FakeCancellationEffects();
+        final conversationIds = ['owner', 'sibling'];
+        final modelStarted = {
+          for (final id in conversationIds) id: Completer<void>(),
+        };
+        final modelResults = {
+          for (final id in conversationIds)
+            id: Completer<ContinueAgentResult>(),
+        };
+        Future<void> waitForModelStart(String id) async {
+          final started = modelStarted[id];
+          if (started == null) {
+            throw StateError('Unexpected conversation start: $id');
+          }
+          await started.future;
+        }
+
+        void releaseModel(String id) {
+          final result = modelResults[id];
+          if (result == null) {
+            throw StateError('Unexpected conversation release: $id');
+          }
+          result.complete(
+            ContinueAgentResult(messageId: 'assistant-$id', hasToolCalls: true),
+          );
+        }
+
+        final dataProvider = _FakeAgentConversationDataProvider(
+          workspaceIdForConversation: (id) => 'workspace-$id',
+          onContinueAgent: (id) {
+            final started = modelStarted[id];
+            if (started == null) {
+              throw StateError('Unexpected conversation start: $id');
+            }
+            started.complete();
+            final result = modelResults[id];
+            if (result == null) {
+              throw StateError('Unexpected conversation: $id');
+            }
+
+            return result.future;
+          },
+        );
+        final sendQueue = _FakeAgentSendQueueRuntime();
+        final usecase = _buildAgentService(
+          dataProvider,
+          sendQueueRuntime: sendQueue,
+          cancellationEffects: cancellationRuntime,
+        );
+        trace.add('start:owner');
+        final ownerRun = usecase(
+          conversationId: 'owner',
+          context: const AgentIterationContext(
+            origin: .userMessage,
+            ackMessageIds: ['owner-ack'],
+          ),
+        );
+        await waitForModelStart('owner');
+        trace.add('model-waiting:owner');
+
+        Future<AgentIterationDecision>? siblingRun;
+        final setupEvents = ['cancel-owner', 'cancel-owner', 'start-sibling']
+          ..shuffle(Random(seed));
+        for (final event in setupEvents) {
+          if (event == 'cancel-owner') {
+            trace.add(event);
+            cancellationRuntime.requestStop('owner');
+            continue;
+          }
+
+          trace.add(event);
+          siblingRun = usecase(
+            conversationId: 'sibling',
+            context: const AgentIterationContext(origin: .userMessage),
+          );
+          await waitForModelStart('sibling');
+          trace.add('model-waiting:sibling');
+        }
+
+        final sibling = siblingRun;
+        if (sibling == null) {
+          throw StateError('Sibling run did not start.');
+        }
+        final releases = ['owner', 'sibling']..shuffle(Random(seed + 1));
+        for (final id in releases) {
+          trace.add('release-model:$id');
+          releaseModel(id);
+        }
+
+        final decisions = await Future.wait([ownerRun, sibling]);
+
+        expect(decisions, [
+          AgentIterationDecision.done,
+          AgentIterationDecision.done,
+        ]);
+        expect(dataProvider.workspaceLookups, ['owner', 'sibling']);
+        expect(dataProvider.continuationConversationIds, ['owner', 'sibling']);
+        expect(dataProvider.allowedToolRuns, ['sibling:workspace-sibling']);
+        expect(dataProvider.markedSent, ['owner-ack']);
+        expect(sendQueue.cleared, ['owner']);
+      } on Object catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          StateError('seed=$seed events=${trace.join(' -> ')}\n$error'),
+          stackTrace,
+        );
+      }
+    }
+  });
+
   test('waits for all allowed tools before the next model request', () async {
     final releaseTools = Completer<void>();
     final dataProvider = _FakeAgentConversationDataProvider(
@@ -150,6 +264,111 @@ void main() {
     expect(result, AgentIterationDecision.iterationLimitReached);
     expect(dataProvider.continuationContexts, hasLength(3));
     expect(dataProvider.allowedToolRuns, hasLength(3));
+  });
+
+  test(
+    'stops an identical no-progress tool call before another model call',
+    () async {
+      final dataProvider = _FakeAgentConversationDataProvider(
+        continueResults: List.filled(
+          3,
+          const ContinueAgentResult(
+            messageId: 'assistant-1',
+            hasToolCalls: true,
+          ),
+        ),
+        toolResults: const [
+          AgentLoopToolResult(
+            decision: .continueIteration,
+            fingerprint: 'same-call-same-result',
+          ),
+          AgentLoopToolResult(
+            decision: .continueIteration,
+            fingerprint: 'same-call-same-result',
+          ),
+        ],
+      );
+      final usecase = _buildAgentService(dataProvider);
+
+      final result = await usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(origin: .userMessage),
+      );
+
+      expect(result, AgentIterationDecision.repeatedToolLoopDetected);
+      expect(dataProvider.continuationContexts, hasLength(2));
+      expect(dataProvider.allowedToolRuns, hasLength(2));
+    },
+  );
+
+  test('stops a repeated two-batch tool cycle', () async {
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueResults: List.filled(
+        5,
+        const ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+      ),
+      toolResults: const [
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-a',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-b',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-a',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'tool-b',
+        ),
+      ],
+    );
+    final usecase = _buildAgentService(dataProvider);
+
+    final result = await usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+
+    expect(result, AgentIterationDecision.repeatedToolLoopDetected);
+    expect(dataProvider.continuationContexts, hasLength(4));
+    expect(dataProvider.allowedToolRuns, hasLength(4));
+  });
+
+  test('does not stop a repeated call when its result changes', () async {
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueResults: [
+        const ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+        const ContinueAgentResult(messageId: 'assistant-2', hasToolCalls: true),
+        const ContinueAgentResult(
+          messageId: 'assistant-3',
+          hasToolCalls: false,
+        ),
+      ],
+      toolResults: const [
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'same-call-first-result',
+        ),
+        AgentLoopToolResult(
+          decision: .continueIteration,
+          fingerprint: 'same-call-updated-result',
+        ),
+      ],
+    );
+    final usecase = _buildAgentService(dataProvider);
+
+    final result = await usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+
+    expect(result, AgentIterationDecision.done);
+    expect(dataProvider.continuationContexts, hasLength(3));
+    expect(dataProvider.allowedToolRuns, hasLength(2));
   });
 
   test('does not retry rate limits inferred from message text', () async {
@@ -234,6 +453,61 @@ void main() {
 
     expect(dataProvider.continuationContexts, hasLength(1));
   });
+
+  test(
+    'preserves acknowledgement identity until the exact retry delay',
+    () async {
+      final started = DateTime.utc(2026);
+      var currentTime = started;
+      final sleeps = <Duration>[];
+      final dataProvider = _FakeAgentConversationDataProvider(
+        continueErrors: [
+          AgentRateLimitRetryException(
+            providerException: ProviderHttpFailureException(
+              429,
+              'Rate limited.',
+            ),
+            retryAfter: const Duration(seconds: 12),
+          ),
+        ],
+        continueResults: const [
+          ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
+        ],
+        onRunAllowedTools: () async {
+          expect(currentTime.difference(started), const Duration(seconds: 12));
+        },
+      );
+      final usecase = _buildAgentService(
+        dataProvider,
+        now: () => currentTime,
+        sleep: (duration) async {
+          expect(dataProvider.continuationContexts, hasLength(1));
+          expect(dataProvider.allowedToolRuns, isEmpty);
+          sleeps.add(duration);
+          currentTime = currentTime.add(duration);
+        },
+      );
+
+      final result = await usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: .userMessage,
+          ackMessageIds: ['original-user'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(
+        sleeps.fold(Duration.zero, (total, duration) => total + duration),
+        const Duration(seconds: 12),
+      );
+      expect(dataProvider.continuationContexts, hasLength(2));
+      for (final context in dataProvider.continuationContexts) {
+        expect(context?.ackMessageIds, ['original-user']);
+      }
+      expect(dataProvider.allowedToolRuns, ['conversation-1:workspace-1']);
+    },
+  );
 
   test('caps explicit Retry-After delays at 60 seconds', () async {
     for (final retryAfter in [
@@ -523,8 +797,11 @@ class _FakeAgentConversationDataProvider
     List<ContinueAgentResult>? continueResults,
     List<Object>? continueErrors,
     List<AgentIterationDecision>? toolDecisions,
+    List<AgentLoopToolResult>? toolResults,
     this.onAutoCompact,
     this.onRunAllowedTools,
+    this.workspaceIdForConversation,
+    this.onContinueAgent,
   }) : continueResults = List.of(
          continueResults ??
              const [
@@ -535,18 +812,25 @@ class _FakeAgentConversationDataProvider
              ],
        ),
        continueErrors = List.of(continueErrors ?? const []),
-       toolDecisions = List.of(
-         toolDecisions ?? const [AgentIterationDecision.done],
+       toolResults = List.of(
+         toolResults ??
+             (toolDecisions ?? const [AgentIterationDecision.done]).map(
+               (decision) => AgentLoopToolResult(decision: decision),
+             ),
        );
 
   final String? workspaceId;
   final List<ContinueAgentResult> continueResults;
   final List<Object> continueErrors;
-  final List<AgentIterationDecision> toolDecisions;
+  final List<AgentLoopToolResult> toolResults;
   final void Function()? onAutoCompact;
   final Future<void> Function()? onRunAllowedTools;
+  final String? Function(String conversationId)? workspaceIdForConversation;
+  final Future<ContinueAgentResult> Function(String conversationId)?
+  onContinueAgent;
   final workspaceLookups = <String>[];
   final continuationContexts = <AgentIterationContext?>[];
+  final continuationConversationIds = <String>[];
   final createdContents = <String>[];
   final markedSent = <String>[];
   final markedErrored = <String>[];
@@ -557,7 +841,12 @@ class _FakeAgentConversationDataProvider
     required String conversationId,
     AgentIterationContext? context,
   }) async {
+    continuationConversationIds.add(conversationId);
     continuationContexts.add(context);
+    final continueAgent = onContinueAgent;
+    if (continueAgent != null) {
+      return await continueAgent(conversationId);
+    }
     if (continueErrors.isNotEmpty) {
       Error.throwWithStackTrace(continueErrors.removeAt(0), .current);
     }
@@ -571,7 +860,7 @@ class _FakeAgentConversationDataProvider
   }
 
   @override
-  Future<AgentIterationDecision> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   }) async {
@@ -579,9 +868,9 @@ class _FakeAgentConversationDataProvider
     final wait = onRunAllowedTools;
     if (wait != null) await wait();
 
-    return toolDecisions.isEmpty
-        ? AgentIterationDecision.done
-        : toolDecisions.removeAt(0);
+    return toolResults.isEmpty
+        ? const AgentLoopToolResult(decision: .done)
+        : toolResults.removeAt(0);
   }
 
   @override
@@ -593,7 +882,7 @@ class _FakeAgentConversationDataProvider
   Future<String?> getWorkspaceId(String conversationId) async {
     workspaceLookups.add(conversationId);
 
-    return workspaceId;
+    return workspaceIdForConversation?.call(conversationId) ?? workspaceId;
   }
 
   @override

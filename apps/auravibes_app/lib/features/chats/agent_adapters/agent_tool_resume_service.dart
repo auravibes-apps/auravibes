@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_execution
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
@@ -20,6 +21,8 @@ class AgentToolResumeService({
   required AgentToolExecutionService toolExecutionService,
   required agent.AgentLoopRunner agentLoop,
   ActiveSubAgentRuntime? activeSubAgents,
+  void Function(String conversationId, agent.AgentIterationDecision decision)?
+  onAgentStop,
 }) extends agent.AgentToolResumeRunner {
   this
     : super(
@@ -29,6 +32,7 @@ class AgentToolResumeService({
           toolExecutionService: toolExecutionService,
           agentLoop: agentLoop,
           activeSubAgents: activeSubAgents,
+          onAgentStop: onAgentStop,
         ),
       );
 }
@@ -39,6 +43,11 @@ class AppAgentToolResumeProvider({
   required final AgentToolExecutionService toolExecutionService,
   required final agent.AgentLoopRunner agentLoop,
   required final ActiveSubAgentRuntime? activeSubAgents,
+  final void Function(
+    String conversationId,
+    agent.AgentIterationDecision decision,
+  )?
+  onAgentStop,
 }) implements agent.AgentToolResumeProvider {
   final _activeContinuations = <String, Future<agent.AgentIterationDecision>>{};
 
@@ -123,6 +132,7 @@ class AppAgentToolResumeProvider({
         context: context,
       );
       _finishChildAfterDecision(conversationId, decision);
+      _reportAgentStopIfNeeded(conversationId, decision);
 
       return decision;
     } on Object catch (error, stackTrace) {
@@ -134,6 +144,15 @@ class AppAgentToolResumeProvider({
       ));
       rethrow;
     }
+  }
+
+  void _reportAgentStopIfNeeded(
+    String conversationId,
+    agent.AgentIterationDecision decision,
+  ) {
+    if (!decision.needsUserNotice) return;
+
+    onAgentStop?.call(conversationId, decision);
   }
 
   void _finishChildAfterDecision(
@@ -148,7 +167,9 @@ class AppAgentToolResumeProvider({
 
     _finishChildIfNeeded(activeSubAgents, (
       conversationId: conversationId,
-      status: decision == agent.AgentIterationDecision.iterationLimitReached
+      status:
+          decision == agent.AgentIterationDecision.iterationLimitReached ||
+              decision == agent.AgentIterationDecision.repeatedToolLoopDetected
           ? .partial
           : .done,
       error: null,
@@ -195,6 +216,9 @@ final agentToolResumeServiceProvider = Provider<AgentToolResumeService>(
     toolExecutionService: ref.watch(agentToolExecutionServiceProvider),
     agentLoop: ref.watch(appAgentLoopProvider),
     activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
+    onAgentStop: (conversationId, decision) => ref
+        .read(conversationAgentStopDecisionProvider(conversationId).notifier)
+        .markIfAgentStopDecision(decision),
   ),
   dependencies: [appAgentLoopProvider],
 );

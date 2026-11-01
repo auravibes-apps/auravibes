@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/service_connection_auth_status.dar
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/anthropic_request_encoder.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/app_anthropic_plugin.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/app_open_ai_plugin.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_plugin.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugin.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
@@ -430,16 +431,26 @@ extension _ProviderFactoryPlugins on ProviderFactory {
     final profile = request.toolSampling.profile;
     if (profile == null &&
         request.config.workspaceModelSelection.toolSamplingPolicy == null) {
-      return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+      return _upstreamOpenAIPlugin(request);
     }
 
-    return _openAICompatPlugin(request, (
-      name: 'openai',
-      codec: _openAICodec(profile),
-      modelSupportsStrictToolSampling: request.toolSampling.strictToolSampling,
-      httpClient: httpClient,
-    ));
+    return _openAICompatPlugin(request, _openAICompatPluginOptions(request));
   }
+
+  GenkitPlugin _upstreamOpenAIPlugin(_ProviderRequest request) =>
+      AppOpenAIPlugin(
+        upstream: openAI(apiKey: request.apiKey, baseUrl: request.baseUrl),
+        httpClient: httpClient,
+      );
+
+  _OpenAICompatPluginOptions _openAICompatPluginOptions(
+    _ProviderRequest request,
+  ) => (
+    name: 'openai',
+    codec: _openAICodec(request.toolSampling.profile),
+    modelSupportsStrictToolSampling: request.toolSampling.strictToolSampling,
+    httpClient: httpClient,
+  );
 
   AppChatCompletionsPlugin _openAICompatPlugin(
     _ProviderRequest request,

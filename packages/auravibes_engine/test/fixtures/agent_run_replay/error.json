@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "scenario": "non-retryable-provider-error",
+  "events": [
+    {"type": "failure", "id": "invalid-provider-config", "category": "unknown"}
+  ],
+  "expected": {
+    "decision": null,
+    "errorType": "StateError",
+    "eventOrder": ["request:1", "failure:invalid-provider-config"],
+    "assistantMessages": [],
+    "streamedOutput": [],
+    "toolDispatches": [],
+    "toolResults": {},
+    "toolSideEffectCounts": {},
+    "sentUserMessageIds": [],
+    "erroredUserMessageIds": ["user-1"],
+    "retryEvents": []
+  }
+}

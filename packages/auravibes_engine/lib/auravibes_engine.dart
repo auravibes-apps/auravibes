@@ -14,6 +14,7 @@ export 'src/agent_background_work_status.dart';
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
+export 'src/agent_loop_tool_result.dart';
 export 'src/agent_rate_limit_retry_exception.dart';
 export 'src/agent_runners.dart';
 export 'src/agent_runtime.dart';

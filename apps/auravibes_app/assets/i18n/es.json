@@ -88,7 +88,7 @@
       "model": "Tu modelo elegido"
     },
     "ai": {
-      "choose_provider": "Elige un proveedor. Sus credenciales se gestionan al configurar la conexión.",
+      "choose_provider": "Elige qué servicio recibe las solicitudes de tu modelo.",
       "start_chat": "Comenzar a chatear",
       "explore": "Explorar espacio",
       "explore_hint": "Puedes explorar ahora. Para chatear necesitas una conexión de IA y un modelo disponible.",
@@ -98,6 +98,12 @@
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Modelo",
+    "model_choice_explanation": "Los modelos varían en calidad, velocidad y tareas compatibles.",
+    "choice_help": {
+      "title": "Sobre proveedores y modelos",
+      "label": "Más información sobre proveedores y modelos",
+      "details": "Un proveedor es el servicio o servidor configurado en tu conexión; recibe los datos de las solicitudes que envías. El modelo es la IA que genera la respuesta. Los modelos pueden diferir en la calidad y velocidad de las respuestas y en las tareas compatibles. El comportamiento y el tratamiento de datos exactos dependen del modelo y del proveedor. Consulta al proveedor para conocer los detalles actuales."
+    },
     "recent_models": "Modelos recientes",
     "all_models": "Todos los modelos",
     "select_provider_first": "Selecciona proveedor primero",
@@ -479,6 +485,12 @@
       "model_effort_selector": "Modelo y esfuerzo",
       "archive_export": "Exportar archivo",
       "archive_exported": "Archivo de conversación guardado.",
+      "archive_export_review_title": "Revisa el archivo de conversación",
+      "archive_export_review_description": "Antes de crear el archivo, revisa qué contiene y dónde puedes guardarlo.",
+      "archive_export_review_contents": "Incluye los títulos de las conversaciones, los mensajes y sus fechas, los archivos adjuntos, el contexto del agente y las preferencias de herramientas.",
+      "archive_export_review_privacy": "No se incluyen las credenciales guardadas, las claves de API, los argumentos de las herramientas ni sus resultados. El texto de los mensajes, el contexto del agente y los archivos adjuntos sí se incluyen; comprueba que no contengan información sensible.",
+      "archive_export_review_destination": "En el siguiente diálogo para guardar, elige dónde guardar {}.",
+      "archive_export_review_continue": "Continuar para guardar",
       "archive_invalid": "Este archivo de conversación no es válido o está dañado.",
       "archive_unsupported_version": "Este archivo de conversación usa una versión no compatible.",
       "archive_error": "No se pudo exportar o importar esta conversación.",
@@ -549,6 +561,7 @@
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
       "continue_agent": "Continuar agente",
       "iteration_limit_reached": "El agente alcanzó su límite de iteraciones. La respuesta parcial y los resultados de herramientas completados están disponibles.",
+      "repeated_tool_loop_detected": "El agente se detuvo porque las mismas llamadas a herramientas seguían devolviendo los mismos resultados. La respuesta parcial y los resultados de herramientas completados están disponibles.",
       "retry_message": "Reintentar mensaje",
       "background_work": {
         "running_task": "Hay una tarea en curso en esta conversación.",
@@ -575,6 +588,7 @@
       "message_copied": "Mensaje copiado",
       "copy_tool_response": "Copiar respuesta de la herramienta",
       "tool_response_copied": "Respuesta de la herramienta copiada",
+      "tool_response_copy_failed": "No se pudo copiar la respuesta de la herramienta. Usa Copiar respuesta de la herramienta para volver a intentarlo.",
       "copy_tool_arguments": "Copiar argumentos de la herramienta",
       "tool_arguments_copied": "Argumentos de la herramienta copiados",
       "tool_call_fallback_description": "Revisa los argumentos de {tool}",
@@ -690,7 +704,11 @@
       "background_work_title": "Trabajo en segundo plano",
       "background_work_accessible_label": "Trabajo en segundo plano, {} activos",
       "background_work_empty": "No hay tareas en segundo plano en esta conversación.",
-      "background_work_load_error": "No se pudieron cargar las tareas en segundo plano. Vuelve a abrir la lista para intentarlo.",
+      "background_work_load_error": "No se pudieron cargar las tareas en segundo plano.",
+      "background_work_load_error_accessible_label": "No se pudieron cargar las tareas en segundo plano. Abre la lista para volver a intentarlo.",
+      "background_work_loading_accessible_label": "Comprobando las tareas en segundo plano.",
+      "background_work_refresh_error_accessible_label": "No se pudieron actualizar las tareas en segundo plano. Recuento anterior: {} tareas activas. Abre la lista para volver a intentarlo.",
+      "background_work_retry": "Reintentar",
       "background_work_elapsed": "Tiempo transcurrido: {}",
       "background_work_elapsed_seconds": "{} s",
       "background_work_elapsed_minutes": "{} min {} s",
@@ -1262,6 +1280,10 @@
   "workspace_capabilities": {
     "unsupported_error": "Esta función no está disponible en este espacio de trabajo."
   },
+  "workspace_network_disclosure": {
+    "title": "El almacenamiento local no significa que funcione sin conexión.",
+    "description": "Al enviar un mensaje, se envían su texto y el contexto de la conversación al servicio de modelo configurado. También pueden incluirse los archivos adjuntos compatibles, y la solicitud usa las credenciales configuradas para ese servicio. Las llamadas a herramientas conectadas envían sus datos de entrada al servicio configurado y pueden usar las credenciales de esa conexión. Los servicios pueden estar en internet o en tu red local."
+  },
   "tools_names": {
     "calculator": {
       "name": "Calculadora",
@@ -1314,6 +1336,13 @@
     "app_settings": {
       "title": "Apariencia",
       "subtitle": "Elige cómo se ve AuraVibes en este dispositivo."
+    },
+    "language": {
+      "title": "Idioma",
+      "dialog_title": "Idioma de la aplicación",
+      "device": "Idioma del dispositivo",
+      "english": "Inglés",
+      "spanish": "Español"
     },
     "theme": {
       "title": "Tema",
@@ -1564,6 +1593,9 @@
       "history_unavailable": "El historial de puntos de control no está disponible.",
       "history_preview_title": "Vista previa de restauración del punto de control",
       "history_preview_summary": "Resumen del punto de control",
+      "history_preview_target_checkpoint": "Punto de control que se restaurará",
+      "history_preview_summary_same": "Este punto de control tiene el mismo resumen que el punto de control activo.",
+      "history_preview_summaries_different": "Este punto de control tiene un resumen distinto del punto de control activo.",
       "history_preview_created": "Creado: {}",
       "history_preview_replay_boundary": "La reproducción comienza después del mensaje {}",
       "history_preview_replay_count": "Mensajes que se volverán a incluir: {}",
@@ -1631,6 +1663,14 @@
     "invalid_target": "Este espacio no puede recibir el archivo de configuración.",
     "unsupported_configuration": "Esta configuración hace referencia a una habilidad de la aplicación no disponible en el espacio de destino.",
     "error": "No se pudo exportar o importar la configuración del espacio de trabajo."
+  },
+  "workspace_location": {
+    "on_device": "En este dispositivo",
+    "personal_cloud": "Nube personal",
+    "team_workspace": "Espacio de equipo",
+    "cloud_workspace": "Espacio en la nube",
+    "view_members": "Miembros y acceso",
+    "view_access": "Detalles de acceso"
   },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
@@ -1710,6 +1750,9 @@
     "cloud_role_owner": "Propietario",
     "cloud_role_admin": "Administrador",
     "cloud_role_member": "Miembro",
+    "cloud_role_owner_description": "Puede invitar a miembros y administradores, cambiar roles, cambiar el nombre o borrar el espacio de trabajo y transferir la propiedad.",
+    "cloud_role_admin_description": "Puede ver, invitar y quitar miembros, pero no administrar administradores, cambiar el nombre ni transferir la propiedad.",
+    "cloud_role_member_description": "Puede usar el contenido del espacio de trabajo, pero no ver la lista de miembros ni administrar personas.",
     "cloud_invite": "Invitar miembro",
     "cloud_error": "La acción en la nube falló. Inténtalo de nuevo.",
     "local_target": "Espacio de trabajo local",
