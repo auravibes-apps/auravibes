@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:import_sorter/files.dart' as import_files;
 import 'package:import_sorter/sort.dart' as import_sorter;
 import 'package:path/path.dart' as p;
@@ -65,14 +67,7 @@ void main() {
     }
 
     for (final entry in files.entries) {
-      final result = import_sorter.sortImports(
-        _inOnePackageUriGroup(entry.value.readAsLinesSync()),
-        '',
-        false,
-        false,
-        _noImportGroupComments,
-      );
-      if (result.updated) {
+      if (_hasUnsortedImports(entry.value.readAsStringSync())) {
         errors.add(
           '${p.relative(entry.key, from: root.path)} has unsorted imports.',
         );
@@ -88,6 +83,43 @@ void main() {
     errors.forEach(stderr.writeln);
     exitCode = 1;
   }
+}
+
+// import_sorter is line-based and treats pre-import comments as source text.
+// Feed it normalized AST directives so comments and multiline imports do not
+// create false positives.
+bool _hasUnsortedImports(String source) {
+  final directives = parseString(content: source).unit.directives
+      .whereType<ImportDirective>();
+  final sorterLines = <String>[];
+  String? previousGroup;
+
+  for (final directive in directives) {
+    final group = _importGroup(directive.uri.stringValue);
+    if (previousGroup != null && group != previousGroup) {
+      sorterLines.add('');
+    }
+    final singleLineDirective = source
+        .substring(directive.offset, directive.end)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    sorterLines.addAll(_inOnePackageUriGroup([singleLineDirective]));
+    previousGroup = group;
+  }
+
+  if (sorterLines.isEmpty) return false;
+  sorterLines.add('');
+
+  return import_sorter
+      .sortImports(sorterLines, '', false, false, _noImportGroupComments)
+      .updated;
+}
+
+String _importGroup(String? uri) {
+  if (uri?.startsWith('dart:') ?? false) return 'dart';
+  if (uri?.startsWith('package:') ?? false) return 'package';
+
+  return 'relative';
 }
 
 List<String> _inOnePackageUriGroup(List<String> lines) => [
@@ -184,14 +216,7 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
     }
 
     final fixture = files.values.single;
-    final result = import_sorter.sortImports(
-      _inOnePackageUriGroup(fixture.readAsLinesSync()),
-      '',
-      false,
-      false,
-      _noImportGroupComments,
-    );
-    if (!result.updated) {
+    if (!_hasUnsortedImports(fixture.readAsStringSync())) {
       errors.add(
         'Nested import-sorter package fixture no longer has unsorted imports.',
       );
