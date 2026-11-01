@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
@@ -315,26 +316,33 @@ class const _CloudWorkspaceLocationIndicator({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final detail = ref.watch(
-      cloudWorkspaceDetailProvider((
-        serverUrl: accessRoute.serverUrl,
-        accountId: accessRoute.accountId,
-        workspaceId: accessRoute.cloudWorkspaceId,
-      )),
-    );
-
     return WorkspaceLocationStatus(
-      info: .fromWorkspace(workspace, cloudDetail: detail.value),
-      onViewAccess: () => context.go(
-        CloudWorkspaceDetailRoute(
-          workspaceId: workspace.id,
-          cloudAccountId: accessRoute.accountId,
-          cloudWorkspaceId: accessRoute.cloudWorkspaceId,
-          serverUrl: accessRoute.serverUrl,
-        ).location,
+      info: .fromWorkspace(
+        workspace,
+        cloudDetail: _watchCloudWorkspaceDetail(ref),
       ),
+      onViewAccess: () => _openAccess(context),
     );
   }
+
+  CloudWorkspaceDetailState? _watchCloudWorkspaceDetail(WidgetRef ref) => ref
+      .watch(
+        cloudWorkspaceDetailProvider((
+          serverUrl: accessRoute.serverUrl,
+          accountId: accessRoute.accountId,
+          workspaceId: accessRoute.cloudWorkspaceId,
+        )),
+      )
+      .value;
+
+  void _openAccess(BuildContext context) => context.go(
+    CloudWorkspaceDetailRoute(
+      workspaceId: workspace.id,
+      cloudAccountId: accessRoute.accountId,
+      cloudWorkspaceId: accessRoute.cloudWorkspaceId,
+      serverUrl: accessRoute.serverUrl,
+    ).location,
+  );
 }
 
 class const _WorkspaceSwitchControl({

@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_detail_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_location_kind.dart';
 
@@ -16,34 +15,39 @@ class const WorkspaceLocationInfo({
     WorkspaceEntity workspace, {
     CloudWorkspaceDetailState? cloudDetail,
   }) {
-    if (workspace.type == WorkspaceType.local) {
+    if (workspace.isLocal) {
       return const WorkspaceLocationInfo(kind: .onDevice);
     }
     if (cloudDetail == null) {
       return const WorkspaceLocationInfo(kind: .cloud);
     }
 
-    final detail = cloudDetail.detail;
-
-    return WorkspaceLocationInfo._fromCloudWorkspace(
-      role: detail.workspace.role,
-      memberCount: cloudDetail.members.length,
-      hasPendingInvites: cloudDetail.invites.isNotEmpty,
-      canViewMembers: detail.capabilities.canViewMembers,
-    );
+    return WorkspaceLocationInfo._fromCloudWorkspace(cloudDetail: cloudDetail);
   }
+
+  /// Returns the localization key for this workspace's location label.
+  String labelKey() => switch (kind) {
+    .onDevice => 'workspace_location.on_device',
+    .personalCloud => 'workspace_location.personal_cloud',
+    .teamWorkspace => 'workspace_location.team_workspace',
+    .cloud => 'workspace_location.cloud_workspace',
+  };
 
   /// Classifies sharing from the server's current role, roster, and
   /// invitations.
   factory _fromCloudWorkspace({
-    required String role,
-    required int memberCount,
-    required bool hasPendingInvites,
-    required bool canViewMembers,
-  }) => WorkspaceLocationInfo(
-    kind: role != 'owner' || memberCount > 1 || hasPendingInvites
-        ? .teamWorkspace
-        : .personalCloud,
-    canViewMembers: canViewMembers,
-  );
+    required CloudWorkspaceDetailState cloudDetail,
+  }) {
+    final detail = cloudDetail.detail;
+
+    return WorkspaceLocationInfo(
+      kind:
+          detail.workspace.role != 'owner' ||
+              cloudDetail.members.length > 1 ||
+              cloudDetail.invites.isNotEmpty
+          ? .teamWorkspace
+          : .personalCloud,
+      canViewMembers: detail.capabilities.canViewMembers,
+    );
+  }
 }
