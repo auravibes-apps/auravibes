@@ -1835,8 +1835,7 @@ class const _ChatConversationBody({
       onEditDraft: data.showInputComposer
           ? (draft) => draftToLoad.value = draft
           : null,
-      onDraftStatusChanged: (hasDraft) =>
-          updateDraftStatus(hasDraft: hasDraft),
+      onDraftStatusChanged: (hasDraft) => updateDraftStatus(hasDraft: hasDraft),
       emptyConversationStarters: _ChatConversationDraftSelection.request(
         data: data,
         draftToLoad: draftToLoad.value,

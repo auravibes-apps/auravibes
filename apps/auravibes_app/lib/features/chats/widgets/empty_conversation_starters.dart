@@ -68,10 +68,7 @@ class const _EmptyConversationStarterContent({
 }) extends StatelessWidget {
   static const List<({String id, String localizationKey})> _starters = [
     (id: 'chat_empty_starter_plan_day', localizationKey: _planDayKey),
-    (
-      id: 'chat_empty_starter_shopping_list',
-      localizationKey: _shoppingListKey,
-    ),
+    (id: 'chat_empty_starter_shopping_list', localizationKey: _shoppingListKey),
     (
       id: 'chat_empty_starter_personal_message',
       localizationKey: _personalMessageKey,
@@ -104,9 +101,8 @@ class const _EmptyConversationStarterButton({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => onSelect(
-      ChatDraft(text: localizationKey.tr(context: context)),
-    ),
+    onPressed: () =>
+        onSelect(ChatDraft(text: localizationKey.tr(context: context))),
     child: TextLocale(localizationKey),
     variant: .outlined,
     isFullWidth: true,
