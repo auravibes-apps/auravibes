@@ -16,7 +16,7 @@ void main() {
     (
       code: 'en',
       providerDescription:
-          'Choose which service receives your model\'s requests',
+          'Choose which service receives your model${String.fromCharCode(39)}s requests',
       modelDescription: 'Models vary in quality',
       helpLabel: 'Learn about providers and models',
       helpTitle: 'About providers and models',
