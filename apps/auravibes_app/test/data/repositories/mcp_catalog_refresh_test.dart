@@ -251,8 +251,7 @@ void main() {
   );
 }
 
-final class _CatalogObserver(McpCatalogFixture this.fixture) {
-  final McpCatalogFixture fixture;
+final class _CatalogObserver(final McpCatalogFixture fixture) {
   final List<List<ToolsTable>> snapshots = [];
   StreamSubscription<List<ToolsTable>>? _subscription;
   Completer<void>? _drained;
