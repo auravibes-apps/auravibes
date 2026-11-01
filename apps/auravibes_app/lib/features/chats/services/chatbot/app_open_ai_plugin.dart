@@ -79,7 +79,7 @@ class AppOpenAIPlugin extends GenkitPlugin {
     ownsClient: httpClient == null,
   );
 
-  Future<ModelResponse> _runModelWithTransport(
+  Future<RunResult<ModelResponse>> _runModelWithTransport(
     Model<dynamic> model,
     ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
@@ -89,7 +89,7 @@ class AppOpenAIPlugin extends GenkitPlugin {
     () => transport,
   );
 
-  Future<ModelResponse> _runModel(
+  Future<RunResult<ModelResponse>> _runModel(
     Model<dynamic> model,
     ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
