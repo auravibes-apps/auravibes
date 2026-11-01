@@ -2088,7 +2088,7 @@ Future<void> _pumpCloudConversationScreen(
       EasyLocalization(
         child: Builder(
           builder: (context) {
-            final agentStopDecision = switch ((
+            final AgentIterationDecision? agentStopDecision = switch ((
               repeatedToolLoopDetected: repeatedToolLoopDetected,
               iterationLimitReached: iterationLimitReached,
             )) {

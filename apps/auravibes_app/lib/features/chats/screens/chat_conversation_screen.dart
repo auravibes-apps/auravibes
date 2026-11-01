@@ -3522,7 +3522,7 @@ void _showAgentStopNoticeIfNeeded({
   required AgentIterationDecision? decision,
   required VoidCallback onContinue,
 }) {
-  final content = switch (decision) {
+  final TextLocale? content = switch (decision) {
     .iterationLimitReached => const .new(
       LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
     ),
