@@ -62,13 +62,9 @@ class const BackgroundWorkHeaderButton({
       workspaceId: workspaceId,
       conversationId: conversationId,
     );
-    final works = _backgroundWorksValue(worksAsync);
 
     return _BackgroundWorkHeaderButtonView(
-      activeCount: _activeBackgroundWorkCount(works),
-      isLoading: worksAsync.isLoading && !worksAsync.hasValue,
-      hasError: worksAsync.hasError,
-      hasValue: worksAsync.hasValue,
+      display: _backgroundWorkHeaderDisplay(worksAsync),
       workspaceId: workspaceId,
       conversationId: conversationId,
     );
@@ -76,10 +72,7 @@ class const BackgroundWorkHeaderButton({
 }
 
 class const _BackgroundWorkHeaderButtonView({
-  required final int activeCount,
-  required final bool isLoading,
-  required final bool hasError,
-  required final bool hasValue,
+  required final _BackgroundWorkHeaderDisplay display,
   required final String workspaceId,
   required final String conversationId,
 }) extends StatelessWidget {
@@ -87,19 +80,19 @@ class const _BackgroundWorkHeaderButtonView({
   Widget build(BuildContext context) => Semantics(
     key: const ValueKey('background_work_header_button'),
     child: _BackgroundWorkHeaderButtonControl(
-      activeCount: activeCount,
-      isLoading: isLoading,
-      hasError: hasError,
+      activeCount: display.activeCount,
+      isLoading: display.isLoading,
+      hasError: display.hasError,
       workspaceId: workspaceId,
       conversationId: conversationId,
     ),
     button: true,
     identifier: 'background_work_header_button',
     label: _backgroundWorkAccessibleLabel(
-      activeCount: activeCount,
-      isLoading: isLoading,
-      hasError: hasError,
-      hasValue: hasValue,
+      activeCount: display.activeCount,
+      isLoading: display.isLoading,
+      hasError: display.hasError,
+      hasValue: display.hasValue,
     ),
   );
 }
@@ -329,32 +322,35 @@ class const _BackgroundWorkListStateView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = _backgroundWorkListDisplay(worksAsync);
-    if (display.hasError) {
-      return _BackgroundWorkMessage(
-        message: _BackgroundWorkLoadError(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-      );
-    }
-    if (display.works case final works?) {
-      return _BackgroundWorkListContent(
+    if (display.hasError) return _errorState();
+    if (display.works case final works?) return _worksState(works);
+    if (display.isLoading) return _loadingState();
+
+    return _emptyState();
+  }
+
+  Widget _errorState() => _BackgroundWorkMessage(
+    message: _BackgroundWorkLoadError(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    ),
+  );
+
+  Widget _worksState(List<AgentBackgroundWork> works) =>
+      _BackgroundWorkListContent(
         works: works,
         workspaceId: workspaceId,
         conversationId: conversationId,
       );
-    }
-    if (display.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
-    return const _BackgroundWorkMessage(
-      message: TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_background_work_empty,
-        textAlign: .center,
-      ),
-    );
-  }
+  Widget _loadingState() => const Center(child: CircularProgressIndicator());
+
+  Widget _emptyState() => const _BackgroundWorkMessage(
+    message: TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_background_work_empty,
+      textAlign: .center,
+    ),
+  );
 }
 
 class const _BackgroundWorkLoadError({
@@ -388,6 +384,13 @@ typedef _BackgroundWorkListDisplay = ({
   bool hasError,
 });
 
+typedef _BackgroundWorkHeaderDisplay = ({
+  int activeCount,
+  bool isLoading,
+  bool hasError,
+  bool hasValue,
+});
+
 _BackgroundWorkListDisplay _backgroundWorkListDisplay(
   AsyncValue<List<AgentBackgroundWork>> worksAsync,
 ) {
@@ -399,6 +402,19 @@ _BackgroundWorkListDisplay _backgroundWorkListDisplay(
     works: worksAsync.value,
     isLoading: worksAsync.isLoading,
     hasError: false,
+  );
+}
+
+_BackgroundWorkHeaderDisplay _backgroundWorkHeaderDisplay(
+  AsyncValue<List<AgentBackgroundWork>> worksAsync,
+) {
+  final works = _backgroundWorksValue(worksAsync);
+
+  return (
+    activeCount: _activeBackgroundWorkCount(works),
+    isLoading: worksAsync.isLoading && !worksAsync.hasValue,
+    hasError: worksAsync.hasError,
+    hasValue: worksAsync.hasValue,
   );
 }
 
