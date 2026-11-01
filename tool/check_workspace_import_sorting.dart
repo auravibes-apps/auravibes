@@ -11,8 +11,8 @@ const _nestedFixturePath =
 const _generatedPluginRegistrant = 'lib/generated_plugin_registrant.dart';
 // Keep checks aligned with the repository's separator-free import style.
 const _noImportGroupComments = true;
-// Keep local and third-party package URIs in one alphabetical import group.
-const _sorterPackageNameForWorkspace = '';
+// Make import_sorter treat Flutter and workspace package URIs as one group.
+const _packageUriSortGroup = 'package:workspace_sorting_group/';
 
 void main() {
   final root = Directory.current.absolute;
@@ -66,8 +66,8 @@ void main() {
 
     for (final entry in files.entries) {
       final result = import_sorter.sortImports(
-        entry.value.readAsLinesSync(),
-        _sorterPackageNameForWorkspace,
+        _inOnePackageUriGroup(entry.value.readAsLinesSync()),
+        '',
         false,
         false,
         _noImportGroupComments,
@@ -89,6 +89,13 @@ void main() {
     exitCode = 1;
   }
 }
+
+List<String> _inOnePackageUriGroup(List<String> lines) => [
+  for (final line in lines)
+    line.startsWith('import ')
+        ? line.replaceAll('package:', _packageUriSortGroup)
+        : line,
+];
 
 List<_WorkspacePackage> _workspacePackages(
   Directory root,
@@ -177,8 +184,8 @@ void _verifyNestedPackageFixture(Directory root, List<String> errors) {
 
     final fixture = files.values.single;
     final result = import_sorter.sortImports(
-      fixture.readAsLinesSync(),
-      _sorterPackageNameForWorkspace,
+      _inOnePackageUriGroup(fixture.readAsLinesSync()),
+      '',
       false,
       false,
       _noImportGroupComments,
