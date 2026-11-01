@@ -2,11 +2,13 @@ import 'package:auravibes_app/features/models/widgets/model_choice_explanation.d
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
 
 void main() {
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
 
@@ -14,8 +16,8 @@ void main() {
     (
       code: 'en',
       providerDescription:
-          'Choose which service receives your model\'s requests',
-      modelDescription: 'Models can differ in response quality',
+          "Choose which service receives your model's requests",
+      modelDescription: 'Models vary in quality',
       helpLabel: 'Learn about providers and models',
       helpTitle: 'About providers and models',
       helpDetails: 'A provider is the service or server configured',
@@ -24,7 +26,7 @@ void main() {
       code: 'es',
       providerDescription:
           'Elige el servicio que recibe las solicitudes de tu modelo',
-      modelDescription: 'Los modelos pueden diferir en la calidad',
+      modelDescription: 'Los modelos varían en calidad',
       helpLabel:
           'M${String.fromCharCode(0xe1)}s informaci'
           '${String.fromCharCode(0xf3)}n sobre proveedores y modelos',

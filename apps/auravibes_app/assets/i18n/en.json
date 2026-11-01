@@ -98,7 +98,7 @@
   "models_screens": {
     "select_provider": "Select Provider",
     "select_model": "Model",
-    "model_choice_explanation": "Models can differ in response quality, speed, and supported tasks. Check the provider for current details.",
+    "model_choice_explanation": "Models vary in quality, speed, and supported tasks.",
     "choice_help": {
       "title": "About providers and models",
       "label": "Learn about providers and models",

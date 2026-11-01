@@ -98,7 +98,7 @@
   "models_screens": {
     "select_provider": "Seleccionar Proveedor",
     "select_model": "Modelo",
-    "model_choice_explanation": "Los modelos pueden diferir en la calidad y velocidad de las respuestas y en las tareas compatibles. Consulta al proveedor para conocer los detalles actuales.",
+    "model_choice_explanation": "Los modelos varían en calidad, velocidad y tareas compatibles.",
     "choice_help": {
       "title": "Sobre proveedores y modelos",
       "label": "Más información sobre proveedores y modelos",
