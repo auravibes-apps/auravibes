@@ -78,10 +78,37 @@ class const _EmptyConversationStarterContent({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      const AuraText(child: TextLocale(_titleKey), style: .heading5),
-      const AuraText(child: TextLocale(_helperKey), style: .bodySmall),
+      const _EmptyConversationStarterHeading(),
       const AuraSizedBox(height: .xs),
-      for (final starter in _starters)
+      _EmptyConversationStarterChoices(starters: _starters, onSelect: onSelect),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .stretch,
+    mainAxisSize: .min,
+  );
+}
+
+class const _EmptyConversationStarterHeading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraColumn(
+    children: [
+      AuraText(child: TextLocale(_titleKey), style: .heading5),
+      AuraText(child: TextLocale(_helperKey), style: .bodySmall),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .stretch,
+    mainAxisSize: .min,
+  );
+}
+
+class const _EmptyConversationStarterChoices({
+  required final List<({String id, String localizationKey})> starters,
+  required final ValueChanged<ChatDraft> onSelect,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      for (final starter in starters)
         _EmptyConversationStarterButton(
           localizationKey: starter.localizationKey,
           onSelect: onSelect,
@@ -101,8 +128,7 @@ class const _EmptyConversationStarterButton({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () =>
-        onSelect(ChatDraft(text: localizationKey.tr(context: context))),
+    onPressed: () => onSelect(.new(text: localizationKey.tr(context: context))),
     child: TextLocale(localizationKey),
     variant: .outlined,
     isFullWidth: true,

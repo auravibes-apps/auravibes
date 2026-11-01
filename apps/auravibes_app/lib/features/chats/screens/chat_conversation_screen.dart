@@ -1816,45 +1816,7 @@ class const _ChatConversationBody({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final draftToLoad = useState<ChatDraft?>(null);
-    final draftProvider = conversationDraftProvider(
-      data.workspaceId,
-      data.conversation.id,
-    );
-    final savedDraft = ref.watch(draftProvider);
-    final composerHasDraft = useState(savedDraft?.isEmpty == false);
-    void updateDraftStatus({required bool hasDraft}) {
-      composerHasDraft.value = hasDraft;
-      if (hasDraft && draftToLoad.value != null) {
-        draftToLoad.value = null;
-      }
-    }
-
-    final draftState = _ChatConversationDraftState(
-      draftToLoad: draftToLoad.value,
-      onEditDraft: data.showInputComposer
-          ? (draft) => draftToLoad.value = draft
-          : null,
-      onDraftStatusChanged: (hasDraft) => updateDraftStatus(hasDraft: hasDraft),
-      emptyConversationStarters: _ChatConversationDraftSelection.request(
-        data: data,
-        draftToLoad: draftToLoad.value,
-        composerHasDraft: composerHasDraft.value,
-        onSelect: (draft) {
-          final existingDraft = ref.read(draftProvider);
-          if (!_ChatConversationDraftSelection.canSelect(
-            data: data,
-            draftToLoad: draftToLoad.value,
-            composerHasDraft: composerHasDraft.value,
-            existingDraft: existingDraft,
-          )) {
-            return;
-          }
-
-          draftToLoad.value = draft;
-        },
-      ),
-    );
+    final draftState = _ChatConversationDraftController.use(ref, data);
     final conversationStatus = _ChatConversationBodyStatusCalculator.use(
       ref,
       data,
@@ -1867,6 +1829,91 @@ class const _ChatConversationBody({
       bodyStatus: conversationStatus,
     );
   }
+}
+
+class _ChatConversationDraftController {
+  static _ChatConversationDraftState use(
+    WidgetRef ref,
+    _LoadedChatConversationData data,
+  ) {
+    final draftToLoad = useState<ChatDraft?>(null);
+    final savedDraft = _watchSavedDraft(ref, data);
+    final composerHasDraft = useState(savedDraft?.isEmpty == false);
+
+    final context = (
+      ref: ref,
+      data: data,
+      draftToLoad: draftToLoad,
+      composerHasDraft: composerHasDraft,
+    );
+
+    return _buildChatConversationDraftState(context);
+  }
+
+  static ChatDraft? _watchSavedDraft(
+    WidgetRef ref,
+    _LoadedChatConversationData data,
+  ) => ref.watch(
+    conversationDraftProvider(data.workspaceId, data.conversation.id),
+  );
+}
+
+typedef _ChatConversationDraftSelectionContext = ({
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+  ValueNotifier<ChatDraft?> draftToLoad,
+  ValueNotifier<bool> composerHasDraft,
+});
+
+_ChatConversationDraftState _buildChatConversationDraftState(
+  _ChatConversationDraftSelectionContext context,
+) => _ChatConversationDraftState(
+  draftToLoad: context.draftToLoad.value,
+  onEditDraft: context.data.showInputComposer
+      ? (draft) => context.draftToLoad.value = draft
+      : null,
+  onDraftStatusChanged: (hasDraft) =>
+      _updateChatConversationDraftStatus(context, hasDraft),
+  emptyConversationStarters: _chatConversationStarterRequest(context),
+);
+
+EmptyConversationStarterRequest _chatConversationStarterRequest(
+  _ChatConversationDraftSelectionContext context,
+) => _ChatConversationDraftSelection.request(
+  data: context.data,
+  draftToLoad: context.draftToLoad.value,
+  composerHasDraft: context.composerHasDraft.value,
+  onSelect: (draft) => _selectChatConversationDraft(context, draft),
+);
+
+void _updateChatConversationDraftStatus(
+  _ChatConversationDraftSelectionContext context,
+  bool hasDraft,
+) {
+  context.composerHasDraft.value = hasDraft;
+  if (hasDraft && context.draftToLoad.value != null) {
+    context.draftToLoad.value = null;
+  }
+}
+
+void _selectChatConversationDraft(
+  _ChatConversationDraftSelectionContext context,
+  ChatDraft draft,
+) {
+  final data = context.data;
+  final existingDraft = context.ref.read(
+    conversationDraftProvider(data.workspaceId, data.conversation.id),
+  );
+  if (!_ChatConversationDraftSelection.canSelect(
+    data: data,
+    draftToLoad: context.draftToLoad.value,
+    composerHasDraft: context.composerHasDraft.value,
+    existingDraft: existingDraft,
+  )) {
+    return;
+  }
+
+  context.draftToLoad.value = draft;
 }
 
 class const _ChatConversationDraftState({
