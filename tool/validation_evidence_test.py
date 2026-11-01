@@ -335,6 +335,37 @@ class ValidationEvidenceTest(unittest.TestCase):
         self.assertNotIn("stdout", columns)
         self.assertNotIn("stderr", columns)
 
+    def test_command_summary_redacts_url_userinfo_and_preserves_safe_url_parts(self):
+        command = validation_evidence.sanitize_command(
+            [
+                "https://private-user:private-url-password"
+                "@example.invalid/api?mode=safe",
+                "postgresql://db-user:private-dsn-password"
+                "@db.example.invalid/app?sslmode=require",
+                "ssh://private-username@example.invalid/repository.git",
+                "https://example.invalid/public?mode=safe",
+            ]
+        )
+        summary = " ".join(command)
+
+        for secret in [
+            "private-user",
+            "private-url-password",
+            "db-user",
+            "private-dsn-password",
+            "private-username",
+        ]:
+            self.assertNotIn(secret, summary)
+
+        self.assertIn("https://<redacted>@example.invalid/api?mode=safe", summary)
+        self.assertIn(
+            "postgresql://<redacted>@db.example.invalid/"
+            "app?sslmode=require",
+            summary,
+        )
+        self.assertIn("ssh://<redacted>@example.invalid/repository.git", summary)
+        self.assertIn("https://example.invalid/public?mode=safe", summary)
+
     def test_toolchain_detection_is_limited_to_known_version_commands(self):
         with patch(
             "validation_evidence._tool_version",

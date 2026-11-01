@@ -30,6 +30,7 @@ SENSITIVE_QUERY = re.compile(
     r"api[-_]?key|access[-_]?(?:key|token)|credential|authorization|auth|"
     r"cookie|key)=)[^&#\s]*"
 )
+URL_USERINFO = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*://)[^/\s?#@]*@")
 SENSITIVE_HEADER = re.compile(
     r"(?i)((?:[a-z0-9-]*(?:authorization|token|secret|api[-_]?key|cookie)"
     r"[a-z0-9-]*)\s*:\s*)(?:(?:bearer|basic)\s+)?[^,\s;]+"
@@ -271,6 +272,7 @@ def detect_toolchain_version(command, cwd):
 
 
 def _safe_summary(value):
+    value = URL_USERINFO.sub(r"\1<redacted>@", value)
     value = SENSITIVE_QUERY.sub(r"\1<redacted>", value)
     value = SENSITIVE_HEADER.sub(r"\1<redacted>", value)
     value = AUTH_SCHEME.sub(r"\1 <redacted>", value)
