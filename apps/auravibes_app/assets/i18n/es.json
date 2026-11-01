@@ -1332,6 +1332,13 @@
       "title": "Apariencia",
       "subtitle": "Elige cómo se ve AuraVibes en este dispositivo."
     },
+    "language": {
+      "title": "Idioma",
+      "dialog_title": "Idioma de la aplicación",
+      "device": "Idioma del dispositivo",
+      "english": "Inglés",
+      "spanish": "Español"
+    },
     "theme": {
       "title": "Tema",
       "light": "Claro",
