@@ -139,6 +139,8 @@ void main() {
   testWidgets('header distinguishes loading, empty, and stale failure states', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     final now = DateTime.utc(2026, 10, 11, 12);
     final stream = StreamController<List<AgentBackgroundWork>>();
     final _ = await tester.runAsync(() async {
@@ -161,9 +163,11 @@ void main() {
         ),
       );
     });
-    final _ = await tester.pump();
-
     final header = find.byKey(const ValueKey('background_work_header_button'));
+    await _pumpUntilFound(
+      tester,
+      find.bySemanticsLabel('Checking background work.'),
+    );
     expect(
       tester.getSemantics(header).getSemanticsData().label,
       'Checking background work.',
@@ -204,6 +208,8 @@ void main() {
   testWidgets('local background work load offers explicit retry', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     final now = DateTime.utc(2026, 10, 11, 12);
     final work = _work('work-1', .completed, now);
     final failedLoad = StreamController<List<AgentBackgroundWork>>();
@@ -235,17 +241,17 @@ void main() {
         ),
       );
     });
-    final _ = await tester.pump();
-
-    await tester.tap(
-      find.byKey(const ValueKey('background_work_header_button')),
+    final header = find.byKey(const ValueKey('background_work_header_button'));
+    await _pumpUntilFound(
+      tester,
+      find.bySemanticsLabel('Checking background work.'),
     );
+    await tester.tap(header);
     await tester.pump();
     failedLoad
       ..addError(StateError('temporary failure'))
       ..close();
     final _ = await tester.pumpAndSettle();
-    final header = find.byKey(const ValueKey('background_work_header_button'));
     expect(
       tester.getSemantics(header).getSemanticsData().label,
       'Background work could not load. Open the list to retry.',
@@ -506,6 +512,15 @@ void main() {
     );
     expect(find.text('Fallida'), findsOneWidget);
   });
+}
+
+Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
+  for (var attempt = 0; attempt < 20; attempt++) {
+    if (finder.evaluate().isNotEmpty) return;
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+
+  expect(finder, findsOneWidget);
 }
 
 AgentBackgroundWork _work(
