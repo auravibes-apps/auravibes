@@ -913,10 +913,9 @@ class const _DropdownSearchHeader({
   );
 }
 
-class const _DropdownSearchExplanation({required this.controller})
-    extends StatelessWidget {
-  final TextEditingController controller;
-
+class const _DropdownSearchExplanation({
+  required final TextEditingController controller,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,

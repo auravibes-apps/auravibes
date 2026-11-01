@@ -34,10 +34,8 @@ class const ModelChoiceExplanation({
       );
 }
 
-class const _ModelChoiceHelpButton({required this.label})
+class const _ModelChoiceHelpButton({required final String label})
     extends StatelessWidget {
-  final String label;
-
   @override
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.info_outline,
