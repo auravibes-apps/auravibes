@@ -31,7 +31,27 @@ def emit(value):
 if Path(sys.argv[0]).name == "dart":
     if state.get("planner_failure"):
         sys.exit(1)
-    matrix = json.loads(Path(args[args.index("--manifest") + 1]).read_text())
+    manifest = json.loads(Path(args[args.index("--manifest") + 1]).read_text())
+    packages = manifest.get("packages", {})
+    if manifest.get("mode") == "full":
+        packages = {
+            "apps/auravibes_app": ["test/app_test.dart"],
+            "packages/auravibes_engine": ["test/engine_test.dart"],
+        }
+    rows = []
+    for package in packages:
+        if package == "apps/auravibes_app":
+            rows.extend(
+                {
+                    "package": package,
+                    "shardMode": "fixed",
+                    "shardIndex": index,
+                }
+                for index in range(3)
+            )
+        else:
+            rows.append({"package": package, "shardMode": "fixed"})
+    matrix = {"include": rows}
     if "--timings" in args:
         path = Path(args[args.index("--timings") + 1])
         try:
@@ -79,7 +99,7 @@ else:
 
 
 class PlanTestShardsTest(unittest.TestCase):
-    def run_plan(self, runs, *, app=True, **options):
+    def run_plan(self, runs, *, app=True, full=False, **options):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         fixture = Path(directory.name)
@@ -100,14 +120,19 @@ class PlanTestShardsTest(unittest.TestCase):
                         run.get("filename", "test_timings.json"),
                         run.get("contents", '{"usable": true}'),
                     )
-        rows = [{"package": "packages/auravibes_engine", "shardMode": "fixed"}]
-        if app:
-            rows += [
-                {"package": "apps/auravibes_app", "shardMode": "fixed", "shardIndex": i}
-                for i in range(3)
-            ]
+        if full:
+            manifest_value = {"mode": "full", "reason": "fixture"}
+        else:
+            packages = {"packages/auravibes_engine": ["test/engine_test.dart"]}
+            if app:
+                packages["apps/auravibes_app"] = ["test/app_test.dart"]
+            manifest_value = {
+                "mode": "affected",
+                "reason": "fixture",
+                "packages": packages,
+            }
         manifest = fixture / "manifest.json"
-        manifest.write_text(json.dumps({"include": rows}))
+        manifest.write_text(json.dumps(manifest_value))
         plan = fixture / "plan"
         result = subprocess.run(
             ["bash", str(ROOT / "tool/plan_test_shards.sh"), str(manifest), str(plan)],
@@ -172,12 +197,34 @@ class PlanTestShardsTest(unittest.TestCase):
             downloads,
             ["repos/auravibes-apps/auravibes/actions/artifacts/2/zip"],
         )
+        selector_runs = [
+            call
+            for call in calls
+            if call[0] == "dart" and "matrix" in call
+        ]
+        self.assertEqual(len(selector_runs), 1)
         metrics = (plan / "timing-lookup.txt").read_text().splitlines()[-1]
         self.assertRegex(
             metrics,
             r"Lookup metrics: duration_ms=\d+ main_runs_examined=1 "
             r"artifact_list_requests=1 artifact_download_requests=1$",
         )
+
+    def test_full_selection_still_uses_timing_artifact(self):
+        result, plan, fixture = self.run_plan([{"id": 1}], full=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((plan / "timing-source.txt").read_text().strip(), "main run 1")
+        calls = [
+            json.loads(line)
+            for line in (fixture / "calls.jsonl").read_text().splitlines()
+        ]
+        selector_runs = [
+            call
+            for call in calls
+            if call[0] == "dart" and "matrix" in call
+        ]
+        self.assertEqual(len(selector_runs), 1)
 
     def test_download_and_validation_failures_continue_to_older_runs(self):
         cases = [
@@ -202,13 +249,23 @@ class PlanTestShardsTest(unittest.TestCase):
             ([{"id": 1, "expired": True}], {}),
         ]:
             with self.subTest(options=options):
-                result, plan, _ = self.run_plan(runs, **options)
+                result, plan, fixture = self.run_plan(runs, **options)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual((plan / "timing-source.txt").read_text().strip(), "fixed shard fallback")
                 rows = json.loads((plan / "matrix.json").read_text())["include"]
                 self.assertEqual(len(rows), 4)
                 self.assertTrue(all(row["shardMode"] == "fixed" for row in rows))
                 self.assertIn("::warning::", (plan / "timing-lookup.txt").read_text())
+                calls = [
+                    json.loads(line)
+                    for line in (fixture / "calls.jsonl").read_text().splitlines()
+                ]
+                selector_runs = [
+                    call
+                    for call in calls
+                    if call[0] == "dart" and "matrix" in call
+                ]
+                self.assertEqual(len(selector_runs), 1)
                 self.assertRegex(
                     (plan / "timing-lookup.txt").read_text().splitlines()[-1],
                     r"Lookup metrics: duration_ms=\d+ main_runs_examined=0 "

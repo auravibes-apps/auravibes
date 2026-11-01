@@ -16,14 +16,19 @@ matrix_args=(
   matrix --manifest "$manifest"
   --shard-package apps/auravibes_app --shard-count 3
 )
-matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
 timing_source="not needed (no app tests)"
 lookup_duration_ms=0
 main_runs_examined=0
 artifact_list_requests=0
 artifact_download_requests=0
 
-if jq -e '.include | any(.package == "apps/auravibes_app")' <<< "$matrix" > /dev/null; then
+if jq -e '
+  if .mode == "full" then
+    true
+  else
+    (.packages // {}) | has("apps/auravibes_app")
+  end
+' "$manifest" > /dev/null; then
   timing_source="fixed shard fallback"
   download_dir="$(mktemp -d)"
   trap 'rm -rf "$download_dir"' EXIT
@@ -84,10 +89,12 @@ if jq -e '.include | any(.package == "apps/auravibes_app")' <<< "$matrix" > /dev
 
   if [ "$timing_source" = 'fixed shard fallback' ]; then
     log '::warning::No usable historical test timing artifact found; using fixed shards. See test-plan/timing-lookup.txt.'
+    matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
   fi
   lookup_duration_ms=$(( $(date +%s%3N) - lookup_started_ms ))
 else
   log 'No app tests selected; historical timing lookup skipped.'
+  matrix="$(dart tool/changed_test_selector.dart "${matrix_args[@]}")"
 fi
 
 log "Lookup metrics: duration_ms=$lookup_duration_ms main_runs_examined=$main_runs_examined artifact_list_requests=$artifact_list_requests artifact_download_requests=$artifact_download_requests"
