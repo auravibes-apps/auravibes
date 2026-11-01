@@ -1,0 +1,7 @@
+name: import_sorter_workspace_fixture
+publish_to: none
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/nested_import_sorter_fixture

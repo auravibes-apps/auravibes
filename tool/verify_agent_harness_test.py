@@ -34,6 +34,8 @@ class HarnessVerificationTest(unittest.TestCase):
         (self.root / "docs").mkdir()
         (self.root / "docs/ARCHITECTURE.md").write_text("# Architecture\n")
         (self.root / "docs/agents").mkdir()
+        (self.root / "docs/agents/commands.md").write_text("# Agent commands\n")
+        self._write_melos_scripts("test:unit", "validate:quick")
         (self.root / "README.md").write_text("# README\n")
         (self.root / "CONTRIBUTING.md").write_text("# Contributing\n")
         context_map = Path(__file__).resolve().parent.parent / "CONTEXT-MAP.md"
@@ -50,6 +52,14 @@ class HarnessVerificationTest(unittest.TestCase):
         self.skill.mkdir(parents=True)
         (self.skill / "SKILL.md").write_text(
             "---\nname: example\ndescription: Use for an example task.\n---\n"
+        )
+
+    def _write_melos_scripts(self, *names):
+        scripts = "\n".join(
+            f"    {name}:\n      run: echo checked" for name in names
+        )
+        (self.root / "pubspec.yaml").write_text(
+            "name: example\nmelos:\n  scripts:\n" + scripts + "\n"
         )
 
     def test_new_indexed_scope_alias_needs_no_scope_registration(self):
@@ -77,6 +87,60 @@ class HarnessVerificationTest(unittest.TestCase):
         before = (self.skill / "SKILL.md").read_bytes()
         self.assertEqual(verify(self.root), [])
         self.assertEqual((self.skill / "SKILL.md").read_bytes(), before)
+
+    def test_documented_melos_scripts_are_checked_across_guidance_files(self):
+        scoped_agents = self.root / "apps/auravibes_app/AGENTS.md"
+        agent_docs = self.root / "docs/agents/commands.md"
+        skill = self.skill / "SKILL.md"
+        for path in (self.root / "AGENTS.md", scoped_agents, agent_docs, skill):
+            content = path.read_text().rstrip()
+            path.write_text(content + "\nmelos run validate:quick\n")
+
+        self.assertEqual(verify(self.root), [])
+
+    def test_unknown_melos_scripts_report_file_line_and_script_name(self):
+        scoped_agents = self.root / "apps/auravibes_app/AGENTS.md"
+        agent_docs = self.root / "docs/agents/commands.md"
+        skill = self.skill / "SKILL.md"
+        sources = (self.root / "AGENTS.md", scoped_agents, agent_docs, skill)
+        expected_lines = {}
+        for path in sources:
+            content = path.read_text().rstrip()
+            line_number = len(content.splitlines()) + 1
+            path.write_text(content + "\nmelos run validate:quik\n")
+            expected_lines[path.relative_to(self.root)] = line_number
+
+        errors = verify(self.root)
+
+        for path, line_number in expected_lines.items():
+            with self.subTest(path=path):
+                self.assertTrue(
+                    any(
+                        f"{path}: line {line_number}: Unknown Melos script "
+                        "'validate:quik'" in error
+                        for error in errors
+                    ),
+                    errors,
+                )
+        self.assertTrue(any("melos.scripts" in error for error in errors), errors)
+
+    def test_unrelated_commands_are_not_treated_as_melos_scripts(self):
+        guidance = self.root / "docs/agents/commands.md"
+        guidance.write_text(
+            "Run `fvm dart run melos bootstrap` to set up the workspace.\n"
+            "Run `melos exec -- flutter test` for package-local execution.\n"
+            "Run `flutter test` for an individual package.\n"
+            "\n"
+            "Generic Melos configuration example:\n"
+            "```yaml\n"
+            "melos:\n"
+            "  scripts:\n"
+            "    test:\n"
+            "      run: melos run test\n"
+            "```\n"
+        )
+
+        self.assertEqual(verify(self.root), [])
 
     def test_mutable_action_references_report_path_and_reference(self):
         workflow = self.root / ".github/workflows/actions.yml"

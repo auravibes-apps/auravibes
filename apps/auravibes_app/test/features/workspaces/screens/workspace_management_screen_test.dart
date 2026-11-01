@@ -2027,6 +2027,13 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(
         find.textContaining(
+          'Erasing this shared workspace immediately ends access for every '
+          'member while cloud cleanup runs.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
           'Completed Connector actions and downloaded exports are not '
           'recalled.',
         ),

@@ -122,6 +122,42 @@ void main() {
       await _sdkRoboto(),
     );
   });
+  testWidgets('workspace erasure confirmation disclosure', (tester) async {
+    const size = Size(960, 1400);
+    final fixture = await UxValidationFixture.create(
+      localWorkspaceId: UxValidationFixture.erasureLocalWorkspaceId,
+    );
+    final router = await fixture.pump(
+      tester,
+      WorkspaceManagementRoute(
+        workspaceId: fixture.workspaceId,
+        view: 'connect',
+      ).location,
+      size: size,
+      accounts: [UxValidationFixture.erasureAccount],
+      cloudWorkspaceState: UxValidationFixture.erasureConfirmationState,
+    );
+
+    await fixture.settle(tester);
+    expect(find.text('Manage Workspaces'), findsOneWidget);
+    expect(find.text('Shared research space'), findsOneWidget);
+    await tester.ensureVisible(find.text('Erase workspace data'));
+    await tester.tap(find.text('Erase workspace data'));
+    await fixture.settle(tester);
+    expect(find.byType(AuraConfirmDialog), findsOneWidget);
+    expect(find.text('Manage Workspaces'), findsOneWidget);
+    expect(find.text('Shared research space'), findsOneWidget);
+    await _capture(
+      tester,
+      'workspace-erasure-confirmation-disclosure',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await fixture.close(tester);
+  });
   for (final dark in [false, true]) {
     testWidgets(
       'actual themed controls contrast targets and keyboard dark=$dark',
@@ -1434,6 +1470,9 @@ double _contrast(Color foreground, Color background) {
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  'workspace-erasure-confirmation-disclosure' =>
+    'In-memory local workspace plus synthetic owner account and deleted cloud '
+        'workspace state; confirmation open with no remote access or deletion',
   'service-connections-services-entry' =>
     'Persisted local workspace with three controlled service rows: '
         'Notion needs reconnect, Linear connected, Sentry failed; '

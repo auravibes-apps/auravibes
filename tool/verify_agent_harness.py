@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Read-only checks for repository guidance; no model calls or network access."""
+"""Read-only checks for repository guidance; no model calls or network access.
+
+Melos command checks cover the root AGENTS.md, its linked scope AGENTS.md files,
+docs/agents/**/*.md, and .agents/**/*.md. YAML code examples are treated as
+configuration examples rather than commands from this workspace.
+"""
 
 import json
 from html.parser import HTMLParser
@@ -14,6 +19,79 @@ HTML_TAG_START = re.compile(
 )
 ACTION_USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(\S+)")
 FULL_COMMIT_SHA = re.compile(r"[0-9a-fA-F]{40}")
+MELOS_RUN = re.compile(r"\bmelos\s+run\s+([A-Za-z0-9][A-Za-z0-9:_-]*)\b")
+MELOS_SCRIPT_DECLARATION = re.compile(
+    r"^ {4}([A-Za-z0-9][A-Za-z0-9:_-]*):(?:[ \t]*(?:#.*)?)?$"
+)
+
+
+def _without_yaml_code_blocks(text):
+    """Preserve line numbers while omitting fenced YAML configuration examples."""
+    lines = []
+    yaml_fence = None
+    for line in text.splitlines():
+        if yaml_fence:
+            closing = re.match(
+                rf"^[ \t]*{re.escape(yaml_fence[0])}{{{yaml_fence[1]},}}[ \t]*$",
+                line,
+            )
+            lines.append("")
+            if closing:
+                yaml_fence = None
+            continue
+
+        opening = re.match(r"^[ \t]*(`{3,}|~{3,})[ \t]*([A-Za-z0-9_-]*)", line)
+        if opening and opening.group(2).lower() in {"yaml", "yml"}:
+            yaml_fence = (opening.group(1)[0], len(opening.group(1)))
+            lines.append("")
+            continue
+
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _melos_script_names(pubspec):
+    """Read declared Melos script names without requiring a YAML dependency."""
+    if not pubspec.is_file():
+        return set()
+
+    names = set()
+    in_melos = False
+    in_scripts = False
+    for line in pubspec.read_text().splitlines():
+        if re.match(r"^melos:[ \t]*(?:#.*)?$", line):
+            in_melos = True
+            in_scripts = False
+            continue
+        if in_melos and re.match(r"^  scripts:[ \t]*(?:#.*)?$", line):
+            in_scripts = True
+            continue
+        if in_scripts:
+            if line.strip() and not line.startswith("    "):
+                break
+            match = MELOS_SCRIPT_DECLARATION.match(line)
+            if match:
+                names.add(match.group(1))
+        elif in_melos and line and not line.startswith(" "):
+            break
+    return names
+
+
+def _verify_melos_commands(root, guidance_files, fail):
+    """Check documented Melos invocations against the root workspace scripts."""
+    scripts = _melos_script_names(root / "pubspec.yaml")
+    for path in sorted(guidance_files):
+        guidance = _without_yaml_code_blocks(path.read_text())
+        for line_number, line in enumerate(guidance.splitlines(), start=1):
+            for match in MELOS_RUN.finditer(line):
+                script = match.group(1)
+                if script not in scripts:
+                    fail(
+                        path,
+                        f"line {line_number}: Unknown Melos script '{script}'. "
+                        "Add it to root pubspec.yaml under melos.scripts or "
+                        "correct the command.",
+                    )
 
 
 class _HtmlImageSourceParser(HTMLParser):
@@ -345,6 +423,15 @@ def verify(root):
     for directory in (root / "docs/agents", root / ".agents"):
         if directory.is_dir():
             markdown.update(path for path in directory.rglob("*.md") if path.is_file())
+    guidance_files = {path for path in instructions if path.is_file()}
+    guidance_files.update(
+        path
+        for directory in (root / "docs/agents", root / ".agents")
+        if directory.is_dir()
+        for path in directory.rglob("*.md")
+        if path.is_file()
+    )
+    _verify_melos_commands(root, guidance_files, fail)
     for path in skills:
         text = path.read_text()
         frontmatter = re.match(r"\A---\n(.*?)\n---(?:\n|$)", text, re.S)
@@ -418,7 +505,8 @@ def main():
     print(
         "Harness verification passed (immutable GitHub action references, "
         "documentation links and image references, "
-        "context documents, aliases, metadata, evaluation schema)."
+        "context documents, aliases, metadata, evaluation schema, "
+        "and documented Melos scripts)."
     )
     print("Behavioral model trials are separate; this check does not run them.")
     return 0

@@ -1,0 +1,7 @@
+import 'dart:io';
+import 'dart:async';
+
+void main() {
+  stdout.write(Platform.numberOfProcessors);
+  Timer.run(() {});
+}
