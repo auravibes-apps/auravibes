@@ -42,6 +42,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | Local server integration | `fvm dart run melos run test:integration` (entrypoint owns the lease; no outer lease) |
 | Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
 | Changed Dart preflight  | `python3 tool/validation_lease.py -- fvm dart run melos run validate:changed` |
+| Changed-file local preflight | `python3 tool/validation_lease.py -- fvm dart run melos run preflight:changed` |
 | Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
 | Asset/clean scripts     | `python3 tool/validation_lease.py -- fvm dart run melos run generate:icons` (same form for `clean` and `generate:flavors`) |
 | Code generation         | `python3 tool/validation_lease.py -- fvm dart run melos run generate` (same form for `generate:localization` and `generate:serverpod`) |
