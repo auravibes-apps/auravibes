@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "scenario": "retry-after-explicit-rate-limit",
+  "events": [
+    {"type": "failure", "id": "rate-limit", "category": "rateLimit", "retryAfterMs": 25},
+    {"type": "chunk", "id": "retry-chunk", "text": "Recovered after retry."},
+    {"type": "response", "id": "retry-response"}
+  ],
+  "expected": {
+    "decision": "done",
+    "errorType": null,
+    "eventOrder": [
+      "request:1", "failure:rate-limit", "retry-start:25", "retry-sleep:25",
+      "retry-clear", "request:2", "chunk:retry-chunk", "complete:retry-response"
+    ],
+    "assistantMessages": [{"id": "assistant-1", "text": "Recovered after retry.", "status": "completed"}],
+    "streamedOutput": [{"eventId": "retry-chunk", "text": "Recovered after retry."}],
+    "toolDispatches": [],
+    "toolResults": {},
+    "toolSideEffectCounts": {},
+    "sentUserMessageIds": ["user-1"],
+    "erroredUserMessageIds": [],
+    "retryEvents": ["start:25", "clear"]
+  }
+}
