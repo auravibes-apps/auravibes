@@ -275,8 +275,8 @@ class _ToolCallResponseCopyButtonState
       children: [
         _ToolCallResponseCopyAction(
           icon: _copyIcon,
-          onPressed: () => unawaited(_copyResponse()),
           tooltip: _copyTooltip,
+          onPressed: () => unawaited(_copyResponse()),
         ),
         if (_copyFailed) const _ToolCallResponseCopyFailureStatus(),
       ],
