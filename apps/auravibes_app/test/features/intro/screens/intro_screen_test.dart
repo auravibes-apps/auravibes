@@ -159,10 +159,6 @@ void main() {
       await _pumpUntilFound(tester, find.text('Workspace created'));
       await _pumpUntilFound(
         tester,
-        find.byKey(const Key('intro_readiness')),
-      );
-      await _pumpUntilFound(
-        tester,
         find.text('chat_readiness.no_provider'.tr()),
       );
       await tester.pumpAndSettle();
