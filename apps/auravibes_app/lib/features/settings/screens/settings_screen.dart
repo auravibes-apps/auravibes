@@ -257,25 +257,17 @@ class const _AppearanceCardContent({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      ..._appearancePreferenceWidgets(),
-      ..._appearanceProfileWidgets(),
+      _appearanceHeader,
+      _ThemeTile(theme: currentTheme, onTap: onThemeTap),
+      _LanguageTile(preference: languagePreference, onTap: onLanguageTap),
+      const AccentColorSection(),
+      if (showReset) _AppearanceResetButton(onPressed: onReset),
+      const AuraSizedBox(height: .md),
+      const AppAppearanceProfileSection(),
     ],
     spacing: .none,
     crossAxisAlignment: .start,
   );
-
-  List<Widget> _appearancePreferenceWidgets() => [
-    _appearanceHeader,
-    _ThemeTile(theme: currentTheme, onTap: onThemeTap),
-    _LanguageTile(preference: languagePreference, onTap: onLanguageTap),
-  ];
-
-  List<Widget> _appearanceProfileWidgets() => [
-    const AccentColorSection(),
-    if (showReset) _AppearanceResetButton(onPressed: onReset),
-    const AuraSizedBox(height: .md),
-    const AppAppearanceProfileSection(),
-  ];
 }
 
 Future<void> _applyLanguagePreference(
