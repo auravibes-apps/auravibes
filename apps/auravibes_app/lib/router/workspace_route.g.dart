@@ -25,18 +25,6 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               factory: $NewChatRoute._fromState,
             ),
             GoRouteData.$route(
-              path: 'chats/:chatId',
-              hasOverriddenOnExit: false,
-              factory: $ConversationRoute._fromState,
-              routes: [
-                GoRouteData.$route(
-                  path: 'sub-agents/:subAgentConversationId',
-                  hasOverriddenOnExit: false,
-                  factory: $SubAgentConversationRoute._fromState,
-                ),
-              ],
-            ),
-            GoRouteData.$route(
               path: 'chats',
               hasOverriddenOnExit: false,
               factory: $ChatsRoute._fromState,
@@ -45,6 +33,18 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                   path: 'archived',
                   hasOverriddenOnExit: false,
                   factory: $ArchivedConversationsRoute._fromState,
+                ),
+              ],
+            ),
+            GoRouteData.$route(
+              path: 'chats/:chatId',
+              hasOverriddenOnExit: false,
+              factory: $ConversationRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'sub-agents/:subAgentConversationId',
+                  hasOverriddenOnExit: false,
+                  factory: $SubAgentConversationRoute._fromState,
                 ),
               ],
             ),

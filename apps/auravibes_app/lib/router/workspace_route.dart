@@ -111,18 +111,18 @@ abstract class const _AppGoRouteData() extends GoRouteData {
         TypedStatefulShellBranch<WorkspaceChatsBranchData>(
           routes: [
             TypedGoRoute<NewChatRoute>(path: 'chat/new'),
+            TypedGoRoute<ChatsRoute>(
+              path: 'chats',
+              routes: [
+                TypedGoRoute<ArchivedConversationsRoute>(path: 'archived'),
+              ],
+            ),
             TypedGoRoute<ConversationRoute>(
               path: 'chats/:chatId',
               routes: [
                 TypedGoRoute<SubAgentConversationRoute>(
                   path: 'sub-agents/:subAgentConversationId',
                 ),
-              ],
-            ),
-            TypedGoRoute<ChatsRoute>(
-              path: 'chats',
-              routes: [
-                TypedGoRoute<ArchivedConversationsRoute>(path: 'archived'),
               ],
             ),
             TypedGoRoute<MessageBookmarksRoute>(path: 'bookmarks'),
