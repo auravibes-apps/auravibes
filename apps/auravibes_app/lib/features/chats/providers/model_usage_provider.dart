@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
+import 'package:auravibes_app/domain/entities/model_usage_aggregation.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/model_usage_totals.dart';
 import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
@@ -24,23 +25,13 @@ modelUsageRecordsForConversationProvider = FutureProvider.autoDispose
           .getRecordsForConversation(conversationId),
     );
 
-final FutureProviderFamily<ModelUsageTotals, String>
-modelUsageTotalsForConversationProvider = FutureProvider.autoDispose
-    .family<ModelUsageTotals, String>(
-      (ref, conversationId) => ref
-          .watch(modelUsageRepositoryProvider)
-          .getTotalsForConversation(conversationId),
-    );
-
 final FutureProviderFamily<ModelUsageConversationDetails, String>
 modelUsageDetailsForConversationProvider = FutureProvider.autoDispose
     .family<ModelUsageConversationDetails, String>((ref, conversationId) async {
       final records = await ref.watch(
         modelUsageRecordsForConversationProvider(conversationId).future,
       );
-      final totals = await ref.watch(
-        modelUsageTotalsForConversationProvider(conversationId).future,
-      );
+      final totals = ModelUsageAggregation.aggregate(records);
 
       return (records: records, totals: totals);
     });

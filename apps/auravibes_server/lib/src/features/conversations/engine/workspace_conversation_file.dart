@@ -64,13 +64,12 @@ class WorkspaceConversationFile {
     try {
       final watch = Stopwatch()..start();
       bytes = await (() async {
-        final signed = await (store ?? HttpObjectStore.fromEnvironment())
-            .signGet(
-              key: object.objectKey,
-              contentDisposition: 'attachment',
-              expiresIn: const Duration(minutes: 1),
-              registrationId: upload?.gatewayRegistrationId,
-            );
+        final signed = await (store ?? objectStoreForSession(session)).signGet(
+          key: object.objectKey,
+          contentDisposition: 'attachment',
+          expiresIn: const Duration(minutes: 1),
+          registrationId: upload?.gatewayRegistrationId,
+        );
         final remaining = deadline - watch.elapsed;
         if (remaining <= Duration.zero) {
           throw const FormatException('File storage is unavailable.');

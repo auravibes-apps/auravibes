@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 
-import '../accounts/auth_user_lock.dart';
 import '../../generated/protocol.dart';
+import '../accounts/auth_user_lock.dart';
 import '../workspace_state/workspace_secret_cipher.dart';
 import 'mcp_oauth_credentials.dart';
 import 'mcp_server_policy.dart';

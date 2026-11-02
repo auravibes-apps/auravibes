@@ -490,6 +490,9 @@ const _settingsScreenDynamicKeys = <String>{
   'settings_screen.legal.privacy',
   'settings_screen.legal.terms',
   'settings_screen.legal.title',
+  'settings_screen.language.device',
+  'settings_screen.language.english',
+  'settings_screen.language.spanish',
   'settings_screen.theme.dark',
   'settings_screen.theme.light',
   'settings_screen.theme.system',
@@ -649,6 +652,15 @@ const _workspaceArchiveDynamicKeys = <String>{
   'workspace_archive.preview_title',
   'workspace_archive.unsupported_configuration',
   'workspace_archive.unsupported_version',
+};
+
+const _workspaceLocationDynamicKeys = <String>{
+  'workspace_location.cloud_workspace',
+  'workspace_location.on_device',
+  'workspace_location.personal_cloud',
+  'workspace_location.team_workspace',
+  'workspace_location.view_access',
+  'workspace_location.view_members',
 };
 
 const _workspaceManagementDynamicKeys = <String>{
@@ -1428,11 +1440,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         method: 'TextLocale',
         keyExpression: '_cloudErrorKey(error)',
       ),
-      DynamicTranslationSite(
-        file: 'features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart',
-        method: 'tr',
-        keyExpression: 'key',
-      ),
     ],
     keys: {..._cloudAppErrorKeys, ..._cloudWorkspacesDynamicKeys},
   ),
@@ -1651,6 +1658,11 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/settings/widgets/legal_links_section.dart',
         method: 'TextLocale',
         keyExpression: 'titleKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/settings/screens/settings_screen.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
       ),
     ],
     keys: {..._compactionDynamicKeys, ..._settingsScreenDynamicKeys},
@@ -1954,6 +1966,29 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       ),
     ],
     keys: {..._cloudAppErrorKeys, ..._cloudWorkspacesDynamicKeys},
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'workspace-location-label-keys',
+    sites: [
+      DynamicTranslationSite(
+        file:
+            'features/workspaces/widgets/workspace_location_access_action.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_location_label.dart',
+        method: 'TextLocale',
+        keyExpression: 'labelKey',
+      ),
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_location_label.dart',
+        method: 'tr',
+        keyExpression: 'labelKey',
+      ),
+    ],
+    keys: {..._workspaceLocationDynamicKeys},
   ),
 
   LocalizationDynamicRegistry(

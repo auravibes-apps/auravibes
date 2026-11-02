@@ -5,8 +5,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_agent_langua
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class const BuildSkillContextMessagesService(

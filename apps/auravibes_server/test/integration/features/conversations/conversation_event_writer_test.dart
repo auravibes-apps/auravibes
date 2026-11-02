@@ -1,5 +1,5 @@
-import 'package:auravibes_server/src/features/conversations/conversation_event_writer.dart';
 import 'package:auravibes_server/src/features/accounts/auth_user_lock.dart';
+import 'package:auravibes_server/src/features/conversations/conversation_event_writer.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';

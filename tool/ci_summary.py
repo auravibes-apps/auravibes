@@ -103,7 +103,61 @@ def routing_summary(paths, outputs, event, unknown_range):
     return "\n".join(lines) + "\n"
 
 
-def plan_summary(manifest, matrix, timing_source, artifact_url):
+def timing_lookup_summary(lookup_log):
+    prefix = "Lookup metrics:"
+    metrics = next(
+        (
+            line[len(prefix) :].strip()
+            for line in lookup_log.splitlines()
+            if line.startswith(prefix)
+        ),
+        None,
+    )
+    if metrics is None:
+        return None
+
+    values = {}
+    for part in metrics.split():
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        try:
+            values[key] = int(value)
+        except ValueError:
+            return None
+
+    required = {
+        "duration_ms",
+        "main_runs_examined",
+        "artifact_list_requests",
+        "artifact_download_requests",
+    }
+    if not required.issubset(values):
+        return None
+
+    artifact_requests = (
+        values["artifact_list_requests"] + values["artifact_download_requests"]
+    )
+    list_label = (
+        "listing request"
+        if values["artifact_list_requests"] == 1
+        else "listing requests"
+    )
+    download_label = (
+        "download"
+        if values["artifact_download_requests"] == 1
+        else "downloads"
+    )
+    return (
+        f"Historical timing lookup: {values['duration_ms'] / 1000:.1f} s; "
+        f"{values['main_runs_examined']} main runs examined; "
+        f"{artifact_requests} artifact requests "
+        f"({values['artifact_list_requests']} {list_label}, "
+        f"{values['artifact_download_requests']} {download_label})."
+    )
+
+
+def plan_summary(manifest, matrix, timing_source, artifact_url, timing_lookup=""):
     mode = manifest["mode"]
     reason = manifest.get("reason", "")
     lines = [
@@ -112,6 +166,8 @@ def plan_summary(manifest, matrix, timing_source, artifact_url):
         f"Reason: {text(reason)}",
         f"Timing source: {text(timing_source)}",
     ]
+    if timing_summary := timing_lookup_summary(timing_lookup):
+        lines.append(timing_summary)
     if mode == "full":
         intent = (
             "Intentional full run" if reason == "non-PR run" else "Selector fallback"
@@ -214,11 +270,13 @@ def main():
         manifest = json.loads((plan_dir / "changed-tests.json").read_text())
         timing_source = (plan_dir / "timing-source.txt").read_text().strip()
         if args.kind == "plan":
+            timing_lookup = (plan_dir / "timing-lookup.txt").read_text()
             summary = plan_summary(
                 manifest,
                 json.loads((plan_dir / "matrix.json").read_text()),
                 timing_source,
                 os.environ.get("ARTIFACT_URL", ""),
+                timing_lookup,
             )
         else:
             row = json.loads(os.environ["MATRIX_ROW"])

@@ -175,7 +175,7 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'340d655fa9259203e03f582a4e6b055d75dbdb44';
+    r'23fa84834e78ed7e2c12a72906da3b7514577aad';
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -230,7 +230,7 @@ final class ChildConversationsStreamProvider
     required ChildConversationsStreamFamily super.from,
     required (String, {String parentConversationId}) super.argument,
   }) : super(
-         retry: null,
+         retry: _childConversationRetry,
          name: r'childConversationsStreamProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -276,7 +276,7 @@ final class ChildConversationsStreamProvider
 }
 
 String _$childConversationsStreamHash() =>
-    r'df631d95500f70052055cb3207246f738b5f6727';
+    r'0dd76247e949358b151f07fa8cfd920106d64e83';
 
 final class ChildConversationsStreamFamily extends $Family
     with
@@ -286,7 +286,7 @@ final class ChildConversationsStreamFamily extends $Family
         > {
   ChildConversationsStreamFamily._()
     : super(
-        retry: null,
+        retry: _childConversationRetry,
         name: r'childConversationsStreamProvider',
         dependencies: null,
         $allTransitiveDependencies: null,

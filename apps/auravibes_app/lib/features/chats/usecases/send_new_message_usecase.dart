@@ -38,7 +38,8 @@ class const SendNewMessageUsecase({
   required final MonitoringService monitoringService,
   final Future<ConversationEntity> Function(ConversationToCreate value)?
   cloudCreate,
-  final void Function(String conversationId)? onIterationLimit,
+  final void Function(String conversationId, AgentIterationDecision decision)?
+  onAgentStop,
 }) {
   Future<ConversationEntity> call(_SendNewMessageRequest request) =>
       _send(request);
@@ -67,7 +68,7 @@ class const SendNewMessageUsecase({
             stackTrace: stackTrace,
           );
         },
-        onIterationLimit: onIterationLimit,
+        onAgentStop: onAgentStop,
       );
     } on Object catch (error, stackTrace) {
       monitoringService.trackError(
@@ -167,7 +168,7 @@ SendNewMessageUsecase _buildSendNewMessageUsecase(
     generateTitleUsecase: dependencies.generateTitleUsecase,
     monitoringService: dependencies.monitoringService,
     cloudCreate: _cloudCreate(ref, workspaceId, isCloud),
-    onIterationLimit: _reportIterationLimit(ref),
+    onAgentStop: _reportAgentStop(ref),
   );
 }
 
@@ -175,10 +176,11 @@ Future<ModelSelectionStore> Function(String workspaceId)
 _loadModelSelectionStore(Ref ref) =>
     (workspaceId) => ref.read(modelSelectionStoreProvider(workspaceId).future);
 
-void Function(String conversationId) _reportIterationLimit(Ref ref) =>
-    (conversationId) => ref
-        .read(conversationIterationLimitProvider(conversationId).notifier)
-        .markReached();
+void Function(String conversationId, AgentIterationDecision decision)
+_reportAgentStop(Ref ref) =>
+    (conversationId, decision) => ref
+        .read(conversationAgentStopDecisionProvider(conversationId).notifier)
+        .markIfAgentStopDecision(decision);
 
 Future<ConversationEntity> Function(ConversationToCreate)? _cloudCreate(
   Ref ref,

@@ -9,6 +9,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+const String _toolResponseCopyFailedKey =
+    LocaleKeys.chats_screens_chat_conversation_tool_response_copy_failed;
+
 /// A preview widget for tool call responses that shows a collapsed view.
 ///
 /// Displays up to 3 lines of the response text. If the content exceeds
@@ -197,9 +200,42 @@ class const _ToolCallResponseCopyButton({required final String content})
       _ToolCallResponseCopyButtonState();
 }
 
+class const _ToolCallResponseCopyAction({
+  required final IconData icon,
+  required final String tooltip,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: onPressed,
+    size: .small,
+    tooltip: tooltip,
+  );
+}
+
+class const _ToolCallResponseCopyFailureStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+    child: Semantics(
+      child: const AuraText(
+        child: TextLocale(_toolResponseCopyFailedKey),
+        style: .bodySmall,
+      ),
+      liveRegion: true,
+    ),
+  );
+}
+
 class _ToolCallResponseCopyButtonState
     extends State<_ToolCallResponseCopyButton> {
   var _copied = false;
+  var _copyFailed = false;
+  var _copyAttempt = 0;
+  Timer? _copyConfirmationTimer;
+  int? _pendingConfirmationAttempt;
+  String? _pendingConfirmationContent;
 
   IconData get _copyIcon => _copied ? Icons.check : Icons.copy_outlined;
 
@@ -210,25 +246,105 @@ class _ToolCallResponseCopyButtonState
           .tr();
 
   @override
+  void dispose() {
+    _copyAttempt++;
+    _copyConfirmationTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ToolCallResponseCopyButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content == widget.content) return;
+
+    _copyAttempt++;
+    _copyConfirmationTimer?.cancel();
+    _copyConfirmationTimer = null;
+    _pendingConfirmationAttempt = null;
+    _pendingConfirmationContent = null;
+    _copied = false;
+    _copyFailed = false;
+  }
+
+  @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
-    child: AuraIconButton(
-      icon: _copyIcon,
-      onPressed: () => unawaited(_copyResponse()),
-      size: .small,
-      tooltip: _copyTooltip,
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        _ToolCallResponseCopyAction(
+          icon: _copyIcon,
+          tooltip: _copyTooltip,
+          onPressed: () => unawaited(_copyResponse()),
+        ),
+        if (_copyFailed) const _ToolCallResponseCopyFailureStatus(),
+      ],
     ),
   );
 
   Future<void> _copyResponse() async {
-    if (widget.content.isEmpty) return;
+    final content = widget.content;
+    if (content.isEmpty) return;
 
+    final attempt = _beginCopyAttempt();
+    if (!await _writeToClipboard(content, attempt)) return;
+
+    _showCopyConfirmation(attempt, content);
+  }
+
+  int _beginCopyAttempt() {
+    final attempt = ++_copyAttempt;
+    _copyConfirmationTimer?.cancel();
+    _copyConfirmationTimer = null;
+    _pendingConfirmationAttempt = null;
+    _pendingConfirmationContent = null;
+    if (_copied || _copyFailed) {
+      setState(() {
+        _copied = false;
+        _copyFailed = false;
+      });
+    }
+
+    return attempt;
+  }
+
+  Future<bool> _writeToClipboard(String content, int attempt) async {
     try {
-      await Clipboard.setData(.new(text: widget.content));
+      await Clipboard.setData(.new(text: content));
     } on Object {
+      if (!mounted || attempt != _copyAttempt || widget.content != content) {
+        return false;
+      }
+
+      setState(() => _copyFailed = true);
+
+      return false;
+    }
+
+    return mounted && attempt == _copyAttempt && widget.content == content;
+  }
+
+  void _showCopyConfirmation(int attempt, String content) {
+    setState(() => _copied = true);
+    _pendingConfirmationAttempt = attempt;
+    _pendingConfirmationContent = content;
+    _copyConfirmationTimer = .new(
+      const Duration(seconds: 2),
+      _clearCopyConfirmation,
+    );
+  }
+
+  void _clearCopyConfirmation() {
+    final attempt = _pendingConfirmationAttempt;
+    final content = _pendingConfirmationContent;
+    _pendingConfirmationAttempt = null;
+    _pendingConfirmationContent = null;
+    _copyConfirmationTimer = null;
+    if (!mounted || attempt != _copyAttempt || widget.content != content) {
       return;
     }
 
-    if (mounted) setState(() => _copied = true);
+    setState(() => _copied = false);
   }
 }

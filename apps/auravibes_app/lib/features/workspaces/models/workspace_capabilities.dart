@@ -15,7 +15,6 @@ final class const WorkspaceCapabilities({
   required final bool skills,
   required final bool attachments,
   required final bool conversationToolOverrides,
-  required final bool offline,
   required final bool agentExecution,
 }) {
   static const local = WorkspaceCapabilities(
@@ -36,7 +35,6 @@ final class const WorkspaceCapabilities({
     skills: true,
     attachments: true,
     conversationToolOverrides: true,
-    offline: true,
     agentExecution: true,
   );
 
@@ -60,7 +58,6 @@ final class const WorkspaceCapabilities({
     skills: true,
     attachments: true,
     conversationToolOverrides: false,
-    offline: false,
     agentExecution: true,
   );
   void require({required bool supported}) {

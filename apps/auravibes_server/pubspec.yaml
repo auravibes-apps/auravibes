@@ -12,6 +12,8 @@ dependencies:
   async: ^2.13.0
   auravibes_engine:
     path: ../../packages/auravibes_engine
+  aws_client: ^0.10.0
+  crypto: ^3.0.8
   cryptography: ^2.9.0
   genkit: ^1.0.0
   serverpod: ^4.0.3

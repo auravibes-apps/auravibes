@@ -1,0 +1,84 @@
+name: Bug report
+description: Report unexpected behavior in AuraVibes.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include passwords, API keys, tokens, personal data, or other private information.
+        Do not post vulnerability details in a public issue. Use the repository's private
+        vulnerability reporting option if it is available.
+
+  - type: input
+    id: app-version
+    attributes:
+      label: AuraVibes version
+      description: Find this in Settings or the app's About screen.
+      placeholder: "1.2.3+45"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android
+        - iOS
+        - macOS
+        - Windows
+        - Linux
+        - Web
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: provider-model
+    attributes:
+      label: Provider or model
+      description: Fill this in when the problem involves a model or provider.
+      placeholder: "For example, OpenAI GPT-4.1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+      placeholder: Describe what happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the shortest steps that reproduce the problem.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Optional. Attach screenshots after submitting the issue; redact logs before sharing.
+      placeholder: Add any other context that may help reproduce the problem.
+    validations:
+      required: false

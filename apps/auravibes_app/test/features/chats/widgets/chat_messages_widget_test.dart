@@ -23,16 +23,16 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
-import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
+import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
-import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
-import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_bookmarks_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/message_bookmark_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
@@ -45,12 +45,12 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
-import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
@@ -1819,7 +1819,7 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
     });
 
-    testWidgets('keeps unfinished A2UI controls and queues cap notice', (
+    testWidgets('keeps A2UI controls and queues a no-progress loop notice', (
       tester,
     ) async {
       final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
@@ -1872,7 +1872,7 @@ void main() {
           overrides: [
             chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
             sendMessageUsecaseProvider('ws-1')
-                .overrideWithValue(_IterationLimitSendMessageUsecase()),
+                .overrideWithValue(_RepeatedToolLoopSendMessageUsecase()),
             ..._messageOverrides({message.id: message}),
           ],
         ),
@@ -1904,8 +1904,8 @@ void main() {
         listen: false,
       );
       expect(
-        container.read(conversationIterationLimitProvider('conv-1')),
-        isTrue,
+        container.read(conversationAgentStopDecisionProvider('conv-1')),
+        AgentIterationDecision.repeatedToolLoopDetected,
       );
       expect(tester.takeException(), isNull);
     });
@@ -6844,13 +6844,13 @@ class _MockConversationRepository extends Mock
 class _MockMessageRepository extends Mock implements MessageRepository;
 class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;
 
-class _IterationLimitSendMessageUsecase extends Fake
+class _RepeatedToolLoopSendMessageUsecase extends Fake
     implements SendMessageUsecase {
   @override
   Future<AgentIterationDecision?> call({
     required String conversationId,
     required ChatDraft draft,
-  }) async => AgentIterationDecision.iterationLimitReached;
+  }) async => AgentIterationDecision.repeatedToolLoopDetected;
 }
 
 class const _ChatMessagesTestSubject({

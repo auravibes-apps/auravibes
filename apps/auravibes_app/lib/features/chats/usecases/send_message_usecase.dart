@@ -21,7 +21,11 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
+    show
+        AgentIterationContext,
+        AgentIterationDecision,
+        AgentIterationDecisionX,
+        AgentIterationOrigin;
 import 'package:riverpod/src/providers/provider.dart';
 
 typedef ContinueAgentTurn = Future<AgentIterationDecision> Function({
@@ -237,7 +241,8 @@ Future<AgentIterationDecision> _retryUserMessage(
 
 typedef _FirstMessageCallbacks = ({
   void Function(Object error, StackTrace stackTrace) onContinueError,
-  void Function(String conversationId)? onIterationLimit,
+  void Function(String conversationId, AgentIterationDecision decision)?
+  onAgentStop,
 });
 
 typedef _FirstMessageRequest = ({
@@ -276,7 +281,7 @@ Future<void> _continueFirstMessage(_FirstMessageRequest request) async {
       messageId: request.messageId,
       languageCode: request.languageCode,
     );
-    _reportFirstMessageIterationLimit(
+    _reportFirstMessageAgentStop(
       request.callbacks,
       request.conversationId,
       decision,
@@ -286,13 +291,13 @@ Future<void> _continueFirstMessage(_FirstMessageRequest request) async {
   }
 }
 
-void _reportFirstMessageIterationLimit(
+void _reportFirstMessageAgentStop(
   _FirstMessageCallbacks callbacks,
   String conversationId,
   AgentIterationDecision decision,
 ) {
-  if (decision == .iterationLimitReached) {
-    callbacks.onIterationLimit?.call(conversationId);
+  if (decision.needsUserNotice) {
+    callbacks.onAgentStop?.call(conversationId, decision);
   }
 }
 
@@ -314,7 +319,8 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
     required String conversationId,
     required ChatDraft draft,
     required void Function(Object error, StackTrace stackTrace) onContinueError,
-    void Function(String conversationId)? onIterationLimit,
+    void Function(String conversationId, AgentIterationDecision decision)?
+    onAgentStop,
   }) async {
     if (draft.isEmpty) return;
     if (cloudSend case final send?) {
@@ -330,10 +336,7 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
         this,
         conversationId: conversationId,
         draft: draft,
-        callbacks: (
-          onContinueError: onContinueError,
-          onIterationLimit: onIterationLimit,
-        ),
+        callbacks: (onContinueError: onContinueError, onAgentStop: onAgentStop),
       ),
     );
   }

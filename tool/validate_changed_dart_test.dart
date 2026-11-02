@@ -2,8 +2,39 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'validate_changed_dart.dart' show dclDirectoriesForPaths;
+
 void main() {
   final script = File('tool/validate_changed_dart.dart').absolute.path;
+
+  test('runs DCL for changed analyzed production directories', () {
+    expect(
+      dclDirectoriesForPaths([
+        'apps/auravibes_app/lib/features/chat/first.dart',
+        'apps/auravibes_app/lib/features/chat/second.dart',
+        'packages/auravibes_engine/lib/src/example.dart',
+        'packages/auravibes_ui/lib/src/example.dart',
+        'widgetbook/lib/example.dart',
+      ]),
+      [
+        'apps/auravibes_app/lib/features/chat',
+        'packages/auravibes_engine/lib/src',
+        'packages/auravibes_ui/lib/src',
+        'widgetbook/lib',
+      ],
+    );
+  });
+
+  test('skips DCL for tests, tools, and unrelated packages', () {
+    expect(
+      dclDirectoriesForPaths([
+        'apps/auravibes_app/test/example_test.dart',
+        'tool/example.dart',
+        'packages/auravibes_server/lib/example.dart',
+      ]),
+      isEmpty,
+    );
+  });
 
   test('returns a failing process status for formatting violations', () async {
     final result = await _runFixture(script, 'void main( ){print(1);}\n');

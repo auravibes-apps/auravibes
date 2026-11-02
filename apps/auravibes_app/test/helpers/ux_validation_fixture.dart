@@ -4,8 +4,12 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_view_state.dart';
+import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -15,6 +19,7 @@ import 'package:auravibes_app/main.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -28,6 +33,13 @@ import '../data/database/drift/database_test_utils.dart';
 
 /// Local persisted objects and production routes; no remote writes.
 class UxValidationFixture {
+  static const erasureAccount = CloudAccountSession(
+    serverUrl: 'https://fixture.example',
+    userId: 'fixture-account',
+    email: 'reviewer@example.test',
+  );
+  static const erasureLocalWorkspaceId = '019a1e91-0000-7000-8000-000000001691';
+
   new _(
     this.database,
     this.workspaceId,
@@ -48,20 +60,60 @@ class UxValidationFixture {
 
   static AppDatabase? _database;
 
+  static CloudWorkspaceViewState get erasureConfirmationState =>
+      CloudWorkspaceViewState(
+        workspaces: const [],
+        pendingInvites: const [],
+        deletedOwnedWorkspaces: [
+          CloudWorkspaceSummary(
+            id: 7,
+            name: 'Shared research space',
+            role: 'owner',
+            revision: 1,
+            sequence: 1,
+            createdAt: .utc(2026, 10, 30),
+            updatedAt: .utc(2026, 10, 30),
+          ),
+        ],
+      );
+
   static Future<void> closeDatabase() async {
     await _database?.close();
     _database = null;
   }
 
-  static Future<UxValidationFixture> create({bool empty = false}) async {
+  static Future<UxValidationFixture> create({
+    bool empty = false,
+    String? localWorkspaceId,
+  }) async {
     final isNewDatabase = _database == null;
     final database = _database ??= .new(connection: NativeDatabase.memory());
     if (!isNewDatabase) await clearAppDatabase(database);
     if (empty) {
       return UxValidationFixture._(database, '', '', '', '', '', '');
     }
-    final workspace = await WorkspaceRepository(database)
-        .createWorkspace(const .new(name: 'Design studio', type: .local));
+    final WorkspaceEntity workspace;
+    if (localWorkspaceId == null) {
+      workspace = await WorkspaceRepository(database)
+          .createWorkspace(const .new(name: 'Design studio', type: .local));
+    } else {
+      final row = await database.workspaceDao.insertWorkspace(
+        .insert(
+          id: .new(localWorkspaceId),
+          createdAt: .new(.utc(2026, 10, 30)),
+          updatedAt: .new(.utc(2026, 10, 30)),
+          name: 'Design studio',
+          type: .local,
+        ),
+      );
+      workspace = WorkspaceEntity(
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      );
+    }
     final skills = SkillsRepository(database);
     final skill = await skills.createSkill(
       workspace.id,
@@ -149,6 +201,7 @@ class UxValidationFixture {
     bool dark = false,
     List<Object> overrides = const [],
     List<CloudAccountSession> accounts = const [],
+    CloudWorkspaceViewState? cloudWorkspaceState,
     Future<List<CloudAccountSession>> Function()? accountsLoad,
     WorkspaceSession? sessionOverride,
     Exception? sessionFailure,
@@ -194,6 +247,10 @@ class UxValidationFixture {
         cloudAccountsProvider.overrideWith(
           (ref) async => accountsLoad == null ? accounts : await accountsLoad(),
         ),
+        if (cloudWorkspaceState case final workspaceState?)
+          for (final account in accounts)
+            cloudWorkspaceStateProvider(account.key)
+                .overrideWith((ref) async => workspaceState),
         if (emptyModels)
           chatModelConnectionsProvider(workspaceId)
               .overrideWith((ref) => Stream.value([])),

@@ -7,8 +7,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../accounts/auth_user_lock.dart';
-import '../../workspaces/domain/workspace_roles.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
+import '../../workspaces/domain/workspace_roles.dart';
 import '../repositories/codex_oauth_repository.dart';
 
 typedef CodexTokenExchange = Future<Map<String, Object?>> Function(

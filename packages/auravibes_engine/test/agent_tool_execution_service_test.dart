@@ -174,6 +174,146 @@ void main() {
     },
   );
 
+  test('changes loop fingerprints when full tool output changes', () async {
+    Future<({String? fingerprint, String? responseContextRaw})> fingerprintFor(
+      String result,
+    ) async {
+      final provider = _FakeExecutionProvider(
+        latestToolCalls: const LoadLatestMessageToolCallsResult(
+          messageId: 'message-1',
+          hasToolCalls: true,
+          toolsToRun: [
+            AgentToolToCall(
+              tool: 'search',
+              id: 'tool-1',
+              argumentsRaw: '{"query":"cats"}',
+            ),
+          ],
+          notFoundToolCallIds: [],
+          previouslyFailedToolCallIds: [],
+        ),
+        decisions: const {'tool-1': AgentToolPermissionResult.granted},
+        results: {'search': '${'x' * 400}$result'},
+      );
+
+      final loopResult =
+          await AgentToolExecutionService<String>(
+            provider: provider,
+            outputPolicyForTool: (_) =>
+                const AgentToolOutputPolicy(maxBytes: 256),
+          ).runAgentLoopIteration(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          );
+
+      return (
+        fingerprint: loopResult.fingerprint,
+        responseContextRaw: provider.updates.single.responseContextRaw,
+      );
+    }
+
+    final first = await fingerprintFor('first result');
+    final unchanged = await fingerprintFor('first result');
+    final changed = await fingerprintFor('other result');
+
+    expect(first.fingerprint, isNotNull);
+    expect(unchanged.fingerprint, first.fingerprint);
+    expect(changed.responseContextRaw, first.responseContextRaw);
+    expect(changed.fingerprint, isNot(first.fingerprint));
+  });
+
+  test('fingerprints permission-denied tool outcomes', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(tool: 'tool-a', id: 'tool-1', argumentsRaw: '{}'),
+          AgentToolToCall(tool: 'tool-b', id: 'tool-2', argumentsRaw: '{}'),
+          AgentToolToCall(tool: 'tool-c', id: 'tool-3', argumentsRaw: '{}'),
+          AgentToolToCall(tool: 'tool-d', id: 'tool-4', argumentsRaw: '{}'),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+        allToolCalls: [
+          AgentMessageToolCall(
+            id: 'tool-1',
+            name: 'model-tool-a',
+            argumentsRaw: '{}',
+          ),
+          AgentMessageToolCall(
+            id: 'tool-2',
+            name: 'model-tool-b',
+            argumentsRaw: '{}',
+          ),
+          AgentMessageToolCall(
+            id: 'tool-3',
+            name: 'model-tool-c',
+            argumentsRaw: '{}',
+          ),
+          AgentMessageToolCall(
+            id: 'tool-4',
+            name: 'model-tool-d',
+            argumentsRaw: '{}',
+          ),
+        ],
+      ),
+      decisions: const {
+        'tool-1': AgentToolPermissionResult.disabledInConversation,
+        'tool-2': AgentToolPermissionResult.disabledByAgent,
+        'tool-3': AgentToolPermissionResult.disabledInWorkspace,
+        'tool-4': AgentToolPermissionResult.notConfigured,
+      },
+    );
+
+    final result = await AgentToolExecutionService<String>(provider: provider)
+        .runAgentLoopIteration(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+    expect(result.decision, AgentIterationDecision.continueIteration);
+    expect(result.fingerprint, isNotNull);
+    expect(provider.updates.map((update) => update.resultStatus), [
+      AgentToolResultStatus.disabledInConversation,
+      AgentToolResultStatus.disabledByAgent,
+      AgentToolResultStatus.disabledInWorkspace,
+      AgentToolResultStatus.notConfigured,
+    ]);
+  });
+
+  test('fingerprints unresolved and previously failed tool calls', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [],
+        notFoundToolCallIds: ['missing-id'],
+        previouslyFailedToolCallIds: ['failed-id'],
+        allToolCalls: [
+          AgentMessageToolCall(
+            id: 'failed-id',
+            name: 'failed-tool',
+            argumentsRaw: '{}',
+          ),
+        ],
+      ),
+    );
+
+    final result = await AgentToolExecutionService<String>(provider: provider)
+        .runAgentLoopIteration(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
+
+    expect(result.decision, AgentIterationDecision.continueIteration);
+    expect(result.fingerprint, isNotNull);
+    expect(provider.updates.map((update) => update.resultStatus), [
+      AgentToolResultStatus.toolNotFound,
+      AgentToolResultStatus.executionError,
+    ]);
+  });
+
   test('stores each granted tool result as it finishes', () async {
     final slow = Completer<Object?>();
     final fast = Completer<Object?>();

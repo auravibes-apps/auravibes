@@ -92,6 +92,9 @@ void main() {
     ConversationSkillSelectorState? skillSelectorState,
     WorkspaceFile? sharedFile,
     WorkspaceAssetRepository? sharedAssets,
+    WorkspaceSession workspaceSession = const WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+    ),
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -109,11 +112,8 @@ void main() {
           if (sharedAssets != null)
             workspaceAssetRepositoryProvider('ws-1')
                 .overrideWith((_) async => sharedAssets),
-          workspaceSessionForRouteProvider('ws-1').overrideWithValue(
-            const AsyncData(
-              WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
-            ),
-          ),
+          workspaceSessionForRouteProvider('ws-1')
+              .overrideWithValue(AsyncData(workspaceSession)),
           if (attachmentService case final service?)
             localChatAttachmentServiceProvider.overrideWithValue(service),
           if (skillSelectorState case final state?)
@@ -650,6 +650,21 @@ void main() {
         },
       ),
     );
+    expect(
+      find.byKey(const ValueKey<String>('local_workspace_network_disclosure')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('local_workspace_network_disclosure')),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Local storage does not mean offline.'), findsOneWidget);
+    expect(
+      find.textContaining('Sending a message sends its text'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(EditableText), 'unsent message');
     await tester.pump();
     await tester.tap(
@@ -689,6 +704,30 @@ void main() {
     );
     expect(attempts, 2);
     semantics.dispose();
+  });
+
+  testWidgets('cloud workspace does not show the local network disclosure', (
+    tester,
+  ) async {
+    final _ = await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        workspaceSession: const WorkspaceSession(
+          CloudWorkspaceRef(
+            localWorkspaceId: 'ws-1',
+            serverUrl: 'https://server.example',
+            accountId: 'account-1',
+            cloudWorkspaceId: 1,
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('local_workspace_network_disclosure')),
+      findsNothing,
+    );
   });
 
   testWidgets('renders without error', (tester) async {
@@ -2035,6 +2074,7 @@ void main() {
     await tester.pump();
     expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
 
+    expect(await tester.sendKeyEvent(.tab), isTrue);
     expect(await tester.sendKeyEvent(.tab), isTrue);
     expect(await tester.sendKeyEvent(.tab), isTrue);
 

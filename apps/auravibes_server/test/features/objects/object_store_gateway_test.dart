@@ -1,733 +1,586 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
-import 'package:auravibes_server/src/features/objects/object_store.dart';
+import 'package:auravibes_server/src/features/objects/object_gateway_config.dart';
+import 'package:auravibes_server/src/features/objects/object_gateway_service.dart';
+import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 
+import 'object_gateway_test_support.dart';
+
 void main() {
-  final registrationId = 'a' * 64;
-  final objectKey = '7/${'b' * 48}';
-
-  for (final operation in ['register', 'head']) {
-    test('$operation times out when response headers stall', () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final subscription = server.listen((_) {});
-      addTearDown(subscription.cancel);
-      final store = _store(server, timeout: const Duration(milliseconds: 250));
-
-      await expectLater(
-        operation == 'register'
-            ? store.registerFreshKey(
-                key: objectKey,
-                registrationId: registrationId,
-              )
-            : store.head(objectKey, registrationId: registrationId),
-        throwsA(isA<TimeoutException>()),
-      );
-    });
-  }
-
-  test('registration times out when response body stalls', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final subscription = server.listen((request) {
-      request.response.statusCode = HttpStatus.conflict;
-      request.response.write('conflict');
-      unawaited(request.response.flush().catchError((Object _) {}));
-    });
-    addTearDown(subscription.cancel);
-    final store = _store(server, timeout: const Duration(milliseconds: 250));
-
-    await expectLater(
-      store.registerFreshKey(key: objectKey, registrationId: registrationId),
-      throwsA(isA<TimeoutException>()),
+  test('rejects missing, forged, and expired signed requests', () async {
+    final fixture = FakeObjectGatewayFixture();
+    final claims = fixture.claims(method: 'GET', key: objectGatewayTestKey);
+    final baseUrl = fixture.config.publicBaseUrl.replace(
+      path: '${fixture.config.publicBaseUrl.path}/${claims.key}',
     );
-  });
 
-  test('registration rejects an oversized conflict response', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final subscription = server.listen((request) {
-      request.response.statusCode = HttpStatus.conflict;
-      request.response.write('x' * 8193);
-      unawaited(request.response.close());
-    });
-    addTearDown(subscription.cancel);
-
-    await expectLater(
-      _store(server).registerFreshKey(
-        key: objectKey,
-        registrationId: registrationId,
+    final missing = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'GET',
+        claims: claims,
+        url: baseUrl,
+        queryParameters: const {},
       ),
-      throwsA(isA<StateError>()),
     );
+    final forged = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'GET',
+        claims: claims,
+        url: baseUrl.replace(queryParameters: {'token': 'forged'}),
+      ),
+    );
+    final expired = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'GET',
+        claims: fixture.claims(
+          method: 'GET',
+          key: objectGatewayTestKey,
+          expiresAtSeconds:
+              DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000 - 1,
+        ),
+      ),
+    );
+
+    expect(missing.statusCode, 401);
+    expect(forged.statusCode, 403);
+    expect(expired.statusCode, 403);
+    expect(fixture.bucket.ranges, isEmpty);
   });
 
-  for (final operation in ['quiesce', 'delete']) {
-    test('$operation times out when response headers stall', () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final subscription = server.listen((_) {});
-      addTearDown(subscription.cancel);
-      final store = _store(server, timeout: const Duration(milliseconds: 250));
-
-      await expectLater(
-        operation == 'quiesce'
-            ? store.confirmsUploadQuiescence(
-                key: objectKey,
-                expiresAt: DateTime.now(),
-                registrationId: registrationId,
-              )
-            : store.delete(objectKey, registrationId: registrationId),
-        throwsA(isA<TimeoutException>()),
-      );
-    });
-
-    test('$operation times out when response body stalls', () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final subscription = server.listen((request) {
-        request.response.statusCode = HttpStatus.conflict;
-        request.response.write('pending');
-        unawaited(request.response.flush().catchError((Object _) {}));
-      });
-      addTearDown(subscription.cancel);
-      final store = _store(server, timeout: const Duration(milliseconds: 250));
-
-      await expectLater(
-        operation == 'quiesce'
-            ? store.confirmsUploadQuiescence(
-                key: objectKey,
-                expiresAt: DateTime.now(),
-                registrationId: registrationId,
-              )
-            : store.delete(objectKey, registrationId: registrationId),
-        throwsA(isA<TimeoutException>()),
-      );
-    });
-  }
-
-  for (final scenario in [
-    (operation: 'quiesce', status: HttpStatus.conflict),
-    (operation: 'delete', status: HttpStatus.conflict),
-    (operation: 'delete', status: HttpStatus.unprocessableEntity),
-  ]) {
-    test(
-      '${scenario.operation} rejects oversized ${scenario.status} body',
-      () async {
-        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-        addTearDown(() => server.close(force: true));
-        final subscription = server.listen((request) {
-          request.response.statusCode = scenario.status;
-          request.response.write('x' * 8193);
-          unawaited(request.response.close());
-        });
-        addTearDown(subscription.cancel);
-        final store = _store(server);
-
-        await expectLater(
-          scenario.operation == 'quiesce'
-              ? store.confirmsUploadQuiescence(
-                  key: objectKey,
-                  expiresAt: DateTime.now(),
-                  registrationId: registrationId,
-                )
-              : store.delete(objectKey, registrationId: registrationId),
-          throwsA(isA<StateError>()),
-        );
+  test('accepts one signed upload and rejects replay', () async {
+    final fixture = FakeObjectGatewayFixture();
+    final bytes = Uint8List.fromList(utf8.encode('object data'));
+    final checksum = sha256.convert(bytes).toString();
+    await fixture.register(objectGatewayTestKey);
+    final claims = fixture.claims(
+      method: 'PUT',
+      key: objectGatewayTestKey,
+      nonce: 'c' * 48,
+      contentType: 'text/plain',
+      length: bytes.length,
+      checksumSha256: checksum,
+    );
+    final request = fixture.request(
+      method: 'PUT',
+      claims: claims,
+      headers: {
+        'content-length': '${bytes.length}',
+        'content-type': 'text/plain',
+        'x-checksum-sha256': checksum,
       },
-    );
-  }
-
-  test('registers a fresh key with its durable identity', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      final result = _ObservedRequest.from(request);
-      request.response.statusCode = HttpStatus.noContent;
-      await request.response.close();
-      return result;
-    });
-    final store = _store(server);
-
-    await store.registerFreshKey(
-      key: objectKey,
-      registrationId: registrationId,
+      body: [bytes],
+      contentLength: bytes.length,
     );
 
-    final request = await observed;
-    expect(request.method, 'POST');
-    expect(request.path, '/objects/$objectKey');
-    expect(request.query['register'], '1');
-    expect(request.registrationId, registrationId);
-    expect(request.authorization, 'Bearer gateway-secret');
-  });
+    final first = await fixture.service.handle(fixture.session, request);
+    final replay = await fixture.service.handle(fixture.session, request);
 
-  test('treats a registration conflict as unverified provenance', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      request.response.statusCode = HttpStatus.conflict;
-      request.response.write('conflict\n');
-      await request.response.close();
-      return _ObservedRequest.from(request);
-    });
-
-    await expectLater(
-      _store(server).registerFreshKey(
-        key: objectKey,
-        registrationId: registrationId,
-      ),
-      throwsA(isA<ObjectStoreRegistrationConflictException>()),
-    );
-
-    final request = await observed;
-    expect(request.query['register'], '1');
+    expect(first.statusCode, 204);
+    expect(replay.statusCode, 409);
+    expect(fixture.bucket.putCount, 1);
+    expect(fixture.ledger.pendingFor(objectGatewayTestKey), 0);
   });
 
   test(
-    'rejects insecure gateway endpoints without exposing credentials',
+    'validates upload length, headers, checksum, and 25 MiB limit',
     () async {
-      final store = HttpObjectStore(
-        gatewayEndpoint: Uri.parse('http://gateway.invalid/objects'),
-        gatewayBearerToken: 'gateway-secret',
+      final fixture = FakeObjectGatewayFixture();
+      final bytes = Uint8List.fromList(utf8.encode('object data'));
+      final checksum = sha256.convert(bytes).toString();
+      await fixture.register(objectGatewayTestKey);
+      final validClaims = fixture.claims(
+        method: 'PUT',
+        key: objectGatewayTestKey,
+        nonce: 'd' * 48,
+        contentType: 'text/plain',
+        length: bytes.length,
+        checksumSha256: checksum,
       );
-
-      await expectLater(
-        store.registerFreshKey(key: objectKey, registrationId: registrationId),
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            allOf(
-              isNot(contains('gateway.invalid')),
-              isNot(contains('gateway-secret')),
-            ),
-          ),
+      final wrongLength = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'PUT',
+          claims: validClaims,
+          headers: {
+            'content-length': '${bytes.length + 1}',
+            'content-type': 'text/plain',
+            'x-checksum-sha256': checksum,
+          },
+          body: [bytes],
+          contentLength: bytes.length + 1,
         ),
       );
+      final wrongContentType = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'PUT',
+          claims: fixture.claims(
+            method: 'PUT',
+            key: objectGatewayTestKey,
+            nonce: '2' * 48,
+            contentType: 'text/plain',
+            length: bytes.length,
+            checksumSha256: checksum,
+          ),
+          headers: {
+            'content-length': '${bytes.length}',
+            'content-type': 'application/json',
+            'x-checksum-sha256': checksum,
+          },
+          body: [bytes],
+          contentLength: bytes.length,
+        ),
+      );
+      final wrongChecksum = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'PUT',
+          claims: fixture.claims(
+            method: 'PUT',
+            key: objectGatewayTestKey,
+            nonce: 'e' * 48,
+            contentType: 'text/plain',
+            length: bytes.length,
+            checksumSha256: checksum,
+          ),
+          headers: {
+            'content-length': '${bytes.length}',
+            'content-type': 'text/plain',
+            'x-checksum-sha256': checksum,
+          },
+          body: [Uint8List.fromList(utf8.encode('other data'))],
+          contentLength: bytes.length,
+        ),
+      );
+      final tooLargeClaims = fixture.claims(
+        method: 'PUT',
+        key: objectGatewayTestKey,
+        nonce: 'f' * 48,
+        contentType: 'application/octet-stream',
+        length: maxObjectUploadBytes + 1,
+        checksumSha256: 'f' * 64,
+      );
+      var readOversizedBody = false;
+      final tooLarge = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'PUT',
+          claims: tooLargeClaims,
+          headers: {
+            'content-length': '${maxObjectUploadBytes + 1}',
+            'content-type': 'application/octet-stream',
+            'x-checksum-sha256': 'f' * 64,
+          },
+          readBody: (_) {
+            readOversizedBody = true;
+            return const Stream.empty();
+          },
+          contentLength: maxObjectUploadBytes + 1,
+        ),
+      );
+
+      expect(wrongLength.statusCode, 400);
+      expect(wrongContentType.statusCode, 400);
+      expect(wrongChecksum.statusCode, 400);
+      expect(tooLarge.statusCode, 403);
+      expect(readOversizedBody, isFalse);
+      expect(fixture.bucket.putCount, 0);
+    },
+  );
+
+  test('allows exact configured CORS origins and answers preflight', () async {
+    final fixture = FakeObjectGatewayFixture();
+    final claims = fixture.claims(method: 'GET', key: objectGatewayTestKey);
+    final options = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'OPTIONS',
+        claims: claims,
+        headers: {'origin': 'https://app.example'},
+      ),
+    );
+    final denied = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'GET',
+        claims: claims,
+        headers: {'origin': 'https://evil.example'},
+      ),
+    );
+
+    expect(options.statusCode, 204);
+    expect(
+      options.headers['access-control-allow-origin'],
+      'https://app.example',
+    );
+    expect(options.headers['access-control-allow-methods'], contains('PUT'));
+    expect(options.headers['cache-control'], 'no-store');
+    expect(denied.statusCode, 403);
+    expect(denied.headers['access-control-allow-origin'], isNull);
+  });
+
+  test(
+    'limits concurrent uploads and releases capacity after completion',
+    () async {
+      final fixture = FakeObjectGatewayFixture(maxConcurrentUploads: 1);
+      final gate = Completer<void>();
+      fixture.bucket.putGate = gate;
+      final bytes = Uint8List.fromList(utf8.encode('object data'));
+      final checksum = sha256.convert(bytes).toString();
+      await fixture.register(objectGatewayTestKey);
+      ObjectGatewayRequest requestFor(String nonce) => fixture.request(
+        method: 'PUT',
+        claims: fixture.claims(
+          method: 'PUT',
+          key: objectGatewayTestKey,
+          nonce: nonce,
+          contentType: 'text/plain',
+          length: bytes.length,
+          checksumSha256: checksum,
+        ),
+        headers: {
+          'content-length': '${bytes.length}',
+          'content-type': 'text/plain',
+          'x-checksum-sha256': checksum,
+        },
+        body: [bytes],
+        contentLength: bytes.length,
+      );
+
+      final firstFuture = fixture.service.handle(
+        fixture.session,
+        requestFor('1' * 48),
+      );
+      await fixture.bucket.putStarted.future;
+      final busy = await fixture.service.handle(
+        fixture.session,
+        requestFor('2' * 48),
+      );
+      gate.complete();
+      final first = await firstFuture;
+
+      expect(busy.statusCode, 503);
+      expect(first.statusCode, 204);
+      expect(fixture.bucket.putCount, 1);
+    },
+  );
+
+  test('limits concurrent downloads until response stream completes', () async {
+    final fixture = FakeObjectGatewayFixture(maxConcurrentDownloads: 1);
+    await fixture.register(objectGatewayTestKey);
+    fixture.bucket.seed(objectGatewayTestKey, Uint8List.fromList([1, 2, 3]));
+    ObjectGatewayRequest downloadRequest(String nonce) => fixture.request(
+      method: 'GET',
+      claims: fixture.claims(
+        method: 'GET',
+        key: objectGatewayTestKey,
+        nonce: nonce,
+        contentDisposition: 'attachment',
+      ),
+    );
+
+    final first = await fixture.service.handle(
+      fixture.session,
+      downloadRequest('1' * 48),
+    );
+    final busy = await fixture.service.handle(
+      fixture.session,
+      downloadRequest('2' * 48),
+    );
+    expect(busy.statusCode, 503);
+    expect(await first.body.expand((chunk) => chunk).toList(), [1, 2, 3]);
+
+    final afterDrain = await fixture.service.handle(
+      fixture.session,
+      downloadRequest('3' * 48),
+    );
+    expect(afterDrain.statusCode, 200);
+    await afterDrain.body.drain<void>();
+  });
+
+  test(
+    'times out a stalled upload body before creating a reservation',
+    () async {
+      final fixture = FakeObjectGatewayFixture(
+        readTimeout: const Duration(milliseconds: 20),
+      );
+      final bytes = Uint8List.fromList(utf8.encode('object data'));
+      final checksum = sha256.convert(bytes).toString();
+      await fixture.register(objectGatewayTestKey);
+      final response = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'PUT',
+          claims: fixture.claims(
+            method: 'PUT',
+            key: objectGatewayTestKey,
+            contentType: 'text/plain',
+            length: bytes.length,
+            checksumSha256: checksum,
+          ),
+          headers: {
+            'content-length': '${bytes.length}',
+            'content-type': 'text/plain',
+            'x-checksum-sha256': checksum,
+          },
+          contentLength: bytes.length,
+          readBody: (_) => Stream<Uint8List>.multi((_) {}),
+        ),
+      );
+
+      expect(response.statusCode, 408);
+      expect(fixture.ledger.pendingFor(objectGatewayTestKey), 0);
+      expect(fixture.bucket.putCount, 0);
     },
   );
 
   test(
-    'rejects insecure legacy endpoints without exposing credentials',
+    'leaves failed storage uploads pending for fail-closed erasure',
     () async {
-      final store = HttpObjectStore(
-        legacyEndpoint: Uri.parse('http://legacy.invalid/objects'),
-        legacyBearerToken: 'legacy-secret',
-      );
-
-      await expectLater(
-        store.delete(objectKey),
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            allOf(
-              isNot(contains('legacy.invalid')),
-              isNot(contains('legacy-secret')),
-            ),
+      final fixture = FakeObjectGatewayFixture();
+      final bytes = Uint8List.fromList(utf8.encode('object data'));
+      final checksum = sha256.convert(bytes).toString();
+      await fixture.register(objectGatewayTestKey);
+      fixture.bucket.putError = StateError('backend details');
+      final response = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'PUT',
+          claims: fixture.claims(
+            method: 'PUT',
+            key: objectGatewayTestKey,
+            nonce: '3' * 48,
+            contentType: 'text/plain',
+            length: bytes.length,
+            checksumSha256: checksum,
           ),
+          headers: {
+            'content-length': '${bytes.length}',
+            'content-type': 'text/plain',
+            'x-checksum-sha256': checksum,
+          },
+          body: [bytes],
+          contentLength: bytes.length,
         ),
       );
+
+      expect(response.statusCode, 502);
+      expect(await utf8.decodeStream(response.body), 'storage unavailable');
+      expect(fixture.ledger.pendingFor(objectGatewayTestKey), 1);
     },
   );
 
-  test('reports gateway delete quiescence as pending', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      request.response.statusCode = HttpStatus.conflict;
-      request.response.write('pending\n');
-      await request.response.close();
-      return _ObservedRequest.from(request);
-    });
-
-    await expectLater(
-      _store(server).delete(objectKey, registrationId: registrationId),
-      throwsA(isA<ObjectStoreDeletePendingException>()),
-    );
-
-    final request = await observed;
-    expect(request.method, 'DELETE');
-    expect(request.registrationId, registrationId);
-  });
-
-  test('decodes the explicit provider deletion blocker response', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      request.response.statusCode = HttpStatus.unprocessableEntity;
-      request.response.write('{"code":"replica_provenance_unavailable"}');
-      await request.response.close();
-      return _ObservedRequest.from(request);
-    });
-
-    await expectLater(
-      _store(server).delete(objectKey, registrationId: registrationId),
-      throwsA(
-        isA<ObjectStoreDeleteBlockedException>().having(
-          (error) => error.code,
-          'code',
-          'replica_provenance_unavailable',
+  test(
+    'streams private downloads in bounded ranges and reserves reads',
+    () async {
+      final fixture = FakeObjectGatewayFixture();
+      await fixture.register(objectGatewayTestKey);
+      final bytes = Uint8List.fromList(
+        List<int>.generate(4 * 1024 * 1024 + 17, (index) => index % 251),
+      );
+      fixture.bucket.seed(
+        objectGatewayTestKey,
+        bytes,
+        mimeType: 'text/plain; charset=utf-8',
+      );
+      final response = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'GET',
+          claims: fixture.claims(
+            method: 'GET',
+            key: objectGatewayTestKey,
+            nonce: '7' * 48,
+            contentDisposition: 'attachment; filename="private.txt"',
+          ),
         ),
-      ),
-    );
-
-    final request = await observed;
-    expect(request.method, 'DELETE');
-    expect(request.registrationId, registrationId);
-  });
-
-  test('fails closed on an unrecognized gateway 422 response', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      request.response.statusCode = HttpStatus.unprocessableEntity;
-      request.response.write('{"code":"unknown_blocker"}');
-      await request.response.close();
-      return _ObservedRequest.from(request);
-    });
-
-    await expectLater(
-      _store(server).delete(objectKey, registrationId: registrationId),
-      throwsStateError,
-    );
-
-    final request = await observed;
-    expect(request.method, 'DELETE');
-    expect(request.registrationId, registrationId);
-  });
-
-  test('keeps an untyped gateway 502 as a transient error', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      request.response.statusCode = HttpStatus.badGateway;
-      request.response.write('storage unavailable');
-      await request.response.close();
-      return _ObservedRequest.from(request);
-    });
-
-    await expectLater(
-      _store(server).delete(objectKey, registrationId: registrationId),
-      throwsStateError,
-    );
-    expect((await observed).method, 'DELETE');
-  });
-
-  test('quiesces by registration and treats pending as unverified', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final requests = <_ObservedRequest>[];
-    var quiesceCount = 0;
-    final serving = () async {
-      await for (final request in server) {
-        final observed = _ObservedRequest.from(request);
-        requests.add(observed);
-        if (observed.query.containsKey('quiesce')) quiesceCount++;
-        request.response.statusCode = observed.query.containsKey('register')
-            ? HttpStatus.noContent
-            : quiesceCount == 1
-            ? HttpStatus.conflict
-            : HttpStatus.noContent;
-        if (quiesceCount == 1) request.response.write('pending\n');
-        await request.response.close();
-        if (quiesceCount == 2) break;
+      );
+      final chunks = <Uint8List>[];
+      await for (final chunk in response.body) {
+        chunks.add(chunk);
       }
-    }();
-    final store = _store(server);
+      final output = BytesBuilder(copy: false);
+      for (final chunk in chunks) {
+        output.add(chunk);
+      }
 
-    final first = await store.confirmsUploadQuiescence(
-      key: objectKey,
-      expiresAt: DateTime.utc(2026, 10, 26),
-      registrationId: registrationId,
-    );
-    final second = await store.confirmsUploadQuiescence(
-      key: objectKey,
-      expiresAt: DateTime.utc(2026, 10, 26),
-      registrationId: registrationId,
-    );
-    await serving;
-
-    expect(first, isFalse);
-    expect(second, isTrue);
-    expect(
-      requests.map(
-        (request) => request.query['register'] ?? request.query['quiesce'],
-      ),
-      ['1', '1'],
-    );
-    expect(
-      requests.every((request) => request.registrationId == registrationId),
-      isTrue,
-    );
-    expect(
-      requests.every(
-        (request) => request.authorization == 'Bearer gateway-secret',
-      ),
-      isTrue,
-    );
-  });
-
-  test(
-    'distinguishes unknown gateway registration from pending quiescence',
-    () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final observed = server.first.then((request) async {
-        request.response.statusCode = HttpStatus.conflict;
-        request.response.write('conflict\n');
-        await request.response.close();
-        return _ObservedRequest.from(request);
-      });
-
-      await expectLater(
-        _store(server).confirmsUploadQuiescence(
-          key: objectKey,
-          expiresAt: DateTime.utc(2026, 10, 26),
-          registrationId: registrationId,
-        ),
-        throwsA(isA<ObjectStoreRegistrationConflictException>()),
-      );
-
-      final request = await observed;
-      expect(request.query, {'quiesce': '1'});
-    },
-  );
-
-  test('fails closed on an unknown 409 quiescence body', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      request.response.statusCode = HttpStatus.conflict;
-      request.response.write('unexpected\n');
-      await request.response.close();
-      return _ObservedRequest.from(request);
-    });
-
-    await expectLater(
-      _store(server).confirmsUploadQuiescence(
-        key: objectKey,
-        expiresAt: DateTime.utc(2026, 10, 26),
-        registrationId: registrationId,
-      ),
-      throwsStateError,
-    );
-    expect((await observed).query, {'quiesce': '1'});
-  });
-
-  test(
-    'does not register unknown keys during head, get signing or quiesce',
-    () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final requests = <_ObservedRequest>[];
-      final serving = () async {
-        await for (final request in server) {
-          final observed = _ObservedRequest.from(request);
-          requests.add(observed);
-          request.response.statusCode = HttpStatus.conflict;
-          request.response.write('conflict\n');
-          await request.response.close();
-          if (requests.length == 3) break;
-        }
-      }();
-      final store = _store(server);
-
-      await expectLater(
-        store.head(objectKey, registrationId: registrationId),
-        throwsStateError,
-      );
-      await expectLater(
-        store.signGet(
-          key: objectKey,
-          contentDisposition: 'attachment; filename="file.txt"',
-          expiresIn: const Duration(minutes: 1),
-          registrationId: registrationId,
-        ),
-        throwsStateError,
-      );
-      await expectLater(
-        store.confirmsUploadQuiescence(
-          key: objectKey,
-          expiresAt: DateTime.utc(2026, 10, 26),
-          registrationId: registrationId,
-        ),
-        throwsA(isA<ObjectStoreRegistrationConflictException>()),
-      );
-      await serving;
-
-      expect(requests.map((request) => request.method), [
-        'HEAD',
-        'POST',
-        'POST',
-      ]);
-      expect(requests.map((request) => request.query['sign']), [
-        null,
-        'GET',
-        null,
-      ]);
+      expect(response.statusCode, 200);
+      expect(response.headers['cache-control'], 'no-store');
+      expect(response.headers['content-type'], 'text/plain; charset=utf-8');
       expect(
-        requests.every((request) => !request.query.containsKey('register')),
-        isTrue,
+        response.headers['content-disposition'],
+        'attachment; filename="private.txt"',
       );
+      expect(response.contentLength, bytes.length);
+      expect(fixture.bucket.ranges.map((range) => range.$2), [
+        0,
+        4 * 1024 * 1024,
+      ]);
+      expect(fixture.bucket.ranges.map((range) => range.$3), [
+        4 * 1024 * 1024 - 1,
+        bytes.length - 1,
+      ]);
+      expect(output.takeBytes(), bytes);
+      expect(fixture.ledger.pendingFor(objectGatewayTestKey), 0);
     },
   );
 
-  test('uses one registration identity for every gateway operation', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final requests = <_ObservedRequest>[];
-    final serving = () async {
-      await for (final request in server) {
-        final observed = _ObservedRequest.from(request);
-        requests.add(observed);
-        request.response.statusCode = request.method == 'HEAD'
-            ? HttpStatus.ok
-            : request.method == 'DELETE' ||
-                  observed.query.containsKey('register') ||
-                  observed.query.containsKey('quiesce')
-            ? HttpStatus.noContent
-            : HttpStatus.ok;
-        if (request.method == 'HEAD') {
-          request.response.headers.contentLength = 4;
-          request.response.headers.contentType = ContentType.text;
-          request.response.headers.set('x-checksum-sha256', 'b' * 64);
-        } else if (observed.query.containsKey('sign')) {
-          request.response.write('https://gateway.invalid/signed');
-        }
-        await request.response.close();
-        if (requests.length == 6) break;
-      }
-    }();
-    final store = _store(server);
-    final expiresAt = DateTime.now().toUtc().add(const Duration(minutes: 5));
+  test(
+    'serves legacy keys by signed GET without touching the ledger',
+    () async {
+      final fixture = FakeObjectGatewayFixture();
+      final key = '7/${'a' * 48}';
+      fixture.bucket.seed(key, Uint8List.fromList([1, 2, 3]));
+      final response = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'GET',
+          claims: fixture.claims(
+            method: 'GET',
+            key: key,
+            registrationId: null,
+            contentDisposition: 'attachment',
+          ),
+        ),
+      );
+      final contents = await response.body.expand((chunk) => chunk).toList();
 
-    await store.registerFreshKey(
-      key: objectKey,
-      registrationId: registrationId,
-    );
-    await store.signPut(
-      key: objectKey,
-      mimeType: 'text/plain',
-      sizeBytes: 4,
-      checksumSha256: 'b' * 64,
-      expiresAt: expiresAt,
-      registrationId: registrationId,
-    );
-    expect(
-      await store.head(objectKey, registrationId: registrationId),
-      isNotNull,
-    );
-    await store.signGet(
-      key: objectKey,
-      contentDisposition: 'attachment; filename="file.txt"',
-      expiresIn: const Duration(minutes: 1),
-      registrationId: registrationId,
-    );
-    expect(
-      await store.confirmsUploadQuiescence(
-        key: objectKey,
-        expiresAt: expiresAt,
-        registrationId: registrationId,
+      expect(response.statusCode, 200);
+      expect(contents, [1, 2, 3]);
+      expect(fixture.ledger.calls, isEmpty);
+    },
+  );
+
+  test('legacy keys cannot upload, register, or be deleted', () async {
+    final fixture = FakeObjectGatewayFixture();
+    final key = '7/${'a' * 48}';
+    final upload = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'PUT',
+        claims: fixture.claims(
+          method: 'PUT',
+          key: key,
+          registrationId: null,
+          contentType: 'text/plain',
+          length: 1,
+          checksumSha256: 'a' * 64,
+        ),
+        headers: {
+          'content-length': '1',
+          'content-type': 'text/plain',
+          'x-checksum-sha256': 'a' * 64,
+        },
+        body: [
+          Uint8List.fromList([1]),
+        ],
+        contentLength: 1,
       ),
-      isTrue,
     );
-    await store.delete(objectKey, registrationId: registrationId);
-    await serving;
 
-    expect(requests, hasLength(6));
-    expect(
-      requests.map((request) => request.registrationId),
-      everyElement(registrationId),
-    );
-    expect(
-      requests.map((request) => request.authorization),
-      everyElement('Bearer gateway-secret'),
-    );
-    expect(requests[1].query['sign'], 'PUT');
-    expect(requests[2].method, 'HEAD');
-    expect(requests[3].query['sign'], 'GET');
-    expect(requests[3].query['response-cache-control'], 'no-store');
-    expect(requests[4].query['quiesce'], '1');
-    expect(requests[5].method, 'DELETE');
+    expect(upload.statusCode, 403);
+    expect(fixture.bucket.putCount, 0);
+    expect(fixture.ledger.calls, isEmpty);
   });
 
   test(
-    'requires gateway DELETE to positively confirm object removal',
+    'returns unavailable on bucket failure and cleans read reservations',
     () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final observed = server.first.then((request) async {
-        final result = _ObservedRequest.from(request);
-        request.response.statusCode = HttpStatus.conflict;
-        request.response.write('pending\n');
-        await request.response.close();
-        return result;
-      });
+      final fixture = FakeObjectGatewayFixture();
+      await fixture.register(objectGatewayTestKey);
+      fixture.bucket.headError = StateError('private backend detail');
+      final response = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'GET',
+          claims: fixture.claims(
+            method: 'GET',
+            key: objectGatewayTestKey,
+            contentDisposition: 'attachment',
+          ),
+        ),
+      );
+
+      expect(response.statusCode, 503);
+      expect(await utf8.decodeStream(response.body), 'unavailable');
+      expect(fixture.ledger.pendingFor(objectGatewayTestKey), 0);
+    },
+  );
+
+  test('finishes a settled failed object range', () async {
+    final fixture = FakeObjectGatewayFixture();
+    await fixture.register(objectGatewayTestKey);
+    fixture.bucket.seed(objectGatewayTestKey, Uint8List.fromList([1, 2, 3]));
+    fixture.bucket.rangeError = StateError('range failed');
+    final response = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'GET',
+        claims: fixture.claims(
+          method: 'GET',
+          key: objectGatewayTestKey,
+          nonce: '8' * 48,
+          contentDisposition: 'attachment',
+        ),
+      ),
+    );
+
+    await expectLater(response.body.drain<void>(), throwsStateError);
+    expect(fixture.ledger.pendingFor(objectGatewayTestKey), 0);
+  });
+
+  test(
+    'keeps timed out object streams pending for fail-closed erasure',
+    () async {
+      final fixture = FakeObjectGatewayFixture(
+        requestTimeout: const Duration(milliseconds: 20),
+      );
+      await fixture.register(objectGatewayTestKey);
+      fixture.bucket.seed(objectGatewayTestKey, Uint8List.fromList([1, 2, 3]));
+      fixture.bucket.rangeDelay = const Duration(milliseconds: 50);
+      final response = await fixture.service.handle(
+        fixture.session,
+        fixture.request(
+          method: 'GET',
+          claims: fixture.claims(
+            method: 'GET',
+            key: objectGatewayTestKey,
+            nonce: '9' * 48,
+            contentDisposition: 'attachment',
+          ),
+        ),
+      );
 
       await expectLater(
-        _store(server).delete(objectKey, registrationId: registrationId),
-        throwsA(isA<ObjectStoreDeletePendingException>()),
+        response.body.drain<void>(),
+        throwsA(isA<TimeoutException>()),
       );
-
-      final request = await observed;
-      expect(request.method, 'DELETE');
-      expect(request.registrationId, registrationId);
+      expect(fixture.ledger.pendingFor(objectGatewayTestKey), 1);
     },
   );
 
-  test(
-    'delete treats a gateway registration conflict as a permanent blocker',
-    () async {
-      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => server.close(force: true));
-      final observed = server.first.then((request) async {
-        request.response.statusCode = HttpStatus.conflict;
-        request.response.write('conflict\n');
-        await request.response.close();
-        return _ObservedRequest.from(request);
-      });
-
-      await expectLater(
-        _store(server).delete(objectKey, registrationId: registrationId),
-        throwsA(isA<ObjectStoreRegistrationConflictException>()),
-      );
-      expect((await observed).method, 'DELETE');
-    },
-  );
-
-  test('allows legacy DELETE 404 for an already absent object', () async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => server.close(force: true));
-    final observed = server.first.then((request) async {
-      final result = _ObservedRequest.from(request);
-      request.response.statusCode = HttpStatus.notFound;
-      await request.response.close();
-      return result;
-    });
-    final store = HttpObjectStore(
-      legacyEndpoint: _endpoint(server),
-      legacyBearerToken: 'legacy-secret',
+  test('rejects malformed object paths before storage access', () async {
+    final fixture = FakeObjectGatewayFixture();
+    final claims = fixture.claims(method: 'GET', key: objectGatewayTestKey);
+    final response = await fixture.service.handle(
+      fixture.session,
+      fixture.request(
+        method: 'GET',
+        claims: claims,
+        url: fixture.config.publicBaseUrl.replace(
+          path: '/objects/../$objectGatewayTestKey',
+          queryParameters: {'token': fixture.signer.sign(claims)},
+        ),
+      ),
     );
 
-    await store.delete(objectKey);
-
-    final request = await observed;
-    expect(request.method, 'DELETE');
-    expect(request.registrationId, isNull);
-    expect(request.authorization, 'Bearer legacy-secret');
+    expect(response.statusCode, 400);
+    expect(fixture.bucket.objects, isEmpty);
   });
-
-  test('legacy operations use only the explicit legacy endpoint', () async {
-    final gateway = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    final legacy = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    addTearDown(() => gateway.close(force: true));
-    addTearDown(() => legacy.close(force: true));
-    var gatewayRequests = 0;
-    gateway.listen((request) {
-      gatewayRequests++;
-      request.response.close();
-    });
-    final legacyRequests = <_ObservedRequest>[];
-    final legacyServing = () async {
-      await for (final request in legacy) {
-        legacyRequests.add(_ObservedRequest.from(request));
-        if (request.method == 'HEAD') {
-          request.response.statusCode = HttpStatus.notFound;
-        } else if (request.uri.queryParameters['sign'] == 'GET') {
-          request.response.write('https://legacy.invalid/signed');
-        }
-        await request.response.close();
-        if (legacyRequests.length == 2) break;
-      }
-    }();
-    final store = HttpObjectStore(
-      gatewayEndpoint: _endpoint(gateway),
-      gatewayBearerToken: 'gateway-secret',
-      legacyEndpoint: _endpoint(legacy),
-      legacyBearerToken: 'legacy-secret',
-    );
-
-    expect(await store.head(objectKey), isNull);
-    await store.signGet(
-      key: objectKey,
-      contentDisposition: 'attachment; filename="legacy.txt"',
-      expiresIn: const Duration(minutes: 1),
-    );
-    await legacyServing;
-
-    expect(gatewayRequests, 0);
-    expect(legacyRequests.map((request) => request.method), ['HEAD', 'POST']);
-    expect(
-      legacyRequests.every((request) => request.registrationId == null),
-      isTrue,
-    );
-    expect(legacyRequests.map((request) => request.authorization), [
-      'Bearer legacy-secret',
-      'Bearer legacy-secret',
-    ]);
-  });
-
-  test(
-    'does not route missing legacy configuration to the new gateway',
-    () async {
-      final gateway = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-      addTearDown(() => gateway.close(force: true));
-      var gatewayRequests = 0;
-      gateway.listen((request) {
-        gatewayRequests++;
-        request.response.close();
-      });
-      final store = HttpObjectStore(
-        gatewayEndpoint: _endpoint(gateway),
-        gatewayBearerToken: 'gateway-secret',
-      );
-
-      await expectLater(store.head(objectKey), throwsStateError);
-      expect(gatewayRequests, 0);
-    },
-  );
-}
-
-HttpObjectStore _store(
-  HttpServer server, {
-  Duration timeout = const Duration(seconds: 30),
-}) => HttpObjectStore(
-  gatewayEndpoint: _endpoint(server),
-  gatewayBearerToken: 'gateway-secret',
-  requestTimeout: timeout,
-);
-
-Uri _endpoint(HttpServer server) => Uri(
-  scheme: 'http',
-  host: server.address.address,
-  port: server.port,
-  path: '/objects',
-);
-
-class _ObservedRequest {
-  const _ObservedRequest({
-    required this.method,
-    required this.path,
-    required this.query,
-    required this.authorization,
-    required this.registrationId,
-  });
-
-  factory _ObservedRequest.from(HttpRequest request) => _ObservedRequest(
-    method: request.method,
-    path: request.uri.path,
-    query: request.uri.queryParameters,
-    authorization: request.headers.value(HttpHeaders.authorizationHeader),
-    registrationId: request.headers.value('x-registration-id'),
-  );
-
-  final String method;
-  final String path;
-  final Map<String, String> query;
-  final String? authorization;
-  final String? registrationId;
 }

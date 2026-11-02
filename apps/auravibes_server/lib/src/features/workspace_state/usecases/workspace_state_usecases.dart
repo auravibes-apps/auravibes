@@ -13,14 +13,14 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_directory_move_batch.dart';
+import '../workspace_history_receipts.dart';
 import '../workspace_record_mutation_batch.dart';
 import '../workspace_revision_capture.dart';
-import '../workspace_history_receipts.dart';
 import '../workspace_secret_cipher.dart';
 import '../workspace_table_access.dart';
+import '../workspace_table_duplication.dart';
 import '../workspace_table_mutation_validation.dart';
 import '../workspace_table_page_reader.dart';
-import '../workspace_table_duplication.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,

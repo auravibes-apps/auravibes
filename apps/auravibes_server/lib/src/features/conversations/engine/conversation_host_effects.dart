@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:serverpod/serverpod.dart';
-import 'package:auravibes_engine/auravibes_engine.dart'
-    show A2uiChatContract, a2uiChatFormCatalogId, fallbackConversationTitle;
 import 'package:auravibes_engine/auravibes_engine.dart'
     as shared
     show A2uiIssueCode, A2uiOperationKind, baselineA2uiChatComponents;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show A2uiChatContract, a2uiChatFormCatalogId, fallbackConversationTitle;
+import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../objects/object_store.dart';
@@ -627,7 +627,7 @@ class const ServerConversationAttachmentReader()
     required List<int> objectIds,
   }) async {
     if (objectIds.isEmpty) return const [];
-    final store = HttpObjectStore.fromEnvironment();
+    final store = objectStoreForSession(session);
     final result = <ConversationAttachment>[];
     for (final objectId in objectIds.toSet()) {
       final object = await WorkspaceObject.db.findFirstRow(

@@ -8,8 +8,8 @@ import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_image_a
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';

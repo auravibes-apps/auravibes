@@ -66,6 +66,34 @@ void main() {
       expect(find.text('Are you sure you want to proceed?'), findsOneWidget);
     });
 
+    testWidgets('uses Aura theme fonts for the title and message', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
+            title: Text('Confirm Action'),
+            message: Text('Are you sure you want to proceed?'),
+            confirmLabel: Text('Confirm'),
+            cancelLabel: Text('Cancel'),
+          ),
+        ),
+      );
+
+      final titleContext = tester.element(find.text('Confirm Action'));
+      expect(
+        DefaultTextStyle.of(titleContext).style.fontFamily,
+        titleContext.auraTheme.typography.headingFontFamily,
+      );
+      final messageContext = tester.element(
+        find.text('Are you sure you want to proceed?'),
+      );
+      expect(
+        DefaultTextStyle.of(messageContext).style.fontFamily,
+        messageContext.auraTheme.typography.bodyFontFamily,
+      );
+    });
+
     testWidgets('wraps confirmation actions on narrow screens', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1;

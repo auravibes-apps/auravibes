@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Read-only checks for repository guidance; no model calls or network access."""
+"""Read-only checks for repository guidance; no model calls or network access.
+
+Melos command checks cover the root AGENTS.md, its linked scope AGENTS.md files,
+docs/agents/**/*.md, and .agents/**/*.md. YAML code examples are treated as
+configuration examples rather than commands from this workspace.
+"""
 
 import json
 from html.parser import HTMLParser
@@ -14,6 +19,160 @@ HTML_TAG_START = re.compile(
 )
 ACTION_USES = re.compile(r"^\s*(?:-\s*)?uses:\s*(\S+)")
 FULL_COMMIT_SHA = re.compile(r"[0-9a-fA-F]{40}")
+MELOS_RUN = re.compile(r"\bmelos\s+run\s+([A-Za-z0-9][A-Za-z0-9:_-]*)\b")
+MELOS_SCRIPT_DECLARATION = re.compile(
+    r"^ {4}([A-Za-z0-9][A-Za-z0-9:_-]*):(?:[ \t]*(?:#.*)?)?$"
+)
+SKILL_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+SKILL_NAME_MIN_LENGTH = 1
+SKILL_NAME_MAX_LENGTH = 64
+SKILL_DESCRIPTION_MAX_LENGTH = 1024
+
+
+def _skill_frontmatter_value(frontmatter, key):
+    """Read a simple YAML frontmatter scalar, including literal/folded blocks."""
+    lines = frontmatter.splitlines()
+    for index, line in enumerate(lines):
+        match = re.match(rf"^(?P<indent> *){re.escape(key)}:[ \t]*(?P<value>.*)$", line)
+        if not match:
+            continue
+
+        raw_value = match.group("value").strip()
+        block = re.fullmatch(r"([>|])([+-]?[1-9]?|[1-9][+-]?)(?:[ \t]+#.*)?", raw_value)
+        if not block:
+            return raw_value.strip("\"'")
+
+        style, indicators = block.groups()
+        parent_indent = len(match.group("indent"))
+        explicit_indent_match = re.search(r"[1-9]", indicators)
+        content_indent = (
+            parent_indent + int(explicit_indent_match.group())
+            if explicit_indent_match
+            else None
+        )
+        leading_blanks = 0
+        content = []
+        for candidate in lines[index + 1 :]:
+            if not candidate.strip():
+                if content_indent is None:
+                    leading_blanks += 1
+                else:
+                    content.append(("", False))
+                continue
+
+            indent = len(candidate) - len(candidate.lstrip(" "))
+            if indent <= parent_indent:
+                break
+            if content_indent is None:
+                content_indent = indent
+                content.extend(("", False) for _ in range(leading_blanks))
+            if indent < content_indent:
+                break
+            content.append((candidate[content_indent:], indent > content_indent))
+
+        if not content:
+            return ""
+
+        trailing_blanks = 0
+        while content and not content[-1][0]:
+            content.pop()
+            trailing_blanks += 1
+        if not content:
+            return ""
+
+        value_parts = [content[0][0]]
+        for previous, current in zip(content, content[1:]):
+            previous_text, previous_indented = previous
+            current_text, current_indented = current
+            if style == "|" or previous_indented or current_indented:
+                separator = "\n"
+            elif previous_text and current_text:
+                separator = " "
+            elif previous_text:
+                separator = ""
+            else:
+                separator = "\n"
+            value_parts.extend((separator, current_text))
+
+        value = "".join(value_parts)
+        chomp = "+" if "+" in indicators else "-" if "-" in indicators else "clip"
+        value = value.rstrip("\n")
+        if chomp == "+":
+            value += "\n" * (trailing_blanks + 1)
+        elif chomp == "clip":
+            value += "\n"
+        return value
+
+    return ""
+
+
+def _without_yaml_code_blocks(text):
+    """Preserve line numbers while omitting fenced YAML configuration examples."""
+    lines = []
+    yaml_fence = None
+    for line in text.splitlines():
+        if yaml_fence:
+            closing = re.match(
+                rf"^[ \t]*{re.escape(yaml_fence[0])}{{{yaml_fence[1]},}}[ \t]*$",
+                line,
+            )
+            lines.append("")
+            if closing:
+                yaml_fence = None
+            continue
+
+        opening = re.match(r"^[ \t]*(`{3,}|~{3,})[ \t]*([A-Za-z0-9_-]*)", line)
+        if opening and opening.group(2).lower() in {"yaml", "yml"}:
+            yaml_fence = (opening.group(1)[0], len(opening.group(1)))
+            lines.append("")
+            continue
+
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _melos_script_names(pubspec):
+    """Read declared Melos script names without requiring a YAML dependency."""
+    if not pubspec.is_file():
+        return set()
+
+    names = set()
+    in_melos = False
+    in_scripts = False
+    for line in pubspec.read_text().splitlines():
+        if re.match(r"^melos:[ \t]*(?:#.*)?$", line):
+            in_melos = True
+            in_scripts = False
+            continue
+        if in_melos and re.match(r"^  scripts:[ \t]*(?:#.*)?$", line):
+            in_scripts = True
+            continue
+        if in_scripts:
+            if line.strip() and not line.startswith("    "):
+                break
+            match = MELOS_SCRIPT_DECLARATION.match(line)
+            if match:
+                names.add(match.group(1))
+        elif in_melos and line and not line.startswith(" "):
+            break
+    return names
+
+
+def _verify_melos_commands(root, guidance_files, fail):
+    """Check documented Melos invocations against the root workspace scripts."""
+    scripts = _melos_script_names(root / "pubspec.yaml")
+    for path in sorted(guidance_files):
+        guidance = _without_yaml_code_blocks(path.read_text())
+        for line_number, line in enumerate(guidance.splitlines(), start=1):
+            for match in MELOS_RUN.finditer(line):
+                script = match.group(1)
+                if script not in scripts:
+                    fail(
+                        path,
+                        f"line {line_number}: Unknown Melos script '{script}'. "
+                        "Add it to root pubspec.yaml under melos.scripts or "
+                        "correct the command.",
+                    )
 
 
 class _HtmlImageSourceParser(HTMLParser):
@@ -345,6 +504,15 @@ def verify(root):
     for directory in (root / "docs/agents", root / ".agents"):
         if directory.is_dir():
             markdown.update(path for path in directory.rglob("*.md") if path.is_file())
+    guidance_files = {path for path in instructions if path.is_file()}
+    guidance_files.update(
+        path
+        for directory in (root / "docs/agents", root / ".agents")
+        if directory.is_dir()
+        for path in directory.rglob("*.md")
+        if path.is_file()
+    )
+    _verify_melos_commands(root, guidance_files, fail)
     for path in skills:
         text = path.read_text()
         frontmatter = re.match(r"\A---\n(.*?)\n---(?:\n|$)", text, re.S)
@@ -353,12 +521,32 @@ def verify(root):
         else:
             fields = {}
             for key in ("name", "description"):
-                match = re.search(rf"^{key}:\s*(.+)$", frontmatter.group(1), re.M)
-                fields[key] = match.group(1).strip().strip("\"'") if match else ""
+                fields[key] = _skill_frontmatter_value(frontmatter.group(1), key)
                 if not fields[key]:
                     fail(path, f"Missing {key}. Describe the skill's task trigger.")
+            name = fields["name"]
+            if name:
+                if not SKILL_NAME_MIN_LENGTH <= len(name) <= SKILL_NAME_MAX_LENGTH:
+                    fail(
+                        path,
+                        "Skill name must contain 1 to 64 characters "
+                        f"(got {len(name)}).",
+                    )
+                if not SKILL_NAME.fullmatch(name):
+                    fail(
+                        path,
+                        "Skill name must use lowercase letters, numbers, and "
+                        "single hyphens; it cannot start or end with a hyphen.",
+                    )
             if fields["name"] and fields["name"] != path.parent.name:
                 fail(path, "Skill name differs from directory. Align discovery metadata.")
+            description = fields["description"]
+            if len(description) > SKILL_DESCRIPTION_MAX_LENGTH:
+                fail(
+                    path,
+                    "Skill description must be at most 1024 characters "
+                    f"(got {len(description)}).",
+                )
         markdown.add(path)
         markdown.update((path.parent / "references").glob("*.md"))
         cases = path.parent / "evals/evals.json"
@@ -418,7 +606,8 @@ def main():
     print(
         "Harness verification passed (immutable GitHub action references, "
         "documentation links and image references, "
-        "context documents, aliases, metadata, evaluation schema)."
+        "context documents, aliases, metadata, evaluation schema, "
+        "and documented Melos scripts)."
     )
     print("Behavioral model trials are separate; this check does not run them.")
     return 0

@@ -62,6 +62,40 @@ void main() {
     expect(paths, ['/image', '/final']);
   });
 
+  test(
+    'revalidates each redirect hop before making the next request',
+    () async {
+      final paths = <String>[];
+      final dio = Dio()
+        ..httpClientAdapter = _Transport((options) async {
+          paths.add(options.uri.path);
+          expect(options.followRedirects, isFalse);
+
+          return paths.length == 1
+              ? ResponseBody.fromString(
+                  '',
+                  302,
+                  headers: {
+                    'location': ['/middle'],
+                  },
+                )
+              : ResponseBody.fromString(
+                  '',
+                  302,
+                  headers: {
+                    'location': ['https://[::ffff:127.0.0.1]/private'],
+                  },
+                );
+        });
+
+      await expectLater(
+        SafeImageLoader(dio: dio).load('https://8.8.8.8/image'),
+        throwsA(isA<FormatException>()),
+      );
+      expect(paths, ['/image', '/middle']);
+    },
+  );
+
   test('stops redirect loops at fixed limit', () async {
     var calls = 0;
     final dio = Dio()

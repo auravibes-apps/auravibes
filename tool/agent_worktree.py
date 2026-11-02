@@ -3,7 +3,10 @@
 
 import argparse
 import json
+import os
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -162,6 +165,548 @@ def _readiness_checks(repo_root):
             "path": str(devtools_options),
         },
     ]
+
+
+_FVM_USE_COMMAND = (
+    "fvm use \"$(python3 -c 'import json; "
+    "print(json.load(open(\".fvmrc\"))[\"flutter\"])')\" --skip-pub-get"
+)
+_MELOS_BOOTSTRAP_COMMAND = (
+    "python3 tool/validation_lease.py -- fvm dart run melos bootstrap"
+)
+
+
+def _check(name, status, expected, observed, next_step):
+    return {
+        "name": name,
+        "status": status,
+        "expected": expected,
+        "observed": observed,
+        "next_step": next_step,
+    }
+
+
+def _read_flutter_pin(repo_root):
+    path = repo_root / ".fvmrc"
+    try:
+        config = json.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        return None, f"could not read .fvmrc: {error}"
+    if not isinstance(config, dict) or not isinstance(config.get("flutter"), str):
+        return None, ".fvmrc is missing a valid flutter version"
+    version = config["flutter"].strip()
+    if not version:
+        return None, ".fvmrc has an empty flutter version"
+    return version, None
+
+
+def _fvm_cli_check(fvm_path):
+    if fvm_path:
+        return _check(
+            "FVM CLI",
+            "pass",
+            "fvm available in PATH",
+            f"found at {fvm_path}",
+            "No action required.",
+        )
+    return _check(
+        "FVM CLI",
+        "mismatch",
+        "fvm available in PATH",
+        "not found in PATH",
+        "dart pub global activate fvm",
+    )
+
+
+def _sdk_repair_step(fvm_available, pinned_version):
+    if pinned_version is None:
+        return "git diff -- .fvmrc"
+    if not fvm_available:
+        return "dart pub global activate fvm"
+    return _FVM_USE_COMMAND
+
+
+def _pinned_sdk_check(repo_root, pinned_version, fvm_available):
+    if pinned_version is None:
+        return (
+            _check(
+                "pinned Flutter SDK",
+                "unknown",
+                "Flutter version from .fvmrc",
+                "could not establish the pinned version",
+                "git diff -- .fvmrc",
+            ),
+            "unknown",
+        )
+
+    expected = f"Flutter {pinned_version}"
+    sdk_link = repo_root / ".fvm" / "flutter_sdk"
+    if not sdk_link.is_symlink():
+        observed = (
+            "not an FVM symlink"
+            if sdk_link.exists()
+            else "missing .fvm/flutter_sdk link"
+        )
+        return (
+            _check(
+                "pinned Flutter SDK",
+                "mismatch",
+                expected,
+                observed,
+                _sdk_repair_step(fvm_available, pinned_version),
+            ),
+            "mismatch",
+        )
+
+    if not sdk_link.exists():
+        return (
+            _check(
+                "pinned Flutter SDK",
+                "mismatch",
+                expected,
+                "dangling .fvm/flutter_sdk link",
+                _sdk_repair_step(fvm_available, pinned_version),
+            ),
+            "mismatch",
+        )
+
+    try:
+        sdk_path = sdk_link.resolve(strict=True)
+    except (OSError, RuntimeError) as error:
+        return (
+            _check(
+                "pinned Flutter SDK",
+                "mismatch",
+                expected,
+                f"could not resolve .fvm/flutter_sdk: {error}",
+                _sdk_repair_step(fvm_available, pinned_version),
+            ),
+            "mismatch",
+        )
+    if not sdk_path.is_dir():
+        return (
+            _check(
+                "pinned Flutter SDK",
+                "mismatch",
+                expected,
+                f"SDK link target is not a directory: {sdk_path}",
+                _sdk_repair_step(fvm_available, pinned_version),
+            ),
+            "mismatch",
+        )
+    if sdk_path.name != pinned_version:
+        return (
+            _check(
+                "pinned Flutter SDK",
+                "mismatch",
+                expected,
+                f"SDK link resolves to directory {sdk_path.name}: {sdk_path}",
+                _sdk_repair_step(fvm_available, pinned_version),
+            ),
+            "mismatch",
+        )
+
+    metadata = sdk_path / "bin" / "cache" / "flutter.version.json"
+    try:
+        metadata_value = json.loads(metadata.read_text())
+    except FileNotFoundError:
+        metadata_detail = f"version metadata unavailable at {metadata}"
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        metadata_detail = f"version metadata unreadable at {metadata}: {error}"
+    else:
+        framework_version = (
+            metadata_value.get("frameworkVersion")
+            if isinstance(metadata_value, dict)
+            else None
+        )
+        if not isinstance(framework_version, str) or not framework_version:
+            metadata_detail = f"frameworkVersion unavailable in {metadata}"
+        elif framework_version != pinned_version:
+            return (
+                _check(
+                    "pinned Flutter SDK",
+                    "mismatch",
+                    expected,
+                    f"flutter.version.json reports Flutter {framework_version}",
+                    _sdk_repair_step(fvm_available, pinned_version),
+                ),
+                "mismatch",
+            )
+        else:
+            return (
+                _check(
+                    "pinned Flutter SDK",
+                    "pass",
+                    expected,
+                    f"Flutter {framework_version} at {sdk_path}",
+                    "No action required.",
+                ),
+                "pass",
+            )
+
+    return (
+        _check(
+            "pinned Flutter SDK",
+            "unknown",
+            expected,
+            f"SDK link target is named {pinned_version}; {metadata_detail}",
+            f"cat {shlex.quote(str(metadata))}",
+        ),
+        "unknown",
+    )
+
+
+def _melos_bootstrap_check(repo_root):
+    path = repo_root / "pubspec.yaml"
+    expected = "melos.sdkPath=.fvm/flutter_sdk and melos.command.bootstrap configured"
+    try:
+        lines = path.read_text().splitlines()
+    except (OSError, UnicodeDecodeError) as error:
+        return (
+            _check(
+                "Melos bootstrap configuration",
+                "unknown",
+                expected,
+                f"could not read pubspec.yaml: {error}",
+                "git diff -- pubspec.yaml",
+            ),
+            False,
+        )
+
+    melos_start = next(
+        (
+            index
+            for index, line in enumerate(lines)
+            if line.strip() == "melos:" and not line[:1].isspace()
+        ),
+        None,
+    )
+    if melos_start is None:
+        return (
+            _check(
+                "Melos bootstrap configuration",
+                "mismatch",
+                expected,
+                "melos configuration missing",
+                "git diff -- pubspec.yaml",
+            ),
+            False,
+        )
+
+    melos_lines = []
+    for line in lines[melos_start + 1 :]:
+        if line.strip() and not line[:1].isspace() and not line.lstrip().startswith("#"):
+            break
+        melos_lines.append(line)
+
+    sdk_path = None
+    command_found = False
+    bootstrap_found = False
+    in_command = False
+    for line in melos_lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if indent == 2 and stripped.startswith("sdkPath:"):
+            sdk_path = stripped.split(":", maxsplit=1)[1].split("#", maxsplit=1)[0]
+            sdk_path = sdk_path.strip().strip("\"'")
+        elif indent == 2 and stripped == "command:":
+            command_found = True
+            in_command = True
+        elif in_command and indent <= 2:
+            in_command = False
+        elif in_command and indent == 4 and stripped.startswith("bootstrap:"):
+            bootstrap_found = True
+
+    observed_parts = [
+        f"melos.sdkPath={sdk_path}" if sdk_path else "melos.sdkPath missing",
+        "melos.command.bootstrap configured"
+        if bootstrap_found
+        else "melos.command.bootstrap missing",
+    ]
+    observed = "; ".join(observed_parts)
+    if sdk_path == ".fvm/flutter_sdk" and command_found and bootstrap_found:
+        return (
+            _check(
+                "Melos bootstrap configuration",
+                "pass",
+                expected,
+                observed,
+                "No action required.",
+            ),
+            True,
+        )
+    return (
+        _check(
+            "Melos bootstrap configuration",
+            "mismatch",
+            expected,
+            observed,
+            "git diff -- pubspec.yaml",
+        ),
+        False,
+    )
+
+
+def _bootstrap_next_step(fvm_available, pinned_version, sdk_status, melos_ready):
+    if not melos_ready:
+        return "git diff -- pubspec.yaml"
+    if pinned_version is None:
+        return "git diff -- .fvmrc"
+
+    steps = []
+    if not fvm_available:
+        steps.append("dart pub global activate fvm")
+    if sdk_status != "pass":
+        steps.append(_FVM_USE_COMMAND)
+    steps.append(_MELOS_BOOTSTRAP_COMMAND)
+    if len(steps) == 1:
+        return steps[0]
+    return "\n".join(
+        f"{index}. {step}" for index, step in enumerate(steps, start=1)
+    )
+
+
+def _package_root_from_uri(package_config_path, root_uri):
+    parsed = urlsplit(root_uri)
+    if parsed.scheme == "file" and parsed.netloc in ("", "localhost"):
+        return Path(unquote(parsed.path)), None
+    if parsed.scheme:
+        return None, f"unsupported workspace URI scheme: {parsed.scheme}"
+    return package_config_path.parent / unquote(parsed.path), None
+
+
+def _pub_workspace_check(
+    repo_root, fvm_available, pinned_version, sdk_status, melos_ready
+):
+    path = repo_root / ".dart_tool" / "package_config.json"
+    expected_root = (repo_root / "apps" / "auravibes_app").resolve()
+    expected = f"auravibes_app resolves to {expected_root}"
+    next_step = _bootstrap_next_step(
+        fvm_available, pinned_version, sdk_status, melos_ready
+    )
+    try:
+        config = json.loads(path.read_text())
+    except FileNotFoundError:
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            "missing package configuration; bootstrap history unknown",
+            next_step,
+        )
+    except json.JSONDecodeError as error:
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            f"invalid package configuration JSON: {error}",
+            next_step,
+        )
+    except (OSError, UnicodeDecodeError) as error:
+        return _check(
+            "resolved Pub workspace config",
+            "unknown",
+            expected,
+            f"could not read package configuration: {error}",
+            f"cat {shlex.quote(str(path))}",
+        )
+
+    packages = config.get("packages") if isinstance(config, dict) else None
+    if not isinstance(packages, list):
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            "invalid package configuration package list",
+            next_step,
+        )
+    app_package = next(
+        (
+            package
+            for package in packages
+            if isinstance(package, dict) and package.get("name") == "auravibes_app"
+        ),
+        None,
+    )
+    if app_package is None:
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            "missing auravibes_app package entry",
+            next_step,
+        )
+
+    root_uri = app_package.get("rootUri")
+    if not isinstance(root_uri, str):
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            "auravibes_app entry has no rootUri",
+            next_step,
+        )
+    package_root, error = _package_root_from_uri(path, root_uri)
+    if error:
+        return _check(
+            "resolved Pub workspace config",
+            "unknown",
+            expected,
+            error,
+            f"cat {shlex.quote(str(path))}",
+        )
+    try:
+        observed_root = package_root.resolve()
+    except (OSError, RuntimeError) as error:
+        return _check(
+            "resolved Pub workspace config",
+            "unknown",
+            expected,
+            f"could not resolve auravibes_app rootUri: {error}",
+            f"cat {shlex.quote(str(path))}",
+        )
+    if observed_root != expected_root:
+        scope = (
+            "outside this worktree"
+            if not observed_root.is_relative_to(repo_root.resolve())
+            else "not the expected app package directory"
+        )
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            f"auravibes_app rootUri resolves to {observed_root} ({scope})",
+            next_step,
+        )
+    if not observed_root.is_dir():
+        return _check(
+            "resolved Pub workspace config",
+            "mismatch",
+            expected,
+            f"auravibes_app package directory is missing at {observed_root}",
+            next_step,
+        )
+    return _check(
+        "resolved Pub workspace config",
+        "pass",
+        expected,
+        f"auravibes_app resolves to {observed_root} in this worktree",
+        "No action required.",
+    )
+
+
+def _pub_cache_check(repo_root, pub_cache):
+    if pub_cache is None:
+        configured = os.environ.get("PUB_CACHE")
+        cache_path = (
+            Path(configured).expanduser()
+            if configured
+            else Path.home() / ".pub-cache"
+        )
+        if not cache_path.is_absolute():
+            cache_path = Path.cwd() / cache_path
+    else:
+        cache_path = Path(pub_cache).expanduser()
+        if not cache_path.is_absolute():
+            cache_path = repo_root / cache_path
+
+    try:
+        resolved_path = cache_path.resolve()
+        resolved_root = repo_root.resolve()
+    except (OSError, RuntimeError) as error:
+        observed = f"could not resolve configured cache path {cache_path}: {error}"
+        return _check(
+            "Pub cache",
+            "unknown",
+            "existing cache with verified write access",
+            observed,
+            f"ls -ld {shlex.quote(str(cache_path))}",
+        )
+
+    shared = not resolved_path.is_relative_to(resolved_root)
+    scope = "outside this worktree (shared scope unverified)" if shared else "worktree-local"
+    if not cache_path.exists():
+        return _check(
+            "Pub cache",
+            "unknown",
+            "existing cache with verified write access",
+            f"configured cache does not exist: {resolved_path} ({scope})",
+            f"ls -ld {shlex.quote(str(cache_path))}",
+        )
+    if not cache_path.is_dir():
+        return _check(
+            "Pub cache",
+            "mismatch",
+            "cache path is a writable directory",
+            f"configured cache is not a directory: {resolved_path}",
+            f"ls -ld {shlex.quote(str(cache_path))}",
+        )
+    try:
+        writable = os.access(cache_path, os.W_OK)
+    except OSError as error:
+        return _check(
+            "Pub cache",
+            "unknown",
+            "existing cache with verified write access",
+            f"could not inspect write access for {resolved_path}: {error}",
+            f"ls -ld {shlex.quote(str(cache_path))}",
+        )
+    if not writable:
+        return _check(
+            "Pub cache",
+            "mismatch",
+            "cache writable by this process",
+            f"not writable by this process: {resolved_path} ({scope})",
+            f"ls -ld {shlex.quote(str(cache_path))}",
+        )
+    if shared:
+        return _check(
+            "Pub cache",
+            "warning",
+            "shared cache may be used; cross-worktree state remains unverified",
+            f"writable by this process at {resolved_path}; {scope}",
+            f"ls -ld {shlex.quote(str(cache_path))}",
+        )
+    return _check(
+        "Pub cache",
+        "pass",
+        "cache writable by this process",
+        f"writable by this process at {resolved_path} ({scope})",
+        "No action required.",
+    )
+
+
+def _toolchain_checks(
+    repo_root: Path, *, pub_cache: Path | None = None
+) -> list[dict[str, str]]:
+    """Inspect local Flutter/Melos setup without running or writing setup tools."""
+    fvm_path = shutil.which("fvm")
+    fvm_available = fvm_path is not None
+    pinned_version, pin_error = _read_flutter_pin(repo_root)
+    sdk_check, sdk_status = _pinned_sdk_check(
+        repo_root, pinned_version, fvm_available
+    )
+    melos_check, melos_ready = _melos_bootstrap_check(repo_root)
+    pub_check = _pub_workspace_check(
+        repo_root,
+        fvm_available,
+        pinned_version,
+        sdk_status,
+        melos_ready,
+    )
+
+    checks = [
+        _fvm_cli_check(fvm_path),
+        sdk_check,
+        melos_check,
+        pub_check,
+        _pub_cache_check(repo_root, pub_cache),
+    ]
+    if pin_error and sdk_check["status"] == "unknown":
+        sdk_check["observed"] = pin_error
+    return checks
 
 
 def _mentions_issue(value, issue_number):
@@ -341,7 +886,7 @@ def _print_preflight(result):
             print("Stop: coordinate with matching worktree or open PR before claiming.")
 
 
-def main(argv=None):
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     status_parser = subparsers.add_parser(
@@ -355,6 +900,44 @@ def main(argv=None):
         "--issue", type=int, help="GitHub issue or pull request number"
     )
     preflight_parser.add_argument("--json", action="store_true", help="print JSON")
+    doctor_parser = subparsers.add_parser(
+        "doctor", help="diagnose local Flutter and Melos setup without changes"
+    )
+    doctor_parser.add_argument("--json", action="store_true", help="print JSON")
+    return parser
+
+
+def _format_doctor(checks, *, as_json=False) -> str:
+    if as_json:
+        return json.dumps(checks, indent=2)
+
+    labels = {
+        "pass": "PASS",
+        "mismatch": "CONFIRMED MISMATCH",
+        "warning": "UNVERIFIED WARNING",
+        "unknown": "UNKNOWN",
+    }
+    lines = []
+    for check in checks:
+        label = labels.get(check["status"], check["status"].upper())
+        lines.extend(
+            (
+                f"{label}: {check['name']}",
+                f"  Expected: {check['expected']}",
+                f"  Observed: {check['observed']}",
+            )
+        )
+        steps = check["next_step"].splitlines()
+        if len(steps) == 1:
+            lines.append(f"  Next step: {steps[0]}")
+        else:
+            lines.append("  Next steps:")
+            lines.extend(f"    {step}" for step in steps)
+    return "\n".join(lines)
+
+
+def main(argv=None):
+    parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "preflight" and args.issue is not None and args.issue < 1:
         parser.error("--issue must be a positive number")
@@ -369,6 +952,14 @@ def main(argv=None):
                 _print_status(result)
             return 0
 
+        if args.command == "doctor":
+            checks = _toolchain_checks(repo_root)
+            output = _format_doctor(checks, as_json=args.json)
+            if not args.json:
+                print(f"Repository: {repo_root}")
+            print(output)
+            return 1 if any(check["status"] == "mismatch" for check in checks) else 0
+
         result = _preflight(repo_root, args.issue)
         if args.json:
             print(json.dumps(result, indent=2))
@@ -379,7 +970,8 @@ def main(argv=None):
         target_closed = "target_open" in result and not result["target_open"]
         return 1 if blocked or any(conflicts.values()) or target_closed else 0
     except (OSError, RuntimeError, subprocess.SubprocessError, json.JSONDecodeError) as error:
-        print(f"Preflight failed: {error}", file=sys.stderr)
+        failure = "Doctor failed" if args.command == "doctor" else "Preflight failed"
+        print(f"{failure}: {error}", file=sys.stderr)
         return 2
 
 

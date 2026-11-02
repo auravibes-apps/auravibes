@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "scenario": "cancellation-after-partial-output",
+  "events": [
+    {"type": "chunk", "id": "chunk-before-stop", "text": "Working on it...", "toolCalls": [{"id": "tool-never-run", "name": "unsafe-demo", "arguments": {}}]},
+    {"type": "cancel", "id": "stop-request"}
+  ],
+  "expected": {
+    "decision": "done",
+    "errorType": null,
+    "eventOrder": ["request:1", "chunk:chunk-before-stop", "cancel:stop-request"],
+    "assistantMessages": [{"id": "assistant-1", "text": "Working on it...", "status": "stopped"}],
+    "streamedOutput": [{"eventId": "chunk-before-stop", "text": "Working on it..."}],
+    "toolDispatches": [],
+    "toolResults": {},
+    "toolSideEffectCounts": {},
+    "sentUserMessageIds": ["user-1"],
+    "erroredUserMessageIds": [],
+    "retryEvents": []
+  }
+}

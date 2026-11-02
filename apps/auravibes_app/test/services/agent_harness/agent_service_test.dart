@@ -93,7 +93,7 @@ void main() {
 
       expect(result, AgentIterationDecision.done);
       final _ = verifyNever(
-        () => fixture.runAllowedToolsUsecase.call(
+        () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
         ),
@@ -244,11 +244,13 @@ void main() {
           );
         });
         when(
-          () => fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
-        ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+        ).thenAnswer(
+          (_) async => const AgentLoopToolResult(decision: .continueIteration),
+        );
 
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
@@ -266,7 +268,7 @@ void main() {
           ),
         ).called(2);
         verify(
-          () => fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -318,7 +320,7 @@ void main() {
         ),
       ).called(2);
       final _ = verifyNever(
-        () => fixture.runAllowedToolsUsecase.call(
+        () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
         ),
@@ -420,7 +422,7 @@ void main() {
           );
         });
         when(
-          () => fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -433,7 +435,7 @@ void main() {
               );
           fixture.agentCancellationRuntime.requestStop('conversation-1');
 
-          return AgentIterationDecision.continueIteration;
+          return const AgentLoopToolResult(decision: .continueIteration);
         });
 
         final result = await fixture.usecase.call(
@@ -541,11 +543,14 @@ void main() {
           ),
         );
         when(
-          () => fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
-        ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
+        ).thenAnswer(
+          (_) async =>
+              const AgentLoopToolResult(decision: .waitForToolApproval),
+        );
 
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
@@ -643,7 +648,7 @@ void main() {
           );
         });
         when(
-          () => fixture.runAllowedToolsUsecase.call(
+          () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
             conversationId: 'conversation-1',
             workspaceId: 'workspace-1',
           ),
@@ -655,7 +660,7 @@ void main() {
                 draft: const ChatDraft(text: 'Queued follow-up'),
               );
 
-          return AgentIterationDecision.continueIteration;
+          return const AgentLoopToolResult(decision: .continueIteration);
         });
 
         final result = await fixture.usecase.call(
@@ -816,11 +821,14 @@ void main() {
             );
           });
           when(
-            () => fixture.runAllowedToolsUsecase.call(
+            () => fixture.runAllowedToolsUsecase.runAgentLoopIteration(
               conversationId: 'conversation-1',
               workspaceId: 'workspace-1',
             ),
-          ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+          ).thenAnswer(
+            (_) async =>
+                const AgentLoopToolResult(decision: .continueIteration),
+          );
 
           final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',

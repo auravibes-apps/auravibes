@@ -7,11 +7,11 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../accounts/auth_user_lock.dart';
 import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
-import '../../accounts/auth_user_lock.dart';
-import '../../mcp_servers/mcp_oauth_token_resolver.dart';
 import '../../mcp_servers/mcp_oauth_credentials.dart';
+import '../../mcp_servers/mcp_oauth_token_resolver.dart';
 import '../../mcp_servers/mcp_server_headers.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../mcp_servers/mcp_sse_session.dart';

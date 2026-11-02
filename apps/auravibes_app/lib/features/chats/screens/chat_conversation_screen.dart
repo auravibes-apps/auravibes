@@ -53,6 +53,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_branch_navigation_button.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/chats/widgets/empty_conversation_starters.dart';
 import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
@@ -508,7 +509,7 @@ class const _LoadedChatConversationRuntime({
       workspaceId: workspaceId,
       conversation: conversation,
     );
-    _listenForPendingIterationLimitNotice(request);
+    _listenForPendingAgentStopNotice(request);
 
     final runtimeState = _useLoadedChatConversationRuntimeState(request);
 
@@ -522,41 +523,22 @@ class const _LoadedChatConversationRuntime({
   }
 }
 
-void _listenForPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
-  final iterationLimitProvider = conversationIterationLimitProvider(
+void _listenForPendingAgentStopNotice(_LoadedRuntimeRequest request) {
+  final agentStopProvider = conversationAgentStopDecisionProvider(
     request.conversation.id,
   );
-  if (request.ref.read(iterationLimitProvider)) {
-    _schedulePendingIterationLimitNotice(request);
+  if (request.ref.read(agentStopProvider) != null) {
+    _schedulePendingAgentStopNotice(request);
   }
-  request.ref.listen(iterationLimitProvider, (_, pending) {
-    if (pending) _schedulePendingIterationLimitNotice(request);
+  request.ref.listen(agentStopProvider, (_, decision) {
+    if (decision != null) _schedulePendingAgentStopNotice(request);
   });
 }
 
-void _schedulePendingIterationLimitNotice(_LoadedRuntimeRequest request) =>
+void _schedulePendingAgentStopNotice(_LoadedRuntimeRequest request) =>
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _showPendingIterationLimitNotice(request),
+      (_) => _AgentStopNoticePresenter.showPending(request),
     );
-
-void _showPendingIterationLimitNotice(_LoadedRuntimeRequest request) {
-  if (!request.context.mounted) return;
-
-  final conversationId = request.conversation.id;
-  request.ref
-      .read(conversationIterationLimitProvider(conversationId).notifier)
-      .consume();
-  final conversationContextRequest = (
-    context: request.context,
-    ref: request.ref,
-    workspaceId: request.workspaceId,
-    conversationId: conversationId,
-  );
-  _showIterationLimitNoticeForConversation(
-    conversationContextRequest,
-    .iterationLimitReached,
-  );
-}
 
 class const _ChatConversationBackButton() extends StatelessWidget {
   @override
@@ -1745,9 +1727,117 @@ class const _ChatConversationAppBar({
 
   @override
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: Text(data.conversation.title),
+    title: _ChatConversationAppBarTitle(data: data),
     actions: actions.widgets,
     leading: data.leading,
+  );
+}
+
+class const _ChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _ResponsiveChatConversationAppBarTitle(
+      data: data,
+      titleWidth: constraints.maxWidth,
+      buttonWidth: _branchButtonWidth(context),
+    ),
+  );
+
+  double _branchButtonWidth(BuildContext context) =>
+      AuraIconButton.buttonSizeFor(.large).clamp(
+        context.auraTheme.interactionSizes.minimumTargetSize,
+        double.infinity,
+      );
+}
+
+class const _ResponsiveChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+  required final double titleWidth,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  static const _buttonGap = 4.0;
+
+  @override
+  Widget build(BuildContext context) => titleWidth >= buttonWidth + _buttonGap
+      ? _WideChatConversationAppBarTitle(data: data)
+      : _CompactChatConversationAppBarTitle(
+          data: data,
+          titleWidth: titleWidth,
+          buttonWidth: buttonWidth,
+        );
+}
+
+class const _WideChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(data.conversation.title, overflow: .ellipsis, maxLines: 1),
+      ),
+      const SizedBox(width: _ResponsiveChatConversationAppBarTitle._buttonGap),
+      ConversationBranchNavigationButton(
+        workspaceId: data.workspaceId,
+        conversation: data.conversation,
+      ),
+    ],
+  );
+}
+
+class const _CompactChatConversationAppBarTitle({
+  required final _LoadedChatConversationData data,
+  required final double titleWidth,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: titleWidth,
+    height: buttonWidth,
+    child: Stack(
+      clipBehavior: .none,
+      children: [
+        _CompactChatConversationTitleText(
+          title: data.conversation.title,
+          buttonWidth: buttonWidth,
+        ),
+        _CompactChatConversationBranchButton(
+          data: data,
+          titleWidth: titleWidth,
+          buttonWidth: buttonWidth,
+        ),
+      ],
+    ),
+  );
+}
+
+class const _CompactChatConversationTitleText({
+  required final String title,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+    child: Padding(
+      padding: EdgeInsets.only(right: buttonWidth),
+      child: Text(title, overflow: .ellipsis, maxLines: 1),
+    ),
+  );
+}
+
+class const _CompactChatConversationBranchButton({
+  required final _LoadedChatConversationData data,
+  required final double titleWidth,
+  required final double buttonWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    left: (titleWidth - buttonWidth) / 2,
+    child: ConversationBranchNavigationButton(
+      workspaceId: data.workspaceId,
+      conversation: data.conversation,
+    ),
   );
 }
 
@@ -3154,7 +3244,7 @@ Future<void> _continueAgent(_ConversationContextRequest request) async {
   if (!_canContinueConversation(request)) return;
 
   final decision = await _continueAgentTurnWithErrorHandling(request);
-  _showIterationLimitNoticeForConversation(request, decision);
+  _showAgentStopNoticeForConversation(request, decision);
 }
 
 Future<AgentIterationDecision?> _continueAgentTurnWithErrorHandling(
@@ -3262,7 +3352,7 @@ Future<void> _retryMessage(_RetryMessageRequest request) async {
 
   try {
     final decision = await _runRetryMessage(request);
-    _showIterationLimitNoticeForConversation(
+    _showAgentStopNoticeForConversation(
       _conversationContextForRetry(request),
       decision,
     );
@@ -3672,7 +3762,7 @@ bool _canStopCloudState(CloudConversationState state) {
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
     final decision = await _sendMessageUsecase(request);
-    _showIterationLimitNoticeForConversation(
+    _showAgentStopNoticeForConversation(
       _conversationContextForSend(request),
       decision,
     );
@@ -3713,35 +3803,76 @@ VoidCallback _conversationContextContinueCallback(
 ) =>
     () => unawaited(_continueAgent(request));
 
-void _showIterationLimitNoticeForConversation(
-  _ConversationContextRequest request,
-  AgentIterationDecision? decision,
-) => _showIterationLimitNoticeIfNeeded(
-  context: request.context,
-  decision: decision,
-  onContinue: _conversationContextContinueCallback(request),
-);
+abstract final class _AgentStopNoticePresenter {
+  static void showPending(_LoadedRuntimeRequest request) {
+    if (!request.context.mounted) return;
 
-void _showIterationLimitNoticeIfNeeded({
-  required BuildContext context,
-  required AgentIterationDecision? decision,
-  required VoidCallback onContinue,
-}) {
-  if (decision != AgentIterationDecision.iterationLimitReached ||
-      !context.mounted) {
-    return;
+    final conversationId = request.conversation.id;
+    _consumePendingDecision(request, conversationId);
   }
 
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: const TextLocale(
-      LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
-    ),
-    duration: const Duration(seconds: 10),
-    actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent.tr(),
-    onAction: onContinue,
-  );
+  static void showForConversation(
+    _ConversationContextRequest request,
+    AgentIterationDecision? decision,
+    VoidCallback onContinue,
+  ) {
+    if (!request.context.mounted) return;
+
+    final content = _contentFor(decision);
+    if (content == null) return;
+
+    final _ = AuraSnackBars.show(
+      context: request.context,
+      content: content,
+      duration: const Duration(seconds: 10),
+      actionLabel: LocaleKeys.chats_screens_chat_conversation_continue_agent
+          .tr(),
+      onAction: onContinue,
+    );
+  }
+
+  static void _consumePendingDecision(
+    _LoadedRuntimeRequest request,
+    String conversationId,
+  ) {
+    final decision = request.ref
+        .read(conversationAgentStopDecisionProvider(conversationId).notifier)
+        .consume();
+    if (decision == null) return;
+
+    final conversationContextRequest = (
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      conversationId: conversationId,
+    );
+    showForConversation(
+      conversationContextRequest,
+      decision,
+      _conversationContextContinueCallback(conversationContextRequest),
+    );
+  }
+
+  static TextLocale? _contentFor(AgentIterationDecision? decision) =>
+      switch (decision) {
+        .iterationLimitReached => const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_iteration_limit_reached,
+        ),
+        .repeatedToolLoopDetected => const TextLocale(
+          'chats_screens.chat_conversation.repeated_tool_loop_detected',
+        ),
+        _ => null,
+      };
 }
+
+void _showAgentStopNoticeForConversation(
+  _ConversationContextRequest request,
+  AgentIterationDecision? decision,
+) => _AgentStopNoticePresenter.showForConversation(
+  request,
+  decision,
+  _conversationContextContinueCallback(request),
+);
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,
