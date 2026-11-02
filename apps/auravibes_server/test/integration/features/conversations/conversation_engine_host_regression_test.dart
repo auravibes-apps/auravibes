@@ -2832,11 +2832,12 @@ void main() {
             briefMessages(requests.last).single['content'],
             'User-authored conversation brief:\n\n$brief',
           );
+          // The server forwards the checkpoint's persisted system role.
           expect(
             (requests.last['messages'] as List).whereType<Map>().any(
               (message) =>
                   message['content'] == 'Earlier discussion summarized.' &&
-                  message['role'] == 'assistant',
+                  message['role'] == 'system',
             ),
             isTrue,
           );
