@@ -28,11 +28,10 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
-          workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
-              .overrideWithValue(const AsyncData(session)),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
+            pagination: (limit: 21, offset: 0),
           ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
           listWorkspaceModelSelectionsProvider.overrideWith(
             (ref, workspaceId) => Stream.value([]),
@@ -78,13 +77,10 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
-          workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
-              .overrideWithValue(
-                const AsyncData(WorkspaceSession(cloudWorkspace)),
-              ),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
+            pagination: (limit: 21, offset: 0),
           ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
           listWorkspaceModelSelectionsProvider.overrideWith(
             (ref, workspaceId) => Stream.value([]),

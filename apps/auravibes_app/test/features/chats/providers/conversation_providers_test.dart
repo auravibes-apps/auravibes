@@ -432,7 +432,9 @@ void main() {
         final activeSubscription = container.listen(activeProvider, (_, next) {
           if (next case AsyncData(:final value)) {
             final ids = value.map((conversation) => conversation.id).toList();
-            if (ids.length == 1 && ids.single == 'active') {
+            if (!activeChanged.isCompleted &&
+                ids.length == 1 &&
+                ids.single == 'active') {
               activeChanged.complete(ids);
             }
           }
@@ -460,7 +462,8 @@ void main() {
           _,
           next,
         ) {
-          if (next case AsyncData(:final value) when value.isEmpty) {
+          final value = next.asData?.value;
+          if (value != null && value.isEmpty && !archivedRestored.isCompleted) {
             archivedRestored.complete(const []);
           }
         });

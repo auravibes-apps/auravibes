@@ -663,6 +663,7 @@ void main() {
           ],
         ),
       );
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
@@ -751,7 +752,10 @@ void main() {
           child: ChatListWidget(workspaceId: workspace.id),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
-            conversationsStreamProvider(workspaceId: workspace.id)
+            conversationsStreamProvider(
+              workspaceId: workspace.id,
+              pagination: (limit: 21, offset: 0),
+            )
                 .overrideWith((ref) => Stream.value([conversation])),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(

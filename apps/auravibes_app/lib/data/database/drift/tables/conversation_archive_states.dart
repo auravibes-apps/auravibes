@@ -1,3 +1,5 @@
+// Drift generates behavior for these schema getters.
+// ignore_for_file: weight-of-class
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
 

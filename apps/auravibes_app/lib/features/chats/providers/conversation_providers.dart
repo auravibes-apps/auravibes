@@ -329,50 +329,64 @@ Future<List<ConversationSummary>> _readFilteredCloudConversationPage(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) async {
-  if (options.scope == .archived && options.archivedIds.isEmpty) return [];
-  if (options.pagination.limit == 0) return [];
+) => _FilteredCloudConversationPageReader(
+  gateway,
+  cloud,
+  options,
+).read();
 
-  final conversations = <ConversationSummary>[];
-  final seenCursors = <String>{};
-  final stopAfterFirstPage =
-      options.scope == ConversationListScope.active &&
-      options.pagination.limit == null &&
-      options.pagination.offset == 0;
-  var skipped = 0;
-  String? cursor;
+class _FilteredCloudConversationPageReader(
+  final CloudWorkspaceStateGateway _gateway,
+  final CloudWorkspaceRef _cloud,
+  final _ConversationListOptions _options,
+) {
+  final _conversations = <ConversationSummary>[];
+  final _seenCursors = <String>{};
+  int _skipped = 0;
+  String? _cursor;
 
-  while (true) {
-    var reachedLimit = false;
-    final page = await _readCloudConversationPageAtCursor(
-      gateway,
-      cloud,
-      cursor,
-      search: options.search,
-    );
-    for (final conversation in page.conversations) {
-      final isArchived = options.archivedIds.contains(conversation.id);
-      if (isArchived != (options.scope == .archived)) continue;
-      if (skipped < options.pagination.offset) {
-        skipped++;
+  Future<List<ConversationSummary>> read() async {
+    if (_options.scope == .archived && _options.archivedIds.isEmpty) return [];
+    if (_options.pagination.limit == 0) return [];
+
+    while (true) {
+      final page = await _readCloudConversationPageAtCursor(
+        _gateway,
+        _cloud,
+        _cursor,
+        search: _options.search,
+      );
+      final reachedLimit = _appendMatchingConversations(page.conversations);
+      final nextCursor = _nextCloudConversationCursor(
+        page.nextCursor,
+        _seenCursors,
+      );
+      if (reachedLimit || _stopAfterFirstPage || nextCursor == null) {
+        return _conversations;
+      }
+      _cursor = nextCursor;
+    }
+  }
+
+  bool get _stopAfterFirstPage =>
+      _options.scope == ConversationListScope.active &&
+      _options.pagination.limit == null &&
+      _options.pagination.offset == 0;
+
+  bool _appendMatchingConversations(List<ConversationSummary> page) {
+    for (final conversation in page) {
+      final isArchived = _options.archivedIds.contains(conversation.id);
+      if (isArchived != (_options.scope == .archived)) continue;
+      if (_skipped < _options.pagination.offset) {
+        _skipped++;
         continue;
       }
-      conversations.add(conversation);
-      final limit = options.pagination.limit;
-      if (limit != null && conversations.length >= limit) {
-        reachedLimit = true;
-        break;
-      }
+      _conversations.add(conversation);
+      final limit = _options.pagination.limit;
+      if (limit != null && _conversations.length >= limit) return true;
     }
 
-    final nextCursor = _nextCloudConversationCursor(
-      page.nextCursor,
-      seenCursors,
-    );
-    if (reachedLimit || stopAfterFirstPage || nextCursor == null) {
-      return conversations;
-    }
-    cursor = nextCursor;
+    return false;
   }
 }
 
