@@ -193,9 +193,10 @@ void main() {
     }
 
     final localWorkspace = await tester.runAsync(
-      () => WorkspaceRepository(fixture.database).createWorkspace(
-        const .new(name: 'Personal work', type: .local),
-      ),
+      () =>
+          WorkspaceRepository(fixture.database).createWorkspace(
+            const .new(name: 'Personal work', type: .local),
+          ),
     );
     if (localWorkspace == null) {
       fail('Quick-start workspace creation did not finish');
