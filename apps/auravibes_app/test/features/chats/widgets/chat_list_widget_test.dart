@@ -755,8 +755,7 @@ void main() {
             conversationsStreamProvider(
               workspaceId: workspace.id,
               pagination: (limit: 21, offset: 0),
-            )
-                .overrideWith((ref) => Stream.value([conversation])),
+            ).overrideWith((ref) => Stream.value([conversation])),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),

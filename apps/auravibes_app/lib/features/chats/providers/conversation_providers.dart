@@ -329,11 +329,7 @@ Future<List<ConversationSummary>> _readFilteredCloudConversationPage(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) => _FilteredCloudConversationPageReader(
-  gateway,
-  cloud,
-  options,
-).read();
+) => _FilteredCloudConversationPageReader(gateway, cloud, options).read();
 
 class _FilteredCloudConversationPageReader(
   final CloudWorkspaceStateGateway _gateway,
