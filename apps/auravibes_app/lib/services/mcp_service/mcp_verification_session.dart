@@ -45,33 +45,15 @@ class McpVerificationSession {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
     McpElicitationHandler? onElicitation,
-  }) async {
-    if (_closed ||
-        mcpServerId != serverId ||
-        toolIdentifier != this.toolIdentifier ||
-        onElicitation != null ||
-        arguments['protocol'] != ScopedVerificationLimits.protocol) {
-      throw StateError('Invalid verification session request.');
-    }
-    final cleanup = arguments['operation'] == 'cancel';
-    if (_elicited.isCompleted && !cleanup) {
-      throw const FormatException('Verification cannot request interaction.');
-    }
-    // This private client permits start/cancel concurrency. It never enters
-    // the ordinary connection's serialized elicitation queue.
-    final pending = _client.callTool(toolIdentifier, arguments);
-    final result = cleanup
-        ? await pending
-        : await Future.any([pending, _rejectPendingInteraction()]);
-    final adapted = McpSdkAdapter.toolResult(result);
-
-    return McpToolCallerResult(
-      modelText: adapted.toModelText(),
-      appData: const {},
-      structuredContent: adapted.structuredContent,
-      isError: adapted.isError,
-    );
-  }
+  }) => _callVerificationTool(
+    this,
+    (
+      mcpServerId: mcpServerId,
+      toolIdentifier: toolIdentifier,
+      arguments: arguments,
+      onElicitation: onElicitation,
+    ),
+  );
 
   void close() {
     if (_closed) return;
@@ -110,4 +92,67 @@ class McpVerificationSession {
 
     return mcp.ElicitResult(action: mcp.ElicitResultAction.cancel);
   }
+}
+
+typedef _VerificationToolCall = ({
+  String mcpServerId,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+  McpElicitationHandler? onElicitation,
+});
+
+Future<Object?> _callVerificationTool(
+  McpVerificationSession session,
+  _VerificationToolCall request,
+) async {
+  _validateVerificationToolCall(session, request);
+  final pending = session._client.callTool(
+    request.toolIdentifier,
+    request.arguments,
+  );
+  final result = _isVerificationCleanup(request.arguments)
+      ? await pending
+      : await Future.any([
+          pending,
+          session._rejectPendingInteraction(),
+        ]);
+
+  return _adaptVerificationToolResult(result);
+}
+
+void _validateVerificationToolCall(
+  McpVerificationSession session,
+  _VerificationToolCall request,
+) {
+  if (!_matchesVerificationSession(session, request)) {
+    throw StateError('Invalid verification session request.');
+  }
+  if (session._elicited.isCompleted &&
+      !_isVerificationCleanup(request.arguments)) {
+    throw const FormatException('Verification cannot request interaction.');
+  }
+}
+
+bool _matchesVerificationSession(
+  McpVerificationSession session,
+  _VerificationToolCall request,
+) =>
+    !session._closed &&
+    request.mcpServerId == session.serverId &&
+    request.toolIdentifier == session.toolIdentifier &&
+    request.onElicitation == null &&
+    request.arguments['protocol'] == ScopedVerificationLimits.protocol;
+
+bool _isVerificationCleanup(Map<String, dynamic> arguments) =>
+    arguments['operation'] == 'cancel';
+
+Object _adaptVerificationToolResult(mcp.CallToolResult result) {
+  final adapted = McpSdkAdapter.toolResult(result);
+
+  return McpToolCallerResult(
+    modelText: adapted.toModelText(),
+    appData: const {},
+    structuredContent: adapted.structuredContent,
+    isError: adapted.isError,
+  );
 }

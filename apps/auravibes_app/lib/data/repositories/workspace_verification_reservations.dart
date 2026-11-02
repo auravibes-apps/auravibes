@@ -13,6 +13,12 @@ typedef VerificationReservationRequest = ({
   int configRevision,
   int maxRepairAttempts,
 });
+typedef ScopedVerificationReservation = ({
+  String? operationId,
+  ScopedVerificationResult? result,
+  int repairAttemptsRemaining,
+  bool shouldRun,
+});
 
 /// Used only inside the repository's SQLite transaction.
 class const WorkspaceVerificationReservations(
@@ -29,51 +35,20 @@ class const WorkspaceVerificationReservations(
     }
     if (!await _validTurn(request)) return _noRun('invalid_turn');
     final rows = await _recoverRows(request);
-    final existing = rows
-        .where((row) => row.toolCallId == request.toolCallId)
-        .firstOrNull;
+    final existing = _existingReservation(rows, request.toolCallId);
     if (existing != null) {
-      final saved = existing.resultJson;
-
-      return ScopedVerificationReservation(
-        result: saved == null
-            ? verificationUnavailable('verification_in_progress')
-            : decodeVerificationResult(saved),
-      );
+      return existing;
     }
     final settings = await getSettings(request.workspaceId);
-    if (!settings.enabled) return _noRun('disabled', outcome: .skipped);
-    if (settings.revision != request.configRevision) {
-      return _noRun('configuration_changed');
-    }
-    if (rows.any((row) => row.resultJson == null)) {
-      return _noRun('verification_in_progress');
-    }
-    final results = rows
-        .map((row) => decodeVerificationResult(row.resultJson ?? ''))
-        .toList();
-    if (results.any(
-      (result) => result.outcome == .incomplete || result.outcome == .cancelled,
-    )) {
-      return _noRun('unreconciled_check');
-    }
-    final limit = min(
-      rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts,
-      settings.maxRepairAttempts,
-    );
-    if (limit < 0 || limit > ScopedVerificationLimits.maxRepairAttempts) {
-      return _noRun('invalid_repair_limit');
-    }
-    final used = rows.where((row) => row.isRepair).length;
-    final repair = results.isNotEmpty && results.last.outcome == .fail;
-    if (repair && used >= limit) return _noRun('repair_limit_reached');
+    final plan = _reservationPlan(request, rows, settings);
+    if (plan.result case final result?) return result;
 
     return await _insert((
       request: request,
       ordinal: rows.length,
-      limit: limit,
-      repair: repair,
-      used: used,
+      limit: plan.limit,
+      repair: plan.repair,
+      used: plan.used,
     ));
   }
 
@@ -93,39 +68,12 @@ class const WorkspaceVerificationReservations(
   Future<List<WorkspaceVerificationRunRow>> _recoverRows(
     VerificationReservationRequest request,
   ) async {
-    final rows =
-        await (database.select(database.workspaceVerificationRuns)
-              ..where(
-                (row) =>
-                    row.workspaceId.equals(request.workspaceId) &
-                    row.turnId.equals(request.turnId),
-              )
-              ..orderBy([(row) => OrderingTerm.asc(row.ordinal)]))
-            .get();
+    final rows = await _queryRows(request);
     for (final row in rows) {
-      if (row.resultJson == null && row.sessionId != sessionId) {
-        final saved = jsonEncode(
-          verificationUnavailable('interrupted').toJson(),
-        );
-        final _ =
-            await (database.update(database.workspaceVerificationRuns)..where(
-                  (entry) =>
-                      entry.id.equals(row.id) & entry.resultJson.isNull(),
-                ))
-                .write(
-                  WorkspaceVerificationRunsCompanion(resultJson: .new(saved)),
-                );
-      }
+      await _recoverInterruptedRow(row);
     }
 
-    return await (database.select(database.workspaceVerificationRuns)
-          ..where(
-            (row) =>
-                row.workspaceId.equals(request.workspaceId) &
-                row.turnId.equals(request.turnId),
-          )
-          ..orderBy([(row) => OrderingTerm.asc(row.ordinal)]))
-        .get();
+    return await _queryRows(request);
   }
 
   Future<ScopedVerificationReservation> _insert(
@@ -156,14 +104,120 @@ class const WorkspaceVerificationReservations(
           ),
         );
 
-    return ScopedVerificationReservation(
+    return (
       operationId: id,
+      result: null,
       repairAttemptsRemaining: max(
         0,
         entry.limit - entry.used - (entry.repair ? 1 : 0),
       ),
+      shouldRun: true,
     );
   }
+
+  Future<List<WorkspaceVerificationRunRow>> _queryRows(
+    VerificationReservationRequest request,
+  ) =>
+      (database.select(database.workspaceVerificationRuns)
+            ..where(
+              (row) =>
+                  row.workspaceId.equals(request.workspaceId) &
+                  row.turnId.equals(request.turnId),
+            )
+            ..orderBy([(row) => OrderingTerm.asc(row.ordinal)]))
+          .get();
+
+  Future<void> _recoverInterruptedRow(WorkspaceVerificationRunRow row) async {
+    if (row.resultJson != null || row.sessionId == sessionId) return;
+    final saved = jsonEncode(verificationUnavailable('interrupted').toJson());
+    final _ = await (database.update(database.workspaceVerificationRuns)..where(
+          (entry) => entry.id.equals(row.id) & entry.resultJson.isNull(),
+        )).write(WorkspaceVerificationRunsCompanion(resultJson: .new(saved)));
+  }
+}
+
+ScopedVerificationReservation? _existingReservation(
+  List<WorkspaceVerificationRunRow> rows,
+  String toolCallId,
+) {
+  final existing = rows.where((row) => row.toolCallId == toolCallId).firstOrNull;
+  if (existing == null) return null;
+  final saved = existing.resultJson;
+
+  return (
+    operationId: null,
+    result: saved == null
+        ? verificationUnavailable('verification_in_progress')
+        : decodeVerificationResult(saved),
+    repairAttemptsRemaining: 0,
+    shouldRun: false,
+  );
+}
+
+ScopedVerificationReservation? _reservationBlockReason(
+  VerificationReservationRequest request,
+  List<WorkspaceVerificationRunRow> rows,
+  ScopedVerificationSettings settings,
+) {
+  if (!settings.enabled) return _noRun('disabled', outcome: .skipped);
+  if (settings.revision != request.configRevision) {
+    return _noRun('configuration_changed');
+  }
+  if (_hasUnfinishedRun(rows)) return _noRun('verification_in_progress');
+  if (_hasUnreconciledResult(rows)) return _noRun('unreconciled_check');
+  if (!_validRepairLimit(request, rows, settings)) {
+    return _noRun('invalid_repair_limit');
+  }
+
+  return null;
+}
+
+bool _hasUnfinishedRun(List<WorkspaceVerificationRunRow> rows) =>
+    rows.any((row) => row.resultJson == null);
+
+bool _hasUnreconciledResult(List<WorkspaceVerificationRunRow> rows) => rows
+    .map((row) => decodeVerificationResult(row.resultJson ?? ''))
+    .any(
+      (result) => result.outcome == .incomplete || result.outcome == .cancelled,
+    );
+
+bool _validRepairLimit(
+  VerificationReservationRequest request,
+  List<WorkspaceVerificationRunRow> rows,
+  ScopedVerificationSettings settings,
+) {
+  final limit = min(
+    rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts,
+    settings.maxRepairAttempts,
+  );
+
+  return limit >= 0 && limit <= ScopedVerificationLimits.maxRepairAttempts;
+}
+
+({int limit, bool repair, int used, ScopedVerificationReservation? result})
+_reservationPlan(
+  VerificationReservationRequest request,
+  List<WorkspaceVerificationRunRow> rows,
+  ScopedVerificationSettings settings,
+) {
+  final blocked = _reservationBlockReason(request, rows, settings);
+  if (blocked != null) {
+    return (limit: 0, repair: false, used: 0, result: blocked);
+  }
+  final results = rows
+      .map((row) => decodeVerificationResult(row.resultJson ?? ''))
+      .toList();
+  final limit = min(
+    rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts,
+    settings.maxRepairAttempts,
+  );
+  final used = rows.where((row) => row.isRepair).length;
+  final repair = results.isNotEmpty && results.last.outcome == .fail;
+  final result = repair && used >= limit
+      ? _noRun('repair_limit_reached')
+      : null;
+
+  return (limit: limit, repair: repair, used: used, result: result);
 }
 
 Future<bool> isLocalVerificationWorkspace(
@@ -199,14 +253,9 @@ int verificationRepairsRemaining(List<WorkspaceVerificationRunRow> rows) {
 ScopedVerificationReservation _noRun(
   String reason, {
   ScopedVerificationOutcome outcome = .incomplete,
-}) => ScopedVerificationReservation(
+}) => (
+  operationId: null,
   result: .new(outcome: outcome, reason: reason),
+  repairAttemptsRemaining: 0,
+  shouldRun: false,
 );
-
-class const ScopedVerificationReservation({
-  final String? operationId,
-  final ScopedVerificationResult? result,
-  final int repairAttemptsRemaining = 0,
-}) {
-  bool get shouldRun => operationId != null && result == null;
-}

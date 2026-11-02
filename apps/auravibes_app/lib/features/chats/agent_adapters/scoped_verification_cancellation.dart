@@ -15,41 +15,12 @@ class ScopedVerificationCancellation {
     ScopedVerificationInvocation invocation,
     Future<ScopedVerificationResult> Function(AgentCancellationScope scope)
     execute,
-  ) async {
-    final lease = _acquire(invocation.conversationId);
-    final child = AgentCancellationScope();
-    final globalStop = lease.scope.registerCleanup(child.requestStop);
-    final completion = Completer<Object?>();
-    ScopedVerificationResult? terminal;
-    final handle = runtime.registerToolCancellationHandle((
-      conversationId: invocation.conversationId,
-      toolCallId: invocation.toolCallId,
-      isSupported: true,
-      cancel: () async {
-        child.requestStop();
-        final _ = await completion.future;
-      },
-      operationResult: completion.future,
-      isCancellationConfirmed: () =>
-          terminal?.outcome == ScopedVerificationOutcome.cancelled,
-    ));
-    try {
-      final result = await execute(child);
-      terminal = result;
-
-      return result;
-    } finally {
-      completion.complete(terminal);
-      runtime.completeToolCancellationHandle(
-        conversationId: invocation.conversationId,
-        toolCallId: invocation.toolCallId,
-        handle: handle,
-      );
-      final _ = globalStop.remove();
-      child.close();
-      _release(invocation.conversationId, lease);
-    }
-  }
+  ) => _ScopedVerificationRun(
+    owner: this,
+    invocation: invocation,
+    lease: _acquire(invocation.conversationId),
+    execute: execute,
+  ).run();
 
   _ScopeLease _acquire(String conversationId) {
     final existing = _leases[conversationId];
@@ -75,6 +46,73 @@ class ScopedVerificationCancellation {
       final _ = _leases.remove(conversationId);
     }
     if (lease.owned) runtime.clear(conversationId, lease.scope);
+  }
+}
+
+final class _ScopedVerificationRun {
+  _ScopedVerificationRun({
+    required this.owner,
+    required this.invocation,
+    required this.lease,
+    required this.execute,
+  });
+
+  final ScopedVerificationCancellation owner;
+  final ScopedVerificationInvocation invocation;
+  final _ScopeLease lease;
+  final Future<ScopedVerificationResult> Function(AgentCancellationScope scope)
+  execute;
+  ScopedVerificationResult? _terminal;
+
+  AgentCancellationRuntime get runtime => owner.runtime;
+
+  Future<ScopedVerificationResult> run() async {
+    final child = AgentCancellationScope();
+    final globalStop = lease.scope.registerCleanup(child.requestStop);
+    final completion = Completer<Object?>();
+    final handle = _registerHandle(child, completion);
+    try {
+      final result = await execute(child);
+      _terminal = result;
+
+      return result;
+    } finally {
+      _finish(child, globalStop, completion, handle);
+    }
+  }
+
+  AgentToolCancellationHandle _registerHandle(
+    AgentCancellationScope child,
+    Completer<Object?> completion,
+  ) =>
+      runtime.registerToolCancellationHandle((
+        conversationId: invocation.conversationId,
+        toolCallId: invocation.toolCallId,
+        isSupported: true,
+        cancel: () async {
+          child.requestStop();
+          final _ = await completion.future;
+        },
+        operationResult: completion.future,
+        isCancellationConfirmed: () =>
+            _terminal?.outcome == ScopedVerificationOutcome.cancelled,
+      ));
+
+  void _finish(
+    AgentCancellationScope child,
+    AgentCancellationCleanupRegistration globalStop,
+    Completer<Object?> completion,
+    AgentToolCancellationHandle handle,
+  ) {
+    completion.complete(_terminal);
+    runtime.completeToolCancellationHandle(
+      conversationId: invocation.conversationId,
+      toolCallId: invocation.toolCallId,
+      handle: handle,
+    );
+    final _ = globalStop.remove();
+    child.close();
+    owner._release(invocation.conversationId, lease);
   }
 }
 

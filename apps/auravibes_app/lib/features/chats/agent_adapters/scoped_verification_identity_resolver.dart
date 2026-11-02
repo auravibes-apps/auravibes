@@ -11,33 +11,74 @@ class const ScopedVerificationIdentityResolver(final AppDatabase database) {
       invocation.conversationId,
     );
     if (chat == null) return null;
-    final messages = await database
-        .customSelect(
-          'SELECT id, rowid AS sequence, metadata, is_user FROM messages '
-          'WHERE conversation_id = ? ORDER BY rowid ASC',
-          variables: [Variable<String>(invocation.conversationId)],
-        )
-        .get();
-    final calls = messages.where((row) {
-      if (row.read<bool>('is_user')) return false;
-      final metadata = MessageMetadataEntity.fromJsonString(
-        row.readNullable<String>('metadata'),
-      );
+    final messages = await _messagesForConversation(
+      database,
+      invocation.conversationId,
+    );
 
-      return metadata?.toolCalls.any(
-            (call) => call.id == invocation.toolCallId,
-          ) ??
-          false;
-    }).toList();
-    if (calls.length != 1) return (workspaceId: chat.workspaceId, turnId: null);
-    final sequence = calls.single.read<int>('sequence');
-    final origin = messages
-        .where(
-          (row) =>
-              row.read<bool>('is_user') && row.read<int>('sequence') < sequence,
-        )
-        .lastOrNull;
-
-    return (workspaceId: chat.workspaceId, turnId: origin?.read<String>('id'));
+    return _resolvedIdentity(chat.workspaceId, invocation.toolCallId, messages);
   }
 }
+
+typedef _SequencedMessage = ({
+  int sequence,
+  bool isUser,
+  String id,
+  String? metadata,
+});
+
+Future<List<_SequencedMessage>> _messagesForConversation(
+  AppDatabase database,
+  String conversationId,
+) async =>
+    (await database
+            .customSelect(
+              'SELECT id, rowid AS sequence, metadata, is_user FROM messages '
+              'WHERE conversation_id = ? ORDER BY rowid ASC',
+              variables: [Variable<String>(conversationId)],
+            )
+            .get())
+        .map(
+          (row) => (
+            id: row.read<String>('id'),
+            sequence: row.read<int>('sequence'),
+            metadata: row.readNullable<String>('metadata'),
+            isUser: row.read<bool>('is_user'),
+          ),
+        )
+        .toList();
+
+ScopedVerificationIdentity _resolvedIdentity(
+  String workspaceId,
+  String toolCallId,
+  List<_SequencedMessage> messages,
+) {
+  final call = _uniqueToolCall(messages, toolCallId);
+  if (call == null) return (workspaceId: workspaceId, turnId: null);
+  final origin = _originatingUserMessage(messages, call.sequence);
+
+  return (workspaceId: workspaceId, turnId: origin?.id);
+}
+
+_SequencedMessage? _uniqueToolCall(
+  List<_SequencedMessage> messages,
+  String toolCallId,
+) {
+  final calls = messages.where((message) {
+    if (message.isUser) return false;
+    final metadata = MessageMetadataEntity.fromJsonString(message.metadata);
+
+    return metadata?.toolCalls.any((call) => call.id == toolCallId) ?? false;
+  }).take(2).toList();
+  if (calls.length != 1) return null;
+
+  return calls.single;
+}
+
+_SequencedMessage? _originatingUserMessage(
+  List<_SequencedMessage> messages,
+  int sequence,
+) =>
+    messages
+        .where((message) => message.isUser && message.sequence < sequence)
+        .lastOrNull;

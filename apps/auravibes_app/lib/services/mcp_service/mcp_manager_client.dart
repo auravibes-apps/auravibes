@@ -284,56 +284,21 @@ class McpManagerService {
     McpVerificationConnectionRequest request,
   ) async {
     final remaining = request.deadline.difference(DateTime.now().toUtc());
-    if (remaining <= .zero || request.cancellation.isCancellationRequested) {
-      throw StateError('Verification connection cancelled.');
-    }
+    _requireVerificationConnectionActive(request, remaining);
     final sdk = _createMcpClient(allowElicitation: false);
     final session = McpVerificationSession(
-      client: sdk,
+      _client: sdk,
       serverId: request.serverId,
       toolIdentifier: request.toolIdentifier,
     );
-    final aborted = Completer<void>();
-    void abort() {
-      session.close();
-      if (!aborted.isCompleted) {
-        aborted.completeError(StateError('Verification connection cancelled.'));
-      }
-    }
 
-    final timer = Timer(remaining, abort);
-    final registration = request.cancellation.registerCleanup(abort);
-    Future<void> connect() async {
-      final transport = await _createTransportConfig(
-        request.server,
-        oauthCredentialService: oauthCredentialService,
-      );
-      if (aborted.isCompleted) {
-        transport.close();
-
-        return;
-      }
-      await sdk.connect(session.guardTransport(transport));
-      // A connect future can finish after the session was already closed.
-      // Close that late SDK attachment directly.
-      // Session close remains idempotent.
-      if (aborted.isCompleted) sdk.disconnect();
-    }
-
-    try {
-      await Future.any([connect(), aborted.future]);
-      if (aborted.isCompleted) {
-        throw StateError('Verification connection cancelled.');
-      }
-
-      return session;
-    } on Object {
-      session.close();
-      rethrow;
-    } finally {
-      timer.cancel();
-      final _ = registration.remove();
-    }
+    return await _McpVerificationSessionConnector(
+      this,
+      request,
+      remaining,
+      sdk,
+      session,
+    ).connect();
   }
 
   Future<void> disconnect(McpManagerClient? client) async {
@@ -544,6 +509,75 @@ Future<mcp.CallToolResult> _callToolWithElicitation({
     return await client._client.callTool(toolIdentifier, arguments);
   } finally {
     handler.stopAccepting();
+  }
+}
+
+void _requireVerificationConnectionActive(
+  McpVerificationConnectionRequest request,
+  Duration remaining,
+) {
+  if (remaining <= .zero || request.cancellation.isCancellationRequested) {
+    throw StateError('Verification connection cancelled.');
+  }
+}
+
+final class _McpVerificationSessionConnector {
+  _McpVerificationSessionConnector(
+    this.manager,
+    this.request,
+    this.remaining,
+    this.client,
+    this.session,
+  );
+
+  final McpManagerService manager;
+  final McpVerificationConnectionRequest request;
+  final Duration remaining;
+  final mcp.Client client;
+  final McpVerificationSession session;
+
+  Future<McpVerificationSession> connect() async {
+    final aborted = Completer<void>();
+    final timer = Timer(remaining, () => _abort(aborted));
+    final registration = request.cancellation.registerCleanup(
+      () => _abort(aborted),
+    );
+    try {
+      await Future.any([_connectTransport(aborted), aborted.future]);
+      if (aborted.isCompleted) {
+        throw StateError('Verification connection cancelled.');
+      }
+
+      return session;
+    } on Object {
+      session.close();
+      rethrow;
+    } finally {
+      timer.cancel();
+      final _ = registration.remove();
+    }
+  }
+
+  Future<void> _connectTransport(Completer<void> aborted) async {
+    final transport = await _createTransportConfig(
+      request.server,
+      oauthCredentialService: manager.oauthCredentialService,
+    );
+    if (aborted.isCompleted) {
+      transport.close();
+
+      return;
+    }
+    await client.connect(session.guardTransport(transport));
+    // A connect future can finish after close; detach the late SDK client.
+    if (aborted.isCompleted) client.disconnect();
+  }
+
+  void _abort(Completer<void> aborted) {
+    session.close();
+    if (!aborted.isCompleted) {
+      aborted.completeError(StateError('Verification connection cancelled.'));
+    }
   }
 }
 
