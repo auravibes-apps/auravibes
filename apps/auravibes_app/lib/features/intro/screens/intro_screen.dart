@@ -309,7 +309,7 @@ class const _IntroEditStage({
   Widget build(BuildContext context) => ServiceConnectionEditScreen(
     workspaceId: workspaceId,
     connectionId: state._editingConnection,
-    pageBuilder: state._frame,
+    pageBuilder: (page) => SetupPageFrame(page: page, key: page.key),
     onReturn: () => state._changeSavedStage(.connections, reverse: true),
   );
 }
@@ -376,7 +376,7 @@ class const _IntroProviderForm({
       routeExitGuard: state._providerExitGuard,
       onCreated: () => state._leaveProvider(workspaceId),
       onCancel: saving ? null : () => state._leaveProvider(workspaceId),
-      pageBuilder: state._frame,
+      pageBuilder: (page) => SetupPageFrame(page: page, key: page.key),
       showHeader: false,
     ),
   );

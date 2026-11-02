@@ -270,7 +270,7 @@ class const _QuickStartButton({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: pending ? null : onStart,
+    onPressed: () => onStart?.call(),
     child: const TextLocale('intro_flow.welcome.quick_start'),
     key: const Key('intro_quick_start_button'),
     isFullWidth: true,
@@ -284,7 +284,7 @@ class const _AdvancedSetupButton({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: pending ? null : onAdvancedSetup,
+    onPressed: onAdvancedSetup,
     child: const TextLocale('intro_flow.welcome.advanced_setup'),
     key: const Key('intro_advanced_setup_button'),
     variant: .outlined,
