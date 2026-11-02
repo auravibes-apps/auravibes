@@ -193,7 +193,7 @@ class const _FirstChatGuide({
           Semantics(child: TextLocale(error), liveRegion: true),
         AuraButton(
           onPressed: () {
-            if (!pending && onStart != null) onStart();
+            if (!pending) onStart?.call();
           },
           child: const TextLocale('intro_flow.welcome.quick_start'),
           key: const Key('intro_quick_start_button'),
