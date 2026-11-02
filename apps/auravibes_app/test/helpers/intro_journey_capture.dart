@@ -146,7 +146,7 @@ void _registerIntroJourneyCaptures() {
           locale,
           mobile: mobile,
         );
-        await journey.tapKey('intro_welcome_skip_button');
+        await journey.tapKey('intro_advanced_setup_button');
         await journey.tapKey('intro_route_local_button');
         await tester.enterText(find.byType(AuraInput), 'Design studio');
         await journey.tapKey('intro_create_workspace_button');
@@ -176,7 +176,7 @@ void _registerIntroJourneyCaptures() {
         journey.container.invalidate(cloudAccountsProvider);
         final waiting = Completer<CloudWorkspaceViewState?>();
         journey.discoveryLoad = () => waiting.future;
-        await journey.tapKey('intro_welcome_skip_button');
+        await journey.tapKey('intro_advanced_setup_button');
         await journey.tapKey('intro_connect_existing_button');
         await journey.capture('DiscoveryWaiting');
         waiting.completeError(StateError('fixture offline'));
@@ -242,7 +242,7 @@ void _registerIntroJourneyCaptures() {
 
             return Future<void>.value();
           });
-          await invites.tapKey('intro_welcome_skip_button');
+          await invites.tapKey('intro_advanced_setup_button');
           await invites.tapKey('intro_connect_existing_button');
           await invites.capture('Invitation${accept ? 'Accept' : 'Decline'}');
           await invites.tapText(
@@ -265,7 +265,7 @@ void _registerIntroJourneyCaptures() {
             locale,
             mobile: mobile,
           );
-          await journey.tapKey('intro_welcome_skip_button');
+          await journey.tapKey('intro_advanced_setup_button');
           await journey.tapKey('intro_route_local_button');
           await tester.enterText(find.byType(AuraInput), 'Design studio');
           await journey.tapKey('intro_create_workspace_button');

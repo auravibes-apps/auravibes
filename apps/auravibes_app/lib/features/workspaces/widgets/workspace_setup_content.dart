@@ -645,7 +645,7 @@ class const _WorkspaceIntroRouteChooser({
         ),
         description: const AuraText(
           child: TextLocale('intro_flow.choice.select_hint'),
-          style: .caption,
+          style: .bodySmall,
         ),
         body: choices,
       ),

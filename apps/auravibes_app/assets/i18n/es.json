@@ -72,24 +72,27 @@
   },
   "intro_flow": {
     "welcome": {
-      "title": "Bienvenido a AuraVibes",
-      "body": "Reúne tus chats, herramientas, habilidades y conexiones en AuraVibes.",
+      "title": "¿Qué te gustaría hacer hoy?",
+      "body": "Elige un ejemplo para empezar un mensaje. Edítalo aquí; no se enviará hasta que lo envíes.",
       "ai_title": "Conecta IA cuando quieras",
       "ai_body": "Elige el proveedor de IA y el modelo que se adapten a tu trabajo. Conectar IA es opcional; puedes explorar primero.",
       "page": "{} de {}",
-      "start": "Elegir un espacio",
-      "skip": "Omitir introducción"
+      "start": "Elegir opciones de configuración",
+      "skip": "Configurar un espacio de trabajo",
+      "local_storage": "Se guarda en este dispositivo. Mantén AuraVibes abierta. Al enviar un mensaje, es posible que se comparta con el proveedor de IA que elijas.",
+      "quick_start": "Empezar en este dispositivo",
+      "advanced_setup": "Más opciones de configuración"
     },
     "choice": {
       "title": "Elige cómo empezar",
-      "body": "Crea un espacio local gratis, o conecta la nube para compartir, sincronizar y agentes siempre activos. La nube podría requerir un plan pago más adelante.",
+      "body": "Se guarda en línea. Requiere internet y una cuenta. Compartir, sincronizar y usar agentes cuando la app está cerrada puede requerir un plan de pago.",
       "local_title": "Crear espacio local",
-      "local_body": "Gratis. Funciona mientras esta app está abierta.",
+      "local_body": "Se guarda en este dispositivo. AuraVibes debe permanecer abierta. Al enviar un chat, es posible que se comparta tu mensaje con el proveedor de IA que elijas.",
       "cloud_create_title": "Crear espacio en la nube",
-      "cloud_create_body": "Comparte, sincroniza y ejecuta agentes aunque esta app esté cerrada.",
+      "cloud_create_body": "Se guarda en línea. Requiere internet y una cuenta. Compartir, sincronizar y usar agentes cuando la app está cerrada puede requerir un plan de pago.",
       "cloud_connect_title": "Conectar espacio en la nube existente",
-      "cloud_connect_body": "Usa un espacio en la nube al que ya tienes acceso.",
-      "select_hint": "Elige un espacio para continuar."
+      "cloud_connect_body": "Usa un espacio en línea al que tengas acceso. Requiere internet; compartir, sincronizar y usar agentes cuando la app está cerrada puede depender de su plan.",
+      "select_hint": "El trabajo local se queda en este dispositivo mientras AuraVibes está abierta. El trabajo en la nube se guarda en línea y requiere internet y una cuenta. Compartir, sincronizar y usar agentes cuando la app está cerrada puede requerir un plan de pago."
     },
     "workspace_context": {
       "title": "Los espacios separan el contexto",

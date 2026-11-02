@@ -432,7 +432,7 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await tester.tap(find.byKey(const Key('intro_advanced_setup_button')));
       await f.settle(tester);
       await tester.tap(find.byKey(const Key('intro_route_cloud_button')));
       await f.settle(tester);
@@ -633,7 +633,7 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await tester.tap(find.byKey(const Key('intro_advanced_setup_button')));
       await f.settle(tester);
       await tester.tap(find.byKey(const Key('intro_connect_existing_button')));
       await f.settle(tester);
@@ -744,7 +744,7 @@ void main() {
       );
       expect(find.byType(IntroScreen), findsOneWidget);
       expect(await f.database.select(f.database.workspaces).get(), isEmpty);
-      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      await tester.tap(find.byKey(const Key('intro_advanced_setup_button')));
       await f.settle(tester);
       await tester.tap(find.byKey(const Key('intro_route_local_button')));
       await f.settle(tester);

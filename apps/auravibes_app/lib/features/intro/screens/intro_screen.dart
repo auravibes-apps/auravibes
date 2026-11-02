@@ -1,5 +1,7 @@
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
 import 'package:auravibes_app/features/intro/notifiers/intro_session_notifier.dart';
@@ -12,6 +14,8 @@ import 'package:auravibes_app/features/models/widgets/compact_workspace_model_se
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_setup_result.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_creation_draft_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_setup_content.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -21,6 +25,7 @@ import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_app/widgets/setup_page_transition.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -32,13 +37,14 @@ class const IntroScreen({super.key}) extends ConsumerStatefulWidget {
 }
 
 class _IntroScreenState extends ConsumerState<IntroScreen> {
-  static const _lastWelcomePage = 2;
+  static const _lastWelcomePage = 0;
   final _pages = PageController();
   final _providerExitGuard = DraftExitGuard();
   WorkspaceSetupResult? _result;
   WorkspaceSetupStage _setupStage = .chooser;
   _IntroSavedStage _savedStage = .readiness;
   bool _pending = false;
+  String? _quickStartError;
   bool _reverse = false;
   String _editingConnection = '';
 
@@ -112,6 +118,42 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     ).go(context);
     ref.read(introSessionProvider.notifier).finish();
   }
+
+  Future<void> _startWithStarter(ChatDraft draft) async {
+    if (_pending) return;
+    setState(() {
+      _pending = true;
+      _quickStartError = null;
+    });
+
+    final workspace = await _createQuickStartWorkspace();
+    if (!mounted) return;
+    if (workspace == null) {
+      setState(() => _pending = false);
+
+      return;
+    }
+
+    ref.invalidate(allWorkspacesProvider);
+    NewChatRoute(workspaceId: workspace.id).goWithDraft(context, draft);
+    ref.read(introSessionProvider.notifier).finish();
+  }
+
+  Future<WorkspaceEntity?> _createQuickStartWorkspace() async {
+    try {
+      return await ref
+          .read(createWorkspaceUseCaseProvider)
+          .call(name: 'intro_flow.preview.project_b'.tr(context: context));
+    } on Object {
+      if (mounted) {
+        setState(
+          () => _quickStartError = 'workspace_management.unexpected_error',
+        );
+      }
+
+      return null;
+    }
+  }
 }
 
 void _watchIntroState(WidgetRef ref, WorkspaceSetupResult? result) {
@@ -177,6 +219,9 @@ class _IntroSetup extends StatelessWidget {
          ),
          canNavigate: state._setupStage == .chooser && !state._pending,
          controller: state._pages,
+         onQuickStart: state._startWithStarter,
+         quickStartPending: state._pending,
+         quickStartError: state._quickStartError,
        );
 
   final Widget _child;
