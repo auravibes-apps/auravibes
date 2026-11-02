@@ -55,10 +55,7 @@ class const _ArchivedConversationsBody({required final String workspaceId})
             ),
           ),
         Expanded(
-          child: ChatListWidget(
-            workspaceId: workspaceId,
-            scope: .archived,
-          ),
+          child: ChatListWidget(workspaceId: workspaceId, scope: .archived),
         ),
       ],
     );

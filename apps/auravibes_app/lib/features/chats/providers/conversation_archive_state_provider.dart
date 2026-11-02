@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/repositories/conversation_archive_state_repository.dart';
 import 'package:auravibes_app/features/chats/usecases/set_conversation_archived_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
 final conversationArchiveStateRepositoryProvider =

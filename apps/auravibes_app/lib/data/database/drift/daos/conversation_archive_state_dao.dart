@@ -36,12 +36,13 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
         ),
       );
     } else {
-      final _ = await (delete(conversationArchiveStates)..where(
-            (row) =>
-                row.workspaceId.equals(workspaceId) &
-                row.conversationId.equals(conversationId),
-          ))
-          .go();
+      final _ =
+          await (delete(conversationArchiveStates)..where(
+                (row) =>
+                    row.workspaceId.equals(workspaceId) &
+                    row.conversationId.equals(conversationId),
+              ))
+              .go();
     }
   }
 
@@ -49,11 +50,12 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
     required String workspaceId,
     required String conversationId,
   }) async {
-    final _ = await (delete(conversationArchiveStates)..where(
-            (row) =>
-                row.workspaceId.equals(workspaceId) &
-                row.conversationId.equals(conversationId),
-          ))
-          .go();
+    final _ =
+        await (delete(conversationArchiveStates)..where(
+              (row) =>
+                  row.workspaceId.equals(workspaceId) &
+                  row.conversationId.equals(conversationId),
+            ))
+            .go();
   }
 }

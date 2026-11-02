@@ -27,9 +27,8 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
-          workspaceSessionForRouteProvider(
-            cloudWorkspace.localWorkspaceId,
-          ).overrideWithValue(session),
+          workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
+              .overrideWithValue(session),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
@@ -78,9 +77,8 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
-          workspaceSessionForRouteProvider(
-            cloudWorkspace.localWorkspaceId,
-          ).overrideWithValue(const WorkspaceSession(cloudWorkspace)),
+          workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
+              .overrideWithValue(const WorkspaceSession(cloudWorkspace)),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,

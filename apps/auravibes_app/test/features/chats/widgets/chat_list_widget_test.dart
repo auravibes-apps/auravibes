@@ -683,10 +683,7 @@ void main() {
         tester,
         buildSubject(
           workspaceId: workspace.id,
-          content: ChatListWidget(
-            workspaceId: workspace.id,
-            scope: .archived,
-          ),
+          content: ChatListWidget(workspaceId: workspace.id, scope: .archived),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
             streamingTitleProvider.overrideWith((ref, id) => null),
@@ -805,10 +802,7 @@ void main() {
         buildSubject(
           workspaceId: 'ws-1',
           content: InheritedGoRouter(
-            child: const ChatListWidget(
-              workspaceId: 'ws-1',
-              scope: .archived,
-            ),
+            child: const ChatListWidget(workspaceId: 'ws-1', scope: .archived),
             goRouter: router,
           ),
           overrides: [

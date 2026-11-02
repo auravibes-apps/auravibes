@@ -2,9 +2,7 @@ import 'package:auravibes_app/data/repositories/conversation_archive_state_repos
 
 import 'conversation_archive_state_exception.dart';
 
-class const SetConversationArchivedUsecase({
-  required this.repository,
-}) {
+class const SetConversationArchivedUsecase({required this.repository}) {
   final ConversationArchiveStateRepository repository;
 
   Future<void> call({

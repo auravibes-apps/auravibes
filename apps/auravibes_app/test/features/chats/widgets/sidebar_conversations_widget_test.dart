@@ -518,13 +518,12 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider(
-                    'workspace-1',
-                  ).overrideWithValue(
-                    const WorkspaceSession(
-                      LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-                    ),
-                  ),
+                  workspaceSessionForRouteProvider('workspace-1')
+                      .overrideWithValue(
+                        const WorkspaceSession(
+                          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+                        ),
+                      ),
                   conversationRepositoryProvider.overrideWithValue(repository),
                 ],
                 child: MaterialApp(
@@ -590,13 +589,12 @@ void main() {
               return Portal(
                 child: TestProviderScope(
                   overrides: [
-                    workspaceSessionForRouteProvider(
-                      'workspace-1',
-                    ).overrideWithValue(
-                      const WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-                      ),
-                    ),
+                    workspaceSessionForRouteProvider('workspace-1')
+                        .overrideWithValue(
+                          const WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+                          ),
+                        ),
                     conversationRepositoryProvider.overrideWithValue(
                       repository,
                     ),

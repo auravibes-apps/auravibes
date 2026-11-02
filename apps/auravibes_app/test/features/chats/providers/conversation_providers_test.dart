@@ -403,17 +403,14 @@ void main() {
     test(
       'cloud archive markers update active and archived views locally',
       () async {
-        final endpoint = _TestConversationEndpoint(
-          [
-            ConversationPage(
-              conversations: [
-                _cloudConversationSummary(id: 'active'),
-                _cloudConversationSummary(id: 'archived'),
-              ],
-            ),
-          ],
-          repeatLastPage: true,
-        );
+        final endpoint = _TestConversationEndpoint([
+          ConversationPage(
+            conversations: [
+              _cloudConversationSummary(id: 'active'),
+              _cloudConversationSummary(id: 'archived'),
+            ],
+          ),
+        ], repeatLastPage: true);
         final database = AppDatabase(
           connection: DatabaseConnection(NativeDatabase.memory()),
         );
