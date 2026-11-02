@@ -13,6 +13,7 @@ typedef EmptyConversationStarterRequest = ({
 
 const _titleKey = 'chats_screens.chat_conversation.empty_starters.title';
 const _helperKey = 'chats_screens.chat_conversation.empty_starters.helper';
+
 class const EmptyConversationStarters({
   required final ValueChanged<ChatDraft> onSelect,
   final String? selectedText,
