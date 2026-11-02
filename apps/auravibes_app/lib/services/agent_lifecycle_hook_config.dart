@@ -86,17 +86,26 @@ bool _hasOnlyKeys(Map<String, dynamic> value, Set<String> keys) =>
     value.keys.toSet().difference(keys).isEmpty;
 
 List<String> _parseSourceFiles(Object? raw) {
-  final sources = raw ?? const <Object?>[];
-  if (sources is! List<Object?> ||
-      sources.length > maxAgentLifecycleHookSourceFiles) {
-    throw const AgentLifecycleHookConfigException('invalid_source_files');
-  }
-  if (!sources.every((value) => value is String && _isSourcePath(value))) {
+  final sources = _sourceFileList(raw);
+  if (!sources.every(_isValidSourceFile)) {
     throw const AgentLifecycleHookConfigException('invalid_source_files');
   }
 
   return sources.cast<String>();
 }
+
+List<Object?> _sourceFileList(Object? raw) {
+  if (raw == null) return const [];
+  if (raw is! List<Object?> ||
+      raw.length > maxAgentLifecycleHookSourceFiles) {
+    throw const AgentLifecycleHookConfigException('invalid_source_files');
+  }
+
+  return raw;
+}
+
+bool _isValidSourceFile(Object? value) =>
+    value is String && _isSourcePath(value);
 
 bool _isSourcePath(String value) =>
     value.trim().isNotEmpty && !value.contains('\u0000');
