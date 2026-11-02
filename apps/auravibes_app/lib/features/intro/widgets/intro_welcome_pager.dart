@@ -40,6 +40,12 @@ class _IntroWelcomePagerState extends State<IntroWelcomePager> {
   int _page = 0;
   ChatDraft? _selectedStarter;
 
+  PageController get _controller => widget.controller;
+
+  bool get _reducedMotion =>
+      MediaQuery.disableAnimationsOf(context) ||
+      MediaQuery.accessibleNavigationOf(context);
+
   @override
   Widget build(BuildContext context) => CallbackShortcuts(
     bindings: widget.canNavigate
@@ -50,12 +56,6 @@ class _IntroWelcomePagerState extends State<IntroWelcomePager> {
         : {},
     child: Focus(child: _IntroWelcomeViewport(state: this), autofocus: true),
   );
-
-  PageController get _controller => widget.controller;
-
-  bool get _reducedMotion =>
-      MediaQuery.disableAnimationsOf(context) ||
-      MediaQuery.accessibleNavigationOf(context);
 
   void _selectStarter(ChatDraft draft) =>
       setState(() => _selectedStarter = draft);

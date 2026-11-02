@@ -25,6 +25,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -55,7 +57,10 @@ void main() {
       await _pumpUntilFound(tester, find.byKey(_quickStartKey));
 
       expect(find.text('intro_flow.welcome.title'.tr()), findsOneWidget);
-      expect(find.textContaining('dispositivo'), findsOneWidget);
+      expect(
+        find.text('intro_flow.welcome.local_storage'.tr()),
+        findsOneWidget,
+      );
       expect(find.byKey(_dayStarterKey), findsOneWidget);
       expect(find.byKey(_shoppingStarterKey), findsOneWidget);
       expect(find.byKey(_messageStarterKey), findsOneWidget);
@@ -324,7 +329,7 @@ void main() {
 
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Connect AI when you\'re ready'), findsOneWidget);
+      expect(find.text("Connect AI when you're ready"), findsOneWidget);
       await tester.tap(find.byKey(_welcomeNextKey));
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       await expectLater(
@@ -517,7 +522,7 @@ void main() {
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
       expect(find.text('3 of 4'), findsOneWidget);
-      expect(find.text('Connect AI when you\'re ready'), findsOneWidget);
+      expect(find.text("Connect AI when you're ready"), findsOneWidget);
       expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
@@ -1369,7 +1374,11 @@ class _IntroFixture {
                 ),
               ),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
             ),
           );
@@ -1381,6 +1390,7 @@ class _IntroFixture {
       startLocale: startLocale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
+      saveLocale: false,
     );
   }
 
