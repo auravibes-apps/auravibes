@@ -73,7 +73,7 @@
   "intro_flow": {
     "welcome": {
       "title": "What would you like help with today?",
-      "body": "Choose an example to start a message. Edit it here; nothing is sent until you send it.",
+      "body": "Choose an example. It opens as an editable draft; send it when you're ready.",
       "ai_title": "Connect AI when you're ready",
       "ai_body": "Choose the AI provider and model that suit your work. Connecting AI is optional; you can explore first.",
       "page": "{} of {}",

@@ -73,7 +73,7 @@
   "intro_flow": {
     "welcome": {
       "title": "¿Qué te gustaría hacer hoy?",
-      "body": "Elige un ejemplo para empezar un mensaje. Edítalo aquí; no se enviará hasta que lo envíes.",
+      "body": "Elige un ejemplo. Se abrirá como borrador editable; envíalo cuando quieras.",
       "ai_title": "Conecta IA cuando quieras",
       "ai_body": "Elige el proveedor de IA y el modelo que se adapten a tu trabajo. Conectar IA es opcional; puedes explorar primero.",
       "page": "{} de {}",
