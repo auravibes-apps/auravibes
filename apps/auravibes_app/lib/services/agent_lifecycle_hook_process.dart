@@ -44,6 +44,16 @@ class const AgentLifecycleHookProcess() {
     final process = started.process;
     if (process == null) return const .new(outcome: .failed);
 
+    return await _createSupervisor(
+      process,
+      request.isCancellationRequested,
+    ).run(request.inputBytes);
+  }
+
+  static _HookProcessSupervisor _createSupervisor(
+    Process process,
+    bool Function() isCancellationRequested,
+  ) {
     final termination = _HookProcessTermination(process);
     final outcome = _HookProcessOutcome(termination);
     final output = _HookProcessOutput(
@@ -52,13 +62,13 @@ class const AgentLifecycleHookProcess() {
       () => outcome.isSuccess,
     );
 
-    return await _HookProcessSupervisor(
+    return _HookProcessSupervisor(
       process,
-      request.isCancellationRequested,
+      isCancellationRequested,
       termination,
       outcome,
       output,
-    ).run(request.inputBytes);
+    );
   }
 }
 
