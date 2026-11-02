@@ -6,6 +6,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 void main() {
+  test('observer preserves transport type and releases its listener', () {
+    final sdk = _Client();
+    final session = McpVerificationSession(
+      client: sdk,
+      serverId: 'server',
+      toolIdentifier: 'verify',
+    );
+    final transport = _Transport();
+    addTearDown(() {
+      session.close();
+      transport.close();
+    });
+    expect(session.guardTransport(transport), same(transport));
+    expect(transport.messages.hasListener, isTrue);
+    session.close();
+    expect(transport.messages.hasListener, isFalse);
+    expect(sdk.disconnects, 1);
+  });
+
   test(
     'same verification client dispatches cancel while start is still pending',
     () async {

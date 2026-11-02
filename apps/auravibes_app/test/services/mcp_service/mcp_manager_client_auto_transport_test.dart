@@ -19,7 +19,7 @@ void main() {
     );
     final manager = McpManagerService();
     final session = await manager.openVerificationSession(
-      _verificationConnection(server.endpoint, AgentCancellationScope()),
+      _verificationConnection(server.endpoint, .new()),
     );
     addTearDown(() async {
       session.close();
@@ -885,14 +885,16 @@ final class _LocalMcpHttpServer {
         response
           ..statusCode = HttpStatus.badRequest
           ..headers.contentType = .json
-          ..write(jsonEncode({
-            'jsonrpc': '2.0',
-            'id': message['id'],
-            'error': {
-              'code': -32600,
-              'message': 'Missing or mismatched MCP-Protocol-Version',
-            },
-          }));
+          ..write(
+            jsonEncode({
+              'jsonrpc': '2.0',
+              'id': message['id'],
+              'error': {
+                'code': -32600,
+                'message': 'Missing or mismatched MCP-Protocol-Version',
+              },
+            }),
+          );
         final _ = await response.close();
 
         return;

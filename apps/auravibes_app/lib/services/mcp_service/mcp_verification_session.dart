@@ -21,10 +21,24 @@ class McpVerificationSession {
   final String toolIdentifier;
   final mcp.Client _client;
   final _elicited = Completer<void>();
+  StreamSubscription<Object?>? _transportObserver;
   bool _closed = false;
 
-  mcp.ClientTransport guardTransport(mcp.ClientTransport transport) =>
-      _VerificationTransport(transport, _inspectMessage);
+  mcp.ClientTransport guardTransport(mcp.ClientTransport transport) {
+    if (_closed || _transportObserver != null) {
+      transport.close();
+      throw StateError('Verification transport is already bound or closed.');
+    }
+    // The SDK uses the concrete transport type to set protocol headers.
+    // Observe its broadcast stream without replacing that transport.
+    _transportObserver = transport.onMessage.listen(
+      _inspectMessage,
+      onError: (Object _) => close(),
+      onDone: close,
+    );
+
+    return transport;
+  }
 
   Future<Object?> call({
     required String mcpServerId,
@@ -62,6 +76,8 @@ class McpVerificationSession {
   void close() {
     if (_closed) return;
     _closed = true;
+    unawaited(_transportObserver?.cancel());
+    _transportObserver = null;
     if (!_elicited.isCompleted) _elicited.complete();
     _client.disconnect();
   }
@@ -94,22 +110,4 @@ class McpVerificationSession {
 
     return mcp.ElicitResult(action: mcp.ElicitResultAction.cancel);
   }
-}
-
-final class _VerificationTransport(
-  final mcp.ClientTransport inner,
-  final void Function(Object? message) inspect,
-) implements mcp.ClientTransport {
-  @override
-  Stream<Object?> get onMessage => inner.onMessage.map((message) {
-    inspect(message);
-
-    return message;
-  });
-  @override
-  Future<void> get onClose => inner.onClose;
-  @override
-  void send(Object? message) => inner.send(message);
-  @override
-  void close() => inner.close();
 }
