@@ -13,12 +13,16 @@ import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/ux_validation_fixture.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
-  setUpAll(EasyLocalization.ensureInitialized);
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
   tearDownAll(UxValidationFixture.closeDatabase);
 
   test(
@@ -195,7 +199,6 @@ base class _OversizedFile({required final int size}) extends fp.PlatformFile {
   }
 
   @override
-  Stream<Uint8List> readAsByteStream() => throw UnsupportedError(
-    'Oversized bytes must not be read',
-  );
+  Stream<Uint8List> readAsByteStream() =>
+      throw UnsupportedError('Oversized bytes must not be read');
 }
