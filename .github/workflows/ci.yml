@@ -391,6 +391,10 @@ jobs:
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: melos run generate:serverpod
 
+      - name: Generate localization keys
+        if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
+        run: melos run generate:localization --no-select
+
       - name: Export generated source patch
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: |

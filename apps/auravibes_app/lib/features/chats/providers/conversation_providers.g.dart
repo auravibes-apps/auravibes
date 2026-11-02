@@ -120,6 +120,7 @@ final class ConversationsStreamProvider
       String workspaceId,
       String search,
       _ConversationPagination pagination,
+      ConversationListScope scope,
     })
     super.argument,
   }) : super(
@@ -154,12 +155,14 @@ final class ConversationsStreamProvider
               String workspaceId,
               String search,
               _ConversationPagination pagination,
+              ConversationListScope scope,
             });
     return conversationsStream(
       ref,
       workspaceId: argument.workspaceId,
       search: argument.search,
       pagination: argument.pagination,
+      scope: argument.scope,
     );
   }
 
@@ -175,7 +178,7 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'23fa84834e78ed7e2c12a72906da3b7514577aad';
+    r'6081896cc783362ca52f85887510a194035c2bea';
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -185,6 +188,7 @@ final class ConversationsStreamFamily extends $Family
             String workspaceId,
             String search,
             _ConversationPagination pagination,
+            ConversationListScope scope,
           })
         > {
   ConversationsStreamFamily._()
@@ -200,11 +204,13 @@ final class ConversationsStreamFamily extends $Family
     required String workspaceId,
     String search = '',
     _ConversationPagination pagination = _defaultConversationPagination,
+    ConversationListScope scope = ConversationListScope.active,
   }) => ConversationsStreamProvider._(
     argument: (
       workspaceId: workspaceId,
       search: search,
       pagination: pagination,
+      scope: scope,
     ),
     from: this,
   );

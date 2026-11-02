@@ -40,6 +40,13 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               path: 'chats',
               hasOverriddenOnExit: false,
               factory: $ChatsRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'archived',
+                  hasOverriddenOnExit: false,
+                  factory: $ArchivedConversationsRoute._fromState,
+                ),
+              ],
             ),
             GoRouteData.$route(
               path: 'bookmarks',
@@ -338,6 +345,33 @@ mixin $ChatsRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $ArchivedConversationsRoute on GoRouteData {
+  static ArchivedConversationsRoute _fromState(GoRouterState state) =>
+      ArchivedConversationsRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+      );
+
+  ArchivedConversationsRoute get _self => this as ArchivedConversationsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats/archived',
   );
 
   @override
