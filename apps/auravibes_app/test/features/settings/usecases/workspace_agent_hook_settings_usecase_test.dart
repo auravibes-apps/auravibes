@@ -5,7 +5,6 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/settings/usecases/workspace_agent_hook_settings_usecase.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 

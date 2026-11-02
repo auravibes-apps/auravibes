@@ -296,7 +296,11 @@ Future<agent.AgentApprovableToolCall> _approvableToolCallFor(
     throw StateError('Tool call conversation is unavailable.');
   }
 
-  return _toApprovableToolCall(conversationId, conversation.workspaceId, toolCall);
+  return _toApprovableToolCall(
+    conversationId,
+    conversation.workspaceId,
+    toolCall,
+  );
 }
 
 void _logToolApprovalOwnershipMismatch(

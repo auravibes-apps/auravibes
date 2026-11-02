@@ -17,6 +17,19 @@ typedef AgentLifecycleHookProcessRequest = ({
 });
 typedef _LaunchResult = ({Process? process, AgentToolHookOutcome? failure});
 
+const _LaunchResult _failedLaunch = (
+  process: null,
+  failure: AgentToolHookOutcome.failed,
+);
+const _LaunchResult _unavailableLaunch = (
+  process: null,
+  failure: AgentToolHookOutcome.unavailable,
+);
+const _LaunchResult _cancelledLaunch = (
+  process: null,
+  failure: AgentToolHookOutcome.cancelled,
+);
+
 const _gracefulStopTimeout = Duration(milliseconds: 150);
 const _forcedStopTimeout = Duration(milliseconds: 250);
 const _streamDrainTimeout = Duration(milliseconds: 100);
@@ -43,14 +56,14 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
   try {
     trusted = await request.isStillTrusted();
   } on Object {
-    return _launchFailure(.failed);
+    return _failedLaunch;
   }
   if (!trusted) {
-    return _launchFailure(.unavailable);
+    return _unavailableLaunch;
   }
   // Keep this synchronous check adjacent to launch after the final trust await.
   if (request.isCancellationRequested()) {
-    return _launchFailure(.cancelled);
+    return _cancelledLaunch;
   }
   try {
     final process = await Process.start(
@@ -63,12 +76,9 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
 
     return (process: process, failure: null);
   } on Object {
-    return _launchFailure(.failed);
+    return _failedLaunch;
   }
 }
-
-_LaunchResult _launchFailure(AgentToolHookOutcome outcome) =>
-    (process: null, failure: outcome);
 
 class _HookProcessOutput {
   _HookProcessOutput(this.process, this.onFailure, this.isAccepting);
@@ -203,8 +213,7 @@ class _HookProcessSupervisor {
       final _ = await Future.wait([
         _output.outputDone.future,
         _output.errorDone.future,
-      ])
-          .timeout(_streamDrainTimeout);
+      ]).timeout(_streamDrainTimeout);
     } on Object {
       _fail(.failed);
       await _output.cancel();
@@ -224,10 +233,7 @@ class _HookProcessSupervisor {
     if (_outcome != AgentToolHookOutcome.success)
       return .new(outcome: _outcome);
     try {
-      return .new(
-        outcome: .success,
-        stdout: utf8.decode(_output.takeBytes()),
-      );
+      return .new(outcome: .success, stdout: utf8.decode(_output.takeBytes()));
     } on FormatException {
       return const .new(outcome: .failed);
     }

@@ -112,7 +112,12 @@ class const WorkspaceLifecycleHookRunner({
   ) async {
     final input = prepared.input;
     final request = input.request;
-    if (!await _isStillTrusted(request.workspaceId, prepared.snapshot)) {
+    if (!await _isStillTrusted(
+      workspaceRepository,
+      settingsRepository,
+      request.workspaceId,
+      prepared.snapshot,
+    )) {
       return const .new(outcome: .unavailable);
     }
     if (input.isCancellationRequested(request.conversationId)) {
@@ -135,23 +140,13 @@ class const WorkspaceLifecycleHookRunner({
       isCancellationRequested: prepared.input.isCancellationRequested,
       conversationId: hookRequest.conversationId,
       isStillTrusted: () =>
-          _isStillTrusted(hookRequest.workspaceId, prepared.snapshot),
+          _isStillTrusted(
+            workspaceRepository,
+            settingsRepository,
+            hookRequest.workspaceId,
+            prepared.snapshot,
+          ),
     ));
-  }
-
-  Future<bool> _isStillTrusted(
-    String workspaceId,
-    AgentLifecycleHookSourceSnapshot snapshot,
-  ) async {
-    final workspace = await workspaceRepository.getWorkspaceById(workspaceId);
-    if (workspace == null || !workspace.type.isLocal) return false;
-    final settings = await settingsRepository.get(workspaceId);
-
-    return settings.enabled &&
-        settings.trustsSource(
-          canonicalPath: snapshot.canonicalPath,
-          digest: snapshot.digest,
-        );
   }
 
   Future<_LoadedHookConfig?> _loadTrustedConfig(String workspaceId) async {
@@ -284,11 +279,20 @@ Map<String, dynamic>? _decodeHookResponse(String? raw) {
 }
 
 String _hookInput(_HookRequest input) {
-  final request = input.request;
-  final toolCallId = _truncateUtf8(
-    request.toolCallId,
-    _maxHookIdentifierBytes,
-  );
+  final identifiers = _hookInputIdentifiers(input.request);
+
+  return jsonEncode({
+    'version': 1,
+    'event': input.event.name,
+    ...identifiers,
+    'toolSucceeded': ?input.toolSucceeded,
+  });
+}
+
+Map<String, Object?> _hookInputIdentifiers(
+  agent.AgentToolLifecycleHookRequest<ResolvedTool> request,
+) {
+  final toolCallId = _truncateUtf8(request.toolCallId, _maxHookIdentifierBytes);
   final toolIdentifier = _truncateUtf8(
     request.tool.toolIdentifier,
     _maxHookIdentifierBytes,
@@ -298,17 +302,31 @@ String _hookInput(_HookRequest input) {
       .map((name) => _truncateUtf8(name, _maxHookArgumentNameBytes))
       .toList(growable: false);
 
-  return jsonEncode({
-    'version': 1,
-    'event': input.event.name,
+  return {
     'toolCallId': toolCallId,
     'tool': toolIdentifier,
     'argumentNames': argumentNames,
-    'toolSucceeded': ?input.toolSucceeded,
-  });
+  };
 }
 
 String _redactAndTrim(String value) => LogRedaction.redact(value).trim();
 
 String _truncateUtf8(String value, int maxBytes) =>
     agent.truncateAgentToolHookText(value, maxBytes);
+
+Future<bool> _isStillTrusted(
+  WorkspaceRepository workspaceRepository,
+  WorkspaceAgentHookSettingsRepository settingsRepository,
+  String workspaceId,
+  AgentLifecycleHookSourceSnapshot snapshot,
+) async {
+  final workspace = await workspaceRepository.getWorkspaceById(workspaceId);
+  if (workspace == null || !workspace.type.isLocal) return false;
+  final settings = await settingsRepository.get(workspaceId);
+
+  return settings.enabled &&
+      settings.trustsSource(
+        canonicalPath: snapshot.canonicalPath,
+        digest: snapshot.digest,
+      );
+}

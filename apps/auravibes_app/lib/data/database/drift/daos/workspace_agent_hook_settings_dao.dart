@@ -37,8 +37,9 @@ class WorkspaceAgentHookSettingsDao(super.attachedDatabase)
   Future<WorkspaceAgentHookSettingsTable> _insert(
     String workspaceId,
     WorkspaceAgentHookSettingsCompanion companion,
-  ) => into(workspaceAgentHookSettings)
-      .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
+  ) =>
+      into(workspaceAgentHookSettings)
+          .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
 
   Future<WorkspaceAgentHookSettingsTable> _update(
     String workspaceId,

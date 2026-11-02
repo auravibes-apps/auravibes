@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
@@ -401,8 +402,11 @@ ToolCallExecutionBatchUpdate _executionUpdateFromParts(
   output: output,
 );
 
-({ResolvedTool tool, PendingToolCall toolCall, ToolCallApprovalBatchItem item})
-_executionCallParts(_ResolvedBatchClaim entry) {
+({
+  ResolvedTool tool,
+  MessageToolCallEntity toolCall,
+  ToolCallApprovalBatchItem item,
+}) _executionCallParts(_ResolvedBatchClaim entry) {
   final tool = entry.tool;
   final toolCall = entry.claim.toolCall;
   final item = entry.claim.item;
@@ -417,13 +421,15 @@ agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
   _ResolvedBatchClaim entry,
 ) {
   final parts = _executionCallParts(entry);
+  final item = parts.item;
+  final toolCall = parts.toolCall;
 
   return agent.AgentToolBatchCall(
-    conversationId: parts.item.conversationId,
-    messageId: parts.item.messageId,
-    toolCallId: parts.item.toolCallId,
+    conversationId: item.conversationId,
+    messageId: item.messageId,
+    toolCallId: item.toolCallId,
     tool: parts.tool,
-    argumentsRaw: parts.toolCall.argumentsRaw,
+    argumentsRaw: toolCall.argumentsRaw,
     workspaceId: entry.workspaceId,
   );
 }

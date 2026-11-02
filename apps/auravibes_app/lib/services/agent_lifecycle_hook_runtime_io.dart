@@ -48,6 +48,13 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     _Invocation request,
   ) async {
     final checked = await _reinspect(request);
+    return await _completeInvocation(request, checked);
+  }
+
+  Future<AgentLifecycleHookInvocationResult> _completeInvocation(
+    _Invocation request,
+    _Reinspection checked,
+  ) async {
     if (checked.failure case final failure?) return .new(outcome: failure);
     final current = checked.snapshot;
     if (current == null) return const .new(outcome: .failed);
@@ -113,17 +120,30 @@ bool _matchesInvocation(
 ) {
   if (current.digest != request.snapshot.digest) return false;
   final expectedHook = request.hook;
-  final event = expectedHook.event;
-  final hook = current.config.hookFor(event);
-  final commandPath = current.commandPaths[event];
-  if (hook == null || commandPath == null) return false;
-  final expectedCommand = expectedHook.command;
-  final expectedArguments = expectedHook.args;
-  final actualCommand = hook.command;
-  final actualArguments = hook.args;
+  final currentHook = _currentHook(current, expectedHook.event);
+  if (currentHook == null) return false;
 
-  return actualCommand == expectedCommand &&
-      _sameArguments(actualArguments, expectedArguments);
+  return _sameHook(currentHook, expectedHook);
+}
+
+AgentLifecycleHookDefinition? _currentHook(
+  AgentLifecycleHookSourceSnapshot snapshot,
+  AgentLifecycleHookEvent event,
+) {
+  final hook = snapshot.config.hookFor(event);
+  if (snapshot.commandPaths[event] == null) return null;
+
+  return hook;
+}
+
+bool _sameHook(
+  AgentLifecycleHookDefinition actual,
+  AgentLifecycleHookDefinition expected,
+) {
+  final commandMatches = actual.command == expected.command;
+  final argumentsMatch = _sameArguments(actual.args, expected.args);
+
+  return commandMatches && argumentsMatch;
 }
 
 bool _sameArguments(List<String> left, List<String> right) {

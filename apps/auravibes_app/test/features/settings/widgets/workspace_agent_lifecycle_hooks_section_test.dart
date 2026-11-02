@@ -10,7 +10,6 @@ import 'package:auravibes_app/providers/agent_lifecycle_hook_runtime_provider.da
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
