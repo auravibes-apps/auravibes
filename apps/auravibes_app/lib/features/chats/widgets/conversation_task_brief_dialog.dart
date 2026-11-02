@@ -39,8 +39,7 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
           crossAxisAlignment: .stretch,
           children: [
             const TextLocale(
-              LocaleKeys
-                  .chats_screens_chat_conversation_task_brief_description
+              LocaleKeys.chats_screens_chat_conversation_task_brief_description,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -76,7 +75,9 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
             ),
           ),
         TextButton(
-          onPressed: canSave.value ? () => _save(context, controller.text) : null,
+          onPressed: canSave.value
+              ? () => _save(context, controller.text)
+              : null,
           child: const TextLocale(LocaleKeys.common_save),
         ),
       ],
@@ -86,10 +87,8 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
 
 void _cancel(BuildContext context) => Navigator.of(context).pop();
 
-void _clear(BuildContext context) => Navigator.of(
-  context,
-).pop((clear: true, value: null));
+void _clear(BuildContext context) =>
+    Navigator.of(context).pop((clear: true, value: null));
 
-void _save(BuildContext context, String value) => Navigator.of(
-  context,
-).pop((clear: false, value: value));
+void _save(BuildContext context, String value) =>
+    Navigator.of(context).pop((clear: false, value: value));

@@ -136,6 +136,10 @@ jobs:
           set -euo pipefail
           evidence="$RUNNER_TEMP/issue-1591-evidence"
           fingerprint="$GITHUB_SHA+generated:$(cut -d' ' -f1 "$evidence/generated-patch-sha256.txt")"
+          baseline_harness="$(head -n 1 "$evidence/capture-harness-sha256.txt" | cut -d' ' -f1)"
+          feature_harness="$(sha256sum apps/auravibes_app/test/widgets/ux_validation_layout_test.dart | cut -d' ' -f1)"
+          test "$baseline_harness" = "$feature_harness"
+          printf '%s\n' "$feature_harness" > "$evidence/after-capture-harness-sha256.txt"
           cd apps/auravibes_app
           python3 ../../tool/validation_lease.py --label feature-capture -- \
             flutter test test/widgets/ux_validation_layout_test.dart --no-pub --reporter expanded \
@@ -168,6 +172,59 @@ jobs:
             test/features/chats/widgets/conversation_task_brief_dialog_test.dart \
             test/features/chats/widgets/conversation_task_brief_button_test.dart \
             test/providers/app_providers_test.dart 2>&1 | tee "$evidence/app-tests.log"
+
+      - name: Focused server protocol tests
+        if: ${{ always() && steps.generate.outcome == 'success' }}
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../../tool/validation_lease.py --label hosted-server-protocol -- dart test \
+            test/features/conversations/conversation_contract_test.dart \
+            test/features/conversations/engine/server_tool_runtime_test.dart \
+            --reporter expanded 2>&1 | tee "$RUNNER_TEMP/issue-1591-evidence/server-unit-tests.log"
+
+      - name: Configure disposable hosted PostgreSQL
+        if: ${{ always() && steps.generate.outcome == 'success' }}
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk -v database_password="$POSTGRES_PASSWORD" '
+            /^test:$/ { in_test = 1; print; next }
+            /^[^[:space:]]/ { in_test = 0 }
+            in_test && /^  database:/ {
+              printf "  database: \"%s\"\n", database_password
+              replaced = 1
+              next
+            }
+            { print }
+            END { if (!replaced) exit 1 }
+          ' config/passwords.example.yaml > config/passwords.yaml
+          python3 ../../tool/validation_lease.py --label hosted-postgres -- docker compose up -d postgres_test
+          for attempt in {1..60}; do
+            if docker compose exec -T postgres_test pg_isready -U postgres -d auravibes_server_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Focused cloud persistence and worker integration tests
+        if: ${{ success() && steps.generate.outcome == 'success' }}
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../../tool/validation_lease.py --label hosted-cloud-integration -- dart test \
+            test/integration/features/conversations/conversation_endpoint_test.dart \
+            test/integration/features/conversations/conversation_engine_host_regression_test.dart \
+            --reporter expanded 2>&1 | tee "$RUNNER_TEMP/issue-1591-evidence/server-integration-tests.log"
+
+      - name: Stop disposable hosted PostgreSQL
+        if: ${{ always() }}
+        working-directory: apps/auravibes_server
+        run: docker compose down --remove-orphans
 
       - name: Verify paired image evidence
         if: ${{ success() }}

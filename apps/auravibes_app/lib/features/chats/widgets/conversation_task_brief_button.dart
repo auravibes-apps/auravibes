@@ -15,12 +15,13 @@ class const ConversationTaskBriefButton({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label = (conversation.taskBrief == null
-            ? LocaleKeys
-                  .chats_screens_chat_conversation_task_brief_add_tooltip
-            : LocaleKeys
-                  .chats_screens_chat_conversation_task_brief_edit_tooltip)
-        .tr(context: context);
+    final label =
+        (conversation.taskBrief == null
+                ? LocaleKeys
+                      .chats_screens_chat_conversation_task_brief_add_tooltip
+                : LocaleKeys
+                      .chats_screens_chat_conversation_task_brief_edit_tooltip)
+            .tr(context: context);
 
     return AuraIconButton(
       icon: conversation.taskBrief == null
@@ -50,8 +51,9 @@ class const ConversationTaskBriefButton({
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            LocaleKeys.chats_screens_chat_conversation_task_brief_save_error
-                .tr(context: context),
+            LocaleKeys.chats_screens_chat_conversation_task_brief_save_error.tr(
+              context: context,
+            ),
           ),
         ),
       );

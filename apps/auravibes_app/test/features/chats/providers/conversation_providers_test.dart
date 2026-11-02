@@ -292,6 +292,8 @@ void main() {
             ),
           ]);
           final container = _cloudContainer(endpoint);
+          final provider = conversationsStreamProvider(workspaceId: 'cloud');
+          final subscription = container.listen(provider, (_, next) => next.toString());
           try {
             final conversations = await container.read(
               conversationsStreamProvider(workspaceId: 'cloud').future,
@@ -299,6 +301,7 @@ void main() {
             expect(conversations.single.taskBrief, savedValue);
             expect(endpoint.requests, hasLength(1));
           } finally {
+            subscription.close();
             container.dispose();
           }
         }
@@ -318,6 +321,11 @@ void main() {
       ]);
       final container = _cloudContainer(endpoint);
       addTearDown(container.dispose);
+      final subscription = container.listen(
+        conversationsStreamProvider(workspaceId: 'cloud'),
+        (_, next) => next.toString(),
+      );
+      addTearDown(subscription.close);
       final conversations = await container.read(
         conversationsStreamProvider(workspaceId: 'cloud').future,
       );

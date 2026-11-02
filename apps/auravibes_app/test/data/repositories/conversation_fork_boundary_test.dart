@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/background_work_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_history_redaction.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';

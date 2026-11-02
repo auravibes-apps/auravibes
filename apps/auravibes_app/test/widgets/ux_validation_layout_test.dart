@@ -159,7 +159,9 @@ void main() {
         find.byKey(const ValueKey('ux-capture')),
       );
       final rendered = await boundary.toImage();
-      final pixels = await rendered.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final pixels = await rendered.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
       rendered.dispose();
       expect(pixels, isNotNull);
       final colors = <int>{};
@@ -167,7 +169,11 @@ void main() {
         colors.add(pixels.getUint32(offset));
         if (colors.length > 2) break;
       }
-      expect(colors.length, greaterThan(2), reason: 'The production route must paint real content before capture.');
+      expect(
+        colors.length,
+        greaterThan(2),
+        reason: 'The production route must paint real content before capture.',
+      );
     });
     final button = find.byKey(const ValueKey('conversation-task-brief-button'));
     const baseline = bool.fromEnvironment('TASK_BRIEF_CAPTURE_BASELINE');
