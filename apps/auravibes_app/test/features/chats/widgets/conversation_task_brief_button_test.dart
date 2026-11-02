@@ -113,9 +113,9 @@ void main() {
       await tester.enterText(find.byType(TextField), brief);
       await tester.pump();
       expect(
-        tester.widget<TextButton>(
-          find.widgetWithText(TextButton, 'Save'),
-        ).onPressed,
+        tester
+            .widget<TextButton>(find.widgetWithText(TextButton, 'Save'))
+            .onPressed,
         isNotNull,
       );
       await tester.tap(find.text('Save'));
