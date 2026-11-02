@@ -140,7 +140,9 @@ ScopedVerificationReservation? _existingReservation(
   List<WorkspaceVerificationRunRow> rows,
   String toolCallId,
 ) {
-  final existing = rows.where((row) => row.toolCallId == toolCallId).firstOrNull;
+  final existing = rows
+      .where((row) => row.toolCallId == toolCallId)
+      .firstOrNull;
   if (existing == null) return null;
   final saved = existing.resultJson;
 

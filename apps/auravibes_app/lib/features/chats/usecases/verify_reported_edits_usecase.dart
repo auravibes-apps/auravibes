@@ -272,14 +272,20 @@ _VerificationSelection _verificationSelection(
     if (report == null) {
       return (
         selections: null,
-        result: ScopedVerificationResult(outcome: .skipped, reason: 'no_changed_paths'),
+        result: ScopedVerificationResult(
+          outcome: .skipped,
+          reason: 'no_changed_paths',
+        ),
       );
     }
     final selections = selectScopedVerificationChecks(settings, report);
     if (selections.isEmpty) {
       return (
         selections: null,
-        result: ScopedVerificationResult(outcome: .skipped, reason: 'no_matching_checks'),
+        result: ScopedVerificationResult(
+          outcome: .skipped,
+          reason: 'no_matching_checks',
+        ),
       );
     }
 
@@ -287,7 +293,10 @@ _VerificationSelection _verificationSelection(
   } on FormatException {
     return (
       selections: null,
-      result: ScopedVerificationResult(outcome: .incomplete, reason: 'invalid_report'),
+      result: ScopedVerificationResult(
+        outcome: .incomplete,
+        reason: 'invalid_report',
+      ),
     );
   }
 }

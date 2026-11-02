@@ -262,7 +262,9 @@ Future<McpServersTable?> _enabledMcpServer(
   final server = await (database.select(
     database.mcpServers,
   )..where((row) => row.id.equals(id))).getSingleOrNull();
-  if (server == null || !server.isEnabled || server.workspaceId != workspaceId) {
+  if (server == null ||
+      !server.isEnabled ||
+      server.workspaceId != workspaceId) {
     return null;
   }
 

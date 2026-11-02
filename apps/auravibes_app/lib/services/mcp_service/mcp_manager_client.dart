@@ -287,7 +287,7 @@ class McpManagerService {
     _requireVerificationConnectionActive(request, remaining);
     final sdk = _createMcpClient(allowElicitation: false);
     final session = McpVerificationSession(
-      _client: sdk,
+      client: sdk,
       serverId: request.serverId,
       toolIdentifier: request.toolIdentifier,
     );
