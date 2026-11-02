@@ -584,13 +584,13 @@ class const _ChatListEmptyState({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (scope) {
-    ConversationListScope.active => Center(
+    .active => Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
       ),
     ),
-    ConversationListScope.archived => const Center(
+    .archived => const Center(
       child: Padding(
         padding: EdgeInsets.all(32),
         child: Column(
@@ -1854,12 +1854,12 @@ AuraPopupMenuItem _chatTileArchiveStateItem(
   ConversationListScope scope,
   VoidCallback onArchiveStateChange,
 ) => switch (scope) {
-  ConversationListScope.active => AuraPopupMenuItem(
+  .active => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_archive),
     onTap: onArchiveStateChange,
     leading: const AuraIcon(Icons.archive_outlined),
   ),
-  ConversationListScope.archived => AuraPopupMenuItem(
+  .archived => AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_restore),
     onTap: onArchiveStateChange,
     leading: const AuraIcon(Icons.unarchive_outlined),

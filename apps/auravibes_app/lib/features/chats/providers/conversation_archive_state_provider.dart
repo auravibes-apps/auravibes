@@ -8,12 +8,13 @@ final conversationArchiveStateRepositoryProvider =
       return ConversationArchiveStateRepository(ref.watch(appDatabaseProvider));
     });
 
-final conversationArchiveStateIdsProvider =
-    StreamProvider.family<Set<String>, String>((ref, workspaceId) {
-      return ref
+final StreamProviderFamily<Set<String>, String>
+conversationArchiveStateIdsProvider =
+    StreamProvider.family<Set<String>, String>(
+      (ref, workspaceId) => ref
           .watch(conversationArchiveStateRepositoryProvider)
-          .watchArchivedConversationIds(workspaceId);
-    });
+          .watchArchivedConversationIds(workspaceId),
+    );
 
 final setConversationArchivedUsecaseProvider =
     Provider<SetConversationArchivedUsecase>((ref) {

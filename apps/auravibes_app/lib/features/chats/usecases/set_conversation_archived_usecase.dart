@@ -1,15 +1,11 @@
 import 'package:auravibes_app/data/repositories/conversation_archive_state_repository.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 
-class const ConversationArchiveStateException() implements Exception {
-  String get localizationKey =>
-      LocaleKeys.chats_screens_chat_conversation_archive_state_error;
-}
+import 'conversation_archive_state_exception.dart';
 
 class const SetConversationArchivedUsecase({
-  required final ConversationArchiveStateRepository repository,
+  required this.repository,
 }) {
-  final ConversationArchiveStateRepository _repository = repository;
+  final ConversationArchiveStateRepository repository;
 
   Future<void> call({
     required String workspaceId,
@@ -17,7 +13,7 @@ class const SetConversationArchivedUsecase({
     required bool isArchived,
   }) async {
     try {
-      await _repository.setArchived(
+      await repository.setArchived(
         workspaceId: workspaceId,
         conversationId: conversationId,
         isArchived: isArchived,

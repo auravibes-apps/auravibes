@@ -14,11 +14,6 @@ typedef ClearConversationDraft = Future<void> Function(
   String workspaceId,
   String conversationId,
 );
-typedef ClearConversationArchive = Future<void> Function(
-  String workspaceId,
-  String conversationId,
-);
-
 typedef BulkConversationOperationError = ({
   ConversationEntity conversation,
   Object error,
@@ -42,7 +37,6 @@ class const BulkConversationActionsUsecase({
   required final LocalConversationDelete deleteConversation,
   required final CloudConversationResolver resolveCloudConversation,
   required final ClearConversationDraft clearConversationDraft,
-  final ClearConversationArchive? clearConversationArchive,
 }) {
   Future<ConversationEntity?> setPinned(
     ConversationEntity conversation, {
@@ -64,10 +58,6 @@ class const BulkConversationActionsUsecase({
     final cloud = await resolveCloudConversation(conversation.workspaceId);
     if (cloud != null) {
       await cloud.delete(conversation);
-      await clearConversationArchive?.call(
-        conversation.workspaceId,
-        conversation.id,
-      );
       await clearConversationDraft(conversation.workspaceId, conversation.id);
 
       return true;

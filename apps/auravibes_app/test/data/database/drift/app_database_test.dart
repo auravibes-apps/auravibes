@@ -88,7 +88,10 @@ void main() {
     );
 
     test(
-      'schema46 migration adds task brief and archive state without rewriting chats',
+      'schema46 migration adds task brief and archive state without rewriting '
+      'chats',
+      'schema46 migration adds task brief and archive state without rewriting '
+      'chats',
       () async {
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 46
@@ -135,7 +138,7 @@ void main() {
         expect(row.read<String>('title'), 'Existing conversation');
         expect(row.data['task_brief'], isNull);
         expect(
-          (await database.select(database.conversationArchiveStates).get()),
+          await database.select(database.conversationArchiveStates).get(),
           isEmpty,
         );
         expect(

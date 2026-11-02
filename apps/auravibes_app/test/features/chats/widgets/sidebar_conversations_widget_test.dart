@@ -38,9 +38,9 @@ void main() {
       await tester.pumpWidget(
         TestProviderScope(
           overrides: [
-            workspaceSessionForRouteProvider.overrideWith(
-              (_, workspaceId) async => WorkspaceSession(
-                LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
               ),
             ),
             conversationRepositoryProvider.overrideWithValue(repository),
@@ -70,9 +70,14 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
-          workspaceSessionForRouteProvider.overrideWith(
-            (_, workspaceId) async => WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
+          workspaceSessionForRouteProvider('workspace-2').overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-2'),
             ),
           ),
           conversationRepositoryProvider.overrideWithValue(repository),
@@ -513,9 +518,11 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider.overrideWith(
-                    (_, workspaceId) async => WorkspaceSession(
-                      LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                  workspaceSessionForRouteProvider(
+                    'workspace-1',
+                  ).overrideWithValue(
+                    const WorkspaceSession(
+                      LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
                     ),
                   ),
                   conversationRepositoryProvider.overrideWithValue(repository),
@@ -583,9 +590,11 @@ void main() {
               return Portal(
                 child: TestProviderScope(
                   overrides: [
-                    workspaceSessionForRouteProvider.overrideWith(
-                      (_, workspaceId) async => WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                    workspaceSessionForRouteProvider(
+                      'workspace-1',
+                    ).overrideWithValue(
+                      const WorkspaceSession(
+                        LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
                       ),
                     ),
                     conversationRepositoryProvider.overrideWithValue(

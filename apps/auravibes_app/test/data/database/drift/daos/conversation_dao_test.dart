@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -569,7 +568,7 @@ void main() {
           ),
         );
         final message = await fixture.database.messageDao.insertMessage(
-          MessagesCompanion.insert(
+          .insert(
             conversationId: conversation.id,
             content: 'Transcript remains available',
             messageType: .text,
@@ -577,7 +576,7 @@ void main() {
             status: .sent,
           ),
         );
-        await fixture.database
+        final _ = await fixture.database
             .into(fixture.database.messageAttachments)
             .insert(
               MessageAttachmentsCompanion.insert(

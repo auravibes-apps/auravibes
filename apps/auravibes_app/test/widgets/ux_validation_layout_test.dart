@@ -317,12 +317,14 @@ void main() {
       archivedScreenIncludingOffstage,
       findsOneWidget,
       reason:
-          'The route URI changed to ${router.routeInformationProvider.value.uri}, '
+          'The route URI changed to '
+          '${router.routeInformationProvider.value.uri}, '
           'but the archived destination was not mounted. Router configuration: '
           '${router.routerDelegate.currentConfiguration}. Router state: '
           'fullPath=${router.state.fullPath}, '
           'matchedLocation=${router.state.matchedLocation}, '
-          'topRoute=${router.state.topRoute?.path}, error=${router.state.error}',
+          'topRoute=${router.state.topRoute?.path}, '
+          'error=${router.state.error}',
     );
     expect(
       archivedScreen,

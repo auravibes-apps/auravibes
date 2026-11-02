@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/test_app.dart';
@@ -22,12 +23,13 @@ void main() {
 
     await tester.pumpWidget(
       TestableApp(
-        workspaceId: cloudWorkspace.localWorkspaceId,
-        workspaceSession: session,
         child: ArchivedConversationsScreen(
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
+          workspaceSessionForRouteProvider(
+            cloudWorkspace.localWorkspaceId,
+          ).overrideWithValue(session),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
@@ -36,9 +38,11 @@ void main() {
             (ref, workspaceId) => Stream.value([]),
           ),
         ],
+        workspaceId: cloudWorkspace.localWorkspaceId,
+        workspaceSession: session,
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Archived on this device'), findsOneWidget);
     expect(
@@ -70,13 +74,13 @@ void main() {
 
     await tester.pumpWidget(
       TestableApp(
-        workspaceId: cloudWorkspace.localWorkspaceId,
-        workspaceSession: const WorkspaceSession(cloudWorkspace),
-        startLocale: const Locale('es'),
         child: ArchivedConversationsScreen(
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
+          workspaceSessionForRouteProvider(
+            cloudWorkspace.localWorkspaceId,
+          ).overrideWithValue(const WorkspaceSession(cloudWorkspace)),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
@@ -85,16 +89,19 @@ void main() {
             (ref, workspaceId) => Stream.value([]),
           ),
         ],
+        workspaceId: cloudWorkspace.localWorkspaceId,
+        workspaceSession: const WorkspaceSession(cloudWorkspace),
+        startLocale: const Locale('es'),
       ),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Archivadas en este dispositivo'), findsOneWidget);
     expect(
       find.text(
         'En los espacios en la nube, el archivo se guarda solo en esta app y '
-        'en este dispositivo. Los demás miembros y tus otros dispositivos '
-        'aún pueden ver esta conversación compartida.',
+        'en este dispositivo. Los dem\u00e1s miembros y tus otros dispositivos '
+        'a\u00fan pueden ver esta conversaci\u00f3n compartida.',
       ),
       findsOneWidget,
     );

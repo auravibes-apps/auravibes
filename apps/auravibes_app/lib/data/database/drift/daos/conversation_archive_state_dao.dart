@@ -7,7 +7,7 @@ part 'conversation_archive_state_dao.g.dart';
 @DriftAccessor(tables: [ConversationArchiveStates])
 class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
     with _$ConversationArchiveStateDaoMixin {
-  ConversationArchiveStateDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   Stream<Set<String>> watchArchivedConversationIds(String workspaceId) =>
       (select(conversationArchiveStates)
@@ -32,11 +32,11 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
         ConversationArchiveStatesCompanion.insert(
           workspaceId: workspaceId,
           conversationId: conversationId,
-          archivedAt: Value(DateTime.now().toUtc()),
+          archivedAt: Value(.now().toUtc()),
         ),
       );
     } else {
-      await (delete(conversationArchiveStates)..where(
+      final _ = await (delete(conversationArchiveStates)..where(
             (row) =>
                 row.workspaceId.equals(workspaceId) &
                 row.conversationId.equals(conversationId),
@@ -48,11 +48,12 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
   Future<void> clearConversationArchive({
     required String workspaceId,
     required String conversationId,
-  }) async =>
-      await (delete(conversationArchiveStates)..where(
+  }) async {
+    final _ = await (delete(conversationArchiveStates)..where(
             (row) =>
                 row.workspaceId.equals(workspaceId) &
                 row.conversationId.equals(conversationId),
           ))
           .go();
+  }
 }

@@ -85,17 +85,15 @@ Stream<List<ConversationEntity>> conversationsStream(
   _ConversationPagination pagination = _defaultConversationPagination,
   ConversationListScope scope = ConversationListScope.active,
 }) async* {
-  final sessionState = ref.watch(workspaceSessionForRouteProvider(workspaceId));
-  if (sessionState.hasError) {
-    Error.throwWithStackTrace(sessionState.error!, sessionState.stackTrace!);
-  }
-  final session = sessionState.asData?.value;
-  if (session == null) return;
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  if (!ref.mounted) return;
 
   final archivedIds = session.cloud == null
       ? const <String>{}
-      : _archivedConversationIds(ref, workspaceId);
-  if (archivedIds == null) return;
+      : await ref.watch(conversationArchiveStateIdsProvider(workspaceId).future);
+  if (!ref.mounted) return;
 
   yield* _conversationsForSession(ref, session, workspaceId, (
     search: search,
@@ -104,15 +102,6 @@ Stream<List<ConversationEntity>> conversationsStream(
     scope: scope,
     archivedIds: archivedIds,
   ));
-}
-
-Set<String>? _archivedConversationIds(Ref ref, String workspaceId) {
-  final state = ref.watch(conversationArchiveStateIdsProvider(workspaceId));
-  if (state.hasError) {
-    Error.throwWithStackTrace(state.error!, state.stackTrace!);
-  }
-
-  return state.asData?.value;
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(

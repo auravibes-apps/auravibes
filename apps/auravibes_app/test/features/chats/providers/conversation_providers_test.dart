@@ -403,19 +403,22 @@ void main() {
     test(
       'cloud archive markers update active and archived views locally',
       () async {
-        final endpoint = _TestConversationEndpoint([
-          ConversationPage(
-            conversations: [
-              _cloudConversationSummary(id: 'active'),
-              _cloudConversationSummary(id: 'archived'),
-            ],
-          ),
-        ], repeatLastPage: true);
+        final endpoint = _TestConversationEndpoint(
+          [
+            ConversationPage(
+              conversations: [
+                _cloudConversationSummary(id: 'active'),
+                _cloudConversationSummary(id: 'archived'),
+              ],
+            ),
+          ],
+          repeatLastPage: true,
+        );
         final database = AppDatabase(
           connection: DatabaseConnection(NativeDatabase.memory()),
         );
         addTearDown(database.close);
-        await database.workspaceDao.insertWorkspace(
+        final _ = await database.workspaceDao.insertWorkspace(
           .insert(
             id: const Value('cloud'),
             name: 'Cloud test workspace',
@@ -827,8 +830,8 @@ class _TestConversationEndpoint extends Fake implements EndpointConversation {
   new(this._pages, {this.repeatLastPage = false});
 
   final requests = <ListConversationsRequest>[];
-  final List<ConversationPage> _pages;
   final bool repeatLastPage;
+  final List<ConversationPage> _pages;
 
   @override
   Future<ConversationPage> listPage(ListConversationsRequest request) async {

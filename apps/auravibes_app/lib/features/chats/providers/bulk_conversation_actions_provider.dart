@@ -1,5 +1,4 @@
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
@@ -8,10 +7,6 @@ import 'package:riverpod/riverpod.dart';
 
 final bulkConversationActionsUsecaseProvider =
     Provider<BulkConversationActionsUsecase>((ref) {
-      final archiveRepository = ref.watch(
-        conversationArchiveStateRepositoryProvider,
-      );
-
       return BulkConversationActionsUsecase(
         conversationRepository: ref.watch(conversationRepositoryProvider),
         deleteConversation: (conversation) => ref
@@ -25,10 +20,5 @@ final bulkConversationActionsUsecaseProvider =
         clearConversationDraft: ref
             .watch(conversationDraftCleanupUsecaseProvider)
             .clearConversation,
-        clearConversationArchive: (workspaceId, conversationId) =>
-            archiveRepository.clearConversationArchive(
-              workspaceId: workspaceId,
-              conversationId: conversationId,
-            ),
       );
     });

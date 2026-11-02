@@ -39,7 +39,11 @@ class const _ArchivedConversationsBody({required final String workspaceId})
       children: [
         if (isCloud)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsetsDirectional.only(
+              start: 16,
+              top: 16,
+              end: 16,
+            ),
             child: AuraCallout(
               title: LocaleKeys
                   .chats_screens_archived_conversations_cloud_notice_title
@@ -48,13 +52,12 @@ class const _ArchivedConversationsBody({required final String workspaceId})
                   .chats_screens_archived_conversations_cloud_notice
                   .tr(context: context),
               icon: Icons.info_outline,
-              tint: .info,
             ),
           ),
         Expanded(
           child: ChatListWidget(
             workspaceId: workspaceId,
-            scope: ConversationListScope.archived,
+            scope: .archived,
           ),
         ),
       ],

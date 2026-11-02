@@ -59,7 +59,12 @@ void main() {
         ),
       ),
     ),
-    overrides: overrides,
+    overrides: [
+      workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
+        WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
+      ),
+      ...overrides,
+    ],
     workspaceId: workspaceId,
     startLocale: startLocale,
   );
@@ -680,7 +685,7 @@ void main() {
           workspaceId: workspace.id,
           content: ChatListWidget(
             workspaceId: workspace.id,
-            scope: ConversationListScope.archived,
+            scope: .archived,
           ),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
@@ -745,8 +750,6 @@ void main() {
 
       await tester.pumpWidget(
         TestableApp(
-          workspaceId: workspace.id,
-          workspaceSession: session,
           child: ChatListWidget(workspaceId: workspace.id),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
@@ -757,16 +760,18 @@ void main() {
               (ref, workspaceId) => Stream.value([]),
             ),
           ],
+          workspaceId: workspace.id,
+          workspaceSession: session,
         ),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.more_vert));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('Archive'), findsOneWidget);
       expect(find.text('Export backup'), findsNothing);
       await tester.tap(find.text('Archive'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         await database.conversationArchiveStateDao.getArchivedConversationIds(
@@ -802,7 +807,7 @@ void main() {
           content: InheritedGoRouter(
             child: const ChatListWidget(
               workspaceId: 'ws-1',
-              scope: ConversationListScope.archived,
+              scope: .archived,
             ),
             goRouter: router,
           ),
@@ -817,7 +822,7 @@ void main() {
       );
 
       await tester.tap(find.text('Archived project'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(
         router.routeInformationProvider.value.uri.path,

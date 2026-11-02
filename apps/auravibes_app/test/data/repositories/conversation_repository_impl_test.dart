@@ -85,7 +85,6 @@ void main() {
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
             search: any(named: 'search'),
-            archivedOnly: false,
             limit: any(named: 'limit'),
             offset: any(named: 'offset'),
           ),
@@ -109,7 +108,6 @@ void main() {
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
             search: any(named: 'search'),
-            archivedOnly: false,
             limit: 5,
             offset: any(named: 'offset'),
           ),
@@ -124,7 +122,6 @@ void main() {
             () => mockDao.watchConversationsByWorkspace(
               'ws-1',
               search: any(named: 'search'),
-              archivedOnly: false,
               limit: 5,
               offset: any(named: 'offset'),
             ),
