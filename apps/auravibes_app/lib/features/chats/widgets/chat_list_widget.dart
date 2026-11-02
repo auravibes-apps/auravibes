@@ -703,6 +703,9 @@ extension on _ChatTileState {
 
   VoidCallback? _selectionAwareTap(BuildContext context) {
     final selection = widget.selection;
+    if (widget.scope == ConversationListScope.archived) {
+      return () => _openConversation(context);
+    }
     if (!selection.isSelectionEnabled) return null;
 
     return selection.isSelectionMode

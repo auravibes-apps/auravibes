@@ -776,6 +776,55 @@ void main() {
       );
     });
 
+    testWidgets('opens an archived conversation when its card is tapped', (
+      tester,
+    ) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Archived project'),
+        ]),
+      );
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const SizedBox.shrink()),
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            builder: (_, _) => const SizedBox.shrink(),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          content: InheritedGoRouter(
+            child: const ChatListWidget(
+              workspaceId: 'ws-1',
+              scope: ConversationListScope.archived,
+            ),
+            goRouter: router,
+          ),
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(find.text('Archived project'));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/workspaces/ws-1/chats/conv-1',
+      );
+    });
+
     testWidgets('pins a conversation from its options menu', (tester) async {
       final repo = _StubConversationRepository(
         conversationsStream: .value([_createConversation()]),
