@@ -1073,13 +1073,15 @@ void main() {
         ),
       ];
       final workspaceTools = WorkspaceToolsRepository(database);
-      final archiveUsecase = ConversationArchiveUsecase(
-        conversationRepository: archiveConversations,
-        messageRepository: .new(database),
-        attachmentService: .new(),
-        conversationToolsRepository: .new(database, workspaceTools),
-        workspaceToolsRepository: workspaceTools,
-        toolsGroupsRepository: .new(database),
+      final archiveUsecase = _RecordingConversationArchiveUsecase(
+        .new(
+          conversationRepository: archiveConversations,
+          messageRepository: .new(database),
+          attachmentService: .new(),
+          conversationToolsRepository: .new(database, workspaceTools),
+          workspaceToolsRepository: workspaceTools,
+          toolsGroupsRepository: .new(database),
+        ),
       );
       final fileService = _RecordingArchiveFileService();
       final listRepository = _StubConversationRepository(
@@ -1117,10 +1119,33 @@ void main() {
 
       await tester.tap(find.text('Export selected'));
       final _ = await tester.pumpAndSettle();
+      expect(find.text('Review your conversation archive'), findsOneWidget);
+      expect(
+        find.text(
+          'In the next save dialog, choose where to save '
+          'conversations.auravibes.json.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Saved connection credentials'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      expect(archiveUsecase.bulkExportCalls, 0);
+      expect(fileService.savedJson, isNull);
+
+      await tester.tap(find.text('Export selected'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue to save'));
+      final _ = await tester.pumpAndSettle();
       final decoded = ConversationArchiveCodec.decodeMany(
         fileService.savedJson ?? fail('Archive was not saved'),
       );
 
+      expect(archiveUsecase.bulkExportCalls, 1);
       expect(fileService.savedFileName, 'conversations.auravibes.json');
       expect(decoded.map((archive) => archive.title), ['Chat One', 'Chat Two']);
     });
@@ -1652,6 +1677,34 @@ class _RecordingArchiveFileService extends ConversationArchiveFileService {
     savedFileName = fileName;
 
     return true;
+  }
+}
+
+class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
+  new(ConversationArchiveUsecase delegate)
+    : _delegate = delegate,
+      super(
+        conversationRepository: delegate.conversationRepository,
+        messageRepository: delegate.messageRepository,
+        attachmentService: delegate.attachmentService,
+        conversationToolsRepository: delegate.conversationToolsRepository,
+        workspaceToolsRepository: delegate.workspaceToolsRepository,
+        toolsGroupsRepository: delegate.toolsGroupsRepository,
+      );
+  int bulkExportCalls = 0;
+  final ConversationArchiveUsecase _delegate;
+
+  @override
+  Future<String> exportConversations({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) {
+    bulkExportCalls++;
+
+    return _delegate.exportConversations(
+      workspaceId: workspaceId,
+      conversationIds: conversationIds,
+    );
   }
 }
 

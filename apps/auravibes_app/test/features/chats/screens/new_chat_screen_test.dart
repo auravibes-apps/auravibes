@@ -325,6 +325,7 @@ void main() {
       tickerEnabled: true,
       router: router,
     );
+    expect(find.text('On this device'), findsOneWidget);
     final container = ProviderScope.containerOf(
       tester.element(find.byType(NewChatScreen)),
     );

@@ -21,11 +21,19 @@ typedef _PreviewCheckpointRestore = void Function(
 );
 
 typedef _CheckpointRestorePreview = ({
+  MessageEntity activeCheckpoint,
   int conversationRevision,
   MessageEntity checkpoint,
   List<MessageEntity> replayMessages,
   List<MessageEntity> transcriptMessages,
 });
+
+const _targetCheckpointLabelKey =
+    'compaction.compacted.history_preview_target_checkpoint';
+const _sameCheckpointSummaryKey =
+    'compaction.compacted.history_preview_summary_same';
+const _differentCheckpointSummaryKey =
+    'compaction.compacted.history_preview_summaries_different';
 
 class const CompactionCheckpointHistoryDialog({
   required final String workspaceId,
@@ -141,6 +149,9 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
   MessageEntity checkpoint,
   CompactionCheckpointHistory history,
 ) {
+  final activeCheckpoint = _activeCheckpointSummary(history);
+  if (activeCheckpoint == null) return null;
+
   final transcriptMessages = SelectPromptMessagesUsecase.promptEligibleMessages(
     history.messages,
   );
@@ -150,13 +161,31 @@ _CheckpointRestorePreview? _checkpointRestorePreview(
   );
   if (selectedMessages == null) return null;
 
-  return (
-    conversationRevision: history.conversationRevision,
+  return _createCheckpointRestorePreview(
     checkpoint: checkpoint,
-    replayMessages: List<MessageEntity>.unmodifiable(selectedMessages.skip(1)),
-    transcriptMessages: List<MessageEntity>.unmodifiable(history.messages),
+    history: history,
+    activeCheckpoint: activeCheckpoint,
+    selectedMessages: selectedMessages,
   );
 }
+
+_CheckpointRestorePreview _createCheckpointRestorePreview({
+  required MessageEntity checkpoint,
+  required CompactionCheckpointHistory history,
+  required MessageEntity activeCheckpoint,
+  required List<MessageEntity> selectedMessages,
+}) => (
+  activeCheckpoint: activeCheckpoint,
+  conversationRevision: history.conversationRevision,
+  checkpoint: checkpoint,
+  replayMessages: List<MessageEntity>.unmodifiable(selectedMessages.skip(1)),
+  transcriptMessages: List<MessageEntity>.unmodifiable(history.messages),
+);
+
+MessageEntity? _activeCheckpointSummary(CompactionCheckpointHistory history) =>
+    history.summaries
+        .where((summary) => summary.id == history.activeCheckpointId)
+        .firstOrNull;
 
 List<MessageEntity>? _selectedCheckpointMessages(
   String checkpointId,
@@ -442,18 +471,68 @@ class const _CheckpointRestorePreviewDetails({
   required final _CheckpointRestorePreview preview,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    final checkpoint = preview.checkpoint;
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      _ActiveCheckpointPreview(checkpoint: preview.activeCheckpoint),
+      _TargetCheckpointPreview(
+        activeCheckpoint: preview.activeCheckpoint,
+        targetCheckpoint: preview.checkpoint,
+      ),
+      _CheckpointReplayPlan(preview: preview),
+    ],
+    crossAxisAlignment: .stretch,
+  );
+}
 
-    return AuraColumn(
-      children: [
-        _CheckpointPreviewMetadata(checkpoint: checkpoint),
-        _CheckpointPreviewSummary(checkpoint: checkpoint),
-        _CheckpointReplayPlan(preview: preview),
-      ],
-      crossAxisAlignment: .stretch,
-    );
-  }
+class const _ActiveCheckpointPreview({required final MessageEntity checkpoint})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _CheckpointPreviewSection(
+    checkpoint: checkpoint,
+    heading: const TextLocale(
+      LocaleKeys.compaction_compacted_history_active,
+      style: .new(fontWeight: FontWeight.bold),
+    ),
+    isActive: true,
+    summaryMatchesActive: true,
+  );
+}
+
+class const _TargetCheckpointPreview({
+  required final MessageEntity activeCheckpoint,
+  required final MessageEntity targetCheckpoint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _CheckpointPreviewSection(
+    checkpoint: targetCheckpoint,
+    heading: const TextLocale(
+      _targetCheckpointLabelKey,
+      style: .new(fontWeight: FontWeight.bold),
+    ),
+    isActive: false,
+    summaryMatchesActive: activeCheckpoint.content == targetCheckpoint.content,
+  );
+}
+
+class const _CheckpointPreviewSection({
+  required final MessageEntity checkpoint,
+  required final Widget heading,
+  required final bool isActive,
+  required final bool summaryMatchesActive,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      heading,
+      _CheckpointPreviewMetadata(checkpoint: checkpoint),
+      _CheckpointPreviewSummary(
+        checkpoint: checkpoint,
+        isActive: isActive,
+        summaryMatchesActive: summaryMatchesActive,
+      ),
+    ],
+    crossAxisAlignment: .stretch,
+  );
 }
 
 class const _CheckpointPreviewMetadata({
@@ -491,8 +570,11 @@ class const _CheckpointPreviewTimestamp({required final DateTime createdAt})
   }
 }
 
-class const _CheckpointPreviewSummary({required final MessageEntity checkpoint})
-    extends StatelessWidget {
+class const _CheckpointPreviewSummary({
+  required final MessageEntity checkpoint,
+  required final bool isActive,
+  required final bool summaryMatchesActive,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraColumn(
     children: [
@@ -500,7 +582,14 @@ class const _CheckpointPreviewSummary({required final MessageEntity checkpoint})
         LocaleKeys.compaction_compacted_history_preview_summary,
         style: .new(fontWeight: FontWeight.bold),
       ),
-      AuraSelectableText(checkpoint.content, style: .bodySmall),
+      if (!isActive)
+        TextLocale(
+          summaryMatchesActive
+              ? _sameCheckpointSummaryKey
+              : _differentCheckpointSummaryKey,
+        ),
+      if (isActive || !summaryMatchesActive)
+        AuraSelectableText(checkpoint.content, style: .bodySmall),
     ],
     crossAxisAlignment: .stretch,
   );

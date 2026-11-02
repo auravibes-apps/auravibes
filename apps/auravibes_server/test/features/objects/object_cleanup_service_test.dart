@@ -1,7 +1,7 @@
 import 'package:auravibes_server/src/features/objects/object_cleanup_service.dart';
-import 'package:auravibes_server/src/features/objects/object_store.dart';
-import 'package:auravibes_server/src/features/objects/object_repository.dart';
 import 'package:auravibes_server/src/features/objects/object_deletion_guard.dart';
+import 'package:auravibes_server/src/features/objects/object_repository.dart';
+import 'package:auravibes_server/src/features/objects/object_store.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:serverpod/serverpod.dart';
 import 'package:test/test.dart';

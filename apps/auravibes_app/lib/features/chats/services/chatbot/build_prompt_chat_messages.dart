@@ -7,9 +7,9 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_attachment_bytes.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_history_redaction.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_engine/auravibes_engine.dart'
     show ChatMessage, ChatMessageRole;
-import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:genkit/genkit.dart';
 import 'package:path/path.dart' as p;
 

@@ -15,6 +15,9 @@ import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:http/http.dart' as http;
 import 'package:schemantic/schemantic.dart';
 
+import 'support/provider_fault_client.dart';
+import 'support/provider_fault_protocol.dart';
+
 void main() {
   group('ProviderFactory', () {
     const factory = ProviderFactory(
@@ -38,8 +41,8 @@ void main() {
         workspaceModelSelection: .new(
           id: 'ws1',
           modelId: modelId,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
           modelConnectionId: 'mc1',
           supportsReasoning: supportsReasoning,
           reasoningOptions: reasoningOptions,
@@ -49,8 +52,8 @@ void main() {
           id: 'mc1',
           name: 'Test',
           modelId: connectionModelId ?? modelId,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
           workspaceId: 'w1',
           hasKey: true,
           authMode: authMode,
@@ -71,6 +74,61 @@ void main() {
 
       expect(ai, isA<Genkit>());
     });
+
+    for (final explicitPolicy in [false, true]) {
+      test(
+        'selects the ${explicitPolicy ? 'app' : 'upstream'} OpenAI path',
+        () async {
+          final client = ProviderFaultClient([
+            (_) async => http.StreamedResponse(
+              .value(utf8.encode('{"error":{"type":"server_error"}}')),
+              503,
+              headers: const {'content-type': 'application/json'},
+            ),
+            (_) async => http.StreamedResponse(
+              .value(ProviderFaultProtocol.chat.success('ready')),
+              200,
+              headers: const {'content-type': 'text/event-stream'},
+            ),
+          ]);
+          final providerFactory = ProviderFactory(
+            serviceConnectionRepository:
+                const _FakeServiceConnectionRepository(),
+            httpClient: client,
+          );
+          final config = makeConfig(
+            type: .openai,
+            modelId: 'contract-model',
+            providerUrl: 'https://provider.invalid/v1',
+            toolSamplingPolicy: explicitPolicy ? ToolSamplingPolicy.off : null,
+          );
+          final streamedText = <String>[];
+          final ai = await providerFactory.createGenkit(config);
+          final response = await ai.generate<Object?, Object?>(
+            model: providerFactory.getModelReference(config),
+            prompt: 'Use the selected adapter.',
+            onChunk: (chunk) => streamedText.add(chunk.text),
+            cancel: CancellationController().token,
+          );
+
+          expect(
+            response.finishReason,
+            explicitPolicy ? FinishReason.stop : FinishReason.failed,
+          );
+          if (explicitPolicy) {
+            expect(response.text, 'ready');
+            expect(streamedText.join(), 'ready');
+          } else {
+            expect(streamedText, isEmpty);
+          }
+          expect(client.requests, hasLength(explicitPolicy ? 2 : 1));
+          expect(client.requests.first.supportsAbort, isTrue);
+          expect(client.requests.first.url.host, 'provider.invalid');
+          expect(client.closeCount, 0);
+          client.close();
+        },
+      );
+    }
 
     test(
       'official catalog URL enables strict tools for verified model',

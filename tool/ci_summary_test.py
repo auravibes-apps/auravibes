@@ -82,6 +82,8 @@ class CiSummaryTest(unittest.TestCase):
             },
             "fixed shard fallback",
             "https://example.test/plan",
+            "Lookup metrics: duration_ms=1840 main_runs_examined=2 "
+            "artifact_list_requests=1 artifact_download_requests=1\n",
         )
         for text in [
             "apps/app",
@@ -90,6 +92,10 @@ class CiSummaryTest(unittest.TestCase):
             "test/b_test.dart",
             "native",
             "fixed shard fallback",
+            (
+                "Historical timing lookup: 1.8 s; 2 main runs examined; "
+                + "2 artifact requests (1 listing request, 1 download)."
+            ),
             "https://example.test/plan",
         ]:
             self.assertIn(text, html.unescape(summary))

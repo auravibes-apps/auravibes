@@ -1,14 +1,14 @@
 // ignore_for_file: type=lint, type=warning
 import 'dart:convert';
 
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
-import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:auravibes_ui/ui.dart';

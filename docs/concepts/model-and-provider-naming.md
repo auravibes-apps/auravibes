@@ -163,3 +163,18 @@ If the app grows to support additional provider-like concepts (e.g., MCP servers
 2. Name the repository after the domain term
 3. Name the provider function after the domain term
 4. Let Riverpod append `Provider` once
+
+## User-facing model and provider explanations
+
+Use "provider" for the service or server configured by the connection. Explain
+that request data is sent to that destination without implying a retention,
+training, or privacy policy. Those details vary by provider and connection and
+must be checked against current provider documentation before adding provider-
+specific claims.
+
+Model descriptions may explain that models differ in response quality, speed,
+and supported tasks. Do not rank a model, promise an outcome, or claim an exact
+latency, price, feature, or privacy behavior unless that information is sourced
+from current provider/model documentation and has an owner for future updates.
+Keep generic guidance useful on its own, and make the detailed explanation
+optional so it does not block setup or model selection.

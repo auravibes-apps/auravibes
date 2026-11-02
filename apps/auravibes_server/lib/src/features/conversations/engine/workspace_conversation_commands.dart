@@ -6,8 +6,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../accounts/auth_user_lock.dart';
-import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/domain/workspace_table_constraints.dart';
+import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/usecases/workspace_state_usecases.dart';
 import '../../workspace_state/workspace_table_access.dart';
 import '../../workspace_views/workspace_view_store.dart';

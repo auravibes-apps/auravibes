@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:auravibes_engine/src/agent_stream_service.dart';
 import 'package:test/test.dart';
@@ -190,6 +191,120 @@ void main() {
   );
 
   test(
+    'seeded completion races settle once and ignore late stream chunks',
+    () async {
+      final terminalKinds = <String>{};
+      for (var seed = 1; seed <= 16; seed++) {
+        final trace = <String>[];
+        try {
+          final conversationId = 'conversation-$seed';
+          final cancellationRuntime = FakeCancellationEffects();
+          final cancellationScope = cancellationRuntime.start(conversationId);
+          final responseStream = StreamController<_Chunk>();
+          final firstChunkPersisted = Completer<void>();
+          final completionStarted = Completer<void>();
+          final completionRelease = Completer<void>();
+          final persistenceSink = _MemorySink<_Chunk>(
+            onAdd: (chunk) {
+              if (chunk.text == 'first' && !firstChunkPersisted.isCompleted) {
+                firstChunkPersisted.complete();
+              }
+            },
+          );
+          final uiSink = _MemorySink<_Chunk>();
+          final calls = <String>[];
+          final usecase = AgentStreamService<_Chunk>(
+            cancellationEffects: cancellationRuntime,
+            provider: _FakeAgentStreamProvider(
+              persistenceSink: persistenceSink,
+              uiSink: uiSink,
+              calls: calls,
+              onPersistCompleted: (_, _) async {
+                completionStarted.complete();
+                await completionRelease.future;
+              },
+            ),
+          );
+
+          trace.add('start:$conversationId');
+          final run = usecase.call(
+            conversationId: conversationId,
+            responseStream: responseStream.stream,
+            pendingUserMessageIds: const [],
+          );
+          responseStream.add(const _Chunk('first'));
+          await firstChunkPersisted.future;
+          trace.add('persist:first');
+
+          if (seed.isEven) {
+            trace.add('close');
+            await responseStream.close();
+            await completionStarted.future;
+            trace.add('completion-persistence-pending');
+            for (var request = 0; request < 2; request++) {
+              trace.add('cancel');
+              cancellationScope.requestStop();
+            }
+            completionRelease.complete();
+          } else {
+            final events = ['close', 'cancel', 'cancel']..shuffle(Random(seed));
+            final raceStart = Completer<void>();
+            final scheduledEvents = events.map((event) async {
+              await raceStart.future;
+              trace.add(event);
+              if (event == 'cancel') {
+                cancellationScope.requestStop();
+                if (!responseStream.isClosed) {
+                  responseStream.add(const _Chunk('late'));
+                  trace.add('emit:late');
+                }
+              } else {
+                await responseStream.close();
+              }
+            }).toList();
+            raceStart.complete();
+            await Future.wait(scheduledEvents);
+            completionRelease.complete();
+          }
+          final result = await run;
+          await cancellationScope.cleanupCompletion;
+          final terminalWrites = calls
+              .where(
+                (call) =>
+                    call.startsWith('stopped:') || call.startsWith('complete:'),
+              )
+              .toList();
+
+          expect(result.messageId, 'm1');
+          expect(result.hasToolCalls, isFalse);
+          expect(terminalWrites, hasLength(1));
+          terminalKinds.add(
+            terminalWrites.single.startsWith('stopped:')
+                ? 'stopped'
+                : 'completed',
+          );
+          expect(persistenceSink.items.map((chunk) => chunk.text), ['first']);
+          expect(uiSink.items.map((chunk) => chunk.text), ['first']);
+          expect(
+            calls.where((call) => call == 'start:$conversationId').toList(),
+            ['start:$conversationId'],
+          );
+          expect(
+            calls.where((call) => call == 'remove:$conversationId').toList(),
+            ['remove:$conversationId'],
+          );
+        } on Object catch (error, stackTrace) {
+          Error.throwWithStackTrace(
+            StateError('seed=$seed events=${trace.join(' -> ')}\n$error'),
+            stackTrace,
+          );
+        }
+      }
+      expect(terminalKinds, {'stopped', 'completed'});
+    },
+  );
+
+  test(
     'keeps cancellation pending until stopped-message cleanup finishes',
     () async {
       final cancellationRuntime = FakeCancellationEffects()..start('c1');
@@ -239,6 +354,8 @@ class const _FakeAgentStreamProvider({
   required final List<String> calls,
   final bool throwOnConcat = false,
   final void Function(String messageId)? onStartMessageStreaming,
+  final Future<void> Function(String messageId, _Chunk result)?
+  onPersistCompleted,
   final Future<void> Function(String? messageId, _Chunk? result)?
   onPersistStopped,
 }) implements AgentStreamProvider<_Chunk> {
@@ -308,6 +425,7 @@ class const _FakeAgentStreamProvider({
     _Chunk result,
   ) async {
     calls.add('complete:$messageId:${result.text}');
+    await onPersistCompleted?.call(messageId, result);
   }
 
   @override
@@ -339,12 +457,14 @@ class const _FakeAgentStreamProvider({
   void trackCancellationStreamError(Object error, StackTrace stackTrace) {}
 }
 
-class _MemorySink<T> implements AgentChunkSink<T> {
+class _MemorySink<T>({final void Function(T)? onAdd})
+    implements AgentChunkSink<T> {
   final items = <T>[];
 
   @override
   void add(T chunk) {
     items.add(chunk);
+    onAdd?.call(chunk);
   }
 
   @override

@@ -1,7 +1,9 @@
 import 'package:auravibes_engine/src/agent_iteration_context.dart';
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
+import 'package:auravibes_engine/src/agent_loop_tool_result.dart';
 import 'package:auravibes_engine/src/agent_rate_limit_retry_exception.dart';
 import 'package:auravibes_engine/src/agent_runtime.dart';
+import 'package:auravibes_engine/src/agent_tool_loop_guard.dart';
 import 'package:auravibes_engine/src/providers/agent_data_provider.dart';
 import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 
@@ -10,7 +12,7 @@ const defaultAgentRateLimitRetryCount = 1;
 const defaultAgentIterationLimit = 16;
 
 abstract interface class AgentLoopToolProvider {
-  Future<AgentIterationDecision> runAllowedTools({
+  Future<AgentLoopToolResult> runAgentLoopIteration({
     required String conversationId,
     required String workspaceId,
   });
@@ -65,6 +67,7 @@ class const AgentService({
     AgentIterationContext? currentContext = context;
     var rateLimitRetries = 0;
     var iterations = 0;
+    final recentToolFingerprints = <String>[];
 
     while (true) {
       final cancelDecision = await _cancelIfRequested(
@@ -80,10 +83,14 @@ class const AgentService({
 
       final _AgentIterationStep result;
       try {
+        final previousContext = currentContext;
         currentContext = await _withQueuedDrafts(
           conversationId: conversationId,
           context: currentContext,
         );
+        if (currentContext != previousContext) {
+          recentToolFingerprints.clear();
+        }
         result = await _runIteration(
           conversationId: conversationId,
           workspaceId: workspaceId,
@@ -114,6 +121,18 @@ class const AgentService({
       currentContext = result.context;
       if (result.decision != AgentIterationDecision.continueIteration) {
         return result.decision;
+      }
+      final fingerprint = result.toolFingerprint;
+      if (fingerprint == null) {
+        recentToolFingerprints.clear();
+        continue;
+      }
+      if (hasRepeatedNoProgressToolCycle(recentToolFingerprints, fingerprint)) {
+        return AgentIterationDecision.repeatedToolLoopDetected;
+      }
+      recentToolFingerprints.add(fingerprint);
+      if (recentToolFingerprints.length > maxRecentAgentToolLoopFingerprints) {
+        recentToolFingerprints.removeAt(0);
       }
     }
   }
@@ -160,7 +179,7 @@ class const AgentService({
       );
     }
 
-    final decision = await tools.runAllowedTools(
+    final toolResult = await tools.runAgentLoopIteration(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
@@ -170,7 +189,11 @@ class const AgentService({
       currentContext,
     );
 
-    return _AgentIterationStep(currentContext, postToolCancel ?? decision);
+    return _AgentIterationStep(
+      currentContext,
+      postToolCancel ?? toolResult.decision,
+      toolFingerprint: postToolCancel == null ? toolResult.fingerprint : null,
+    );
   }
 
   Future<_AgentIterationStep> _continueAfterNoToolCalls(
@@ -288,5 +311,6 @@ class const AgentService({
 
 class const _AgentIterationStep(
   final AgentIterationContext? context,
-  final AgentIterationDecision decision,
-);
+  final AgentIterationDecision decision, {
+  final String? toolFingerprint,
+});

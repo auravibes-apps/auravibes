@@ -228,6 +228,10 @@ melos:
       run: dart run tool/validate_changed_dart.dart
       description: Format and analyze changed Dart files; run DCL for production changes
 
+    preflight:changed:
+      run: dart run tool/local_preflight.dart
+      description: Format, analyze, and test changes selected from the working tree
+
     validate:generated:
       run: |
         set -e
@@ -253,7 +257,7 @@ melos:
     validate:pr:
       steps:
         - melos run format:check
-        - dart run import_sorter:main --exit-if-changed
+        - dart run tool/check_workspace_import_sorting.dart
         - dart run tool/check_benchmark_imports.dart
         - melos run analyze:workspace
         - melos run dcl:analyze

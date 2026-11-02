@@ -42,6 +42,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 | Local server integration | `fvm dart run melos run test:integration` (entrypoint owns the lease; no outer lease) |
 | Engine focused test     | `python3 "$(git rev-parse --show-toplevel)/tool/validation_lease.py" -- fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
 | Changed Dart preflight  | `python3 tool/validation_lease.py -- fvm dart run melos run validate:changed` |
+| Changed-file local preflight | `python3 tool/validation_lease.py -- fvm dart run melos run preflight:changed` |
 | Validation              | `python3 tool/validation_lease.py -- fvm dart run melos run validate:quick` (same form for `validate` and `validate:ci`) |
 | Asset/clean scripts     | `python3 tool/validation_lease.py -- fvm dart run melos run generate:icons` (same form for `clean` and `generate:flavors`) |
 | Code generation         | `python3 tool/validation_lease.py -- fvm dart run melos run generate` (same form for `generate:localization` and `generate:serverpod`) |
@@ -111,6 +112,7 @@ AuraVibes is an AI-powered Flutter app for conversations, agents, and workspace 
 ## PR Gates
 
 - PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
+- Local review is the default. A request to review code before creating a Draft PR does not authorize sending code to a third-party reviewer; follow [PR delivery and review](docs/agents/operations.md#pr-delivery-and-review) before any external review.
 - Use each contributor's configured tools and workflow for PR delivery and review. Do not install tools or prepare a full local environment solely for these tasks.
 - Local commits do not publish changes and need no separate user authorization; `git push` and `gh pr merge` require explicit user authorization.
 - If a requested Codex review rejects its configured model as unsupported, retry once with a model supported by the current host. Report a blocker if none is available.

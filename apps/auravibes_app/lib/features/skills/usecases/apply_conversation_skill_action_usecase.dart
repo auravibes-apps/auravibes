@@ -308,13 +308,13 @@ final applyConversationSkillActionUsecaseProvider =
               slug: slug,
             ),
         sendMessage: (workspaceId, conversationId, draft) async {
-          final iterationLimitNotifier = ref.read(
-            conversationIterationLimitProvider(conversationId).notifier,
+          final agentStopNotifier = ref.read(
+            conversationAgentStopDecisionProvider(conversationId).notifier,
           );
           final decision = await ref
               .read(sendMessageUsecaseProvider(workspaceId))
               .call(conversationId: conversationId, draft: draft);
-          iterationLimitNotifier.markIfIterationLimitReached(decision);
+          agentStopNotifier.markIfAgentStopDecision(decision);
         },
         recordRecentSkillUse: (workspaceId, conversationId, skillSlug) async {
           await ref

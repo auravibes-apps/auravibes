@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:aws_client/credential_providers.dart';
-import 'package:aws_client/s3.dart';
 import 'package:auravibes_server/src/features/objects/object_gateway_config.dart';
 import 'package:auravibes_server/src/features/objects/object_gateway_storage.dart';
+import 'package:aws_client/credential_providers.dart';
+import 'package:aws_client/s3.dart';
 import 'package:crypto/crypto.dart';
 import 'package:test/test.dart';
 

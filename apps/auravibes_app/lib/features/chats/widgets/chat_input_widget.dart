@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -406,19 +407,22 @@ class const _ChatInputCapabilities({
   required final _ChatInputAttachmentCapabilities attachments,
   required final bool supportsDrop,
   required final bool isMacOS,
+  required final bool isLocalWorkspace,
 });
 
 abstract final class _ChatInputCapabilitiesFactory {
   static _ChatInputCapabilities create(
     WorkspaceCapabilities? workspaceCapabilities,
-    List<String> modalitiesInput,
-  ) => _ChatInputCapabilities(
+    List<String> modalitiesInput, {
+    required bool isLocalWorkspace,
+  }) => _ChatInputCapabilities(
     attachments: _createAttachmentCapabilities(
       workspaceCapabilities,
       modalitiesInput,
     ),
     supportsDrop: _supportsDrop(workspaceCapabilities),
     isMacOS: defaultTargetPlatform == TargetPlatform.macOS,
+    isLocalWorkspace: isLocalWorkspace,
   );
 
   static bool _supportsDrop(WorkspaceCapabilities? capabilities) =>
@@ -502,14 +506,14 @@ _ChatInputCapabilities _watchChatInputCapabilities(
   WidgetRef ref,
   ChatInputWidget input,
 ) {
-  final workspaceCapabilities = ref.watch(
-    workspaceSessionForRouteProvider(input.workspaceId)
-        .select((session) => session.value?.capabilities),
+  final workspaceSession = ref.watch(
+    workspaceSessionForRouteProvider(input.workspaceId),
   );
 
   return _ChatInputCapabilitiesFactory.create(
-    workspaceCapabilities,
+    workspaceSession.value?.capabilities,
     input.modalitiesInput,
+    isLocalWorkspace: workspaceSession.value?.workspace is LocalWorkspaceRef,
   );
 }
 
@@ -2124,6 +2128,31 @@ class const _ChatInputFooterContent({required final _ChatInputState state})
   }
 }
 
+class const _LocalWorkspaceNetworkDisclosure() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = 'workspace_network_disclosure.title'.tr(context: context);
+
+    return AuraIconButton(
+      icon: Icons.public_outlined,
+      onPressed: () =>
+          unawaited(_LocalWorkspaceNetworkDisclosure._showDisclosure(context)),
+      key: const ValueKey<String>('local_workspace_network_disclosure'),
+      size: .small,
+      semanticLabel: label,
+      tooltip: label,
+    );
+  }
+
+  static Future<void> _showDisclosure(BuildContext context) =>
+      AuraDialogs.alert(
+        context: context,
+        title: const TextLocale('workspace_network_disclosure.title'),
+        message: const TextLocale('workspace_network_disclosure.description'),
+        dismissLabel: const TextLocale(LocaleKeys.common_close),
+      );
+}
+
 class const _ChatInputAttachments({required final _ChatInputState state})
     extends StatelessWidget {
   @override
@@ -2236,20 +2265,58 @@ class const _ChatInputControlRow({required final _ChatInputState state})
     final isRecording = state.hooks.recording.isRecording.value;
     final compact = MediaQuery.sizeOf(context).width <= 360;
 
-    return Row(
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
       children: [
-        _ChatInputLeadingControls(
+        _ChatInputPrimaryControls(
           state: state,
           isRecording: isRecording,
           compact: compact,
         ),
-        Expanded(
-          child: _ChatInputModelAndTrailingControls(
-            state: state,
-            isRecording: isRecording,
-          ),
-        ),
+        _ChatInputCompactDisclosure(compact: compact, state: state),
       ],
+    );
+  }
+}
+
+class const _ChatInputPrimaryControls({
+  required final _ChatInputState state,
+  required final bool isRecording,
+  required final bool compact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      _ChatInputLeadingControls(
+        state: state,
+        isRecording: isRecording,
+        compact: compact,
+        showNetworkDisclosure: !compact,
+      ),
+      Expanded(
+        child: _ChatInputModelAndTrailingControls(
+          state: state,
+          isRecording: isRecording,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _ChatInputCompactDisclosure({
+  required final bool compact,
+  required final _ChatInputState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!compact || !state.capabilities.isLocalWorkspace) {
+      return const SizedBox.shrink();
+    }
+
+    return const Align(
+      alignment: .centerLeft,
+      child: _LocalWorkspaceNetworkDisclosure(),
     );
   }
 }
@@ -2276,6 +2343,7 @@ class const _ChatInputLeadingControls({
   required final _ChatInputState state,
   required final bool isRecording,
   required final bool compact,
+  required final bool showNetworkDisclosure,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2284,6 +2352,8 @@ class const _ChatInputLeadingControls({
     return Row(
       mainAxisSize: .min,
       children: [
+        if (showNetworkDisclosure && state.capabilities.isLocalWorkspace)
+          const _LocalWorkspaceNetworkDisclosure(),
         if (!isRecording) _ChatInputBrowseControls(state: state),
         if (!isRecording || hasToolAccessMode)
           _ChatInputControlSpacing(compact: compact),

@@ -1,7 +1,7 @@
-import 'workspace_reference_value.dart';
-
-import 'package:auravibes_server/src/features/workspace_state/domain/workspace_time_zones.dart';
 import 'package:auravibes_server/src/features/workspace_state/domain/workspace_exact_value_validation.dart';
+import 'package:auravibes_server/src/features/workspace_state/domain/workspace_time_zones.dart';
+
+import 'workspace_reference_value.dart';
 
 const _maximumTextLength = 16384;
 const _minimumPhoneDigits = 3;
