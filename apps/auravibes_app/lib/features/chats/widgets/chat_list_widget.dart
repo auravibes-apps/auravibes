@@ -1030,7 +1030,7 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
       _ChatListBulkActionBar(
         selected: selected,
         isWorking: _isWorking,
-        canExportArchive: _shouldShowArchiveAction(ref, widget.workspaceId),
+        canExportArchive: _shouldShowBackupAction(ref, widget.workspaceId),
         callbacks: _bulkActionCallbacks(selected),
       );
 

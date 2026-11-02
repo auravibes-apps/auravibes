@@ -89,7 +89,7 @@ Stream<List<ConversationEntity>> conversationsStream(
   if (sessionState.hasError) {
     Error.throwWithStackTrace(sessionState.error!, sessionState.stackTrace!);
   }
-  final session = sessionState.valueOrNull;
+  final session = sessionState.asData?.value;
   if (session == null) return;
 
   final archivedIds = session.cloud == null
@@ -112,7 +112,7 @@ Set<String>? _archivedConversationIds(Ref ref, String workspaceId) {
     Error.throwWithStackTrace(state.error!, state.stackTrace!);
   }
 
-  return state.valueOrNull;
+  return state.asData?.value;
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(

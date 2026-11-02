@@ -8,6 +8,10 @@ import 'package:riverpod/riverpod.dart';
 
 final bulkConversationActionsUsecaseProvider =
     Provider<BulkConversationActionsUsecase>((ref) {
+      final archiveRepository = ref.watch(
+        conversationArchiveStateRepositoryProvider,
+      );
+
       return BulkConversationActionsUsecase(
         conversationRepository: ref.watch(conversationRepositoryProvider),
         deleteConversation: (conversation) => ref
@@ -21,8 +25,10 @@ final bulkConversationActionsUsecaseProvider =
         clearConversationDraft: ref
             .watch(conversationDraftCleanupUsecaseProvider)
             .clearConversation,
-        clearConversationArchive: ref
-            .watch(conversationArchiveStateRepositoryProvider)
-            .clearConversationArchive,
+        clearConversationArchive: (workspaceId, conversationId) =>
+            archiveRepository.clearConversationArchive(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
       );
     });
