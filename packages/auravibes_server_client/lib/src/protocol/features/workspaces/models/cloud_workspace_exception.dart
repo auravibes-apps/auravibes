@@ -23,11 +23,13 @@ abstract class CloudWorkspaceException
   CloudWorkspaceException._({
     required this.code,
     this.blockingResourcesJson,
+    this.resourceLimitKind,
   });
 
   factory CloudWorkspaceException({
     required _ipvhvodq.CloudWorkspaceErrorCode code,
     String? blockingResourcesJson,
+    String? resourceLimitKind,
   }) = _CloudWorkspaceExceptionImpl;
 
   factory CloudWorkspaceException.fromJson(
@@ -39,6 +41,7 @@ abstract class CloudWorkspaceException
       ),
       blockingResourcesJson:
           jsonSerialization['blockingResourcesJson'] as String?,
+      resourceLimitKind: jsonSerialization['resourceLimitKind'] as String?,
     );
   }
 
@@ -46,12 +49,15 @@ abstract class CloudWorkspaceException
 
   String? blockingResourcesJson;
 
+  String? resourceLimitKind;
+
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
   CloudWorkspaceException copyWith({
     _ipvhvodq.CloudWorkspaceErrorCode? code,
     String? blockingResourcesJson,
+    String? resourceLimitKind,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -60,6 +66,7 @@ abstract class CloudWorkspaceException
       'code': code.toJson(),
       if (blockingResourcesJson != null)
         'blockingResourcesJson': blockingResourcesJson,
+      if (resourceLimitKind != null) 'resourceLimitKind': resourceLimitKind,
     };
   }
 
@@ -70,12 +77,13 @@ abstract class CloudWorkspaceException
       'code': code.toJson(),
       if (blockingResourcesJson != null)
         'blockingResourcesJson': blockingResourcesJson,
+      if (resourceLimitKind != null) 'resourceLimitKind': resourceLimitKind,
     };
   }
 
   @override
   String toString() {
-    return 'CloudWorkspaceException(code: $code, blockingResourcesJson: $blockingResourcesJson)';
+    return 'CloudWorkspaceException(code: $code, blockingResourcesJson: $blockingResourcesJson, resourceLimitKind: $resourceLimitKind)';
   }
 }
 
@@ -85,9 +93,11 @@ class _CloudWorkspaceExceptionImpl extends CloudWorkspaceException {
   _CloudWorkspaceExceptionImpl({
     required _ipvhvodq.CloudWorkspaceErrorCode code,
     String? blockingResourcesJson,
+    String? resourceLimitKind,
   }) : super._(
          code: code,
          blockingResourcesJson: blockingResourcesJson,
+         resourceLimitKind: resourceLimitKind,
        );
 
   /// Returns a shallow copy of this [CloudWorkspaceException]
@@ -97,12 +107,16 @@ class _CloudWorkspaceExceptionImpl extends CloudWorkspaceException {
   CloudWorkspaceException copyWith({
     _ipvhvodq.CloudWorkspaceErrorCode? code,
     Object? blockingResourcesJson = _Undefined,
+    Object? resourceLimitKind = _Undefined,
   }) {
     return CloudWorkspaceException(
       code: code ?? this.code,
       blockingResourcesJson: blockingResourcesJson is String?
           ? blockingResourcesJson
           : this.blockingResourcesJson,
+      resourceLimitKind: resourceLimitKind is String?
+          ? resourceLimitKind
+          : this.resourceLimitKind,
     );
   }
 }

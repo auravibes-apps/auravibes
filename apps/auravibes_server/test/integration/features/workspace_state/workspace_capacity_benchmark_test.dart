@@ -328,15 +328,17 @@ void main() {
             ),
           ]),
           throwsA(
-            isA<CloudWorkspaceException>().having(
-              (error) => error.code,
-              'code',
-              CloudWorkspaceErrorCode.validationFailed,
-            ).having(
-              (error) => error.resourceLimitKind,
-              'resourceLimitKind',
-              'resourceSizeLimitExceeded',
-            ),
+            isA<CloudWorkspaceException>()
+                .having(
+                  (error) => error.code,
+                  'code',
+                  CloudWorkspaceErrorCode.validationFailed,
+                )
+                .having(
+                  (error) => error.resourceLimitKind,
+                  'resourceLimitKind',
+                  'resourceSizeLimitExceeded',
+                ),
           ),
         );
 
