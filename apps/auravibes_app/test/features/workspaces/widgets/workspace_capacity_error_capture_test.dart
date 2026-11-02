@@ -47,7 +47,6 @@ void main() {
       );
       expect(file.bytesRead, isFalse);
     },
-    skip: 'Enable after the picker size-limit classification is implemented.',
   );
 
   testWidgets('workspace File size-limit copy on the production route', (
