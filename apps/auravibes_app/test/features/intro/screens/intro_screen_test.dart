@@ -192,12 +192,11 @@ void main() {
       expect(tester.widget<AuraButton>(button).disabled, isTrue);
     }
 
-    final localWorkspace = await tester.runAsync(
-      () =>
-          WorkspaceRepository(fixture.database).createWorkspace(
-            const .new(name: 'Personal work', type: .local),
-          ),
-    );
+    final localWorkspace = await tester.runAsync(() {
+      return WorkspaceRepository(fixture.database).createWorkspace(
+        const .new(name: 'Personal work', type: .local),
+      );
+    });
     if (localWorkspace == null) {
       fail('Quick-start workspace creation did not finish');
     }
