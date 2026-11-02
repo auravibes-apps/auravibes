@@ -1,3 +1,6 @@
+@Tags(['golden'])
+library;
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -48,6 +51,7 @@ void main() {
       find.text('Hooks are available only for local workspaces.'),
       findsOneWidget,
     );
+    expect(find.text('To use hooks, open a local workspace in the desktop app.'), findsOneWidget);
     await expectLater(
       find.byKey(const ValueKey('workspace-settings-screenshot')),
       matchesGoldenFile('goldens/workspace_settings_hooks_remote.png'),

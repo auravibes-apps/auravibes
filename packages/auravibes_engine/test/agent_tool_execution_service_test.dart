@@ -464,7 +464,10 @@ void main() {
 
       expect(result, AgentIterationDecision.continueIteration);
       expect(
-        {for (final update in provider.updates) update.toolCallId: update.resultStatus},
+        {
+          for (final update in provider.updates)
+            update.toolCallId: update.resultStatus,
+        },
         {
           'tool-1': AgentToolResultStatus.success,
           'tool-2': AgentToolResultStatus.toolNotFound,

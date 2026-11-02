@@ -27,6 +27,7 @@
     "status_invalid": "Configuration could not be read or is invalid.",
     "status_unsupported_platform": "Hooks are unavailable on this platform.",
     "status_unsupported_workspace": "Hooks are available only for local workspaces.",
+    "recovery_local_desktop": "To use hooks, open a local workspace in the desktop app.",
     "unsupported_platform": "Hooks run only in the desktop app.",
     "choose_config": "Choose configuration",
     "trust_config": "Review and trust",

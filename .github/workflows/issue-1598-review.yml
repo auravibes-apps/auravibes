@@ -62,6 +62,8 @@ jobs:
       - uses: ./.github/actions/setup-workspace
       - name: Generate feature code
         run: python3 tool/validation_lease.py --label hooks-feature-generate -- dart run melos run generate
+      - name: Generate locale keys
+        run: python3 tool/validation_lease.py --label hooks-localization-generate -- dart run melos run generate:localization
       - name: Export formatting corrections for review
         run: |
           python3 tool/validation_lease.py --label hooks-feature-format -- dart format apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_engine/lib packages/auravibes_engine/test
@@ -79,6 +81,29 @@ jobs:
         if: success() || failure()
         working-directory: apps/auravibes_app
         run: python3 ../../tool/validation_lease.py --label hooks-approval -- flutter test test/features/chats/agent_adapters/approve_tool_call_service_test.dart test/features/chats/usecases/batch_tool_approval_usecase_test.dart test/domain/entities/messages_test.dart test/features/chats/widgets/tool_call_response_preview_test.dart test/data/database/drift/app_database_test.dart test/data/repositories/local_workspace_configuration_repository_test.dart test/features/settings/usecases/workspace_agent_hook_settings_usecase_test.dart test/providers/app_providers_test.dart --no-pub
+      - name: Settings trust interactions
+        if: success() || failure()
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label hooks-settings-ui -- flutter test test/features/settings/widgets/workspace_agent_lifecycle_hooks_section_test.dart test/features/settings/screens/workspace_settings_screen_test.dart --no-pub
+      - name: Render supplementary settings goldens
+        if: success() || failure()
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label hooks-settings-goldens -- flutter test test/features/settings/screens/workspace_settings_lifecycle_hooks_test.dart --no-pub --update-goldens
+      - name: Analyze app and engine
+        if: success() || failure()
+        run: python3 tool/validation_lease.py --label hooks-analysis -- dart analyze apps/auravibes_app packages/auravibes_engine --fatal-infos --fatal-warnings
+      - name: Audit localization
+        if: success() || failure()
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label hooks-localization -- dart run tool/localization_audit.dart
+      - name: Upload supplementary settings goldens
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1598-settings-goldens-${{ github.sha }}
+          path: apps/auravibes_app/test/features/settings/screens/goldens/workspace_settings_hooks_*.png
+          if-no-files-found: warn
+          retention-days: 14
       - name: Export formatting patch
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -86,4 +111,35 @@ jobs:
           name: issue1598-format-${{ github.sha }}
           path: ${{ runner.temp }}/issue1598-format.patch
           if-no-files-found: warn
+          retention-days: 14
+
+  feature-capture:
+    name: production settings after at feature head
+    needs: baseline
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-workspace
+      - name: Generate feature code
+        run: python3 tool/validation_lease.py --label hooks-after-generate -- dart run melos run generate
+      - name: Capture matched production settings after view
+        working-directory: apps/auravibes_app
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/issue1598-after-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/issue1598-after-config
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/issue1598-after"
+          cp ../../.github/fixtures/issue_1598_settings_capture.dart.fixture test/widgets/issue1598_capture_test.dart
+          python3 ../../tool/validation_lease.py --label hooks-after-capture -- flutter test test/widgets/issue1598_capture_test.dart --no-pub --timeout=2m --dart-define=HOOK_CAPTURE_DIR="$RUNNER_TEMP/issue1598-after" --dart-define=HOOK_CAPTURE_SHA="$GITHUB_SHA" --dart-define=HOOK_CAPTURE_LABEL=after 2>&1 | tee "$RUNNER_TEMP/issue1598-after/capture.log"
+      - name: Upload genuine after image and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1598-after-${{ github.sha }}
+          path: ${{ runner.temp }}/issue1598-after/
+          if-no-files-found: error
           retention-days: 14

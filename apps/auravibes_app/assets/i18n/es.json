@@ -27,6 +27,7 @@
     "status_invalid": "No se pudo leer la configuración o no es válida.",
     "status_unsupported_platform": "Los hooks no están disponibles en esta plataforma.",
     "status_unsupported_workspace": "Los hooks solo están disponibles en espacios de trabajo locales.",
+    "recovery_local_desktop": "Para usar los hooks, abre un espacio de trabajo local en la aplicación de escritorio.",
     "unsupported_platform": "Los hooks solo se ejecutan en la aplicación de escritorio.",
     "choose_config": "Elegir configuración",
     "trust_config": "Revisar y confiar",

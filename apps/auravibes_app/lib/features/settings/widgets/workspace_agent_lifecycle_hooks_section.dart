@@ -77,6 +77,11 @@ class _WorkspaceAgentLifecycleHooksSectionState
             ],
           ),
           AuraText(child: TextLocale(trustKey), style: .bodySmall),
+          if (!isSupported)
+            const AuraText(
+              child: TextLocale('agent_lifecycle_hooks.recovery_local_desktop'),
+              style: .bodySmall,
+            ),
           if (settings.configPath case final String path) ...[
             AuraSelectableText(path),
             AuraText(
@@ -85,13 +90,18 @@ class _WorkspaceAgentLifecycleHooksSectionState
                 args: [
                   digest == null
                       ? ''
-                      : digest.substring(0, digest.length < 12 ? digest.length : 12),
+                      : digest.substring(
+                          0,
+                          digest.length < 12 ? digest.length : 12,
+                        ),
                 ],
               ),
               style: .bodySmall,
             ),
           ],
-          AuraRow(
+          Wrap(
+            spacing: context.auraTheme.fromSpacing(.sm),
+            runSpacing: context.auraTheme.fromSpacing(.sm),
             children: [
               AuraButton(
                 disabled: _busy || !isSupported,
