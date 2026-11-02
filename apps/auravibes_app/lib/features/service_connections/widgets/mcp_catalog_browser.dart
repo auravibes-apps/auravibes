@@ -12,11 +12,13 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_oauth_exception.dart';
+import 'package:auravibes_app/widgets/confirmed_external_link.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class const McpCatalogBrowser({required final String workspaceId, super.key})
     extends ConsumerStatefulWidget {
@@ -701,9 +703,41 @@ class const _McpCatalogFieldHelpLink({required final String url})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
-    onPressed: () =>
-        unawaited(launchUrl(.parse(url), mode: .externalApplication)),
+    onPressed: () => _open(context, url),
     child: Text(LocaleKeys.mcp_catalog_help.tr()),
+  );
+
+  static void _open(BuildContext context, String url) => unawaited(
+    ConfirmedExternalLink.open(
+      context: context,
+      url: url,
+      confirm: (uri) => _confirmMcpCatalogExternalLink(context, uri),
+      onLaunchFailure: () => _showMcpCatalogExternalLinkError(context),
+    ),
+  );
+}
+
+Future<bool?> _confirmMcpCatalogExternalLink(BuildContext context, Uri uri) =>
+    AuraDialogs.confirm(
+      context: context,
+      title: Text(LocaleKeys.markdown_editor_external_link_title.tr()),
+      message: AuraSelectableText(
+        LocaleKeys.markdown_editor_external_link_message.tr(
+          namedArgs: {'host': uri.host, 'url': uri.toString()},
+        ),
+      ),
+      actions: .new(
+        confirmLabel: Text(LocaleKeys.markdown_editor_external_link_open.tr()),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+      ),
+    );
+
+void _showMcpCatalogExternalLinkError(BuildContext context) {
+  unawaited(AuraHaptics.error());
+  final _ = ScaffoldMessenger.of(context).showSnackBar(
+    const .new(
+      content: TextLocale(LocaleKeys.markdown_editor_external_link_error),
+    ),
   );
 }
 
