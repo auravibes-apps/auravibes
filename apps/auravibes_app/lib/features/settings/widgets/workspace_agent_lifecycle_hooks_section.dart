@@ -190,12 +190,10 @@ _WorkspaceHookActionCallbacks _workspaceHookCallbacks(
 Future<void> _runHookSettingsMutation(
   _WorkspaceAgentLifecycleHooksSectionState state,
   Future<void> Function(WorkspaceAgentHookSettingsUsecase) action,
-) => state._runBusy(
-  () async {
-    await action(state.ref.read(workspaceAgentHookSettingsUsecaseProvider));
-    if (state.mounted) state._retry();
-  },
-);
+) => state._runBusy(() async {
+  await action(state.ref.read(workspaceAgentHookSettingsUsecaseProvider));
+  if (state.mounted) state._retry();
+});
 
 Future<bool?> _confirmHookTrust(
   BuildContext context,

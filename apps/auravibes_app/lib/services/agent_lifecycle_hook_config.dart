@@ -52,11 +52,11 @@ AgentLifecycleHookConfig parseAgentLifecycleHookConfig(String source) {
 Map<String, dynamic> _decodeConfig(String source) {
   _validateConfigSize(source);
   final decoded = _decodeJson(source);
-  if (!_isConfigShape(decoded)) {
+  if (decoded is! Map<String, dynamic> || !_isConfigShape(decoded)) {
     throw const AgentLifecycleHookConfigException('invalid_config');
   }
 
-  return decoded! as Map<String, dynamic>;
+  return decoded;
 }
 
 void _validateConfigSize(String source) {
@@ -77,8 +77,7 @@ Object? _decodeJson(String source) {
   }
 }
 
-bool _isConfigShape(Object? value) =>
-    value is Map<String, dynamic> &&
+bool _isConfigShape(Map<String, dynamic> value) =>
     _hasOnlyKeys(value, const {'version', 'hooks', 'sourceFiles'}) &&
     value['version'] == 1 &&
     value['hooks'] is List<Object?>;
@@ -138,11 +137,11 @@ AgentLifecycleHookEvent _parseEvent(Object? raw) => switch (raw) {
 };
 
 String _parseCommand(Object? raw) {
-  if (!_isSourcePath(raw)) {
+  if (raw is! String || !_isSourcePath(raw)) {
     throw const AgentLifecycleHookConfigException('invalid_hook');
   }
 
-  return raw! as String;
+  return raw;
 }
 
 List<String> _parseArguments(Object? raw) {

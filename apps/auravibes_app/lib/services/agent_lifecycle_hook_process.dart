@@ -77,10 +77,11 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
   }
 }
 
-class _HookProcessOutput(this.process, this.onFailure, this.isAccepting) {
-  final Process process;
-  final void Function(AgentToolHookOutcome) onFailure;
-  final bool Function() isAccepting;
+class _HookProcessOutput(
+  final Process process,
+  final void Function(AgentToolHookOutcome) onFailure,
+  final bool Function() isAccepting,
+) {
   final outputDone = Completer<void>();
   final errorDone = Completer<void>();
   final _output = BytesBuilder(copy: false);
@@ -131,7 +132,9 @@ class _HookProcessOutput(this.process, this.onFailure, this.isAccepting) {
   }
 }
 
-class _HookProcessOutcome(this._termination) {
+class _HookProcessOutcome(final _HookProcessTermination _termination) {
+  AgentToolHookOutcome _outcome = .success;
+
   bool get isSuccess => _outcome == .success;
   AgentToolHookOutcome get value => _outcome;
 
@@ -144,13 +147,10 @@ class _HookProcessOutcome(this._termination) {
   void setIfSuccess(AgentToolHookOutcome outcome) {
     if (isSuccess) _outcome = outcome;
   }
-
-  final _HookProcessTermination _termination;
-  AgentToolHookOutcome _outcome = .success;
 }
 
 class _HookProcessSupervisor {
-  factory _HookProcessSupervisor(
+  factory new(
     Process process,
     bool Function() isCancellationRequested,
   ) {
@@ -171,7 +171,7 @@ class _HookProcessSupervisor {
     );
   }
 
-  _HookProcessSupervisor._(
+  new._(
     this.process,
     this.isCancellationRequested,
     this._termination,
