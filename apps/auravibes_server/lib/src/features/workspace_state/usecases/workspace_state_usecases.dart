@@ -1349,7 +1349,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         data: resource.data,
       );
     } on WorkspaceResourceSizeLimitException {
-      _validationFailed();
+      _resourceSizeLimitExceeded();
     } on FormatException {
       _validationFailed();
     }
@@ -1827,7 +1827,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
   );
 
   Never _resourceSizeLimitExceeded() => throw CloudWorkspaceException(
-    code: CloudWorkspaceErrorCode.resourceSizeLimitExceeded,
+    code: CloudWorkspaceErrorCode.validationFailed,
+    resourceLimitKind: 'resourceSizeLimitExceeded',
   );
 
   Never _staleRevision() => throw CloudWorkspaceException(

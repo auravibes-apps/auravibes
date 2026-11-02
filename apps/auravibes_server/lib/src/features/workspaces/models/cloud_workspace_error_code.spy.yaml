@@ -19,7 +19,6 @@ values:
   - duplicateMembership
   - confirmationNameMismatch
   - validationFailed
-  - resourceSizeLimitExceeded
   - invalidCursor
   - staleRevision
   - idempotencyConflict

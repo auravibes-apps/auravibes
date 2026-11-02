@@ -16,11 +16,24 @@ void main() {
 
   test('keeps the resource size failure generic until copy is approved', () {
     final error = _translate(
-      CloudWorkspaceException(code: .resourceSizeLimitExceeded),
+      CloudWorkspaceException.fromJson({
+        'code': 'validationFailed',
+        'resourceLimitKind': 'resourceSizeLimitExceeded',
+      }),
       .workspace,
     );
 
     expect(error.code, 'resourceSizeLimitExceeded');
+    expect(error.localizationKey, LocaleKeys.cloud_errors_validation);
+  });
+
+  test('keeps legacy validation errors generic without limit metadata', () {
+    final error = _translate(
+      CloudWorkspaceException(code: .validationFailed),
+      .workspace,
+    );
+
+    expect(error.code, 'validationFailed');
     expect(error.localizationKey, LocaleKeys.cloud_errors_validation);
   });
 

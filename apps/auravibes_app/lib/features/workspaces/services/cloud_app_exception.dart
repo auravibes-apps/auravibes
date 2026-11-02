@@ -55,7 +55,8 @@ abstract final class CloudAppErrors {
 
 ({String localizationKey, String? code}) _translatedException(Object error) =>
     switch (error) {
-      CloudWorkspaceException(:final code) => _workspaceTranslation(code),
+      CloudWorkspaceException(:final code, :final resourceLimitKind) =>
+        _workspaceTranslation(code, resourceLimitKind),
       ConversationException(:final code) => _conversationTranslation(code),
       ObjectException(:final code) => _objectTranslation(code),
       UnsupportedWorkspaceCapabilityException() => (
@@ -76,7 +77,14 @@ abstract final class CloudAppErrors {
 
 ({String localizationKey, String? code}) _workspaceTranslation(
   CloudWorkspaceErrorCode code,
-) => (localizationKey: _workspaceKey(code), code: code.name);
+  String? resourceLimitKind,
+) => (
+  localizationKey: _workspaceKey(code),
+  code: switch (resourceLimitKind) {
+    'resourceSizeLimitExceeded' => resourceLimitKind,
+    _ => code.name,
+  },
+);
 
 ({String localizationKey, String? code}) _conversationTranslation(
   ConversationErrorCode code,
@@ -105,7 +113,6 @@ const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
   .invalidRole: LocaleKeys.cloud_errors_validation,
   .confirmationNameMismatch: LocaleKeys.cloud_errors_validation,
   .invalidCursor: LocaleKeys.cloud_errors_validation,
-  .resourceSizeLimitExceeded: LocaleKeys.cloud_errors_validation,
   .ownerCannotLeave: LocaleKeys.cloud_errors_conflict,
   .ownerCannotBeRemoved: LocaleKeys.cloud_errors_conflict,
   .ownershipTransferRequired: LocaleKeys.cloud_errors_conflict,
