@@ -220,6 +220,13 @@ jobs:
         id: check-format
         run: melos run format:check
 
+      - name: Format workspace capacity files for artifact
+        if: ${{ always() && steps.check-format.outcome == 'failure' }}
+        run: >-
+          dart format --line-length 80
+          apps/auravibes_app/lib/features/workspaces/models/workspace_table.dart
+          apps/auravibes_app/test/features/workspaces/usecases/workspace_capacity_error_classification_test.dart
+
       - name: Upload workspace capacity formatter outputs
         if: ${{ always() && steps.check-format.outcome == 'failure' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
