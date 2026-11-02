@@ -32,7 +32,7 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
         ConversationArchiveStatesCompanion.insert(
           workspaceId: workspaceId,
           conversationId: conversationId,
-          archivedAt: Value(.now().toUtc()),
+          archivedAt: .new(.now().toUtc()),
         ),
       );
     } else {

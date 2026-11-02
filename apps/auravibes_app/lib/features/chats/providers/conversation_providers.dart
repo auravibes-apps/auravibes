@@ -90,7 +90,7 @@ Stream<List<ConversationEntity>> conversationsStream(
   );
   if (!ref.mounted) return;
 
-  final Set<String> archivedIds = session.cloud == null
+  final archivedIds = session.cloud == null
       ? const <String>{}
       : await ref.watch(
           conversationArchiveStateIdsProvider(workspaceId).future,
