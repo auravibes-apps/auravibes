@@ -1342,6 +1342,12 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'String?',
         ),
         _isp.ColumnDefinition(
+          name: 'taskBrief',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
           name: 'parentConversationStableId',
           columnType: _isp.ColumnType.text,
           isNullable: true,

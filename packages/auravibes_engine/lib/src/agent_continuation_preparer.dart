@@ -5,6 +5,7 @@ class const AgentConversationReference({
   required final String workspaceId,
   required final String? modelId,
   final ReasoningConfiguration? reasoningConfiguration,
+  final String? taskBrief,
 });
 
 class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
@@ -64,6 +65,7 @@ abstract interface class AgentContinuationProvider<
     required TModel model,
     required List<TMessage> messages,
     required List<TChatMessage> skillContextMessages,
+    required String? taskBrief,
   });
 
   bool shouldDisableTools(TModel model);
@@ -71,6 +73,8 @@ abstract interface class AgentContinuationProvider<
   bool isSystemMessage(TChatMessage message);
 
   bool isSkillContextMessage(TChatMessage message);
+
+  bool isCompactionSummaryMessage(TChatMessage message);
 
   bool isUserMessage(TChatMessage message);
 }
@@ -120,10 +124,12 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
       model: projectedModel,
       messages: messages,
       skillContextMessages: transcriptContext.contextMessages,
+      taskBrief: conversation.taskBrief,
     );
     assert(
       _startsWithUserMessage(chatHistory),
-      'First non-system message after compaction must be user.',
+      'First conversation message after context and compaction summaries '
+      'must be user.',
     );
 
     return PreparedContinueAgentInput(
@@ -140,7 +146,8 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
   bool _startsWithUserMessage(List<TChatMessage> chatHistory) {
     for (final message in chatHistory) {
       if (provider.isSystemMessage(message) ||
-          provider.isSkillContextMessage(message)) {
+          provider.isSkillContextMessage(message) ||
+          provider.isCompactionSummaryMessage(message)) {
         continue;
       }
 

@@ -12,58 +12,58 @@ import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
 
+Future<
+  ({
+    TestSessionBuilder session,
+    Session database,
+    int workspaceId,
+    String userId,
+  })
+>
+_prepareEndpointFixture(TestSessionBuilder sessionBuilder) async {
+  final userId = const Uuid().v4().toString();
+  final session = sessionBuilder.copyWith(
+    authentication: AuthenticationOverride.authenticationInfo(
+      userId,
+      const {},
+    ),
+  );
+  final database = session.build();
+  await AuthUser.db.insertRow(
+    database,
+    AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+  );
+  await EmailAccount.db.insertRow(
+    database,
+    EmailAccount(
+      authUserId: UuidValue.fromString(userId),
+      email: '$userId@example.com',
+      passwordHash: 'unused',
+    ),
+  );
+  final workspace = await workspace_repo.CloudWorkspaceRepository()
+      .createWorkspace(
+        database,
+        name: 'Auto approval',
+        ownerUserId: userId,
+        now: DateTime.now().toUtc(),
+      );
+  return (
+    session: session,
+    database: database,
+    workspaceId: workspace.id!,
+    userId: userId,
+  );
+}
+
 void main() {
   // Template execution opens a separate session that must see committed rows.
   withServerpod('ConversationAutoApproval', (sessionBuilder, endpoints) {
-    Future<
-      ({
-        TestSessionBuilder session,
-        Session database,
-        int workspaceId,
-        String userId,
-      })
-    >
-    prepare() async {
-      final userId = const Uuid().v4().toString();
-      final session = sessionBuilder.copyWith(
-        authentication: AuthenticationOverride.authenticationInfo(
-          userId,
-          const {},
-        ),
-      );
-      final database = session.build();
-      await AuthUser.db.insertRow(
-        database,
-        AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
-      );
-      await EmailAccount.db.insertRow(
-        database,
-        EmailAccount(
-          authUserId: UuidValue.fromString(userId),
-          email: '$userId@example.com',
-          passwordHash: 'unused',
-        ),
-      );
-      final workspace = await workspace_repo.CloudWorkspaceRepository()
-          .createWorkspace(
-            database,
-            name: 'Auto approval',
-            ownerUserId: userId,
-            now: DateTime.now().toUtc(),
-          );
-      return (
-        session: session,
-        database: database,
-        workspaceId: workspace.id!,
-        userId: userId,
-      );
-    }
-
     test(
       'all conversation reads reject erasure-pending and deleted workspaces',
       () async {
         for (final tombstone in ['erasure requested', 'soft deleted']) {
-          final fixture = await prepare();
+          final fixture = await _prepareEndpointFixture(sessionBuilder);
           final conversation = await endpoints.conversation.create(
             fixture.session,
             CreateConversationRequest(
@@ -216,7 +216,7 @@ void main() {
     test(
       'persists mode through create, update, projection and root/child forks',
       () async {
-        final fixture = await prepare();
+        final fixture = await _prepareEndpointFixture(sessionBuilder);
         final root = await endpoints.conversation.create(
           fixture.session,
           CreateConversationRequest(
@@ -288,6 +288,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -307,6 +308,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -358,6 +360,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -369,7 +372,7 @@ void main() {
     test(
       'server mode honors current root, denial priority and pending calls',
       () async {
-        final fixture = await prepare();
+        final fixture = await _prepareEndpointFixture(sessionBuilder);
         final now = DateTime.now().toUtc();
         Future<Conversation> conversation(
           String id, {
@@ -487,6 +490,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -802,6 +806,7 @@ void main() {
           clearModel: false,
           clearAgent: false,
           clearReasoningConfig: false,
+          clearTaskBrief: false,
           clearParent: false,
         ),
       );
@@ -956,6 +961,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         ),
@@ -1451,6 +1457,310 @@ void main() {
           ),
           isEmpty,
         );
+      },
+    );
+    test('task brief persists, clears, and isolates fork edits', () async {
+      final fixture = await _prepareEndpointFixture(sessionBuilder);
+      final created = await endpoints.conversation.create(
+        fixture.session,
+        CreateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'create-task-brief',
+          conversationId: 'task-brief-source',
+          title: 'Task brief source',
+          isPinned: false,
+          taskBrief: 'Keep the user objective in view.',
+        ),
+      );
+      expect(created.taskBrief, 'Keep the user objective in view.');
+
+      final sourceRow = (await Conversation.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.stableId.equals(created.id),
+      ))!;
+      final now = DateTime.now().toUtc();
+      final sourceMessage = await ConversationMessage.db.insertRow(
+        fixture.database,
+        ConversationMessage(
+          workspaceId: fixture.workspaceId,
+          conversationId: sourceRow.id!,
+          stableId: 'task-brief-source-message',
+          role: 'assistant',
+          kind: 'text',
+          status: ConversationStatuses.completed,
+          content: 'Existing transcript message',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final fork = await endpoints.conversation.fork(
+        fixture.session,
+        ForkConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'fork-task-brief',
+          sourceConversationId: created.id,
+          forkConversationId: 'task-brief-fork',
+          throughMessageId: 'task-brief-source-message',
+        ),
+      );
+      expect(fork.taskBrief, 'Keep the user objective in view.');
+
+      final sourceUpdated = await endpoints.conversation.update(
+        fixture.session,
+        UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'update-source-task-brief',
+          conversationId: created.id,
+          expectedRevision: created.revision,
+          taskBrief: 'Source edit.',
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearTaskBrief: false,
+          clearParent: false,
+        ),
+      );
+      expect(sourceUpdated.taskBrief, 'Source edit.');
+      expect(
+        (await endpoints.conversation.get(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fork.id,
+          ),
+        )).taskBrief,
+        'Keep the user objective in view.',
+      );
+
+      final forkCleared = await endpoints.conversation.update(
+        fixture.session,
+        UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'clear-fork-task-brief',
+          conversationId: fork.id,
+          expectedRevision: fork.revision,
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearTaskBrief: true,
+          clearParent: false,
+        ),
+      );
+      expect(forkCleared.taskBrief, isNull);
+      expect(
+        (await endpoints.conversation.get(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: created.id,
+          ),
+        )).taskBrief,
+        'Source edit.',
+      );
+      final messages = await ConversationMessage.db.find(
+        fixture.database,
+        where: (table) => table.conversationId.equals(sourceRow.id),
+      );
+      expect(messages.single.toJson(), sourceMessage.toJson());
+
+      final forkEdited = await endpoints.conversation.update(
+        fixture.session,
+        UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'edit-cleared-fork-task-brief',
+          conversationId: fork.id,
+          expectedRevision: forkCleared.revision,
+          taskBrief: 'Fork edit.',
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearParent: false,
+        ),
+      );
+      final sourceCleared = await endpoints.conversation.update(
+        fixture.session,
+        UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'clear-source-task-brief',
+          conversationId: created.id,
+          expectedRevision: sourceUpdated.revision,
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearTaskBrief: true,
+          clearParent: false,
+        ),
+      );
+      expect(sourceCleared.taskBrief, isNull);
+      expect(forkEdited.taskBrief, 'Fork edit.');
+      final forkWithoutBrief = await endpoints.conversation.fork(
+        fixture.session,
+        ForkConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'fork-source-without-task-brief',
+          sourceConversationId: created.id,
+          forkConversationId: 'task-brief-empty-fork',
+          throughMessageId: 'task-brief-source-message',
+        ),
+      );
+      expect(forkWithoutBrief.taskBrief, isNull);
+      expect(
+        (await endpoints.conversation.get(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fork.id,
+          ),
+        )).taskBrief,
+        'Fork edit.',
+      );
+    });
+
+    test(
+      'task brief reloads exactly and rejected updates preserve it',
+      () async {
+        final fixture = await _prepareEndpointFixture(sessionBuilder);
+        const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+        final created = await endpoints.conversation.create(
+          fixture.session,
+          CreateConversationRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'create-exact-task-brief',
+            conversationId: 'exact-task-brief',
+            title: 'Exact task brief',
+            isPinned: false,
+            taskBrief: brief,
+          ),
+        );
+        final persistedConversation = (await Conversation.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.stableId.equals(created.id),
+        ))!;
+        final messageTime = DateTime.now().toUtc();
+        final originalMessage = await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: persistedConversation.id!,
+            stableId: 'exact-task-brief-message',
+            role: 'user',
+            kind: 'text',
+            status: ConversationStatuses.completed,
+            content: 'Original transcript',
+            revision: 1,
+            createdAt: messageTime,
+            updatedAt: messageTime,
+          ),
+        );
+        final freshSession = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            fixture.userId,
+            const {},
+          ),
+        );
+        Future<ConversationSummary> reload() => endpoints.conversation.get(
+          freshSession,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: created.id,
+          ),
+        );
+        UpdateConversationRequest update({
+          required String requestId,
+          int? expectedRevision,
+          String? taskBrief,
+          bool clearTaskBrief = false,
+          String? title,
+        }) => UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: requestId,
+          conversationId: created.id,
+          expectedRevision: expectedRevision ?? created.revision,
+          taskBrief: taskBrief,
+          clearTaskBrief: clearTaskBrief,
+          title: title,
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearParent: false,
+        );
+
+        expect((await reload()).taskBrief, brief);
+        final listed = await endpoints.conversation.list(
+          freshSession,
+          ListConversationsRequest(workspaceId: fixture.workspaceId, limit: 20),
+        );
+        expect(listed.single.taskBrief, brief);
+        final unchanged = await endpoints.conversation.update(
+          fixture.session,
+          update(requestId: 'rename-exact-task-brief', title: 'Renamed'),
+        );
+        expect((await reload()).taskBrief, brief);
+
+        for (final invalid in [
+          (
+            request: update(
+              requestId: 'blank-task-brief',
+              expectedRevision: unchanged.revision,
+              taskBrief: ' \n\t ',
+            ),
+            code: ConversationErrorCode.validationFailed,
+          ),
+          (
+            request: update(
+              requestId: 'conflicting-task-brief',
+              expectedRevision: unchanged.revision,
+              taskBrief: 'Should not save',
+              clearTaskBrief: true,
+            ),
+            code: ConversationErrorCode.validationFailed,
+          ),
+          (
+            request: update(
+              requestId: 'stale-task-brief',
+              taskBrief: 'Stale edit',
+            ),
+            code: ConversationErrorCode.staleRevision,
+          ),
+        ]) {
+          await expectLater(
+            endpoints.conversation.update(fixture.session, invalid.request),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                invalid.code,
+              ),
+            ),
+          );
+          expect((await reload()).toJson(), unchanged.toJson());
+        }
+        final _ = await endpoints.conversation.update(
+          fixture.session,
+          update(
+            requestId: 'clear-exact-task-brief',
+            expectedRevision: unchanged.revision,
+            clearTaskBrief: true,
+          ),
+        );
+        expect((await reload()).taskBrief, isNull);
+        final clearedList = await endpoints.conversation.list(
+          freshSession,
+          ListConversationsRequest(workspaceId: fixture.workspaceId, limit: 20),
+        );
+        expect(clearedList.single.taskBrief, isNull);
+        final messagesAfterUpdates = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(persistedConversation.id),
+        );
+        expect(messagesAfterUpdates.single.toJson(), originalMessage.toJson());
       },
     );
   });

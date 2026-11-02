@@ -19,6 +19,7 @@ void main() {
         modelId: 'model-1',
         agentId: 'agent-1',
         reasoningConfiguration: .new(effort: 'high'),
+        taskBrief: 'User-authored objective.',
         parentConversationId: 'parent-1',
         isPinned: true,
       );
@@ -31,6 +32,7 @@ void main() {
         modelId: 'model-1',
         agentId: 'agent-1',
         reasoningConfigJson: value.reasoningConfiguration?.encode(),
+        taskBrief: value.taskBrief,
         parentConversationId: 'parent-1',
         revision: 4,
         createdAt: now,
@@ -53,6 +55,7 @@ void main() {
         conversation.reasoningConfiguration?.encode(),
         value.reasoningConfiguration?.encode(),
       );
+      expect(conversation.taskBrief, value.taskBrief);
       final _ = verify(() => usecase.create(value)).called(1);
     });
   }

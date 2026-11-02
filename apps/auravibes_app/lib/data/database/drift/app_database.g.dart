@@ -4439,6 +4439,17 @@ class $ConversationsTable extends Conversations
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _taskBriefMeta = const VerificationMeta(
+    'taskBrief',
+  );
+  @override
+  late final GeneratedColumn<String> taskBrief = GeneratedColumn<String>(
+    'task_brief',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _parentConversationIdMeta =
       const VerificationMeta('parentConversationId');
   @override
@@ -4545,6 +4556,7 @@ class $ConversationsTable extends Conversations
     modelId,
     agentId,
     reasoningConfigJson,
+    taskBrief,
     parentConversationId,
     forkSourceConversationId,
     forkSourceTitle,
@@ -4619,6 +4631,12 @@ class $ConversationsTable extends Conversations
           data['reasoning_config_json']!,
           _reasoningConfigJsonMeta,
         ),
+      );
+    }
+    if (data.containsKey('task_brief')) {
+      context.handle(
+        _taskBriefMeta,
+        taskBrief.isAcceptableOrUnknown(data['task_brief']!, _taskBriefMeta),
       );
     }
     if (data.containsKey('parent_conversation_id')) {
@@ -4731,6 +4749,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}reasoning_config_json'],
       ),
+      taskBrief: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_brief'],
+      ),
       parentConversationId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}parent_conversation_id'],
@@ -4789,6 +4811,9 @@ class ConversationsTable extends DataClass
 
   /// JSON-encoded conversation-scoped reasoning override.
   final String? reasoningConfigJson;
+
+  /// User-authored context that is composed separately from transcript rows.
+  final String? taskBrief;
   final String? parentConversationId;
 
   /// Stable id of the conversation this fork snapshots.
@@ -4818,6 +4843,7 @@ class ConversationsTable extends DataClass
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
+    this.taskBrief,
     this.parentConversationId,
     this.forkSourceConversationId,
     this.forkSourceTitle,
@@ -4843,6 +4869,9 @@ class ConversationsTable extends DataClass
     }
     if (!nullToAbsent || reasoningConfigJson != null) {
       map['reasoning_config_json'] = Variable<String>(reasoningConfigJson);
+    }
+    if (!nullToAbsent || taskBrief != null) {
+      map['task_brief'] = Variable<String>(taskBrief);
     }
     if (!nullToAbsent || parentConversationId != null) {
       map['parent_conversation_id'] = Variable<String>(parentConversationId);
@@ -4887,6 +4916,9 @@ class ConversationsTable extends DataClass
       reasoningConfigJson: reasoningConfigJson == null && nullToAbsent
           ? const Value.absent()
           : Value(reasoningConfigJson),
+      taskBrief: taskBrief == null && nullToAbsent
+          ? const Value.absent()
+          : Value(taskBrief),
       parentConversationId: parentConversationId == null && nullToAbsent
           ? const Value.absent()
           : Value(parentConversationId),
@@ -4927,6 +4959,7 @@ class ConversationsTable extends DataClass
       reasoningConfigJson: serializer.fromJson<String?>(
         json['reasoningConfigJson'],
       ),
+      taskBrief: serializer.fromJson<String?>(json['taskBrief']),
       parentConversationId: serializer.fromJson<String?>(
         json['parentConversationId'],
       ),
@@ -4959,6 +4992,7 @@ class ConversationsTable extends DataClass
       'modelId': serializer.toJson<String?>(modelId),
       'agentId': serializer.toJson<String?>(agentId),
       'reasoningConfigJson': serializer.toJson<String?>(reasoningConfigJson),
+      'taskBrief': serializer.toJson<String?>(taskBrief),
       'parentConversationId': serializer.toJson<String?>(parentConversationId),
       'forkSourceConversationId': serializer.toJson<String?>(
         forkSourceConversationId,
@@ -4983,6 +5017,7 @@ class ConversationsTable extends DataClass
     Value<String?> modelId = const Value.absent(),
     Value<String?> agentId = const Value.absent(),
     Value<String?> reasoningConfigJson = const Value.absent(),
+    Value<String?> taskBrief = const Value.absent(),
     Value<String?> parentConversationId = const Value.absent(),
     Value<String?> forkSourceConversationId = const Value.absent(),
     Value<String?> forkSourceTitle = const Value.absent(),
@@ -5002,6 +5037,7 @@ class ConversationsTable extends DataClass
     reasoningConfigJson: reasoningConfigJson.present
         ? reasoningConfigJson.value
         : this.reasoningConfigJson,
+    taskBrief: taskBrief.present ? taskBrief.value : this.taskBrief,
     parentConversationId: parentConversationId.present
         ? parentConversationId.value
         : this.parentConversationId,
@@ -5037,6 +5073,7 @@ class ConversationsTable extends DataClass
       reasoningConfigJson: data.reasoningConfigJson.present
           ? data.reasoningConfigJson.value
           : this.reasoningConfigJson,
+      taskBrief: data.taskBrief.present ? data.taskBrief.value : this.taskBrief,
       parentConversationId: data.parentConversationId.present
           ? data.parentConversationId.value
           : this.parentConversationId,
@@ -5073,6 +5110,7 @@ class ConversationsTable extends DataClass
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
           ..write('reasoningConfigJson: $reasoningConfigJson, ')
+          ..write('taskBrief: $taskBrief, ')
           ..write('parentConversationId: $parentConversationId, ')
           ..write('forkSourceConversationId: $forkSourceConversationId, ')
           ..write('forkSourceTitle: $forkSourceTitle, ')
@@ -5097,6 +5135,7 @@ class ConversationsTable extends DataClass
     modelId,
     agentId,
     reasoningConfigJson,
+    taskBrief,
     parentConversationId,
     forkSourceConversationId,
     forkSourceTitle,
@@ -5118,6 +5157,7 @@ class ConversationsTable extends DataClass
           other.modelId == this.modelId &&
           other.agentId == this.agentId &&
           other.reasoningConfigJson == this.reasoningConfigJson &&
+          other.taskBrief == this.taskBrief &&
           other.parentConversationId == this.parentConversationId &&
           other.forkSourceConversationId == this.forkSourceConversationId &&
           other.forkSourceTitle == this.forkSourceTitle &&
@@ -5138,6 +5178,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String?> modelId;
   final Value<String?> agentId;
   final Value<String?> reasoningConfigJson;
+  final Value<String?> taskBrief;
   final Value<String?> parentConversationId;
   final Value<String?> forkSourceConversationId;
   final Value<String?> forkSourceTitle;
@@ -5156,6 +5197,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
     this.reasoningConfigJson = const Value.absent(),
+    this.taskBrief = const Value.absent(),
     this.parentConversationId = const Value.absent(),
     this.forkSourceConversationId = const Value.absent(),
     this.forkSourceTitle = const Value.absent(),
@@ -5175,6 +5217,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
     this.reasoningConfigJson = const Value.absent(),
+    this.taskBrief = const Value.absent(),
     this.parentConversationId = const Value.absent(),
     this.forkSourceConversationId = const Value.absent(),
     this.forkSourceTitle = const Value.absent(),
@@ -5195,6 +5238,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? modelId,
     Expression<String>? agentId,
     Expression<String>? reasoningConfigJson,
+    Expression<String>? taskBrief,
     Expression<String>? parentConversationId,
     Expression<String>? forkSourceConversationId,
     Expression<String>? forkSourceTitle,
@@ -5215,6 +5259,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       if (agentId != null) 'agent_id': agentId,
       if (reasoningConfigJson != null)
         'reasoning_config_json': reasoningConfigJson,
+      if (taskBrief != null) 'task_brief': taskBrief,
       if (parentConversationId != null)
         'parent_conversation_id': parentConversationId,
       if (forkSourceConversationId != null)
@@ -5241,6 +5286,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String?>? modelId,
     Value<String?>? agentId,
     Value<String?>? reasoningConfigJson,
+    Value<String?>? taskBrief,
     Value<String?>? parentConversationId,
     Value<String?>? forkSourceConversationId,
     Value<String?>? forkSourceTitle,
@@ -5260,6 +5306,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       modelId: modelId ?? this.modelId,
       agentId: agentId ?? this.agentId,
       reasoningConfigJson: reasoningConfigJson ?? this.reasoningConfigJson,
+      taskBrief: taskBrief ?? this.taskBrief,
       parentConversationId: parentConversationId ?? this.parentConversationId,
       forkSourceConversationId:
           forkSourceConversationId ?? this.forkSourceConversationId,
@@ -5302,6 +5349,9 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       map['reasoning_config_json'] = Variable<String>(
         reasoningConfigJson.value,
       );
+    }
+    if (taskBrief.present) {
+      map['task_brief'] = Variable<String>(taskBrief.value);
     }
     if (parentConversationId.present) {
       map['parent_conversation_id'] = Variable<String>(
@@ -5354,6 +5404,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
           ..write('reasoningConfigJson: $reasoningConfigJson, ')
+          ..write('taskBrief: $taskBrief, ')
           ..write('parentConversationId: $parentConversationId, ')
           ..write('forkSourceConversationId: $forkSourceConversationId, ')
           ..write('forkSourceTitle: $forkSourceTitle, ')
@@ -29571,6 +29622,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> modelId,
       Value<String?> agentId,
       Value<String?> reasoningConfigJson,
+      Value<String?> taskBrief,
       Value<String?> parentConversationId,
       Value<String?> forkSourceConversationId,
       Value<String?> forkSourceTitle,
@@ -29591,6 +29643,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> modelId,
       Value<String?> agentId,
       Value<String?> reasoningConfigJson,
+      Value<String?> taskBrief,
       Value<String?> parentConversationId,
       Value<String?> forkSourceConversationId,
       Value<String?> forkSourceTitle,
@@ -29923,6 +29976,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<String> get reasoningConfigJson => $composableBuilder(
     column: $table.reasoningConfigJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskBrief => $composableBuilder(
+    column: $table.taskBrief,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30318,6 +30376,11 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get taskBrief => $composableBuilder(
+    column: $table.taskBrief,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
     builder: (column) => ColumnOrderings(column),
@@ -30473,6 +30536,9 @@ class $$ConversationsTableAnnotationComposer
     column: $table.reasoningConfigJson,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get taskBrief =>
+      $composableBuilder(column: $table.taskBrief, builder: (column) => column);
 
   GeneratedColumn<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
@@ -30886,6 +30952,7 @@ class $$ConversationsTableTableManager
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
                 Value<String?> reasoningConfigJson = const Value.absent(),
+                Value<String?> taskBrief = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
                 Value<String?> forkSourceConversationId = const Value.absent(),
                 Value<String?> forkSourceTitle = const Value.absent(),
@@ -30905,6 +30972,7 @@ class $$ConversationsTableTableManager
                 modelId: modelId,
                 agentId: agentId,
                 reasoningConfigJson: reasoningConfigJson,
+                taskBrief: taskBrief,
                 parentConversationId: parentConversationId,
                 forkSourceConversationId: forkSourceConversationId,
                 forkSourceTitle: forkSourceTitle,
@@ -30925,6 +30993,7 @@ class $$ConversationsTableTableManager
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
                 Value<String?> reasoningConfigJson = const Value.absent(),
+                Value<String?> taskBrief = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
                 Value<String?> forkSourceConversationId = const Value.absent(),
                 Value<String?> forkSourceTitle = const Value.absent(),
@@ -30944,6 +31013,7 @@ class $$ConversationsTableTableManager
                 modelId: modelId,
                 agentId: agentId,
                 reasoningConfigJson: reasoningConfigJson,
+                taskBrief: taskBrief,
                 parentConversationId: parentConversationId,
                 forkSourceConversationId: forkSourceConversationId,
                 forkSourceTitle: forkSourceTitle,

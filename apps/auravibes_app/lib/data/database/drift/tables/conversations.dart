@@ -38,6 +38,9 @@ class Conversations extends Table with TableMixin {
 
   /// JSON-encoded conversation-scoped reasoning override.
   TextColumn get reasoningConfigJson => text().nullable()();
+
+  /// User-authored context that is composed separately from transcript rows.
+  TextColumn get taskBrief => text().nullable()();
   TextColumn get parentConversationId =>
       text().nullable().references(Conversations, #id, onDelete: .cascade)();
 

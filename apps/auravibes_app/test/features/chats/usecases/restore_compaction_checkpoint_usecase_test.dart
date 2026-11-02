@@ -30,6 +30,9 @@ void main() {
     isPinned: false,
     createdAt: now,
     updatedAt: now,
+    taskBrief:
+        '  User-edited objective after the checkpoint.\n'
+        'Keep this exact text.  ',
     activeCompactionCheckpointId: 'summary-2',
   );
   final checkpoint = MessageEntity(
@@ -105,6 +108,26 @@ void main() {
           const .new(activeCompactionCheckpointId: checkpointId),
         ),
       ).called(1);
+      final _ = verifyNever(() => messages.patchMessage(any(), any()));
+    },
+  );
+
+  test(
+    'checkpoint restore patches only its pointer, preserving the current brief',
+    () async {
+      await restore.call(restoreRequest());
+
+      final patch =
+          verify(
+                () => conversations.patchConversation(
+                  conversationId,
+                  captureAny(),
+                ),
+              ).captured.single
+              as ConversationPatch;
+      expect(patch.activeCompactionCheckpointId, checkpointId);
+      expect(patch.taskBrief, isNull);
+      expect(patch.clearTaskBrief, isFalse);
       final _ = verifyNever(() => messages.patchMessage(any(), any()));
     },
   );

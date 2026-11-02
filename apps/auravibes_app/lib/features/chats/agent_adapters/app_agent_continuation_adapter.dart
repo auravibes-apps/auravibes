@@ -21,6 +21,9 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
 import 'package:riverpod/riverpod.dart';
 
+const _conversationTaskBriefMetadataKind = 'conversation_task_brief';
+const _compactionSummaryMetadataKind = 'compaction_summary';
+
 class AppAgentContinuationAdapter({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
@@ -73,6 +76,7 @@ class AppAgentContinuationAdapter({
       workspaceId: conversation.workspaceId,
       modelId: conversation.modelId,
       reasoningConfiguration: conversation.reasoningConfiguration,
+      taskBrief: conversation.taskBrief,
     );
   }
 
@@ -168,15 +172,15 @@ class AppAgentContinuationAdapter({
     required WorkspaceModelSelectionWithConnectionEntity model,
     required List<MessageEntity> messages,
     required List<ChatMessage> skillContextMessages,
+    required String? taskBrief,
   }) async {
+    final summaryMessageIds = _compactionSummaryMessageIds(messages);
+    final transcript = await _buildPromptTranscript(model, messages);
+
     return [
-      ...skillContextMessages,
-      ...await BuildPromptChatMessages(
-        modalitiesInput: model.workspaceModelSelection.modalitiesInput,
-        supportsImageToolResults:
-            model.modelsProvider.type == ModelProvidersType.anthropic &&
-            (model.modelConnection.url?.trim().isEmpty ?? true),
-      )(messages),
+      ..._conversationContextMessages(skillContextMessages, taskBrief),
+      for (final message in transcript)
+        _tagCompactionSummary(message, summaryMessageIds),
     ];
   }
 
@@ -184,6 +188,40 @@ class AppAgentContinuationAdapter({
   bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) =>
       !model.workspaceModelSelection.supportsToolCalls;
 }
+
+Set<String> _compactionSummaryMessageIds(List<MessageEntity> messages) => {
+  for (final message in messages)
+    if (message.messageType == .system &&
+        message.metadata?.isCompactionSummary == true)
+      message.id,
+};
+
+Future<List<ChatMessage>> _buildPromptTranscript(
+  WorkspaceModelSelectionWithConnectionEntity model,
+  List<MessageEntity> messages,
+) => BuildPromptChatMessages(
+  modalitiesInput: model.workspaceModelSelection.modalitiesInput,
+  supportsImageToolResults: _supportsImageToolResults(model),
+)(messages);
+
+bool _supportsImageToolResults(
+  WorkspaceModelSelectionWithConnectionEntity model,
+) =>
+    model.modelsProvider.type == ModelProvidersType.anthropic &&
+    (model.modelConnection.url?.trim().isEmpty ?? true);
+
+List<ChatMessage> _conversationContextMessages(
+  List<ChatMessage> skillContextMessages,
+  String? taskBrief,
+) => [
+  ...skillContextMessages,
+  if (taskBrief case final brief? when brief.trim().isNotEmpty)
+    ChatMessage(
+      role: .user,
+      content: 'User-authored conversation brief:\n\n$brief',
+      metadata: const {'kind': _conversationTaskBriefMetadataKind},
+    ),
+];
 
 mixin _AgentContinuationMessageRoleChecks {
   bool isSystemMessage(ChatMessage message) {
@@ -193,9 +231,29 @@ mixin _AgentContinuationMessageRoleChecks {
   bool isSkillContextMessage(ChatMessage message) =>
       message.metadata['kind'] == skillContextMetadataKind;
 
+  bool isCompactionSummaryMessage(ChatMessage message) =>
+      message.role == ChatMessageRole.model &&
+      message.metadata['kind'] == _compactionSummaryMetadataKind;
+
   bool isUserMessage(ChatMessage message) {
     return message.role == ChatMessageRole.user;
   }
+}
+
+ChatMessage _tagCompactionSummary(
+  ChatMessage message,
+  Set<String> summaryMessageIds,
+) {
+  final transcriptMessageId = message.metadata['transcriptMessageId'];
+  if (message.role != ChatMessageRole.model ||
+      transcriptMessageId is! String ||
+      !summaryMessageIds.contains(transcriptMessageId)) {
+    return message;
+  }
+
+  return message.copyWith(
+    metadata: {...message.metadata, 'kind': _compactionSummaryMetadataKind},
+  );
 }
 
 Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(

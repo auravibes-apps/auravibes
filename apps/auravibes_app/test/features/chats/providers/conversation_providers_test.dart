@@ -272,6 +272,69 @@ void main() {
       expect(endpoint.requests, hasLength(1));
       expect(endpoint.requests.single.cursor, isNull);
     });
+
+    test(
+      'fresh app containers load saved, edited, and cleared cloud briefs',
+      () async {
+        for (final savedValue in [
+          '  Saved objective.\nKeep the deadline.  ',
+          'Edited objective.',
+          null,
+        ]) {
+          final endpoint = _TestConversationEndpoint([
+            ConversationPage(
+              conversations: [
+                _cloudConversationSummary(
+                  id: 'brief-conversation',
+                  taskBrief: savedValue,
+                ),
+              ],
+            ),
+          ]);
+          final container = _cloudContainer(endpoint);
+          final provider = conversationsStreamProvider(workspaceId: 'cloud');
+          final subscription = container.listen(
+            provider,
+            (_, next) => next.toString(),
+          );
+          try {
+            final conversations = await container.read(
+              conversationsStreamProvider(workspaceId: 'cloud').future,
+            );
+            expect(conversations.single.taskBrief, savedValue);
+            expect(endpoint.requests, hasLength(1));
+          } finally {
+            subscription.close();
+            container.dispose();
+          }
+        }
+      },
+    );
+
+    test('maps the cloud task brief into the conversation entity', () async {
+      final endpoint = _TestConversationEndpoint([
+        ConversationPage(
+          conversations: [
+            _cloudConversationSummary(
+              id: 'brief-conversation',
+              taskBrief: 'Cloud user-authored objective.',
+            ),
+          ],
+        ),
+      ]);
+      final container = _cloudContainer(endpoint);
+      addTearDown(container.dispose);
+      final subscription = container.listen(
+        conversationsStreamProvider(workspaceId: 'cloud'),
+        (_, next) => next.toString(),
+      );
+      addTearDown(subscription.close);
+      final conversations = await container.read(
+        conversationsStreamProvider(workspaceId: 'cloud').future,
+      );
+
+      expect(conversations.single.taskBrief, 'Cloud user-authored objective.');
+    });
   });
 
   group('childConversationsStreamProvider', () {
@@ -659,10 +722,12 @@ class _TestCloudWorkspaceStateGateway extends Fake
 ConversationSummary _cloudConversationSummary({
   required String id,
   String? parentConversationId,
+  String? taskBrief,
 }) => ConversationSummary(
   id: id,
   title: id,
   isPinned: false,
+  taskBrief: taskBrief,
   parentConversationId: parentConversationId,
   revision: 1,
   createdAt: .utc(2026),

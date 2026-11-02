@@ -410,6 +410,7 @@ ConversationEntity _cloudConversationCore(
   toolAccessMode: ConversationToolAccessModeStorage.decode(
     conversation.toolAccessMode,
   ),
+  taskBrief: conversation.taskBrief,
 );
 
 ConversationEntity _cloudConversationFields(

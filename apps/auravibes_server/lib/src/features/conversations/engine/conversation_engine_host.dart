@@ -1178,6 +1178,11 @@ final class const ServerConversationEngineHost({
           languageCode: languageCode,
         ),
       ),
+      if (conversation.taskBrief case final brief? when brief.trim().isNotEmpty)
+        {
+          'role': 'user',
+          'content': 'User-authored conversation brief:\n\n$brief',
+        },
     ];
 
     return messages;
@@ -1429,14 +1434,16 @@ final class const ServerConversationEngineHost({
         workspaceId: job.workspaceId,
         userId: actorUserId,
         turnId: null,
-        start: () => _transport(
-          config,
-          body,
-          session: session,
-          workspaceId: job.workspaceId,
-          userId: actorUserId,
-          leaseLost: leaseLost,
-        ),
+        start: () =>
+            providerTransport?.call(body) ??
+            _transport(
+              config,
+              body,
+              session: session,
+              workspaceId: job.workspaceId,
+              userId: actorUserId,
+              leaseLost: leaseLost,
+            ),
       ),
       {
         'model': config.modelId,

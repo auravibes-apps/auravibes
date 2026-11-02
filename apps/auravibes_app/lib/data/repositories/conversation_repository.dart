@@ -456,6 +456,7 @@ extension on ConversationRepository {
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
     reasoningConfigJson: .new(source.reasoningConfigJson),
+    taskBrief: .new(source.taskBrief),
     toolAccessMode: .new(source.toolAccessMode),
   );
 
@@ -1194,6 +1195,7 @@ extension on ConversationRepository {
     toolAccessMode: ConversationToolAccessModeStorage.decode(
       conversationTable.toolAccessMode,
     ),
+    taskBrief: conversationTable.taskBrief,
   );
 
   ConversationEntity _mapConversationFields(
@@ -1220,6 +1222,7 @@ extension on ConversationRepository {
   ) => _mapConversationFieldsToCompanion(conversation).copyWith(
     createdAt: .absentIfNull(conversation.createdAt),
     updatedAt: .absentIfNull(conversation.updatedAt ?? conversation.createdAt),
+    taskBrief: .new(conversation.taskBrief),
   );
 
   ConversationsCompanion _mapConversationFieldsToCompanion(
@@ -1246,6 +1249,7 @@ extension on ConversationRepository {
       modelId: .absentIfNull(conversation.modelId),
       agentId: _agentIdCompanionPatch(conversation),
       reasoningConfigJson: _reasoningConfigCompanionPatch(conversation),
+      taskBrief: _taskBriefCompanionPatch(conversation),
       activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
         conversation,
       ),
@@ -1273,6 +1277,11 @@ Value<String?> _reasoningConfigCompanionPatch(ConversationPatch conversation) =>
     conversation.clearReasoningConfiguration
     ? const Value(null)
     : Value.absentIfNull(conversation.reasoningConfiguration?.encode());
+
+Value<String?> _taskBriefCompanionPatch(ConversationPatch conversation) =>
+    conversation.clearTaskBrief
+    ? const Value(null)
+    : Value.absentIfNull(conversation.taskBrief);
 
 Value<String?> _activeCompactionCheckpointPatch(
   ConversationPatch conversation,

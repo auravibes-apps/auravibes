@@ -235,8 +235,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceCredentialDeletionsSchemaVersion + 1;
   static const int _workspaceAssetDeletionOwnerSchemaVersion =
       _workspaceAttachmentDeletionsSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _workspaceAssetDeletionOwnerSchemaVersion;
+  static const int _conversationTaskBriefSchemaVersion =
+      _workspaceAssetDeletionOwnerSchemaVersion + 1;
+  static const int _currentSchemaVersion = _conversationTaskBriefSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -595,6 +596,16 @@ extension on AppDatabase {
     await _upgradeReasoningControlsSchema(m, from);
     await _upgradeCompactionBudgetsSchema(m, from);
     await _upgradeCompactionCheckpointSchema(m, from);
+    await _upgradeConversationTaskBriefSchema(m, from);
+  }
+
+  Future<void> _upgradeConversationTaskBriefSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._conversationTaskBriefSchemaVersion ||
+        !await _tableExists('conversations') ||
+        await _columnExists('conversations', 'task_brief')) {
+      return;
+    }
+    await m.addColumn(conversations, conversations.taskBrief);
   }
 
   Future<void> _upgradeApiModelModalitiesSchema(int from) async {

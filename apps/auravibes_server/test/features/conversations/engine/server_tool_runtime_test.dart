@@ -59,6 +59,7 @@ void main() {
         clearModel: false,
         clearAgent: false,
         clearReasoningConfig: false,
+        clearTaskBrief: false,
         clearParent: false,
       );
       expect(

@@ -81,6 +81,7 @@ import 'package:auravibes_app/widgets/setup_page_frame.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -122,6 +123,116 @@ void main() {
       await _sdkRoboto(),
     );
   });
+  testWidgets('conversation task brief capture flow', (tester) async {
+    final fixture = await UxValidationFixture.create();
+    const size = Size(466, 678);
+    final router = await fixture.pump(
+      tester,
+      '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
+      size: size,
+      useProductionRouter: true,
+      realSessions: true,
+      emptyModels: false,
+    );
+    for (var attempt = 0; attempt < 250; attempt++) {
+      if (find.byType(ChatConversationScreen).evaluate().isNotEmpty &&
+          find.text('Project research').evaluate().isNotEmpty) {
+        break;
+      }
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(ChatConversationScreen), findsOneWidget);
+    expect(find.text('Project research'), findsWidgets);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
+    );
+    await fixture.settle(tester);
+    await tester.runAsync(() async {
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('ux-capture')),
+      );
+      final rendered = await boundary.toImage();
+      final pixels = await rendered.toByteData();
+      rendered.dispose();
+      expect(pixels, isNotNull);
+      final data = pixels ?? (throw StateError('Missing rendered pixels'));
+      final colors = <int>{};
+      for (var offset = 0; offset < data.lengthInBytes; offset += 4) {
+        final _ = colors.add(data.getUint32(offset));
+        if (colors.length > 2) break;
+      }
+      expect(
+        colors.length,
+        greaterThan(2),
+        reason: 'The production route must paint real content before capture.',
+      );
+    });
+    final button = find.byKey(const ValueKey('conversation-task-brief-button'));
+    const baseline = bool.fromEnvironment('TASK_BRIEF_CAPTURE_BASELINE');
+    if (!baseline) expect(button, findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'conversation-task-brief-controls',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    if (baseline) {
+      await fixture.close(tester);
+
+      return;
+    }
+    await tester.tap(button);
+    await fixture.settle(tester);
+    final editor = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    const brief =
+        'Objective: Plan the weekend trip.\n'
+        'Constraints: Stay within the budget.\n'
+        'Open tasks: Confirm the train times.';
+    await tester.enterText(editor, brief);
+    await fixture.settle(tester);
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'conversation-task-brief-editor',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await tester.tap(find.widgetWithText(TextButton, 'Save'));
+    await fixture.settle(tester);
+    final saved = await fixture.database
+        .customSelect(
+          'SELECT task_brief FROM conversations WHERE id = ?',
+          variables: [Variable<String>(fixture.chatId)],
+        )
+        .getSingle();
+    expect(saved.read<String>('task_brief'), brief);
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'conversation-task-brief-saved',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await fixture.close(tester);
+  });
+
   testWidgets('workspace erasure confirmation disclosure', (tester) async {
     const size = Size(960, 1400);
     final fixture = await UxValidationFixture.create(

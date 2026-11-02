@@ -9,4 +9,5 @@ fields:
   modelId: String?
   agentId: String?
   reasoningConfigJson: String?
+  taskBrief: String?
   parentConversationId: String?

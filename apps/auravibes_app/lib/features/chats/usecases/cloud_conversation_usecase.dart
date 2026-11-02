@@ -116,6 +116,7 @@ UpdateConversationRequest _conversationUpdateRequest({
     clearModel: false,
     clearAgent: patch.clearAgent,
     clearReasoningConfig: patch.clearReasoningConfiguration,
+    clearTaskBrief: patch.clearTaskBrief,
     clearParent: false,
   ),
   patch,
@@ -160,6 +161,7 @@ CreateConversationRequest _withConversationCreationFields(
   modelId: value.modelId,
   agentId: value.agentId,
   reasoningConfigJson: value.reasoningConfiguration?.encode(),
+  taskBrief: value.taskBrief,
   parentConversationId: value.parentConversationId,
 );
 
@@ -173,6 +175,7 @@ UpdateConversationRequest _withConversationPatch(
   modelId: patch.modelId,
   agentId: patch.agentId,
   reasoningConfigJson: patch._reasoningConfigJson,
+  taskBrief: patch.taskBrief,
 );
 
 extension _ConversationPatchReasoningJson on ConversationPatch {

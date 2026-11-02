@@ -82,12 +82,14 @@ void main() {
           title: 'Conversation',
           workspaceId: 'local',
           toolAccessMode: .allowAll,
+          taskBrief: 'User-authored objective.',
         ),
       );
       final create =
           verify(() => endpoint.create(captureAny())).captured.single
               as CreateConversationRequest;
       expect(create.toolAccessMode, 'allow_all');
+      expect(create.taskBrief, 'User-authored objective.');
       expect(create.workspaceId, _workspace.cloudWorkspaceId);
       final conversation = ConversationEntity(
         id: summary.id,
@@ -98,6 +100,7 @@ void main() {
         updatedAt: now,
         revision: 1,
         toolAccessMode: .allowAll,
+        taskBrief: 'User-authored objective.',
       );
       for (final mode in [
         ConversationToolAccessMode.allowAll,
@@ -115,6 +118,26 @@ void main() {
         expect(update.workspaceId, _workspace.cloudWorkspaceId);
         expect(update.expectedRevision, conversation.revision);
       }
+
+      final _ = await usecase.update(
+        conversation,
+        const ConversationPatch(taskBrief: 'Updated user objective.'),
+      );
+      final briefUpdate =
+          verify(() => endpoint.update(captureAny())).captured.single
+              as UpdateConversationRequest;
+      expect(briefUpdate.taskBrief, 'Updated user objective.');
+      expect(briefUpdate.clearTaskBrief, isFalse);
+
+      final _ = await usecase.update(
+        conversation,
+        const ConversationPatch(clearTaskBrief: true),
+      );
+      final briefClear =
+          verify(() => endpoint.update(captureAny())).captured.single
+              as UpdateConversationRequest;
+      expect(briefClear.taskBrief, isNull);
+      expect(briefClear.clearTaskBrief, isTrue);
     },
   );
 

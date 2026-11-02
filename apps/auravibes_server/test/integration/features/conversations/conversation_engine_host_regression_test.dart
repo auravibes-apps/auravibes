@@ -123,7 +123,11 @@ Future<_Fixture> _prepareConversationFixture(
   );
 }
 
-Future<void> _configureRegressionProvider(_Fixture fixture) async {
+Future<void> _configureRegressionProvider(
+  _Fixture fixture, {
+  int limitContext = 1,
+  int limitOutput = 1,
+}) async {
   fixture.database.passwords['workspaceSecretKey'] =
       'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
   final now = DateTime.now().toUtc();
@@ -147,8 +151,8 @@ Future<void> _configureRegressionProvider(_Fixture fixture) async {
       providerId: 'openai',
       modelId: 'model-1',
       name: 'Model',
-      limitContext: 1,
-      limitOutput: 1,
+      limitContext: limitContext,
+      limitOutput: limitOutput,
       modalitiesInput: const ['text'],
       modalitiesOutput: const ['text'],
       costInput: 0,
@@ -222,6 +226,123 @@ void main() {
           endpoints,
           languageCode: languageCode,
         );
+
+    test(
+      'user task brief is sent after system context and after compaction',
+      () async {
+        final fixture = await prepare();
+        await _configureRegressionProvider(fixture);
+        const brief = 'Keep the current user objective in view.';
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await Conversation.db.updateRow(
+          fixture.database,
+          conversation.copyWith(
+            taskBrief: brief,
+            activeCompactionCheckpointId: 'task-brief-checkpoint',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            stableId: 'task-brief-checkpoint',
+            role: 'system',
+            kind: 'system',
+            status: 'sent',
+            content: 'Compacted transcript summary',
+            metadataJson: jsonEncode({'isCompactionSummary': true}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            stableId: 'task-brief-current-message',
+            role: 'user',
+            kind: 'text',
+            status: 'sent',
+            content: 'Continue from the compacted summary.',
+            metadataJson: fixture.messages
+                .singleWhere((message) => message.role == 'user')
+                .metadataJson,
+            revision: 1,
+            createdAt: now.add(const Duration(seconds: 1)),
+            updatedAt: now.add(const Duration(seconds: 1)),
+          ),
+        );
+        final messages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) => table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.id,
+        );
+        final requests = <Map<String, dynamic>>[];
+        final host = ServerConversationEngineHost(
+          admissionGate: const _ImmediateAdmissionGate(),
+          lookup: (_) async => [InternetAddress('8.8.8.8')],
+          providerTransport: (body) async {
+            requests.add(body);
+            return ProviderTransportResponse(
+              statusCode: HttpStatus.ok,
+              body: Stream.value(
+                utf8.encode(
+                  'data: {"id":"response","choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\n'
+                  'data: [DONE]\n\n',
+                ),
+              ),
+            );
+          },
+        );
+
+        await host.executeTurn(
+          fixture.database,
+          job: fixture.job,
+          turn: fixture.turn,
+          messages: messages,
+          liveTurns: const _NoopProgressPublisher(),
+        );
+
+        final requestMessages = requests.single['messages'] as List;
+        final briefIndex = requestMessages.indexWhere(
+          (message) =>
+              message is Map &&
+              message['role'] == 'user' &&
+              message['content'] ==
+                  'User-authored conversation brief:\n\n$brief',
+        );
+        final summaryIndex = requestMessages.indexWhere(
+          (message) =>
+              message is Map &&
+              message['content'] == 'Compacted transcript summary',
+        );
+        final systemContextIndex = requestMessages.indexWhere(
+          (message) => message is Map && message['role'] == 'system',
+        );
+        expect(briefIndex, greaterThanOrEqualTo(0));
+        expect(systemContextIndex, greaterThanOrEqualTo(0));
+        expect(briefIndex, greaterThan(systemContextIndex));
+        expect(summaryIndex, greaterThan(briefIndex));
+        expect(
+          messages.every((message) => !message.content.contains(brief)),
+          isTrue,
+        );
+        expect(
+          (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))?.taskBrief,
+          brief,
+        );
+      },
+    );
 
     test('Connector writes require Default approval and durable uncertainty prevents duplicate effects', () async {
       final fixture = await prepare();
@@ -1104,6 +1225,15 @@ void main() {
       () async {
         final fixture = await prepare();
         await _configureRegressionProvider(fixture);
+        const brief = 'Keep the user-authored objective in view.';
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await Conversation.db.updateRow(
+          fixture.database,
+          conversation.copyWith(taskBrief: brief),
+        );
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
@@ -1154,6 +1284,15 @@ void main() {
         );
 
         final messages = requests.single['messages'] as List;
+        expect(
+          messages.whereType<Map>().any(
+            (message) =>
+                message['role'] == 'user' &&
+                message['content'] ==
+                    'User-authored conversation brief:\n\n$brief',
+          ),
+          isTrue,
+        );
         final deniedAssistantMessage = messages.whereType<Map>().singleWhere(
           (message) =>
               message['role'] == 'assistant' && message['tool_calls'] is List,
@@ -2470,6 +2609,281 @@ void main() {
       expect(call.resultJson, isNull);
     });
   });
+
+  // Real worker dispatch overlaps transaction scopes and commits job state.
+  // Use a separate ephemeral database instead of the rollback proxy.
+  withServerpod(
+    'ConversationEngineHostRegression task brief lifecycle',
+    (sessionBuilder, endpoints) {
+      Future<_Fixture> prepare() =>
+          _prepareConversationFixture(sessionBuilder, endpoints);
+
+      test(
+        'task brief survives real worker compaction, edits, restore, and clear',
+        () async {
+          final fixture = await prepare();
+          // The shared fixture's one-token context cannot retain the tail
+          // required for a real compaction range.
+          await _configureRegressionProvider(
+            fixture,
+            limitContext: 4096,
+            limitOutput: 512,
+          );
+          const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+          final initial = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))!;
+          await Conversation.db.updateRow(
+            fixture.database,
+            initial.copyWith(
+              taskBrief: brief,
+              modelId: VirtualWorkspaceModelSelectionId.encode(
+                connectionId: 'connection-1',
+                modelId: 'model-1',
+              ),
+            ),
+          );
+          final requests = <Map<String, dynamic>>[];
+          final host = ServerConversationEngineHost(
+            admissionGate: const _ImmediateAdmissionGate(),
+            lookup: (_) async => [InternetAddress('8.8.8.8')],
+            providerTransport: (body) async {
+              requests.add(body);
+              if (body['stream'] == false) {
+                return ProviderTransportResponse(
+                  statusCode: HttpStatus.ok,
+                  body: Stream.value(
+                    utf8.encode(
+                      jsonEncode({
+                        'id': 'summary-response',
+                        'choices': [
+                          {
+                            'message': {
+                              'role': 'assistant',
+                              'content': 'Earlier discussion summarized.',
+                            },
+                            'finish_reason': 'stop',
+                          },
+                        ],
+                      }),
+                    ),
+                  ),
+                );
+              }
+              return ProviderTransportResponse(
+                statusCode: HttpStatus.ok,
+                body: Stream.value(
+                  utf8.encode(
+                    'data: {"id":"response","choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}]}\n\n'
+                    'data: [DONE]\n\n',
+                  ),
+                ),
+              );
+            },
+          );
+          final worker = ConversationWorker(
+            host: host,
+            publishConversationJob: (_, _) async {},
+            publishConversation: (
+              _, {
+              required workspaceId,
+              required conversationId,
+            }) async {},
+          );
+          Future<Conversation> conversation() async =>
+              (await Conversation.db.findById(
+                fixture.database,
+                fixture.conversationId,
+              ))!;
+          Future<void> runJobs() => runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          List<Map> briefMessages(Map<String, dynamic> request) =>
+              (request['messages'] as List)
+                  .whereType<Map>()
+                  .where(
+                    (message) =>
+                        (message['content'] as Object?).toString().startsWith(
+                          'User-authored conversation brief:\n\n',
+                        ),
+                  )
+                  .toList();
+          Future<void> continueWith(String suffix) async {
+            final beforeQueue = await conversation();
+            final _ = await endpoints.conversation.queueConversationMessage(
+              fixture.session,
+              QueueConversationMessageRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'queue-brief-$suffix',
+                conversationId: initial.stableId,
+                expectedProjectionRevision: beforeQueue.projectionRevision,
+                clientMessageId: 'brief-user-$suffix',
+                content: 'Continue $suffix.',
+                attachmentIds: const [],
+              ),
+            );
+            final queued = await conversation();
+            final _ = await endpoints.conversation.continueConversation(
+              fixture.session,
+              ContinueConversationRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'continue-brief-$suffix',
+                conversationId: initial.stableId,
+                expectedProjectionRevision: queued.projectionRevision,
+              ),
+            );
+            await runJobs();
+          }
+
+          Future<void> saveBrief(String? value, String suffix) async {
+            final current = await conversation();
+            final _ = await endpoints.conversation.update(
+              fixture.session,
+              UpdateConversationRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'save-brief-$suffix',
+                conversationId: initial.stableId,
+                expectedRevision: current.revision,
+                taskBrief: value,
+                clearTaskBrief: value == null,
+                clearModel: false,
+                clearAgent: false,
+                clearReasoningConfig: false,
+                clearParent: false,
+              ),
+            );
+          }
+
+          await runJobs();
+          final initialJob = await ConversationJob.db.findById(
+            fixture.database,
+            fixture.job.id!,
+          );
+          expect(
+            initialJob?.status,
+            ConversationJobStatuses.completed,
+            reason: 'Initial worker error: ${initialJob?.lastErrorCode}',
+          );
+          expect(requests, hasLength(1));
+          expect(
+            briefMessages(requests.single).single['content'],
+            'User-authored conversation brief:\n\n$brief',
+          );
+          final tailTime = DateTime.now().toUtc();
+          await ConversationMessage.db.insertRow(
+            fixture.database,
+            ConversationMessage(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+              stableId: 'brief-compaction-tail',
+              role: 'user',
+              kind: 'text',
+              status: 'sent',
+              content: 'Keep this recent message.',
+              metadataJson: fixture.messages
+                  .firstWhere((message) => message.role == 'user')
+                  .metadataJson,
+              revision: 1,
+              createdAt: tailTime,
+              updatedAt: tailTime,
+            ),
+          );
+          final beforeCompact = await conversation();
+          final _ =
+              await ConversationUseCases(
+                conversation_repo.ConversationRepository(),
+                publishConversationJob: (_, _) async {},
+              ).compact(
+                fixture.database,
+                userId: fixture.userId,
+                request: CompactConversationRequest(
+                  workspaceId: fixture.workspaceId,
+                  requestId: 'real-task-brief-compaction',
+                  conversationId: initial.stableId,
+                  expectedConversationRevision: beforeCompact.revision,
+                ),
+              );
+          await runJobs();
+          final compactionJob = await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.requestId.equals('real-task-brief-compaction'),
+          );
+          expect(
+            compactionJob?.status,
+            ConversationJobStatuses.completed,
+            reason: 'Compaction worker error: ${compactionJob?.lastErrorCode}',
+          );
+          final compacted = await conversation();
+          expect(compacted.taskBrief, brief);
+          final checkpoint = compacted.activeCompactionCheckpointId;
+          expect(checkpoint, isNotNull);
+          expect(
+            requests.where((request) => request['stream'] == false),
+            hasLength(1),
+          );
+
+          await continueWith('after-compaction');
+          expect(
+            briefMessages(requests.last).single['content'],
+            'User-authored conversation brief:\n\n$brief',
+          );
+          // The server forwards the checkpoint's persisted system role.
+          expect(
+            (requests.last['messages'] as List).whereType<Map>().any(
+              (message) =>
+                  message['content'] == 'Earlier discussion summarized.' &&
+                  message['role'] == 'system',
+            ),
+            isTrue,
+          );
+          const edited =
+              '  Edited after compaction.\nPreserve this decision.  ';
+          await saveBrief(edited, 'edited');
+          final beforeRestore = await conversation();
+          final _ = await endpoints.conversation.restoreCompactionCheckpoint(
+            fixture.session,
+            RestoreConversationCheckpointRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'restore-brief-checkpoint',
+              conversationId: initial.stableId,
+              checkpointMessageId: checkpoint!,
+              expectedConversationRevision: beforeRestore.revision,
+            ),
+          );
+          expect((await conversation()).taskBrief, edited);
+          await continueWith('after-restore');
+          expect(
+            briefMessages(requests.last).single['content'],
+            'User-authored conversation brief:\n\n$edited',
+          );
+          await saveBrief(null, 'cleared');
+          await continueWith('after-clear');
+          expect(briefMessages(requests.last), isEmpty);
+          expect((await conversation()).taskBrief, isNull);
+          final storedMessages = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationId),
+          );
+          expect(
+            storedMessages.any(
+              (message) =>
+                  message.content.contains(brief) ||
+                  message.content.contains(edited),
+            ),
+            isFalse,
+          );
+        },
+      );
+    },
+    rollbackDatabase: RollbackDatabase.disabled,
+    ephemeralDatabase: true,
+  );
 
   // Provider latency and workspace erasure overlap database transactions.
   // Use a fresh database without the rollback proxy's single-transaction limit.

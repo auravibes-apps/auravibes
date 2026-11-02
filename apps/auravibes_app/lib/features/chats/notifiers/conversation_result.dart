@@ -102,6 +102,17 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     );
   }
 
+  Future<void> setTaskBrief(String? taskBrief) async {
+    if (taskBrief != null && taskBrief.trim().isEmpty) return;
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    final patch = taskBrief == null
+        ? const ConversationPatch(clearTaskBrief: true)
+        : ConversationPatch(taskBrief: taskBrief);
+    await _saveConversationPatch(result.conversation, patch);
+  }
+
   Future<void> rename(ConversationEntity conversation, String title) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) return;
@@ -132,33 +143,40 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  Future<ConversationEntity> _updateConversation(
-    ConversationEntity conversation,
-    ConversationPatch patch,
-  ) async {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(_workspaceId).future,
-    );
-    if (cloud != null) {
-      final updated = await cloud.update(conversation, patch);
-
-      return _updatedConversation(conversation, updated);
-    }
-
-    return await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(conversation.id, patch);
-  }
-
   Future<void> _saveConversationPatch(
     ConversationEntity conversation,
     ConversationPatch patch,
   ) async {
-    final updated = await _updateConversation(conversation, patch);
+    final updated = await _updateConversation(
+      ref,
+      _workspaceId,
+      conversation,
+      patch,
+    );
     if (!ref.mounted) return;
 
     state = AsyncData(ConversationFound(updated));
   }
+}
+
+Future<ConversationEntity> _updateConversation(
+  Ref ref,
+  String workspaceId,
+  ConversationEntity conversation,
+  ConversationPatch patch,
+) async {
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(workspaceId).future,
+  );
+  if (cloud != null) {
+    final updated = await cloud.update(conversation, patch);
+
+    return _updatedConversation(conversation, updated);
+  }
+
+  return await ref
+      .read(conversationRepositoryProvider)
+      .patchConversation(conversation.id, patch);
 }
 
 Future<ConversationPatch> _modelUpdatePatch(
@@ -216,6 +234,7 @@ ConversationEntity _updatedConversation(
   reasoningConfiguration: ReasoningConfiguration.decode(
     updated.reasoningConfigJson,
   ),
+  taskBrief: updated.taskBrief,
   toolAccessMode: ConversationToolAccessModeStorage.decode(
     updated.toolAccessMode,
   ),

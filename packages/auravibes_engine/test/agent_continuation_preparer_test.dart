@@ -19,6 +19,66 @@ void main() {
       expect(result.transcriptContextEntries, isEmpty);
     });
 
+    test(
+      'passes the conversation brief separately from transcript context',
+      () async {
+        final usecase = _usecase(
+          loadConversation: (_) async => const AgentConversationReference(
+            workspaceId: 'workspace-1',
+            modelId: 'model-1',
+            taskBrief: 'User-authored objective.',
+          ),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.chatHistory.map((message) => message.content), [
+          'skill context',
+          'User-authored objective.',
+          'hello',
+        ]);
+        expect(
+          result.requestedContextMessages.map((message) => message.content),
+          ['skill context'],
+        );
+      },
+    );
+
+    test(
+      'allows a tagged model summary before the current user without a brief',
+      () async {
+        final usecase = _usecase(
+          chatHistory: const [
+            _Chat(
+              'compacted summary',
+              isModel: true,
+              isCompactionSummary: true,
+            ),
+            _Chat('current user'),
+          ],
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(result.chatHistory.first.isModel, isTrue);
+        expect(result.chatHistory.last.content, 'current user');
+      },
+    );
+
+    test('rejects ordinary model content before the current user', () async {
+      final usecase = _usecase(
+        chatHistory: const [
+          _Chat('ordinary model message', isModel: true),
+          _Chat('current user'),
+        ],
+      );
+
+      await expectLater(
+        usecase.call(conversationId: 'conversation-1'),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
     test('disables tools when selected model cannot use them', () async {
       final usecase = _usecase(
         loadSelectedModel: (_) async =>
@@ -59,6 +119,7 @@ AgentContinuationPreparer<_Model, String, _Chat, String> _usecase({
   Future<AgentConversationReference?> Function(String conversationId)?
   loadConversation,
   Future<_Model?> Function(String modelId)? loadSelectedModel,
+  List<_Chat>? chatHistory,
 }) {
   return AgentContinuationPreparer<_Model, String, _Chat, String>(
     provider: _FakeAgentContinuationProvider(
@@ -69,6 +130,7 @@ AgentContinuationPreparer<_Model, String, _Chat, String> _usecase({
           ),
       loadSelectedModel ??
           (_) async => const _Model('model-1', supportsToolCalls: true),
+      chatHistory: chatHistory,
     ),
   );
 }
@@ -76,8 +138,9 @@ AgentContinuationPreparer<_Model, String, _Chat, String> _usecase({
 class const _FakeAgentContinuationProvider(
   final Future<AgentConversationReference?> Function(String conversationId)
   _loadConversation,
-  final Future<_Model?> Function(String modelId) _loadSelectedModel,
-) implements AgentContinuationProvider<_Model, String, _Chat, String> {
+  final Future<_Model?> Function(String modelId) _loadSelectedModel, {
+  final List<_Chat>? chatHistory,
+}) implements AgentContinuationProvider<_Model, String, _Chat, String> {
   @override
   Future<AgentConversationReference?> loadConversation(String conversationId) {
     return _loadConversation(conversationId);
@@ -130,8 +193,14 @@ class const _FakeAgentContinuationProvider(
     required List<String> messages,
     required _Model model,
     required List<_Chat> skillContextMessages,
+    required String? taskBrief,
   }) async {
-    return [...skillContextMessages, ...messages.map(_Chat.new)];
+    return chatHistory ??
+        [
+          ...skillContextMessages,
+          if (taskBrief != null) _Chat(taskBrief),
+          ...messages.map(_Chat.new),
+        ];
   }
 
   @override
@@ -144,8 +213,11 @@ class const _FakeAgentContinuationProvider(
   bool isSkillContextMessage(_Chat message) => message.isSkillContext;
 
   @override
+  bool isCompactionSummaryMessage(_Chat message) => message.isCompactionSummary;
+
+  @override
   bool isUserMessage(_Chat message) {
-    return !message.isSystem && !message.isSkillContext;
+    return !message.isSystem && !message.isSkillContext && !message.isModel;
   }
 }
 
@@ -155,4 +227,6 @@ class const _Chat(
   final String content, {
   final bool isSystem = false,
   final bool isSkillContext = false,
+  final bool isModel = false,
+  final bool isCompactionSummary = false,
 });

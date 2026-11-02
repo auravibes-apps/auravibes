@@ -1,0 +1,19 @@
+{
+  "workflow_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41484501815/attempts/1",
+  "original_successful_capture_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41482674673/attempts/1",
+  "original_png_bytes_preserved": true,
+  "baseline_sha": "1aaa31f61128fe810ca35ef7a00205edb9233175",
+  "feature_sha": "750e91b32f5f211010bed263156387b17e87d13b",
+  "generated_patch_sha256": "39bf15ca976e74649df0300320b0e3d429d3b131df7ec3d945af8a57acc8cab6",
+  "capture_harness_sha256": "943ee412cf685ead3d3b789fc5fc11ac6fe08a6168475d9e0a19464ca5a026a2",
+  "identical_before_after_harness_verified": true,
+  "scope": "Production MyApp ConversationRoute with real router, sessions, repositories, and SQLite storage; Flutter widget-test renderer.",
+  "viewport": [
+    466,
+    678
+  ],
+  "locale": "en",
+  "theme": "light",
+  "text_scale": 1,
+  "validation": "Both production captures and persisted editor save passed; all four PNGs visually inspected and byte-identical to the original successful captures. Engine 7/7 and server protocol/runtime 45/45 passed. Final app/widget/cloud validation is assigned to required PR CI."
+}

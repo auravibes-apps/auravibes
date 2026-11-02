@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/background_work_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_history_redaction.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -22,7 +23,10 @@ void main() {
   setUp(() => clearAppDatabase(database));
   tearDownAll(database.close);
 
-  Future<void> insertSource({String? reasoningConfigJson}) async {
+  Future<void> insertSource({
+    String? reasoningConfigJson,
+    String? taskBrief,
+  }) async {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
@@ -32,6 +36,7 @@ void main() {
         workspaceId: .new(workspace.id),
         title: const .new('Source'),
         reasoningConfigJson: .new(reasoningConfigJson),
+        taskBrief: .new(taskBrief),
       ),
     );
   }
@@ -56,6 +61,72 @@ void main() {
       metadata: .new(metadata),
     ),
   );
+
+  test('briefs persist and fork independently of transcript edits', () async {
+    await insertSource(taskBrief: 'Keep the user objective in view.');
+    final _ = await insertMessage(
+      id: 'user-1',
+      createdAt: .utc(2026),
+      isUser: true,
+      status: .sent,
+    );
+
+    final sourceBeforeFork = await repository.getConversationById('source');
+    expect(sourceBeforeFork?.taskBrief, 'Keep the user objective in view.');
+    final fork = await repository.forkConversation('source');
+    expect(fork.taskBrief, 'Keep the user objective in view.');
+
+    final _ = await insertMessage(
+      id: 'checkpoint',
+      createdAt: .utc(2026, 1, 1, 0, 0, 1),
+      isUser: false,
+      status: .sent,
+      messageType: .system,
+      metadata: jsonEncode({'isCompactionSummary': true}),
+    );
+    final _ = await repository.patchConversation(
+      'source',
+      const ConversationPatch(activeCompactionCheckpointId: 'checkpoint'),
+    );
+    expect(
+      (await repository.getConversationById('source'))?.taskBrief,
+      'Keep the user objective in view.',
+    );
+
+    final _ = await repository.patchConversation(
+      'source',
+      const ConversationPatch(taskBrief: 'Source edit.'),
+    );
+    expect(
+      (await repository.getConversationById('source'))?.taskBrief,
+      'Source edit.',
+    );
+    expect(
+      (await repository.getConversationById(fork.id))?.taskBrief,
+      'Keep the user objective in view.',
+    );
+
+    final _ = await repository.patchConversation(
+      fork.id,
+      const ConversationPatch(taskBrief: 'Fork edit.'),
+    );
+    final messagesBeforeClear = await database.messageDao
+        .getMessagesByConversation('source');
+    final _ = await repository.patchConversation(
+      'source',
+      const ConversationPatch(clearTaskBrief: true),
+    );
+
+    expect((await repository.getConversationById('source'))?.taskBrief, isNull);
+    expect(
+      (await repository.getConversationById(fork.id))?.taskBrief,
+      'Fork edit.',
+    );
+    expect(
+      await database.messageDao.getMessagesByConversation('source'),
+      messagesBeforeClear,
+    );
+  });
 
   test(
     'fork history redacts workspace results before and after materialization',
@@ -658,7 +729,7 @@ void main() {
   test(
     'deleting source materializes fork and keeps shared attachments',
     () async {
-      final _ = await insertSource();
+      await insertSource(taskBrief: 'Brief at fork creation.');
       final base = DateTime.utc(2026);
       final sourceMessage = await insertMessage(
         id: 'assistant-1',
@@ -684,6 +755,10 @@ void main() {
         'source',
         throughMessageId: sourceMessage.id,
       );
+      final _ = await repository.patchConversation(
+        'source',
+        const ConversationPatch(taskBrief: 'Later source edit.'),
+      );
       final boundaries = await repository.captureForkBoundaries('source');
       expect(boundaries[fork.id], sourceMessage.id);
 
@@ -698,6 +773,7 @@ void main() {
 
       final materialized = await repository.getConversationById(fork.id);
       expect(materialized?.isForkMaterialized, isTrue);
+      expect(materialized?.taskBrief, 'Brief at fork creation.');
       final messages = await MessageRepository(database)
           .getMessagesByConversation(fork.id);
       expect(messages, hasLength(1));
