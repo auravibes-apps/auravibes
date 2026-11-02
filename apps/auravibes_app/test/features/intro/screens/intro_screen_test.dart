@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
@@ -123,6 +124,44 @@ void main() {
       (await fixture.database.workspaceDao.getAllWorkspaces()).single.name,
       'Personal work',
     );
+  });
+
+  testWidgets('quick start disables starter changes while creating workspace', (
+    tester,
+  ) async {
+    final useCase = _CreateWorkspaceUseCase();
+    final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
+    addTearDown(fixture.dispose);
+    final workspaceCreation = Completer<WorkspaceEntity>();
+    when(() => useCase.call(name: 'Personal work'))
+        .thenAnswer((_) => workspaceCreation.future);
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _tapVisible(tester, find.byKey(_dayStarterKey));
+    await _tapVisible(tester, find.byKey(_quickStartKey));
+    await tester.pump();
+
+    for (final key in [
+      _dayStarterKey,
+      _shoppingStarterKey,
+      _messageStarterKey,
+    ]) {
+      final button = find.descendant(
+        of: find.byKey(key),
+        matching: find.byType(AuraButton),
+      );
+      expect(tester.widget<AuraButton>(button).disabled, isTrue);
+    }
+
+    final localWorkspace = await tester.runAsync(
+      () =>
+          WorkspaceRepository(fixture.database)
+              .createWorkspace(const .new(name: 'Personal work', type: .local)),
+    );
+    if (localWorkspace == null) {
+      fail('Quick-start workspace creation did not finish');
+    }
+    workspaceCreation.complete(localWorkspace);
+    await _pumpUntilFound(tester, find.textContaining('new chat:'));
   });
 
   for (final locale in [const Locale('en'), const Locale('es')]) {

@@ -116,9 +116,11 @@ class _IntroWelcomeViewport extends StatelessWidget {
                     pending: state.widget.quickStartPending,
                     error: state.widget.quickStartError,
                   ),
-                  for (var index = 0;
-                      index < _additionalIntroPages.length;
-                      index++)
+                  for (
+                    var index = 0;
+                    index < _additionalIntroPages.length;
+                    index++
+                  )
                     _IntroWelcomePage(
                       page: _additionalIntroPages[index],
                       index: index + 1,
@@ -183,6 +185,7 @@ class const _FirstChatGuide({
         ),
         EmptyConversationStarterChoices(
           onSelect: onSelect,
+          disabled: pending,
           selectedText: selectedText,
           keyPrefix: 'intro_starter',
         ),

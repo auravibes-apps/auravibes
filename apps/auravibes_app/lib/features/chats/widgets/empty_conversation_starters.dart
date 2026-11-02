@@ -114,6 +114,7 @@ class const _EmptyConversationStarterHeading() extends StatelessWidget {
 
 class const EmptyConversationStarterChoices({
   required final ValueChanged<ChatDraft> onSelect,
+  final bool disabled = false,
   final String? selectedText,
   final String keyPrefix = 'chat_empty_starter',
   super.key,
@@ -131,6 +132,7 @@ class const EmptyConversationStarterChoices({
         _EmptyConversationStarterButton(
           localizationKey: starter.localizationKey,
           onSelect: onSelect,
+          disabled: disabled,
           selectedText: selectedText,
           key: ValueKey('${keyPrefix}_${starter.id}'),
         ),
@@ -144,6 +146,7 @@ class const EmptyConversationStarterChoices({
 class const _EmptyConversationStarterButton({
   required final String localizationKey,
   required final ValueChanged<ChatDraft> onSelect,
+  required final bool disabled,
   final String? selectedText,
   super.key,
 }) extends StatelessWidget {
@@ -158,6 +161,7 @@ class const _EmptyConversationStarterButton({
         child: Text(text),
         variant: selected ? .secondary : .outlined,
         isFullWidth: true,
+        disabled: disabled,
       ),
       selected: selected,
     );
