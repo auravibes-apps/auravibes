@@ -4,12 +4,12 @@ import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/filtered_cloud_conversation_page_reader.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -29,8 +29,6 @@ typedef _ForkedConversationRequest = ({
   String workspaceId,
   String sourceConversationId,
 });
-
-const _cloudConversationPageSize = 100;
 
 const _ConversationPagination _defaultConversationPagination = (
   limit: null,
@@ -209,7 +207,7 @@ _readForkedCloudConversations(
   String sourceConversationId,
 ) async {
   final conversations = _mapCloudConversations(
-    await _readAllCloudConversationPages(gateway, cloud),
+    await FilteredCloudConversationPageReader.readAllPages(gateway, cloud),
     cloud.localWorkspaceId,
   );
   final currentSequence = await _cloudConversationSequence(gateway);
@@ -304,8 +302,15 @@ _readCloudConversations(
   _ConversationListOptions options,
 ) async {
   final conversations = options.fetchAllPages
-      ? await _readAllCloudConversationPages(gateway, cloud)
-      : await _readFilteredCloudConversationPage(gateway, cloud, options);
+      ? await FilteredCloudConversationPageReader.readAllPages(gateway, cloud)
+      : await FilteredCloudConversationPageReader(
+          gateway,
+          cloud,
+          options.scope,
+          options.pagination,
+          options.search,
+          options.archivedIds,
+        ).read();
   final currentSequence = await _cloudConversationSequence(gateway);
 
   return _cloudConversationSnapshot(
@@ -323,121 +328,6 @@ _cloudConversationSnapshot(
 ) => (
   value: _mapCloudConversations(conversations, localWorkspaceId),
   currentSequence: currentSequence,
-);
-
-Future<List<ConversationSummary>> _readFilteredCloudConversationPage(
-  CloudWorkspaceStateGateway gateway,
-  CloudWorkspaceRef cloud,
-  _ConversationListOptions options,
-) => _FilteredCloudConversationPageReader(gateway, cloud, options).read();
-
-// ignore: prefer-match-file-name - Keep the private page reader by its provider.
-class _FilteredCloudConversationPageReader(
-  final CloudWorkspaceStateGateway _gateway,
-  final CloudWorkspaceRef _cloud,
-  final _ConversationListOptions _options,
-) {
-  final _conversations = <ConversationSummary>[];
-  final _seenCursors = <String>{};
-  int _skipped = 0;
-  String? _cursor;
-
-  bool get _stopAfterFirstPage =>
-      _options.scope == ConversationListScope.active &&
-      _options.pagination.limit == null &&
-      _options.pagination.offset == 0;
-
-  Future<List<ConversationSummary>> read() async {
-    if (_options.scope == .archived && _options.archivedIds.isEmpty) return [];
-    if (_options.pagination.limit == 0) return [];
-
-    while (true) {
-      final page = await _readCloudConversationPageAtCursor(
-        _gateway,
-        _cloud,
-        _cursor,
-        search: _options.search,
-      );
-      final reachedLimit = _appendMatchingConversations(page.conversations);
-      final nextCursor = _nextCloudConversationCursor(
-        page.nextCursor,
-        _seenCursors,
-      );
-      if (reachedLimit || _stopAfterFirstPage || nextCursor == null) {
-        return _conversations;
-      }
-      _cursor = nextCursor;
-    }
-  }
-
-  bool _appendMatchingConversations(List<ConversationSummary> page) {
-    for (final conversation in page) {
-      final isArchived = _options.archivedIds.contains(conversation.id);
-      if (isArchived != (_options.scope == .archived)) continue;
-      if (_skipped < _options.pagination.offset) {
-        _skipped++;
-        continue;
-      }
-      _conversations.add(conversation);
-      final limit = _options.pagination.limit;
-      if (limit != null && _conversations.length >= limit) return true;
-    }
-
-    return false;
-  }
-}
-
-Future<List<ConversationSummary>> _readAllCloudConversationPages(
-  CloudWorkspaceStateGateway gateway,
-  CloudWorkspaceRef cloud,
-) async {
-  final conversations = <ConversationSummary>[];
-  final seenCursors = <String>{};
-  String? cursor;
-
-  while (true) {
-    final page = await _readCloudConversationPageAtCursor(
-      gateway,
-      cloud,
-      cursor,
-    );
-    conversations.addAll(page.conversations);
-
-    cursor = _nextCloudConversationCursor(page.nextCursor, seenCursors);
-    if (cursor == null) return conversations;
-  }
-}
-
-Future<ConversationPage> _readCloudConversationPageAtCursor(
-  CloudWorkspaceStateGateway gateway,
-  CloudWorkspaceRef cloud,
-  String? cursor, {
-  String search = '',
-}) => gateway.client.conversation.listPage(
-  .new(
-    workspaceId: cloud.cloudWorkspaceId,
-    limit: _cloudConversationPageSize,
-    cursor: cursor,
-    search: search.isEmpty ? null : search,
-  ),
-);
-
-String? _nextCloudConversationCursor(
-  String? nextCursor,
-  Set<String> seenCursors,
-) {
-  if (nextCursor == null) return null;
-  if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
-    _throwInvalidCloudConversationCursor();
-  }
-
-  return nextCursor;
-}
-
-Never _throwInvalidCloudConversationCursor() => throw const CloudAppException(
-  localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-  context: .conversation,
-  code: 'invalidCursor',
 );
 
 Future<int> _cloudConversationSequence(
