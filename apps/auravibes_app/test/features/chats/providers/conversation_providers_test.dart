@@ -16,7 +16,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -793,7 +793,7 @@ ProviderContainer _cloudContainer(
       ),
       if (database == null)
         conversationArchiveStateIdsProvider('cloud')
-            .overrideWith((_, _) => Stream.value(archivedIds)),
+            .overrideWith((_) => Stream.value(archivedIds)),
       if (database != null) appDatabaseProvider.overrideWithValue(database),
     ],
   );

@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
@@ -130,6 +131,7 @@ void main() {
                     String workspaceId,
                     String search,
                     ({int? limit, int offset}) pagination,
+                    ConversationListScope scope,
                   })
                   args,
                 ) => Stream.value([]),
