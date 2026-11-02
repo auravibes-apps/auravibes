@@ -544,6 +544,16 @@
       "rename": "Cambiar nombre",
       "rename_title": "Cambiar nombre del chat",
       "rename_field_label": "Título del chat",
+      "task_brief": {
+        "add_tooltip": "Añadir resumen de tarea",
+        "edit_tooltip": "Editar resumen de tarea",
+        "title": "Resumen de tarea",
+        "description": "Guarda aquí el contexto que escribiste para esta conversación. Se envía como contexto del usuario y se mantiene separado de los mensajes y la compactación.",
+        "field_label": "Resumen de la conversación",
+        "field_hint": "Describe el objetivo, las restricciones, las decisiones o las tareas pendientes.",
+        "clear": "Borrar resumen",
+        "save_error": "No se pudo guardar el resumen de tarea. Inténtalo de nuevo."
+      },
       "stop_generation": "Detener generación",
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",

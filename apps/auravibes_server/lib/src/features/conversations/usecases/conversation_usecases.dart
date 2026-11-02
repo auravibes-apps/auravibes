@@ -130,6 +130,7 @@ class ConversationUseCases {
       _requireId(request.requestId);
       _requireId(request.conversationId);
       _validateMetadata(request.title, request.modelId, request.agentId);
+      _validateTaskBrief(request.taskBrief);
       final existing = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,
@@ -174,6 +175,7 @@ class ConversationUseCases {
             modelId: request.modelId,
             agentId: request.agentId,
             reasoningConfigJson: reasoningConfigJson,
+            taskBrief: request.taskBrief,
             parentConversationStableId: request.parentConversationId,
             revision: 1,
             projectionRevision: 1,
@@ -289,6 +291,7 @@ class ConversationUseCases {
           modelId: source.modelId,
           agentId: source.agentId,
           reasoningConfigJson: source.reasoningConfigJson,
+          taskBrief: source.taskBrief,
           forkSourceConversationId: source.stableId,
           forkSourceTitle: source.title,
           forkThroughMessageId: boundary,
@@ -572,6 +575,10 @@ class ConversationUseCases {
         request.agentId,
         allowNullTitle: true,
       );
+      _validateTaskBrief(request.taskBrief);
+      if (request.clearTaskBrief && request.taskBrief != null) {
+        _fail(ConversationErrorCode.validationFailed);
+      }
       await _requireMember(
         session,
         workspaceId: request.workspaceId,
@@ -640,6 +647,9 @@ class ConversationUseCases {
               ? null
               : request.agentId ?? conversation.agentId,
           reasoningConfigJson: reasoningConfigJson,
+          taskBrief: request.clearTaskBrief
+              ? null
+              : request.taskBrief ?? conversation.taskBrief,
           parentConversationStableId: request.clearParent
               ? null
               : request.parentConversationId ??
@@ -6115,6 +6125,7 @@ class ConversationUseCases {
         modelId: conversation.modelId,
         agentId: conversation.agentId,
         reasoningConfigJson: conversation.reasoningConfigJson,
+        taskBrief: conversation.taskBrief,
         parentConversationId: conversation.parentConversationStableId,
         forkSourceConversationId: conversation.forkSourceConversationId,
         forkSourceTitle: conversation.forkSourceTitle,
@@ -6336,6 +6347,12 @@ class ConversationUseCases {
     }
     if (modelId != null) _requireId(modelId);
     if (agentId != null) _requireId(agentId);
+  }
+
+  void _validateTaskBrief(String? taskBrief) {
+    if (taskBrief != null && taskBrief.trim().isEmpty) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
   }
 
   Future<String?> _validatedReasoningConfig(

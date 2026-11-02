@@ -223,6 +223,124 @@ void main() {
           languageCode: languageCode,
         );
 
+    test(
+      'user task brief is sent after system context and after compaction',
+      () async {
+        final fixture = await prepare();
+        await _configureRegressionProvider(fixture);
+        const brief = 'Keep the current user objective in view.';
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await Conversation.db.updateRow(
+          fixture.database,
+          conversation.copyWith(
+            taskBrief: brief,
+            activeCompactionCheckpointId: 'task-brief-checkpoint',
+          ),
+        );
+        final now = DateTime.now().toUtc();
+        await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            stableId: 'task-brief-checkpoint',
+            role: 'system',
+            kind: 'system',
+            status: 'sent',
+            content: 'Compacted transcript summary',
+            metadataJson: jsonEncode({'isCompactionSummary': true}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.insertRow(
+          fixture.database,
+          ConversationMessage(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            stableId: 'task-brief-current-message',
+            role: 'user',
+            kind: 'text',
+            status: 'sent',
+            content: 'Continue from the compacted summary.',
+            metadataJson: fixture.messages
+                .singleWhere((message) => message.role == 'user')
+                .metadataJson,
+            revision: 1,
+            createdAt: now.add(const Duration(seconds: 1)),
+            updatedAt: now.add(const Duration(seconds: 1)),
+          ),
+        );
+        final messages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationId),
+          orderBy: (table) => table.id,
+        );
+        final requests = <Map<String, dynamic>>[];
+        final host = ServerConversationEngineHost(
+          admissionGate: const _ImmediateAdmissionGate(),
+          lookup: (_) async => [InternetAddress('8.8.8.8')],
+          providerTransport: (body) async {
+            requests.add(body);
+            return ProviderTransportResponse(
+              statusCode: HttpStatus.ok,
+              body: Stream.value(
+                utf8.encode(
+                  'data: {"id":"response","choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\n'
+                  'data: [DONE]\n\n',
+                ),
+              ),
+            );
+          },
+        );
+
+        await host.executeTurn(
+          fixture.database,
+          job: fixture.job,
+          turn: fixture.turn,
+          messages: messages,
+          liveTurns: const _NoopProgressPublisher(),
+        );
+
+        final requestMessages = requests.single['messages'] as List;
+        final briefIndex = requestMessages.indexWhere(
+          (message) =>
+              message is Map &&
+              message['role'] == 'user' &&
+              message['content'] ==
+                  'User-authored conversation brief:\n\n$brief',
+        );
+        final summaryIndex = requestMessages.indexWhere(
+          (message) =>
+              message is Map &&
+              message['content'] == 'Compacted transcript summary',
+        );
+        final systemContextIndex = requestMessages.indexWhere(
+          (message) => message is Map && message['role'] == 'system',
+        );
+        expect(briefIndex, greaterThanOrEqualTo(0));
+        expect(systemContextIndex, greaterThanOrEqualTo(0));
+        expect(briefIndex, greaterThan(systemContextIndex));
+        expect(summaryIndex, greaterThan(briefIndex));
+        expect(
+          messages.every((message) => !message.content.contains(brief)),
+          isTrue,
+        );
+        expect(
+          (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationId,
+          ))?.taskBrief,
+          brief,
+        );
+      },
+    );
+
     test('Connector writes require Default approval and durable uncertainty prevents duplicate effects', () async {
       final fixture = await prepare();
       final assistant = fixture.messages.singleWhere(
@@ -1104,6 +1222,15 @@ void main() {
       () async {
         final fixture = await prepare();
         await _configureRegressionProvider(fixture);
+        const brief = 'Keep the user-authored objective in view.';
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationId,
+        ))!;
+        await Conversation.db.updateRow(
+          fixture.database,
+          conversation.copyWith(taskBrief: brief),
+        );
         final assistant = fixture.messages.singleWhere(
           (message) => message.id == fixture.turn.assistantMessageId,
         );
@@ -1154,6 +1281,15 @@ void main() {
         );
 
         final messages = requests.single['messages'] as List;
+        expect(
+          messages.whereType<Map>().any(
+            (message) =>
+                message['role'] == 'user' &&
+                message['content'] ==
+                    'User-authored conversation brief:\n\n$brief',
+          ),
+          isTrue,
+        );
         final deniedAssistantMessage = messages.whereType<Map>().singleWhere(
           (message) =>
               message['role'] == 'assistant' && message['tool_calls'] is List,

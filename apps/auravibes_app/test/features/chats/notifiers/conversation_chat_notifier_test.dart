@@ -305,6 +305,73 @@ void main() {
       sub.close();
     });
 
+    test(
+      'setTaskBrief saves exact text and clears with an explicit patch',
+      () async {
+        final patched = <ConversationPatch>[];
+        final container = ProviderContainer(
+          overrides: [
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => Stream.value(conversation),
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  patched.add(patch);
+
+                  return conversation.copyWith(
+                    taskBrief: patch.clearTaskBrief ? null : patch.taskBrief,
+                  );
+                },
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final completer = Completer<AsyncValue<ConversationResult>>();
+        final sub = container.listen<AsyncValue<ConversationResult>>(
+          conversationChatProvider('ws-1', 'conv-1'),
+          (_, next) {
+            if (next is AsyncData<ConversationResult> &&
+                !completer.isCompleted) {
+              completer.complete(next);
+            }
+          },
+          fireImmediately: true,
+        );
+        final _ = await completer.future;
+        final notifier = container.read(
+          conversationChatProvider('ws-1', 'conv-1').notifier,
+        );
+
+        const brief =
+            '  Keep the objective in view.\nReview the open tasks.  ';
+        await notifier.setTaskBrief(brief);
+        expect(patched.single.taskBrief, brief);
+        expect(patched.single.clearTaskBrief, isFalse);
+        final saved = container
+            .read(conversationChatProvider('ws-1', 'conv-1'))
+            .value;
+        expect(
+          (saved as ConversationFound).conversation.taskBrief,
+          brief,
+        );
+
+        await notifier.setTaskBrief(null);
+        expect(patched, hasLength(2));
+        expect(patched.last.taskBrief, isNull);
+        expect(patched.last.clearTaskBrief, isTrue);
+        final cleared = container
+            .read(conversationChatProvider('ws-1', 'conv-1'))
+            .value;
+        expect((cleared as ConversationFound).conversation.taskBrief, isNull);
+        sub.close();
+      },
+    );
+
     test('null reasoning configuration persists a clear patch', () async {
       final patches = <ConversationPatch>[];
       final container = ProviderContainer(

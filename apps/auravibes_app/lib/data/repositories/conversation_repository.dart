@@ -456,6 +456,7 @@ extension on ConversationRepository {
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
     reasoningConfigJson: .new(source.reasoningConfigJson),
+    taskBrief: .new(source.taskBrief),
     toolAccessMode: .new(source.toolAccessMode),
   );
 
@@ -1209,6 +1210,7 @@ extension on ConversationRepository {
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
       reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
+      taskBrief: conversationTable.taskBrief,
       parentConversationId: conversationTable.parentConversationId,
       activeCompactionCheckpointId:
           conversationTable.activeCompactionCheckpointId,
@@ -1231,6 +1233,7 @@ extension on ConversationRepository {
       modelId: .new(conversation.modelId),
       agentId: .new(conversation.agentId),
       reasoningConfigJson: _reasoningConfigCompanion(conversation),
+      taskBrief: .new(conversation.taskBrief),
       parentConversationId: .new(conversation.parentConversationId),
       activeCompactionCheckpointId: const Value(null),
       toolAccessMode: _toolAccessModeCompanion(conversation),
@@ -1246,6 +1249,7 @@ extension on ConversationRepository {
       modelId: .absentIfNull(conversation.modelId),
       agentId: _agentIdCompanionPatch(conversation),
       reasoningConfigJson: _reasoningConfigCompanionPatch(conversation),
+      taskBrief: _taskBriefCompanionPatch(conversation),
       activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
         conversation,
       ),
@@ -1273,6 +1277,11 @@ Value<String?> _reasoningConfigCompanionPatch(ConversationPatch conversation) =>
     conversation.clearReasoningConfiguration
     ? const Value(null)
     : Value.absentIfNull(conversation.reasoningConfiguration?.encode());
+
+Value<String?> _taskBriefCompanionPatch(ConversationPatch conversation) =>
+    conversation.clearTaskBrief
+    ? const Value(null)
+    : Value.absentIfNull(conversation.taskBrief);
 
 Value<String?> _activeCompactionCheckpointPatch(
   ConversationPatch conversation,

@@ -102,6 +102,16 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     );
   }
 
+  Future<void> setTaskBrief(String? taskBrief) async {
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    final patch = taskBrief == null || taskBrief.trim().isEmpty
+        ? const ConversationPatch(clearTaskBrief: true)
+        : ConversationPatch(taskBrief: taskBrief);
+    await _saveConversationPatch(result.conversation, patch);
+  }
+
   Future<void> rename(ConversationEntity conversation, String title) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) return;
@@ -216,6 +226,7 @@ ConversationEntity _updatedConversation(
   reasoningConfiguration: ReasoningConfiguration.decode(
     updated.reasoningConfigJson,
   ),
+  taskBrief: updated.taskBrief,
   toolAccessMode: ConversationToolAccessModeStorage.decode(
     updated.toolAccessMode,
   ),

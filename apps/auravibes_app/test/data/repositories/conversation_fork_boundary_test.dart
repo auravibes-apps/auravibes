@@ -22,7 +22,10 @@ void main() {
   setUp(() => clearAppDatabase(database));
   tearDownAll(database.close);
 
-  Future<void> insertSource({String? reasoningConfigJson}) async {
+  Future<void> insertSource({
+    String? reasoningConfigJson,
+    String? taskBrief,
+  }) async {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
@@ -32,6 +35,7 @@ void main() {
         workspaceId: .new(workspace.id),
         title: const .new('Source'),
         reasoningConfigJson: .new(reasoningConfigJson),
+        taskBrief: .new(taskBrief),
       ),
     );
   }
@@ -55,6 +59,78 @@ void main() {
       status: .new(status),
       metadata: .new(metadata),
     ),
+  );
+
+  test(
+    'task briefs persist, copy to forks, isolate edits, and clear without changing messages',
+    () async {
+      await insertSource(taskBrief: 'Keep the user objective in view.');
+      await insertMessage(
+        id: 'user-1',
+        createdAt: .utc(2026),
+        isUser: true,
+        status: .sent,
+      );
+
+      final sourceBeforeFork = await repository.getConversationById('source');
+      expect(sourceBeforeFork?.taskBrief, 'Keep the user objective in view.');
+      final fork = await repository.forkConversation('source');
+      expect(fork.taskBrief, 'Keep the user objective in view.');
+
+      await insertMessage(
+        id: 'checkpoint',
+        createdAt: .utc(2026, 1, 1, 0, 0, 1),
+        isUser: false,
+        status: .sent,
+        messageType: .system,
+        metadata: jsonEncode({'isCompactionSummary': true}),
+      );
+      final _ = await repository.patchConversation(
+        'source',
+        const ConversationPatch(activeCompactionCheckpointId: 'checkpoint'),
+      );
+      expect(
+        (await repository.getConversationById('source'))?.taskBrief,
+        'Keep the user objective in view.',
+      );
+
+      final _ = await repository.patchConversation(
+        'source',
+        const ConversationPatch(taskBrief: 'Source edit.'),
+      );
+      expect(
+        (await repository.getConversationById('source'))?.taskBrief,
+        'Source edit.',
+      );
+      expect(
+        (await repository.getConversationById(fork.id))?.taskBrief,
+        'Keep the user objective in view.',
+      );
+
+      final _ = await repository.patchConversation(
+        fork.id,
+        const ConversationPatch(taskBrief: 'Fork edit.'),
+      );
+      final messagesBeforeClear = await database.messageDao
+          .getMessagesByConversation('source');
+      final _ = await repository.patchConversation(
+        'source',
+        const ConversationPatch(clearTaskBrief: true),
+      );
+
+      expect(
+        (await repository.getConversationById('source'))?.taskBrief,
+        isNull,
+      );
+      expect(
+        (await repository.getConversationById(fork.id))?.taskBrief,
+        'Fork edit.',
+      );
+      expect(
+        await database.messageDao.getMessagesByConversation('source'),
+        messagesBeforeClear,
+      );
+    },
   );
 
   test(

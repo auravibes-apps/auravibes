@@ -5,6 +5,7 @@ class const AgentConversationReference({
   required final String workspaceId,
   required final String? modelId,
   final ReasoningConfiguration? reasoningConfiguration,
+  final String? taskBrief,
 });
 
 class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
@@ -64,6 +65,7 @@ abstract interface class AgentContinuationProvider<
     required TModel model,
     required List<TMessage> messages,
     required List<TChatMessage> skillContextMessages,
+    required String? taskBrief,
   });
 
   bool shouldDisableTools(TModel model);
@@ -120,6 +122,7 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
       model: projectedModel,
       messages: messages,
       skillContextMessages: transcriptContext.contextMessages,
+      taskBrief: conversation.taskBrief,
     );
     assert(
       _startsWithUserMessage(chatHistory),

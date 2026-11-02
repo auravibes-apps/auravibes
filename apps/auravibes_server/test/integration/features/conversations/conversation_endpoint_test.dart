@@ -288,6 +288,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -307,6 +308,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -358,6 +360,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -487,6 +490,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         );
@@ -802,6 +806,7 @@ void main() {
           clearModel: false,
           clearAgent: false,
           clearReasoningConfig: false,
+          clearTaskBrief: false,
           clearParent: false,
         ),
       );
@@ -956,6 +961,7 @@ void main() {
             clearModel: false,
             clearAgent: false,
             clearReasoningConfig: false,
+            clearTaskBrief: false,
             clearParent: false,
           ),
         ),
@@ -1453,5 +1459,113 @@ void main() {
         );
       },
     );
+    test('task brief persists, clears, and isolates fork edits', () async {
+      final fixture = await prepare();
+      final created = await endpoints.conversation.create(
+        fixture.session,
+        CreateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'create-task-brief',
+          conversationId: 'task-brief-source',
+          title: 'Task brief source',
+          isPinned: false,
+          taskBrief: 'Keep the user objective in view.',
+        ),
+      );
+      expect(created.taskBrief, 'Keep the user objective in view.');
+
+      final sourceRow = (await Conversation.db.findFirstRow(
+        fixture.database,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.stableId.equals(created.id),
+      ))!;
+      final now = DateTime.now().toUtc();
+      await ConversationMessage.db.insertRow(
+        fixture.database,
+        ConversationMessage(
+          workspaceId: fixture.workspaceId,
+          conversationId: sourceRow.id!,
+          stableId: 'task-brief-source-message',
+          role: 'assistant',
+          kind: 'text',
+          status: ConversationStatuses.completed,
+          content: 'Existing transcript message',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final fork = await endpoints.conversation.fork(
+        fixture.session,
+        ForkConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'fork-task-brief',
+          sourceConversationId: created.id,
+          forkConversationId: 'task-brief-fork',
+          throughMessageId: 'task-brief-source-message',
+        ),
+      );
+      expect(fork.taskBrief, 'Keep the user objective in view.');
+
+      final sourceUpdated = await endpoints.conversation.update(
+        fixture.session,
+        UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'update-source-task-brief',
+          conversationId: created.id,
+          expectedRevision: created.revision,
+          taskBrief: 'Source edit.',
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearTaskBrief: false,
+          clearParent: false,
+        ),
+      );
+      expect(sourceUpdated.taskBrief, 'Source edit.');
+      expect(
+        (await endpoints.conversation.get(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: fork.id,
+          ),
+        )).taskBrief,
+        'Keep the user objective in view.',
+      );
+
+      final forkCleared = await endpoints.conversation.update(
+        fixture.session,
+        UpdateConversationRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'clear-fork-task-brief',
+          conversationId: fork.id,
+          expectedRevision: fork.revision,
+          clearModel: false,
+          clearAgent: false,
+          clearReasoningConfig: false,
+          clearTaskBrief: true,
+          clearParent: false,
+        ),
+      );
+      expect(forkCleared.taskBrief, isNull);
+      expect(
+        (await endpoints.conversation.get(
+          fixture.session,
+          GetConversationRequest(
+            workspaceId: fixture.workspaceId,
+            conversationId: created.id,
+          ),
+        )).taskBrief,
+        'Source edit.',
+      );
+      final messages = await ConversationMessage.db.find(
+        fixture.database,
+        where: (table) => table.conversationId.equals(sourceRow.id),
+      );
+      expect(messages.single.content, 'Existing transcript message');
+    });
   });
 }

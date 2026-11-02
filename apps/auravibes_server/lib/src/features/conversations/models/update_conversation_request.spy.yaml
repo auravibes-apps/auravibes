@@ -13,5 +13,7 @@ fields:
   clearAgent: bool
   reasoningConfigJson: String?
   clearReasoningConfig: bool
+  taskBrief: String?
+  clearTaskBrief: bool, default=false
   parentConversationId: String?
   clearParent: bool

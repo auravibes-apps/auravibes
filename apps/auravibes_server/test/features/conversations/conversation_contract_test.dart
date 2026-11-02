@@ -141,6 +141,7 @@ void main() {
       isPinned: true,
       modelId: 'model-1',
       agentId: 'agent-1',
+      taskBrief: 'User-authored objective.',
       parentConversationId: 'parent-1',
       revision: 7,
       createdAt: now,
@@ -149,6 +150,7 @@ void main() {
 
     expect(summary.toJson()['revision'], 7);
     expect(summary.toJson()['parentConversationId'], 'parent-1');
+    expect(summary.toJson()['taskBrief'], 'User-authored objective.');
   });
 
   test('conversation stream event retains sequence and actor attribution', () {
@@ -201,6 +203,7 @@ void main() {
       clearModel: false,
       clearAgent: false,
       clearReasoningConfig: false,
+      clearTaskBrief: false,
       clearParent: false,
     );
     final delete = DeleteConversationRequest(
@@ -216,7 +219,7 @@ void main() {
   });
 
   test(
-    'reasoning configuration survives cloud protocol round trips and reset',
+    'conversation brief and reasoning survive cloud protocol round trips',
     () {
       const reasoningConfigJson = '{"effort":"high"}';
       final create = CreateConversationRequest(
@@ -226,12 +229,14 @@ void main() {
         title: 'Reasoning',
         isPinned: false,
         reasoningConfigJson: reasoningConfigJson,
+        taskBrief: 'User-authored objective.',
       );
       final summary = ConversationSummary(
         id: create.conversationId,
         title: create.title,
         isPinned: create.isPinned,
         reasoningConfigJson: reasoningConfigJson,
+        taskBrief: 'User-authored objective.',
         revision: 1,
         createdAt: DateTime.utc(2026),
         updatedAt: DateTime.utc(2026),
@@ -242,9 +247,11 @@ void main() {
         conversationId: summary.id,
         expectedRevision: summary.revision,
         reasoningConfigJson: reasoningConfigJson,
+        taskBrief: 'Updated user objective.',
         clearModel: false,
         clearAgent: false,
         clearReasoningConfig: false,
+        clearTaskBrief: false,
         clearParent: false,
       );
       final reset = UpdateConversationRequest(
@@ -255,6 +262,7 @@ void main() {
         clearModel: false,
         clearAgent: false,
         clearReasoningConfig: true,
+        clearTaskBrief: true,
         clearParent: false,
       );
 
@@ -263,8 +271,16 @@ void main() {
         reasoningConfigJson,
       );
       expect(
+        CreateConversationRequest.fromJson(create.toJson()).taskBrief,
+        'User-authored objective.',
+      );
+      expect(
         ConversationSummary.fromJson(summary.toJson()).reasoningConfigJson,
         reasoningConfigJson,
+      );
+      expect(
+        ConversationSummary.fromJson(summary.toJson()).taskBrief,
+        'User-authored objective.',
       );
       expect(
         UpdateConversationRequest.fromJson(update.toJson()).reasoningConfigJson,
@@ -273,6 +289,18 @@ void main() {
       final decodedReset = UpdateConversationRequest.fromJson(reset.toJson());
       expect(decodedReset.reasoningConfigJson, isNull);
       expect(decodedReset.clearReasoningConfig, isTrue);
+      expect(decodedReset.taskBrief, isNull);
+      expect(decodedReset.clearTaskBrief, isTrue);
+      expect(
+        UpdateConversationRequest.fromJson(update.toJson()).taskBrief,
+        'Updated user objective.',
+      );
+      final legacyUpdateJson = Map<String, dynamic>.from(update.toJson())
+        ..remove('clearTaskBrief');
+      expect(
+        UpdateConversationRequest.fromJson(legacyUpdateJson).clearTaskBrief,
+        isFalse,
+      );
     },
   );
 

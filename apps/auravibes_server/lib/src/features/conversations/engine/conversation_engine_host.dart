@@ -1178,6 +1178,12 @@ final class const ServerConversationEngineHost({
           languageCode: languageCode,
         ),
       ),
+      if (conversation.taskBrief case final brief?
+          when brief.trim().isNotEmpty)
+        {
+          'role': 'user',
+          'content': 'User-authored conversation brief:\n\n$brief',
+        },
     ];
 
     return messages;

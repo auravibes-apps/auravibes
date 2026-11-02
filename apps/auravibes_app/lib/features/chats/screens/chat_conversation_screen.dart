@@ -53,6 +53,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indica
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_task_brief_button.dart';
 import 'package:auravibes_app/features/chats/widgets/model_usage_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/responsive_conversation_layout.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -2180,6 +2181,7 @@ class const _ChatConversationControlsLayout({
       _ChatControlsBar(
         workspaceId: data.workspaceId,
         conversationId: data.conversation.id,
+        conversation: data.conversation,
         idleActivitySummary: _IdleConversationActivityLabel(activity: activity),
       ),
     ],
@@ -2580,6 +2582,7 @@ class const _ChatComposerAgentCompactControl({
 class const _ChatControlsBar({
   required final String workspaceId,
   required final String conversationId,
+  required final ConversationEntity conversation,
   required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
@@ -2594,6 +2597,7 @@ class const _ChatControlsBar({
       child: _ChatControlsContent(
         workspaceId: workspaceId,
         conversationId: conversationId,
+        conversation: conversation,
         idleActivitySummary: idleActivitySummary,
       ),
     );
@@ -2603,6 +2607,7 @@ class const _ChatControlsBar({
 class const _ChatControlsContent({
   required final String workspaceId,
   required final String conversationId,
+  required final ConversationEntity conversation,
   required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
@@ -2612,6 +2617,7 @@ class const _ChatControlsContent({
     child: _ChatControlsPadding(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      conversation: conversation,
       idleActivitySummary: idleActivitySummary,
     ),
   );
@@ -2620,6 +2626,7 @@ class const _ChatControlsContent({
 class const _ChatControlsPadding({
   required final String workspaceId,
   required final String conversationId,
+  required final ConversationEntity conversation,
   required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
@@ -2628,6 +2635,7 @@ class const _ChatControlsPadding({
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      conversation: conversation,
       idleActivitySummary: idleActivitySummary,
     ),
   );
@@ -2636,6 +2644,7 @@ class const _ChatControlsPadding({
 class const _ChatControlsAlignment({
   required final String workspaceId,
   required final String conversationId,
+  required final ConversationEntity conversation,
   required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
@@ -2652,6 +2661,10 @@ class const _ChatControlsAlignment({
       ConversationContextUsagePill(
         workspaceId: workspaceId,
         conversationId: conversationId,
+      ),
+      ConversationTaskBriefButton(
+        workspaceId: workspaceId,
+        conversation: conversation,
       ),
     ],
   );

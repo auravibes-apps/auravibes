@@ -257,6 +257,41 @@ void main() {
         },
       );
 
+      test(
+        'persists the user-authored brief when creating conversation',
+        () async {
+          const brief = 'Keep the requested outcome in view.';
+          const toCreate = ConversationToCreate(
+            title: 'Brief Chat',
+            workspaceId: 'ws-1',
+            taskBrief: brief,
+          );
+          final createdRow = ConversationsTable(
+            id: 'new-conv',
+            createdAt: now,
+            updatedAt: now,
+            workspaceId: 'ws-1',
+            title: 'Brief Chat',
+            taskBrief: brief,
+            toolAccessMode: 'default',
+            isPinned: false,
+          );
+
+          when(() => mockDao.insertConversation(captureAny()))
+              .thenAnswer((_) async => createdRow);
+
+          final result = await repository.createConversation(toCreate);
+          final companion =
+              verify(() => mockDao.insertConversation(captureAny()))
+                      .captured
+                      .single
+                  as ConversationsCompanion;
+
+          expect(companion.taskBrief.value, brief);
+          expect(result.taskBrief, brief);
+        },
+      );
+
       test('throws on empty title', () async {
         const toCreate = ConversationToCreate(title: '', workspaceId: 'ws-1');
 

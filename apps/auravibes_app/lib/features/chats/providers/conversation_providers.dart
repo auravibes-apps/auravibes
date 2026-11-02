@@ -341,6 +341,7 @@ ConversationEntity _cloudConversationFields(
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),
+    taskBrief: conversation.taskBrief,
     parentConversationId: conversation.parentConversationId,
   );
 }

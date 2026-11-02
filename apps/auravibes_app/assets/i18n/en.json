@@ -544,6 +544,16 @@
       "rename": "Rename",
       "rename_title": "Rename chat",
       "rename_field_label": "Chat title",
+      "task_brief": {
+        "add_tooltip": "Add task brief",
+        "edit_tooltip": "Edit task brief",
+        "title": "Task brief",
+        "description": "Keep user-written context with this conversation. It is sent as user context and stays separate from messages and compaction.",
+        "field_label": "Conversation brief",
+        "field_hint": "Describe the objective, constraints, decisions, or open tasks.",
+        "clear": "Clear brief",
+        "save_error": "Could not save the task brief. Try again."
+      },
       "stop_generation": "Stop generation",
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",

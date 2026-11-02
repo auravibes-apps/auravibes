@@ -272,6 +272,26 @@ void main() {
       expect(endpoint.requests, hasLength(1));
       expect(endpoint.requests.single.cursor, isNull);
     });
+
+    test('maps the cloud task brief into the conversation entity', () async {
+      final endpoint = _TestConversationEndpoint([
+        ConversationPage(
+          conversations: [
+            _cloudConversationSummary(
+              id: 'brief-conversation',
+              taskBrief: 'Cloud user-authored objective.',
+            ),
+          ],
+        ),
+      ]);
+      final container = _cloudContainer(endpoint);
+      addTearDown(container.dispose);
+      final conversations = await container.read(
+        conversationsStreamProvider(workspaceId: 'cloud').future,
+      );
+
+      expect(conversations.single.taskBrief, 'Cloud user-authored objective.');
+    });
   });
 
   group('childConversationsStreamProvider', () {
@@ -597,10 +617,12 @@ class _TestCloudWorkspaceStateGateway extends Fake
 ConversationSummary _cloudConversationSummary({
   required String id,
   String? parentConversationId,
+  String? taskBrief,
 }) => ConversationSummary(
   id: id,
   title: id,
   isPinned: false,
+  taskBrief: taskBrief,
   parentConversationId: parentConversationId,
   revision: 1,
   createdAt: .utc(2026),

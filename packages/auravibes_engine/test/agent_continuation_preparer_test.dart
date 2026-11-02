@@ -19,6 +19,30 @@ void main() {
       expect(result.transcriptContextEntries, isEmpty);
     });
 
+    test(
+      'passes the conversation brief separately from transcript context',
+      () async {
+        final usecase = _usecase(
+          loadConversation: (_) async => const AgentConversationReference(
+            workspaceId: 'workspace-1',
+            modelId: 'model-1',
+            taskBrief: 'User-authored objective.',
+          ),
+        );
+
+        final result = await usecase.call(conversationId: 'conversation-1');
+
+        expect(
+          result.chatHistory.map((message) => message.content),
+          ['skill context', 'User-authored objective.', 'hello'],
+        );
+        expect(
+          result.requestedContextMessages.map((message) => message.content),
+          ['skill context'],
+        );
+      },
+    );
+
     test('disables tools when selected model cannot use them', () async {
       final usecase = _usecase(
         loadSelectedModel: (_) async =>
@@ -130,8 +154,13 @@ class const _FakeAgentContinuationProvider(
     required List<String> messages,
     required _Model model,
     required List<_Chat> skillContextMessages,
+    required String? taskBrief,
   }) async {
-    return [...skillContextMessages, ...messages.map(_Chat.new)];
+    return [
+      ...skillContextMessages,
+      if (taskBrief != null) _Chat(taskBrief),
+      ...messages.map(_Chat.new),
+    ];
   }
 
   @override

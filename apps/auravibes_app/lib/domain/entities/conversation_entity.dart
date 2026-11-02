@@ -46,6 +46,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
     /// Conversation-scoped reasoning override. Null uses provider defaults.
     ReasoningConfiguration? reasoningConfiguration,
 
+    /// User-authored context kept separate from the transcript.
+    String? taskBrief,
+
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
 
@@ -108,6 +111,9 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
     /// Conversation-scoped reasoning override. Null uses provider defaults.
     ReasoningConfiguration? reasoningConfiguration,
 
+    /// User-authored context kept separate from the transcript.
+    String? taskBrief,
+
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
 
@@ -126,6 +132,7 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
 
     return hasValidTitle &&
         workspaceId.isNotEmpty &&
+        _isNullOrNonBlank(taskBrief) &&
         (modelId == null || modelId.isNotEmpty) &&
         (agentId == null || agentId.isNotEmpty) &&
         (parentConversationId == null || parentConversationId.isNotEmpty);
@@ -153,11 +160,17 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// Conversation-scoped reasoning override. Null uses provider defaults.
     ReasoningConfiguration? reasoningConfiguration,
 
+    /// User-authored context kept separate from the transcript.
+    String? taskBrief,
+
     ConversationToolAccessMode? toolAccessMode,
 
     /// Active compaction checkpoint, if one was restored.
     String? activeCompactionCheckpointId,
     @Default(false) bool clearActiveCompactionCheckpointId,
+
+    /// Clears [taskBrief]. Nullable Freezed fields cannot express null set.
+    @Default(false) bool clearTaskBrief,
 
     /// Clears [agentId]. Nullable Freezed fields cannot express null set.
     @Default(false) bool clearAgent,
@@ -174,10 +187,12 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       _isNullOrNonEmpty(title) &&
       _isNullOrNonEmpty(modelId) &&
       _isNullOrNonEmpty(agentId) &&
+      _isNullOrNonBlank(taskBrief) &&
       (!clearAgent || agentId == null) &&
       (!clearActiveCompactionCheckpointId ||
           activeCompactionCheckpointId == null) &&
-      _isNullOrNonEmpty(activeCompactionCheckpointId);
+      _isNullOrNonEmpty(activeCompactionCheckpointId) &&
+      (!clearTaskBrief || taskBrief == null);
 
   bool get _hasChanges =>
       toolAccessMode != null ||
@@ -189,7 +204,9 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       clearReasoningConfiguration ||
       isPinned != null ||
       clearActiveCompactionCheckpointId ||
-      activeCompactionCheckpointId != null;
+      activeCompactionCheckpointId != null ||
+      taskBrief != null ||
+      clearTaskBrief;
 
   bool hasChanges() => _hasChanges;
 
@@ -197,6 +214,9 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
 }
 
 bool _isNullOrNonEmpty(String? value) => value == null || value.isNotEmpty;
+
+bool _isNullOrNonBlank(String? value) =>
+    value == null || value.trim().isNotEmpty;
 
 abstract final class ConversationLimits {
   static const maxPinnedPerWorkspace = 10;

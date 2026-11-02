@@ -9,6 +9,7 @@ fields:
   modelId: String?
   agentId: String?
   reasoningConfigJson: String?
+  taskBrief: String?
   parentConversationStableId: String?
   revision: int
   projectionRevision: int, default=1

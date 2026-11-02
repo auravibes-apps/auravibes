@@ -21,6 +21,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
 import 'package:riverpod/riverpod.dart';
 
+const _conversationTaskBriefMetadataKind = 'conversation_task_brief';
+
 class AppAgentContinuationAdapter({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
@@ -73,6 +75,7 @@ class AppAgentContinuationAdapter({
       workspaceId: conversation.workspaceId,
       modelId: conversation.modelId,
       reasoningConfiguration: conversation.reasoningConfiguration,
+      taskBrief: conversation.taskBrief,
     );
   }
 
@@ -168,9 +171,16 @@ class AppAgentContinuationAdapter({
     required WorkspaceModelSelectionWithConnectionEntity model,
     required List<MessageEntity> messages,
     required List<ChatMessage> skillContextMessages,
+    required String? taskBrief,
   }) async {
     return [
       ...skillContextMessages,
+      if (taskBrief case final brief? when brief.trim().isNotEmpty)
+        ChatMessage(
+          role: ChatMessageRole.user,
+          content: 'User-authored conversation brief:\n\n$brief',
+          metadata: const {'kind': _conversationTaskBriefMetadataKind},
+        ),
       ...await BuildPromptChatMessages(
         modalitiesInput: model.workspaceModelSelection.modalitiesInput,
         supportsImageToolResults:

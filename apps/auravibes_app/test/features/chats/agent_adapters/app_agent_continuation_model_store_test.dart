@@ -2,8 +2,10 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
@@ -88,6 +90,7 @@ void main() {
           createdAt: .new(2026),
           updatedAt: .new(2026),
           modelId: 'selection',
+          taskBrief: 'Keep the user objective in view.',
         ),
       );
       when(() => selections.getById('selection')).thenAnswer((_) async => null);
@@ -110,7 +113,10 @@ void main() {
         loadConversationToolSpecsUsecase: _LoadTools(),
       );
 
-      expect(await adapter.loadConversation('conversation'), isNotNull);
+      expect(
+        (await adapter.loadConversation('conversation'))?.taskBrief,
+        'Keep the user objective in view.',
+      );
       expect(await adapter.loadSelectedModel('selection'), isNull);
 
       expect(resolvedWorkspaces, ['workspace']);
@@ -154,6 +160,57 @@ void main() {
     expect(await adapter.supportsToolsForConversation('conversation'), isFalse);
     verify(() => conversations.getConversationById('conversation')).called(2);
     verify(() => selections.getById('selection')).called(2);
+  });
+
+  test('composes the user-authored brief outside transcript messages', () async {
+    final adapter = AppAgentContinuationAdapter(
+      conversationRepository: _ConversationRepository(),
+      messageRepository: _MessageRepository(),
+      modelSelectionStore: (_) async => _ModelSelectionStore(),
+      apiModelRepository: _ApiModelRepository(),
+      selectPromptMessagesUsecase: _SelectPromptMessages(),
+      buildSkillContextMessagesUsecase: _BuildSkillContext(),
+      loadApprovalStates: ({
+        required conversationId,
+        required workspaceId,
+      }) async => const {},
+      loadConversationToolSpecsUsecase: _LoadTools(),
+    );
+    final skillContext = ChatMessage(
+      role: ChatMessageRole.system,
+      content: 'Skill context',
+      metadata: const {'kind': skillContextMetadataKind},
+    );
+
+    final compactedTranscript = MessageEntity(
+      id: 'checkpoint',
+      conversationId: 'conversation',
+      content: 'Summary of earlier messages.',
+      messageType: MessageType.system,
+      isUser: false,
+      status: MessageStatus.sent,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+      metadata: const MessageMetadataEntity(isCompactionSummary: true),
+    );
+    final history = await adapter.buildChatHistory(
+      model: _model(true),
+      messages: [compactedTranscript],
+      skillContextMessages: [skillContext],
+      taskBrief: 'Finish the migration without changing existing messages.',
+    );
+
+    expect(history, hasLength(3));
+    expect(history.first, skillContext);
+    expect(history[1].role, ChatMessageRole.user);
+    expect(
+      history[1].content,
+      'User-authored conversation brief:\n\n'
+      'Finish the migration without changing existing messages.',
+    );
+    expect(history[1].metadata['kind'], 'conversation_task_brief');
+    expect(history.last.role, ChatMessageRole.model);
+    expect(history.last.content, 'Summary of earlier messages.');
   });
 }
 
