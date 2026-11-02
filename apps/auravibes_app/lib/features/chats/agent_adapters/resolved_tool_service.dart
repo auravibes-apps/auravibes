@@ -78,6 +78,13 @@ typedef _SkillCommandResources = ({
   LoadSkillResourceContent? load,
 });
 
+typedef _ResolvedToolCallRequest = ({
+  String conversationId,
+  String toolCallId,
+  ResolvedTool tool,
+  Map<String, dynamic> arguments,
+});
+
 class ResolvedToolService {
   static const ResolvedToolService Function() cloud =
       ResolvedToolService._cloud;
@@ -147,42 +154,48 @@ class ResolvedToolService {
   bool supportsCancellation(ResolvedTool tool) =>
       _delegate?.supportsCancellation(tool) ?? false;
 
-  Future<Object?> call({
-    required String conversationId,
-    required ResolvedTool tool,
-    required Map<String, dynamic> arguments,
-    String toolCallId = '',
-  }) async {
+  Future<Object?> call(_ResolvedToolCallRequest request) async {
     final delegate = _delegate;
     if (delegate == null) {
       throw StateError('Cloud tools execute on the server.');
     }
-
-    if (tool.isWorkspaceCommand) {
-      return await _workspaceCommand(conversationId, arguments, (
-        name: tool.toolIdentifier,
-        id: toolCallId,
-      ));
+    if (request.tool.isWorkspaceCommand) {
+      return await _callWorkspaceTool(request);
     }
+
+    return await _callDelegatedTool(delegate, request);
+  }
+
+  Future<Object?> _callWorkspaceTool(
+    _ResolvedToolCallRequest request,
+  ) => _workspaceCommand(request.conversationId, request.arguments, (
+    name: request.tool.toolIdentifier,
+    id: request.toolCallId,
+  ));
+
+  Future<Object?> _callDelegatedTool(
+    agent.ResolvedToolRunner<ResolvedTool> delegate,
+    _ResolvedToolCallRequest request,
+  ) async {
     final result = await delegate.call(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      arguments: arguments,
+      conversationId: request.conversationId,
+      toolCallId: request.toolCallId,
+      tool: request.tool,
+      arguments: request.arguments,
     );
 
     final modelResult = _modelToolResult(
       result,
-      conversationId,
-      toolCallId,
+      request.conversationId,
+      request.toolCallId,
       _mcpAppResultData,
     );
     final verification = scopedVerification;
     if (result is McpToolCallerResult && verification != null) {
       return await verification.call(
-        conversationId: conversationId,
-        toolCallId: toolCallId,
-        tool: tool,
+        conversationId: request.conversationId,
+        toolCallId: request.toolCallId,
+        tool: request.tool,
         result: result,
       );
     }

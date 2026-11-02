@@ -188,10 +188,12 @@ class const AppApproveToolCallDataProvider({
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) => runResolvedToolUsecase.call(
-    conversationId: conversationId,
-    toolCallId: toolCallId,
-    tool: tool,
-    arguments: arguments,
+    (
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      arguments: arguments,
+    ),
   );
 
   @override

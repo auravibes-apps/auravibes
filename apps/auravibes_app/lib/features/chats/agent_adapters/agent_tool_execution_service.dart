@@ -144,10 +144,12 @@ class const AppAllowedToolsDataProvider({
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) => resolvedToolService.call(
-    conversationId: conversationId,
-    toolCallId: toolCallId,
-    tool: tool,
-    arguments: arguments,
+    (
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      arguments: arguments,
+    ),
   );
 
   @override

@@ -63,11 +63,13 @@ void main() {
     String workspaceId = 'workspace',
     String turnId = 'turn',
   }) => state.repository.reserve(
-    workspaceId: workspaceId,
-    turnId: turnId,
-    toolCallId: toolCallId,
-    configRevision: revision,
-    maxRepairAttempts: maxRepairAttempts,
+    (
+      workspaceId: workspaceId,
+      turnId: turnId,
+      toolCallId: toolCallId,
+      configRevision: revision,
+      maxRepairAttempts: maxRepairAttempts,
+    ),
   );
 
   test(
@@ -278,11 +280,13 @@ void main() {
       final initial = await reserve('edit');
       final restarted = WorkspaceVerificationRepository(state.database);
       final replay = await restarted.reserve(
-        workspaceId: 'workspace',
-        turnId: 'turn',
-        toolCallId: 'edit',
-        configRevision: 1,
-        maxRepairAttempts: 1,
+        (
+          workspaceId: 'workspace',
+          turnId: 'turn',
+          toolCallId: 'edit',
+          configRevision: 1,
+          maxRepairAttempts: 1,
+        ),
       );
       expect(replay.result?.outcome, ScopedVerificationOutcome.incomplete);
       expect(replay.result?.reason, 'interrupted');

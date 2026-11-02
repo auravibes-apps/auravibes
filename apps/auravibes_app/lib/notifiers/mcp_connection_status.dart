@@ -611,23 +611,59 @@ Future<McpVerificationSession> _openMcpVerificationSession(
   McpConnectionNotifier notifier,
   _McpVerificationSessionRequest request,
 ) async {
+  final connection = _connectedVerificationServer(notifier, request);
+  final authentication = await _verificationAuthentication(notifier, connection);
+  _requireActiveVerificationConnection(notifier, connection, request);
+  final session = await _connectVerificationSession(
+    notifier,
+    request,
+    connection,
+    authentication,
+  );
+
+  return _retainActiveVerificationSession(notifier, connection, request, session);
+}
+
+McpConnectionState _connectedVerificationServer(
+  McpConnectionNotifier notifier,
+  _McpVerificationSessionRequest request,
+) {
   _requireLocalMcp(notifier);
   final connection = notifier._requiredConnection(request.mcpServerId);
   final _ = notifier._requiredToolClient(
     request.mcpServerId,
     request.toolIdentifier,
   );
-  final authentication = await notifier._notifierRef
-      .read(oauthCredentialServiceProvider)
-      .resolveMcpAuthentication(connection.server.serviceConnectionId);
-  _requireActiveVerificationConnection(notifier, connection, request);
-  final session = await notifier._requiredMcpManager.openVerificationSession((
+
+  return connection;
+}
+
+Future<McpAuthenticationType> _verificationAuthentication(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+) => notifier._notifierRef
+    .read(oauthCredentialServiceProvider)
+    .resolveMcpAuthentication(connection.server.serviceConnectionId);
+
+Future<McpVerificationSession> _connectVerificationSession(
+  McpConnectionNotifier notifier,
+  _McpVerificationSessionRequest request,
+  McpConnectionState connection,
+  McpAuthenticationType authentication,
+) => notifier._requiredMcpManager.openVerificationSession((
     server: connection.server.copyWith(authenticationType: authentication),
     serverId: request.mcpServerId,
     toolIdentifier: request.toolIdentifier,
     deadline: request.deadline,
     cancellation: request.cancellation,
   ));
+
+McpVerificationSession _retainActiveVerificationSession(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+  _McpVerificationSessionRequest request,
+  McpVerificationSession session,
+) {
   if (_isActiveVerificationConnection(notifier, connection, request)) {
     return session;
   }

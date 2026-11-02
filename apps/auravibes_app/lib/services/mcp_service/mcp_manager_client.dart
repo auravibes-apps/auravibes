@@ -531,24 +531,26 @@ final class _McpVerificationSessionConnector {
   final McpVerificationSession session;
 
   Future<McpVerificationSession> connect() async {
-    final aborted = Completer<void>();
-    final timer = Timer(remaining, () => _abort(aborted));
-    final registration = request.cancellation.registerCleanup(
-      () => _abort(aborted),
+    final attempt = _McpVerificationConnectAttempt(
+      remaining: remaining,
+      cancellation: request.cancellation,
+      abort: _abort,
     );
     try {
-      await Future.any([_connectTransport(aborted), aborted.future]);
-      if (aborted.isCompleted) {
-        throw StateError('Verification connection cancelled.');
-      }
-
+      await _connectOrAbort(attempt.aborted);
       return session;
     } on Object {
       session.close();
       rethrow;
     } finally {
-      timer.cancel();
-      final _ = registration.remove();
+      attempt.close();
+    }
+  }
+
+  Future<void> _connectOrAbort(Completer<void> aborted) async {
+    await Future.any([_connectTransport(aborted), aborted.future]);
+    if (aborted.isCompleted) {
+      throw StateError('Verification connection cancelled.');
     }
   }
 
@@ -572,6 +574,26 @@ final class _McpVerificationSessionConnector {
     if (!aborted.isCompleted) {
       aborted.completeError(StateError('Verification connection cancelled.'));
     }
+  }
+}
+
+final class _McpVerificationConnectAttempt {
+  _McpVerificationConnectAttempt({
+    required Duration remaining,
+    required AgentCancellationScope cancellation,
+    required void Function(Completer<void>) abort,
+  }) {
+    timer = Timer(remaining, () => abort(aborted));
+    registration = cancellation.registerCleanup(() => abort(aborted));
+  }
+
+  final Completer<void> aborted = Completer<void>();
+  late final Timer timer;
+  late final AgentCancellationCleanupRegistration registration;
+
+  void close() {
+    timer.cancel();
+    final _ = registration.remove();
   }
 }
 

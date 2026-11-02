@@ -4,6 +4,13 @@ import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
+typedef _VerificationStartIntent = ({
+  String operationId,
+  String workspaceRoot,
+  int deadlineMs,
+  String fingerprint,
+});
+
 /// Uses only an owner-bound remote runner on the editing tool's MCP server.
 /// Create a fresh instance per verification invocation. Cleanup authority is
 /// retained only for that instance's single host-created start intent.
@@ -24,13 +31,7 @@ class McpScopedVerificationRunner
   final McpToolCaller caller;
   final Future<bool> Function() isAllowed;
   final void Function() onClose;
-  ({
-    String operationId,
-    String workspaceRoot,
-    int deadlineMs,
-    String fingerprint,
-  })?
-  _bound;
+  _VerificationStartIntent? _bound;
   bool _cancelRequested = false;
   @override
   void close() => onClose();
@@ -63,6 +64,19 @@ class McpScopedVerificationRunner
     String operation,
     Map<String, Object?> arguments,
   ) async {
+    _requireServerBinding();
+    final payload = await _authorizedPayload(operation, arguments);
+    _requireStartNotCancelled(operation);
+    final response = await caller(
+      mcpServerId: mcpServerId,
+      toolIdentifier: runnerToolIdentifier,
+      arguments: _protocolArguments(payload, operation),
+    );
+
+    return _structuredResult(response);
+  }
+
+  void _requireServerBinding() {
     if (mcpServerId.isEmpty ||
         mcpServerId != editMcpServerId ||
         runnerToolIdentifier.isEmpty) {
@@ -70,26 +84,31 @@ class McpScopedVerificationRunner
         'Verification needs the editing server binding.',
       );
     }
-    final payload = await _authorizedPayload(operation, arguments);
+  }
+
+  void _requireStartNotCancelled(String operation) {
     if (operation == 'start' && _cancelRequested) {
       throw StateError('Cancelled verification cannot dispatch start.');
     }
-    final result = await caller(
-      mcpServerId: mcpServerId,
-      toolIdentifier: runnerToolIdentifier,
-      arguments: {
-        ...payload,
-        'protocol': ScopedVerificationLimits.protocol,
-        'operation': operation,
-      },
-    );
-    if (result is! McpToolCallerResult || result.isError == true) {
+  }
+
+  Map<String, Object?> _protocolArguments(
+    Map<String, Object?> payload,
+    String operation,
+  ) => {
+    ...payload,
+    'protocol': ScopedVerificationLimits.protocol,
+    'operation': operation,
+  };
+
+  Object? _structuredResult(Object? response) {
+    if (response is! McpToolCallerResult || response.isError == true) {
       throw const FormatException(
         'Verification needs a structured MCP receipt.',
       );
     }
 
-    return result.structuredContent;
+    return response.structuredContent;
   }
 
   Future<Map<String, Object?>> _authorizedPayload(
@@ -125,18 +144,30 @@ class McpScopedVerificationRunner
   void _bindStartIntent(Map<String, Object?> arguments) {
     final bound = _bound;
     final fingerprint = jsonEncode(arguments);
+    _requireStartIntentAvailable(bound, fingerprint);
+    _bound = _startIntent(arguments, fingerprint);
+  }
+
+  void _requireStartIntentAvailable(
+    _VerificationStartIntent? bound,
+    String fingerprint,
+  ) {
     if (_cancelRequested ||
         (bound != null && bound.fingerprint != fingerprint)) {
       throw StateError(
         'A verification runner cannot replace its start intent.',
       );
     }
-    // Bind synchronously, before any permission future can yield to a stop.
-    _bound = (
-      operationId: arguments['operationId']! as String,
-      workspaceRoot: arguments['workspaceRoot']! as String,
-      deadlineMs: arguments['deadlineMs']! as int,
-      fingerprint: fingerprint,
-    );
   }
+
+  // Bind synchronously, before any permission future can yield to a stop.
+  _VerificationStartIntent _startIntent(
+    Map<String, Object?> arguments,
+    String fingerprint,
+  ) => (
+    operationId: arguments['operationId']! as String,
+    workspaceRoot: arguments['workspaceRoot']! as String,
+    deadlineMs: arguments['deadlineMs']! as int,
+    fingerprint: fingerprint,
+  );
 }

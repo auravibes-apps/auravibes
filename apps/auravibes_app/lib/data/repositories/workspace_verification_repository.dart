@@ -8,7 +8,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 export 'workspace_verification_reservations.dart'
-    show ScopedVerificationReservation;
+    show ScopedVerificationReservation, VerificationReservationRequest;
 
 /// Local owner policy and durable records. This repository never runs tools.
 class WorkspaceVerificationRepository {
@@ -47,21 +47,11 @@ class WorkspaceVerificationRepository {
     () => _saveWorkspaceSettings(database, getSettings, workspaceId, settings),
   );
 
-  Future<ScopedVerificationReservation> reserve({
-    required String workspaceId,
-    required String turnId,
-    required String toolCallId,
-    required int configRevision,
-    required int maxRepairAttempts,
-  }) => database.transaction(
+  Future<ScopedVerificationReservation> reserve(
+    VerificationReservationRequest request,
+  ) => database.transaction(
     () => WorkspaceVerificationReservations(database, _sessionId, getSettings)
-        .reserve((
-          workspaceId: workspaceId,
-          turnId: turnId,
-          toolCallId: toolCallId,
-          configRevision: configRevision,
-          maxRepairAttempts: maxRepairAttempts,
-        )),
+        .reserve(request),
   );
 
   /// Returns the persisted winner so late replies cannot restore a pass.
@@ -109,17 +99,30 @@ Future<void> _saveWorkspaceSettings(
 Future<void> _saveWorkspaceSettingsInTransaction(
   _SaveWorkspaceSettings request,
 ) async {
-  if (!await isLocalVerificationWorkspace(
-    request.database,
-    request.workspaceId,
-  )) {
+  await _requireLocalSettingsOwner(request);
+  final current = await request.getSettings(request.workspaceId);
+  await _persistNextSettings(request, current);
+}
+
+Future<void> _requireLocalSettingsOwner(
+  _SaveWorkspaceSettings request,
+) async {
+  final database = request.database;
+  final workspaceId = request.workspaceId;
+  if (!await isLocalVerificationWorkspace(database, workspaceId)) {
     throw const WorkspaceTableException(denied: true);
   }
-  final current = await request.getSettings(request.workspaceId);
-  if (current.revision != request.settings.revision) {
+}
+
+Future<void> _persistNextSettings(
+  _SaveWorkspaceSettings request,
+  ScopedVerificationSettings current,
+) async {
+  final requested = request.settings;
+  if (current.revision != requested.revision) {
     throw const WorkspaceTableException(conflict: true);
   }
-  final next = _nextSettingsRevision(request.settings, current.revision);
+  final next = _nextSettingsRevision(requested, current.revision);
   await _storeSettings(request.database, request.workspaceId, next);
 }
 
@@ -142,10 +145,26 @@ Future<void> _storeSettings(
 Future<ScopedVerificationResult> _completeWorkspaceVerification(
   _CompleteWorkspaceVerification request,
 ) async {
-  final row = await (request.database.select(
-    request.database.workspaceVerificationRuns,
-  )..where((row) => row.id.equals(request.operationId))).getSingleOrNull();
+  final row = await _verificationRun(request);
   if (row == null) return verificationUnavailable('workspace_unavailable');
+
+  return await _completeRunForCurrentSession(request, row);
+}
+
+Future<WorkspaceVerificationRunRow?> _verificationRun(
+  _CompleteWorkspaceVerification request,
+) async {
+  final database = request.database;
+  final query = database.select(database.workspaceVerificationRuns);
+  query.where((row) => row.id.equals(request.operationId));
+
+  return await query.getSingleOrNull();
+}
+
+Future<ScopedVerificationResult> _completeRunForCurrentSession(
+  _CompleteWorkspaceVerification request,
+  WorkspaceVerificationRunRow row,
+) async {
   final saved = _completedResult(row);
   if (saved != null) return saved;
   if (row.sessionId != request.sessionId) {
@@ -170,25 +189,43 @@ Future<ScopedVerificationResult> _resultWithCurrentAuthority(
   WorkspaceVerificationRunRow row,
 ) async {
   final settings = await request.getSettings(row.workspaceId);
-  final safe = settings.enabled && settings.revision == row.configRevision
-      ? request.result
-      : verificationUnavailable('configuration_changed');
-  final rows =
-      await (request.database.select(request.database.workspaceVerificationRuns)
-            ..where(
-              (entry) =>
-                  entry.workspaceId.equals(row.workspaceId) &
-                  entry.turnId.equals(row.turnId),
-            ))
-          .get();
+  final safe = _resultAuthorizedBySettings(request, row, settings);
+  final rows = await _runsForTurn(request.database, row);
   final remaining = verificationRepairsRemaining(rows);
 
-  return ScopedVerificationResult.fromJson({
-    ...safe.toJson(),
-    'repairAttemptsRemaining': remaining,
-    'repairAllowed': safe.outcome == .fail && remaining > 0,
-  });
+  return _resultWithRepairAuthority(safe, remaining);
 }
+
+ScopedVerificationResult _resultAuthorizedBySettings(
+  _CompleteWorkspaceVerification request,
+  WorkspaceVerificationRunRow row,
+  ScopedVerificationSettings settings,
+) => settings.enabled && settings.revision == row.configRevision
+    ? request.result
+    : verificationUnavailable('configuration_changed');
+
+Future<List<WorkspaceVerificationRunRow>> _runsForTurn(
+  AppDatabase database,
+  WorkspaceVerificationRunRow row,
+) async {
+  final query = database.select(database.workspaceVerificationRuns);
+  query.where(
+    (entry) =>
+        entry.workspaceId.equals(row.workspaceId) &
+        entry.turnId.equals(row.turnId),
+  );
+
+  return await query.get();
+}
+
+ScopedVerificationResult _resultWithRepairAuthority(
+  ScopedVerificationResult result,
+  int remaining,
+) => ScopedVerificationResult.fromJson({
+  ...result.toJson(),
+  'repairAttemptsRemaining': remaining,
+  'repairAllowed': result.outcome == .fail && remaining > 0,
+});
 
 Future<void> _saveCompletedResult(
   AppDatabase database,

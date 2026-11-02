@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 
+const int _feedbackValueCount = 2;
+
 /// Keeps state and repair authority inside the engine's ordinary context cap.
 /// Full normalized paths and check output remain in the durable result record.
 Map<String, Object?> buildScopedVerificationFeedback(
@@ -42,7 +44,7 @@ Map<String, Object?> _emptyFeedback(Map<String, Object?> verification) => {
 int _perValueByteBudget(Map<String, Object?> feedback) {
   final overhead = utf8.encode(jsonEncode(feedback)).length;
 
-  return (defaultToolOutputBytes - overhead) ~/ 2;
+  return (defaultToolOutputBytes - overhead) ~/ _feedbackValueCount;
 }
 
 typedef _FeedbackTextWrite = ({
@@ -61,9 +63,25 @@ void _writeFeedbackText(_FeedbackTextWrite request) {
   final toolResult = request.toolResult;
   final output = request.output;
   final original = request.original;
+  _writeVerificationFeedback(verification, result, output);
+  _writeOriginalFeedback(feedback, original, toolResult);
+}
+
+void _writeVerificationFeedback(
+  Map<String, Object?> verification,
+  ScopedVerificationResult result,
+  String output,
+) {
   verification['output'] = output;
   verification['outputTruncated'] =
       result.outputTruncated || output != result.output;
+}
+
+void _writeOriginalFeedback(
+  Map<String, Object?> feedback,
+  String original,
+  String toolResult,
+) {
   feedback['toolResult'] = original;
   feedback['toolResultTruncated'] = original != toolResult;
 }
@@ -80,15 +98,17 @@ int _maximumEncodedPrefixLength(String source, int budget) {
   var high = source.length;
   while (low < high) {
     final middle = (low + high + 1) ~/ 2;
-    final prefix = String.fromCharCodes(source.codeUnits.take(middle));
-    if (utf8.encode(jsonEncode(prefix)).length <= budget) {
-      low = middle;
-    } else {
-      high = middle - 1;
-    }
+    if (_encodedPrefixFits(source, middle, budget)) low = middle;
+    else high = middle - 1;
   }
 
   return low;
+}
+
+bool _encodedPrefixFits(String source, int length, int budget) {
+  final prefix = String.fromCharCodes(source.codeUnits.take(length));
+
+  return utf8.encode(jsonEncode(prefix)).length <= budget;
 }
 
 int _avoidSplitSurrogate(String source, int length) =>

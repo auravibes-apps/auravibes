@@ -30,15 +30,32 @@ class const WorkspaceVerificationReservations(
   Future<ScopedVerificationReservation> reserve(
     VerificationReservationRequest request,
   ) async {
-    if (!await isLocalVerificationWorkspace(database, request.workspaceId)) {
-      return _noRun('unsupported_workspace', outcome: .skipped);
-    }
-    if (!await _validTurn(request)) return _noRun('invalid_turn');
+    final invalid = await _invalidReservation(request);
+    if (invalid != null) return invalid;
     final rows = await _recoverRows(request);
     final existing = _existingReservation(rows, request.toolCallId);
-    if (existing != null) {
-      return existing;
-    }
+    if (existing != null) return existing;
+
+    return await _reserveNext(request, rows);
+  }
+
+  Future<ScopedVerificationReservation?> _invalidReservation(
+    VerificationReservationRequest request,
+  ) async {
+    final supported = await isLocalVerificationWorkspace(
+      database,
+      request.workspaceId,
+    );
+    if (!supported) return _noRun('unsupported_workspace', outcome: .skipped);
+    if (!await _validTurn(request)) return _noRun('invalid_turn');
+
+    return null;
+  }
+
+  Future<ScopedVerificationReservation> _reserveNext(
+    VerificationReservationRequest request,
+    List<WorkspaceVerificationRunRow> rows,
+  ) async {
     final settings = await getSettings(request.workspaceId);
     final plan = _reservationPlan(request, rows, settings);
     if (plan.result case final result?) return result;
@@ -53,14 +70,22 @@ class const WorkspaceVerificationReservations(
   }
 
   Future<bool> _validTurn(VerificationReservationRequest request) async {
-    if (request.toolCallId.isEmpty || request.toolCallId.length > 512) {
-      return false;
-    }
+    if (!_validToolCallId(request.toolCallId)) return false;
     final message = await database.messageDao.getMessageById(request.turnId);
     if (message == null || !message.isUser) return false;
+    return await _messageBelongsToWorkspace(message.conversationId, request);
+  }
+
+  bool _validToolCallId(String toolCallId) =>
+      toolCallId.isNotEmpty && toolCallId.length <= 512;
+
+  Future<bool> _messageBelongsToWorkspace(
+    String conversationId,
+    VerificationReservationRequest request,
+  ) async {
     final chat = await (database.select(
       database.conversations,
-    )..where((row) => row.id.equals(message.conversationId))).getSingleOrNull();
+    )..where((row) => row.id.equals(conversationId))).getSingleOrNull();
 
     return chat?.workspaceId == request.workspaceId;
   }
@@ -87,52 +112,80 @@ class const WorkspaceVerificationReservations(
     entry,
   ) async {
     final id = const Uuid().v4();
-    final request = entry.request;
-    final _ = await database
-        .into(database.workspaceVerificationRuns)
-        .insert(
-          WorkspaceVerificationRunsCompanion.insert(
-            id: id,
-            workspaceId: request.workspaceId,
-            turnId: request.turnId,
-            toolCallId: request.toolCallId,
-            sessionId: sessionId,
-            configRevision: request.configRevision,
-            ordinal: entry.ordinal,
-            repairLimit: entry.limit,
-            isRepair: entry.repair,
-          ),
-        );
+    await _writeReservation(entry, id);
 
-    return (
-      operationId: id,
-      result: null,
-      repairAttemptsRemaining: max(
-        0,
-        entry.limit - entry.used - (entry.repair ? 1 : 0),
-      ),
-      shouldRun: true,
-    );
+    return _createdReservation(entry, id);
   }
+
+  Future<void> _writeReservation(
+    ({
+      VerificationReservationRequest request,
+      int ordinal,
+      int limit,
+      bool repair,
+      int used,
+    }) entry,
+    String id,
+  ) async {
+    final request = entry.request;
+    final companion = WorkspaceVerificationRunsCompanion.insert(
+      id: id,
+      workspaceId: request.workspaceId,
+      turnId: request.turnId,
+      toolCallId: request.toolCallId,
+      sessionId: sessionId,
+      configRevision: request.configRevision,
+      ordinal: entry.ordinal,
+      repairLimit: entry.limit,
+      isRepair: entry.repair,
+    );
+    await database.into(database.workspaceVerificationRuns).insert(companion);
+  }
+
+  ScopedVerificationReservation _createdReservation(
+    ({
+      VerificationReservationRequest request,
+      int ordinal,
+      int limit,
+      bool repair,
+      int used,
+    }) entry,
+    String id,
+  ) => (
+    operationId: id,
+    result: null,
+    repairAttemptsRemaining: max(
+      0,
+      entry.limit - entry.used - (entry.repair ? 1 : 0),
+    ),
+    shouldRun: true,
+  );
 
   Future<List<WorkspaceVerificationRunRow>> _queryRows(
     VerificationReservationRequest request,
-  ) =>
-      (database.select(database.workspaceVerificationRuns)
-            ..where(
-              (row) =>
-                  row.workspaceId.equals(request.workspaceId) &
-                  row.turnId.equals(request.turnId),
-            )
-            ..orderBy([(row) => OrderingTerm.asc(row.ordinal)]))
-          .get();
+  ) async {
+    final table = database.workspaceVerificationRuns;
+    final query = database.select(table);
+    query.where(
+      (row) =>
+          row.workspaceId.equals(request.workspaceId) &
+          row.turnId.equals(request.turnId),
+    );
+    query.orderBy([(row) => OrderingTerm.asc(row.ordinal)]);
+
+    return await query.get();
+  }
 
   Future<void> _recoverInterruptedRow(WorkspaceVerificationRunRow row) async {
     if (row.resultJson != null || row.sessionId == sessionId) return;
+    await _markInterrupted(row.id);
+  }
+
+  Future<void> _markInterrupted(String runId) async {
     final saved = jsonEncode(verificationUnavailable('interrupted').toJson());
     final _ =
         await (database.update(database.workspaceVerificationRuns)..where(
-              (entry) => entry.id.equals(row.id) & entry.resultJson.isNull(),
+              (entry) => entry.id.equals(runId) & entry.resultJson.isNull(),
             ))
             .write(WorkspaceVerificationRunsCompanion(resultJson: .new(saved)));
   }
@@ -205,16 +258,29 @@ _reservationPlan(
   ScopedVerificationSettings settings,
 ) {
   final blocked = _reservationBlockReason(request, rows, settings);
-  if (blocked != null) {
-    return (limit: 0, repair: false, used: 0, result: blocked);
-  }
+  if (blocked != null) return _blockedReservationPlan(blocked);
+
+  return _availableReservationPlan(request, rows, settings);
+}
+
+({int limit, bool repair, int used, ScopedVerificationReservation? result})
+_blockedReservationPlan(ScopedVerificationReservation result) => (
+  limit: 0,
+  repair: false,
+  used: 0,
+  result: result,
+);
+
+({int limit, bool repair, int used, ScopedVerificationReservation? result})
+_availableReservationPlan(
+  VerificationReservationRequest request,
+  List<WorkspaceVerificationRunRow> rows,
+  ScopedVerificationSettings settings,
+) {
   final results = rows
       .map((row) => decodeVerificationResult(row.resultJson ?? ''))
       .toList();
-  final limit = min(
-    rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts,
-    settings.maxRepairAttempts,
-  );
+  final limit = _repairLimit(request, rows, settings);
   final used = rows.where((row) => row.isRepair).length;
   final repair = results.isNotEmpty && results.last.outcome == .fail;
   final result = repair && used >= limit
@@ -223,6 +289,15 @@ _reservationPlan(
 
   return (limit: limit, repair: repair, used: used, result: result);
 }
+
+int _repairLimit(
+  VerificationReservationRequest request,
+  List<WorkspaceVerificationRunRow> rows,
+  ScopedVerificationSettings settings,
+) => min(
+  rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts,
+  settings.maxRepairAttempts,
+);
 
 Future<bool> isLocalVerificationWorkspace(
   AppDatabase database,

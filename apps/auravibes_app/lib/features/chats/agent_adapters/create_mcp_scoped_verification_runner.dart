@@ -29,21 +29,11 @@ class const CreateMcpScopedVerificationRunner({
       database: database,
       repository: repository,
       permission: permission,
+      openSession: openSession,
     );
     final target = await _runnerTarget(dependencies, input);
-    if (target == null || !_requestActive(input)) return null;
-    if (!await _runnerPermissionAllowed(dependencies, input, target)) {
-      return null;
-    }
 
-    final session = await openSession(input, target);
-    if (!_requestActive(input)) {
-      session.close();
-
-      return null;
-    }
-
-    return _scopedRunner(input, target, session, dependencies);
+    return await _openAllowedRunner(dependencies, input, target);
   }
 }
 
@@ -54,30 +44,59 @@ typedef _RunnerFactoryDependencies = ({
     AgentToolApprovalRequest<ResolvedTool> request,
   )
   permission,
+  Future<ScopedVerificationOwnedCaller> Function(
+    ScopedVerificationRunnerInput input,
+    ResolvedTool target,
+  )
+  openSession,
 });
+
+Future<ScopedVerificationRunner?> _openAllowedRunner(
+  _RunnerFactoryDependencies dependencies,
+  ScopedVerificationRunnerInput input,
+  ResolvedTool? target,
+) async {
+  if (target == null || !_requestActive(input)) return null;
+  if (!await _runnerPermissionAllowed(dependencies, input, target)) return null;
+
+  final session = await dependencies.openSession(input, target);
+  if (!_requestActive(input)) return _closeRunnerSession(session);
+
+  return _scopedRunner(input, target, session, dependencies);
+}
+
+ScopedVerificationRunner? _closeRunnerSession(
+  ScopedVerificationOwnedCaller session,
+) {
+  session.close();
+
+  return null;
+}
 
 Future<ResolvedTool?> _runnerTarget(
   _RunnerFactoryDependencies dependencies,
   ScopedVerificationRunnerInput input,
 ) async {
-  final conversation = await dependencies.database.conversationDao
-      .getConversationById(input.invocation.conversationId);
+  final database = dependencies.database;
+  final invocation = input.invocation;
+  final settings = input.settings;
+  final conversation = await database.conversationDao.getConversationById(
+    invocation.conversationId,
+  );
   if (conversation == null) return null;
-  final target = await _resolveTool(
-    dependencies.database,
-    input.settings.runnerToolId,
-    input.settings,
-    conversation.workspaceId,
-  );
-  final edit = await _resolveTool(
-    dependencies.database,
-    input.invocation.tool.tableId,
-    input.settings,
-    conversation.workspaceId,
-  );
-  if (edit?.toolIdentifier != input.invocation.tool.toolIdentifier) {
-    return null;
-  }
+  final target = await _resolveTool((
+    database: database,
+    id: settings.runnerToolId,
+    settings: settings,
+    workspaceId: conversation.workspaceId,
+  ));
+  final edit = await _resolveTool((
+    database: database,
+    id: invocation.tool.tableId,
+    settings: settings,
+    workspaceId: conversation.workspaceId,
+  ));
+  if (edit?.toolIdentifier != invocation.tool.toolIdentifier) return null;
 
   return target;
 }
@@ -92,28 +111,46 @@ Future<bool> _runnerPermissionAllowed(
   if (workspaceId == null) return false;
   final current = await dependencies.repository.getSettings(workspaceId);
   if (!_settingsMatch(input.settings, current)) return false;
-  if (!await _toolsMatch(
-    dependencies.database,
-    input,
-    target,
-    current,
-    workspaceId,
-  )) {
+  return await _runnerPermissionsCurrent((
+    dependencies: dependencies,
+    input: input,
+    target: target,
+    settings: current,
+    workspaceId: workspaceId,
+  ));
+}
+
+typedef _RunnerPermissionRequest = ({
+  _RunnerFactoryDependencies dependencies,
+  ScopedVerificationRunnerInput input,
+  ResolvedTool target,
+  ScopedVerificationSettings settings,
+  String workspaceId,
+});
+
+Future<bool> _runnerPermissionsCurrent(_RunnerPermissionRequest request) async {
+  if (!await _toolsMatch((
+    database: request.dependencies.database,
+    input: request.input,
+    target: request.target,
+    settings: request.settings,
+    workspaceId: request.workspaceId,
+  ))) {
     return false;
   }
-  if (!await _permissionDecisionsMatch(
-    dependencies,
-    input,
-    target,
-    workspaceId,
-  )) {
+  if (!await _permissionDecisionsMatch((
+    dependencies: request.dependencies,
+    input: request.input,
+    target: request.target,
+    workspaceId: request.workspaceId,
+  ))) {
     return false;
   }
 
   return await _settingsRemainCurrent(
-    dependencies.repository,
-    input,
-    workspaceId,
+    request.dependencies.repository,
+    request.input,
+    request.workspaceId,
   );
 }
 
@@ -129,50 +166,63 @@ bool _settingsMatch(
   ScopedVerificationSettings current,
 ) => current.enabled && current.revision == requested.revision;
 
-Future<bool> _toolsMatch(
+typedef _ToolMatchRequest = ({
   AppDatabase database,
   ScopedVerificationRunnerInput input,
   ResolvedTool target,
   ScopedVerificationSettings settings,
   String workspaceId,
-) async {
+});
+
+Future<bool> _toolsMatch(_ToolMatchRequest request) async {
   final runner = await _resolveTool(
-    database,
-    target.tableId,
-    settings,
-    workspaceId,
+    (
+      database: request.database,
+      id: request.target.tableId,
+      settings: request.settings,
+      workspaceId: request.workspaceId,
+    ),
   );
   final edit = await _resolveTool(
-    database,
-    input.invocation.tool.tableId,
-    settings,
-    workspaceId,
+    (
+      database: request.database,
+      id: request.input.invocation.tool.tableId,
+      settings: request.settings,
+      workspaceId: request.workspaceId,
+    ),
   );
 
-  return runner?.toolIdentifier == target.toolIdentifier &&
-      edit?.toolIdentifier == input.invocation.tool.toolIdentifier;
+  return runner?.toolIdentifier == request.target.toolIdentifier &&
+      edit?.toolIdentifier == request.input.invocation.tool.toolIdentifier;
 }
 
-Future<bool> _permissionDecisionsMatch(
+typedef _PermissionDecisionRequest = ({
   _RunnerFactoryDependencies dependencies,
   ScopedVerificationRunnerInput input,
   ResolvedTool target,
   String workspaceId,
+});
+
+Future<bool> _permissionDecisionsMatch(
+  _PermissionDecisionRequest request,
 ) async {
-  final edit = await dependencies.permission((
-    conversationId: input.invocation.conversationId,
+  final invocation = request.input.invocation;
+  final workspaceId = request.workspaceId;
+  final edit = await request.dependencies.permission((
+    conversationId: invocation.conversationId,
     workspaceId: workspaceId,
-    toolCallId: input.invocation.toolCallId,
-    resolvedTool: input.invocation.tool,
+    toolCallId: invocation.toolCallId,
+    resolvedTool: invocation.tool,
     argumentsRaw: null,
   ));
   if (!edit.isGranted() && !edit.needsConfirmation) return false;
-  final runner = await dependencies.permission((
-    conversationId: input.invocation.conversationId,
+  final runnerRequest = request.input.request;
+  final runner = await request.dependencies.permission((
+    conversationId: invocation.conversationId,
     workspaceId: workspaceId,
-    toolCallId: input.request.operationId,
-    resolvedTool: target,
-    argumentsRaw: jsonEncode(input.request.toJson()),
+    toolCallId: runnerRequest.operationId,
+    resolvedTool: request.target,
+    argumentsRaw: jsonEncode(runnerRequest.toJson()),
   ));
 
   return runner.isGranted();
@@ -188,26 +238,41 @@ Future<bool> _settingsRemainCurrent(
   return _settingsMatch(input.settings, latest) && _requestActive(input);
 }
 
-Future<ResolvedTool?> _resolveTool(
+typedef _ToolResolutionRequest = ({
   AppDatabase database,
   String id,
   ScopedVerificationSettings settings,
   String workspaceId,
-) async {
-  final row = await _enabledToolRow(database, id, workspaceId);
+});
+
+Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
+  final row = await _enabledToolRow(
+    request.database,
+    request.id,
+    request.workspaceId,
+  );
   if (row == null) return null;
+  return await _resolveToolGroup(row, request);
+}
+
+Future<ResolvedTool?> _resolveToolGroup(
+  ToolsTable row,
+  _ToolResolutionRequest request,
+) async {
   final groupId = row.workspaceToolsGroupId;
   if (groupId == null) return null;
   final group = await _enabledToolGroup(
-    database,
-    groupId,
-    row.workspaceId,
-    settings.mcpServerId,
+    (
+      database: request.database,
+      id: groupId,
+      workspaceId: row.workspaceId,
+      serverId: request.settings.mcpServerId,
+    ),
   );
   if (group == null) return null;
   final server = await _enabledMcpServer(
-    database,
-    settings.mcpServerId,
+    request.database,
+    request.settings.mcpServerId,
     row.workspaceId,
   );
   if (server == null) return null;
@@ -216,11 +281,34 @@ Future<ResolvedTool?> _resolveTool(
     tableId: row.id,
     toolIdentifier: row.toolId,
     mcp: (
-      mcpServerId: settings.mcpServerId,
-      mcpSlug: settings.mcpServerId,
+      mcpServerId: request.settings.mcpServerId,
+      mcpSlug: request.settings.mcpServerId,
       outputSchemaJson: row.outputSchema,
     ),
   );
+}
+
+typedef _EnabledToolGroupRequest = ({
+  AppDatabase database,
+  String id,
+  String workspaceId,
+  String serverId,
+});
+
+Future<ToolsGroupsTable?> _enabledToolGroup(
+  _EnabledToolGroupRequest request,
+) async {
+  final group = await (request.database.select(
+    request.database.toolsGroups,
+  )..where((row) => row.id.equals(request.id))).getSingleOrNull();
+  if (group == null ||
+      !group.isEnabled ||
+      group.workspaceId != request.workspaceId ||
+      group.mcpServerId != request.serverId) {
+    return null;
+  }
+
+  return group;
 }
 
 Future<ToolsTable?> _enabledToolRow(
@@ -236,25 +324,6 @@ Future<ToolsTable?> _enabledToolRow(
   }
 
   return row;
-}
-
-Future<ToolsGroupsTable?> _enabledToolGroup(
-  AppDatabase database,
-  String id,
-  String workspaceId,
-  String serverId,
-) async {
-  final group = await (database.select(
-    database.toolsGroups,
-  )..where((row) => row.id.equals(id))).getSingleOrNull();
-  if (group == null ||
-      !group.isEnabled ||
-      group.workspaceId != workspaceId ||
-      group.mcpServerId != serverId) {
-    return null;
-  }
-
-  return group;
 }
 
 Future<McpServersTable?> _enabledMcpServer(

@@ -30,23 +30,24 @@ typedef _SequencedMessage = ({
 Future<List<_SequencedMessage>> _messagesForConversation(
   AppDatabase database,
   String conversationId,
-) async =>
-    (await database
-            .customSelect(
-              'SELECT id, rowid AS sequence, metadata, is_user FROM messages '
-              'WHERE conversation_id = ? ORDER BY rowid ASC',
-              variables: [Variable<String>(conversationId)],
-            )
-            .get())
-        .map(
-          (row) => (
-            id: row.read<String>('id'),
-            sequence: row.read<int>('sequence'),
-            metadata: row.readNullable<String>('metadata'),
-            isUser: row.read<bool>('is_user'),
-          ),
-        )
-        .toList();
+) async {
+  final rows = await database
+      .customSelect(
+        'SELECT id, rowid AS sequence, metadata, is_user FROM messages '
+        'WHERE conversation_id = ? ORDER BY rowid ASC',
+        variables: [Variable<String>(conversationId)],
+      )
+      .get();
+
+  return rows.map(_sequencedMessage).toList();
+}
+
+_SequencedMessage _sequencedMessage(QueryRow row) => (
+  id: row.read<String>('id'),
+  sequence: row.read<int>('sequence'),
+  metadata: row.readNullable<String>('metadata'),
+  isUser: row.read<bool>('is_user'),
+);
 
 ScopedVerificationIdentity _resolvedIdentity(
   String workspaceId,
@@ -64,19 +65,18 @@ _SequencedMessage? _uniqueToolCall(
   List<_SequencedMessage> messages,
   String toolCallId,
 ) {
-  final calls = messages
-      .where((message) {
-        if (message.isUser) return false;
-        final metadata = MessageMetadataEntity.fromJsonString(message.metadata);
-
-        return metadata?.toolCalls.any((call) => call.id == toolCallId) ??
-            false;
-      })
-      .take(2)
-      .toList();
+  final calls = messages.where((message) => _callsTool(message, toolCallId))
+      .take(2).toList();
   if (calls.length != 1) return null;
 
   return calls.single;
+}
+
+bool _callsTool(_SequencedMessage message, String toolCallId) {
+  if (message.isUser) return false;
+  final metadata = MessageMetadataEntity.fromJsonString(message.metadata);
+
+  return metadata?.toolCalls.any((call) => call.id == toolCallId) ?? false;
 }
 
 _SequencedMessage? _originatingUserMessage(

@@ -2,11 +2,7 @@ import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
 
-// Drift generates behavior for these schema getters.
-// ignore_for_file: weight-of-class
-
-@DataClassName('WorkspaceVerificationRunRow')
-class WorkspaceVerificationRuns extends Table {
+mixin _WorkspaceVerificationRunColumns on Table {
   TextColumn get id => text()();
   TextColumn get workspaceId =>
       text().references(Workspaces, #id, onDelete: .cascade)();
@@ -19,7 +15,11 @@ class WorkspaceVerificationRuns extends Table {
   IntColumn get repairLimit => integer()();
   BoolColumn get isRepair => boolean()();
   TextColumn get resultJson => text().nullable()();
+}
 
+@DataClassName('WorkspaceVerificationRunRow')
+class WorkspaceVerificationRuns extends Table
+    with _WorkspaceVerificationRunColumns {
   @override
   Set<Column<Object>> get primaryKey => {id};
 

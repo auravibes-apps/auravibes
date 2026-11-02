@@ -35,33 +35,45 @@ class const VerifyReportedEditsUsecase({
   ));
 
   Future<ScopedVerificationResult> _verify(_VerificationInput input) async {
-    final turnId = input.identity.turnId;
-    if (turnId == null) {
-      return ScopedVerificationResult(
-        outcome: .incomplete,
-        reason: 'invalid_turn',
-      );
+    final reservation = await _reserveVerification(input);
+    if (reservation.result case final ScopedVerificationResult result) {
+      return result;
     }
-    final reservation = await repository.reserve(
-      workspaceId: input.identity.workspaceId,
-      turnId: turnId,
-      toolCallId: input.invocation.toolCallId,
-      configRevision: input.settings.revision,
-      maxRepairAttempts: input.settings.maxRepairAttempts,
-    );
-    if (reservation.result case final ScopedVerificationResult recorded) {
-      return recorded;
-    }
-    final id = reservation.operationId;
-    if (id == null) {
+    final operationId = reservation.operationId;
+    if (operationId == null) {
       return ScopedVerificationResult(
         outcome: .incomplete,
         reason: 'invalid_reservation',
       );
     }
 
-    return await _runReservedVerification(input, id);
+    return await _runReservedVerification(input, operationId);
   }
+
+  Future<ScopedVerificationReservation> _reserveVerification(
+    _VerificationInput input,
+  ) async {
+    final turnId = input.identity.turnId;
+    if (turnId == null) return _invalidTurnReservation();
+
+    return await repository.reserve((
+      workspaceId: input.identity.workspaceId,
+      turnId: turnId,
+      toolCallId: input.invocation.toolCallId,
+      configRevision: input.settings.revision,
+      maxRepairAttempts: input.settings.maxRepairAttempts,
+    ));
+  }
+
+  ScopedVerificationReservation _invalidTurnReservation() => (
+    operationId: null,
+    result: ScopedVerificationResult(
+      outcome: .incomplete,
+      reason: 'invalid_turn',
+    ),
+    repairAttemptsRemaining: 0,
+    shouldRun: false,
+  );
 
   Future<ScopedVerificationResult> _runReservedVerification(
     _VerificationInput input,
@@ -85,23 +97,26 @@ class const VerifyReportedEditsUsecase({
     String operationId,
     DateTime deadline,
   ) async {
+    final invocation = input.invocation;
+    final settings = input.settings;
+    final cancellation = input.cancellation;
     final request = ScopedVerificationRequest(
       operationId: operationId,
-      workspaceRoot: input.settings.workspaceRoot,
+      workspaceRoot: settings.workspaceRoot,
       deadline: deadline,
       selections: input.selections,
-      maxOutputBytes: input.settings.maxOutputBytes,
+      maxOutputBytes: settings.maxOutputBytes,
     );
     final runner = await _createBounded((
-      invocation: input.invocation,
-      settings: input.settings,
+      invocation: invocation,
+      settings: settings,
       request: request,
-      cancellation: input.cancellation,
+      cancellation: cancellation,
     ));
     if (runner == null) return _unavailableRunnerResult(input, request);
 
     return await ScopedVerificationService(runner: runner)
-        .call(request, cancellation: input.cancellation);
+        .call(request, cancellation: cancellation);
   }
 
   Future<ScopedVerificationRunner?> _createBounded(
@@ -111,19 +126,31 @@ class const VerifyReportedEditsUsecase({
     if (input.cancellation.isCancellationRequested || remaining <= .zero) {
       return null;
     }
-    final interrupted = Completer<ScopedVerificationRunner?>();
-    void end() {
-      if (!interrupted.isCompleted) interrupted.complete();
-    }
+    return await _raceRunnerCreation(input, remaining, createRunner);
+  }
 
-    final timer = Timer(remaining, end);
-    final registration = input.cancellation.registerCleanup(end);
+  Future<ScopedVerificationRunner?> _raceRunnerCreation(
+    ScopedVerificationRunnerInput input,
+    Duration remaining,
+    Future<ScopedVerificationRunner?> Function(
+      ScopedVerificationRunnerInput input,
+    ) create,
+  ) async {
+    final interrupted = Completer<ScopedVerificationRunner?>();
+    final timer = Timer(remaining, () => _endRunnerCreation(interrupted));
+    final registration = input.cancellation.registerCleanup(
+      () => _endRunnerCreation(interrupted),
+    );
     try {
-      return await Future.any([createRunner(input), interrupted.future]);
+      return await Future.any([create(input), interrupted.future]);
     } finally {
       timer.cancel();
       final _ = registration.remove();
     }
+  }
+
+  void _endRunnerCreation(Completer<ScopedVerificationRunner?> interrupted) {
+    if (!interrupted.isCompleted) interrupted.complete();
   }
 }
 
@@ -152,6 +179,13 @@ typedef _SelectedVerification = ({
   List<ScopedVerificationSelection> selections,
 });
 
+typedef _EligibleVerification = ({
+  VerifyReportedEditsUsecase usecase,
+  ScopedVerificationInvocation invocation,
+  _VerifyReportedEditRequest request,
+  _VerificationContext context,
+});
+
 Future<Object> _verifyReportedEdit(
   VerifyReportedEditsUsecase usecase,
   _VerifyReportedEditRequest request,
@@ -178,7 +212,12 @@ Future<Object> _verifyCandidateEdit(
   final context = await _verificationContext(usecase, invocation, request.tool);
   if (context == null) return request.result.modelText;
 
-  return await _verifyEligibleEdit(usecase, invocation, request, context);
+  return await _verifyEligibleEdit((
+    usecase: usecase,
+    invocation: invocation,
+    request: request,
+    context: context,
+  ));
 }
 
 Future<_VerificationContext?> _verificationContext(
@@ -199,14 +238,27 @@ Future<_VerificationContext?> _verificationContext(
 }
 
 Future<Object> _verifyEligibleEdit(
-  VerifyReportedEditsUsecase usecase,
-  ScopedVerificationInvocation invocation,
-  _VerifyReportedEditRequest request,
-  _VerificationContext context,
+  _EligibleVerification eligible,
 ) async {
-  if (request.tool.mcpServerId != context.settings.mcpServerId) {
-    return _feedback(request.result, .incomplete, 'server_mismatch');
-  }
+  final invalid = _editServerMismatch(eligible);
+  if (invalid != null) return invalid;
+
+  return await _selectAndRunVerification(eligible);
+}
+
+Object? _editServerMismatch(_EligibleVerification eligible) {
+  final request = eligible.request;
+  final context = eligible.context;
+  if (request.tool.mcpServerId == context.settings.mcpServerId) return null;
+
+  return _feedback(request.result, .incomplete, 'server_mismatch');
+}
+
+Future<Object> _selectAndRunVerification(
+  _EligibleVerification eligible,
+) async {
+  final request = eligible.request;
+  final context = eligible.context;
   final selection = _verificationSelection(
     context.settings,
     request.result.structuredContent,
@@ -220,8 +272,8 @@ Future<Object> _verifyEligibleEdit(
   }
 
   return await _runSelectedVerification((
-    usecase: usecase,
-    invocation: invocation,
+    usecase: eligible.usecase,
+    invocation: eligible.invocation,
     original: request.result,
     context: context,
     selections: selections,
@@ -297,13 +349,17 @@ _VerificationSelection _verificationSelection(
 }
 
 Future<Object> _runSelectedVerification(_SelectedVerification request) async {
-  final verified = await request.usecase.cancellation.run(
-    request.invocation,
-    (scope) => request.usecase._verify((
-      identity: request.context.identity,
-      invocation: request.invocation,
-      settings: request.context.settings,
-      selections: request.selections,
+  final usecase = request.usecase;
+  final invocation = request.invocation;
+  final context = request.context;
+  final selections = request.selections;
+  final verified = await usecase.cancellation.run(
+    invocation,
+    (scope) => usecase._verify((
+      identity: context.identity,
+      invocation: invocation,
+      settings: context.settings,
+      selections: selections,
       cancellation: scope,
     )),
   );

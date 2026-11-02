@@ -300,12 +300,7 @@ void main() {
         ),
       ).thenAnswer((_) async => catalog);
       when(
-        () => resolvedToolService.call(
-          conversationId: any(named: 'conversationId'),
-          tool: any(named: 'tool'),
-          arguments: any(named: 'arguments'),
-          toolCallId: any(named: 'toolCallId'),
-        ),
+        () => resolvedToolService.call(any()),
       ).thenAnswer((_) async => 'done');
       when(
         () => resolvedToolService.takeMcpAppResultData(
