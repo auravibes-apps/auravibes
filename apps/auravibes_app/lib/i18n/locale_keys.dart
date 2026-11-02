@@ -3266,6 +3266,9 @@ abstract class LocaleKeys {
   static const verification_subtitle = 'verification.subtitle';
   static const verification_enabled = 'verification.enabled';
   static const verification_disabled = 'verification.disabled';
+  static const verification_loading = 'verification.loading';
+  static const verification_unavailable = 'verification.unavailable';
+  static const verification_unsaved = 'verification.unsaved';
   static const verification_configure = 'verification.configure';
   static const verification_enable = 'verification.enable';
   static const verification_enable_hint = 'verification.enable_hint';
@@ -3280,6 +3283,9 @@ abstract class LocaleKeys {
   static const verification_root_hint = 'verification.root_hint';
   static const verification_edit_tools = 'verification.edit_tools';
   static const verification_edit_tools_hint = 'verification.edit_tools_hint';
+  static const verification_missing_selections =
+      'verification.missing_selections';
+  static const verification_clear_missing = 'verification.clear_missing';
   static const verification_checks = 'verification.checks';
   static const verification_add_check = 'verification.add_check';
   static const verification_remove_check = 'verification.remove_check';
