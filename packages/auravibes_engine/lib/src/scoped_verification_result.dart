@@ -8,7 +8,7 @@ enum ScopedVerificationOutcome { pass, fail, skipped, cancelled, incomplete }
 
 /// Bounded check feedback. A tool's mutation outcome remains independent.
 final class ScopedVerificationResult {
-  factory ScopedVerificationResult({
+  factory({
     required ScopedVerificationOutcome outcome,
     required String reason,
     String output = '',

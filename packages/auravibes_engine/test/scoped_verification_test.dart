@@ -60,8 +60,8 @@ void main() {
     final checks = [check];
     final ids = {'edit'};
     final settings = ScopedVerificationSettings(
-      checks: checks,
       editToolIds: ids,
+      checks: checks,
     );
     args.add('malicious');
     suffixes.add('.sh');
@@ -70,7 +70,7 @@ void main() {
     expect(settings.checks.single.arguments, ['analyze']);
     expect(settings.checks.single.pathSuffixes, ['.dart']);
     expect(settings.editToolIds, {'edit'});
-    expect(() => settings.checks.clear(), throwsUnsupportedError);
+    expect(settings.checks.clear, throwsUnsupportedError);
   });
 
   test(

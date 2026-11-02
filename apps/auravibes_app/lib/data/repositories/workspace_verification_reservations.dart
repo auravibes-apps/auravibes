@@ -6,14 +6,6 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
-class const ScopedVerificationReservation({
-  final String? operationId,
-  final ScopedVerificationResult? result,
-  final int repairAttemptsRemaining = 0,
-}) {
-  bool get shouldRun => operationId != null && result == null;
-}
-
 typedef VerificationReservationRequest = ({
   String workspaceId,
   String turnId,
@@ -37,32 +29,33 @@ class const WorkspaceVerificationReservations(
     }
     if (!await _validTurn(request)) return _noRun('invalid_turn');
     final rows = await _recoverRows(request);
-    final matches = rows.where((row) => row.toolCallId == request.toolCallId);
-    if (matches.isNotEmpty) {
-      final existing = matches.first;
+    final existing = rows.where((row) => row.toolCallId == request.toolCallId).firstOrNull;
+    if (existing != null) {
+      final saved = existing.resultJson;
+
       return ScopedVerificationReservation(
-        result: existing.resultJson == null
+        result: saved == null
             ? verificationUnavailable('verification_in_progress')
-            : decodeVerificationResult(existing.resultJson!),
+            : decodeVerificationResult(saved),
       );
     }
     final settings = await getSettings(request.workspaceId);
     if (!settings.enabled) return _noRun('disabled', outcome: .skipped);
-    if (settings.revision != request.configRevision)
+    if (settings.revision != request.configRevision) {
       return _noRun('configuration_changed');
-    if (rows.any((row) => row.resultJson == null))
+    }
+    if (rows.any((row) => row.resultJson == null)) {
       return _noRun('verification_in_progress');
+    }
     final results = rows
-        .map((row) => decodeVerificationResult(row.resultJson!))
+        .map((row) => decodeVerificationResult(row.resultJson ?? ''))
         .toList();
     if (results.any(
       (result) => result.outcome == .incomplete || result.outcome == .cancelled,
     )) {
       return _noRun('unreconciled_check');
     }
-    final limit = rows.isEmpty
-        ? min(request.maxRepairAttempts, settings.maxRepairAttempts)
-        : min(rows.first.repairLimit, settings.maxRepairAttempts);
+    final limit = min(rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts, settings.maxRepairAttempts);
     if (limit < 0 || limit > ScopedVerificationLimits.maxRepairAttempts) {
       return _noRun('invalid_repair_limit');
     }
@@ -80,8 +73,9 @@ class const WorkspaceVerificationReservations(
   }
 
   Future<bool> _validTurn(VerificationReservationRequest request) async {
-    if (request.toolCallId.isEmpty || request.toolCallId.length > 512)
+    if (request.toolCallId.isEmpty || request.toolCallId.length > 512) {
       return false;
+    }
     final message = await database.messageDao.getMessageById(request.turnId);
     if (message == null || !message.isUser) return false;
     final chat = await (database.select(
@@ -108,11 +102,11 @@ class const WorkspaceVerificationReservations(
         final saved = jsonEncode(
           verificationUnavailable('interrupted').toJson(),
         );
-        await (database.update(database.workspaceVerificationRuns)..where(
+        final _ = await (database.update(database.workspaceVerificationRuns)..where(
               (entry) => entry.id.equals(row.id) & entry.resultJson.isNull(),
             ))
             .write(
-              WorkspaceVerificationRunsCompanion(resultJson: Value(saved)),
+              WorkspaceVerificationRunsCompanion(resultJson: .new(saved)),
             );
       }
     }
@@ -199,5 +193,13 @@ ScopedVerificationReservation _noRun(
   String reason, {
   ScopedVerificationOutcome outcome = .incomplete,
 }) => ScopedVerificationReservation(
-  result: ScopedVerificationResult(outcome: outcome, reason: reason),
+  result: .new(outcome: outcome, reason: reason),
 );
+
+class const ScopedVerificationReservation({
+  final String? operationId,
+  final ScopedVerificationResult? result,
+  final int repairAttemptsRemaining = 0,
+}) {
+  bool get shouldRun => operationId != null && result == null;
+}

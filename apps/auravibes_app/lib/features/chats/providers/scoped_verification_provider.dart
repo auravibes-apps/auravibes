@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/repositories/workspace_verification_repository.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/create_mcp_scoped_verification_runner.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/scoped_verification_cancellation.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/scoped_verification_identity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/scoped_verification_identity_resolver.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/verify_reported_edits_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';

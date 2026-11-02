@@ -105,14 +105,16 @@ class McpScopedVerificationRunner
 
       // Revoking execution permission must not prevent stopping admitted work.
       _cancelRequested = true;
+
       return {
         ...arguments,
         'workspaceRoot': bound.workspaceRoot,
         'deadlineMs': bound.deadlineMs,
       };
     }
-    if (!await isAllowed())
+    if (!await isAllowed()) {
       throw StateError('Verification permission is unavailable.');
+    }
     if (operation == 'start' && _cancelRequested) {
       throw StateError('Cancelled verification cannot start after admission.');
     }

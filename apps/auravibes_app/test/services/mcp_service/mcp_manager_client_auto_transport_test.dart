@@ -21,12 +21,13 @@ void main() {
       final server = await _LocalMcpHttpServer.start(
         toolHandler: (message) async {
           final args = _objectMap(_objectMap(message['params'])['arguments']);
-          final operation = args['operation'] as String;
+          final operation = args['operation']! as String;
           operations.add(operation);
           if (operation == 'start') {
             started.complete();
             await release.future;
           }
+
           return _verificationReceipt(
             operation == 'cancel' ? 'cancelled' : 'completed',
           );
@@ -44,16 +45,17 @@ void main() {
       });
       expect(server.clientCapabilities, isNot(contains('elicitation')));
       var startSettled = false;
-      final start = session
-          .call(
-            mcpServerId: 'server',
-            toolIdentifier: 'verify',
-            arguments: _verificationArguments('start'),
-          )
-          .then((value) {
-            startSettled = true;
-            return value;
-          });
+      Future<Object?> trackStart() async {
+        final value = await session.call(
+          mcpServerId: 'server',
+          toolIdentifier: 'verify',
+          arguments: _verificationArguments('start'),
+        );
+        startSettled = true;
+
+        return value;
+      }
+      final start = trackStart();
       await started.future.timeout(const Duration(seconds: 2));
       final cancel = await session
           .call(
@@ -70,7 +72,8 @@ void main() {
     },
   );
 
-  test('dedicated manager rejects server elicitation while ordinary handler stays active', () async {
+  test('dedicated manager rejects server elicitation while '
+      'ordinary handler stays active', () async {
     final ordinarySeen = Completer<void>();
     final releaseOrdinary = Completer<void>();
     final server = await _LocalMcpHttpServer.start(
@@ -80,6 +83,7 @@ void main() {
           ordinarySeen.complete();
           await releaseOrdinary.future;
         }
+
         return {
           'content': [
             {'type': 'text', 'text': 'ordinary completed'},
@@ -100,6 +104,7 @@ void main() {
         serverName: 'Ordinary',
         onElicitation: (_) async {
           prompts++;
+
           return const McpElicitationResponse(action: .cancel);
         },
       ),
@@ -139,7 +144,8 @@ void main() {
   });
   for (final failed in [false, true]) {
     test(
-      'preserves structured edit metadata and error flag $failed without app data',
+      'preserves structured edit metadata and error flag $failed '
+      'without app data',
       () async {
         final structured = {
           'auravibesChangedPaths': {
@@ -847,6 +853,7 @@ final class _LocalMcpHttpServer {
       if (!elicitationReply.isCompleted) elicitationReply.complete(message);
       response.statusCode = HttpStatus.accepted;
       final _ = await response.close();
+
       return;
     }
     final params = _objectMap(message['params']);
@@ -854,10 +861,11 @@ final class _LocalMcpHttpServer {
         message['method'] == 'tools/call' &&
         params['name'] == 'verify') {
       response.headers.set(HttpHeaders.contentTypeHeader, 'text/event-stream');
-      // Match the fixture's legacy SSE path: deliver the server request while
-      // this tool response stays open awaiting the client's rejection.
-      response.bufferOutput = false;
-      response.write(
+      // Match the fixture's legacy SSE behavior.
+      // Deliver requests while the tool awaits the client's rejection.
+      response
+        ..bufferOutput = false
+        ..write(
         'event: message\ndata: ${jsonEncode({
           'jsonrpc': '2.0',
           'id': 900,
@@ -865,11 +873,15 @@ final class _LocalMcpHttpServer {
           'params': {
             'mode': 'form',
             'message': 'Unexpected verification prompt',
-            'requestedSchema': {'type': 'object', 'properties': <String, Object?>{}},
+            'requestedSchema': {
+              'type': 'object',
+              'properties': <String, Object?>{},
+            },
           },
         })}\n\n',
       );
-      await response.flush();
+      final _ = await response.flush();
+
       return;
     }
     if (streamableStatus != HttpStatus.ok) {
@@ -930,8 +942,9 @@ final class _LocalMcpHttpServer {
         }),
       );
     } else if (message['method'] == 'tools/call') {
+      final handler = toolHandler;
       final result =
-          (toolHandler == null ? toolResult : await toolHandler!(message)) ??
+          (handler == null ? toolResult : await handler(message)) ??
           {
             'content': [
               {'type': 'text', 'text': 'refreshed'},

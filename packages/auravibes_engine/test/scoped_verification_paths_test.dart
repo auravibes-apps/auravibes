@@ -179,7 +179,7 @@ void main() {
     final report = ScopedEditReport(workspaceRoot: 'checkout', paths: paths);
     paths.add('../escape.dart');
     expect(report.paths, ['a.dart']);
-    expect(() => report.paths.clear(), throwsUnsupportedError);
+    expect(report.paths.clear, throwsUnsupportedError);
     final selection = selectScopedVerificationChecks(_settings(), report).first;
     expect(
       () => selection.paths.add('unreported.dart'),

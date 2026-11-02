@@ -21,20 +21,6 @@ final class ScopedVerificationCapabilities {
   new({required this.protocol, required Set<String> features})
     : features = Set.unmodifiable(features);
 
-  static const requiredFeatures = {
-    'scopedPaths',
-    'canonicalContainment',
-    'sandboxedCommands',
-    'boundedOutput',
-    'deadline',
-    'cancellation',
-    'idempotentStart',
-    'cancellationTombstones',
-    'nonInteractive',
-  };
-  final String protocol;
-  final Set<String> features;
-
   factory fromJson(Object? value) {
     final json = verificationObject(value, const {'protocol', 'capabilities'});
     final flags = verificationObject(json['capabilities'], requiredFeatures);
@@ -50,6 +36,20 @@ final class ScopedVerificationCapabilities {
       },
     );
   }
+
+  static const requiredFeatures = {
+    'scopedPaths',
+    'canonicalContainment',
+    'sandboxedCommands',
+    'boundedOutput',
+    'deadline',
+    'cancellation',
+    'idempotentStart',
+    'cancellationTombstones',
+    'nonInteractive',
+  };
+  final String protocol;
+  final Set<String> features;
 
   bool get supported =>
       protocol == ScopedVerificationLimits.protocol &&
@@ -133,18 +133,6 @@ final class ScopedVerificationJob {
     }
   }
 
-  final String operationId;
-  final String workspaceRoot;
-  final ScopedVerificationJobState state;
-  final bool scopeValidated;
-  final Map<String, int> exitCodes;
-  final String output;
-  final bool outputTruncated;
-  final int originalOutputBytes;
-
-  /// Confirms a durable tombstone that also prevents a delayed start.
-  final bool cancellationRecorded;
-
   factory fromJson(Object? value) {
     final json = verificationObject(value, const {
       'protocol',
@@ -180,8 +168,9 @@ final class ScopedVerificationJob {
     for (final item in checks) {
       final check = verificationObject(item, const {'id', 'exitCode'});
       final id = verificationString(check['id'], maxBytes: 64);
-      if (exits.containsKey(id))
+      if (exits.containsKey(id)) {
         throw const FormatException('Duplicate verification check.');
+      }
       exits[id] = verificationInteger(
         check['exitCode'],
         min: -0x80000000,
@@ -205,6 +194,18 @@ final class ScopedVerificationJob {
       ),
     );
   }
+
+  final String operationId;
+  final String workspaceRoot;
+  final ScopedVerificationJobState state;
+  final bool scopeValidated;
+  final Map<String, int> exitCodes;
+  final String output;
+  final bool outputTruncated;
+  final int originalOutputBytes;
+
+  /// Confirms a durable tombstone that also prevents a delayed start.
+  final bool cancellationRecorded;
 }
 
 /// Clock and cancellable timer boundary for the verification lifecycle.

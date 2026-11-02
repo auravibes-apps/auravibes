@@ -56,11 +56,12 @@ class ScopedVerificationCancellation {
     final current = runtime.current(conversationId);
     if (existing != null && identical(existing.scope, current)) {
       existing.users++;
+
       return existing;
     }
     final lease = _ScopeLease(
       current ?? runtime.start(conversationId),
-      current == null,
+      owned: current == null,
     );
     _leases[conversationId] = lease;
 
@@ -78,7 +79,7 @@ class ScopedVerificationCancellation {
 }
 
 final class _ScopeLease {
-  _ScopeLease(this.scope, this.owned);
+  new(this.scope, {required this.owned});
   final AgentCancellationScope scope;
   final bool owned;
   int users = 1;

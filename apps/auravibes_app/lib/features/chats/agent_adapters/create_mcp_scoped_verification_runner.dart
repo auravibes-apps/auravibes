@@ -41,27 +41,31 @@ class const CreateMcpScopedVerificationRunner({
     );
     if (target == null ||
         edit == null ||
-        edit.toolIdentifier != input.invocation.tool.toolIdentifier)
+        edit.toolIdentifier != input.invocation.tool.toolIdentifier) {
       return null;
+    }
     if (input.cancellation.isCancellationRequested ||
-        !input.request.deadline.isAfter(DateTime.now().toUtc()))
+        !input.request.deadline.isAfter(DateTime.now().toUtc())) {
       return null;
+    }
     if (!await _allowed(input, target)) return null;
     final session = await openSession(input, target);
     if (input.cancellation.isCancellationRequested ||
         !input.request.deadline.isAfter(DateTime.now().toUtc())) {
       session.close();
+
       return null;
     }
 
-    // Never cache this adapter in a workspace/provider: it owns one start intent.
+    // Never cache this adapter in a workspace/provider.
+    // It owns one start intent.
     return McpScopedVerificationRunner(
       mcpServerId: input.settings.mcpServerId,
       editMcpServerId: input.invocation.tool.mcpServerId ?? '',
       runnerToolIdentifier: target.toolIdentifier,
       caller: session.call,
-      onClose: session.close,
       isAllowed: () => _allowed(input, target),
+      onClose: session.close,
     );
   }
 
@@ -75,8 +79,9 @@ class const CreateMcpScopedVerificationRunner({
     );
     if (workspace == null) return false;
     final current = await repository.getSettings(workspace.workspaceId);
-    if (!current.enabled || current.revision != input.settings.revision)
+    if (!current.enabled || current.revision != input.settings.revision) {
       return false;
+    }
     final runner = await _tool(target.tableId, current, workspace.workspaceId);
     final edit = await _tool(
       input.invocation.tool.tableId,
@@ -84,8 +89,9 @@ class const CreateMcpScopedVerificationRunner({
       workspace.workspaceId,
     );
     if (runner?.toolIdentifier != target.toolIdentifier ||
-        edit?.toolIdentifier != input.invocation.tool.toolIdentifier)
+        edit?.toolIdentifier != input.invocation.tool.toolIdentifier) {
       return false;
+    }
     final editDecision = await permission((
       conversationId: input.invocation.conversationId,
       workspaceId: workspace.workspaceId,
@@ -93,8 +99,9 @@ class const CreateMcpScopedVerificationRunner({
       resolvedTool: input.invocation.tool,
       argumentsRaw: null,
     ));
-    if (!editDecision.isGranted() && !editDecision.needsConfirmation)
+    if (!editDecision.isGranted() && !editDecision.needsConfirmation) {
       return false;
+    }
     final runnerDecision = await permission((
       conversationId: input.invocation.conversationId,
       workspaceId: workspace.workspaceId,
@@ -119,8 +126,9 @@ class const CreateMcpScopedVerificationRunner({
     final row = await (database.select(
       database.tools,
     )..where((row) => row.id.equals(id))).getSingleOrNull();
-    if (row == null || !row.isEnabled || row.workspaceId != workspaceId)
+    if (row == null || !row.isEnabled || row.workspaceId != workspaceId) {
       return null;
+    }
     final groupId = row.workspaceToolsGroupId;
     if (groupId == null) return null;
     final group = await (database.select(
@@ -129,15 +137,17 @@ class const CreateMcpScopedVerificationRunner({
     if (group == null ||
         !group.isEnabled ||
         group.workspaceId != row.workspaceId ||
-        group.mcpServerId != settings.mcpServerId)
+        group.mcpServerId != settings.mcpServerId) {
       return null;
+    }
     final server = await (database.select(
       database.mcpServers,
     )..where((row) => row.id.equals(settings.mcpServerId))).getSingleOrNull();
     if (server == null ||
         !server.isEnabled ||
-        server.workspaceId != row.workspaceId)
+        server.workspaceId != row.workspaceId) {
       return null;
+    }
 
     return ResolvedTool.mcp(
       tableId: row.id,

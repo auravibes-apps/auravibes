@@ -54,7 +54,7 @@ class WorkspaceVerificationRepository {
     final next = ScopedVerificationSettings.decode(
       jsonEncode({...settings.toJson(), 'revision': current.revision + 1}),
     );
-    await database
+    final _ = await database
         .into(database.workspaceVerificationSettings)
         .insertOnConflictUpdate(
           WorkspaceVerificationSettingsCompanion.insert(
@@ -91,10 +91,12 @@ class WorkspaceVerificationRepository {
       database.workspaceVerificationRuns,
     )..where((row) => row.id.equals(operationId))).getSingleOrNull();
     if (row == null) return verificationUnavailable('workspace_unavailable');
-    if (row.resultJson case final String saved)
+    if (row.resultJson case final String saved) {
       return decodeVerificationResult(saved);
-    if (row.sessionId != _sessionId)
+    }
+    if (row.sessionId != _sessionId) {
       return verificationUnavailable('interrupted');
+    }
     final settings = await getSettings(row.workspaceId);
     final safe = settings.enabled && settings.revision == row.configRevision
         ? result
@@ -112,12 +114,12 @@ class WorkspaceVerificationRepository {
       'repairAttemptsRemaining': remaining,
       'repairAllowed': safe.outcome == .fail && remaining > 0,
     });
-    await (database.update(database.workspaceVerificationRuns)..where(
+    final _ = await (database.update(database.workspaceVerificationRuns)..where(
           (entry) => entry.id.equals(operationId) & entry.resultJson.isNull(),
         ))
         .write(
           WorkspaceVerificationRunsCompanion(
-            resultJson: Value(jsonEncode(finalResult.toJson())),
+            resultJson: .new(jsonEncode(finalResult.toJson())),
           ),
         );
 

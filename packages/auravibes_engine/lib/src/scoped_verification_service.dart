@@ -22,19 +22,15 @@ class const ScopedVerificationService({
         cancellation,
       ).run();
     } finally {
-      if (runner case ScopedVerificationRunnerLifecycle lifecycle)
+      if (runner case final ScopedVerificationRunnerLifecycle lifecycle) {
         lifecycle.close();
+      }
     }
   }
 }
 
 final class _VerificationExecution {
-  _VerificationExecution(
-    this.runner,
-    this.clock,
-    this.request,
-    this.cancellation,
-  );
+  new(this.runner, this.clock, this.request, this.cancellation);
 
   final ScopedVerificationRunner runner;
   final ScopedVerificationClock clock;
@@ -45,29 +41,34 @@ final class _VerificationExecution {
   bool _started = false;
 
   Future<ScopedVerificationResult> run() async {
-    if (cancellation.isCancellationRequested)
+    if (cancellation.isCancellationRequested) {
       return _result(.cancelled, 'cancelled');
-    if (request.selections.isEmpty)
+    }
+    if (request.selections.isEmpty) {
       return _result(.skipped, 'no_matching_checks');
+    }
     final remaining = request.deadline.difference(clock.now());
     if (remaining <= Duration.zero) return _result(.incomplete, 'timeout');
-    if (remaining > ScopedVerificationLimits.maxTimeout)
+    if (remaining > ScopedVerificationLimits.maxTimeout) {
       return _result(.incomplete, 'invalid_deadline');
+    }
     final timer = clock.schedule(remaining, _completeTimeout);
     final registration = cancellation.registerCleanup(_completeStop);
     try {
       final capabilities = await _wait(runner.capabilities());
       _ensureActive();
-      if (!capabilities.supported)
+      if (!capabilities.supported) {
         return _result(.incomplete, 'unsupported_runner');
+      }
       _started = true;
       var job = await _wait(runner.start(request));
       while (true) {
         _ensureActive();
         _validateJob(job);
         if (job.state == .completed) return _completed(job);
-        if (job.state == .cancelled)
+        if (job.state == .cancelled) {
           return _result(.cancelled, 'runner_cancelled');
+        }
         await _pause();
         _ensureActive();
         job = await _wait(runner.poll(request.operationId));
@@ -93,10 +94,12 @@ final class _VerificationExecution {
   }
 
   void _ensureActive() {
-    if (cancellation.isCancellationRequested)
+    if (cancellation.isCancellationRequested) {
       throw const _VerificationInterrupted('cancelled');
-    if (_timeout.isCompleted || !request.deadline.isAfter(clock.now()))
+    }
+    if (_timeout.isCompleted || !request.deadline.isAfter(clock.now())) {
       throw const _VerificationInterrupted('timeout');
+    }
   }
 
   Future<T> _wait<T>(Future<T> operation) => Future.any([
@@ -161,8 +164,9 @@ final class _VerificationExecution {
   }
 
   Future<ScopedVerificationResult> _terminate(String reason) async {
-    if (!_started)
+    if (!_started) {
       return _result(reason == 'cancelled' ? .cancelled : .incomplete, reason);
+    }
     final confirmed = await _cancel();
     if (reason == 'cancelled') {
       return confirmed

@@ -284,9 +284,10 @@ class McpManagerService {
     McpVerificationConnectionRequest request,
   ) async {
     final remaining = request.deadline.difference(DateTime.now().toUtc());
-    if (remaining <= Duration.zero ||
-        request.cancellation.isCancellationRequested)
+    if (remaining <= .zero ||
+        request.cancellation.isCancellationRequested) {
       throw StateError('Verification connection cancelled.');
+    }
     final sdk = _createMcpClient(allowElicitation: false);
     final session = McpVerificationSession(
       client: sdk,
@@ -296,8 +297,9 @@ class McpManagerService {
     final aborted = Completer<void>();
     void abort() {
       session.close();
-      if (!aborted.isCompleted)
+      if (!aborted.isCompleted) {
         aborted.completeError(StateError('Verification connection cancelled.'));
+      }
     }
 
     final timer = Timer(remaining, abort);
@@ -309,18 +311,21 @@ class McpManagerService {
       );
       if (aborted.isCompleted) {
         transport.close();
+
         return;
       }
       await sdk.connect(session.guardTransport(transport));
       // A connect future can finish after the session was already closed.
-      // Close that late SDK attachment directly; session.close stays idempotent.
+      // Close that late SDK attachment directly.
+      // Session close remains idempotent.
       if (aborted.isCompleted) sdk.disconnect();
     }
 
     try {
       await Future.any([connect(), aborted.future]);
-      if (aborted.isCompleted)
+      if (aborted.isCompleted) {
         throw StateError('Verification connection cancelled.');
+      }
 
       return session;
     } on Object {
@@ -477,7 +482,7 @@ mcp.Client _createMcpClient({bool allowElicitation = true}) =>
         name: 'AuraVibes MCP Client',
         version: '1.0.0',
       ).copyWith(
-        capabilities: mcp.ClientCapabilities(
+        capabilities: .new(
           elicitationForm: allowElicitation,
           elicitationUrl: allowElicitation,
           extensions: const {

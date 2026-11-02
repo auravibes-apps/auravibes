@@ -36,7 +36,8 @@ String _jsonPrefix(String source, int budget) {
   var high = source.length;
   while (low < high) {
     final middle = (low + high + 1) ~/ 2;
-    if (utf8.encode(jsonEncode(source.substring(0, middle))).length <= budget) {
+    final prefix = String.fromCharCodes(source.codeUnits.take(middle));
+    if (utf8.encode(jsonEncode(prefix)).length <= budget) {
       low = middle;
     } else {
       high = middle - 1;
@@ -51,5 +52,5 @@ String _jsonPrefix(String source, int budget) {
     low--;
   }
 
-  return source.substring(0, low);
+  return String.fromCharCodes(source.codeUnits.take(low));
 }

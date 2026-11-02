@@ -305,8 +305,8 @@ final class _Runner
   Future<ScopedVerificationCapabilities>? capabilityResult;
   Future<ScopedVerificationJob>? startResult;
   Future<ScopedVerificationJob>? cancelResult;
-  Object? startFailure;
-  Object? pollFailure;
+  StateError? startFailure;
+  StateError? pollFailure;
   ScopedVerificationJob? reply;
   final cancelledOperations = <String>{};
   int remoteExecutions = 0;
@@ -330,12 +330,13 @@ final class _Runner
   );
 
   ScopedVerificationJob registerLate(String operationId) {
-    if (cancelledOperations.contains(operationId))
+    if (cancelledOperations.contains(operationId)) {
       return job(
         operationId: operationId,
         state: .cancelled,
         exitCodes: const {},
       );
+    }
     remoteExecutions++;
     return job(operationId: operationId);
   }
@@ -349,14 +350,14 @@ final class _Runner
   @override
   Future<ScopedVerificationJob> start(ScopedVerificationRequest request) async {
     calls.add('start');
-    if (startFailure case final Object failure) throw failure;
+    if (startFailure case final StateError failure) throw failure;
     return await (startResult ?? Future.value(reply ?? job()));
   }
 
   @override
   Future<ScopedVerificationJob> poll(String operationId) async {
     calls.add('poll');
-    if (pollFailure case final Object failure) throw failure;
+    if (pollFailure case final StateError failure) throw failure;
     return reply ?? job();
   }
 
@@ -391,7 +392,7 @@ final class _Clock implements ScopedVerificationClock {
 }
 
 final class _Timer implements Timer {
-  _Timer(this.at, this.callback);
+  new(this.at, this.callback);
   final DateTime at;
   final void Function() callback;
   bool _active = true;

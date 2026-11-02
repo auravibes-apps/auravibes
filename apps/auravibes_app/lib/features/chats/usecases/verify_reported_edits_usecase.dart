@@ -40,24 +40,29 @@ class const VerifyReportedEditsUsecase({
       final settings = await repository.getSettings(identity.workspaceId);
       if (!settings.enabled ||
           !settings.editToolIds.contains(tool.tableId) ||
-          tool.tableId == settings.runnerToolId)
+          tool.tableId == settings.runnerToolId) {
         return result.modelText;
-      if (tool.mcpServerId != settings.mcpServerId)
+      }
+      if (tool.mcpServerId != settings.mcpServerId) {
         return _feedback(result, .incomplete, 'server_mismatch');
+      }
       final ScopedEditReport? report;
       final List<ScopedVerificationSelection> selections;
       try {
         report = parseScopedEditReport(result.structuredContent);
-        if (report == null)
+        if (report == null) {
           return _feedback(result, .skipped, 'no_changed_paths');
+        }
         selections = selectScopedVerificationChecks(settings, report);
       } on FormatException {
         return _feedback(result, .incomplete, 'invalid_report');
       }
-      if (selections.isEmpty)
+      if (selections.isEmpty) {
         return _feedback(result, .skipped, 'no_matching_checks');
-      if (identity.turnId == null)
+      }
+      if (identity.turnId == null) {
         return _feedback(result, .incomplete, 'invalid_turn');
+      }
       final verified = await cancellation.run(
         invocation,
         (scope) => _verify((
@@ -78,11 +83,12 @@ class const VerifyReportedEditsUsecase({
 
   Future<ScopedVerificationResult> _verify(_VerificationInput input) async {
     final turnId = input.identity.turnId;
-    if (turnId == null)
+    if (turnId == null) {
       return ScopedVerificationResult(
         outcome: .incomplete,
         reason: 'invalid_turn',
       );
+    }
     final reservation = await repository.reserve(
       workspaceId: input.identity.workspaceId,
       turnId: turnId,
@@ -90,14 +96,16 @@ class const VerifyReportedEditsUsecase({
       configRevision: input.settings.revision,
       maxRepairAttempts: input.settings.maxRepairAttempts,
     );
-    if (reservation.result case final ScopedVerificationResult recorded)
+    if (reservation.result case final ScopedVerificationResult recorded) {
       return recorded;
+    }
     final id = reservation.operationId;
-    if (id == null)
+    if (id == null) {
       return ScopedVerificationResult(
         outcome: .incomplete,
         reason: 'invalid_reservation',
       );
+    }
     final deadline = DateTime.now().toUtc().add(input.settings.timeout);
     try {
       final request = ScopedVerificationRequest(
@@ -143,13 +151,9 @@ class const VerifyReportedEditsUsecase({
 
       return await repository.complete(
         id,
-        ScopedVerificationResult(
+        .new(
           outcome: stopped ? .cancelled : .incomplete,
-          reason: stopped
-              ? 'cancelled'
-              : expired
-              ? 'timeout'
-              : 'verification_error',
+          reason: _failureReason(stopped: stopped, expired: expired),
         ),
       );
     }
@@ -160,8 +164,9 @@ class const VerifyReportedEditsUsecase({
   ) async {
     final remaining = input.request.deadline.difference(DateTime.now().toUtc());
     if (input.cancellation.isCancellationRequested ||
-        remaining <= Duration.zero)
+        remaining <= .zero) {
       return null;
+    }
     final interrupted = Completer<ScopedVerificationRunner?>();
     void end() {
       if (!interrupted.isCompleted) interrupted.complete();
@@ -178,6 +183,17 @@ class const VerifyReportedEditsUsecase({
   }
 }
 
+String _failureReason({required bool stopped, required bool expired}) {
+  if (stopped) {
+    return 'cancelled';
+  }
+  if (expired) {
+    return 'timeout';
+  }
+
+  return 'verification_error';
+}
+
 typedef _VerificationInput = ({
   ScopedVerificationIdentity identity,
   ScopedVerificationInvocation invocation,
@@ -192,5 +208,5 @@ Map<String, Object?> _feedback(
   String reason,
 ) => buildScopedVerificationFeedback(
   original.modelText,
-  ScopedVerificationResult(outcome: outcome, reason: reason),
+  .new(outcome: outcome, reason: reason),
 );

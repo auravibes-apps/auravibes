@@ -2,7 +2,6 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_configuration_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_verification_repository.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNull;
@@ -10,14 +9,13 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late AppDatabase database;
-  late WorkspaceVerificationRepository repository;
+  final state = _RepositoryFixture();
 
   setUp(() async {
-    database = AppDatabase(connection: NativeDatabase.memory());
-    repository = WorkspaceVerificationRepository(database);
-    await database
-        .into(database.workspaces)
+    state.database = AppDatabase(connection: NativeDatabase.memory());
+    state.repository = WorkspaceVerificationRepository(state.database);
+    final _ = await state.database
+        .into(state.database.workspaces)
         .insert(
           WorkspacesCompanion.insert(
             id: const Value('workspace'),
@@ -25,8 +23,8 @@ void main() {
             type: .local,
           ),
         );
-    await database
-        .into(database.workspaces)
+    final _ = await state.database
+        .into(state.database.workspaces)
         .insert(
           WorkspacesCompanion.insert(
             id: const Value('other'),
@@ -34,8 +32,8 @@ void main() {
             type: .local,
           ),
         );
-    await database
-        .into(database.conversations)
+    final _ = await state.database
+        .into(state.database.conversations)
         .insert(
           ConversationsCompanion.insert(
             id: const Value('chat'),
@@ -43,8 +41,8 @@ void main() {
             title: 'Work',
           ),
         );
-    await database
-        .into(database.messages)
+    final _ = await state.database
+        .into(state.database.messages)
         .insert(
           MessagesCompanion.insert(
             id: const Value('turn'),
@@ -56,7 +54,7 @@ void main() {
           ),
         );
   });
-  tearDown(() => database.close());
+  tearDown(() => state.database.close());
 
   Future<ScopedVerificationReservation> reserve(
     String toolCallId, {
@@ -64,7 +62,7 @@ void main() {
     int maxRepairAttempts = 1,
     String workspaceId = 'workspace',
     String turnId = 'turn',
-  }) => repository.reserve(
+  }) => state.repository.reserve(
     workspaceId: workspaceId,
     turnId: turnId,
     toolCallId: toolCallId,
@@ -75,15 +73,16 @@ void main() {
   test(
     'absent and malformed settings are disabled within their workspace',
     () async {
-      expect((await repository.getSettings('workspace')).enabled, isFalse);
-      await repository.saveSettings('workspace', _settings());
-      expect((await repository.getSettings('workspace')).enabled, isTrue);
-      expect((await repository.watchSettings('other').first).enabled, isFalse);
-      await database.customStatement(
-        'UPDATE workspace_verification_settings SET settings_json = ? WHERE workspace_id = ?',
+      expect((await state.repository.getSettings('workspace')).enabled, isFalse);
+      await state.repository.saveSettings('workspace', _settings());
+      expect((await state.repository.getSettings('workspace')).enabled, isTrue);
+      expect((await state.repository.watchSettings('other').first).enabled, isFalse);
+      await state.database.customStatement(
+        'UPDATE workspace_verification_settings SET settings_json = ? '
+        'WHERE workspace_id = ?',
         ['malformed', 'workspace'],
       );
-      expect((await repository.getSettings('workspace')).enabled, isFalse);
+      expect((await state.repository.getSettings('workspace')).enabled, isFalse);
       expect((await reserve('edit')).shouldRun, isFalse);
     },
   );
@@ -91,13 +90,13 @@ void main() {
   test(
     'explicit save increments revision and rejects a stale writer',
     () async {
-      await repository.saveSettings('workspace', _settings());
-      expect((await repository.getSettings('workspace')).revision, 1);
+      await state.repository.saveSettings('workspace', _settings());
+      expect((await state.repository.getSettings('workspace')).revision, 1);
       await expectLater(
-        repository.saveSettings('workspace', _settings()),
+        state.repository.saveSettings('workspace', _settings()),
         throwsA(isA<WorkspaceTableException>()),
       );
-      await repository.saveSettings(
+      await state.repository.saveSettings(
         'workspace',
         _settings(enabled: false, revision: 1),
       );
@@ -106,16 +105,16 @@ void main() {
   );
 
   test('cloud workspaces cannot save authority or reserve commands', () async {
-    await (database.update(
-      database.workspaces,
+    final _ = await (state.database.update(
+      state.database.workspaces,
     )..where((row) => row.id.equals('workspace'))).write(
       const WorkspacesCompanion(
-        type: Value(.remote),
-        url: Value('https://cloud.example'),
+        type: .new(.remote),
+        url: .new('https://cloud.example'),
       ),
     );
     await expectLater(
-      repository.saveSettings('workspace', _settings()),
+      state.repository.saveSettings('workspace', _settings()),
       throwsA(isA<WorkspaceTableException>()),
     );
     expect((await reserve('edit')).result?.reason, 'unsupported_workspace');
@@ -124,15 +123,15 @@ void main() {
   test(
     'wrong workspace and non-user turn cannot obtain a reservation',
     () async {
-      await repository.saveSettings('other', _settings());
+      await state.repository.saveSettings('other', _settings());
       expect(
         (await reserve('edit', workspaceId: 'other')).result?.reason,
         'invalid_turn',
       );
-      await repository.saveSettings('workspace', _settings());
-      await (database.update(database.messages)
+      await state.repository.saveSettings('workspace', _settings());
+      final _ = await (state.database.update(state.database.messages)
             ..where((row) => row.id.equals('turn')))
-          .write(const MessagesCompanion(isUser: Value(false)));
+          .write(const MessagesCompanion(isUser: .new(false)));
       expect((await reserve('edit')).result?.reason, 'invalid_turn');
     },
   );
@@ -140,7 +139,7 @@ void main() {
   test(
     'duplicate concurrent reservation creates only one remote operation',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final reservations = await Future.wait([
         reserve('edit'),
         reserve('edit'),
@@ -158,19 +157,19 @@ void main() {
         'verification_in_progress',
       );
       expect(
-        await database.select(database.workspaceVerificationRuns).get(),
+        await state.database.select(state.database.workspaceVerificationRuns).get(),
         hasLength(1),
       );
     },
   );
 
   test('healthy edits do not consume repair budget', () async {
-    await repository.saveSettings('workspace', _settings());
+    await state.repository.saveSettings('workspace', _settings());
     for (final id in ['edit-1', 'edit-2', 'edit-3']) {
       final reservation = await reserve(id);
       expect(reservation.shouldRun, isTrue);
-      final saved = await repository.complete(
-        reservation.operationId!,
+      final saved = await state.repository.complete(
+        _operationId(reservation),
         _result(.pass),
       );
       expect(saved.outcome, ScopedVerificationOutcome.pass);
@@ -181,18 +180,18 @@ void main() {
   test(
     'failed checks arm one repair across tool IDs and configuration revisions',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final first = await reserve('first');
-      final failed = await repository.complete(
-        first.operationId!,
+      final failed = await state.repository.complete(
+        _operationId(first),
         _result(.fail),
       );
       expect(failed.repairAllowed, isTrue);
       final repair = await reserve('different-tool-id');
       expect(repair.shouldRun, isTrue);
       expect(repair.repairAttemptsRemaining, 0);
-      await repository.complete(repair.operationId!, _result(.fail));
-      await repository.saveSettings(
+      final _ = await state.repository.complete(_operationId(repair), _result(.fail));
+      await state.repository.saveSettings(
         'workspace',
         _settings(revision: 1, maxRepairAttempts: 2),
       );
@@ -208,15 +207,15 @@ void main() {
   );
 
   test('successful repair does not restore previously spent tokens', () async {
-    await repository.saveSettings('workspace', _settings());
+    await state.repository.saveSettings('workspace', _settings());
     final first = await reserve('first');
-    await repository.complete(first.operationId!, _result(.fail));
+    final _ = await state.repository.complete(_operationId(first), _result(.fail));
     final repair = await reserve('repair');
-    await repository.complete(repair.operationId!, _result(.pass));
+    final _ = await state.repository.complete(_operationId(repair), _result(.pass));
     final healthy = await reserve('healthy');
     expect(healthy.shouldRun, isTrue);
-    final failed = await repository.complete(
-      healthy.operationId!,
+    final failed = await state.repository.complete(
+      _operationId(healthy),
       _result(.fail),
     );
     expect(failed.repairAllowed, isFalse);
@@ -226,20 +225,20 @@ void main() {
   test(
     'completed replay is terminal and does not run after a revision change',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final first = await reserve('edit');
-      await repository.complete(first.operationId!, _result(.fail));
-      final late = await repository.complete(
-        first.operationId!,
+      final _ = await state.repository.complete(_operationId(first), _result(.fail));
+      final late = await state.repository.complete(
+        _operationId(first),
         _result(.pass),
       );
       expect(late.outcome, ScopedVerificationOutcome.fail);
-      await repository.saveSettings('workspace', _settings(revision: 1));
+      await state.repository.saveSettings('workspace', _settings(revision: 1));
       final replay = await reserve('edit', revision: 2);
       expect(replay.shouldRun, isFalse);
       expect(replay.result?.outcome, ScopedVerificationOutcome.fail);
       expect(
-        await database.select(database.workspaceVerificationRuns).get(),
+        await state.database.select(state.database.workspaceVerificationRuns).get(),
         hasLength(1),
       );
     },
@@ -248,9 +247,9 @@ void main() {
   test(
     'restart preserves unknown work as incomplete without command replay',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final initial = await reserve('edit');
-      final restarted = WorkspaceVerificationRepository(database);
+      final restarted = WorkspaceVerificationRepository(state.database);
       final replay = await restarted.reserve(
         workspaceId: 'workspace',
         turnId: 'turn',
@@ -260,8 +259,8 @@ void main() {
       );
       expect(replay.result?.outcome, ScopedVerificationOutcome.incomplete);
       expect(replay.result?.reason, 'interrupted');
-      final late = await repository.complete(
-        initial.operationId!,
+      final late = await state.repository.complete(
+        _operationId(initial),
         _result(.pass),
       );
       expect(late.outcome, ScopedVerificationOutcome.incomplete);
@@ -272,14 +271,14 @@ void main() {
   test(
     'disabling configuration before completion prevents a pass claim',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final initial = await reserve('edit');
-      await repository.saveSettings(
+      await state.repository.saveSettings(
         'workspace',
         _settings(enabled: false, revision: 1),
       );
-      final finalResult = await repository.complete(
-        initial.operationId!,
+      final finalResult = await state.repository.complete(
+        _operationId(initial),
         _result(.pass),
       );
       expect(finalResult.outcome, ScopedVerificationOutcome.incomplete);
@@ -290,17 +289,17 @@ void main() {
   test(
     'workspace deletion cascades saved authority and reservations',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final _ = await reserve('edit');
-      await (database.delete(
-        database.workspaces,
+      final _ = await (state.database.delete(
+        state.database.workspaces,
       )..where((row) => row.id.equals('workspace'))).go();
       expect(
-        await database.select(database.workspaceVerificationSettings).get(),
+        await state.database.select(state.database.workspaceVerificationSettings).get(),
         isEmpty,
       );
       expect(
-        await database.select(database.workspaceVerificationRuns).get(),
+        await state.database.select(state.database.workspaceVerificationRuns).get(),
         isEmpty,
       );
     },
@@ -309,12 +308,12 @@ void main() {
   test(
     'duplicated and exported workspaces do not copy enabled authority',
     () async {
-      await repository.saveSettings('workspace', _settings());
-      final copy = await WorkspaceRepository(database)
+      await state.repository.saveSettings('workspace', _settings());
+      final copy = await WorkspaceRepository(state.database)
           .duplicateWorkspace('workspace', name: 'Copy');
-      expect((await repository.getSettings(copy.id)).enabled, isFalse);
-      final archive = await LocalWorkspaceConfigurationRepository(database)
-          .export('workspace', selectedKinds: WorkspaceConfigurationKind.all);
+      expect((await state.repository.getSettings(copy.id)).enabled, isFalse);
+      final archive = await LocalWorkspaceConfigurationRepository(state.database)
+          .export('workspace');
       expect(
         archive.entries.where(
           (entry) => entry.data.keys.any(
@@ -329,16 +328,16 @@ void main() {
   test(
     'deleting the originating conversation removes its reservations',
     () async {
-      await repository.saveSettings('workspace', _settings());
+      await state.repository.saveSettings('workspace', _settings());
       final _ = await reserve('edit');
-      await (database.delete(
-        database.conversations,
+      final _ = await (state.database.delete(
+        state.database.conversations,
       )..where((row) => row.id.equals('chat'))).go();
       expect(
-        await database.select(database.workspaceVerificationRuns).get(),
+        await state.database.select(state.database.workspaceVerificationRuns).get(),
         isEmpty,
       );
-      expect((await repository.getSettings('workspace')).enabled, isTrue);
+      expect((await state.repository.getSettings('workspace')).enabled, isTrue);
     },
   );
 }
@@ -354,9 +353,21 @@ ScopedVerificationSettings _settings({
   mcpServerId: 'server',
   workspaceRoot: 'root',
   editToolIds: const {'edit'},
-  maxRepairAttempts: maxRepairAttempts,
   checks: [ScopedVerificationCheck(id: 'check', executable: 'check')],
+  maxRepairAttempts: maxRepairAttempts,
 );
 
 ScopedVerificationResult _result(ScopedVerificationOutcome outcome) =>
     ScopedVerificationResult(outcome: outcome, reason: 'fixture');
+
+final class _RepositoryFixture {
+  AppDatabase? _database;
+  WorkspaceVerificationRepository? _repository;
+
+  AppDatabase get database => _database ?? (throw StateError('Test database is not initialized.'));
+  WorkspaceVerificationRepository get repository => _repository ?? (throw StateError('Test repository is not initialized.'));
+  set database(AppDatabase value) { _database = value; }
+  set repository(WorkspaceVerificationRepository value) { _repository = value; }
+}
+
+String _operationId(ScopedVerificationReservation reservation) => reservation.operationId ?? (throw StateError('Expected a reserved verification operation.'));

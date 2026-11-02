@@ -64,7 +64,7 @@ List<String> normalizeScopedVerificationPaths(List<String> rawPaths) {
     );
     if (path.startsWith('/') ||
         path.contains(r'\') ||
-        RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*:').hasMatch(path)) {
+        RegExp('^[a-zA-Z][a-zA-Z0-9+.-]*:').hasMatch(path)) {
       throw const FormatException('Reported paths must be workspace-relative.');
     }
     final segments = path.split('/');

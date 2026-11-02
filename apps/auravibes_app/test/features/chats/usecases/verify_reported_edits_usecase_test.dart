@@ -19,62 +19,62 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late _Fixture fixture;
+  final holder = _FixtureHolder();
   setUp(() async {
-    fixture = await _Fixture.create();
+    holder.current = await _Fixture.create();
   });
   tearDown(() async {
-    fixture.runtime.dispose();
-    await fixture.database.close();
+    holder.current.runtime.dispose();
+    await holder.current.database.close();
   });
 
   test(
     'disabled settings preserve model text without probing a runner',
     () async {
-      final result = await fixture.call('one');
+      final result = await holder.current.call('one');
       expect(result, 'edit completed');
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.operations, isEmpty);
     },
   );
 
   test(
     'two sequential edits build fresh runners and both verify successfully',
     () async {
-      await fixture.enable();
-      final first = _verification(await fixture.call('one'));
-      final second = _verification(await fixture.call('two'));
+      await holder.current.enable();
+      final first = _verification(await holder.current.call('one'));
+      final second = _verification(await holder.current.call('two'));
       expect(first['state'], 'pass');
       expect(second['state'], 'pass');
-      expect(fixture.operations, [
+      expect(holder.current.operations, [
         'capabilities',
         'start',
         'capabilities',
         'start',
       ]);
-      expect(fixture.operationIds.toSet(), hasLength(2));
-      expect(identical(fixture.runners[0], fixture.runners[1]), isFalse);
-      expect(fixture.closedSessions, 2);
-      expect(fixture.runtime.current('chat'), isNull);
+      expect(holder.current.operationIds.toSet(), hasLength(2));
+      expect(identical(holder.current.runners.firstOrNull, holder.current.runners[1]), isFalse);
+      expect(holder.current.closedSessions, 2);
+      expect(holder.current.runtime.current('chat'), isNull);
     },
   );
 
   test(
     'failed feedback permits one authorized repair without replaying edits',
     () async {
-      await fixture.enable();
-      fixture.exitCode = 1;
-      final first = _verification(await fixture.call('one'));
+      await holder.current.enable();
+      holder.current.exitCode = 1;
+      final first = _verification(await holder.current.call('one'));
       expect(first['state'], 'fail');
       expect(first['output'], 'check failed');
       expect(first['repairAllowed'], isTrue);
-      final repaired = _verification(await fixture.call('two'));
+      final repaired = _verification(await holder.current.call('two'));
       expect(repaired['state'], 'fail');
       expect(repaired['repairAllowed'], isFalse);
-      final exhausted = _verification(await fixture.call('three'));
+      final exhausted = _verification(await holder.current.call('three'));
       expect(exhausted['state'], 'incomplete');
       expect(exhausted['reason'], 'repair_limit_reached');
       expect(
-        fixture.operations.where((operation) => operation == 'start'),
+        holder.current.operations.where((operation) => operation == 'start'),
         hasLength(2),
       );
     },
@@ -83,11 +83,11 @@ void main() {
   test(
     'successful repair clears failure without restoring its spent token',
     () async {
-      await fixture.enable();
-      fixture.exitCode = 2;
-      final _ = await fixture.call('one');
-      fixture.exitCode = 0;
-      final result = _verification(await fixture.call('two'));
+      await holder.current.enable();
+      holder.current.exitCode = 2;
+      final _ = await holder.current.call('one');
+      holder.current.exitCode = 0;
+      final result = _verification(await holder.current.call('two'));
       expect(result['state'], 'pass');
       expect(result['repairAttemptsRemaining'], 0);
     },
@@ -96,8 +96,8 @@ void main() {
   test(
     'unlisted tools, MCP errors, text and app data never select commands',
     () async {
-      await fixture.enable();
-      final _ = await fixture.call(
+      await holder.current.enable();
+      final _ = await holder.current.call(
         'one',
         tool: ResolvedTool.mcp(
           tableId: 'unlisted',
@@ -109,37 +109,37 @@ void main() {
           ),
         ),
       );
-      final _ = await fixture.call(
+      final _ = await holder.current.call(
         'two',
-        result: McpToolCallerResult(
+        result: .new(
           modelText: 'error',
           appData: const {},
           structuredContent: _report(),
           isError: true,
         ),
       );
-      final text = await fixture.call(
+      final text = await holder.current.call(
         'three',
-        result: McpToolCallerResult(
+        result: .new(
           modelText: jsonEncode(_report()),
           appData: {'auravibesChangedPaths': _report()},
         ),
       );
       expect(_verification(text)['state'], 'skipped');
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.operations, isEmpty);
     },
   );
 
   test(
     'malformed paths reject the entire report before reserving a command',
     () async {
-      await fixture.enable();
+      await holder.current.enable();
       final result = _verification(
-        await fixture.call(
+        await holder.current.call(
           'one',
-          result: McpToolCallerResult(
+          result: const McpToolCallerResult(
             modelText: 'edit completed',
-            appData: const {},
+            appData: {},
             structuredContent: {
               'auravibesChangedPaths': {
                 'version': 1,
@@ -152,10 +152,10 @@ void main() {
       );
       expect(result['reason'], 'invalid_report');
       expect(result['state'], 'incomplete');
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.operations, isEmpty);
       expect(
-        await fixture.database
-            .select(fixture.database.workspaceVerificationRuns)
+        await holder.current.database
+            .select(holder.current.database.workspaceVerificationRuns)
             .get(),
         isEmpty,
       );
@@ -165,31 +165,31 @@ void main() {
   test(
     'runner permission denial preserves the edit and reports incomplete',
     () async {
-      await fixture.enable();
-      fixture.permitted = false;
-      final result = _verification(await fixture.call('one'));
+      await holder.current.enable();
+      holder.current.permitted = false;
+      final result = _verification(await holder.current.call('one'));
       expect(result['state'], 'incomplete');
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.operations, isEmpty);
     },
   );
 
   test('a missing compliant runner never claims a check ran', () async {
-    await fixture.enable();
-    fixture.compliant = false;
-    final result = _verification(await fixture.call('one'));
+    await holder.current.enable();
+    holder.current.compliant = false;
+    final result = _verification(await holder.current.call('one'));
     expect(result['state'], 'incomplete');
     expect(result['reason'], 'unsupported_runner');
-    expect(fixture.operations, ['capabilities']);
+    expect(holder.current.operations, ['capabilities']);
   });
 
   test(
     'replayed tool call returns its recorded outcome with no second start',
     () async {
-      await fixture.enable();
-      final first = _verification(await fixture.call('one'));
-      final replay = _verification(await fixture.call('one'));
+      await holder.current.enable();
+      final first = _verification(await holder.current.call('one'));
+      final replay = _verification(await holder.current.call('one'));
       expect(replay['state'], first['state']);
-      expect(fixture.operations, ['capabilities', 'start']);
+      expect(holder.current.operations, ['capabilities', 'start']);
     },
   );
 
@@ -217,12 +217,11 @@ void main() {
   test(
     'shared tool execution preserves mutation success and private app data',
     () async {
-      await fixture.enable();
-      fixture.exitCode = 1;
+      await holder.current.enable();
+      holder.current.exitCode = 1;
       var edits = 0;
       final service = ResolvedToolService(
-        agentCancellationRuntime: fixture.runtime,
-        scopedVerification: fixture.usecase,
+        agentCancellationRuntime: holder.current.runtime,
         mcpToolCaller:
             ({
               required mcpServerId,
@@ -231,28 +230,19 @@ void main() {
               onElicitation,
             }) async {
               edits++;
+
               return McpToolCallerResult(
                 modelText: 'edit completed',
                 appData: const {'private': 'app-only-marker'},
                 structuredContent: _report(),
               );
             },
+        scopedVerification: holder.current.usecase,
       );
       final executor = AgentToolBatchExecutor<ResolvedTool>(
-        runResolvedTool:
-            ({
-              required conversationId,
-              required toolCallId,
-              required tool,
-              required arguments,
-            }) => service.call(
-              conversationId: conversationId,
-              toolCallId: toolCallId,
-              tool: tool,
-              arguments: arguments,
-            ),
+        runResolvedTool: service.call,
         isCancellationRequested: (_) => false,
-        logToolExecutionError: (_) {},
+        logToolExecutionError: (error) => fail('A completed edit must not become a mutation error: $error'),
       );
       final results = await executor.call([
         AgentToolBatchCall(
@@ -274,7 +264,7 @@ void main() {
       final result = results.single.result;
       expect(result.resultStatus, AgentToolResultStatus.success);
       expect(
-        _verification(jsonDecode(result.responseRaw!) as Object)['state'],
+        _verification(jsonDecode((result.responseRaw ?? (throw StateError('Missing tool response.')))) as Object)['state'],
         'fail',
       );
       expect(result.responseRaw, isNot(contains('app-only-marker')));
@@ -283,25 +273,26 @@ void main() {
         {'private': 'app-only-marker'},
       );
       expect(edits, 1);
-      expect(fixture.operations, ['capabilities', 'start']);
+      expect(holder.current.operations, ['capabilities', 'start']);
     },
   );
 
   test(
     'cancellation while the runner factory is pending cannot launch late work',
     () async {
-      await fixture.enable();
+      await holder.current.enable();
       final entered = Completer<void>();
       final pending = Completer<ScopedVerificationRunner?>();
       final usecase = VerifyReportedEditsUsecase(
-        repository: fixture.repository,
+        repository: holder.current.repository,
         resolveIdentity: (_) async =>
             (workspaceId: 'workspace', turnId: 'turn'),
-        cancellation: fixture.cancellation,
         createRunner: (_) {
           entered.complete();
+
           return pending.future;
         },
+        cancellation: holder.current.cancellation,
       );
       final output = usecase(
         conversationId: 'chat',
@@ -322,58 +313,58 @@ void main() {
         ),
       );
       await entered.future;
-      final handle = fixture.runtime.toolCancellationHandle(
+      final handle = holder.current.runtime.toolCancellationHandle(
         conversationId: 'chat',
         toolCallId: 'one',
       );
       expect(await handle?.requestCancellation(), isTrue);
       expect(_verification(await output)['state'], 'cancelled');
       pending.complete();
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.operations, isEmpty);
     },
   );
 
   test(
     'a connection completed after cancellation is closed without dispatch',
     () async {
-      await fixture.enable();
+      await holder.current.enable();
       final connection = Completer<ScopedVerificationOwnedCaller>();
-      fixture.pendingConnection = connection.future;
-      final output = fixture.call('one');
-      await fixture.openingConnection.future;
-      final handle = fixture.runtime.toolCancellationHandle(
+      holder.current.pendingConnection = connection.future;
+      final output = holder.current.call('one');
+      await holder.current.openingConnection.future;
+      final handle = holder.current.runtime.toolCancellationHandle(
         conversationId: 'chat',
         toolCallId: 'one',
       );
       expect(await handle?.requestCancellation(), isTrue);
       expect(_verification(await output)['state'], 'cancelled');
       connection.complete((
-        call: fixture._caller,
+        call: holder.current._caller,
         close: () {
-          fixture.closedSessions++;
+          holder.current.closedSessions++;
         },
       ));
       for (var index = 0; index < 10; index++) {
-        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(.zero);
       }
-      expect(fixture.closedSessions, 1);
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.closedSessions, 1);
+      expect(holder.current.operations, isEmpty);
     },
   );
 
   test(
     'connection cancellation exceptions preserve the cancelled result',
     () async {
-      await fixture.enable();
+      await holder.current.enable();
       final usecase = VerifyReportedEditsUsecase(
-        repository: fixture.repository,
+        repository: holder.current.repository,
         resolveIdentity: (_) async =>
             (workspaceId: 'workspace', turnId: 'turn'),
-        cancellation: fixture.cancellation,
         createRunner: (input) async {
           input.cancellation.requestStop();
           throw StateError('Connection cancelled.');
         },
+        cancellation: holder.current.cancellation,
       );
       final output = await usecase(
         conversationId: 'chat',
@@ -395,7 +386,7 @@ void main() {
       );
       expect(_verification(output)['state'], 'cancelled');
       expect(_verification(output)['reason'], 'cancelled');
-      expect(fixture.operations, isEmpty);
+      expect(holder.current.operations, isEmpty);
     },
   );
 }
@@ -411,7 +402,7 @@ Map<String, Object?> _report() => {
 };
 
 final class _Fixture {
-  _Fixture(this.database);
+  new(this.database);
   final AppDatabase database;
   final runtime = AgentCancellationRuntime();
   final operations = <String>[];
@@ -424,13 +415,19 @@ final class _Fixture {
   Future<ScopedVerificationOwnedCaller>? pendingConnection;
   final openingConnection = Completer<void>();
 
-  late final repository = WorkspaceVerificationRepository(database);
-  late final cancellation = ScopedVerificationCancellation(runtime);
-  late final runnerFactory = CreateMcpScopedVerificationRunner(
+  WorkspaceVerificationRepository? _repository;
+  ScopedVerificationCancellation? _cancellation;
+  CreateMcpScopedVerificationRunner? _runnerFactory;
+  VerifyReportedEditsUsecase? _usecase;
+
+  WorkspaceVerificationRepository get repository => _repository ??= WorkspaceVerificationRepository(database);
+  ScopedVerificationCancellation get cancellation => _cancellation ??= ScopedVerificationCancellation(runtime);
+  CreateMcpScopedVerificationRunner get runnerFactory => _runnerFactory ??= CreateMcpScopedVerificationRunner(
     database: database,
     repository: repository,
     openSession: (_, _) async {
       if (!openingConnection.isCompleted) openingConnection.complete();
+
       return await (pendingConnection ??
           Future.value((
             call: _caller,
@@ -444,15 +441,16 @@ final class _Fixture {
       permissionResult: permitted ? .granted : .disabledInWorkspace,
     ),
   );
-  late final usecase = VerifyReportedEditsUsecase(
+  VerifyReportedEditsUsecase get usecase => _usecase ??= VerifyReportedEditsUsecase(
     repository: repository,
     resolveIdentity: (_) async => (workspaceId: 'workspace', turnId: 'turn'),
-    cancellation: cancellation,
     createRunner: (input) async {
       final runner = await runnerFactory(input);
       if (runner != null) runners.add(runner);
+
       return runner;
     },
+    cancellation: cancellation,
   );
 
   Future<Object> call(
@@ -484,7 +482,7 @@ final class _Fixture {
 
   Future<void> enable() => repository.saveSettings(
     'workspace',
-    ScopedVerificationSettings(
+    .new(
       enabled: true,
       runnerToolId: 'runner',
       mcpServerId: 'server',
@@ -501,15 +499,90 @@ final class _Fixture {
     ),
   );
 
+  static Future<_Fixture> create() async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    final _ = await database
+        .into(database.workspaces)
+        .insert(
+          WorkspacesCompanion.insert(
+            id: const Value('workspace'),
+            name: 'Local',
+            type: .local,
+          ),
+        );
+    final _ = await database
+        .into(database.conversations)
+        .insert(
+          ConversationsCompanion.insert(
+            id: const Value('chat'),
+            workspaceId: 'workspace',
+            title: 'Work',
+          ),
+        );
+    final _ = await database
+        .into(database.messages)
+        .insert(
+          MessagesCompanion.insert(
+            id: const Value('turn'),
+            conversationId: 'chat',
+            content: 'Edit',
+            messageType: .text,
+            isUser: true,
+            status: .sent,
+          ),
+        );
+    final _ = await database
+        .into(database.mcpServers)
+        .insert(
+          McpServersCompanion.insert(
+            id: const Value('server'),
+            workspaceId: 'workspace',
+            name: 'Code',
+            url: 'https://runner.example/mcp',
+            transport: const McpTransportTypeStreamableHttp(),
+          ),
+        );
+    final _ = await database
+        .into(database.toolsGroups)
+        .insert(
+          ToolsGroupsCompanion.insert(
+            id: const Value('group'),
+            workspaceId: 'workspace',
+            mcpServerId: const Value('server'),
+            name: 'Code',
+            permissions: .granted,
+          ),
+        );
+    for (final entry in {'edit': 'edit_file', 'runner': 'verify'}.entries) {
+      final _ = await database
+          .into(database.tools)
+          .insert(
+            ToolsCompanion.insert(
+              id: .new(entry.key),
+              workspaceId: 'workspace',
+              workspaceToolsGroupId: const Value('group'),
+              toolId: entry.value,
+              isEnabled: const Value(true),
+              permissions: const Value(.granted),
+            ),
+          );
+    }
+
+    return _Fixture(database);
+  }
+
   Future<Object?> _caller({
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
     Object? onElicitation,
   }) async {
+    expect(mcpServerId, 'server');
+    expect(toolIdentifier, 'verify');
+    expect(onElicitation, isNull);
     final operation = arguments['operation'] as String;
     operations.add(operation);
-    if (operation == 'capabilities')
+    if (operation == 'capabilities') {
       return McpToolCallerResult(
         modelText: '',
         appData: const {},
@@ -522,8 +595,10 @@ final class _Fixture {
           },
         },
       );
+    }
     final id = arguments['operationId'] as String;
     operationIds.add(id);
+
     return McpToolCallerResult(
       modelText: '',
       appData: const {},
@@ -543,74 +618,12 @@ final class _Fixture {
     );
   }
 
-  static Future<_Fixture> create() async {
-    final database = AppDatabase(connection: NativeDatabase.memory());
-    await database
-        .into(database.workspaces)
-        .insert(
-          WorkspacesCompanion.insert(
-            id: const Value('workspace'),
-            name: 'Local',
-            type: .local,
-          ),
-        );
-    await database
-        .into(database.conversations)
-        .insert(
-          ConversationsCompanion.insert(
-            id: const Value('chat'),
-            workspaceId: 'workspace',
-            title: 'Work',
-          ),
-        );
-    await database
-        .into(database.messages)
-        .insert(
-          MessagesCompanion.insert(
-            id: const Value('turn'),
-            conversationId: 'chat',
-            content: 'Edit',
-            messageType: .text,
-            isUser: true,
-            status: .sent,
-          ),
-        );
-    await database
-        .into(database.mcpServers)
-        .insert(
-          McpServersCompanion.insert(
-            id: const Value('server'),
-            workspaceId: 'workspace',
-            name: 'Code',
-            url: 'https://runner.example/mcp',
-            transport: const McpTransportTypeStreamableHttp(),
-          ),
-        );
-    await database
-        .into(database.toolsGroups)
-        .insert(
-          ToolsGroupsCompanion.insert(
-            id: const Value('group'),
-            workspaceId: 'workspace',
-            mcpServerId: const Value('server'),
-            name: 'Code',
-            permissions: .granted,
-          ),
-        );
-    for (final entry in {'edit': 'edit_file', 'runner': 'verify'}.entries) {
-      await database
-          .into(database.tools)
-          .insert(
-            ToolsCompanion.insert(
-              id: Value(entry.key),
-              workspaceId: 'workspace',
-              workspaceToolsGroupId: const Value('group'),
-              toolId: entry.value,
-              isEnabled: const Value(true),
-              permissions: const Value(.granted),
-            ),
-          );
-    }
-    return _Fixture(database);
-  }
+
+}
+
+final class _FixtureHolder {
+  _Fixture? _current;
+
+  _Fixture get current => _current ?? (throw StateError('Test fixture is not initialized.'));
+  set current(_Fixture value) { _current = value; }
 }

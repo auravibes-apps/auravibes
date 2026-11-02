@@ -4,7 +4,6 @@ import 'package:auravibes_app/services/mcp_service/mcp_verification_session.dart
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
-import 'package:mocktail/mocktail.dart';
 
 void main() {
   test(
@@ -53,7 +52,8 @@ void main() {
         arguments: _arguments('start'),
       );
       final failure = expectLater(start, throwsFormatException);
-      final reply = await sdk.handler!(
+      final handler = sdk.handler ?? (throw StateError('Missing elicitation handler.'));
+      final reply = await handler(
         mcp.ElicitRequestFormParams(
           message: 'Prompt',
           requestedSchema: const {
@@ -74,12 +74,14 @@ void main() {
     },
   );
 
-  test('transport guard detects an undeclared elicitation without another UI handler', () async {
+  test('transport guard detects an undeclared elicitation '
+      'without another UI handler', () async {
     final sdk = _Client();
     final ordinary = _Client();
     var ordinaryPrompts = 0;
     ordinary.onElicitationRequestTyped((_) async {
       ordinaryPrompts++;
+
       return mcp.ElicitResult(action: mcp.ElicitResultAction.decline);
     });
     final original = ordinary.handler;
@@ -91,7 +93,8 @@ void main() {
     );
     final transport = _Transport();
     final guarded = session.guardTransport(transport);
-    final subscription = guarded.onMessage.listen((_) {});
+    final received = <Object?>[];
+    final subscription = guarded.onMessage.listen(received.add);
     addTearDown(() async {
       session.close();
       await subscription.cancel();
@@ -110,6 +113,7 @@ void main() {
       'params': {'message': 'Unexpected'},
     });
     await failure;
+    expect(received, hasLength(1));
     expect(ordinary.handler, same(original));
     expect(ordinaryPrompts, 0);
     expect(ordinary.operations, ['start']);
@@ -126,8 +130,9 @@ void main() {
       serverId: 'server',
       toolIdentifier: 'verify',
     );
-    session.close();
-    session.close();
+    session
+      ..close()
+      ..close();
     expect(sdk.disconnects, 1);
   });
 }
@@ -163,6 +168,7 @@ final class _Client extends Fake implements mcp.Client {
   }) async {
     final operation = arguments['operation'] as String;
     operations.add(operation);
+
     return operation == 'start' ? await started.future : _response();
   }
 
@@ -173,14 +179,15 @@ final class _Client extends Fake implements mcp.Client {
 }
 
 final class _Transport implements mcp.ClientTransport {
-  final messages = StreamController<dynamic>.broadcast(sync: true);
+  final messages = StreamController<Object?>.broadcast(sync: true);
+  final sent = <Object?>[];
   final _closed = Completer<void>();
   @override
-  Stream<dynamic> get onMessage => messages.stream;
+  Stream<Object?> get onMessage => messages.stream;
   @override
   Future<void> get onClose => _closed.future;
   @override
-  void send(dynamic message) {}
+  void send(Object? message) => sent.add(message);
   @override
   void close() {
     if (!_closed.isCompleted) {

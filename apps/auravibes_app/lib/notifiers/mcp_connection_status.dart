@@ -545,8 +545,9 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
         !deadline.isAfter(DateTime.now().toUtc()) ||
         _isDisposed ||
         _isCloud ||
-        getConnection(mcpServerId)?.server != connection.server)
+        getConnection(mcpServerId)?.server != connection.server) {
       throw StateError('Verification connection cancelled.');
+    }
     final session = await _requiredMcpManager.openVerificationSession((
       server: connection.server.copyWith(authenticationType: authentication),
       serverId: mcpServerId,

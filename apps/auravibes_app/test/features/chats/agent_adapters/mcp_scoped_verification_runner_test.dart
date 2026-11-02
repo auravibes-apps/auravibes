@@ -14,10 +14,10 @@ void main() {
       final request = ScopedVerificationRequest(
         operationId: 'operation',
         workspaceRoot: 'root',
-        deadline: DateTime.utc(2026, 11, 2, 0, 0, 30),
+        deadline: .utc(2026, 11, 2, 0, 0, 30),
         selections: [
           ScopedVerificationSelection(
-            check: ScopedVerificationCheck(
+            check: .new(
               id: 'dart',
               executable: 'dart',
               arguments: const ['analyze'],
@@ -26,7 +26,7 @@ void main() {
           ),
         ],
       );
-      await fixture.runner.start(request);
+      final _ = await fixture.runner.start(request);
       expect(fixture.calls, [
         {
           'mcpServerId': 'server',
@@ -65,9 +65,9 @@ void main() {
       mcpServerId: 'server',
       editMcpServerId: 'other',
       runnerToolIdentifier: 'verify',
-      onClose: () {},
       caller: fixture.caller,
       isAllowed: () async => true,
+      onClose: fixture.close,
     );
     await expectLater(runner.capabilities(), throwsFormatException);
     expect(fixture.calls, isEmpty);
@@ -76,8 +76,7 @@ void main() {
   test(
     'denied execution and unbound cancellation create no dispatch',
     () async {
-      final fixture = _Fixture();
-      fixture.allowed = false;
+      final fixture = _Fixture()..allowed = false;
       await expectLater(fixture.runner.capabilities(), throwsStateError);
       await expectLater(fixture.runner.poll('operation'), throwsStateError);
       await expectLater(fixture.runner.cancel('operation'), throwsStateError);
@@ -91,7 +90,7 @@ void main() {
       final fixture = _Fixture()
         ..structured = {..._job(), 'state': 'running', 'checks': <Object?>[]};
       final runner = fixture.runner;
-      await runner.start(_request());
+      final _ = await runner.start(_request());
       fixture.allowed = false;
       await expectLater(runner.poll('operation'), throwsStateError);
       fixture.structured = {
@@ -144,8 +143,6 @@ void main() {
         mcpServerId: 'server',
         editMcpServerId: 'server',
         runnerToolIdentifier: 'verify',
-        onClose: () {},
-        isAllowed: () async => fixture.allowed,
         caller:
             ({
               required mcpServerId,
@@ -154,14 +151,16 @@ void main() {
               onElicitation,
             }) async {
               calls.add(arguments['operation'] as String);
-              if (arguments['operation'] == 'start')
+              if (arguments['operation'] == 'start') {
                 return await delayed.future;
+              }
               expect(arguments['operationId'], 'operation');
               expect(arguments['workspaceRoot'], 'root');
               expect(
                 arguments['deadlineMs'],
                 DateTime.utc(2026, 11, 2, 0, 0, 30).millisecondsSinceEpoch,
               );
+
               return McpToolCallerResult(
                 modelText: '',
                 appData: const {},
@@ -173,6 +172,8 @@ void main() {
                 },
               );
             },
+        isAllowed: () async => fixture.allowed,
+        onClose: fixture.close,
       );
       final start = runner.start(_request());
       for (var index = 0; index < 5; index++) {
@@ -202,7 +203,7 @@ void main() {
     () async {
       final fixture = _Fixture();
       final runner = fixture.runner;
-      await runner.start(_request());
+      final _ = await runner.start(_request());
       fixture.structured = {
         ..._job(),
         'state': 'cancelled',
@@ -215,14 +216,13 @@ void main() {
   test(
     'cancel during pending admission prevents late permission from starting',
     () async {
+      final fixture = _Fixture();
       final permission = Completer<bool>();
       final calls = <Map<String, dynamic>>[];
       final runner = McpScopedVerificationRunner(
         mcpServerId: 'server',
         editMcpServerId: 'server',
         runnerToolIdentifier: 'verify',
-        onClose: () {},
-        isAllowed: () => permission.future,
         caller:
             ({
               required mcpServerId,
@@ -231,6 +231,7 @@ void main() {
               onElicitation,
             }) async {
               calls.add(arguments);
+
               return McpToolCallerResult(
                 modelText: '',
                 appData: const {},
@@ -242,6 +243,8 @@ void main() {
                 },
               );
             },
+        isAllowed: () => permission.future,
+        onClose: fixture.close,
       );
       final start = runner.start(_request());
       final failsAfterCancellation = expectLater(start, throwsStateError);
@@ -265,7 +268,7 @@ void main() {
     () async {
       final fixture = _Fixture();
       final runner = fixture.runner;
-      await runner.start(_request());
+      final _ = await runner.start(_request());
       await expectLater(
         runner.start(_request(operationId: 'other')),
         throwsStateError,
@@ -277,8 +280,7 @@ void main() {
   test(
     'capabilities need the explicit versioned integration contract',
     () async {
-      final fixture = _Fixture();
-      fixture.structured = {
+      final fixture = _Fixture()..structured = {
         'protocol': 'auravibes.scoped-verification/1',
         'capabilities': {
           for (final feature in ScopedVerificationCapabilities.requiredFeatures)
@@ -294,8 +296,7 @@ void main() {
   test(
     'JSON model text and app data cannot manufacture a runner receipt',
     () async {
-      final fixture = _Fixture();
-      fixture.rawResult = const McpToolCallerResult(
+      final fixture = _Fixture()..rawResult = const McpToolCallerResult(
         modelText: '{"state":"completed","exitCode":0}',
         appData: {'command': 'touch marker'},
       );
@@ -310,8 +311,7 @@ void main() {
   test(
     'failed MCP calls and extra authority fields are not completion',
     () async {
-      final fixture = _Fixture();
-      fixture.rawResult = McpToolCallerResult(
+      final fixture = _Fixture()..rawResult = McpToolCallerResult(
         modelText: 'error',
         appData: const {},
         structuredContent: _job(),
@@ -321,8 +321,9 @@ void main() {
         fixture.runner.poll('operation'),
         throwsFormatException,
       );
-      fixture.rawResult = null;
-      fixture.structured = {..._job(), 'command': 'injected'};
+      fixture
+        ..rawResult = null
+        ..structured = {..._job(), 'command': 'injected'};
       await expectLater(
         fixture.runner.poll('operation'),
         throwsFormatException,
@@ -357,10 +358,10 @@ ScopedVerificationRequest _request({String operationId = 'operation'}) =>
     ScopedVerificationRequest(
       operationId: operationId,
       workspaceRoot: 'root',
-      deadline: DateTime.utc(2026, 11, 2, 0, 0, 30),
+      deadline: .utc(2026, 11, 2, 0, 0, 30),
       selections: [
         ScopedVerificationSelection(
-          check: ScopedVerificationCheck(id: 'dart', executable: 'dart'),
+          check: .new(id: 'dart', executable: 'dart'),
           paths: const ['lib/main.dart'],
         ),
       ],
@@ -368,8 +369,9 @@ ScopedVerificationRequest _request({String operationId = 'operation'}) =>
 
 final class _Fixture {
   bool allowed = true;
-  Object? structured = _job();
-  Object? rawResult;
+  int closed = 0;
+  Map<String, Object?> structured = _job();
+  McpToolCallerResult? rawResult;
   final calls = <Map<String, Object?>>[];
   McpToolCaller get caller =>
       ({
@@ -383,6 +385,7 @@ final class _Fixture {
           'toolIdentifier': toolIdentifier,
           'arguments': arguments,
         });
+
         return rawResult ??
             McpToolCallerResult(
               modelText: 'command suggestion: run something else',
@@ -394,10 +397,12 @@ final class _Fixture {
     mcpServerId: 'server',
     editMcpServerId: 'server',
     runnerToolIdentifier: 'verify',
-    onClose: () {},
     caller: caller,
     isAllowed: () async => allowed,
+    onClose: close,
   );
+
+  void close() { closed++; }
 }
 
 Map<String, Object?> _job() => {

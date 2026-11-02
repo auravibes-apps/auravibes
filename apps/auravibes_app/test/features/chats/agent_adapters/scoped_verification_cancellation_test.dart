@@ -7,7 +7,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('cancelling one concurrent invocation preserves its sibling and conversation', () async {
+  test('cancelling one concurrent invocation preserves its sibling '
+      'and conversation', () async {
     final runtime = AgentCancellationRuntime();
     addTearDown(runtime.dispose);
     final adapter = ScopedVerificationCancellation(runtime);
@@ -21,10 +22,12 @@ void main() {
           ScopedVerificationResult(outcome: .cancelled, reason: 'cancelled'),
         ),
       );
+
       return first.future;
     });
     final b = adapter.run(_invocation('two'), (scope) {
       scopes.add(scope);
+
       return second.future;
     });
     final handle = runtime.toolCancellationHandle(
@@ -59,6 +62,7 @@ void main() {
             ScopedVerificationResult(outcome: .cancelled, reason: 'cancelled'),
           ),
         );
+
         return completion.future;
       }
 

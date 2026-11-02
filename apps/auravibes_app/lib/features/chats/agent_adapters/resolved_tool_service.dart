@@ -1085,7 +1085,6 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
   return ResolvedToolService(
     agentCancellationRuntime: agentCancellationRuntime,
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
-    scopedVerification: ref.watch(scopedVerificationProvider),
     mcpElicitationRequester: (conversationId, request) => container
         .read(mcpElicitationProvider(conversationId).notifier)
         .request(request),
@@ -1166,6 +1165,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
       conversationAgentLanguageRuntimeProvider,
     ),
     workspaceConversationTools: ref.watch(workspaceConversationToolsProvider),
+    scopedVerification: ref.watch(scopedVerificationProvider),
   );
 });
 

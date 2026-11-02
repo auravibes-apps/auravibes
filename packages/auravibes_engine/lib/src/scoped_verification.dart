@@ -6,11 +6,11 @@ import 'package:auravibes_engine/src/scoped_verification_json.dart';
 /// Configuration limits enforced independently of connected tool output.
 abstract final class ScopedVerificationLimits {
   static const protocol = 'auravibes.scoped-verification/1';
-  static const maxSettingsBytes = 32 * 1024;
+  static const int maxSettingsBytes = 32 * 1024;
   static const maxChecks = 8;
   static const maxPaths = 128;
   static const maxPathBytes = 4096;
-  static const maxOutputBytes = 64 * 1024;
+  static const int maxOutputBytes = 64 * 1024;
   static const maxTimeout = Duration(seconds: 120);
   static const maxRepairAttempts = 2;
 }
