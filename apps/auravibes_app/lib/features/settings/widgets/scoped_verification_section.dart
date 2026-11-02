@@ -39,15 +39,6 @@ class _ScopedVerificationSectionState
   bool _saving = false;
   bool _advanced = false;
 
-  String get _status {
-    if (_saving) return LocaleKeys.verification_saving;
-    if (!_loaded) return LocaleKeys.verification_loading;
-
-    return _draft.enabled
-        ? LocaleKeys.verification_enabled
-        : LocaleKeys.verification_disabled;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -227,14 +218,31 @@ class const _VerificationCard({
               child: TextLocale(LocaleKeys.verification_title),
               style: .heading6,
             ),
-            AuraText(
-              child: TextLocale(
-                cloud || loadError && !state._loaded
-                    ? LocaleKeys.verification_unavailable
-                    : state._status,
+            if (cloud || loadError && !state._loaded)
+              const AuraText(
+                child: TextLocale(LocaleKeys.verification_unavailable),
+                style: .bodySmall,
+              )
+            else if (state._saving)
+              const AuraText(
+                child: TextLocale(LocaleKeys.verification_saving),
+                style: .bodySmall,
+              )
+            else if (!state._loaded)
+              const AuraText(
+                child: TextLocale(LocaleKeys.verification_loading),
+                style: .bodySmall,
+              )
+            else if (state._draft.enabled)
+              const AuraText(
+                child: TextLocale(LocaleKeys.verification_enabled),
+                style: .bodySmall,
+              )
+            else
+              const AuraText(
+                child: TextLocale(LocaleKeys.verification_disabled),
+                style: .bodySmall,
               ),
-              style: .bodySmall,
-            ),
             if (state._draft.isDirty)
               const TextLocale(LocaleKeys.verification_unsaved),
           ],
