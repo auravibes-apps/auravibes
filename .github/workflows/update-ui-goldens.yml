@@ -88,6 +88,15 @@ jobs:
             --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
           git diff --exit-code
 
+      - name: Capture empty conversation baseline
+        working-directory: ${{ runner.temp }}/issue-1527-baseline/apps/auravibes_app
+        run: |
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route ConversationRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/before-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
+          git diff --exit-code
+
       - name: Capture first-chat and setup-choice feature
         working-directory: apps/auravibes_app
         run: |
@@ -98,7 +107,17 @@ jobs:
             --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
           git diff --exit-code
 
-      - name: Verify and package the four screen captures
+      - name: Capture empty conversation feature
+        working-directory: apps/auravibes_app
+        run: |
+          test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route ConversationRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/after-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
+          git diff --exit-code
+
+      - name: Verify and package the six screen captures
         run: |
           python3 - <<'PY'
           import json
@@ -112,6 +131,8 @@ jobs:
               ('after-raw', '*Intro-FirstChatGuide-en-mobile.png'): 'after-first-chat',
               ('before-raw', '*Intro-Chooser-en-mobile.png'): 'before-setup-choice',
               ('after-raw', '*Intro-Chooser-en-mobile.png'): 'after-setup-choice',
+              ('before-raw', '*ConversationRoute-duo_closed-light.png'): 'before-empty-conversation',
+              ('after-raw', '*ConversationRoute-duo_closed-light.png'): 'after-empty-conversation',
           }
           captures = []
           for (directory, pattern), output_name in expected.items():
@@ -126,13 +147,30 @@ jobs:
               source = os.environ['FIRST_CHAT_BASELINE_SHA'] if directory == 'before-raw' else os.environ['FIRST_CHAT_FEATURE_SHA']
               if metadata.get('sourceFingerprint') != source:
                   raise SystemExit(f'Wrong source fingerprint in {sidecar.name}')
-              if metadata.get('route') != '/intro' or metadata.get('locale') != 'en':
+              conversation_capture = 'ConversationRoute-' in metadata.get('name', '')
+              route = metadata.get('route', '')
+              if conversation_capture:
+                  if not route.startswith('/workspaces/') or '/chats/' not in route:
+                      raise SystemExit(f'Unexpected conversation route in {sidecar.name}')
+                  if metadata.get('viewport') != [466.0, 678.0]:
+                      raise SystemExit(f'Unexpected conversation viewport in {sidecar.name}')
+              elif route != '/intro':
+                  raise SystemExit(f'Unexpected intro route in {sidecar.name}')
+              if metadata.get('locale') != 'en':
                   raise SystemExit(f'Unexpected route or locale in {sidecar.name}')
               if metadata.get('renderer') != 'Flutter widget-test Skia, linux':
                   raise SystemExit(f'Unexpected renderer in {sidecar.name}')
+              families = {font.get('family') for font in metadata.get('fonts', [])}
+              if not {'Inter', 'Roboto', 'MaterialIcons'}.issubset(families):
+                  raise SystemExit(f'Missing app fonts in {sidecar.name}: {families}')
+              if 'Ahem' in families:
+                  raise SystemExit(f'Ahem placeholder font in {sidecar.name}')
               metadata['fixture'] = (
-                  'Empty in-memory database; no workspace or account; intro journey '
-                  'captured before creating a workspace or connecting an AI provider'
+                  'Persisted local workspace with one empty conversation, no messages, '
+                  'and an empty composer; no models or cloud accounts'
+                  if conversation_capture
+                  else 'Empty in-memory database; no workspace or account; intro journey '
+                       'captured before creating a workspace or connecting an AI provider'
               )
               sidecar.write_text(json.dumps(metadata, indent=2) + '\n')
               shutil.copy2(png, root / f'{output_name}.png')
