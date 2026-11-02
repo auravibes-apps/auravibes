@@ -41,17 +41,16 @@ class const ConversationTaskBriefButton({
     );
     if (!context.mounted || result == null) return;
 
+    final notifier = _notifier(ref);
     try {
-      await _save(ref, result);
+      await notifier.setTaskBrief(result.clear ? null : result.value);
     } on Object {
       if (context.mounted) _showTaskBriefSaveError(context);
     }
   }
 
-  Future<void> _save(WidgetRef ref, ConversationTaskBriefEditResult result) =>
-      ref
-          .read(conversationChatProvider(workspaceId, conversation.id).notifier)
-          .setTaskBrief(result.clear ? null : result.value);
+  ConversationChatNotifier _notifier(WidgetRef ref) =>
+      ref.read(conversationChatProvider(workspaceId, conversation.id).notifier);
 }
 
 void _showTaskBriefSaveError(BuildContext context) {
