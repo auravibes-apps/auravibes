@@ -12,8 +12,8 @@ void main() {
   final state = _RepositoryFixture();
 
   setUp(() async {
-    state.database = AppDatabase(connection: NativeDatabase.memory());
-    state.repository = WorkspaceVerificationRepository(state.database);
+    state.database = .new(connection: NativeDatabase.memory());
+    state.repository = .new(state.database);
     final _ = await state.database
         .into(state.database.workspaces)
         .insert(
@@ -73,16 +73,25 @@ void main() {
   test(
     'absent and malformed settings are disabled within their workspace',
     () async {
-      expect((await state.repository.getSettings('workspace')).enabled, isFalse);
+      expect(
+        (await state.repository.getSettings('workspace')).enabled,
+        isFalse,
+      );
       await state.repository.saveSettings('workspace', _settings());
       expect((await state.repository.getSettings('workspace')).enabled, isTrue);
-      expect((await state.repository.watchSettings('other').first).enabled, isFalse);
+      expect(
+        (await state.repository.watchSettings('other').first).enabled,
+        isFalse,
+      );
       await state.database.customStatement(
         'UPDATE workspace_verification_settings SET settings_json = ? '
         'WHERE workspace_id = ?',
         ['malformed', 'workspace'],
       );
-      expect((await state.repository.getSettings('workspace')).enabled, isFalse);
+      expect(
+        (await state.repository.getSettings('workspace')).enabled,
+        isFalse,
+      );
       expect((await reserve('edit')).shouldRun, isFalse);
     },
   );
@@ -105,14 +114,15 @@ void main() {
   );
 
   test('cloud workspaces cannot save authority or reserve commands', () async {
-    final _ = await (state.database.update(
-      state.database.workspaces,
-    )..where((row) => row.id.equals('workspace'))).write(
-      const WorkspacesCompanion(
-        type: .new(.remote),
-        url: .new('https://cloud.example'),
-      ),
-    );
+    final _ =
+        await (state.database.update(
+          state.database.workspaces,
+        )..where((row) => row.id.equals('workspace'))).write(
+          const WorkspacesCompanion(
+            type: .new(.remote),
+            url: .new('https://cloud.example'),
+          ),
+        );
     await expectLater(
       state.repository.saveSettings('workspace', _settings()),
       throwsA(isA<WorkspaceTableException>()),
@@ -129,9 +139,10 @@ void main() {
         'invalid_turn',
       );
       await state.repository.saveSettings('workspace', _settings());
-      final _ = await (state.database.update(state.database.messages)
-            ..where((row) => row.id.equals('turn')))
-          .write(const MessagesCompanion(isUser: .new(false)));
+      final _ =
+          await (state.database.update(state.database.messages)
+                ..where((row) => row.id.equals('turn')))
+              .write(const MessagesCompanion(isUser: .new(false)));
       expect((await reserve('edit')).result?.reason, 'invalid_turn');
     },
   );
@@ -157,7 +168,9 @@ void main() {
         'verification_in_progress',
       );
       expect(
-        await state.database.select(state.database.workspaceVerificationRuns).get(),
+        await state.database
+            .select(state.database.workspaceVerificationRuns)
+            .get(),
         hasLength(1),
       );
     },
@@ -190,7 +203,10 @@ void main() {
       final repair = await reserve('different-tool-id');
       expect(repair.shouldRun, isTrue);
       expect(repair.repairAttemptsRemaining, 0);
-      final _ = await state.repository.complete(_operationId(repair), _result(.fail));
+      final _ = await state.repository.complete(
+        _operationId(repair),
+        _result(.fail),
+      );
       await state.repository.saveSettings(
         'workspace',
         _settings(revision: 1, maxRepairAttempts: 2),
@@ -209,9 +225,15 @@ void main() {
   test('successful repair does not restore previously spent tokens', () async {
     await state.repository.saveSettings('workspace', _settings());
     final first = await reserve('first');
-    final _ = await state.repository.complete(_operationId(first), _result(.fail));
+    final _ = await state.repository.complete(
+      _operationId(first),
+      _result(.fail),
+    );
     final repair = await reserve('repair');
-    final _ = await state.repository.complete(_operationId(repair), _result(.pass));
+    final _ = await state.repository.complete(
+      _operationId(repair),
+      _result(.pass),
+    );
     final healthy = await reserve('healthy');
     expect(healthy.shouldRun, isTrue);
     final failed = await state.repository.complete(
@@ -227,7 +249,10 @@ void main() {
     () async {
       await state.repository.saveSettings('workspace', _settings());
       final first = await reserve('edit');
-      final _ = await state.repository.complete(_operationId(first), _result(.fail));
+      final _ = await state.repository.complete(
+        _operationId(first),
+        _result(.fail),
+      );
       final late = await state.repository.complete(
         _operationId(first),
         _result(.pass),
@@ -238,7 +263,9 @@ void main() {
       expect(replay.shouldRun, isFalse);
       expect(replay.result?.outcome, ScopedVerificationOutcome.fail);
       expect(
-        await state.database.select(state.database.workspaceVerificationRuns).get(),
+        await state.database
+            .select(state.database.workspaceVerificationRuns)
+            .get(),
         hasLength(1),
       );
     },
@@ -295,11 +322,15 @@ void main() {
         state.database.workspaces,
       )..where((row) => row.id.equals('workspace'))).go();
       expect(
-        await state.database.select(state.database.workspaceVerificationSettings).get(),
+        await state.database
+            .select(state.database.workspaceVerificationSettings)
+            .get(),
         isEmpty,
       );
       expect(
-        await state.database.select(state.database.workspaceVerificationRuns).get(),
+        await state.database
+            .select(state.database.workspaceVerificationRuns)
+            .get(),
         isEmpty,
       );
     },
@@ -312,8 +343,9 @@ void main() {
       final copy = await WorkspaceRepository(state.database)
           .duplicateWorkspace('workspace', name: 'Copy');
       expect((await state.repository.getSettings(copy.id)).enabled, isFalse);
-      final archive = await LocalWorkspaceConfigurationRepository(state.database)
-          .export('workspace');
+      final archive = await LocalWorkspaceConfigurationRepository(
+        state.database,
+      ).export('workspace');
       expect(
         archive.entries.where(
           (entry) => entry.data.keys.any(
@@ -334,7 +366,9 @@ void main() {
         state.database.conversations,
       )..where((row) => row.id.equals('chat'))).go();
       expect(
-        await state.database.select(state.database.workspaceVerificationRuns).get(),
+        await state.database
+            .select(state.database.workspaceVerificationRuns)
+            .get(),
         isEmpty,
       );
       expect((await state.repository.getSettings('workspace')).enabled, isTrue);
@@ -364,10 +398,19 @@ final class _RepositoryFixture {
   AppDatabase? _database;
   WorkspaceVerificationRepository? _repository;
 
-  AppDatabase get database => _database ?? (throw StateError('Test database is not initialized.'));
-  WorkspaceVerificationRepository get repository => _repository ?? (throw StateError('Test repository is not initialized.'));
-  set database(AppDatabase value) { _database = value; }
-  set repository(WorkspaceVerificationRepository value) { _repository = value; }
+  AppDatabase get database =>
+      _database ?? (throw StateError('Test database is not initialized.'));
+  WorkspaceVerificationRepository get repository =>
+      _repository ?? (throw StateError('Test repository is not initialized.'));
+  set database(AppDatabase value) {
+    _database = value;
+  }
+
+  set repository(WorkspaceVerificationRepository value) {
+    _repository = value;
+  }
 }
 
-String _operationId(ScopedVerificationReservation reservation) => reservation.operationId ?? (throw StateError('Expected a reserved verification operation.'));
+String _operationId(ScopedVerificationReservation reservation) =>
+    reservation.operationId ??
+    (throw StateError('Expected a reserved verification operation.'));

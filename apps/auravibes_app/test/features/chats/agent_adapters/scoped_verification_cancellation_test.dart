@@ -7,44 +7,47 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('cancelling one concurrent invocation preserves its sibling '
-      'and conversation', () async {
-    final runtime = AgentCancellationRuntime();
-    addTearDown(runtime.dispose);
-    final adapter = ScopedVerificationCancellation(runtime);
-    final first = Completer<ScopedVerificationResult>();
-    final second = Completer<ScopedVerificationResult>();
-    final scopes = <AgentCancellationScope>[];
-    final a = adapter.run(_invocation('one'), (scope) {
-      scopes.add(scope);
-      final _ = scope.registerCleanup(
-        () => first.complete(
-          ScopedVerificationResult(outcome: .cancelled, reason: 'cancelled'),
-        ),
+  test(
+    'cancelling one concurrent invocation preserves its sibling '
+    'and conversation',
+    () async {
+      final runtime = AgentCancellationRuntime();
+      addTearDown(runtime.dispose);
+      final adapter = ScopedVerificationCancellation(runtime);
+      final first = Completer<ScopedVerificationResult>();
+      final second = Completer<ScopedVerificationResult>();
+      final scopes = <AgentCancellationScope>[];
+      final a = adapter.run(_invocation('one'), (scope) {
+        scopes.add(scope);
+        final _ = scope.registerCleanup(
+          () => first.complete(
+            ScopedVerificationResult(outcome: .cancelled, reason: 'cancelled'),
+          ),
+        );
+
+        return first.future;
+      });
+      final b = adapter.run(_invocation('two'), (scope) {
+        scopes.add(scope);
+
+        return second.future;
+      });
+      final handle = runtime.toolCancellationHandle(
+        conversationId: 'chat',
+        toolCallId: 'one',
       );
-
-      return first.future;
-    });
-    final b = adapter.run(_invocation('two'), (scope) {
-      scopes.add(scope);
-
-      return second.future;
-    });
-    final handle = runtime.toolCancellationHandle(
-      conversationId: 'chat',
-      toolCallId: 'one',
-    );
-    expect(await handle?.requestCancellation(), isTrue);
-    expect((await a).outcome, ScopedVerificationOutcome.cancelled);
-    expect(scopes[1].isCancellationRequested, isFalse);
-    expect(runtime.current('chat')?.isCancellationRequested, isFalse);
-    expect(second.isCompleted, isFalse);
-    second.complete(
-      ScopedVerificationResult(outcome: .pass, reason: 'zero_exit'),
-    );
-    expect((await b).outcome, ScopedVerificationOutcome.pass);
-    expect(runtime.current('chat'), isNull);
-  });
+      expect(await handle?.requestCancellation(), isTrue);
+      expect((await a).outcome, ScopedVerificationOutcome.cancelled);
+      expect(scopes[1].isCancellationRequested, isFalse);
+      expect(runtime.current('chat')?.isCancellationRequested, isFalse);
+      expect(second.isCompleted, isFalse);
+      second.complete(
+        ScopedVerificationResult(outcome: .pass, reason: 'zero_exit'),
+      );
+      expect((await b).outcome, ScopedVerificationOutcome.pass);
+      expect(runtime.current('chat'), isNull);
+    },
+  );
 
   test(
     'conversation stop fans out without releasing a foreground-owned scope',

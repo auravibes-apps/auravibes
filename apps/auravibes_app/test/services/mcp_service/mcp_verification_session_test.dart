@@ -52,7 +52,8 @@ void main() {
         arguments: _arguments('start'),
       );
       final failure = expectLater(start, throwsFormatException);
-      final handler = sdk.handler ?? (throw StateError('Missing elicitation handler.'));
+      final handler =
+          sdk.handler ?? (throw StateError('Missing elicitation handler.'));
       final reply = await handler(
         mcp.ElicitRequestFormParams(
           message: 'Prompt',
@@ -74,63 +75,65 @@ void main() {
     },
   );
 
-  test('transport guard detects an undeclared elicitation '
-      'without another UI handler', () async {
-    final sdk = _Client();
-    final ordinary = _Client();
-    var ordinaryPrompts = 0;
-    ordinary.onElicitationRequestTyped((_) async {
-      ordinaryPrompts++;
+  test(
+    'transport guard detects an undeclared elicitation '
+    'without another UI handler',
+    () async {
+      final sdk = _Client();
+      final ordinary = _Client();
+      var ordinaryPrompts = 0;
+      ordinary.onElicitationRequestTyped((_) async {
+        ordinaryPrompts++;
 
-      return mcp.ElicitResult(action: mcp.ElicitResultAction.decline);
-    });
-    final original = ordinary.handler;
-    final ordinaryCall = ordinary.callTool('ordinary', _arguments('start'));
-    final session = McpVerificationSession(
-      client: sdk,
-      serverId: 'server',
-      toolIdentifier: 'verify',
-    );
-    final transport = _Transport();
-    final guarded = session.guardTransport(transport);
-    final received = <Object?>[];
-    final subscription = guarded.onMessage.listen(received.add);
-    addTearDown(() async {
-      session.close();
-      await subscription.cancel();
-      transport.close();
-    });
-    final start = session.call(
-      mcpServerId: 'server',
-      toolIdentifier: 'verify',
-      arguments: _arguments('start'),
-    );
-    final failure = expectLater(start, throwsFormatException);
-    transport.messages.add({
-      'jsonrpc': '2.0',
-      'id': 123,
-      'method': 'elicitation/create',
-      'params': {'message': 'Unexpected'},
-    });
-    await failure;
-    expect(received, hasLength(1));
-    expect(ordinary.handler, same(original));
-    expect(ordinaryPrompts, 0);
-    expect(ordinary.operations, ['start']);
-    expect(ordinary.started.isCompleted, isFalse);
-    sdk.started.complete(_response());
-    ordinary.started.complete(_response());
-    final _ = await ordinaryCall;
-  });
+        return mcp.ElicitResult(action: mcp.ElicitResultAction.decline);
+      });
+      final original = ordinary.handler;
+      final ordinaryCall = ordinary.callTool('ordinary', _arguments('start'));
+      final session = McpVerificationSession(
+        client: sdk,
+        serverId: 'server',
+        toolIdentifier: 'verify',
+      );
+      final transport = _Transport();
+      final guarded = session.guardTransport(transport);
+      final received = <Object?>[];
+      final subscription = guarded.onMessage.listen(received.add);
+      addTearDown(() async {
+        session.close();
+        await subscription.cancel();
+        transport.close();
+      });
+      final start = session.call(
+        mcpServerId: 'server',
+        toolIdentifier: 'verify',
+        arguments: _arguments('start'),
+      );
+      final failure = expectLater(start, throwsFormatException);
+      transport.messages.add({
+        'jsonrpc': '2.0',
+        'id': 123,
+        'method': 'elicitation/create',
+        'params': {'message': 'Unexpected'},
+      });
+      await failure;
+      expect(received, hasLength(1));
+      expect(ordinary.handler, same(original));
+      expect(ordinaryPrompts, 0);
+      expect(ordinary.operations, ['start']);
+      expect(ordinary.started.isCompleted, isFalse);
+      sdk.started.complete(_response());
+      ordinary.started.complete(_response());
+      final _ = await ordinaryCall;
+    },
+  );
 
   test('repeated close disconnects the owned client exactly once', () {
     final sdk = _Client();
-    final session = McpVerificationSession(
+    final _ = McpVerificationSession(
       client: sdk,
       serverId: 'server',
       toolIdentifier: 'verify',
-    );
-    session
+    )
       ..close()
       ..close();
     expect(sdk.disconnects, 1);

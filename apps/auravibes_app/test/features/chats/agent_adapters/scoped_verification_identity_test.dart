@@ -39,7 +39,11 @@ void main() {
           ],
         ).toJson(),
       );
-      Future<void> message(String id, {required bool user, String? data}) async {
+      Future<void> message(
+        String id, {
+        required bool user,
+        String? data,
+      }) async {
         final _ = await database
             .into(database.messages)
             .insert(

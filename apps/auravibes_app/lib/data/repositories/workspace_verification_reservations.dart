@@ -29,7 +29,9 @@ class const WorkspaceVerificationReservations(
     }
     if (!await _validTurn(request)) return _noRun('invalid_turn');
     final rows = await _recoverRows(request);
-    final existing = rows.where((row) => row.toolCallId == request.toolCallId).firstOrNull;
+    final existing = rows
+        .where((row) => row.toolCallId == request.toolCallId)
+        .firstOrNull;
     if (existing != null) {
       final saved = existing.resultJson;
 
@@ -55,7 +57,10 @@ class const WorkspaceVerificationReservations(
     )) {
       return _noRun('unreconciled_check');
     }
-    final limit = min(rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts, settings.maxRepairAttempts);
+    final limit = min(
+      rows.firstOrNull?.repairLimit ?? request.maxRepairAttempts,
+      settings.maxRepairAttempts,
+    );
     if (limit < 0 || limit > ScopedVerificationLimits.maxRepairAttempts) {
       return _noRun('invalid_repair_limit');
     }
@@ -102,12 +107,14 @@ class const WorkspaceVerificationReservations(
         final saved = jsonEncode(
           verificationUnavailable('interrupted').toJson(),
         );
-        final _ = await (database.update(database.workspaceVerificationRuns)..where(
-              (entry) => entry.id.equals(row.id) & entry.resultJson.isNull(),
-            ))
-            .write(
-              WorkspaceVerificationRunsCompanion(resultJson: .new(saved)),
-            );
+        final _ =
+            await (database.update(database.workspaceVerificationRuns)..where(
+                  (entry) =>
+                      entry.id.equals(row.id) & entry.resultJson.isNull(),
+                ))
+                .write(
+                  WorkspaceVerificationRunsCompanion(resultJson: .new(saved)),
+                );
       }
     }
 

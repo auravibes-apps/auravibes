@@ -163,8 +163,7 @@ class const VerifyReportedEditsUsecase({
     ScopedVerificationRunnerInput input,
   ) async {
     final remaining = input.request.deadline.difference(DateTime.now().toUtc());
-    if (input.cancellation.isCancellationRequested ||
-        remaining <= .zero) {
+    if (input.cancellation.isCancellationRequested || remaining <= .zero) {
       return null;
     }
     final interrupted = Completer<ScopedVerificationRunner?>();

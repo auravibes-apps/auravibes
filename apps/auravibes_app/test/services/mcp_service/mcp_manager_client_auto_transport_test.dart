@@ -55,6 +55,7 @@ void main() {
 
         return value;
       }
+
       final start = trackStart();
       await started.future.timeout(const Duration(seconds: 2));
       final cancel = await session
@@ -72,76 +73,79 @@ void main() {
     },
   );
 
-  test('dedicated manager rejects server elicitation while '
-      'ordinary handler stays active', () async {
-    final ordinarySeen = Completer<void>();
-    final releaseOrdinary = Completer<void>();
-    final server = await _LocalMcpHttpServer.start(
-      elicitVerification: true,
-      toolHandler: (message) async {
-        if (_objectMap(message['params'])['name'] == 'ordinary') {
-          ordinarySeen.complete();
-          await releaseOrdinary.future;
-        }
+  test(
+    'dedicated manager rejects server elicitation while '
+    'ordinary handler stays active',
+    () async {
+      final ordinarySeen = Completer<void>();
+      final releaseOrdinary = Completer<void>();
+      final server = await _LocalMcpHttpServer.start(
+        elicitVerification: true,
+        toolHandler: (message) async {
+          if (_objectMap(message['params'])['name'] == 'ordinary') {
+            ordinarySeen.complete();
+            await releaseOrdinary.future;
+          }
 
-        return {
-          'content': [
-            {'type': 'text', 'text': 'ordinary completed'},
-          ],
-        };
-      },
-    );
-    final manager = McpManagerService();
-    final ordinary = await manager.connectMcpWithAutoTransport(
-      _connectionRequest(server.endpoint),
-    );
-    var prompts = 0;
-    final ordinaryCall = manager.callToolString(
-      ordinary,
-      toolIdentifier: 'ordinary',
-      arguments: const {},
-      elicitation: (
-        serverName: 'Ordinary',
-        onElicitation: (_) async {
-          prompts++;
-
-          return const McpElicitationResponse(action: .cancel);
+          return {
+            'content': [
+              {'type': 'text', 'text': 'ordinary completed'},
+            ],
+          };
         },
-      ),
-    );
-    await ordinarySeen.future.timeout(const Duration(seconds: 2));
-    final scope = AgentCancellationScope();
-    final session = await manager.openVerificationSession(
-      _verificationConnection(server.endpoint, scope),
-    );
-    addTearDown(() async {
-      if (!releaseOrdinary.isCompleted) releaseOrdinary.complete();
-      session.close();
-      final _ = await ordinaryCall;
-      await manager.disconnect(ordinary);
-      await server.close();
-    });
-    final start = session.call(
-      mcpServerId: 'server',
-      toolIdentifier: 'verify',
-      arguments: _verificationArguments('start'),
-    );
-    await expectLater(
-      start.timeout(const Duration(seconds: 2)),
-      throwsFormatException,
-    );
-    final response = await server.elicitationReply.future.timeout(
-      const Duration(seconds: 2),
-    );
-    expect(
-      response.containsKey('error') ||
-          _objectMap(response['result'])['action'] == 'cancel',
-      isTrue,
-    );
-    expect(prompts, 0);
-    releaseOrdinary.complete();
-    expect(await ordinaryCall, 'ordinary completed');
-  });
+      );
+      final manager = McpManagerService();
+      final ordinary = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      var prompts = 0;
+      final ordinaryCall = manager.callToolString(
+        ordinary,
+        toolIdentifier: 'ordinary',
+        arguments: const {},
+        elicitation: (
+          serverName: 'Ordinary',
+          onElicitation: (_) async {
+            prompts++;
+
+            return const McpElicitationResponse(action: .cancel);
+          },
+        ),
+      );
+      await ordinarySeen.future.timeout(const Duration(seconds: 2));
+      final scope = AgentCancellationScope();
+      final session = await manager.openVerificationSession(
+        _verificationConnection(server.endpoint, scope),
+      );
+      addTearDown(() async {
+        if (!releaseOrdinary.isCompleted) releaseOrdinary.complete();
+        session.close();
+        final _ = await ordinaryCall;
+        await manager.disconnect(ordinary);
+        await server.close();
+      });
+      final start = session.call(
+        mcpServerId: 'server',
+        toolIdentifier: 'verify',
+        arguments: _verificationArguments('start'),
+      );
+      await expectLater(
+        start.timeout(const Duration(seconds: 2)),
+        throwsFormatException,
+      );
+      final response = await server.elicitationReply.future.timeout(
+        const Duration(seconds: 2),
+      );
+      expect(
+        response.containsKey('error') ||
+            _objectMap(response['result'])['action'] == 'cancel',
+        isTrue,
+      );
+      expect(prompts, 0);
+      releaseOrdinary.complete();
+      expect(await ordinaryCall, 'ordinary completed');
+    },
+  );
   for (final failed in [false, true]) {
     test(
       'preserves structured edit metadata and error flag $failed '
@@ -863,23 +867,22 @@ final class _LocalMcpHttpServer {
       response.headers.set(HttpHeaders.contentTypeHeader, 'text/event-stream');
       // Match the fixture's legacy SSE behavior.
       // Deliver requests while the tool awaits the client's rejection.
+      final event = {
+        'jsonrpc': '2.0',
+        'id': 900,
+        'method': 'elicitation/create',
+        'params': {
+          'mode': 'form',
+          'message': 'Unexpected verification prompt',
+          'requestedSchema': {
+            'type': 'object',
+            'properties': <String, Object?>{},
+          },
+        },
+      };
       response
         ..bufferOutput = false
-        ..write(
-        'event: message\ndata: ${jsonEncode({
-          'jsonrpc': '2.0',
-          'id': 900,
-          'method': 'elicitation/create',
-          'params': {
-            'mode': 'form',
-            'message': 'Unexpected verification prompt',
-            'requestedSchema': {
-              'type': 'object',
-              'properties': <String, Object?>{},
-            },
-          },
-        })}\n\n',
-      );
+        ..write('event: message\ndata: ${jsonEncode(event)}\n\n');
       final _ = await response.flush();
 
       return;

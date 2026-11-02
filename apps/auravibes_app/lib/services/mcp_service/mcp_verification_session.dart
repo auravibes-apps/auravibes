@@ -48,10 +48,7 @@ class McpVerificationSession {
     final pending = _client.callTool(toolIdentifier, arguments);
     final result = cleanup
         ? await pending
-        : await Future.any([
-            pending,
-            _rejectPendingInteraction(),
-          ]);
+        : await Future.any([pending, _rejectPendingInteraction()]);
     final adapted = McpSdkAdapter.toolResult(result);
 
     return McpToolCallerResult(

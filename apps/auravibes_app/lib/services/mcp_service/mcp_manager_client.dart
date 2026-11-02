@@ -284,8 +284,7 @@ class McpManagerService {
     McpVerificationConnectionRequest request,
   ) async {
     final remaining = request.deadline.difference(DateTime.now().toUtc());
-    if (remaining <= .zero ||
-        request.cancellation.isCancellationRequested) {
+    if (remaining <= .zero || request.cancellation.isCancellationRequested) {
       throw StateError('Verification connection cancelled.');
     }
     final sdk = _createMcpClient(allowElicitation: false);

@@ -280,13 +280,15 @@ void main() {
   test(
     'capabilities need the explicit versioned integration contract',
     () async {
-      final fixture = _Fixture()..structured = {
-        'protocol': 'auravibes.scoped-verification/1',
-        'capabilities': {
-          for (final feature in ScopedVerificationCapabilities.requiredFeatures)
-            feature: true,
-        },
-      };
+      final fixture = _Fixture()
+        ..structured = {
+          'protocol': 'auravibes.scoped-verification/1',
+          'capabilities': {
+            for (final feature
+                in ScopedVerificationCapabilities.requiredFeatures)
+              feature: true,
+          },
+        };
       expect((await fixture.runner.capabilities()).supported, isTrue);
       fixture.structured = {'protocol': 'shell', 'command': 'run tests'};
       await expectLater(fixture.runner.capabilities(), throwsFormatException);
@@ -296,10 +298,11 @@ void main() {
   test(
     'JSON model text and app data cannot manufacture a runner receipt',
     () async {
-      final fixture = _Fixture()..rawResult = const McpToolCallerResult(
-        modelText: '{"state":"completed","exitCode":0}',
-        appData: {'command': 'touch marker'},
-      );
+      final fixture = _Fixture()
+        ..rawResult = const McpToolCallerResult(
+          modelText: '{"state":"completed","exitCode":0}',
+          appData: {'command': 'touch marker'},
+        );
       await expectLater(
         fixture.runner.poll('operation'),
         throwsFormatException,
@@ -311,12 +314,13 @@ void main() {
   test(
     'failed MCP calls and extra authority fields are not completion',
     () async {
-      final fixture = _Fixture()..rawResult = McpToolCallerResult(
-        modelText: 'error',
-        appData: const {},
-        structuredContent: _job(),
-        isError: true,
-      );
+      final fixture = _Fixture()
+        ..rawResult = .new(
+          modelText: 'error',
+          appData: const {},
+          structuredContent: _job(),
+          isError: true,
+        );
       await expectLater(
         fixture.runner.poll('operation'),
         throwsFormatException,
@@ -402,7 +406,9 @@ final class _Fixture {
     onClose: close,
   );
 
-  void close() { closed++; }
+  void close() {
+    closed++;
+  }
 }
 
 Map<String, Object?> _job() => {

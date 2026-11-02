@@ -114,14 +114,16 @@ class WorkspaceVerificationRepository {
       'repairAttemptsRemaining': remaining,
       'repairAllowed': safe.outcome == .fail && remaining > 0,
     });
-    final _ = await (database.update(database.workspaceVerificationRuns)..where(
-          (entry) => entry.id.equals(operationId) & entry.resultJson.isNull(),
-        ))
-        .write(
-          WorkspaceVerificationRunsCompanion(
-            resultJson: .new(jsonEncode(finalResult.toJson())),
-          ),
-        );
+    final _ =
+        await (database.update(database.workspaceVerificationRuns)..where(
+              (entry) =>
+                  entry.id.equals(operationId) & entry.resultJson.isNull(),
+            ))
+            .write(
+              WorkspaceVerificationRunsCompanion(
+                resultJson: .new(jsonEncode(finalResult.toJson())),
+              ),
+            );
 
     return finalResult;
   });

@@ -52,7 +52,13 @@ void main() {
         'start',
       ]);
       expect(holder.current.operationIds.toSet(), hasLength(2));
-      expect(identical(holder.current.runners.firstOrNull, holder.current.runners[1]), isFalse);
+      expect(
+        identical(
+          holder.current.runners.firstOrNull,
+          holder.current.runners[1],
+        ),
+        isFalse,
+      );
       expect(holder.current.closedSessions, 2);
       expect(holder.current.runtime.current('chat'), isNull);
     },
@@ -242,7 +248,8 @@ void main() {
       final executor = AgentToolBatchExecutor<ResolvedTool>(
         runResolvedTool: service.call,
         isCancellationRequested: (_) => false,
-        logToolExecutionError: (error) => fail('A completed edit must not become a mutation error: $error'),
+        logToolExecutionError: (error) =>
+            fail('A completed edit must not become a mutation error: $error'),
       );
       final results = await executor.call([
         AgentToolBatchCall(
@@ -264,7 +271,11 @@ void main() {
       final result = results.single.result;
       expect(result.resultStatus, AgentToolResultStatus.success);
       expect(
-        _verification(jsonDecode((result.responseRaw ?? (throw StateError('Missing tool response.')))) as Object)['state'],
+        _verification(
+          jsonDecode(
+            result.responseRaw ?? (throw StateError('Missing tool response.')),
+          ) as Object,
+        )['state'],
         'fail',
       );
       expect(result.responseRaw, isNot(contains('app-only-marker')));
@@ -420,38 +431,43 @@ final class _Fixture {
   CreateMcpScopedVerificationRunner? _runnerFactory;
   VerifyReportedEditsUsecase? _usecase;
 
-  WorkspaceVerificationRepository get repository => _repository ??= WorkspaceVerificationRepository(database);
-  ScopedVerificationCancellation get cancellation => _cancellation ??= ScopedVerificationCancellation(runtime);
-  CreateMcpScopedVerificationRunner get runnerFactory => _runnerFactory ??= CreateMcpScopedVerificationRunner(
-    database: database,
-    repository: repository,
-    openSession: (_, _) async {
-      if (!openingConnection.isCompleted) openingConnection.complete();
+  WorkspaceVerificationRepository get repository =>
+      _repository ??= .new(database);
+  ScopedVerificationCancellation get cancellation =>
+      _cancellation ??= .new(runtime);
+  CreateMcpScopedVerificationRunner get runnerFactory =>
+      _runnerFactory ??= .new(
+        database: database,
+        repository: repository,
+        openSession: (_, _) async {
+          if (!openingConnection.isCompleted) openingConnection.complete();
 
-      return await (pendingConnection ??
-          Future.value((
-            call: _caller,
-            close: () {
-              closedSessions++;
-            },
-          )));
-    },
-    permission: (request) async => ToolApprovalDecision(
-      toolCallId: request.toolCallId,
-      permissionResult: permitted ? .granted : .disabledInWorkspace,
-    ),
-  );
-  VerifyReportedEditsUsecase get usecase => _usecase ??= VerifyReportedEditsUsecase(
-    repository: repository,
-    resolveIdentity: (_) async => (workspaceId: 'workspace', turnId: 'turn'),
-    createRunner: (input) async {
-      final runner = await runnerFactory(input);
-      if (runner != null) runners.add(runner);
+          return await (pendingConnection ??
+              Future.value((
+                call: _caller,
+                close: () {
+                  closedSessions++;
+                },
+              )));
+        },
+        permission: (request) async => ToolApprovalDecision(
+          toolCallId: request.toolCallId,
+          permissionResult: permitted ? .granted : .disabledInWorkspace,
+        ),
+      );
+  VerifyReportedEditsUsecase get usecase =>
+      _usecase ??= .new(
+        repository: repository,
+        resolveIdentity: (_) async =>
+            (workspaceId: 'workspace', turnId: 'turn'),
+        createRunner: (input) async {
+          final runner = await runnerFactory(input);
+          if (runner != null) runners.add(runner);
 
-      return runner;
-    },
-    cancellation: cancellation,
-  );
+          return runner;
+        },
+        cancellation: cancellation,
+      );
 
   Future<Object> call(
     String id, {
@@ -617,13 +633,14 @@ final class _Fixture {
       },
     );
   }
-
-
 }
 
 final class _FixtureHolder {
   _Fixture? _current;
 
-  _Fixture get current => _current ?? (throw StateError('Test fixture is not initialized.'));
-  set current(_Fixture value) { _current = value; }
+  _Fixture get current =>
+      _current ?? (throw StateError('Test fixture is not initialized.'));
+  set current(_Fixture value) {
+    _current = value;
+  }
 }
