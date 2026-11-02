@@ -216,6 +216,22 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Capture hosted formatter diff (temporary)
+        run: |
+          for path in \
+            apps/auravibes_app/lib/services/mcp_service/mcp_manager_client.dart \
+            apps/auravibes_app/lib/services/mcp_service/mcp_verification_session.dart \
+            apps/auravibes_app/test/data/database/drift/app_database_test.dart; do
+            original=$(mktemp --suffix=.dart)
+            formatted=$(mktemp --suffix=.dart)
+            cp "$path" "$original"
+            cp "$path" "$formatted"
+            dart format --line-length 80 "$formatted" >/dev/null
+            echo "FORMAT_DIFF_BEGIN:$path"
+            diff -u --label "a/$path" --label "b/$path" "$original" "$formatted" || true
+            echo "FORMAT_DIFF_END:$path"
+          done
+
       - name: Check formatting
         id: check-format
         run: melos run format:check
