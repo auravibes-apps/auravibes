@@ -13,8 +13,7 @@ class McpVerificationSession {
     required mcp.Client client,
     required String serverId,
     required String toolIdentifier,
-  }) =>
-      McpVerificationSession._(client, serverId, toolIdentifier);
+  }) => McpVerificationSession._(client, serverId, toolIdentifier);
 
   McpVerificationSession._(this._client, this.serverId, this.toolIdentifier) {
     _client.onElicitationRequestTyped(_rejectElicitation);

@@ -52,9 +52,7 @@ void main() {
       () async {
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 47
-          ..execute(
-            'CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT)',
-          )
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT)')
           ..execute('INSERT INTO workspaces VALUES (?, ?)', [
             'existing',
             'Kept',
