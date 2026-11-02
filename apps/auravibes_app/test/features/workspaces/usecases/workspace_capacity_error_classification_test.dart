@@ -112,9 +112,7 @@ void main() {
   });
 
   test('classifies an oversized workspace asset', () {
-    final bytes = Uint8List(
-      ChatAttachmentModality.maxChatAttachmentBytes + 1,
-    );
+    final bytes = Uint8List(ChatAttachmentModality.maxChatAttachmentBytes + 1);
 
     expect(
       () => WorkspaceAssetInput.validate('notes.txt', bytes),

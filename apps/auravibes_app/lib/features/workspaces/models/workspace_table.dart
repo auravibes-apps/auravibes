@@ -105,12 +105,7 @@ class const WorkspaceRecord({
   final List<String> restrictedReferenceColumns = const [],
 });
 
-enum WorkspaceTableLimit {
-  columns,
-  queryPageSize,
-  summaryColumns,
-  recordBatch,
-}
+enum WorkspaceTableLimit { columns, queryPageSize, summaryColumns, recordBatch }
 
 class const WorkspaceTableException({
   final bool conflict = false,
