@@ -169,13 +169,12 @@ class const _WorkspaceHookReadyContent({
   required final _WorkspaceAgentLifecycleHooksSectionState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      _WorkspaceHookSettingsView(
-        settings: settings,
-        trustStatus: trust,
-        busy: state._busy,
-        callbacks: _workspaceHookCallbacks(state),
-      );
+  Widget build(BuildContext context) => _WorkspaceHookSettingsView(
+    settings: settings,
+    trustStatus: trust,
+    busy: state._busy,
+    callbacks: _workspaceHookCallbacks(state),
+  );
 }
 
 _WorkspaceHookActionCallbacks _workspaceHookCallbacks(
@@ -227,47 +226,60 @@ class const _WorkspaceHookReviewBody({
       args: [review.digest],
     );
     final sourceFiles = review.sourceFiles;
+    final children = <Widget>[];
+    _appendChildren(children, review, sourceFiles, digest);
 
     return AuraColumn(
-      children: _children(review, sourceFiles, digest),
+      children: children,
       spacing: .sm,
       crossAxisAlignment: .start,
     );
   }
 
-  static List<Widget> _children(
+  static void _appendChildren(
+    List<Widget> children,
     WorkspaceAgentHookConfigReview review,
     List<String> sourceFiles,
     String digest,
-  ) => [
-    ..._summary(review),
-    ..._commands(review.commands),
-    ..._sourceFiles(sourceFiles),
-    AuraSelectableText(digest),
-  ];
+  ) {
+    _appendSummary(children, review);
+    _appendCommands(children, review.commands);
+    _appendSourceFiles(children, sourceFiles);
+    children.add(AuraSelectableText(digest));
+  }
 
-  static List<Widget> _summary(WorkspaceAgentHookConfigReview review) => [
-    const TextLocale('agent_lifecycle_hooks.trust_warning'),
-    AuraSelectableText(review.canonicalPath),
-    const TextLocale('agent_lifecycle_hooks.commands'),
-    if (review.commands.isEmpty)
-      const TextLocale('agent_lifecycle_hooks.no_hooks'),
-  ];
+  static void _appendSummary(
+    List<Widget> children,
+    WorkspaceAgentHookConfigReview review,
+  ) {
+    children
+      ..add(const TextLocale('agent_lifecycle_hooks.trust_warning'))
+      ..add(AuraSelectableText(review.canonicalPath))
+      ..add(const TextLocale('agent_lifecycle_hooks.commands'));
+    if (review.commands.isEmpty) {
+      children.add(const TextLocale('agent_lifecycle_hooks.no_hooks'));
+    }
+  }
 
-  static List<Widget> _commands(
+  static void _appendCommands(
+    List<Widget> children,
     List<WorkspaceAgentHookCommandReview> commands,
-  ) => [
-    for (final command in commands)
-      _WorkspaceHookCommandDetails(command: command),
-  ];
+  ) {
+    for (final command in commands) {
+      children.add(_WorkspaceHookCommandDetails(command: command));
+    }
+  }
 
-  static List<Widget> _sourceFiles(List<String> sourceFiles) =>
-      sourceFiles.isEmpty
-      ? const []
-      : [
-          const TextLocale('agent_lifecycle_hooks.source_files'),
-          for (final sourceFile in sourceFiles) AuraSelectableText(sourceFile),
-        ];
+  static void _appendSourceFiles(
+    List<Widget> children,
+    List<String> sourceFiles,
+  ) {
+    if (sourceFiles.isEmpty) return;
+    children.add(const TextLocale('agent_lifecycle_hooks.source_files'));
+    for (final sourceFile in sourceFiles) {
+      children.add(AuraSelectableText(sourceFile));
+    }
+  }
 }
 
 class const _WorkspaceHookCommandDetails({
@@ -337,45 +349,50 @@ class const _WorkspaceHookSettingsColumn({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final children = <Widget>[];
+    _appendChildren(children, view, status, isSupported);
+
     return AuraColumn(
-      children: _children(view, status, isSupported),
+      children: children,
       spacing: .md,
       crossAxisAlignment: .stretch,
     );
   }
 
-  static List<Widget> _children(
+  static void _appendChildren(
+    List<Widget> children,
     _WorkspaceHookSettingsView view,
     WorkspaceAgentHookTrustStatus status,
     bool isSupported,
-  ) => [
-    ..._headerChildren(view, status, isSupported),
-    ..._configuredPathChildren(view.settings),
-    _WorkspaceHookActions(view: view, isSupported: isSupported),
-  ];
+  ) {
+    _appendHeaderChildren(children, view, status, isSupported);
+    _appendConfiguredPathChildren(children, view.settings);
+    children.add(_WorkspaceHookActions(view: view, isSupported: isSupported));
+  }
 
-  static List<Widget> _headerChildren(
+  static void _appendHeaderChildren(
+    List<Widget> children,
     _WorkspaceHookSettingsView view,
     WorkspaceAgentHookTrustStatus status,
     bool isSupported,
-  ) => [
-    const _WorkspaceHookTitle(),
-    const _WorkspaceHookDescription(),
-    _WorkspaceHookToggle(view: view, status: status),
-    _WorkspaceHookStatus(status: status),
-    if (!isSupported) const _WorkspaceHookRecovery(),
-  ];
+  ) {
+    children
+      ..add(const _WorkspaceHookTitle())
+      ..add(const _WorkspaceHookDescription())
+      ..add(_WorkspaceHookToggle(view: view, status: status))
+      ..add(_WorkspaceHookStatus(status: status));
+    if (!isSupported) children.add(const _WorkspaceHookRecovery());
+  }
 
-  static List<Widget> _configuredPathChildren(
+  static void _appendConfiguredPathChildren(
+    List<Widget> children,
     WorkspaceAgentHookSettings settings,
   ) {
     final path = settings.configPath;
-
-    return [
-      if (path != null) AuraSelectableText(path),
-      if (path != null)
-        _WorkspaceHookTrustedDigest(digest: settings.trustedDigest),
-    ];
+    if (path == null) return;
+    children
+      ..add(AuraSelectableText(path))
+      ..add(_WorkspaceHookTrustedDigest(digest: settings.trustedDigest));
   }
 }
 
@@ -485,37 +502,47 @@ class const _WorkspaceHookActionsLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final children = <Widget>[];
+    _appendChildren(children, view, settings, disabled);
+
     return Wrap(
       spacing: spacing,
       runSpacing: spacing,
-      children: _children(view, settings, disabled),
+      children: children,
     );
   }
 
-  static List<Widget> _children(
+  static void _appendChildren(
+    List<Widget> children,
     _WorkspaceHookSettingsView view,
     WorkspaceAgentHookSettings settings,
     bool disabled,
   ) {
     final path = settings.configPath;
 
-    return [
+    children.add(
       _WorkspaceHookChooseAction(
         onPressed: view.callbacks.choose,
         disabled: disabled,
       ),
-      if (path != null)
+    );
+    if (path != null) {
+      children.add(
         _WorkspaceHookReviewAction(
           path: path,
           onReview: view.callbacks.review,
           disabled: disabled,
         ),
-      if (settings.isTrusted)
+      );
+    }
+    if (settings.isTrusted) {
+      children.add(
         _WorkspaceHookRevokeAction(
           onPressed: view.callbacks.revoke,
           disabled: view.busy,
         ),
-    ];
+      );
+    }
   }
 }
 
