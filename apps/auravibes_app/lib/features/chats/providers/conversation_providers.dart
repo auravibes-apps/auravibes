@@ -331,6 +331,7 @@ Future<List<ConversationSummary>> _readFilteredCloudConversationPage(
   _ConversationListOptions options,
 ) => _FilteredCloudConversationPageReader(gateway, cloud, options).read();
 
+// ignore: prefer-match-file-name - Keep the private page reader by its provider.
 class _FilteredCloudConversationPageReader(
   final CloudWorkspaceStateGateway _gateway,
   final CloudWorkspaceRef _cloud,
@@ -340,6 +341,11 @@ class _FilteredCloudConversationPageReader(
   final _seenCursors = <String>{};
   int _skipped = 0;
   String? _cursor;
+
+  bool get _stopAfterFirstPage =>
+      _options.scope == ConversationListScope.active &&
+      _options.pagination.limit == null &&
+      _options.pagination.offset == 0;
 
   Future<List<ConversationSummary>> read() async {
     if (_options.scope == .archived && _options.archivedIds.isEmpty) return [];
@@ -363,11 +369,6 @@ class _FilteredCloudConversationPageReader(
       _cursor = nextCursor;
     }
   }
-
-  bool get _stopAfterFirstPage =>
-      _options.scope == ConversationListScope.active &&
-      _options.pagination.limit == null &&
-      _options.pagination.offset == 0;
 
   bool _appendMatchingConversations(List<ConversationSummary> page) {
     for (final conversation in page) {
