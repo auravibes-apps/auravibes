@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     env:
-      VERIFICATION_BASELINE_SHA: 1aaa31f61128fe810ca35ef7a00205edb9233175
+      VERIFICATION_BASELINE_SHA: f77d999cd494d3bee92f4befa01446a3b42b7de2
       VERIFICATION_FEATURE_SHA: ${{ github.sha }}
       VERIFICATION_LINT_FIX: ${{ inputs.scoped_verification_lint_fix }}
     steps:

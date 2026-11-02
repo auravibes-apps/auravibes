@@ -4,19 +4,23 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
+import 'package:auravibes_app/features/settings/providers/scoped_verification_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_agent_hook_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
+import 'package:auravibes_app/features/settings/services/scoped_verification_configuration.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/features/settings/widgets/scoped_verification_section.dart';
 import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycle_hooks_section.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -62,6 +66,12 @@ void main() {
               ),
               compactionSettingsProvider('A')
                   .overrideWith((_) => stream.stream),
+              scopedVerificationSettingsProvider(
+                'A',
+              ).overrideWith((_) => Stream.value(ScopedVerificationSettings())),
+              scopedVerificationToolsProvider('A').overrideWith(
+                (_) => Stream.value(const <ScopedVerificationToolOption>[]),
+              ),
               listWorkspaceModelSelectionsProvider(workspaceId: 'A')
                   .overrideWith((_) => Stream.value(const [])),
             ],
@@ -184,6 +194,7 @@ void main() {
     expect(find.byType(WorkspaceSettingsScreen), findsOneWidget);
     expect(find.byType(CompactionSettingsSection), findsOneWidget);
     expect(find.byType(WorkspaceAgentLifecycleHooksSection), findsOneWidget);
+    expect(find.byType(ScopedVerificationSection), findsOneWidget);
     final field = find.byType(EditableText).first;
     await tester.enterText(field, '456');
     await tester.tap(
