@@ -191,7 +191,11 @@ AgentLifecycleHookInvocationRequest _runtimeRequest(
     input: _hookInput(input),
     isCancellationRequested: input.isCancellationRequested,
     conversationId: request.conversationId,
-    isStillTrusted: _trustRecheck(prepared, workspaceRepository, settingsRepository),
+    isStillTrusted: _trustRecheck(
+      prepared,
+      workspaceRepository,
+      settingsRepository,
+    ),
   );
 }
 

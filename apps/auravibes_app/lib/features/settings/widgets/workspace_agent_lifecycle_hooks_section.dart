@@ -169,19 +169,14 @@ class const _WorkspaceHookReadyContent({
   required final _WorkspaceAgentLifecycleHooksSectionState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _readySettingsView(settings, trust, state);
+  Widget build(BuildContext context) =>
+      _WorkspaceHookSettingsView(
+        settings: settings,
+        trustStatus: trust,
+        busy: state._busy,
+        callbacks: _workspaceHookCallbacks(state),
+      );
 }
-
-_WorkspaceHookSettingsView _readySettingsView(
-  WorkspaceAgentHookSettings settings,
-  WorkspaceAgentHookTrustStatus? trust,
-  _WorkspaceAgentLifecycleHooksSectionState state,
-) => _WorkspaceHookSettingsView(
-  settings: settings,
-  trustStatus: trust,
-  busy: state._busy,
-  callbacks: _workspaceHookCallbacks(state),
-);
 
 _WorkspaceHookActionCallbacks _workspaceHookCallbacks(
   _WorkspaceAgentLifecycleHooksSectionState state,
@@ -234,46 +229,46 @@ class const _WorkspaceHookReviewBody({
     final sourceFiles = review.sourceFiles;
 
     return AuraColumn(
-      children: _hookReviewChildren(review, sourceFiles, digest),
+      children: _children(review, sourceFiles, digest),
       spacing: .sm,
       crossAxisAlignment: .start,
     );
   }
+
+  static List<Widget> _children(
+    WorkspaceAgentHookConfigReview review,
+    List<String> sourceFiles,
+    String digest,
+  ) => [
+    ..._summary(review),
+    ..._commands(review.commands),
+    ..._sourceFiles(sourceFiles),
+    AuraSelectableText(digest),
+  ];
+
+  static List<Widget> _summary(WorkspaceAgentHookConfigReview review) => [
+    const TextLocale('agent_lifecycle_hooks.trust_warning'),
+    AuraSelectableText(review.canonicalPath),
+    const TextLocale('agent_lifecycle_hooks.commands'),
+    if (review.commands.isEmpty)
+      const TextLocale('agent_lifecycle_hooks.no_hooks'),
+  ];
+
+  static List<Widget> _commands(
+    List<WorkspaceAgentHookCommandReview> commands,
+  ) => [
+    for (final command in commands)
+      _WorkspaceHookCommandDetails(command: command),
+  ];
+
+  static List<Widget> _sourceFiles(List<String> sourceFiles) =>
+      sourceFiles.isEmpty
+      ? const []
+      : [
+          const TextLocale('agent_lifecycle_hooks.source_files'),
+          for (final sourceFile in sourceFiles) AuraSelectableText(sourceFile),
+        ];
 }
-
-List<Widget> _hookReviewChildren(
-  WorkspaceAgentHookConfigReview review,
-  List<String> sourceFiles,
-  String digest,
-) => [
-  ..._hookReviewSummary(review),
-  ..._hookReviewCommands(review.commands),
-  ..._hookReviewSourceFiles(sourceFiles),
-  AuraSelectableText(digest),
-];
-
-List<Widget> _hookReviewSummary(WorkspaceAgentHookConfigReview review) => [
-  const TextLocale('agent_lifecycle_hooks.trust_warning'),
-  AuraSelectableText(review.canonicalPath),
-  const TextLocale('agent_lifecycle_hooks.commands'),
-  if (review.commands.isEmpty)
-    const TextLocale('agent_lifecycle_hooks.no_hooks'),
-];
-
-List<Widget> _hookReviewCommands(
-  List<WorkspaceAgentHookCommandReview> commands,
-) => [
-  for (final command in commands)
-    _WorkspaceHookCommandDetails(command: command),
-];
-
-List<Widget> _hookReviewSourceFiles(List<String> sourceFiles) =>
-    sourceFiles.isEmpty
-    ? const []
-    : [
-        const TextLocale('agent_lifecycle_hooks.source_files'),
-        for (final sourceFile in sourceFiles) AuraSelectableText(sourceFile),
-      ];
 
 class const _WorkspaceHookCommandDetails({
   required final WorkspaceAgentHookCommandReview command,
@@ -343,32 +338,45 @@ class const _WorkspaceHookSettingsColumn({
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
-      children: _hookSettingsChildren(view, status, isSupported),
+      children: _children(view, status, isSupported),
       spacing: .md,
       crossAxisAlignment: .stretch,
     );
   }
-}
 
-List<Widget> _hookSettingsChildren(
-  _WorkspaceHookSettingsView view,
-  WorkspaceAgentHookTrustStatus status,
-  bool isSupported,
-) {
-  final settings = view.settings;
-  final path = settings.configPath;
+  static List<Widget> _children(
+    _WorkspaceHookSettingsView view,
+    WorkspaceAgentHookTrustStatus status,
+    bool isSupported,
+  ) => [
+    ..._headerChildren(view, status, isSupported),
+    ..._configuredPathChildren(view.settings),
+    _WorkspaceHookActions(view: view, isSupported: isSupported),
+  ];
 
-  return [
+  static List<Widget> _headerChildren(
+    _WorkspaceHookSettingsView view,
+    WorkspaceAgentHookTrustStatus status,
+    bool isSupported,
+  ) => [
     const _WorkspaceHookTitle(),
     const _WorkspaceHookDescription(),
     _WorkspaceHookToggle(view: view, status: status),
     _WorkspaceHookStatus(status: status),
     if (!isSupported) const _WorkspaceHookRecovery(),
-    if (path != null) AuraSelectableText(path),
-    if (path != null)
-      _WorkspaceHookTrustedDigest(digest: settings.trustedDigest),
-    _WorkspaceHookActions(view: view, isSupported: isSupported),
   ];
+
+  static List<Widget> _configuredPathChildren(
+    WorkspaceAgentHookSettings settings,
+  ) {
+    final path = settings.configPath;
+
+    return [
+      if (path != null) AuraSelectableText(path),
+      if (path != null)
+        _WorkspaceHookTrustedDigest(digest: settings.trustedDigest),
+    ];
+  }
 }
 
 class const _WorkspaceHookTitle() extends StatelessWidget {
@@ -480,35 +488,35 @@ class const _WorkspaceHookActionsLayout({
     return Wrap(
       spacing: spacing,
       runSpacing: spacing,
-      children: _hookActionChildren(view, settings, disabled),
+      children: _children(view, settings, disabled),
     );
   }
-}
 
-List<Widget> _hookActionChildren(
-  _WorkspaceHookSettingsView view,
-  WorkspaceAgentHookSettings settings,
-  bool disabled,
-) {
-  final path = settings.configPath;
+  static List<Widget> _children(
+    _WorkspaceHookSettingsView view,
+    WorkspaceAgentHookSettings settings,
+    bool disabled,
+  ) {
+    final path = settings.configPath;
 
-  return [
-    _WorkspaceHookChooseAction(
-      onPressed: view.callbacks.choose,
-      disabled: disabled,
-    ),
-    if (path != null)
-      _WorkspaceHookReviewAction(
-        path: path,
-        onReview: view.callbacks.review,
+    return [
+      _WorkspaceHookChooseAction(
+        onPressed: view.callbacks.choose,
         disabled: disabled,
       ),
-    if (settings.isTrusted)
-      _WorkspaceHookRevokeAction(
-        onPressed: view.callbacks.revoke,
-        disabled: view.busy,
-      ),
-  ];
+      if (path != null)
+        _WorkspaceHookReviewAction(
+          path: path,
+          onReview: view.callbacks.review,
+          disabled: disabled,
+        ),
+      if (settings.isTrusted)
+        _WorkspaceHookRevokeAction(
+          onPressed: view.callbacks.revoke,
+          disabled: view.busy,
+        ),
+    ];
+  }
 }
 
 class const _WorkspaceHookChooseAction({
