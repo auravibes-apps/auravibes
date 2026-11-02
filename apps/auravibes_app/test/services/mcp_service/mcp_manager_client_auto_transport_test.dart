@@ -12,6 +12,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 void main() {
+  test('verification preserves negotiated HTTP protocol headers', () async {
+    final server = await _LocalMcpHttpServer.start(
+      toolResult: _verificationReceipt('completed'),
+      enforceProtocolHeader: true,
+    );
+    final manager = McpManagerService();
+    final session = await manager.openVerificationSession(
+      _verificationConnection(server.endpoint, AgentCancellationScope()),
+    );
+    addTearDown(() async {
+      session.close();
+      await server.close();
+    });
+    final output = await session.call(
+      mcpServerId: 'server',
+      toolIdentifier: 'verify',
+      arguments: _verificationArguments('capabilities'),
+    );
+    expect(output, isNotNull);
+    expect(server.negotiatedProtocolVersion, isNotNull);
+    expect(server.toolProtocolVersions, [server.negotiatedProtocolVersion]);
+  });
+
   test(
     'dedicated manager connection cancels a pending start without teardown',
     () async {
@@ -747,6 +770,7 @@ final class _LocalMcpHttpServer {
     required this.toolResult,
     this.toolHandler,
     this.elicitVerification = false,
+    this.enforceProtocolHeader = false,
   });
 
   final int streamableStatus;
@@ -757,11 +781,14 @@ final class _LocalMcpHttpServer {
   final Future<Map<String, Object?>> Function(Map<String, dynamic> message)?
   toolHandler;
   final bool elicitVerification;
+  final bool enforceProtocolHeader;
   final elicitationReply = Completer<Map<String, dynamic>>();
   Map<String, Object?>? clientExtensions;
   int streamablePostCount = 0;
   int sseGetCount = 0;
   Map<String, Object?>? clientCapabilities;
+  String? negotiatedProtocolVersion;
+  final toolProtocolVersions = <String?>[];
   String? streamableAuthorization;
   final streamableAuthorizationHeaders = <String?>[];
   String? sseAuthorization;
@@ -787,6 +814,7 @@ final class _LocalMcpHttpServer {
     Future<Map<String, Object?>> Function(Map<String, dynamic> message)?
     toolHandler,
     bool elicitVerification = false,
+    bool enforceProtocolHeader = false,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final local = _LocalMcpHttpServer(
@@ -798,6 +826,7 @@ final class _LocalMcpHttpServer {
       toolResult: toolResult,
       toolHandler: toolHandler,
       elicitVerification: elicitVerification,
+      enforceProtocolHeader: enforceProtocolHeader,
     );
     final _ = server.listen((request) => unawaited(local._handle(request)));
 
@@ -840,11 +869,35 @@ final class _LocalMcpHttpServer {
     streamableAuthorizationHeaders.add(streamableAuthorization);
     final message = await _readMessage(request);
     if (message['method'] == 'initialize') {
+      final version = _objectMap(message['params'])['protocolVersion'];
+      if (version is String) negotiatedProtocolVersion = version;
       clientCapabilities = _objectMap(
         _objectMap(message['params'])['capabilities'],
       );
     }
     final response = request.response..statusCode = streamableStatus;
+    if (message['method'] == 'tools/call') {
+      final version = request.headers.value('MCP-Protocol-Version');
+      toolProtocolVersions.add(version);
+      if (enforceProtocolHeader &&
+          (negotiatedProtocolVersion == null ||
+              version != negotiatedProtocolVersion)) {
+        response
+          ..statusCode = HttpStatus.badRequest
+          ..headers.contentType = .json
+          ..write(jsonEncode({
+            'jsonrpc': '2.0',
+            'id': message['id'],
+            'error': {
+              'code': -32600,
+              'message': 'Missing or mismatched MCP-Protocol-Version',
+            },
+          }));
+        final _ = await response.close();
+
+        return;
+      }
+    }
     if (message['id'] == 900 && message['method'] == null) {
       if (!elicitationReply.isCompleted) elicitationReply.complete(message);
       response.statusCode = HttpStatus.accepted;
