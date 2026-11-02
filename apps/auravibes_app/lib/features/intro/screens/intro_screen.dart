@@ -44,7 +44,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   WorkspaceSetupStage _setupStage = .chooser;
   _IntroSavedStage _savedStage = .readiness;
   bool _pending = false;
-  String? _quickStartError;
+  bool _quickStartFailed = false;
   bool _reverse = false;
   String _editingConnection = '';
 
@@ -123,7 +123,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     if (_pending) return;
     setState(() {
       _pending = true;
-      _quickStartError = null;
+      _quickStartFailed = false;
     });
 
     final workspace = await _createQuickStartWorkspace();
@@ -147,7 +147,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     } on Object {
       if (mounted) {
         setState(
-          () => _quickStartError = 'workspace_management.unexpected_error',
+          () => _quickStartFailed = true,
         );
       }
 
@@ -221,7 +221,7 @@ class _IntroSetup extends StatelessWidget {
          controller: state._pages,
          onQuickStart: state._startWithStarter,
          quickStartPending: state._pending,
-         quickStartError: state._quickStartError,
+         quickStartFailed: state._quickStartFailed,
        );
 
   final Widget _child;

@@ -29,7 +29,7 @@ class const IntroWelcomePager({
   required final PageController controller,
   required final ValueChanged<ChatDraft> onQuickStart,
   final bool quickStartPending = false,
-  final String? quickStartError,
+  final bool quickStartFailed = false,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -114,7 +114,7 @@ class _IntroWelcomeViewport extends StatelessWidget {
                           ),
                     onAdvancedSetup: () => state._goToPage(_chooserPage),
                     pending: state.widget.quickStartPending,
-                    error: state.widget.quickStartError,
+                    showError: state.widget.quickStartFailed,
                   ),
                   for (
                     var index = 0;
@@ -160,7 +160,7 @@ class const _FirstChatGuide({
   required final VoidCallback? onStart,
   required final VoidCallback onAdvancedSetup,
   required final bool pending,
-  required final String? error,
+  required final bool showError,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -190,8 +190,11 @@ class const _FirstChatGuide({
           selectedText: selectedText,
           keyPrefix: 'intro_starter',
         ),
-        if (error case final error?)
-          Semantics(child: TextLocale(error), liveRegion: true),
+        if (showError)
+          const Semantics(
+            child: TextLocale('workspace_management.unexpected_error'),
+            liveRegion: true,
+          ),
         AuraButton(
           onPressed: () {
             if (!pending) onStart?.call();
