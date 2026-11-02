@@ -52,10 +52,17 @@ void main() {
       () async {
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 47
-          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT)')
-          ..execute('INSERT INTO workspaces VALUES (?, ?)', ['existing', 'Kept']);
+          ..execute(
+            'CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT)',
+          )
+          ..execute('INSERT INTO workspaces VALUES (?, ?)', [
+            'existing',
+            'Kept',
+          ]);
         _createHistorySources(sqliteDb);
-        final database = AppDatabase(connection: NativeDatabase.opened(sqliteDb));
+        final database = AppDatabase(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
         addTearDown(database.close);
 
         final workspace = await database
@@ -67,10 +74,14 @@ void main() {
         expect(workspace.read<String>('name'), 'Kept');
 
         final settings = await database
-            .customSelect('SELECT COUNT(*) AS count FROM workspace_verification_settings')
+            .customSelect(
+              'SELECT COUNT(*) AS count FROM workspace_verification_settings',
+            )
             .getSingle();
         final runs = await database
-            .customSelect('SELECT COUNT(*) AS count FROM workspace_verification_runs')
+            .customSelect(
+              'SELECT COUNT(*) AS count FROM workspace_verification_runs',
+            )
             .getSingle();
         expect(settings.read<int>('count'), 0);
         expect(runs.read<int>('count'), 0);
