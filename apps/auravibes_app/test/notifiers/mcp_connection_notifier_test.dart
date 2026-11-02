@@ -1354,13 +1354,15 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   }
 
   @override
-  Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
+  Future<McpToolOutput> callToolOutput(
     McpToolOutputRequest request,
   ) async {
     includeAppDataCalls.add(request.includeAppData);
 
     return (
       modelText: 'tool result',
+      structuredContent: null,
+      isError: null,
       appData: request.includeAppData
           ? const {
               'content': [

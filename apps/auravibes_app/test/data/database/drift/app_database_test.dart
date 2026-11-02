@@ -48,6 +48,37 @@ void main() {
     });
 
     test(
+      'schema47 migration preserves workspaces with verification disabled',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 47
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT)')
+          ..execute('INSERT INTO workspaces VALUES (?, ?)', ['existing', 'Kept']);
+        _createHistorySources(sqliteDb);
+        final database = AppDatabase(connection: NativeDatabase.opened(sqliteDb));
+        addTearDown(database.close);
+
+        final workspace = await database
+            .customSelect(
+              'SELECT name FROM workspaces WHERE id = ?',
+              variables: [const Variable<String>('existing')],
+            )
+            .getSingle();
+        expect(workspace.read<String>('name'), 'Kept');
+
+        final settings = await database
+            .customSelect('SELECT COUNT(*) AS count FROM workspace_verification_settings')
+            .getSingle();
+        final runs = await database
+            .customSelect('SELECT COUNT(*) AS count FROM workspace_verification_runs')
+            .getSingle();
+        expect(settings.read<int>('count'), 0);
+        expect(runs.read<int>('count'), 0);
+        expect(sqliteDb.userVersion, 48);
+      },
+    );
+
+    test(
       'schema46 migration adds a nullable conversation task brief',
       () async {
         final sqliteDb = sqlite.sqlite3.openInMemory()

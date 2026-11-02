@@ -22,6 +22,7 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_app_tool_metadata.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_verification_session.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
@@ -516,7 +517,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     );
   }
 
-  Future<({String modelText, Map<String, Object?> appData})>
+  Future<McpToolOutput>
   callToolWithAppData({
     required String mcpServerId,
     required String toolIdentifier,
@@ -528,6 +529,26 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     arguments: arguments,
     onElicitation: onElicitation,
   ));
+
+  Future<McpVerificationSession> openVerificationSession({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required DateTime deadline,
+    required AgentCancellationScope cancellation,
+  }) async {
+    _requireLocalMcp(this);
+    final connection = _requiredConnection(mcpServerId);
+    final _ = _requiredToolClient(mcpServerId, toolIdentifier);
+    final authentication = await _notifierRef.read(oauthCredentialServiceProvider).resolveMcpAuthentication(connection.server.serviceConnectionId);
+    if (cancellation.isCancellationRequested || !deadline.isAfter(DateTime.now().toUtc()) || _isDisposed || _isCloud || getConnection(mcpServerId)?.server != connection.server) throw StateError('Verification connection cancelled.');
+    final session = await _requiredMcpManager.openVerificationSession((server: connection.server.copyWith(authenticationType: authentication), serverId: mcpServerId, toolIdentifier: toolIdentifier, deadline: deadline, cancellation: cancellation));
+    if (cancellation.isCancellationRequested || !deadline.isAfter(DateTime.now().toUtc()) || _isDisposed || _isCloud || getConnection(mcpServerId)?.server != connection.server) {
+      session.close();
+      throw StateError('Verification connection changed.');
+    }
+
+    return session;
+  }
 
   /// Read a UI resource declared by [toolIdentifier].
   Future<Map<String, Object?>> readAppResource({
@@ -588,7 +609,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
   }
 }
 
-Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
+Future<McpToolOutput> _callToolWithAppData(
   McpConnectionNotifier notifier,
   _McpToolCallRequest request,
 ) => notifier._requiredMcpManager.callToolOutput(

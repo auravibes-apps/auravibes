@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/mcp_elicitation_request.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_sdk_adapter.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_verification_session.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_streamable_http_response_capture.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_web_sse_client_transport.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
@@ -113,6 +114,21 @@ typedef McpToolOutputRequest = ({
   Map<String, dynamic> arguments,
   bool includeAppData,
   McpToolElicitationContext elicitation,
+});
+
+typedef McpToolOutput = ({
+  String modelText,
+  Map<String, Object?> appData,
+  Object? structuredContent,
+  bool? isError,
+});
+
+typedef McpVerificationConnectionRequest = ({
+  McpServerToCreate server,
+  String serverId,
+  String toolIdentifier,
+  DateTime deadline,
+  AgentCancellationScope cancellation,
 });
 
 class McpManagerClient._(
@@ -264,6 +280,37 @@ class McpManagerService {
   final Future<mcp.ClientTransport> Function(McpServerToCreate)?
   legacySseTransportFactory;
 
+  Future<McpVerificationSession> openVerificationSession(McpVerificationConnectionRequest request) async {
+    final remaining = request.deadline.difference(DateTime.now().toUtc());
+    if (remaining <= Duration.zero || request.cancellation.isCancellationRequested) throw StateError('Verification connection cancelled.');
+    final sdk = _createMcpClient(allowElicitation: false);
+    final session = McpVerificationSession(client: sdk, serverId: request.serverId, toolIdentifier: request.toolIdentifier);
+    final aborted = Completer<void>();
+    void abort() { session.close(); if (!aborted.isCompleted) aborted.completeError(StateError('Verification connection cancelled.')); }
+    final timer = Timer(remaining, abort);
+    final registration = request.cancellation.registerCleanup(abort);
+    Future<void> connect() async {
+      final transport = await _createTransportConfig(request.server, oauthCredentialService: oauthCredentialService);
+      if (aborted.isCompleted) { transport.close(); return; }
+      await sdk.connect(session.guardTransport(transport));
+      // A connect future can finish after the session was already closed.
+      // Close that late SDK attachment directly; session.close stays idempotent.
+      if (aborted.isCompleted) sdk.disconnect();
+    }
+    try {
+      await Future.any([connect(), aborted.future]);
+      if (aborted.isCompleted) throw StateError('Verification connection cancelled.');
+
+      return session;
+    } on Object {
+      session.close();
+      rethrow;
+    } finally {
+      timer.cancel();
+      final _ = registration.remove();
+    }
+  }
+
   Future<void> disconnect(McpManagerClient? client) async {
     if (client == null) return;
     client.disconnect();
@@ -285,7 +332,7 @@ class McpManagerService {
     return McpSdkAdapter.toolResult(result).toModelText();
   }
 
-  Future<({String modelText, Map<String, Object?> appData})> callToolOutput(
+  Future<McpToolOutput> callToolOutput(
     McpToolOutputRequest request,
   ) async {
     final result = await _callSerializedMcpTool(
@@ -405,15 +452,15 @@ Future<McpManagerClient> _connectMcp(_McpConnectRequest request) async {
 }
 
 // Create client configuration.
-mcp.Client _createMcpClient() => mcp.McpClient.createClient(
+mcp.Client _createMcpClient({bool allowElicitation = true}) => mcp.McpClient.createClient(
   mcp.McpClient.simpleConfig(
     name: 'AuraVibes MCP Client',
     version: '1.0.0',
   ).copyWith(
-    capabilities: const mcp.ClientCapabilities(
-      elicitationForm: true,
-      elicitationUrl: true,
-      extensions: {
+    capabilities: mcp.ClientCapabilities(
+      elicitationForm: allowElicitation,
+      elicitationUrl: allowElicitation,
+      extensions: const {
         'io.modelcontextprotocol/ui': {
           'mimeTypes': ['text/html;profile=mcp-app'],
         },
@@ -490,16 +537,19 @@ Future<mcp.CallToolResult> _callSerializedMcpTool(
   ),
 );
 
-({String modelText, Map<String, Object?> appData}) _mcpToolOutput(
+McpToolOutput _mcpToolOutput(
   mcp.CallToolResult result,
   bool includeAppData,
 ) {
-  final modelText = McpSdkAdapter.toolResult(result).toModelText();
+  final adapted = McpSdkAdapter.toolResult(result);
+  final modelText = adapted.toModelText();
   final appData = includeAppData
       ? _boundedMcpAppResult(result.toJson(), () => modelText)
       : const <String, Object?>{};
 
-  return (modelText: modelText, appData: appData);
+  return (modelText: modelText, appData: appData,
+    structuredContent: adapted.structuredContent,
+    isError: result.isError);
 }
 
 final class _McpToolElicitationHandler(

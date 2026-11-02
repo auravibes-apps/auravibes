@@ -16,6 +16,8 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/scoped_verification_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/verify_reported_edits_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/connector_command_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
@@ -102,6 +104,7 @@ class ResolvedToolService {
     ConnectorCommandUsecase? connectorCommandUsecase,
     ConversationAgentLanguageRuntime? conversationLanguageRuntime,
     this.workspaceConversationTools,
+    this.scopedVerification,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
@@ -122,9 +125,10 @@ class ResolvedToolService {
            conversationLanguageRuntime: conversationLanguageRuntime,
          ),
        );
-  new _cloud() : _delegate = null, workspaceConversationTools = null;
+  new _cloud() : _delegate = null, workspaceConversationTools = null, scopedVerification = null;
 
   final WorkspaceConversationToolsUsecase? workspaceConversationTools;
+  final VerifyReportedEditsUsecase? scopedVerification;
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
   final Map<({String conversationId, String toolCallId}), Map<String, Object?>>
   _mcpAppResultData = {};
@@ -164,12 +168,18 @@ class ResolvedToolService {
       arguments: arguments,
     );
 
-    return _modelToolResult(
+    final modelResult = _modelToolResult(
       result,
       conversationId,
       toolCallId,
       _mcpAppResultData,
     );
+    final verification = scopedVerification;
+    if (result is McpToolCallerResult && verification != null) {
+      return await verification.call(conversationId: conversationId, toolCallId: toolCallId, tool: tool, result: result);
+    }
+
+    return modelResult;
   }
 
   Future<Object?> _workspaceCommand(
@@ -1067,6 +1077,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
   return ResolvedToolService(
     agentCancellationRuntime: agentCancellationRuntime,
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
+    scopedVerification: ref.watch(scopedVerificationProvider),
     mcpElicitationRequester: (conversationId, request) => container
         .read(mcpElicitationProvider(conversationId).notifier)
         .request(request),
