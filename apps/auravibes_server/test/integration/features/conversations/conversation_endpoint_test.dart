@@ -12,58 +12,58 @@ import 'package:test/test.dart';
 
 import '../../test_tools/serverpod_test_tools.dart';
 
+Future<
+  ({
+    TestSessionBuilder session,
+    Session database,
+    int workspaceId,
+    String userId,
+  })
+>
+_prepareEndpointFixture(TestSessionBuilder sessionBuilder) async {
+  final userId = const Uuid().v4().toString();
+  final session = sessionBuilder.copyWith(
+    authentication: AuthenticationOverride.authenticationInfo(
+      userId,
+      const {},
+    ),
+  );
+  final database = session.build();
+  await AuthUser.db.insertRow(
+    database,
+    AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+  );
+  await EmailAccount.db.insertRow(
+    database,
+    EmailAccount(
+      authUserId: UuidValue.fromString(userId),
+      email: '$userId@example.com',
+      passwordHash: 'unused',
+    ),
+  );
+  final workspace = await workspace_repo.CloudWorkspaceRepository()
+      .createWorkspace(
+        database,
+        name: 'Auto approval',
+        ownerUserId: userId,
+        now: DateTime.now().toUtc(),
+      );
+  return (
+    session: session,
+    database: database,
+    workspaceId: workspace.id!,
+    userId: userId,
+  );
+}
+
 void main() {
   // Template execution opens a separate session that must see committed rows.
   withServerpod('ConversationAutoApproval', (sessionBuilder, endpoints) {
-    Future<
-      ({
-        TestSessionBuilder session,
-        Session database,
-        int workspaceId,
-        String userId,
-      })
-    >
-    prepare() async {
-      final userId = const Uuid().v4().toString();
-      final session = sessionBuilder.copyWith(
-        authentication: AuthenticationOverride.authenticationInfo(
-          userId,
-          const {},
-        ),
-      );
-      final database = session.build();
-      await AuthUser.db.insertRow(
-        database,
-        AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
-      );
-      await EmailAccount.db.insertRow(
-        database,
-        EmailAccount(
-          authUserId: UuidValue.fromString(userId),
-          email: '$userId@example.com',
-          passwordHash: 'unused',
-        ),
-      );
-      final workspace = await workspace_repo.CloudWorkspaceRepository()
-          .createWorkspace(
-            database,
-            name: 'Auto approval',
-            ownerUserId: userId,
-            now: DateTime.now().toUtc(),
-          );
-      return (
-        session: session,
-        database: database,
-        workspaceId: workspace.id!,
-        userId: userId,
-      );
-    }
-
     test(
       'all conversation reads reject erasure-pending and deleted workspaces',
       () async {
         for (final tombstone in ['erasure requested', 'soft deleted']) {
-          final fixture = await prepare();
+          final fixture = await _prepareEndpointFixture(sessionBuilder);
           final conversation = await endpoints.conversation.create(
             fixture.session,
             CreateConversationRequest(
@@ -216,7 +216,7 @@ void main() {
     test(
       'persists mode through create, update, projection and root/child forks',
       () async {
-        final fixture = await prepare();
+        final fixture = await _prepareEndpointFixture(sessionBuilder);
         final root = await endpoints.conversation.create(
           fixture.session,
           CreateConversationRequest(
@@ -372,7 +372,7 @@ void main() {
     test(
       'server mode honors current root, denial priority and pending calls',
       () async {
-        final fixture = await prepare();
+        final fixture = await _prepareEndpointFixture(sessionBuilder);
         final now = DateTime.now().toUtc();
         Future<Conversation> conversation(
           String id, {
@@ -1460,7 +1460,7 @@ void main() {
       },
     );
     test('task brief persists, clears, and isolates fork edits', () async {
-      final fixture = await prepare();
+      final fixture = await _prepareEndpointFixture(sessionBuilder);
       final created = await endpoints.conversation.create(
         fixture.session,
         CreateConversationRequest(
@@ -1623,7 +1623,7 @@ void main() {
     test(
       'task brief reloads exactly and rejected updates preserve it',
       () async {
-        final fixture = await prepare();
+        final fixture = await _prepareEndpointFixture(sessionBuilder);
         const brief = '  Objetivo 🎯\nKeep the deadline.  ';
         final created = await endpoints.conversation.create(
           fixture.session,
