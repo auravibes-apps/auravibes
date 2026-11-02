@@ -19,10 +19,18 @@ final class ScopedVerificationResult {
     List<String> paths = const [],
     int repairAttemptsRemaining = 0,
   }) {
-    final safeCheckIds = verificationStrings(checkIds, maxEntries: 8, maxBytes: 64);
+    final safeCheckIds = verificationStrings(
+      checkIds,
+      maxEntries: 8,
+      maxBytes: 64,
+    );
     final safePaths = normalizeScopedVerificationPaths(paths);
     final _ = verificationString(reason, maxBytes: 128);
-    final _ = verificationInteger(maxOutputBytes, min: 1, max: ScopedVerificationLimits.maxOutputBytes);
+    final _ = verificationInteger(
+      maxOutputBytes,
+      min: 1,
+      max: ScopedVerificationLimits.maxOutputBytes,
+    );
     final _ = verificationInteger(repairAttemptsRemaining, min: 0, max: 2);
     final bytes = utf8.encode(output);
     final originalBytes = originalOutputBytes ?? bytes.length;
@@ -37,7 +45,8 @@ final class ScopedVerificationResult {
       paths: safePaths,
       output: retained,
       originalOutputBytes: originalBytes,
-      outputTruncated: outputTruncated || originalBytes > utf8.encode(retained).length,
+      outputTruncated:
+          outputTruncated || originalBytes > utf8.encode(retained).length,
       repairAttemptsRemaining: repairAttemptsRemaining,
     );
   }
@@ -55,13 +64,20 @@ final class ScopedVerificationResult {
 
   factory fromJson(Object? value) {
     final json = verificationObject(value, const {
-      'state', 'reason', 'checkIds', 'paths', 'output', 'outputTruncated',
-      'originalOutputBytes', 'repairAllowed', 'repairAttemptsRemaining',
+      'state',
+      'reason',
+      'checkIds',
+      'paths',
+      'output',
+      'outputTruncated',
+      'originalOutputBytes',
+      'repairAllowed',
+      'repairAttemptsRemaining',
     });
     final state = json['state'];
-    final outcome = ScopedVerificationOutcome.values.where(
-      (candidate) => candidate.name == state,
-    ).firstOrNull;
+    final outcome = ScopedVerificationOutcome.values
+        .where((candidate) => candidate.name == state)
+        .firstOrNull;
     final output = json['output'];
     final truncated = json['outputTruncated'];
     if (outcome == null || output is! String || truncated is! bool) {
@@ -74,13 +90,29 @@ final class ScopedVerificationResult {
     final result = ScopedVerificationResult(
       outcome: outcome,
       reason: verificationString(json['reason'], maxBytes: 128),
-      checkIds: verificationStrings(json['checkIds'], maxEntries: 8, maxBytes: 64),
-      paths: verificationStrings(json['paths'], maxEntries: 128, maxBytes: 4096),
+      checkIds: verificationStrings(
+        json['checkIds'],
+        maxEntries: 8,
+        maxBytes: 64,
+      ),
+      paths: verificationStrings(
+        json['paths'],
+        maxEntries: 128,
+        maxBytes: 4096,
+      ),
       output: output,
       maxOutputBytes: ScopedVerificationLimits.maxOutputBytes,
-      originalOutputBytes: verificationInteger(json['originalOutputBytes'], min: 0, max: 0x1fffffffffffff),
+      originalOutputBytes: verificationInteger(
+        json['originalOutputBytes'],
+        min: 0,
+        max: 0x1fffffffffffff,
+      ),
       outputTruncated: truncated,
-      repairAttemptsRemaining: verificationInteger(json['repairAttemptsRemaining'], min: 0, max: 2),
+      repairAttemptsRemaining: verificationInteger(
+        json['repairAttemptsRemaining'],
+        min: 0,
+        max: 2,
+      ),
     );
     if (result.repairAllowed != json['repairAllowed'] ||
         result.outputTruncated != truncated) {

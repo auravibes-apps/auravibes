@@ -6,7 +6,8 @@ import 'package:drift/drift.dart';
 
 @DataClassName('WorkspaceVerificationSettingsRow')
 class WorkspaceVerificationSettings extends Table {
-  TextColumn get workspaceId => text().references(Workspaces, #id, onDelete: .cascade)();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
   TextColumn get settingsJson => text()();
   IntColumn get revision => integer()();
 

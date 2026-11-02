@@ -125,7 +125,10 @@ class ResolvedToolService {
            conversationLanguageRuntime: conversationLanguageRuntime,
          ),
        );
-  new _cloud() : _delegate = null, workspaceConversationTools = null, scopedVerification = null;
+  new _cloud()
+    : _delegate = null,
+      workspaceConversationTools = null,
+      scopedVerification = null;
 
   final WorkspaceConversationToolsUsecase? workspaceConversationTools;
   final VerifyReportedEditsUsecase? scopedVerification;
@@ -176,7 +179,12 @@ class ResolvedToolService {
     );
     final verification = scopedVerification;
     if (result is McpToolCallerResult && verification != null) {
-      return await verification.call(conversationId: conversationId, toolCallId: toolCallId, tool: tool, result: result);
+      return await verification.call(
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        tool: tool,
+        result: result,
+      );
     }
 
     return modelResult;

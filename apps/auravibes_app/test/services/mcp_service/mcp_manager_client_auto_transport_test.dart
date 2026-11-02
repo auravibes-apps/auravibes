@@ -12,70 +12,173 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 void main() {
-  test('dedicated manager connection cancels a pending start without teardown', () async {
-    final started = Completer<void>();
-    final release = Completer<void>();
-    final operations = <String>[];
-    final server = await _LocalMcpHttpServer.start(toolHandler: (message) async {
-      final args = _objectMap(_objectMap(message['params'])['arguments']);
-      final operation = args['operation'] as String;
-      operations.add(operation);
-      if (operation == 'start') { started.complete(); await release.future; }
-      return _verificationReceipt(operation == 'cancel' ? 'cancelled' : 'completed');
-    });
-    final manager = McpManagerService();
-    final scope = AgentCancellationScope();
-    final session = await manager.openVerificationSession(_verificationConnection(server.endpoint, scope));
-    addTearDown(() async { if (!release.isCompleted) release.complete(); session.close(); await server.close(); });
-    expect(server.clientCapabilities, isNot(contains('elicitation')));
-    var startSettled = false;
-    final start = session.call(mcpServerId: 'server', toolIdentifier: 'verify', arguments: _verificationArguments('start')).then((value) { startSettled = true; return value; });
-    await started.future.timeout(const Duration(seconds: 2));
-    final cancel = await session.call(mcpServerId: 'server', toolIdentifier: 'verify', arguments: _verificationArguments('cancel')).timeout(const Duration(seconds: 2));
-    expect(operations, ['start', 'cancel']);
-    expect(startSettled, isFalse);
-    expect(cancel, isNotNull);
-    release.complete();
-    final _ = await start;
-  });
+  test(
+    'dedicated manager connection cancels a pending start without teardown',
+    () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      final operations = <String>[];
+      final server = await _LocalMcpHttpServer.start(
+        toolHandler: (message) async {
+          final args = _objectMap(_objectMap(message['params'])['arguments']);
+          final operation = args['operation'] as String;
+          operations.add(operation);
+          if (operation == 'start') {
+            started.complete();
+            await release.future;
+          }
+          return _verificationReceipt(
+            operation == 'cancel' ? 'cancelled' : 'completed',
+          );
+        },
+      );
+      final manager = McpManagerService();
+      final scope = AgentCancellationScope();
+      final session = await manager.openVerificationSession(
+        _verificationConnection(server.endpoint, scope),
+      );
+      addTearDown(() async {
+        if (!release.isCompleted) release.complete();
+        session.close();
+        await server.close();
+      });
+      expect(server.clientCapabilities, isNot(contains('elicitation')));
+      var startSettled = false;
+      final start = session
+          .call(
+            mcpServerId: 'server',
+            toolIdentifier: 'verify',
+            arguments: _verificationArguments('start'),
+          )
+          .then((value) {
+            startSettled = true;
+            return value;
+          });
+      await started.future.timeout(const Duration(seconds: 2));
+      final cancel = await session
+          .call(
+            mcpServerId: 'server',
+            toolIdentifier: 'verify',
+            arguments: _verificationArguments('cancel'),
+          )
+          .timeout(const Duration(seconds: 2));
+      expect(operations, ['start', 'cancel']);
+      expect(startSettled, isFalse);
+      expect(cancel, isNotNull);
+      release.complete();
+      final _ = await start;
+    },
+  );
 
   test('dedicated manager rejects server elicitation while ordinary handler stays active', () async {
     final ordinarySeen = Completer<void>();
     final releaseOrdinary = Completer<void>();
-    final server = await _LocalMcpHttpServer.start(elicitVerification: true, toolHandler: (message) async {
-      if (_objectMap(message['params'])['name'] == 'ordinary') { ordinarySeen.complete(); await releaseOrdinary.future; }
-      return {'content': [{'type': 'text', 'text': 'ordinary completed'}]};
-    });
+    final server = await _LocalMcpHttpServer.start(
+      elicitVerification: true,
+      toolHandler: (message) async {
+        if (_objectMap(message['params'])['name'] == 'ordinary') {
+          ordinarySeen.complete();
+          await releaseOrdinary.future;
+        }
+        return {
+          'content': [
+            {'type': 'text', 'text': 'ordinary completed'},
+          ],
+        };
+      },
+    );
     final manager = McpManagerService();
-    final ordinary = await manager.connectMcpWithAutoTransport(_connectionRequest(server.endpoint));
+    final ordinary = await manager.connectMcpWithAutoTransport(
+      _connectionRequest(server.endpoint),
+    );
     var prompts = 0;
-    final ordinaryCall = manager.callToolString(ordinary, toolIdentifier: 'ordinary', arguments: const {}, elicitation: (serverName: 'Ordinary', onElicitation: (_) async { prompts++; return const McpElicitationResponse(action: .cancel); }));
+    final ordinaryCall = manager.callToolString(
+      ordinary,
+      toolIdentifier: 'ordinary',
+      arguments: const {},
+      elicitation: (
+        serverName: 'Ordinary',
+        onElicitation: (_) async {
+          prompts++;
+          return const McpElicitationResponse(action: .cancel);
+        },
+      ),
+    );
     await ordinarySeen.future.timeout(const Duration(seconds: 2));
     final scope = AgentCancellationScope();
-    final session = await manager.openVerificationSession(_verificationConnection(server.endpoint, scope));
-    addTearDown(() async { if (!releaseOrdinary.isCompleted) releaseOrdinary.complete(); session.close(); await manager.disconnect(ordinary); await server.close(); });
-    final start = session.call(mcpServerId: 'server', toolIdentifier: 'verify', arguments: _verificationArguments('start'));
-    await expectLater(start.timeout(const Duration(seconds: 2)), throwsFormatException);
-    final response = await server.elicitationReply.future.timeout(const Duration(seconds: 2));
-    expect(response.containsKey('error') || _objectMap(response['result'])['action'] == 'cancel', isTrue);
+    final session = await manager.openVerificationSession(
+      _verificationConnection(server.endpoint, scope),
+    );
+    addTearDown(() async {
+      if (!releaseOrdinary.isCompleted) releaseOrdinary.complete();
+      session.close();
+      final _ = await ordinaryCall;
+      await manager.disconnect(ordinary);
+      await server.close();
+    });
+    final start = session.call(
+      mcpServerId: 'server',
+      toolIdentifier: 'verify',
+      arguments: _verificationArguments('start'),
+    );
+    await expectLater(
+      start.timeout(const Duration(seconds: 2)),
+      throwsFormatException,
+    );
+    final response = await server.elicitationReply.future.timeout(
+      const Duration(seconds: 2),
+    );
+    expect(
+      response.containsKey('error') ||
+          _objectMap(response['result'])['action'] == 'cancel',
+      isTrue,
+    );
     expect(prompts, 0);
     releaseOrdinary.complete();
     expect(await ordinaryCall, 'ordinary completed');
   });
   for (final failed in [false, true]) {
-    test('preserves structured edit metadata and error flag $failed without app data', () async {
-      final structured = {'auravibesChangedPaths': {'version': 1, 'workspaceRoot': 'root', 'paths': ['lib/main.dart']}};
-      final server = await _LocalMcpHttpServer.start(toolResult: {'content': [{'type': 'text', 'text': 'edit result'}], 'structuredContent': structured, 'isError': failed});
-      final manager = McpManagerService();
-      McpManagerClient? client;
-      addTearDown(() async { await manager.disconnect(client); await server.close(); });
-      client = await manager.connectMcpWithAutoTransport(_connectionRequest(server.endpoint));
-      final output = await manager.callToolOutput((client: client, toolIdentifier: 'edit_file', arguments: const {}, includeAppData: false, elicitation: (serverName: 'Code', onElicitation: null)));
-      expect(output.structuredContent, structured);
-      expect(output.isError, failed);
-      expect(output.appData, isEmpty);
-      expect(output.modelText, contains('edit result'));
-    });
+    test(
+      'preserves structured edit metadata and error flag $failed without app data',
+      () async {
+        final structured = {
+          'auravibesChangedPaths': {
+            'version': 1,
+            'workspaceRoot': 'root',
+            'paths': ['lib/main.dart'],
+          },
+        };
+        final server = await _LocalMcpHttpServer.start(
+          toolResult: {
+            'content': [
+              {'type': 'text', 'text': 'edit result'},
+            ],
+            'structuredContent': structured,
+            'isError': failed,
+          },
+        );
+        final manager = McpManagerService();
+        McpManagerClient? client;
+        addTearDown(() async {
+          await manager.disconnect(client);
+          await server.close();
+        });
+        client = await manager.connectMcpWithAutoTransport(
+          _connectionRequest(server.endpoint),
+        );
+        final output = await manager.callToolOutput((
+          client: client,
+          toolIdentifier: 'edit_file',
+          arguments: const {},
+          includeAppData: false,
+          elicitation: (serverName: 'Code', onElicitation: null),
+        ));
+        expect(output.structuredContent, structured);
+        expect(output.isError, failed);
+        expect(output.appData, isEmpty);
+        expect(output.modelText, contains('edit result'));
+      },
+    );
   }
   group('McpManagerService.connectMcpWithAutoTransport', () {
     test('uses Streamable HTTP when initialize succeeds', () async {
@@ -577,13 +680,47 @@ void main() {
   });
 }
 
-McpVerificationConnectionRequest _verificationConnection(Uri endpoint, AgentCancellationScope cancellation) => (
-  server: McpServerToCreate(name: 'Verification', url: endpoint.toString(), transport: const McpTransportTypeStreamableHttp(), authenticationType: const McpAuthenticationTypeNone()),
-  serverId: 'server', toolIdentifier: 'verify', deadline: DateTime.now().toUtc().add(const Duration(seconds: 10)), cancellation: cancellation,
+McpVerificationConnectionRequest _verificationConnection(
+  Uri endpoint,
+  AgentCancellationScope cancellation,
+) => (
+  server: McpServerToCreate(
+    name: 'Verification',
+    url: endpoint.toString(),
+    transport: const McpTransportTypeStreamableHttp(),
+    authenticationType: const McpAuthenticationTypeNone(),
+  ),
+  serverId: 'server',
+  toolIdentifier: 'verify',
+  deadline: DateTime.now().toUtc().add(const Duration(seconds: 10)),
+  cancellation: cancellation,
 );
 
-Map<String, dynamic> _verificationArguments(String operation) => {'protocol': ScopedVerificationLimits.protocol, 'operation': operation, 'operationId': 'operation', 'workspaceRoot': 'root'};
-Map<String, Object?> _verificationReceipt(String state) => {'content': <Object?>[], 'structuredContent': {'protocol': ScopedVerificationLimits.protocol, 'operationId': 'operation', 'workspaceRoot': 'root', 'state': state, 'scopeValidated': true, 'checks': state == 'completed' ? [{'id': 'check', 'exitCode': 0}] : <Object?>[], 'output': '', 'outputTruncated': false, 'originalOutputBytes': 0, if (state == 'cancelled') 'cancellationRecorded': true}};
+Map<String, dynamic> _verificationArguments(String operation) => {
+  'protocol': ScopedVerificationLimits.protocol,
+  'operation': operation,
+  'operationId': 'operation',
+  'workspaceRoot': 'root',
+};
+Map<String, Object?> _verificationReceipt(String state) => {
+  'content': <Object?>[],
+  'structuredContent': {
+    'protocol': ScopedVerificationLimits.protocol,
+    'operationId': 'operation',
+    'workspaceRoot': 'root',
+    'state': state,
+    'scopeValidated': true,
+    'checks': state == 'completed'
+        ? [
+            {'id': 'check', 'exitCode': 0},
+          ]
+        : <Object?>[],
+    'output': '',
+    'outputTruncated': false,
+    'originalOutputBytes': 0,
+    if (state == 'cancelled') 'cancellationRecorded': true,
+  },
+};
 
 McpConnectionRequest _connectionRequest(
   Uri endpoint, {
@@ -615,7 +752,8 @@ final class _LocalMcpHttpServer {
   final bool useJsonRpcError;
   final List<Map<String, Object?>> tools;
   final Map<String, Object?>? toolResult;
-  final Future<Map<String, Object?>> Function(Map<String, dynamic> message)? toolHandler;
+  final Future<Map<String, Object?>> Function(Map<String, dynamic> message)?
+  toolHandler;
   final bool elicitVerification;
   final elicitationReply = Completer<Map<String, dynamic>>();
   Map<String, Object?>? clientExtensions;
@@ -644,7 +782,8 @@ final class _LocalMcpHttpServer {
     bool useJsonRpcError = false,
     List<Map<String, Object?>> tools = const [],
     Map<String, Object?>? toolResult,
-    Future<Map<String, Object?>> Function(Map<String, dynamic> message)? toolHandler,
+    Future<Map<String, Object?>> Function(Map<String, dynamic> message)?
+    toolHandler,
     bool elicitVerification = false,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -711,9 +850,25 @@ final class _LocalMcpHttpServer {
       return;
     }
     final params = _objectMap(message['params']);
-    if (elicitVerification && message['method'] == 'tools/call' && params['name'] == 'verify') {
+    if (elicitVerification &&
+        message['method'] == 'tools/call' &&
+        params['name'] == 'verify') {
       response.headers.set(HttpHeaders.contentTypeHeader, 'text/event-stream');
-      response.write('event: message\ndata: ${jsonEncode({'jsonrpc': '2.0', 'id': 900, 'method': 'elicitation/create', 'params': {'mode': 'form', 'message': 'Unexpected verification prompt', 'requestedSchema': {'type': 'object', 'properties': <String, Object?>{}}}})}\n\n');
+      // Match the fixture's legacy SSE path: deliver the server request while
+      // this tool response stays open awaiting the client's rejection.
+      response.bufferOutput = false;
+      response.write(
+        'event: message\ndata: ${jsonEncode({
+          'jsonrpc': '2.0',
+          'id': 900,
+          'method': 'elicitation/create',
+          'params': {
+            'mode': 'form',
+            'message': 'Unexpected verification prompt',
+            'requestedSchema': {'type': 'object', 'properties': <String, Object?>{}},
+          },
+        })}\n\n',
+      );
       await response.flush();
       return;
     }

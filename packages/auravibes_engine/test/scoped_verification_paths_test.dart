@@ -14,19 +14,34 @@ void main() {
   });
 
   for (final path in [
-    '', '.', './', '/', '/tmp/outside.dart', '../outside.dart',
-    'lib/../../outside.dart', 'lib/../inside.dart', r'C:\file.dart',
-    'C:/file.dart', r'\\server\share\file.dart', 'file:///tmp/file.dart',
-    'https://example.test/file.dart', 'lib/\u0000file.dart',
-    'lib/\nfile.dart', 'lib/\u007ffile.dart', '-option.dart',
+    '',
+    '.',
+    './',
+    '/',
+    '/tmp/outside.dart',
+    '../outside.dart',
+    'lib/../../outside.dart',
+    'lib/../inside.dart',
+    r'C:\file.dart',
+    'C:/file.dart',
+    r'\\server\share\file.dart',
+    'file:///tmp/file.dart',
+    'https://example.test/file.dart',
+    'lib/\u0000file.dart',
+    'lib/\nfile.dart',
+    'lib/\u007ffile.dart',
+    '-option.dart',
     'lib/-option.dart',
   ]) {
-    test('rejects a whole report containing ${path.replaceAll('\n', r'\n')}', () {
-      expect(
-        () => normalizeScopedVerificationPaths(['lib/safe.dart', path]),
-        throwsFormatException,
-      );
-    });
+    test(
+      'rejects a whole report containing ${path.replaceAll('\n', r'\n')}',
+      () {
+        expect(
+          () => normalizeScopedVerificationPaths(['lib/safe.dart', path]),
+          throwsFormatException,
+        );
+      },
+    );
   }
 
   test('keeps shell punctuation and encoded names as literal path data', () {
@@ -36,7 +51,11 @@ void main() {
         'lib/"quoted".dart',
         'lib/%2e%2e.dart',
       ]),
-      [r'lib/$(touch marker); name.dart', 'lib/"quoted".dart', 'lib/%2e%2e.dart'],
+      [
+        r'lib/$(touch marker); name.dart',
+        'lib/"quoted".dart',
+        'lib/%2e%2e.dart',
+      ],
     );
   });
 
@@ -64,41 +83,64 @@ void main() {
     );
   });
 
-  test('accepts only a versioned structured report with no authority fields', () {
-    final input = <String, Object?>{
-      'auravibesChangedPaths': {
-        'version': 1,
-        'workspaceRoot': 'checkout',
-        'paths': ['lib//main.dart'],
-      },
-    };
-    final report = parseScopedEditReport(input);
-    expect(report?.workspaceRoot, 'checkout');
-    expect(report?.paths, ['lib/main.dart']);
-    for (final field in ['command', 'runnerToolId', 'checks', 'enabled']) {
-      expect(
-        () => parseScopedEditReport({
-          'auravibesChangedPaths': {
-            'version': 1,
-            'workspaceRoot': 'checkout',
-            'paths': ['lib/main.dart'],
-            field: 'injected',
-          },
-        }),
-        throwsFormatException,
-      );
-    }
-  });
+  test(
+    'accepts only a versioned structured report with no authority fields',
+    () {
+      final input = <String, Object?>{
+        'auravibesChangedPaths': {
+          'version': 1,
+          'workspaceRoot': 'checkout',
+          'paths': ['lib//main.dart'],
+        },
+      };
+      final report = parseScopedEditReport(input);
+      expect(report?.workspaceRoot, 'checkout');
+      expect(report?.paths, ['lib/main.dart']);
+      for (final field in ['command', 'runnerToolId', 'checks', 'enabled']) {
+        expect(
+          () => parseScopedEditReport({
+            'auravibesChangedPaths': {
+              'version': 1,
+              'workspaceRoot': 'checkout',
+              'paths': ['lib/main.dart'],
+              field: 'injected',
+            },
+          }),
+          throwsFormatException,
+        );
+      }
+    },
+  );
 
   test('rejects malformed reports instead of treating them as safe paths', () {
     for (final value in <Object?>[
       null,
       [],
-      {'version': 2, 'workspaceRoot': 'root', 'paths': ['main.dart']},
-      {'version': 1.0, 'workspaceRoot': 'root', 'paths': ['main.dart']},
-      {'version': 1, 'workspaceRoot': '', 'paths': ['main.dart']},
-      {'version': 1, 'workspaceRoot': 'root', 'paths': ['main.dart', 3]},
-      {'version': 1, 'workspaceRoot': 'root', 'paths': ['../main.dart']},
+      {
+        'version': 2,
+        'workspaceRoot': 'root',
+        'paths': ['main.dart'],
+      },
+      {
+        'version': 1.0,
+        'workspaceRoot': 'root',
+        'paths': ['main.dart'],
+      },
+      {
+        'version': 1,
+        'workspaceRoot': '',
+        'paths': ['main.dart'],
+      },
+      {
+        'version': 1,
+        'workspaceRoot': 'root',
+        'paths': ['main.dart', 3],
+      },
+      {
+        'version': 1,
+        'workspaceRoot': 'root',
+        'paths': ['../main.dart'],
+      },
     ]) {
       expect(
         () => parseScopedEditReport({'auravibesChangedPaths': value}),
@@ -119,15 +161,18 @@ void main() {
     expect(selections.last.paths, ['lib/a.dart', 'README.md', 'lib/b.dart']);
   });
 
-  test('disabled settings select no commands even with a mismatched report', () {
-    expect(
-      selectScopedVerificationChecks(
-        ScopedVerificationSettings(),
-        ScopedEditReport(workspaceRoot: 'other', paths: ['main.dart']),
-      ),
-      isEmpty,
-    );
-  });
+  test(
+    'disabled settings select no commands even with a mismatched report',
+    () {
+      expect(
+        selectScopedVerificationChecks(
+          ScopedVerificationSettings(),
+          ScopedEditReport(workspaceRoot: 'other', paths: ['main.dart']),
+        ),
+        isEmpty,
+      );
+    },
+  );
 
   test('report and selection cannot be changed after validation', () {
     final paths = ['a.dart'];
@@ -136,7 +181,10 @@ void main() {
     expect(report.paths, ['a.dart']);
     expect(() => report.paths.clear(), throwsUnsupportedError);
     final selection = selectScopedVerificationChecks(_settings(), report).first;
-    expect(() => selection.paths.add('unreported.dart'), throwsUnsupportedError);
+    expect(
+      () => selection.paths.add('unreported.dart'),
+      throwsUnsupportedError,
+    );
   });
 
   test('different root and empty reports cannot select commands', () {
@@ -165,7 +213,9 @@ ScopedVerificationSettings _settings() => ScopedVerificationSettings(
   editToolIds: const {'edit'},
   checks: [
     ScopedVerificationCheck(
-      id: 'dart', executable: 'dart', arguments: const ['analyze'],
+      id: 'dart',
+      executable: 'dart',
+      arguments: const ['analyze'],
       pathSuffixes: const ['.dart'],
     ),
     ScopedVerificationCheck(id: 'all', executable: 'check'),

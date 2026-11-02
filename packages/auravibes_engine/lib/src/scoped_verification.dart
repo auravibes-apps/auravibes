@@ -35,7 +35,8 @@ final class ScopedVerificationSettings {
 
   factory decode(String source) {
     if (source.length > ScopedVerificationLimits.maxSettingsBytes ||
-        utf8.encode(source).length > ScopedVerificationLimits.maxSettingsBytes) {
+        utf8.encode(source).length >
+            ScopedVerificationLimits.maxSettingsBytes) {
       throw const FormatException('Verification settings exceeded the limit.');
     }
     final json = verificationObject(jsonDecode(source), _settingsKeys);
@@ -55,13 +56,28 @@ final class ScopedVerificationSettings {
       runnerToolId: _optionalBinding(json['runnerToolId']),
       mcpServerId: _optionalBinding(json['mcpServerId']),
       workspaceRoot: _optionalBinding(json['workspaceRoot']),
-      editToolIds: verificationStrings(json['editToolIds'], maxEntries: 128).toSet(),
+      editToolIds: verificationStrings(
+        json['editToolIds'],
+        maxEntries: 128,
+      ).toSet(),
       checks: rawChecks.map(ScopedVerificationCheck.fromJson).toList(),
       timeout: Duration(
-        milliseconds: verificationInteger(json['timeoutMs'], min: 1, max: 120000),
+        milliseconds: verificationInteger(
+          json['timeoutMs'],
+          min: 1,
+          max: 120000,
+        ),
       ),
-      maxOutputBytes: verificationInteger(json['maxOutputBytes'], min: 1, max: 65536),
-      maxRepairAttempts: verificationInteger(json['maxRepairAttempts'], min: 0, max: 2),
+      maxOutputBytes: verificationInteger(
+        json['maxOutputBytes'],
+        min: 1,
+        max: 65536,
+      ),
+      maxRepairAttempts: verificationInteger(
+        json['maxRepairAttempts'],
+        min: 0,
+        max: 2,
+      ),
     );
   }
 
@@ -95,8 +111,16 @@ final class ScopedVerificationSettings {
 }
 
 const _settingsKeys = {
-  'enabled', 'revision', 'runnerToolId', 'mcpServerId', 'workspaceRoot',
-  'editToolIds', 'checks', 'timeoutMs', 'maxOutputBytes', 'maxRepairAttempts',
+  'enabled',
+  'revision',
+  'runnerToolId',
+  'mcpServerId',
+  'workspaceRoot',
+  'editToolIds',
+  'checks',
+  'timeoutMs',
+  'maxOutputBytes',
+  'maxRepairAttempts',
 };
 
 String _optionalBinding(Object? value) {
@@ -110,27 +134,44 @@ String _optionalBinding(Object? value) {
 
 void _validateSettings(ScopedVerificationSettings settings) {
   final _ = verificationInteger(settings.revision, min: 0, max: 0x7fffffff);
-  final _ = verificationInteger(settings.timeout.inMicroseconds, min: 1000, max: 120000000);
+  final _ = verificationInteger(
+    settings.timeout.inMicroseconds,
+    min: 1000,
+    max: 120000000,
+  );
   final _ = verificationInteger(settings.maxOutputBytes, min: 1, max: 65536);
   final _ = verificationInteger(settings.maxRepairAttempts, min: 0, max: 2);
   if (settings.timeout.inMicroseconds % 1000 != 0) {
-    throw const FormatException('Verification timeout needs whole milliseconds.');
+    throw const FormatException(
+      'Verification timeout needs whole milliseconds.',
+    );
   }
-  for (final binding in [settings.runnerToolId, settings.mcpServerId, settings.workspaceRoot]) {
+  for (final binding in [
+    settings.runnerToolId,
+    settings.mcpServerId,
+    settings.workspaceRoot,
+  ]) {
     final _ = _optionalBinding(binding);
   }
   final _ = verificationStrings(settings.editToolIds.toList(), maxEntries: 128);
   if (settings.checks.length > ScopedVerificationLimits.maxChecks ||
-      settings.checks.map((check) => check.id).toSet().length != settings.checks.length ||
+      settings.checks.map((check) => check.id).toSet().length !=
+          settings.checks.length ||
       settings.editToolIds.contains(settings.runnerToolId)) {
     throw const FormatException('Invalid verification check or edit binding.');
   }
   if (settings.enabled &&
-      (settings.runnerToolId.isEmpty || settings.mcpServerId.isEmpty ||
-       settings.workspaceRoot.isEmpty || settings.editToolIds.isEmpty || settings.checks.isEmpty)) {
-    throw const FormatException('Enabled verification needs explicit configuration.');
+      (settings.runnerToolId.isEmpty ||
+          settings.mcpServerId.isEmpty ||
+          settings.workspaceRoot.isEmpty ||
+          settings.editToolIds.isEmpty ||
+          settings.checks.isEmpty)) {
+    throw const FormatException(
+      'Enabled verification needs explicit configuration.',
+    );
   }
-  if (utf8.encode(settings.encode()).length > ScopedVerificationLimits.maxSettingsBytes) {
+  if (utf8.encode(settings.encode()).length >
+      ScopedVerificationLimits.maxSettingsBytes) {
     throw const FormatException('Verification settings exceeded the limit.');
   }
 }

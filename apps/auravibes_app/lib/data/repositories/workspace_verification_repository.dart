@@ -7,7 +7,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
-export 'workspace_verification_reservations.dart' show ScopedVerificationReservation;
+export 'workspace_verification_reservations.dart'
+    show ScopedVerificationReservation;
 
 /// Local owner policy and durable records. This repository never runs tools.
 class WorkspaceVerificationRepository {
@@ -20,8 +21,9 @@ class WorkspaceVerificationRepository {
     if (!await isLocalVerificationWorkspace(database, workspaceId)) {
       return ScopedVerificationSettings();
     }
-    final row = await (database.select(database.workspaceVerificationSettings)
-      ..where((row) => row.workspaceId.equals(workspaceId))).getSingleOrNull();
+    final row = await (database.select(
+      database.workspaceVerificationSettings,
+    )..where((row) => row.workspaceId.equals(workspaceId))).getSingleOrNull();
 
     return _decodeSettings(row);
   }
@@ -33,11 +35,15 @@ class WorkspaceVerificationRepository {
       return;
     }
     yield* (database.select(database.workspaceVerificationSettings)
-      ..where((row) => row.workspaceId.equals(workspaceId)))
-        .watchSingleOrNull().map(_decodeSettings);
+          ..where((row) => row.workspaceId.equals(workspaceId)))
+        .watchSingleOrNull()
+        .map(_decodeSettings);
   }
 
-  Future<void> saveSettings(String workspaceId, ScopedVerificationSettings settings) => database.transaction(() async {
+  Future<void> saveSettings(
+    String workspaceId,
+    ScopedVerificationSettings settings,
+  ) => database.transaction(() async {
     if (!await isLocalVerificationWorkspace(database, workspaceId)) {
       throw const WorkspaceTableException(denied: true);
     }
@@ -45,14 +51,18 @@ class WorkspaceVerificationRepository {
     if (current.revision != settings.revision) {
       throw const WorkspaceTableException(conflict: true);
     }
-    final next = ScopedVerificationSettings.decode(jsonEncode({
-      ...settings.toJson(), 'revision': current.revision + 1,
-    }));
-    await database.into(database.workspaceVerificationSettings).insertOnConflictUpdate(
-      WorkspaceVerificationSettingsCompanion.insert(
-        workspaceId: workspaceId, settingsJson: next.encode(), revision: next.revision,
-      ),
+    final next = ScopedVerificationSettings.decode(
+      jsonEncode({...settings.toJson(), 'revision': current.revision + 1}),
     );
+    await database
+        .into(database.workspaceVerificationSettings)
+        .insertOnConflictUpdate(
+          WorkspaceVerificationSettingsCompanion.insert(
+            workspaceId: workspaceId,
+            settingsJson: next.encode(),
+            revision: next.revision,
+          ),
+        );
   });
 
   Future<ScopedVerificationReservation> reserve({
@@ -61,38 +71,63 @@ class WorkspaceVerificationRepository {
     required String toolCallId,
     required int configRevision,
     required int maxRepairAttempts,
-  }) => database.transaction(() => WorkspaceVerificationReservations(
-    database, _sessionId, getSettings,
-  ).reserve((workspaceId: workspaceId, turnId: turnId, toolCallId: toolCallId,
-    configRevision: configRevision, maxRepairAttempts: maxRepairAttempts)));
+  }) => database.transaction(
+    () => WorkspaceVerificationReservations(database, _sessionId, getSettings)
+        .reserve((
+          workspaceId: workspaceId,
+          turnId: turnId,
+          toolCallId: toolCallId,
+          configRevision: configRevision,
+          maxRepairAttempts: maxRepairAttempts,
+        )),
+  );
 
   /// Returns the persisted winner so late replies cannot restore a pass.
-  Future<ScopedVerificationResult> complete(String operationId, ScopedVerificationResult result) => database.transaction(() async {
-    final row = await (database.select(database.workspaceVerificationRuns)
-      ..where((row) => row.id.equals(operationId))).getSingleOrNull();
+  Future<ScopedVerificationResult> complete(
+    String operationId,
+    ScopedVerificationResult result,
+  ) => database.transaction(() async {
+    final row = await (database.select(
+      database.workspaceVerificationRuns,
+    )..where((row) => row.id.equals(operationId))).getSingleOrNull();
     if (row == null) return verificationUnavailable('workspace_unavailable');
-    if (row.resultJson case final String saved) return decodeVerificationResult(saved);
-    if (row.sessionId != _sessionId) return verificationUnavailable('interrupted');
+    if (row.resultJson case final String saved)
+      return decodeVerificationResult(saved);
+    if (row.sessionId != _sessionId)
+      return verificationUnavailable('interrupted');
     final settings = await getSettings(row.workspaceId);
     final safe = settings.enabled && settings.revision == row.configRevision
-        ? result : verificationUnavailable('configuration_changed');
-    final rows = await (database.select(database.workspaceVerificationRuns)
-      ..where((entry) => entry.workspaceId.equals(row.workspaceId) & entry.turnId.equals(row.turnId))).get();
+        ? result
+        : verificationUnavailable('configuration_changed');
+    final rows =
+        await (database.select(database.workspaceVerificationRuns)..where(
+              (entry) =>
+                  entry.workspaceId.equals(row.workspaceId) &
+                  entry.turnId.equals(row.turnId),
+            ))
+            .get();
     final remaining = verificationRepairsRemaining(rows);
     final finalResult = ScopedVerificationResult.fromJson({
       ...safe.toJson(),
       'repairAttemptsRemaining': remaining,
       'repairAllowed': safe.outcome == .fail && remaining > 0,
     });
-    await (database.update(database.workspaceVerificationRuns)
-      ..where((entry) => entry.id.equals(operationId) & entry.resultJson.isNull()))
-        .write(WorkspaceVerificationRunsCompanion(resultJson: Value(jsonEncode(finalResult.toJson()))));
+    await (database.update(database.workspaceVerificationRuns)..where(
+          (entry) => entry.id.equals(operationId) & entry.resultJson.isNull(),
+        ))
+        .write(
+          WorkspaceVerificationRunsCompanion(
+            resultJson: Value(jsonEncode(finalResult.toJson())),
+          ),
+        );
 
     return finalResult;
   });
 }
 
-ScopedVerificationSettings _decodeSettings(WorkspaceVerificationSettingsRow? row) {
+ScopedVerificationSettings _decodeSettings(
+  WorkspaceVerificationSettingsRow? row,
+) {
   if (row == null) return ScopedVerificationSettings();
   try {
     final settings = ScopedVerificationSettings.decode(row.settingsJson);

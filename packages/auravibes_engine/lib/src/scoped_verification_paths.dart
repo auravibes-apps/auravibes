@@ -58,8 +58,12 @@ List<String> normalizeScopedVerificationPaths(List<String> rawPaths) {
   }
   final normalized = <String>{};
   for (final path in rawPaths) {
-    final _ = verificationString(path, maxBytes: ScopedVerificationLimits.maxPathBytes);
-    if (path.startsWith('/') || path.contains(r'\') ||
+    final _ = verificationString(
+      path,
+      maxBytes: ScopedVerificationLimits.maxPathBytes,
+    );
+    if (path.startsWith('/') ||
+        path.contains(r'\') ||
         RegExp(r'^[a-zA-Z][a-zA-Z0-9+.-]*:').hasMatch(path)) {
       throw const FormatException('Reported paths must be workspace-relative.');
     }
@@ -67,7 +71,9 @@ List<String> normalizeScopedVerificationPaths(List<String> rawPaths) {
     if (segments.any((part) => part == '..' || part.startsWith('-'))) {
       throw const FormatException('Reported path escapes its scope.');
     }
-    final parts = segments.where((part) => part.isNotEmpty && part != '.').toList();
+    final parts = segments
+        .where((part) => part.isNotEmpty && part != '.')
+        .toList();
     if (parts.isEmpty) {
       throw const FormatException('Reported path names the workspace root.');
     }
@@ -83,13 +89,19 @@ List<ScopedVerificationSelection> selectScopedVerificationChecks(
 ) {
   if (!settings.enabled) return const [];
   if (report.workspaceRoot != settings.workspaceRoot) {
-    throw const FormatException('Edit report root does not match configuration.');
+    throw const FormatException(
+      'Edit report root does not match configuration.',
+    );
   }
   final selections = <ScopedVerificationSelection>[];
   for (final check in settings.checks) {
-    final paths = report.paths.where(
-      (path) => check.pathSuffixes.isEmpty || check.pathSuffixes.any(path.endsWith),
-    ).toList();
+    final paths = report.paths
+        .where(
+          (path) =>
+              check.pathSuffixes.isEmpty ||
+              check.pathSuffixes.any(path.endsWith),
+        )
+        .toList();
     if (paths.isNotEmpty) {
       selections.add(ScopedVerificationSelection(check: check, paths: paths));
     }

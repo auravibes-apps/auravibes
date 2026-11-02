@@ -26,7 +26,10 @@ final class ScopedVerificationCheck {
 
   factory fromJson(Object? value) {
     final json = verificationObject(value, const {
-      'id', 'executable', 'arguments', 'pathSuffixes',
+      'id',
+      'executable',
+      'arguments',
+      'pathSuffixes',
     });
 
     return ScopedVerificationCheck(

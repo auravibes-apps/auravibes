@@ -517,8 +517,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     );
   }
 
-  Future<McpToolOutput>
-  callToolWithAppData({
+  Future<McpToolOutput> callToolWithAppData({
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
@@ -539,10 +538,27 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     _requireLocalMcp(this);
     final connection = _requiredConnection(mcpServerId);
     final _ = _requiredToolClient(mcpServerId, toolIdentifier);
-    final authentication = await _notifierRef.read(oauthCredentialServiceProvider).resolveMcpAuthentication(connection.server.serviceConnectionId);
-    if (cancellation.isCancellationRequested || !deadline.isAfter(DateTime.now().toUtc()) || _isDisposed || _isCloud || getConnection(mcpServerId)?.server != connection.server) throw StateError('Verification connection cancelled.');
-    final session = await _requiredMcpManager.openVerificationSession((server: connection.server.copyWith(authenticationType: authentication), serverId: mcpServerId, toolIdentifier: toolIdentifier, deadline: deadline, cancellation: cancellation));
-    if (cancellation.isCancellationRequested || !deadline.isAfter(DateTime.now().toUtc()) || _isDisposed || _isCloud || getConnection(mcpServerId)?.server != connection.server) {
+    final authentication = await _notifierRef
+        .read(oauthCredentialServiceProvider)
+        .resolveMcpAuthentication(connection.server.serviceConnectionId);
+    if (cancellation.isCancellationRequested ||
+        !deadline.isAfter(DateTime.now().toUtc()) ||
+        _isDisposed ||
+        _isCloud ||
+        getConnection(mcpServerId)?.server != connection.server)
+      throw StateError('Verification connection cancelled.');
+    final session = await _requiredMcpManager.openVerificationSession((
+      server: connection.server.copyWith(authenticationType: authentication),
+      serverId: mcpServerId,
+      toolIdentifier: toolIdentifier,
+      deadline: deadline,
+      cancellation: cancellation,
+    ));
+    if (cancellation.isCancellationRequested ||
+        !deadline.isAfter(DateTime.now().toUtc()) ||
+        _isDisposed ||
+        _isCloud ||
+        getConnection(mcpServerId)?.server != connection.server) {
       session.close();
       throw StateError('Verification connection changed.');
     }

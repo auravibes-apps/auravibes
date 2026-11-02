@@ -1354,9 +1354,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   }
 
   @override
-  Future<McpToolOutput> callToolOutput(
-    McpToolOutputRequest request,
-  ) async {
+  Future<McpToolOutput> callToolOutput(McpToolOutputRequest request) async {
     includeAppDataCalls.add(request.includeAppData);
 
     return (

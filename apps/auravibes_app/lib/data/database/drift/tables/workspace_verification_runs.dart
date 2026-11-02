@@ -8,8 +8,10 @@ import 'package:drift/drift.dart';
 @DataClassName('WorkspaceVerificationRunRow')
 class WorkspaceVerificationRuns extends Table {
   TextColumn get id => text()();
-  TextColumn get workspaceId => text().references(Workspaces, #id, onDelete: .cascade)();
-  TextColumn get turnId => text().references(Messages, #id, onDelete: .cascade)();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: .cascade)();
+  TextColumn get turnId =>
+      text().references(Messages, #id, onDelete: .cascade)();
   TextColumn get toolCallId => text()();
   TextColumn get sessionId => text()();
   IntColumn get configRevision => integer()();

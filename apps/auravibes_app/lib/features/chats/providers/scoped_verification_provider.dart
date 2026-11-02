@@ -9,22 +9,45 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:riverpod/riverpod.dart';
 
-final workspaceVerificationRepositoryProvider = Provider<WorkspaceVerificationRepository>((ref) => WorkspaceVerificationRepository(ref.watch(appDatabaseProvider)));
-final scopedVerificationCancellationProvider = Provider<ScopedVerificationCancellation>((ref) => ScopedVerificationCancellation(ref.watch(agentCancellationRuntimeProvider)));
+final workspaceVerificationRepositoryProvider =
+    Provider<WorkspaceVerificationRepository>(
+      (ref) => WorkspaceVerificationRepository(ref.watch(appDatabaseProvider)),
+    );
+final scopedVerificationCancellationProvider =
+    Provider<ScopedVerificationCancellation>(
+      (ref) => ScopedVerificationCancellation(
+        ref.watch(agentCancellationRuntimeProvider),
+      ),
+    );
 
 final scopedVerificationProvider = Provider<VerifyReportedEditsUsecase>((ref) {
   final database = ref.watch(appDatabaseProvider);
   final repository = ref.watch(workspaceVerificationRepositoryProvider);
   final container = ref.container;
   final factory = CreateMcpScopedVerificationRunner(
-    database: database, repository: repository,
+    database: database,
+    repository: repository,
     openSession: (input, target) async {
-      final session = await container.read(mcpConnectionProvider.notifier).openVerificationSession(mcpServerId: input.settings.mcpServerId, toolIdentifier: target.toolIdentifier, deadline: input.request.deadline, cancellation: input.cancellation);
+      final session = await container
+          .read(mcpConnectionProvider.notifier)
+          .openVerificationSession(
+            mcpServerId: input.settings.mcpServerId,
+            toolIdentifier: target.toolIdentifier,
+            deadline: input.request.deadline,
+            cancellation: input.cancellation,
+          );
 
       return (call: session.call, close: session.close);
     },
-    permission: (request) => container.read(resolveToolApprovalDecisionUsecaseProvider(request.workspaceId)).callForRequest(request),
+    permission: (request) => container
+        .read(resolveToolApprovalDecisionUsecaseProvider(request.workspaceId))
+        .callForRequest(request),
   );
 
-  return VerifyReportedEditsUsecase(repository: repository, resolveIdentity: ScopedVerificationIdentityResolver(database).call, createRunner: factory.call, cancellation: ref.watch(scopedVerificationCancellationProvider));
+  return VerifyReportedEditsUsecase(
+    repository: repository,
+    resolveIdentity: ScopedVerificationIdentityResolver(database).call,
+    createRunner: factory.call,
+    cancellation: ref.watch(scopedVerificationCancellationProvider),
+  );
 });

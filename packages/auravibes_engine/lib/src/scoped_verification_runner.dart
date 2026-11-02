@@ -22,8 +22,13 @@ final class ScopedVerificationCapabilities {
     : features = Set.unmodifiable(features);
 
   static const requiredFeatures = {
-    'scopedPaths', 'canonicalContainment', 'sandboxedCommands', 'boundedOutput',
-    'deadline', 'cancellation', 'idempotentStart',
+    'scopedPaths',
+    'canonicalContainment',
+    'sandboxedCommands',
+    'boundedOutput',
+    'deadline',
+    'cancellation',
+    'idempotentStart',
     'cancellationTombstones',
     'nonInteractive',
   };
@@ -39,11 +44,15 @@ final class ScopedVerificationCapabilities {
 
     return ScopedVerificationCapabilities(
       protocol: verificationString(json['protocol']),
-      features: {for (final entry in flags.entries) if (entry.value == true) entry.key},
+      features: {
+        for (final entry in flags.entries)
+          if (entry.value == true) entry.key,
+      },
     );
   }
 
-  bool get supported => protocol == ScopedVerificationLimits.protocol &&
+  bool get supported =>
+      protocol == ScopedVerificationLimits.protocol &&
       features.containsAll(requiredFeatures);
 }
 
@@ -54,16 +63,24 @@ final class ScopedVerificationRequest {
     required DateTime deadline,
     required List<ScopedVerificationSelection> selections,
     this.maxOutputBytes = 16 * 1024,
-  }) : deadline = deadline.toUtc(), selections = List.unmodifiable(selections) {
+  }) : deadline = deadline.toUtc(),
+       selections = List.unmodifiable(selections) {
     final _ = verificationString(operationId);
     final _ = verificationString(workspaceRoot);
-    final _ = verificationInteger(maxOutputBytes, min: 1, max: ScopedVerificationLimits.maxOutputBytes);
+    final _ = verificationInteger(
+      maxOutputBytes,
+      min: 1,
+      max: ScopedVerificationLimits.maxOutputBytes,
+    );
     if (selections.length > ScopedVerificationLimits.maxChecks ||
-        selections.map((selection) => selection.check.id).toSet().length != selections.length ||
+        selections.map((selection) => selection.check.id).toSet().length !=
+            selections.length ||
         selections.any((selection) => selection.paths.isEmpty)) {
       throw const FormatException('Invalid verification selection.');
     }
-    final _ = normalizeScopedVerificationPaths(selections.expand((selection) => selection.paths).toSet().toList());
+    final _ = normalizeScopedVerificationPaths(
+      selections.expand((selection) => selection.paths).toSet().toList(),
+    );
   }
 
   final String operationId;
@@ -78,12 +95,16 @@ final class ScopedVerificationRequest {
     'workspaceRoot': workspaceRoot,
     'deadlineMs': deadline.millisecondsSinceEpoch,
     'maxOutputBytes': maxOutputBytes,
-    'checks': selections.map((selection) => {
-      'id': selection.check.id,
-      'executable': selection.check.executable,
-      'arguments': selection.check.arguments,
-      'paths': selection.paths,
-    }).toList(),
+    'checks': selections
+        .map(
+          (selection) => {
+            'id': selection.check.id,
+            'executable': selection.check.executable,
+            'arguments': selection.check.arguments,
+            'paths': selection.paths,
+          },
+        )
+        .toList(),
   };
 }
 
@@ -121,41 +142,68 @@ final class ScopedVerificationJob {
   final String output;
   final bool outputTruncated;
   final int originalOutputBytes;
+
   /// Confirms a durable tombstone that also prevents a delayed start.
   final bool cancellationRecorded;
 
   factory fromJson(Object? value) {
     final json = verificationObject(value, const {
-      'protocol', 'operationId', 'workspaceRoot', 'state', 'scopeValidated',
-      'checks', 'output', 'outputTruncated', 'originalOutputBytes',
+      'protocol',
+      'operationId',
+      'workspaceRoot',
+      'state',
+      'scopeValidated',
+      'checks',
+      'output',
+      'outputTruncated',
+      'originalOutputBytes',
       'cancellationRecorded',
     });
-    final state = ScopedVerificationJobState.values.where((state) => state.name == json['state']).firstOrNull;
+    final state = ScopedVerificationJobState.values
+        .where((state) => state.name == json['state'])
+        .firstOrNull;
     final scope = json['scopeValidated'];
     final output = json['output'];
     final truncated = json['outputTruncated'];
     final checks = json['checks'];
     final cancellationRecorded = json['cancellationRecorded'] ?? false;
-    if (json['protocol'] != ScopedVerificationLimits.protocol || state == null ||
-        scope is! bool || output is! String || truncated is! bool || checks is! List<Object?> ||
-        checks.length > ScopedVerificationLimits.maxChecks || cancellationRecorded is! bool) {
+    if (json['protocol'] != ScopedVerificationLimits.protocol ||
+        state == null ||
+        scope is! bool ||
+        output is! String ||
+        truncated is! bool ||
+        checks is! List<Object?> ||
+        checks.length > ScopedVerificationLimits.maxChecks ||
+        cancellationRecorded is! bool) {
       throw const FormatException('Invalid verification job.');
     }
     final exits = <String, int>{};
     for (final item in checks) {
       final check = verificationObject(item, const {'id', 'exitCode'});
       final id = verificationString(check['id'], maxBytes: 64);
-      if (exits.containsKey(id)) throw const FormatException('Duplicate verification check.');
-      exits[id] = verificationInteger(check['exitCode'], min: -0x80000000, max: 0x7fffffff);
+      if (exits.containsKey(id))
+        throw const FormatException('Duplicate verification check.');
+      exits[id] = verificationInteger(
+        check['exitCode'],
+        min: -0x80000000,
+        max: 0x7fffffff,
+      );
     }
 
     return ScopedVerificationJob(
       operationId: verificationString(json['operationId']),
       workspaceRoot: verificationString(json['workspaceRoot']),
-      state: state, scopeValidated: scope, exitCodes: exits, output: output,
+      state: state,
+      scopeValidated: scope,
+      exitCodes: exits,
+      output: output,
       outputTruncated: truncated,
       cancellationRecorded: cancellationRecorded,
-      originalOutputBytes: verificationInteger(json['originalOutputBytes'], min: 0, max: 0x1fffffffffffff),
+      originalOutputBytes: verificationInteger(
+        json['originalOutputBytes'],
+        min: 0,
+        max: 0x1fffffffffffff,
+      ),
     );
   }
 }

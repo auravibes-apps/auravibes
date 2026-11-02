@@ -13,7 +13,8 @@ class ScopedVerificationCancellation {
 
   Future<ScopedVerificationResult> run(
     ScopedVerificationInvocation invocation,
-    Future<ScopedVerificationResult> Function(AgentCancellationScope scope) execute,
+    Future<ScopedVerificationResult> Function(AgentCancellationScope scope)
+    execute,
   ) async {
     final lease = _acquire(invocation.conversationId);
     final child = AgentCancellationScope();
@@ -24,9 +25,13 @@ class ScopedVerificationCancellation {
       conversationId: invocation.conversationId,
       toolCallId: invocation.toolCallId,
       isSupported: true,
-      cancel: () async { child.requestStop(); final _ = await completion.future; },
+      cancel: () async {
+        child.requestStop();
+        final _ = await completion.future;
+      },
       operationResult: completion.future,
-      isCancellationConfirmed: () => terminal?.outcome == ScopedVerificationOutcome.cancelled,
+      isCancellationConfirmed: () =>
+          terminal?.outcome == ScopedVerificationOutcome.cancelled,
     ));
     try {
       final result = await execute(child);
@@ -35,7 +40,11 @@ class ScopedVerificationCancellation {
       return result;
     } finally {
       completion.complete(terminal);
-      runtime.completeToolCancellationHandle(conversationId: invocation.conversationId, toolCallId: invocation.toolCallId, handle: handle);
+      runtime.completeToolCancellationHandle(
+        conversationId: invocation.conversationId,
+        toolCallId: invocation.toolCallId,
+        handle: handle,
+      );
       final _ = globalStop.remove();
       child.close();
       _release(invocation.conversationId, lease);
@@ -45,8 +54,14 @@ class ScopedVerificationCancellation {
   _ScopeLease _acquire(String conversationId) {
     final existing = _leases[conversationId];
     final current = runtime.current(conversationId);
-    if (existing != null && identical(existing.scope, current)) { existing.users++; return existing; }
-    final lease = _ScopeLease(current ?? runtime.start(conversationId), current == null);
+    if (existing != null && identical(existing.scope, current)) {
+      existing.users++;
+      return existing;
+    }
+    final lease = _ScopeLease(
+      current ?? runtime.start(conversationId),
+      current == null,
+    );
     _leases[conversationId] = lease;
 
     return lease;
@@ -55,7 +70,9 @@ class ScopedVerificationCancellation {
   void _release(String conversationId, _ScopeLease lease) {
     lease.users--;
     if (lease.users > 0) return;
-    if (identical(_leases[conversationId], lease)) { final _ = _leases.remove(conversationId); }
+    if (identical(_leases[conversationId], lease)) {
+      final _ = _leases.remove(conversationId);
+    }
     if (lease.owned) runtime.clear(conversationId, lease.scope);
   }
 }
