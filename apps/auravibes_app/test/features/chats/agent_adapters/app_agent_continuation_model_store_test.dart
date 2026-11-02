@@ -210,6 +210,12 @@ void main() {
     );
     expect(history[1].metadata['kind'], 'conversation_task_brief');
     expect(history.last.role, ChatMessageRole.model);
+    expect(adapter.isCompactionSummaryMessage(history.last), isTrue);
+    expect(adapter.isCompactionSummaryMessage(history[1]), isFalse);
+    expect(
+      adapter.isCompactionSummaryMessage(ChatMessage.model('Ordinary response')),
+      isFalse,
+    );
     expect(history.last.content, 'Summary of earlier messages.');
   });
 }

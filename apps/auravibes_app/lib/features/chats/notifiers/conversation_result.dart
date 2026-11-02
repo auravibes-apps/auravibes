@@ -103,10 +103,11 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   }
 
   Future<void> setTaskBrief(String? taskBrief) async {
+    if (taskBrief != null && taskBrief.trim().isEmpty) return;
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final patch = taskBrief == null || taskBrief.trim().isEmpty
+    final patch = taskBrief == null
         ? const ConversationPatch(clearTaskBrief: true)
         : ConversationPatch(taskBrief: taskBrief);
     await _saveConversationPatch(result.conversation, patch);

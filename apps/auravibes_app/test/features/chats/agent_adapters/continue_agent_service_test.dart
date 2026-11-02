@@ -240,6 +240,96 @@ void main() {
           });
     });
 
+    test('next request uses the current brief and omits it after clear', () async {
+      const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+      var currentConversation = _conversation.copyWith(taskBrief: brief);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => currentConversation);
+      final requests = <List<ChatMessage>>[];
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((invocation) {
+        requests.add(List<ChatMessage>.of(
+          invocation.positionalArguments[1] as List<ChatMessage>,
+        ));
+        return Stream.value(ChatResult<ChatMessage>(
+          output: ChatMessage.model('Done'),
+        ));
+      });
+
+      final _ = await usecase.call(conversationId: 'conversation-1');
+      currentConversation = currentConversation.copyWith(taskBrief: 'Edited brief');
+      final _ = await usecase.call(conversationId: 'conversation-1');
+      currentConversation = currentConversation.copyWith(taskBrief: null);
+      final _ = await usecase.call(conversationId: 'conversation-1');
+
+      expect(requests, hasLength(3));
+      for (final (index, expected) in [brief, 'Edited brief'].indexed) {
+        final entries = requests[index].where(
+          (message) => message.metadata['kind'] == 'conversation_task_brief',
+        ).toList();
+        expect(entries, hasLength(1));
+        expect(entries.single.role, ChatMessageRole.user);
+        expect(entries.single.content, 'User-authored conversation brief:\n\n$expected');
+        expect(requests[index].last.content, _userMessage.content);
+      }
+      expect(requests.last.any(
+        (message) => message.metadata['kind'] == 'conversation_task_brief',
+      ), isFalse);
+      final created = verify(() => messageRepository.createMessage(captureAny()))
+          .captured.cast<MessageToCreate>();
+      expect(created.every((message) => !message.content.contains(brief)), isTrue);
+      final transcriptUpdates = created.where(
+        (message) => MessageMetadataEntity.fromJsonString(message.metadata)?.modelMetadata[
+            MessageMetadataEntity.agentTranscriptContextMetadataKey
+          ] == true,
+      );
+      expect(transcriptUpdates, isEmpty);
+    });
+
+    test('cleared brief does not block continuation from a compacted summary', () async {
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation.copyWith(taskBrief: null));
+      final summary = _userMessage.copyWith(
+        id: 'compaction-summary',
+        isUser: false,
+        messageType: MessageType.system,
+        content: 'Earlier context summarized by the model.',
+        metadata: const MessageMetadataEntity(isCompactionSummary: true),
+      );
+      when(() => selectPromptMessagesUsecase.call('conversation-1'))
+          .thenAnswer((_) async => [summary, _userMessage]);
+      List<ChatMessage>? dispatched;
+      when(
+        () => chatbotService.sendMessage(
+          _model,
+          any(),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((invocation) {
+        dispatched = List<ChatMessage>.of(
+          invocation.positionalArguments[1] as List<ChatMessage>,
+        );
+        return Stream.value(ChatResult<ChatMessage>(
+          output: ChatMessage.model('Continued'),
+        ));
+      });
+
+      final _ = await usecase.call(conversationId: 'conversation-1');
+
+      expect(dispatched, isNotNull);
+      expect(dispatched!.first.role, ChatMessageRole.model);
+      expect(dispatched!.first.content, summary.content);
+      expect(dispatched!.last.content, _userMessage.content);
+      expect(dispatched!.any(
+        (message) => message.metadata['kind'] == 'conversation_task_brief',
+      ), isFalse);
+    });
+
     test('uses model stream as lastResult', () async {
       when(
         () => chatbotService.sendMessage(

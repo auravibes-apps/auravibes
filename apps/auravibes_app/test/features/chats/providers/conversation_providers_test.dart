@@ -273,6 +273,26 @@ void main() {
       expect(endpoint.requests.single.cursor, isNull);
     });
 
+    test('fresh app containers load saved, edited, and cleared cloud briefs', () async {
+      for (final savedValue in ['  Saved objective.\nKeep the deadline.  ', 'Edited objective.', null]) {
+        final endpoint = _TestConversationEndpoint([
+          ConversationPage(conversations: [
+            _cloudConversationSummary(id: 'brief-conversation', taskBrief: savedValue),
+          ]),
+        ]);
+        final container = _cloudContainer(endpoint);
+        try {
+          final conversations = await container.read(
+            conversationsStreamProvider(workspaceId: 'cloud').future,
+          );
+          expect(conversations.single.taskBrief, savedValue);
+          expect(endpoint.requests, hasLength(1));
+        } finally {
+          container.dispose();
+        }
+      }
+    });
+
     test('maps the cloud task brief into the conversation entity', () async {
       final endpoint = _TestConversationEndpoint([
         ConversationPage(

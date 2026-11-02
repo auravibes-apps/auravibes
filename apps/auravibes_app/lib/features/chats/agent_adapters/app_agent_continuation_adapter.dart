@@ -22,6 +22,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
 import 'package:riverpod/riverpod.dart';
 
 const _conversationTaskBriefMetadataKind = 'conversation_task_brief';
+const _compactionSummaryMetadataKind = 'compaction_summary';
 
 class AppAgentContinuationAdapter({
   required final ConversationRepository conversationRepository,
@@ -173,6 +174,19 @@ class AppAgentContinuationAdapter({
     required List<ChatMessage> skillContextMessages,
     required String? taskBrief,
   }) async {
+    final summaryMessageIds = {
+      for (final message in messages)
+        if (message.messageType == .system &&
+            message.metadata?.isCompactionSummary == true)
+          message.id,
+    };
+    final transcript = await BuildPromptChatMessages(
+      modalitiesInput: model.workspaceModelSelection.modalitiesInput,
+      supportsImageToolResults:
+          model.modelsProvider.type == ModelProvidersType.anthropic &&
+          (model.modelConnection.url?.trim().isEmpty ?? true),
+    )(messages);
+
     return [
       ...skillContextMessages,
       if (taskBrief case final brief? when brief.trim().isNotEmpty)
@@ -181,12 +195,8 @@ class AppAgentContinuationAdapter({
           content: 'User-authored conversation brief:\n\n$brief',
           metadata: const {'kind': _conversationTaskBriefMetadataKind},
         ),
-      ...await BuildPromptChatMessages(
-        modalitiesInput: model.workspaceModelSelection.modalitiesInput,
-        supportsImageToolResults:
-            model.modelsProvider.type == ModelProvidersType.anthropic &&
-            (model.modelConnection.url?.trim().isEmpty ?? true),
-      )(messages),
+      for (final message in transcript)
+        _tagCompactionSummary(message, summaryMessageIds),
     ];
   }
 
@@ -203,9 +213,28 @@ mixin _AgentContinuationMessageRoleChecks {
   bool isSkillContextMessage(ChatMessage message) =>
       message.metadata['kind'] == skillContextMetadataKind;
 
+  bool isCompactionSummaryMessage(ChatMessage message) =>
+      message.role == ChatMessageRole.model &&
+      message.metadata['kind'] == _compactionSummaryMetadataKind;
+
   bool isUserMessage(ChatMessage message) {
     return message.role == ChatMessageRole.user;
   }
+}
+
+ChatMessage _tagCompactionSummary(
+  ChatMessage message,
+  Set<String> summaryMessageIds,
+) {
+  if (message.role != ChatMessageRole.model ||
+      !summaryMessageIds.contains(message.metadata['transcriptMessageId'])) {
+    return message;
+  }
+
+  return message.copyWith(metadata: {
+    ...message.metadata,
+    'kind': _compactionSummaryMetadataKind,
+  });
 }
 
 Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(

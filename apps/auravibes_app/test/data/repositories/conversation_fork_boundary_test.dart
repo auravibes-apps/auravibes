@@ -734,7 +734,7 @@ void main() {
   test(
     'deleting source materializes fork and keeps shared attachments',
     () async {
-      final _ = await insertSource();
+      await insertSource(taskBrief: 'Brief at fork creation.');
       final base = DateTime.utc(2026);
       final sourceMessage = await insertMessage(
         id: 'assistant-1',
@@ -760,6 +760,10 @@ void main() {
         'source',
         throughMessageId: sourceMessage.id,
       );
+      final _ = await repository.patchConversation(
+        'source',
+        const ConversationPatch(taskBrief: 'Later source edit.'),
+      );
       final boundaries = await repository.captureForkBoundaries('source');
       expect(boundaries[fork.id], sourceMessage.id);
 
@@ -774,6 +778,7 @@ void main() {
 
       final materialized = await repository.getConversationById(fork.id);
       expect(materialized?.isForkMaterialized, isTrue);
+      expect(materialized?.taskBrief, 'Brief at fork creation.');
       final messages = await MessageRepository(database)
           .getMessagesByConversation(fork.id);
       expect(messages, hasLength(1));

@@ -74,6 +74,8 @@ abstract interface class AgentContinuationProvider<
 
   bool isSkillContextMessage(TChatMessage message);
 
+  bool isCompactionSummaryMessage(TChatMessage message);
+
   bool isUserMessage(TChatMessage message);
 }
 
@@ -126,7 +128,7 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
     );
     assert(
       _startsWithUserMessage(chatHistory),
-      'First non-system message after compaction must be user.',
+      'First conversation message after context and compaction summaries must be user.',
     );
 
     return PreparedContinueAgentInput(
@@ -143,7 +145,8 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
   bool _startsWithUserMessage(List<TChatMessage> chatHistory) {
     for (final message in chatHistory) {
       if (provider.isSystemMessage(message) ||
-          provider.isSkillContextMessage(message)) {
+          provider.isSkillContextMessage(message) ||
+          provider.isCompactionSummaryMessage(message)) {
         continue;
       }
 

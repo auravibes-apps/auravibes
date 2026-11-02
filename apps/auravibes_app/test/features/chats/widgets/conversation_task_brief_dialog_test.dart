@@ -60,6 +60,48 @@ void main() {
     final _ = await tester.pumpAndSettle();
   }
 
+  for (final initial in [null, 'Existing saved brief']) {
+    testWidgets('whitespace-only draft cannot save or clear initial=$initial', (tester) async {
+      final result = Completer<ConversationTaskBriefEditResult?>();
+      await pumpSubject(tester, result, taskBrief: initial);
+      await tester.tap(find.text('Open'));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), ' \n\t ');
+      final _ = await tester.pumpAndSettle();
+
+      final save = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Save'));
+      expect(save.onPressed, isNull);
+      expect(result.isCompleted, isFalse);
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      expect(await result.future, isNull);
+    });
+  }
+
+  testWidgets('creates an exact multiline brief from an empty draft', (tester) async {
+    final result = Completer<ConversationTaskBriefEditResult?>();
+    await pumpSubject(tester, result);
+    await tester.tap(find.text('Open'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Clear brief'), findsNothing);
+    expect(tester.widget<TextButton>(find.widgetWithText(TextButton, 'Save')).onPressed, isNull);
+    const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+    await tester.enterText(find.byType(TextField), brief);
+    await tester.tap(find.text('Save'));
+    final _ = await tester.pumpAndSettle();
+    expect(await result.future, (clear: false, value: brief));
+  });
+
+  testWidgets('dismiss leaves the saved brief untouched', (tester) async {
+    final result = Completer<ConversationTaskBriefEditResult?>();
+    await pumpSubject(tester, result, taskBrief: 'Existing objective.');
+    await tester.tap(find.text('Open'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(5, 5));
+    final _ = await tester.pumpAndSettle();
+    expect(await result.future, isNull);
+  });
+
   testWidgets('prefills and preserves the exact user-edited text', (
     tester,
   ) async {

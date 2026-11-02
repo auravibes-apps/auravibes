@@ -1,0 +1,186 @@
+name: Issue 1591 hosted validation
+
+on:
+  push:
+    branches: [codex/issue-1591-task-brief]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: issue-1591-hosted-validation
+  cancel-in-progress: false
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BASELINE_SHA: 1aaa31f61128fe810ca35ef7a00205edb9233175
+      POSTGRES_PASSWORD: ci-postgres-password
+    steps:
+      - name: Checkout feature
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Read pinned Flutter version
+        id: pin
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('version=' + json.load(open('.fvmrc'))['flutter'] + '\n')
+          PY
+
+      - name: Set up pinned Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ steps.pin.outputs.version }}
+          cache: true
+
+      - name: Bootstrap feature through validation lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .fvm "$RUNNER_TEMP/issue-1591-evidence"
+          ln -s "$FLUTTER_ROOT" .fvm/flutter_sdk
+          python3 tool/validation_lease.py --label hosted-pub -- flutter pub get
+          python3 tool/validation_lease.py --label hosted-bootstrap -- dart run melos bootstrap
+          flutter --version --machine > "$RUNNER_TEMP/issue-1591-evidence/flutter-version.json"
+          git rev-parse HEAD > "$RUNNER_TEMP/issue-1591-evidence/feature-sha.txt"
+          printf '%s\n' "$BASELINE_SHA" > "$RUNNER_TEMP/issue-1591-evidence/baseline-sha.txt"
+          printf '%s/%s/actions/runs/%s/attempts/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/issue-1591-evidence/workflow-run.txt"
+          uname -a > "$RUNNER_TEMP/issue-1591-evidence/runner.txt"
+
+      - name: Checkout exact main baseline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 1aaa31f61128fe810ca35ef7a00205edb9233175
+          path: .dart_tool/issue-1591-main
+          persist-credentials: false
+
+      - name: Capture main production conversation before feature rendering
+        id: before
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/issue-1591-evidence"
+          baseline="$GITHUB_WORKSPACE/.dart_tool/issue-1591-main"
+          test "$(git -C "$baseline" rev-parse HEAD)" = "$BASELINE_SHA"
+          harness=apps/auravibes_app/test/widgets/ux_validation_layout_test.dart
+          cp "$harness" "$baseline/$harness"
+          sha256sum "$harness" "$baseline/$harness" > "$evidence/capture-harness-sha256.txt"
+          git -C "$baseline" diff --exit-code -- apps/auravibes_app/lib packages
+          mkdir -p "$baseline/.fvm"
+          ln -s "$FLUTTER_ROOT" "$baseline/.fvm/flutter_sdk"
+          cd "$baseline"
+          python3 tool/validation_lease.py --label baseline-pub -- flutter pub get
+          python3 tool/validation_lease.py --label baseline-bootstrap -- dart run melos bootstrap
+          cd apps/auravibes_app
+          python3 ../../tool/validation_lease.py --label baseline-capture -- \
+            flutter test test/widgets/ux_validation_layout_test.dart --no-pub --reporter expanded \
+            --plain-name='conversation task brief capture flow' \
+            --dart-define=TASK_BRIEF_CAPTURE_BASELINE=true \
+            --dart-define=UX_CAPTURE_DIR="$evidence/before" \
+            --dart-define=UX_SOURCE_FINGERPRINT="$BASELINE_SHA" 2>&1 | tee "$evidence/before.log"
+          test -n "$(find "$evidence/before" -name '*.png' -print -quit)"
+
+      - name: Generate app and Serverpod artifacts
+        id: generate
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/issue-1591-evidence"
+          python3 tool/validation_lease.py --label feature-generate -- dart run melos run generate --no-select 2>&1 | tee "$evidence/generate.log"
+          python3 tool/validation_lease.py --label feature-localization -- dart run melos run generate:localization 2>&1 | tee "$evidence/localization.log"
+          python3 tool/validation_lease.py --label serverpod-cli -- dart pub global activate serverpod_cli 4.0.3
+          export PATH="$HOME/.pub-cache/bin:$PATH"
+          python3 tool/validation_lease.py --label feature-serverpod -- dart run melos run generate:serverpod 2>&1 | tee "$evidence/serverpod.log"
+          if ! find apps/auravibes_server/migrations -maxdepth 1 -name '*issue-1591-task-brief' | grep -q .; then
+            cd apps/auravibes_server
+            python3 ../../tool/validation_lease.py --label feature-migration -- serverpod create-migration --tag issue-1591-task-brief 2>&1 | tee "$evidence/migration.log"
+          fi
+
+      - name: Format generated and handwritten issue files
+        if: ${{ steps.generate.outcome == 'success' }}
+        shell: bash
+        run: |
+          python3 tool/validation_lease.py --label hosted-format -- python3 - <<'PY'
+          import subprocess
+          changed = subprocess.check_output(['git', 'diff', '--name-only', 'origin/main']).decode().splitlines()
+          untracked = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard']).decode().splitlines()
+          files = sorted({path for path in changed + untracked if path.endswith('.dart') and path.startswith(('apps/', 'packages/'))})
+          if files:
+              subprocess.run(['dart', 'format', '--line-length', '80', *files], check=True)
+          PY
+
+      - name: Export tool-generated patch
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/issue-1591-evidence"
+          git add -N -- apps packages
+          git diff --binary HEAD -- apps packages > "$RUNNER_TEMP/issue-1591-evidence/generated-and-formatted.patch"
+          sha256sum "$RUNNER_TEMP/issue-1591-evidence/generated-and-formatted.patch" > "$RUNNER_TEMP/issue-1591-evidence/generated-patch-sha256.txt"
+
+      - name: Capture matching feature production conversation and editor
+        if: ${{ success() && steps.before.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/issue-1591-evidence"
+          fingerprint="$GITHUB_SHA+generated:$(cut -d' ' -f1 "$evidence/generated-patch-sha256.txt")"
+          cd apps/auravibes_app
+          python3 ../../tool/validation_lease.py --label feature-capture -- \
+            flutter test test/widgets/ux_validation_layout_test.dart --no-pub --reporter expanded \
+            --plain-name='conversation task brief capture flow' \
+            --dart-define=UX_CAPTURE_DIR="$evidence/after" \
+            --dart-define=UX_SOURCE_FINGERPRINT="$fingerprint" 2>&1 | tee "$evidence/after.log"
+
+      - name: Focused engine and app tests
+        if: ${{ success() && steps.generate.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/issue-1591-evidence"
+          cd packages/auravibes_engine
+          python3 ../../tool/validation_lease.py --label hosted-engine -- dart test test/agent_continuation_preparer_test.dart --reporter expanded 2>&1 | tee "$evidence/engine-tests.log"
+          cd ../../apps/auravibes_app
+          python3 ../../tool/validation_lease.py --label hosted-app -- flutter test --no-pub --reporter expanded \
+            test/data/database/drift/app_database_test.dart \
+            test/data/repositories/conversation_repository_impl_test.dart \
+            test/data/repositories/conversation_fork_boundary_test.dart \
+            test/data/repositories/conversation_task_brief_persistence_test.dart \
+            test/features/chats/agent_adapters/app_agent_continuation_model_store_test.dart \
+            test/features/chats/agent_adapters/continue_agent_service_test.dart \
+            test/features/chats/notifiers/conversation_chat_notifier_test.dart \
+            test/features/chats/providers/conversation_providers_test.dart \
+            test/features/chats/services/cloud_conversation_creator_test.dart \
+            test/features/chats/usecases/cloud_conversation_usecase_test.dart \
+            test/features/chats/usecases/compact_conversation_usecase_test.dart \
+            test/features/chats/usecases/restore_compaction_checkpoint_usecase_test.dart \
+            test/features/chats/widgets/conversation_task_brief_dialog_test.dart \
+            test/features/chats/widgets/conversation_task_brief_button_test.dart \
+            test/providers/app_providers_test.dart 2>&1 | tee "$evidence/app-tests.log"
+
+      - name: Verify paired image evidence
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          test -n "$(find "$RUNNER_TEMP/issue-1591-evidence/before" -name '*.png' -print -quit)"
+          test "$(find "$RUNNER_TEMP/issue-1591-evidence/after" -name '*.png' | wc -l)" -ge 3
+
+      - name: Upload generation, validation, and genuine image evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1591-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/issue-1591-evidence
+          if-no-files-found: error
+          retention-days: 30
