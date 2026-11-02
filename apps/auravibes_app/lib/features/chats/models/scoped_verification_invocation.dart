@@ -1,5 +1,5 @@
-import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 typedef ScopedVerificationInvocation = ({

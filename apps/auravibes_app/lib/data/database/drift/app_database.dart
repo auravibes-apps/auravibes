@@ -58,9 +58,9 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_
 import 'package:auravibes_app/data/database/drift/tables/workspace_revisions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_trash_batches.dart';
-import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_verification_runs.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_verification_settings.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/data/database/drift/workspace_revision_capture.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
