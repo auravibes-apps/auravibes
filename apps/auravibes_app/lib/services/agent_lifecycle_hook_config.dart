@@ -12,8 +12,13 @@ class const AgentLifecycleHookConfig({
   required final List<AgentLifecycleHookDefinition> hooks,
   final List<String> sourceFiles = const [],
 }) {
-  AgentLifecycleHookDefinition? hookFor(AgentLifecycleHookEvent event) =>
-      hooks.where((hook) => hook.event == event).firstOrNull;
+  AgentLifecycleHookDefinition? hookFor(AgentLifecycleHookEvent event) {
+    for (final hook in hooks) {
+      if (hook.event == event) return hook;
+    }
+
+    return null;
+  }
 }
 
 enum AgentLifecycleHookEvent { beforeTool, afterTool }
@@ -34,110 +39,121 @@ class AgentLifecycleHookConfigException implements Exception {
 }
 
 AgentLifecycleHookConfig parseAgentLifecycleHookConfig(String source) {
-  if (source.length > maxAgentLifecycleHookConfigBytes) {
-    throw const AgentLifecycleHookConfigException('config_too_large');
+  final decoded = _decodeConfig(source);
+  final rawHooks = decoded['hooks'] as List<Object?>;
+  if (rawHooks.length > maxAgentLifecycleHooks) {
+    throw const AgentLifecycleHookConfigException('too_many_hooks');
   }
-  if (utf8.encode(source).length > maxAgentLifecycleHookConfigBytes) {
-    throw const AgentLifecycleHookConfigException('config_too_large');
+  final sourceFiles = _parseSourceFiles(decoded['sourceFiles']);
+
+  return .new(hooks: _parseHooks(rawHooks), sourceFiles: sourceFiles);
+}
+
+Map<String, dynamic> _decodeConfig(String source) {
+  _validateConfigSize(source);
+  final decoded = _decodeJson(source);
+  if (!_isConfigShape(decoded)) {
+    throw const AgentLifecycleHookConfigException('invalid_config');
   }
 
-  final Object? decoded;
+  return decoded as Map<String, dynamic>;
+}
+
+void _validateConfigSize(String source) {
+  if (source.length > maxAgentLifecycleHookConfigBytes ||
+      utf8.encode(source).length > maxAgentLifecycleHookConfigBytes) {
+    throw const AgentLifecycleHookConfigException('config_too_large');
+  }
+}
+
+Object? _decodeJson(String source) {
   try {
-    decoded = jsonDecode(source);
+    return jsonDecode(source);
   } on FormatException catch (_, stackTrace) {
     Error.throwWithStackTrace(
       const AgentLifecycleHookConfigException('invalid_json'),
       stackTrace,
     );
   }
-  if (decoded is! Map<String, dynamic> ||
-      decoded.keys.toSet().difference(<String>{
-        'version',
-        'hooks',
-        'sourceFiles',
-      }).isNotEmpty ||
-      decoded['version'] != 1 ||
-      decoded['hooks'] is! List<Object?>) {
-    throw const AgentLifecycleHookConfigException('invalid_config');
-  }
+}
 
-  final rawHooks = decoded['hooks']! as List<Object?>;
-  if (rawHooks.length > maxAgentLifecycleHooks) {
-    throw const AgentLifecycleHookConfigException('too_many_hooks');
-  }
+bool _isConfigShape(Object? value) => value is Map<String, dynamic> &&
+    _hasOnlyKeys(value, const {'version', 'hooks', 'sourceFiles'}) &&
+    value['version'] == 1 && value['hooks'] is List<Object?>;
 
-  final rawSourceFiles = decoded['sourceFiles'] ?? const <Object?>[];
-  if (rawSourceFiles is! List<Object?> ||
-      rawSourceFiles.length > maxAgentLifecycleHookSourceFiles ||
-      rawSourceFiles.any(
-        (path) =>
-            path is! String || path.trim().isEmpty || path.contains('\u0000'),
-      )) {
+bool _hasOnlyKeys(Map<String, dynamic> value, Set<String> keys) =>
+    value.keys.toSet().difference(keys).isEmpty;
+
+List<String> _parseSourceFiles(Object? raw) {
+  final sources = raw ?? const <Object?>[];
+  if (sources is! List<Object?> ||
+      sources.length > maxAgentLifecycleHookSourceFiles) {
+    throw const AgentLifecycleHookConfigException('invalid_source_files');
+  }
+  if (!sources.every(_isSourcePath)) {
     throw const AgentLifecycleHookConfigException('invalid_source_files');
   }
 
+  return sources.cast<String>();
+}
+
+bool _isSourcePath(Object? value) => value is String &&
+    value.trim().isNotEmpty && !value.contains('\u0000');
+
+List<AgentLifecycleHookDefinition> _parseHooks(List<Object?> rawHooks) {
   final hooks = <AgentLifecycleHookDefinition>[];
   final events = <AgentLifecycleHookEvent>{};
-  for (final rawHook in rawHooks) {
-    final hook = _parseHook(rawHook);
+  for (final raw in rawHooks) {
+    final hook = _parseHook(raw);
     if (!events.add(hook.event)) {
       throw const AgentLifecycleHookConfigException('duplicate_event');
     }
     hooks.add(hook);
   }
 
-  return AgentLifecycleHookConfig(
-    hooks: hooks,
-    sourceFiles: rawSourceFiles.cast<String>(),
-  );
+  return hooks;
 }
 
-AgentLifecycleHookDefinition _parseHook(Object? rawHook) {
-  if (rawHook is! Map<String, dynamic> ||
-      rawHook.keys.toSet().difference(<String>{
-        'event',
-        'command',
-        'args',
-      }).isNotEmpty) {
+AgentLifecycleHookDefinition _parseHook(Object? raw) {
+  if (raw is! Map<String, dynamic> ||
+      !_hasOnlyKeys(raw, const {'event', 'command', 'args'})) {
+    throw const AgentLifecycleHookConfigException('invalid_hook');
+  }
+  final event = _parseEvent(raw['event']);
+  final command = _parseCommand(raw['command']);
+
+  return .new(event: event, command: command, args: _parseArguments(raw['args']));
+}
+
+AgentLifecycleHookEvent _parseEvent(Object? raw) => switch (raw) {
+  'beforeTool' => .beforeTool,
+  'afterTool' => .afterTool,
+  _ => throw const AgentLifecycleHookConfigException('unsupported_event'),
+};
+
+String _parseCommand(Object? raw) {
+  if (!_isSourcePath(raw)) {
     throw const AgentLifecycleHookConfigException('invalid_hook');
   }
 
-  final event = switch (rawHook['event']) {
-    'beforeTool' => AgentLifecycleHookEvent.beforeTool,
-    'afterTool' => AgentLifecycleHookEvent.afterTool,
-    _ => throw const AgentLifecycleHookConfigException('unsupported_event'),
-  };
-  final command = rawHook['command'];
-  final rawArgs = rawHook['args'];
-  if (command is! String ||
-      command.trim().isEmpty ||
-      command.contains('\u0000') ||
-      rawArgs is! List<Object?> ||
-      rawArgs.length > maxAgentLifecycleHookArgs) {
-    throw const AgentLifecycleHookConfigException('invalid_hook');
-  }
-  final args = <String>[];
-  for (final rawArg in rawArgs) {
-    if (rawArg is! String ||
-        rawArg.contains('\u0000') ||
-        utf8.encode(rawArg).length > maxAgentLifecycleHookArgBytes) {
-      throw const AgentLifecycleHookConfigException('invalid_hook_argument');
-    }
-    args.add(rawArg);
-  }
-
-  return AgentLifecycleHookDefinition(
-    event: event,
-    command: command,
-    args: args,
-  );
+  return raw as String;
 }
 
-extension on Iterable<AgentLifecycleHookDefinition> {
-  AgentLifecycleHookDefinition? get firstOrNull {
-    final iterator = this.iterator;
-    if (!iterator.moveNext()) return null;
-
-    return iterator.current;
+List<String> _parseArguments(Object? raw) {
+  if (raw is! List<Object?> || raw.length > maxAgentLifecycleHookArgs) {
+    throw const AgentLifecycleHookConfigException('invalid_hook');
   }
+
+  return raw.map(_parseArgument).toList();
+}
+
+String _parseArgument(Object? raw) {
+  if (raw is! String || raw.contains('\u0000')) {
+    throw const AgentLifecycleHookConfigException('invalid_hook_argument');
+  }
+  if (utf8.encode(raw).length > maxAgentLifecycleHookArgBytes) {
+    throw const AgentLifecycleHookConfigException('invalid_hook_argument');
+  }
+
+  return raw;
 }

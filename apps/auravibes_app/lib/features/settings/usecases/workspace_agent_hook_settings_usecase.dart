@@ -77,8 +77,9 @@ class const WorkspaceAgentHookSettingsUsecase({
       }
 
       final snapshot = await _inspect(configPath);
-      if (snapshot.canonicalPath != settings.trustedSourcePath ||
-          snapshot.digest != settings.trustedDigest) {
+      if (!settings.trustsSource(
+        canonicalPath: snapshot.canonicalPath, digest: snapshot.digest,
+      )) {
         throw const WorkspaceAgentHookSettingsException(
           'agent_lifecycle_hooks.configuration_changed',
         );
@@ -163,4 +164,7 @@ class WorkspaceAgentHookSettingsException implements Exception {
   const new(this.localizationKey);
 
   final String localizationKey;
+
+  @override
+  String toString() => localizationKey;
 }

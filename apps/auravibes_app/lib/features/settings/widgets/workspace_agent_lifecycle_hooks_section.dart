@@ -101,40 +101,7 @@ class _WorkspaceAgentLifecycleHooksSectionState
       AuraDialogs.confirm(
         context: context,
         title: const TextLocale('agent_lifecycle_hooks.trust_title'),
-        message: AuraColumn(
-          children: [
-            const TextLocale('agent_lifecycle_hooks.trust_warning'),
-            AuraSelectableText(review.canonicalPath),
-            const TextLocale('agent_lifecycle_hooks.commands'),
-            if (review.commands.isEmpty)
-              const TextLocale('agent_lifecycle_hooks.no_hooks'),
-            for (final command in review.commands)
-              AuraColumn(
-                children: [
-                  TextLocale(
-                    command.event == WorkspaceAgentHookEvent.beforeTool
-                        ? 'agent_lifecycle_hooks.before_tool'
-                        : 'agent_lifecycle_hooks.after_tool',
-                  ),
-                  AuraSelectableText(command.canonicalCommandPath),
-                  const TextLocale('agent_lifecycle_hooks.arguments'),
-                  AuraSelectableText(jsonEncode(command.arguments)),
-                ],
-                spacing: .xs,
-                crossAxisAlignment: .start,
-              ),
-            if (review.sourceFiles.isNotEmpty) ...[
-              const TextLocale('agent_lifecycle_hooks.source_files'),
-              for (final sourceFile in review.sourceFiles)
-                AuraSelectableText(sourceFile),
-            ],
-            AuraSelectableText(
-              'agent_lifecycle_hooks.digest_value'.tr(args: [review.digest]),
-            ),
-          ],
-          spacing: .sm,
-          crossAxisAlignment: .start,
-        ),
+        message: _WorkspaceHookReviewBody(review: review),
         actions: const AuraConfirmDialogActions(
           confirmLabel: TextLocale('agent_lifecycle_hooks.trust_confirm'),
           cancelLabel: TextLocale('settings_screen.actions.cancel'),
@@ -197,6 +164,59 @@ class _WorkspaceAgentLifecycleHooksSectionState
   }
 }
 
+class const _WorkspaceHookReviewBody({required final WorkspaceAgentHookConfigReview review})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+          children: [
+            const TextLocale('agent_lifecycle_hooks.trust_warning'),
+            AuraSelectableText(review.canonicalPath),
+            const TextLocale('agent_lifecycle_hooks.commands'),
+            if (review.commands.isEmpty)
+              const TextLocale('agent_lifecycle_hooks.no_hooks'),
+            for (final command in review.commands)
+              _WorkspaceHookCommandDetails(command: command),
+            if (review.sourceFiles.isNotEmpty) ...[
+              const TextLocale('agent_lifecycle_hooks.source_files'),
+              for (final sourceFile in review.sourceFiles)
+                AuraSelectableText(sourceFile),
+            ],
+            AuraSelectableText(
+              'agent_lifecycle_hooks.digest_value'.tr(args: [review.digest]),
+            ),
+          ],
+          spacing: .sm,
+          crossAxisAlignment: .start,
+        );
+}
+
+class const _WorkspaceHookCommandDetails({required final WorkspaceAgentHookCommandReview command})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      TextLocale(command.event == WorkspaceAgentHookEvent.beforeTool
+          ? 'agent_lifecycle_hooks.before_tool' : 'agent_lifecycle_hooks.after_tool'),
+      AuraSelectableText(command.canonicalCommandPath),
+      const TextLocale('agent_lifecycle_hooks.arguments'),
+      AuraSelectableText(jsonEncode(command.arguments)),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+const _statusLabels = <WorkspaceAgentHookTrustStatus, TextLocale>{
+  .notConfigured: TextLocale('agent_lifecycle_hooks.status_not_configured'),
+  .trustRequired: TextLocale('agent_lifecycle_hooks.status_trust_required'),
+  .trusted: TextLocale('agent_lifecycle_hooks.status_trusted'),
+  .changed: TextLocale('agent_lifecycle_hooks.status_changed'),
+  .invalid: TextLocale('agent_lifecycle_hooks.status_invalid'),
+  .unsupportedPlatform: TextLocale('agent_lifecycle_hooks.status_unsupported_platform'),
+  .unsupportedWorkspace: TextLocale('agent_lifecycle_hooks.status_unsupported_workspace'),
+};
+const _trustedDigestPreviewLength = 12;
+
 class const _WorkspaceHookSettingsView({
   required final WorkspaceAgentHookSettings settings,
   required final WorkspaceAgentHookTrustStatus? trustStatus,
@@ -209,109 +229,142 @@ class const _WorkspaceHookSettingsView({
   @override
   Widget build(BuildContext context) {
     final status = trustStatus ?? WorkspaceAgentHookTrustStatus.trustRequired;
-    final isSupported =
-        status != WorkspaceAgentHookTrustStatus.unsupportedPlatform &&
+    final isSupported = status != WorkspaceAgentHookTrustStatus.unsupportedPlatform &&
         status != WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
-    final canEnable = status == WorkspaceAgentHookTrustStatus.trusted;
-    final digest = settings.trustedDigest;
 
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          const AuraText(
-            child: TextLocale('agent_lifecycle_hooks.title'),
-            style: .heading6,
-          ),
-          const AuraText(
-            child: TextLocale('agent_lifecycle_hooks.description'),
-            style: .bodySmall,
-          ),
-          AuraRow(
-            children: [
-              const Expanded(child: TextLocale('agent_lifecycle_hooks.enable')),
-              AuraSwitch(
-                value: settings.enabled,
-                onChanged: busy || (!settings.enabled && !canEnable)
-                    ? null
-                    : onEnabled,
-              ),
-            ],
-          ),
-          AuraText(
-            child: switch (status) {
-              .notConfigured => const TextLocale(
-                'agent_lifecycle_hooks.status_not_configured',
-              ),
-              .trustRequired => const TextLocale(
-                'agent_lifecycle_hooks.status_trust_required',
-              ),
-              .trusted => const TextLocale(
-                'agent_lifecycle_hooks.status_trusted',
-              ),
-              .changed => const TextLocale(
-                'agent_lifecycle_hooks.status_changed',
-              ),
-              .invalid => const TextLocale(
-                'agent_lifecycle_hooks.status_invalid',
-              ),
-              .unsupportedPlatform => const TextLocale(
-                'agent_lifecycle_hooks.status_unsupported_platform',
-              ),
-              .unsupportedWorkspace => const TextLocale(
-                'agent_lifecycle_hooks.status_unsupported_workspace',
-              ),
-            },
-            style: .bodySmall,
-          ),
-          if (!isSupported)
-            const AuraText(
-              child: TextLocale('agent_lifecycle_hooks.recovery_local_desktop'),
-              style: .bodySmall,
-            ),
-          if (settings.configPath case final String path) ...[
-            AuraSelectableText(path),
-            AuraText(
-              child: TextLocale(
-                'agent_lifecycle_hooks.trusted_digest',
-                args: [
-                  if (digest != null)
-                    digest.characters.take(12).toString()
-                  else
-                    '',
-                ],
-              ),
-              style: .bodySmall,
-            ),
-          ],
-          Wrap(
-            spacing: context.auraTheme.fromSpacing(.sm),
-            runSpacing: context.auraTheme.fromSpacing(.sm),
-            children: [
-              AuraButton(
-                onPressed: onChoose,
-                child: const TextLocale('agent_lifecycle_hooks.choose_config'),
-                disabled: busy || !isSupported,
-              ),
-              if (settings.configPath case final String path)
-                AuraButton(
-                  onPressed: () => onReview(path),
-                  child: const TextLocale('agent_lifecycle_hooks.trust_config'),
-                  disabled: busy || !isSupported,
-                ),
-              if (settings.isTrusted)
-                AuraButton(
-                  onPressed: onRevoke,
-                  child: const TextLocale('agent_lifecycle_hooks.revoke_trust'),
-                  disabled: busy,
-                ),
-            ],
-          ),
+    return AuraCard(child: AuraColumn(
+      children: [
+        const _WorkspaceHookTitle(),
+        const _WorkspaceHookDescription(),
+        _WorkspaceHookToggle(view: this, status: status),
+        _WorkspaceHookStatus(status: status),
+        if (!isSupported) const _WorkspaceHookRecovery(),
+        if (settings.configPath case final String path) ...[
+          AuraSelectableText(path),
+          _WorkspaceHookTrustedDigest(digest: settings.trustedDigest),
         ],
-        spacing: .md,
-        crossAxisAlignment: .stretch,
-      ),
+        _WorkspaceHookActions(view: this, isSupported: isSupported),
+      ],
+      spacing: .md,
+      crossAxisAlignment: .stretch,
+    ));
+  }
+}
+
+class const _WorkspaceHookTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale('agent_lifecycle_hooks.title'), style: .heading6,
+  );
+}
+
+class const _WorkspaceHookDescription() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale('agent_lifecycle_hooks.description'), style: .bodySmall,
+  );
+}
+
+class const _WorkspaceHookToggle({
+  required final _WorkspaceHookSettingsView view,
+  required final WorkspaceAgentHookTrustStatus status,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final enabled = view.settings.enabled;
+    final canEnable = status == WorkspaceAgentHookTrustStatus.trusted;
+
+    return AuraRow(children: [
+      const Expanded(child: TextLocale('agent_lifecycle_hooks.enable')),
+      AuraSwitch(value: enabled,
+        onChanged: view.busy || (!enabled && !canEnable) ? null : view.onEnabled),
+    ]);
+  }
+}
+
+class const _WorkspaceHookRecovery() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale('agent_lifecycle_hooks.recovery_local_desktop'),
+    style: .bodySmall,
+  );
+}
+
+class const _WorkspaceHookStatus({required final WorkspaceAgentHookTrustStatus status})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: _statusLabels[status] ?? const TextLocale('agent_lifecycle_hooks.status_trust_required'),
+    style: .bodySmall,
+  );
+}
+
+class const _WorkspaceHookTrustedDigest({required final String? digest}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final value = digest;
+
+    return AuraText(
+      child: TextLocale('agent_lifecycle_hooks.trusted_digest', args: [
+        if (value != null) value.characters.take(_trustedDigestPreviewLength).toString() else '',
+      ]),
+      style: .bodySmall,
     );
   }
+}
+
+class const _WorkspaceHookActions({
+  required final _WorkspaceHookSettingsView view,
+  required final bool isSupported,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final settings = view.settings;
+    final disabled = view.busy || !isSupported;
+
+    return Wrap(
+      spacing: context.auraTheme.fromSpacing(.sm),
+      runSpacing: context.auraTheme.fromSpacing(.sm),
+      children: [
+        _WorkspaceHookChooseAction(onPressed: view.onChoose, disabled: disabled),
+        if (settings.configPath case final String path)
+          _WorkspaceHookReviewAction(path: path, onReview: view.onReview, disabled: disabled),
+        if (settings.isTrusted)
+          _WorkspaceHookRevokeAction(onPressed: view.onRevoke, disabled: view.busy),
+      ],
+    );
+  }
+}
+
+class const _WorkspaceHookChooseAction({
+  required final VoidCallback onPressed, required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed, child: const TextLocale('agent_lifecycle_hooks.choose_config'),
+    disabled: disabled,
+  );
+}
+
+class const _WorkspaceHookReviewAction({
+  required final String path, required final void Function(String) onReview,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => onReview(path), child: const TextLocale('agent_lifecycle_hooks.trust_config'),
+    disabled: disabled,
+  );
+}
+
+class const _WorkspaceHookRevokeAction({
+  required final VoidCallback onPressed, required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed, child: const TextLocale('agent_lifecycle_hooks.revoke_trust'),
+    disabled: disabled,
+  );
 }
 
 class const _WorkspaceHookLoadFailure({required final VoidCallback onRetry})

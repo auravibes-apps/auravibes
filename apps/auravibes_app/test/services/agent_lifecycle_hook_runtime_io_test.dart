@@ -6,12 +6,43 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_api.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_io.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const runtime = AgentLifecycleHookRuntimeIo();
   final supported = Platform.isLinux || Platform.isMacOS;
   final pythonAvailable = supported && File('/usr/bin/python3').existsSync();
+
+  test(
+    'fingerprint encoding remains compatible with stored trust',
+    () async {
+      const sources = ['z-policy.json', 'a-policy.json'];
+      final fixture = await _HookFixture.create('/usr/bin/printf', sourceFiles: sources);
+      addTearDown(fixture.dispose);
+      final configBytes = await File(fixture.snapshot.canonicalPath).readAsBytes();
+      final command = await File('/usr/bin/printf').resolveSymbolicLinks();
+      final commandBytes = await File(command).readAsBytes();
+      final sourcePaths = <String>[];
+      for (final source in sources) {
+        sourcePaths.add(await File('${fixture.directory.path}/$source').resolveSymbolicLinks());
+      }
+      expect(fixture.snapshot.sourceFilePaths, sourcePaths);
+      sourcePaths.sort();
+      final expected = jsonEncode({
+        'sourcePath': fixture.snapshot.canonicalPath,
+        'configDigest': sha256.convert(configBytes).toString(),
+        'commands': [{'path': command, 'digest': sha256.convert(commandBytes).toString()}],
+        'sourceFiles': [
+          for (final path in sourcePaths)
+            {'path': path, 'digest': sha256.convert(utf8.encode('trusted')).toString()},
+        ],
+      });
+      expect(fixture.snapshot.digest, sha256.convert(utf8.encode(expected)).toString());
+    },
+    timeout: const Timeout(.new(seconds: 10)),
+    skip: !supported || !File('/usr/bin/printf').existsSync(),
+  );
 
   test(
     'stderr secrets are discarded on both success and failure',
