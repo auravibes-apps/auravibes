@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/workspace_verification_reservations.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';

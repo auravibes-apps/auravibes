@@ -3262,4 +3262,51 @@ abstract class LocaleKeys {
       'workspace_tool_names.create_view';
   static const workspace_tool_names_edit_view =
       'workspace_tool_names.edit_view';
+  static const verification_title = 'verification.title';
+  static const verification_subtitle = 'verification.subtitle';
+  static const verification_enabled = 'verification.enabled';
+  static const verification_disabled = 'verification.disabled';
+  static const verification_configure = 'verification.configure';
+  static const verification_enable = 'verification.enable';
+  static const verification_enable_hint = 'verification.enable_hint';
+  static const verification_runner_requirement =
+      'verification.runner_requirement';
+  static const verification_cloud_unavailable =
+      'verification.cloud_unavailable';
+  static const verification_runner = 'verification.runner';
+  static const verification_no_runner = 'verification.no_runner';
+  static const verification_runner_hint = 'verification.runner_hint';
+  static const verification_root = 'verification.root';
+  static const verification_root_hint = 'verification.root_hint';
+  static const verification_edit_tools = 'verification.edit_tools';
+  static const verification_edit_tools_hint = 'verification.edit_tools_hint';
+  static const verification_checks = 'verification.checks';
+  static const verification_add_check = 'verification.add_check';
+  static const verification_remove_check = 'verification.remove_check';
+  static const verification_check_id = 'verification.check_id';
+  static const verification_executable = 'verification.executable';
+  static const verification_arguments = 'verification.arguments';
+  static const verification_arguments_hint = 'verification.arguments_hint';
+  static const verification_suffixes = 'verification.suffixes';
+  static const verification_suffixes_hint = 'verification.suffixes_hint';
+  static const verification_advanced = 'verification.advanced';
+  static const verification_timeout = 'verification.timeout';
+  static const verification_output = 'verification.output';
+  static const verification_repairs = 'verification.repairs';
+  static const verification_limits_hint = 'verification.limits_hint';
+  static const verification_save = 'verification.save';
+  static const verification_saved = 'verification.saved';
+  static const verification_discard = 'verification.discard';
+  static const verification_saving = 'verification.saving';
+  static const verification_errors_bindings = 'verification.errors.bindings';
+  static const verification_errors_runner_unavailable =
+      'verification.errors.runner_unavailable';
+  static const verification_errors_unsupported_runner =
+      'verification.errors.unsupported_runner';
+  static const verification_errors_conflict = 'verification.errors.conflict';
+  static const verification_errors_save_failed =
+      'verification.errors.save_failed';
+  static const verification_errors_invalid = 'verification.errors.invalid';
+  static const verification_errors_load_failed =
+      'verification.errors.load_failed';
 }
