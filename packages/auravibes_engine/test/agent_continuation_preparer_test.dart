@@ -32,10 +32,11 @@ void main() {
 
         final result = await usecase.call(conversationId: 'conversation-1');
 
-        expect(
-          result.chatHistory.map((message) => message.content),
-          ['skill context', 'User-authored objective.', 'hello'],
-        );
+        expect(result.chatHistory.map((message) => message.content), [
+          'skill context',
+          'User-authored objective.',
+          'hello',
+        ]);
         expect(
           result.requestedContextMessages.map((message) => message.content),
           ['skill context'],
@@ -43,23 +44,34 @@ void main() {
       },
     );
 
-    test('allows a tagged model summary before the current user without a brief', () async {
-      final usecase = _usecase(chatHistory: const [
-        _Chat('compacted summary', isModel: true, isCompactionSummary: true),
-        _Chat('current user'),
-      ]);
+    test(
+      'allows a tagged model summary before the current user without a brief',
+      () async {
+        final usecase = _usecase(
+          chatHistory: const [
+            _Chat(
+              'compacted summary',
+              isModel: true,
+              isCompactionSummary: true,
+            ),
+            _Chat('current user'),
+          ],
+        );
 
-      final result = await usecase.call(conversationId: 'conversation-1');
+        final result = await usecase.call(conversationId: 'conversation-1');
 
-      expect(result.chatHistory.first.isModel, isTrue);
-      expect(result.chatHistory.last.content, 'current user');
-    });
+        expect(result.chatHistory.first.isModel, isTrue);
+        expect(result.chatHistory.last.content, 'current user');
+      },
+    );
 
     test('rejects ordinary model content before the current user', () async {
-      final usecase = _usecase(chatHistory: const [
-        _Chat('ordinary model message', isModel: true),
-        _Chat('current user'),
-      ]);
+      final usecase = _usecase(
+        chatHistory: const [
+          _Chat('ordinary model message', isModel: true),
+          _Chat('current user'),
+        ],
+      );
 
       await expectLater(
         usecase.call(conversationId: 'conversation-1'),
@@ -183,11 +195,12 @@ class const _FakeAgentContinuationProvider(
     required List<_Chat> skillContextMessages,
     required String? taskBrief,
   }) async {
-    return chatHistory ?? [
-      ...skillContextMessages,
-      if (taskBrief != null) _Chat(taskBrief),
-      ...messages.map(_Chat.new),
-    ];
+    return chatHistory ??
+        [
+          ...skillContextMessages,
+          if (taskBrief != null) _Chat(taskBrief),
+          ...messages.map(_Chat.new),
+        ];
   }
 
   @override

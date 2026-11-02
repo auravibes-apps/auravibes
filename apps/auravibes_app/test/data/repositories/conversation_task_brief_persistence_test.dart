@@ -51,26 +51,29 @@ void main() {
     expect(await fixture.messages(), originalMessages);
   });
 
-  test('invalid brief patches preserve the saved brief and transcript', () async {
-    final fixture = await _TaskBriefDatabase.open();
-    addTearDown(fixture.close);
-    final created = await fixture.createConversation(taskBrief: _brief);
-    final originalMessages = await fixture.messages();
+  test(
+    'invalid brief patches preserve the saved brief and transcript',
+    () async {
+      final fixture = await _TaskBriefDatabase.open();
+      addTearDown(fixture.close);
+      final created = await fixture.createConversation(taskBrief: _brief);
+      final originalMessages = await fixture.messages();
 
-    for (final patch in const [
-      ConversationPatch(taskBrief: ' \n\t '),
-      ConversationPatch(taskBrief: 'new brief', clearTaskBrief: true),
-    ]) {
-      await expectLater(
-        fixture.repository.patchConversation(created.id, patch),
-        throwsA(isA<ConversationValidationException>()),
-      );
-    }
-    await fixture.reopen();
+      for (final patch in const [
+        ConversationPatch(taskBrief: ' \n\t '),
+        ConversationPatch(taskBrief: 'new brief', clearTaskBrief: true),
+      ]) {
+        await expectLater(
+          fixture.repository.patchConversation(created.id, patch),
+          throwsA(isA<ConversationValidationException>()),
+        );
+      }
+      await fixture.reopen();
 
-    expect((await fixture.read(created.id))?.taskBrief, _brief);
-    expect(await fixture.messages(), originalMessages);
-  });
+      expect((await fixture.read(created.id))?.taskBrief, _brief);
+      expect(await fixture.messages(), originalMessages);
+    },
+  );
 
   test('fork without a brief remains independent after reopen', () async {
     final fixture = await _TaskBriefDatabase.open();
@@ -103,7 +106,9 @@ void main() {
 final class _TaskBriefDatabase {
   _TaskBriefDatabase(this.directory)
     : database = AppDatabase(
-        connection: NativeDatabase(File('${directory.path}/conversation.sqlite')),
+        connection: NativeDatabase(
+          File('${directory.path}/conversation.sqlite'),
+        ),
       );
 
   final Directory directory;
@@ -115,7 +120,8 @@ final class _TaskBriefDatabase {
 
   ConversationRepository get repository => ConversationRepository(database);
 
-  Future<ConversationEntity?> read(String id) => repository.getConversationById(id);
+  Future<ConversationEntity?> read(String id) =>
+      repository.getConversationById(id);
 
   Future<ConversationEntity> createConversation({String? taskBrief}) async {
     final workspace = await database.workspaceDao.insertWorkspace(
@@ -141,7 +147,10 @@ final class _TaskBriefDatabase {
   }
 
   Future<List<Map<String, Object?>>> messages() async => [
-    for (final row in await database.customSelect('SELECT * FROM messages ORDER BY id').get())
+    for (final row
+        in await database
+            .customSelect('SELECT * FROM messages ORDER BY id')
+            .get())
       row.data,
   ];
 

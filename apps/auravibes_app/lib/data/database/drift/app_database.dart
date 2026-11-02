@@ -237,8 +237,7 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAttachmentDeletionsSchemaVersion + 1;
   static const int _conversationTaskBriefSchemaVersion =
       _workspaceAssetDeletionOwnerSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _conversationTaskBriefSchemaVersion;
+  static const int _currentSchemaVersion = _conversationTaskBriefSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -600,10 +599,7 @@ extension on AppDatabase {
     await _upgradeConversationTaskBriefSchema(m, from);
   }
 
-  Future<void> _upgradeConversationTaskBriefSchema(
-    Migrator m,
-    int from,
-  ) async {
+  Future<void> _upgradeConversationTaskBriefSchema(Migrator m, int from) async {
     if (from >= AppDatabase._conversationTaskBriefSchemaVersion ||
         !await _tableExists('conversations') ||
         await _columnExists('conversations', 'task_brief')) {

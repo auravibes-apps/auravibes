@@ -46,49 +46,52 @@ void main() {
       expect(fixture.database.schemaVersion, 47);
     });
 
-    test('schema46 migration adds a nullable conversation task brief', () async {
-      final sqliteDb = sqlite.sqlite3.openInMemory()
-        ..userVersion = 46
-        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
-        ..execute('''
+    test(
+      'schema46 migration adds a nullable conversation task brief',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 46
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('''
           CREATE TABLE conversations (
             id TEXT NOT NULL PRIMARY KEY,
             title TEXT NOT NULL
           )
         ''')
-        ..execute('INSERT INTO conversations (id, title) VALUES (?, ?)', [
-          'conversation-1',
-          'Existing conversation',
-        ])
-        ..execute('''
+          ..execute('INSERT INTO conversations (id, title) VALUES (?, ?)', [
+            'conversation-1',
+            'Existing conversation',
+          ])
+          ..execute('''
           CREATE TABLE workspace_revisions (
             workspace_id TEXT, kind TEXT, resource_id TEXT, revision INTEGER,
             data TEXT, actor_user_id TEXT, ai_involved INTEGER,
             operation TEXT, captured_at INTEGER
           )
         ''')
-        ..execute(
-          'CREATE TABLE workspace_history_policies '
-          '(workspace_id TEXT, days INTEGER)',
-        )
-        ..execute('''
+          ..execute(
+            'CREATE TABLE workspace_history_policies '
+            '(workspace_id TEXT, days INTEGER)',
+          )
+          ..execute('''
           CREATE TABLE workspace_content_reports (
             workspace_id TEXT, kind TEXT, resource_id TEXT, revision INTEGER
           )
         ''');
-      _createHistorySources(sqliteDb);
-      final database = _MigrationAppDatabase<_MigrationCase16>(
-        connection: NativeDatabase.opened(sqliteDb),
-      );
-      addTearDown(database.close);
+        _createHistorySources(sqliteDb);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-      final row = await database
-          .customSelect('SELECT id, title, task_brief FROM conversations')
-          .getSingle();
-      expect(row.read<String>('id'), 'conversation-1');
-      expect(row.read<String>('title'), 'Existing conversation');
-      expect(row.data['task_brief'], isNull);
-    });
+        final row = await database
+            .customSelect('SELECT id, title, task_brief FROM conversations')
+            .getSingle();
+        expect(row.read<String>('id'), 'conversation-1');
+        expect(row.read<String>('title'), 'Existing conversation');
+        expect(row.data['task_brief'], isNull);
+      },
+    );
 
     test('schema41 assets survive context and reporting migrations', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()

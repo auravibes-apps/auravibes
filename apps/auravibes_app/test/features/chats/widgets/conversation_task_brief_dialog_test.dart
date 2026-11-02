@@ -29,9 +29,8 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () => unawaited(
-                openDialog(context, result, taskBrief: taskBrief),
-              ),
+              onPressed: () =>
+                  unawaited(openDialog(context, result, taskBrief: taskBrief)),
               child: const Text('Open'),
             ),
           ),
@@ -61,7 +60,9 @@ void main() {
   }
 
   for (final initial in [null, 'Existing saved brief']) {
-    testWidgets('whitespace-only draft cannot save or clear initial=$initial', (tester) async {
+    testWidgets('whitespace-only draft cannot save or clear initial=$initial', (
+      tester,
+    ) async {
       final result = Completer<ConversationTaskBriefEditResult?>();
       await pumpSubject(tester, result, taskBrief: initial);
       await tester.tap(find.text('Open'));
@@ -69,7 +70,9 @@ void main() {
       await tester.enterText(find.byType(TextField), ' \n\t ');
       final _ = await tester.pumpAndSettle();
 
-      final save = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Save'));
+      final save = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Save'),
+      );
       expect(save.onPressed, isNull);
       expect(result.isCompleted, isFalse);
       await tester.tap(find.text('Cancel'));
@@ -78,13 +81,20 @@ void main() {
     });
   }
 
-  testWidgets('creates an exact multiline brief from an empty draft', (tester) async {
+  testWidgets('creates an exact multiline brief from an empty draft', (
+    tester,
+  ) async {
     final result = Completer<ConversationTaskBriefEditResult?>();
     await pumpSubject(tester, result);
     await tester.tap(find.text('Open'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Clear brief'), findsNothing);
-    expect(tester.widget<TextButton>(find.widgetWithText(TextButton, 'Save')).onPressed, isNull);
+    expect(
+      tester
+          .widget<TextButton>(find.widgetWithText(TextButton, 'Save'))
+          .onPressed,
+      isNull,
+    );
     const brief = '  Objetivo 🎯\nKeep the deadline.  ';
     await tester.enterText(find.byType(TextField), brief);
     await tester.tap(find.text('Save'));

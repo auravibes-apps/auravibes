@@ -231,10 +231,9 @@ ChatMessage _tagCompactionSummary(
     return message;
   }
 
-  return message.copyWith(metadata: {
-    ...message.metadata,
-    'kind': _compactionSummaryMetadataKind,
-  });
+  return message.copyWith(
+    metadata: {...message.metadata, 'kind': _compactionSummaryMetadataKind},
+  );
 }
 
 Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(

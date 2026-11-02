@@ -137,6 +137,38 @@ void main() {
       realSessions: true,
       emptyModels: false,
     );
+    for (var attempt = 0; attempt < 250; attempt++) {
+      if (find.byType(ChatConversationScreen).evaluate().isNotEmpty &&
+          find.text('Project research').evaluate().isNotEmpty) {
+        break;
+      }
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(ChatConversationScreen), findsOneWidget);
+    expect(find.text('Project research'), findsWidgets);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
+    );
+    await fixture.settle(tester);
+    await tester.runAsync(() async {
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('ux-capture')),
+      );
+      final rendered = await boundary.toImage();
+      final pixels = await rendered.toByteData(format: ui.ImageByteFormat.rawRgba);
+      rendered.dispose();
+      expect(pixels, isNotNull);
+      final colors = <int>{};
+      for (var offset = 0; offset < pixels!.lengthInBytes; offset += 4) {
+        colors.add(pixels.getUint32(offset));
+        if (colors.length > 2) break;
+      }
+      expect(colors.length, greaterThan(2), reason: 'The production route must paint real content before capture.');
+    });
     final button = find.byKey(const ValueKey('conversation-task-brief-button'));
     const baseline = bool.fromEnvironment('TASK_BRIEF_CAPTURE_BASELINE');
     if (!baseline) expect(button, findsOneWidget);
@@ -145,7 +177,10 @@ void main() {
       tester,
       'conversation-task-brief-controls',
       router.routeInformationProvider.value.uri.toString(),
-      locale: 'en', size: size, scale: 1, dark: false,
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
     );
     if (baseline) {
       await fixture.close(tester);
@@ -168,21 +203,29 @@ void main() {
       tester,
       'conversation-task-brief-editor',
       router.routeInformationProvider.value.uri.toString(),
-      locale: 'en', size: size, scale: 1, dark: false,
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
     );
     await tester.tap(find.widgetWithText(TextButton, 'Save'));
     await fixture.settle(tester);
-    final saved = await fixture.database.customSelect(
-      'SELECT task_brief FROM conversations WHERE id = ?',
-      variables: [Variable<String>(fixture.chatId)],
-    ).getSingle();
+    final saved = await fixture.database
+        .customSelect(
+          'SELECT task_brief FROM conversations WHERE id = ?',
+          variables: [Variable<String>(fixture.chatId)],
+        )
+        .getSingle();
     expect(saved.read<String>('task_brief'), brief);
     expect(tester.takeException(), isNull);
     await _capture(
       tester,
       'conversation-task-brief-saved',
       router.routeInformationProvider.value.uri.toString(),
-      locale: 'en', size: size, scale: 1, dark: false,
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
     );
     await fixture.close(tester);
   });

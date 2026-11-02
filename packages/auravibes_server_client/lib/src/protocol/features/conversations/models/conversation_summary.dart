@@ -22,6 +22,7 @@ abstract class ConversationSummary
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
+    this.taskBrief,
     this.parentConversationId,
     this.forkSourceConversationId,
     this.forkSourceTitle,
@@ -41,6 +42,7 @@ abstract class ConversationSummary
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
@@ -61,6 +63,7 @@ abstract class ConversationSummary
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
+      taskBrief: jsonSerialization['taskBrief'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
       forkSourceConversationId:
@@ -99,6 +102,8 @@ abstract class ConversationSummary
 
   String? reasoningConfigJson;
 
+  String? taskBrief;
+
   String? parentConversationId;
 
   String? forkSourceConversationId;
@@ -128,6 +133,7 @@ abstract class ConversationSummary
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
@@ -150,6 +156,7 @@ abstract class ConversationSummary
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
+      if (taskBrief != null) 'taskBrief': taskBrief,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       if (forkSourceConversationId != null)
@@ -179,6 +186,7 @@ abstract class ConversationSummary
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
+      if (taskBrief != null) 'taskBrief': taskBrief,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       if (forkSourceConversationId != null)
@@ -213,6 +221,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
@@ -230,6 +239,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
+         taskBrief: taskBrief,
          parentConversationId: parentConversationId,
          forkSourceConversationId: forkSourceConversationId,
          forkSourceTitle: forkSourceTitle,
@@ -253,6 +263,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
+    Object? taskBrief = _Undefined,
     Object? parentConversationId = _Undefined,
     Object? forkSourceConversationId = _Undefined,
     Object? forkSourceTitle = _Undefined,
@@ -273,6 +284,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
       reasoningConfigJson: reasoningConfigJson is String?
           ? reasoningConfigJson
           : this.reasoningConfigJson,
+      taskBrief: taskBrief is String? ? taskBrief : this.taskBrief,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,

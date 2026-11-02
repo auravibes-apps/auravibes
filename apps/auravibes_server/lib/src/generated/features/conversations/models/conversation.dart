@@ -24,6 +24,7 @@ abstract class Conversation
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
+    this.taskBrief,
     this.parentConversationStableId,
     required this.revision,
     int? projectionRevision,
@@ -53,6 +54,7 @@ abstract class Conversation
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationStableId,
     required int revision,
     int? projectionRevision,
@@ -80,6 +82,7 @@ abstract class Conversation
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
+      taskBrief: jsonSerialization['taskBrief'] as String?,
       parentConversationStableId:
           jsonSerialization['parentConversationStableId'] as String?,
       revision: jsonSerialization['revision'] as int,
@@ -134,6 +137,8 @@ abstract class Conversation
 
   String? reasoningConfigJson;
 
+  String? taskBrief;
+
   String? parentConversationStableId;
 
   int revision;
@@ -178,6 +183,7 @@ abstract class Conversation
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationStableId,
     int? revision,
     int? projectionRevision,
@@ -207,6 +213,7 @@ abstract class Conversation
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
+      if (taskBrief != null) 'taskBrief': taskBrief,
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
@@ -243,6 +250,7 @@ abstract class Conversation
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
+      if (taskBrief != null) 'taskBrief': taskBrief,
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
@@ -306,6 +314,7 @@ class _ConversationImpl extends Conversation {
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationStableId,
     required int revision,
     int? projectionRevision,
@@ -330,6 +339,7 @@ class _ConversationImpl extends Conversation {
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
+         taskBrief: taskBrief,
          parentConversationStableId: parentConversationStableId,
          revision: revision,
          projectionRevision: projectionRevision,
@@ -360,6 +370,7 @@ class _ConversationImpl extends Conversation {
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
+    Object? taskBrief = _Undefined,
     Object? parentConversationStableId = _Undefined,
     int? revision,
     int? projectionRevision,
@@ -387,6 +398,7 @@ class _ConversationImpl extends Conversation {
       reasoningConfigJson: reasoningConfigJson is String?
           ? reasoningConfigJson
           : this.reasoningConfigJson,
+      taskBrief: taskBrief is String? ? taskBrief : this.taskBrief,
       parentConversationStableId: parentConversationStableId is String?
           ? parentConversationStableId
           : this.parentConversationStableId,
@@ -463,6 +475,11 @@ class ConversationUpdateTable extends _is.UpdateTable<ConversationTable> {
         table.reasoningConfigJson,
         value,
       );
+
+  _is.ColumnValue<String, String> taskBrief(String? value) => _is.ColumnValue(
+    table.taskBrief,
+    value,
+  );
 
   _is.ColumnValue<String, String> parentConversationStableId(String? value) =>
       _is.ColumnValue(
@@ -581,6 +598,10 @@ class ConversationTable extends _is.Table<int?> {
       'reasoningConfigJson',
       this,
     );
+    taskBrief = _is.ColumnString(
+      'taskBrief',
+      this,
+    );
     parentConversationStableId = _is.ColumnString(
       'parentConversationStableId',
       this,
@@ -660,6 +681,8 @@ class ConversationTable extends _is.Table<int?> {
 
   late final _is.ColumnString reasoningConfigJson;
 
+  late final _is.ColumnString taskBrief;
+
   late final _is.ColumnString parentConversationStableId;
 
   late final _is.ColumnInt revision;
@@ -699,6 +722,7 @@ class ConversationTable extends _is.Table<int?> {
     modelId,
     agentId,
     reasoningConfigJson,
+    taskBrief,
     parentConversationStableId,
     revision,
     projectionRevision,

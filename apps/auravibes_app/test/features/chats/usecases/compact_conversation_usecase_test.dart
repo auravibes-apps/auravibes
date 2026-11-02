@@ -242,52 +242,71 @@ void main() {
   }
 
   for (final trigger in CompactionTrigger.values) {
-    test('$trigger compaction never writes the user-owned task brief', () async {
-      const brief = '  Objetivo 🎯\nKeep the deadline.  ';
-      final transcript = [
-        _makeMessage(),
-        _makeMessage(id: 'msg-2', isUser: false),
-        _makeMessage(id: 'msg-3'),
-        _makeMessage(id: 'msg-4', isUser: false),
-      ];
-      when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
-          .thenAnswer((_) async => _makeConversation(taskBrief: brief));
-      when(() => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById('model-1'))
-          .thenAnswer((_) async => _makeModelSelection());
-      when(() => fixture.mockMessageRepo.getMessagesByConversation('conv-1'))
-          .thenAnswer((_) async => transcript);
-      List<ChatMessage>? summaryRequest;
-      when(() => fixture.mockChatbotService.sendMessage(any(), any()))
-          .thenAnswer((invocation) {
-        summaryRequest = List<ChatMessage>.of(
-          invocation.positionalArguments[1] as List<ChatMessage>,
+    test(
+      '$trigger compaction never writes the user-owned task brief',
+      () async {
+        const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+        final transcript = [
+          _makeMessage(),
+          _makeMessage(id: 'msg-2', isUser: false),
+          _makeMessage(id: 'msg-3'),
+          _makeMessage(id: 'msg-4', isUser: false),
+        ];
+        when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
+            .thenAnswer((_) async => _makeConversation(taskBrief: brief));
+        when(
+          () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
+        ).thenAnswer((_) async => _makeModelSelection());
+        when(() => fixture.mockMessageRepo.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => transcript);
+        List<ChatMessage>? summaryRequest;
+        when(() => fixture.mockChatbotService.sendMessage(any(), any()))
+            .thenAnswer((invocation) {
+              summaryRequest = List<ChatMessage>.of(
+                invocation.positionalArguments[1] as List<ChatMessage>,
+              );
+              return Stream.value(
+                ChatResult<ChatMessage>(
+                  output: ChatMessage.model(
+                    'Model-generated summary; leave saved brief alone.',
+                  ),
+                  usage: const LanguageModelUsage(),
+                ),
+              );
+            });
+
+        final result = await fixture.usecase(
+          conversationId: 'conv-1',
+          trigger: trigger,
         );
-        return Stream.value(ChatResult<ChatMessage>(
-          output: ChatMessage.model('Model-generated summary; leave saved brief alone.'),
-          usage: const LanguageModelUsage(),
-        ));
-      });
 
-      final result = await fixture.usecase(
-        conversationId: 'conv-1',
-        trigger: trigger,
-      );
-
-      expect(result.status, CompactionExecutionStatus.success);
-      final patches = verify(() => fixture.mockConversationRepo.patchConversation(
-        'conv-1', captureAny(),
-      )).captured.cast<ConversationPatch>().toList();
-      expect(patches, hasLength(1));
-      expect(patches.single.activeCompactionCheckpointId, isNotNull);
-      expect(patches.single.taskBrief, isNull);
-      expect(patches.single.clearTaskBrief, isFalse);
-      expect(summaryRequest, isNotEmpty);
-      expect(summaryRequest!.every((message) => !message.content.contains(brief)), isTrue);
-      final writes = verify(() => fixture.mockMessageRepo.patchMessage(
-        captureAny(), any(),
-      )).captured.cast<String>();
-      expect(writes.any((id) => transcript.any((message) => message.id == id)), isFalse);
-    });
+        expect(result.status, CompactionExecutionStatus.success);
+        final patches = verify(
+          () => fixture.mockConversationRepo.patchConversation(
+            'conv-1',
+            captureAny(),
+          ),
+        ).captured.cast<ConversationPatch>().toList();
+        expect(patches, hasLength(1));
+        expect(patches.single.activeCompactionCheckpointId, isNotNull);
+        expect(patches.single.taskBrief, isNull);
+        expect(patches.single.clearTaskBrief, isFalse);
+        expect(summaryRequest, isNotEmpty);
+        expect(
+          summaryRequest!.every((message) => !message.content.contains(brief)),
+          isTrue,
+        );
+        final writes = verify(
+          () => fixture.mockMessageRepo.patchMessage(captureAny(), any()),
+        ).captured.cast<String>();
+        expect(
+          writes.any((id) => transcript.any((message) => message.id == id)),
+          isFalse,
+        );
+      },
+    );
   }
 
   group('CompactConversationUsecase manual', () {

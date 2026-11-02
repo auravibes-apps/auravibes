@@ -162,62 +162,67 @@ void main() {
     verify(() => selections.getById('selection')).called(2);
   });
 
-  test('composes the user-authored brief outside transcript messages', () async {
-    final adapter = AppAgentContinuationAdapter(
-      conversationRepository: _ConversationRepository(),
-      messageRepository: _MessageRepository(),
-      modelSelectionStore: (_) async => _ModelSelectionStore(),
-      apiModelRepository: _ApiModelRepository(),
-      selectPromptMessagesUsecase: _SelectPromptMessages(),
-      buildSkillContextMessagesUsecase: _BuildSkillContext(),
-      loadApprovalStates: ({
-        required conversationId,
-        required workspaceId,
-      }) async => const {},
-      loadConversationToolSpecsUsecase: _LoadTools(),
-    );
-    final skillContext = ChatMessage(
-      role: ChatMessageRole.system,
-      content: 'Skill context',
-      metadata: const {'kind': skillContextMetadataKind},
-    );
+  test(
+    'composes the user-authored brief outside transcript messages',
+    () async {
+      final adapter = AppAgentContinuationAdapter(
+        conversationRepository: _ConversationRepository(),
+        messageRepository: _MessageRepository(),
+        modelSelectionStore: (_) async => _ModelSelectionStore(),
+        apiModelRepository: _ApiModelRepository(),
+        selectPromptMessagesUsecase: _SelectPromptMessages(),
+        buildSkillContextMessagesUsecase: _BuildSkillContext(),
+        loadApprovalStates: ({
+          required conversationId,
+          required workspaceId,
+        }) async => const {},
+        loadConversationToolSpecsUsecase: _LoadTools(),
+      );
+      final skillContext = ChatMessage(
+        role: ChatMessageRole.system,
+        content: 'Skill context',
+        metadata: const {'kind': skillContextMetadataKind},
+      );
 
-    final compactedTranscript = MessageEntity(
-      id: 'checkpoint',
-      conversationId: 'conversation',
-      content: 'Summary of earlier messages.',
-      messageType: MessageType.system,
-      isUser: false,
-      status: MessageStatus.sent,
-      createdAt: DateTime(2026),
-      updatedAt: DateTime(2026),
-      metadata: const MessageMetadataEntity(isCompactionSummary: true),
-    );
-    final history = await adapter.buildChatHistory(
-      model: _model(true),
-      messages: [compactedTranscript],
-      skillContextMessages: [skillContext],
-      taskBrief: 'Finish the migration without changing existing messages.',
-    );
+      final compactedTranscript = MessageEntity(
+        id: 'checkpoint',
+        conversationId: 'conversation',
+        content: 'Summary of earlier messages.',
+        messageType: MessageType.system,
+        isUser: false,
+        status: MessageStatus.sent,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        metadata: const MessageMetadataEntity(isCompactionSummary: true),
+      );
+      final history = await adapter.buildChatHistory(
+        model: _model(true),
+        messages: [compactedTranscript],
+        skillContextMessages: [skillContext],
+        taskBrief: 'Finish the migration without changing existing messages.',
+      );
 
-    expect(history, hasLength(3));
-    expect(history.first, skillContext);
-    expect(history[1].role, ChatMessageRole.user);
-    expect(
-      history[1].content,
-      'User-authored conversation brief:\n\n'
-      'Finish the migration without changing existing messages.',
-    );
-    expect(history[1].metadata['kind'], 'conversation_task_brief');
-    expect(history.last.role, ChatMessageRole.model);
-    expect(adapter.isCompactionSummaryMessage(history.last), isTrue);
-    expect(adapter.isCompactionSummaryMessage(history[1]), isFalse);
-    expect(
-      adapter.isCompactionSummaryMessage(ChatMessage.model('Ordinary response')),
-      isFalse,
-    );
-    expect(history.last.content, 'Summary of earlier messages.');
-  });
+      expect(history, hasLength(3));
+      expect(history.first, skillContext);
+      expect(history[1].role, ChatMessageRole.user);
+      expect(
+        history[1].content,
+        'User-authored conversation brief:\n\n'
+        'Finish the migration without changing existing messages.',
+      );
+      expect(history[1].metadata['kind'], 'conversation_task_brief');
+      expect(history.last.role, ChatMessageRole.model);
+      expect(adapter.isCompactionSummaryMessage(history.last), isTrue);
+      expect(adapter.isCompactionSummaryMessage(history[1]), isFalse);
+      expect(
+        adapter.isCompactionSummaryMessage(
+          ChatMessage.model('Ordinary response'),
+        ),
+        isFalse,
+      );
+      expect(history.last.content, 'Summary of earlier messages.');
+    },
+  );
 }
 
 WorkspaceModelSelectionWithConnectionEntity _model(bool supportsToolCalls) =>

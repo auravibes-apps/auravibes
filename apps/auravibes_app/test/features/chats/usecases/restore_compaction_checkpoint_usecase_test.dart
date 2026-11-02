@@ -110,17 +110,25 @@ void main() {
     },
   );
 
-  test('checkpoint restore patches only its pointer, preserving the current brief', () async {
-    await restore.call(restoreRequest());
+  test(
+    'checkpoint restore patches only its pointer, preserving the current brief',
+    () async {
+      await restore.call(restoreRequest());
 
-    final patch = verify(() => conversations.patchConversation(
-      conversationId, captureAny(),
-    )).captured.single as ConversationPatch;
-    expect(patch.activeCompactionCheckpointId, checkpointId);
-    expect(patch.taskBrief, isNull);
-    expect(patch.clearTaskBrief, isFalse);
-    verifyNever(() => messages.patchMessage(any(), any()));
-  });
+      final patch =
+          verify(
+                () => conversations.patchConversation(
+                  conversationId,
+                  captureAny(),
+                ),
+              ).captured.single
+              as ConversationPatch;
+      expect(patch.activeCompactionCheckpointId, checkpointId);
+      expect(patch.taskBrief, isNull);
+      expect(patch.clearTaskBrief, isFalse);
+      verifyNever(() => messages.patchMessage(any(), any()));
+    },
+  );
 
   test(
     'rejects a local preview when the source transcript has changed',

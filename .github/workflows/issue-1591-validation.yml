@@ -144,7 +144,7 @@ jobs:
             --dart-define=UX_SOURCE_FINGERPRINT="$fingerprint" 2>&1 | tee "$evidence/after.log"
 
       - name: Focused engine and app tests
-        if: ${{ success() && steps.generate.outcome == 'success' }}
+        if: ${{ always() && steps.generate.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail

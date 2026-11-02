@@ -28,9 +28,11 @@ abstract class UpdateConversationRequest
     required this.clearAgent,
     this.reasoningConfigJson,
     required this.clearReasoningConfig,
+    this.taskBrief,
+    bool? clearTaskBrief,
     this.parentConversationId,
     required this.clearParent,
-  });
+  }) : clearTaskBrief = clearTaskBrief ?? false;
 
   factory UpdateConversationRequest({
     required int workspaceId,
@@ -46,6 +48,8 @@ abstract class UpdateConversationRequest
     required bool clearAgent,
     String? reasoningConfigJson,
     required bool clearReasoningConfig,
+    String? taskBrief,
+    bool? clearTaskBrief,
     String? parentConversationId,
     required bool clearParent,
   }) = _UpdateConversationRequestImpl;
@@ -75,6 +79,10 @@ abstract class UpdateConversationRequest
       clearReasoningConfig: _is.BoolJsonExtension.fromJson(
         jsonSerialization['clearReasoningConfig'],
       ),
+      taskBrief: jsonSerialization['taskBrief'] as String?,
+      clearTaskBrief: jsonSerialization['clearTaskBrief'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(jsonSerialization['clearTaskBrief']),
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
       clearParent: _is.BoolJsonExtension.fromJson(
@@ -109,6 +117,10 @@ abstract class UpdateConversationRequest
 
   bool clearReasoningConfig;
 
+  String? taskBrief;
+
+  bool clearTaskBrief;
+
   String? parentConversationId;
 
   bool clearParent;
@@ -130,6 +142,8 @@ abstract class UpdateConversationRequest
     bool? clearAgent,
     String? reasoningConfigJson,
     bool? clearReasoningConfig,
+    String? taskBrief,
+    bool? clearTaskBrief,
     String? parentConversationId,
     bool? clearParent,
   });
@@ -151,6 +165,8 @@ abstract class UpdateConversationRequest
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
       'clearReasoningConfig': clearReasoningConfig,
+      if (taskBrief != null) 'taskBrief': taskBrief,
+      'clearTaskBrief': clearTaskBrief,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       'clearParent': clearParent,
@@ -175,6 +191,8 @@ abstract class UpdateConversationRequest
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
       'clearReasoningConfig': clearReasoningConfig,
+      if (taskBrief != null) 'taskBrief': taskBrief,
+      'clearTaskBrief': clearTaskBrief,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       'clearParent': clearParent,
@@ -204,6 +222,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
     required bool clearAgent,
     String? reasoningConfigJson,
     required bool clearReasoningConfig,
+    String? taskBrief,
+    bool? clearTaskBrief,
     String? parentConversationId,
     required bool clearParent,
   }) : super._(
@@ -220,6 +240,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
          clearAgent: clearAgent,
          reasoningConfigJson: reasoningConfigJson,
          clearReasoningConfig: clearReasoningConfig,
+         taskBrief: taskBrief,
+         clearTaskBrief: clearTaskBrief,
          parentConversationId: parentConversationId,
          clearParent: clearParent,
        );
@@ -242,6 +264,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
     bool? clearAgent,
     Object? reasoningConfigJson = _Undefined,
     bool? clearReasoningConfig,
+    Object? taskBrief = _Undefined,
+    bool? clearTaskBrief,
     Object? parentConversationId = _Undefined,
     bool? clearParent,
   }) {
@@ -263,6 +287,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
           ? reasoningConfigJson
           : this.reasoningConfigJson,
       clearReasoningConfig: clearReasoningConfig ?? this.clearReasoningConfig,
+      taskBrief: taskBrief is String? ? taskBrief : this.taskBrief,
+      clearTaskBrief: clearTaskBrief ?? this.clearTaskBrief,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,

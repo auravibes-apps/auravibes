@@ -24,6 +24,7 @@ abstract class CreateConversationRequest
     this.modelId,
     this.agentId,
     this.reasoningConfigJson,
+    this.taskBrief,
     this.parentConversationId,
   }) : toolAccessMode = toolAccessMode ?? 'default';
 
@@ -37,6 +38,7 @@ abstract class CreateConversationRequest
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationId,
   }) = _CreateConversationRequestImpl;
 
@@ -53,6 +55,7 @@ abstract class CreateConversationRequest
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
       reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
+      taskBrief: jsonSerialization['taskBrief'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
     );
@@ -76,6 +79,8 @@ abstract class CreateConversationRequest
 
   String? reasoningConfigJson;
 
+  String? taskBrief;
+
   String? parentConversationId;
 
   /// Returns a shallow copy of this [CreateConversationRequest]
@@ -91,6 +96,7 @@ abstract class CreateConversationRequest
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationId,
   });
   @override
@@ -107,6 +113,7 @@ abstract class CreateConversationRequest
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
+      if (taskBrief != null) 'taskBrief': taskBrief,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
     };
@@ -126,6 +133,7 @@ abstract class CreateConversationRequest
       if (agentId != null) 'agentId': agentId,
       if (reasoningConfigJson != null)
         'reasoningConfigJson': reasoningConfigJson,
+      if (taskBrief != null) 'taskBrief': taskBrief,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
     };
@@ -150,6 +158,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
     String? modelId,
     String? agentId,
     String? reasoningConfigJson,
+    String? taskBrief,
     String? parentConversationId,
   }) : super._(
          workspaceId: workspaceId,
@@ -161,6 +170,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
          modelId: modelId,
          agentId: agentId,
          reasoningConfigJson: reasoningConfigJson,
+         taskBrief: taskBrief,
          parentConversationId: parentConversationId,
        );
 
@@ -178,6 +188,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? reasoningConfigJson = _Undefined,
+    Object? taskBrief = _Undefined,
     Object? parentConversationId = _Undefined,
   }) {
     return CreateConversationRequest(
@@ -192,6 +203,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
       reasoningConfigJson: reasoningConfigJson is String?
           ? reasoningConfigJson
           : this.reasoningConfigJson,
+      taskBrief: taskBrief is String? ? taskBrief : this.taskBrief,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,
