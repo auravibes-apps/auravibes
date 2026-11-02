@@ -58,6 +58,14 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     if (checked.failure case final failure?) return .new(outcome: failure);
     final current = checked.snapshot;
     if (current == null) return const .new(outcome: .failed);
+
+    return await _invokeCurrentSnapshot(request, current);
+  }
+
+  Future<AgentLifecycleHookInvocationResult> _invokeCurrentSnapshot(
+    _Invocation request,
+    AgentLifecycleHookSourceSnapshot current,
+  ) async {
     final commandPath = current.commandPaths[request.hook.event];
     if (commandPath == null) return const .new(outcome: .unavailable);
 

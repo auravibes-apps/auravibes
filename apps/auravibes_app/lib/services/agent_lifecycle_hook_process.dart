@@ -58,23 +58,20 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
   } on Object {
     return _failedLaunch;
   }
-  if (!trusted) {
-    return _unavailableLaunch;
-  }
+  if (!trusted) return _unavailableLaunch;
   // Keep this synchronous check adjacent to launch after the final trust await.
-  if (request.isCancellationRequested()) {
-    return _cancelledLaunch;
-  }
+  if (request.isCancellationRequested()) return _cancelledLaunch;
   try {
-    final process = await Process.start(
-      request.commandPath,
-      request.arguments,
-      workingDirectory: request.workingDirectory,
-      environment: const {},
-      includeParentEnvironment: false,
+    return (
+      process: await Process.start(
+        request.commandPath,
+        request.arguments,
+        workingDirectory: request.workingDirectory,
+        environment: const {},
+        includeParentEnvironment: false,
+      ),
+      failure: null,
     );
-
-    return (process: process, failure: null);
   } on Object {
     return _failedLaunch;
   }

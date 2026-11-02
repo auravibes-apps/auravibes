@@ -406,7 +406,8 @@ ToolCallExecutionBatchUpdate _executionUpdateFromParts(
   ResolvedTool tool,
   MessageToolCallEntity toolCall,
   ToolCallApprovalBatchItem item,
-}) _executionCallParts(_ResolvedBatchClaim entry) {
+})
+_executionCallParts(_ResolvedBatchClaim entry) {
   final tool = entry.tool;
   final toolCall = entry.claim.toolCall;
   final item = entry.claim.item;

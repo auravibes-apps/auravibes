@@ -129,25 +129,9 @@ class const WorkspaceLifecycleHookRunner({
 
   Future<AgentLifecycleHookInvocationResult> _runtimeInvocation(
     _TrustedHookRequest prepared,
-  ) {
-    final input = _hookInput(prepared.input);
-    final hookRequest = prepared.input.request;
-
-    return runtime.invoke((
-      snapshot: prepared.snapshot,
-      hook: prepared.hook,
-      input: input,
-      isCancellationRequested: prepared.input.isCancellationRequested,
-      conversationId: hookRequest.conversationId,
-      isStillTrusted: () =>
-          _isStillTrusted(
-            workspaceRepository,
-            settingsRepository,
-            hookRequest.workspaceId,
-            prepared.snapshot,
-          ),
-    ));
-  }
+  ) => runtime.invoke(
+    _runtimeRequest(prepared, workspaceRepository, settingsRepository),
+  );
 
   Future<_LoadedHookConfig?> _loadTrustedConfig(String workspaceId) async {
     if (workspaceId.trim().isEmpty) return _unavailableConfig;
@@ -191,6 +175,40 @@ class const WorkspaceLifecycleHookRunner({
       return _failedConfig;
     }
   }
+}
+
+AgentLifecycleHookInvocationRequest _runtimeRequest(
+  _TrustedHookRequest prepared,
+  WorkspaceRepository workspaceRepository,
+  WorkspaceAgentHookSettingsRepository settingsRepository,
+) {
+  final input = prepared.input;
+  final request = input.request;
+
+  return (
+    snapshot: prepared.snapshot,
+    hook: prepared.hook,
+    input: _hookInput(input),
+    isCancellationRequested: input.isCancellationRequested,
+    conversationId: request.conversationId,
+    isStillTrusted: _trustRecheck(prepared, workspaceRepository, settingsRepository),
+  );
+}
+
+Future<bool> Function() _trustRecheck(
+  _TrustedHookRequest prepared,
+  WorkspaceRepository workspaceRepository,
+  WorkspaceAgentHookSettingsRepository settingsRepository,
+) {
+  final workspaceId = prepared.input.request.workspaceId;
+  final snapshot = prepared.snapshot;
+
+  return () => _isStillTrusted(
+    workspaceRepository,
+    settingsRepository,
+    workspaceId,
+    snapshot,
+  );
 }
 
 agent.AgentPreToolHookResult _preResponse(String? raw) {
