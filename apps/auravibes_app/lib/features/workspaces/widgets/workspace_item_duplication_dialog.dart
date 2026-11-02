@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_item_duplication.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_item_duplication_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -71,7 +72,8 @@ class const _CopyState(
   void _complete(BuildContext context, WidgetRef ref) {
     ref
       ..invalidate(workspaceTablesProvider)
-      ..invalidate(workspaceViewsProvider);
+      ..invalidate(workspaceViewsProvider)
+      ..invalidate(workspaceDirectoryWorkflowsProvider);
     Navigator.of(context).pop(owner.request.targetId);
   }
 }
@@ -127,6 +129,8 @@ class const _Options(final _CopyState state) extends StatelessWidget {
             ),
           ],
         )
+      : state.owner.request.kind == .workflow
+      ? const TextLocale(LocaleKeys.workspace_items_duplicate_workflow_hint)
       : const TextLocale(LocaleKeys.workspace_items_duplicate_view_binding);
 }
 

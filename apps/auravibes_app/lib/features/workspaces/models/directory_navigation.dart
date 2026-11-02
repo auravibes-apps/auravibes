@@ -33,3 +33,5 @@ class const DirectoryNavigation({
 class const DirectoryViewLocation(final String id);
 
 class const DirectoryFileLocation(final String id);
+
+class const DirectoryWorkflowLocation(final String id);

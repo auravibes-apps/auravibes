@@ -372,6 +372,23 @@ void main() {
     },
   );
 
+  test('workflow is a valid workspace item selection', () {
+    final workflow = {
+      ...selection.toJson(),
+      'itemId': 'workflow-1',
+      'kind': 'workflow',
+      'recordIds': const <String>[],
+    };
+    expect(
+      WorkspaceContextSelection.decode(workflow, 'workspace', 'chat')?.kind,
+      'workflow',
+    );
+    expect(
+      workspaceTargetKind({'action': 'read', 'kind': 'workflow'}),
+      'workflow',
+    );
+  });
+
   test(
     'verified creations extend only their target and retain selected rows',
     () {

@@ -6,12 +6,17 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_context_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/data/repositories/local_workspace_trash_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/workflows_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
+import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_trash_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/manage_workspace_views_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_files_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/organize_workspace_folders_usecase.dart';
@@ -170,6 +175,121 @@ void main() {
         (throw StateError('Expected directory entries'));
     expect(foundEntries.single, containsPair('path', 'Sales/Leads/Contacts'));
   });
+  test(
+    'Directory search and item reads include active workflows only',
+    () async {
+      final database = AppDatabase(connection: NativeDatabase.memory());
+      addTearDown(database.close);
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const .new('one'),
+              name: 'One',
+              type: .local,
+            ),
+          );
+      final conversations = ConversationRepository(database);
+      final chat = await conversations.createConversation(
+        const .new(title: 'Chat', workspaceId: 'one'),
+      );
+      final folders = OrganizeWorkspaceFoldersUsecase(
+        LocalWorkspaceFolderRepository(database, 'one'),
+      );
+      final sales = await folders.create(name: 'Sales');
+      final leads = await folders.create(name: 'Leads', parentId: sales.id);
+      final now = DateTime.utc(2026, 10, 29);
+      final workflows = WorkflowsRepository(database);
+      final workflow = await workflows.saveWorkflow(
+        WorkspaceWorkflow.create(
+          id: 'workflow-1',
+          workspaceId: 'one',
+          parentId: leads.id,
+          name: 'Summarize leads',
+          description: 'Read a lead list',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final tables = OrganizeWorkspaceTablesUsecase(
+        LocalWorkspaceTableRepository(database, 'one'),
+      );
+      final views = _Views();
+      final files = _Files();
+      when(views.list).thenAnswer((_) async => []);
+      when(files.list).thenAnswer((_) async => []);
+      when(() => views.list(parentId: sales.id)).thenAnswer((_) async => []);
+      when(() => views.list(parentId: leads.id)).thenAnswer((_) async => []);
+      when(() => files.list(parentId: sales.id)).thenAnswer((_) async => []);
+      when(() => files.list(parentId: leads.id)).thenAnswer((_) async => []);
+      final tools = WorkspaceConversationToolsUsecase(
+        conversations: conversations,
+        context: (id) => LocalWorkspaceContextRepository(database, id),
+        commands: (_) async => WorkspaceConversationCommandUsecase(
+          tables: tables,
+          folders: folders,
+          views: views,
+          files: files,
+          workflows: workflows,
+          workspaceId: 'one',
+        ),
+      );
+      final search =
+          await tools.call(
+            conversationId: chat.id,
+            arguments: {
+              'action': 'readDirectory',
+              'nameRegex': r'^Summarize leads$',
+            },
+          ) as Map<String, Object?>? ??
+          (throw StateError('Expected workflow search result'));
+      final entries = search['entries']! as List<Object?>;
+      expect(
+        entries.single,
+        containsPair('path', 'Sales/Leads/Summarize leads'),
+      );
+      expect(entries.single, containsPair('kind', 'workflow'));
+
+      final read =
+          await tools.call(
+            conversationId: chat.id,
+            arguments: {'action': 'read', 'id': workflow.id},
+          ) as Map<String, Object?>? ??
+          (throw StateError('Expected workflow read result'));
+      expect(read['kind'], 'workflow');
+      expect(read['definition'], isA<Map<String, Object?>>());
+
+      final trash = ManageWorkspaceTrashUsecase(
+        LocalWorkspaceTrashRepository(database, 'one'),
+      );
+      final batch = await trash.apply(
+        WorkspaceTrashTarget(
+          kind: .workflow,
+          id: workflow.id,
+          revision: workflow.revision,
+        ),
+        approve: (_) async => true,
+      );
+      final empty =
+          await tools.call(
+            conversationId: chat.id,
+            arguments: {
+              'action': 'readDirectory',
+              'nameRegex': r'^Summarize leads$',
+            },
+          ) as Map<String, Object?>? ??
+          (throw StateError('Expected workflow search result'));
+      expect(empty['entries'], isEmpty);
+      await expectLater(
+        tools.call(
+          conversationId: chat.id,
+          arguments: {'action': 'read', 'id': workflow.id},
+        ),
+        throwsA(isA<WorkspaceTableException>()),
+      );
+      expect(batch?.target.kind, WorkspaceTrashKind.workflow);
+    },
+  );
   test('Directory resolves visible tables and their authorized rows', () async {
     final database = AppDatabase(connection: NativeDatabase.memory());
     addTearDown(database.close);

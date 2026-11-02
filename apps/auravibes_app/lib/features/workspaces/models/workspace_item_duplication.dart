@@ -51,7 +51,7 @@ class const WorkspaceItemDuplication({
       expectedRevision > 0 &&
       name.trim().isNotEmpty &&
       name.trim().length <= _maximumName &&
-      !(kind == .view && copyRecords) &&
+      !(kind != .table && copyRecords) &&
       _validParent(parentId);
 }
 
@@ -59,7 +59,7 @@ abstract interface class WorkspaceItemDuplicationRepository {
   Future<void> copy(WorkspaceItemDuplication request);
 }
 
-enum WorkspaceDuplicateKind { table, view }
+enum WorkspaceDuplicateKind { table, view, workflow }
 
 const _maximumId = 100;
 const _maximumName = 200;

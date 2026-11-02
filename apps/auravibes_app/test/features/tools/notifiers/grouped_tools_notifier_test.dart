@@ -341,6 +341,13 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   List<WorkspaceToolEntity> workspaceTools = const [];
 
   @override
+  Future<List<WorkspaceToolEntity>> updateToolOutputSchema(
+    String workspaceId,
+    String toolId,
+    String? outputSchemaJson,
+  ) => throw UnimplementedError();
+
+  @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
   ) async {

@@ -298,6 +298,7 @@ class _WorkspaceContextSelectionValidator {
     final kind = switch (selection.kind) {
       'folder' => WorkspaceResourceKind.folder,
       'file' => WorkspaceResourceKind.file,
+      'workflow' => WorkspaceResourceKind.workflow,
       _ => WorkspaceResourceKind.table,
     };
     final item = await store._visible(

@@ -96,6 +96,7 @@ WorkspaceResourceKind _kind(Object? kind) => switch (kind) {
   'record' => .tableRecord,
   'view' => .view,
   'file' => .file,
+  'workflow' => .workflow,
   _ => trashInvalid(),
 };
 WorkspaceResource _deleted(WorkspaceResource row, DateTime now) =>

@@ -37,6 +37,7 @@ const _requiredResourceFields = <WorkspaceResourceKind, Map<String, Type>>{
   .conversationSkillSelection: {'conversationId': String, 'skillId': String},
   .compactionSetting: {},
   .workspaceSetting: {},
+  .workflow: {'name': String, 'description': String, 'definition': Map},
 };
 
 abstract final class CloudResourceMapper {
@@ -151,6 +152,7 @@ bool _allowsEmptyValue(WorkspaceResourceKind kind, String field) {
   if (kind == WorkspaceResourceKind.skill) {
     return field == 'content' || field == 'description';
   }
+  if (kind == WorkspaceResourceKind.workflow) return field == 'description';
 
   return kind == WorkspaceResourceKind.agent && field == 'content';
 }
@@ -162,14 +164,47 @@ void _validateResourceSpecificFields(
   if (kind == WorkspaceResourceKind.folder) {
     _validateFolderParent(data['parentId']);
   }
-  if (kind == WorkspaceResourceKind.agent) {
-    final _ = CloudResourceMapper.visibility(data['visibility']);
+  if (kind == WorkspaceResourceKind.workflow) {
+    _validateFolderParent(data['parentId']);
   }
-  if (_requiresPermission(kind)) {
-    final _ = CloudResourceMapper.permission(data['permissionMode']);
-  }
-  if (kind == WorkspaceResourceKind.agentAssociation) {
-    _validateAgentAssociation(data);
+  _validateVisibility(kind, data);
+  _validatePermissionMode(kind, data);
+  _validateAssociation(kind, data);
+  _validateWorkflowDefinition(kind, data);
+}
+
+void _validateVisibility(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind != WorkspaceResourceKind.agent) return;
+  final _ = CloudResourceMapper.visibility(data['visibility']);
+}
+
+void _validatePermissionMode(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (!_requiresPermission(kind)) return;
+  final _ = CloudResourceMapper.permission(data['permissionMode']);
+}
+
+void _validateAssociation(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind != WorkspaceResourceKind.agentAssociation) return;
+  _validateAgentAssociation(data);
+}
+
+void _validateWorkflowDefinition(
+  WorkspaceResourceKind kind,
+  Map<String, dynamic> data,
+) {
+  if (kind != WorkspaceResourceKind.workflow) return;
+  final definition = data['definition'];
+  if (definition is! Map || definition['version'] != 2) {
+    throw const FormatException();
   }
 }
 

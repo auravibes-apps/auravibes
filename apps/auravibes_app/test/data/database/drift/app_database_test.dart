@@ -43,7 +43,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 46);
+      expect(fixture.database.schemaVersion, 48);
     });
 
     test('schema41 assets survive context and reporting migrations', () async {
@@ -123,7 +123,7 @@ void main() {
           .getSingle();
       expect(retained.read<String>('name'), 'Retained');
       expect(retained.read<String>('asset_id'), 'asset');
-      expect(sqliteDb.userVersion, 46);
+      expect(sqliteDb.userVersion, 48);
       final revision = await database
           .customSelect(
             '''
@@ -663,6 +663,77 @@ AND name IN ('skill_template_tools', 'skill_credential_definitions')
       expect(table, hasLength(1));
     });
 
+    test(
+      'schema 33 creates Directory workflow storage and drops prototype data',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 33
+          ..execute('''
+            CREATE TABLE workflows (
+              id TEXT PRIMARY KEY,
+              workspace_id TEXT NOT NULL,
+              name TEXT NOT NULL,
+              definition_json TEXT NOT NULL,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            )
+          ''')
+          ..execute('INSERT INTO workflows VALUES (?,?,?,?,?,?)', [
+            'prototype',
+            'workspace',
+            'Prototype',
+            '{}',
+            1,
+            1,
+          ]);
+        final database = _MigrationAppDatabase<_MigrationCase16>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+
+        final columns = await database
+            .customSelect('PRAGMA table_info(workspace_workflows)')
+            .get();
+        final foreignKeys = await database
+            .customSelect('PRAGMA foreign_key_list(workspace_workflows)')
+            .get();
+        final legacyTable = await database
+            .customSelect(
+              'SELECT name FROM sqlite_master WHERE type = ? AND name = ?',
+              variables: [
+                const Variable<String>('table'),
+                const Variable<String>('workflows'),
+              ],
+            )
+            .get();
+
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          containsAll([
+            'id',
+            'workspace_id',
+            'parent_id',
+            'name',
+            'description',
+            'revision',
+            'deleted_at',
+            'definition_json',
+            'created_at',
+            'updated_at',
+          ]),
+        );
+        expect(foreignKeys, hasLength(2));
+        expect(
+          foreignKeys.map((row) => row.read<String>('table')),
+          containsAll(['workspaces', 'workspace_folders']),
+        );
+        expect(
+          foreignKeys.map((row) => row.read<String>('from')),
+          containsAll(['workspace_id', 'parent_id']),
+        );
+        expect(legacyTable, isEmpty);
+      },
+    );
     test(
       'migration from schema 25 adds tool-call attachment association',
       () async {

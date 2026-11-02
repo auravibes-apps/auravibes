@@ -73,6 +73,70 @@ void main() {
       });
     });
 
+    test('shared output schema updates every matching Connector row', () async {
+      var readCount = 0;
+      final first = createToolRow(
+        id: 'group-a',
+        toolId: 'connector/example/search',
+        workspaceToolsGroupId: 'group-a',
+      );
+      final second = createToolRow(
+        id: 'group-b',
+        toolId: 'connector/example/search',
+        workspaceToolsGroupId: 'group-b',
+      );
+      when(() => fixture.mockToolsDao.getWorkspaceTools('ws-1'))
+          .thenAnswer((_) async {
+            readCount++;
+            return readCount == 1
+                ? [first, second]
+                : [
+                    createToolRow(
+                      id: 'group-a',
+                      toolId: 'connector/example/search',
+                      workspaceToolsGroupId: 'group-a',
+                      outputSchema: '{"type":"object"}',
+                    ),
+                    createToolRow(
+                      id: 'group-b',
+                      toolId: 'connector/example/search',
+                      workspaceToolsGroupId: 'group-b',
+                      outputSchema: '{"type":"object"}',
+                    ),
+                  ];
+          });
+      when(
+        () => fixture.mockToolsDao.updateOutputSchema(
+          id: any(named: 'id'),
+          outputSchemaJson: any(named: 'outputSchemaJson'),
+        ),
+      ).thenAnswer((_) async {});
+
+      final result = await fixture.repository.updateToolOutputSchema(
+        'ws-1',
+        'connector/example/search',
+        '{"type":"object"}',
+      );
+
+      expect(result, hasLength(2));
+      expect(
+        result.every((tool) => tool.outputSchemaJson == '{"type":"object"}'),
+        true,
+      );
+      verify(
+        () => fixture.mockToolsDao.updateOutputSchema(
+          id: 'group-a',
+          outputSchemaJson: '{"type":"object"}',
+        ),
+      ).called(1);
+      verify(
+        () => fixture.mockToolsDao.updateOutputSchema(
+          id: 'group-b',
+          outputSchemaJson: '{"type":"object"}',
+        ),
+      ).called(1);
+    });
+
     group('getEnabledWorkspaceTools', () {
       test('returns only enabled tools', () async {
         when(() => fixture.mockToolsDao.getEnabledWorkspaceTools('ws-1'))

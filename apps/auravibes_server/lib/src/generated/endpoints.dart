@@ -201,6 +201,7 @@ import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
 import '../features/accounts/account_endpoint.dart' as _iytsp81w;
 import '../features/agents/agent_catalog_endpoint.dart' as _ivvm0cyi;
 import '../features/codex_oauth/codex_oauth_endpoint.dart' as _igisrqgh;
+import '../features/connectors/connector_tool_endpoint.dart' as _iyem2mue;
 import '../features/conversations/conversation_endpoint.dart' as _ie3ymqip;
 import '../features/mcp_catalog/mcp_catalog_endpoint.dart' as _iuv55i4c;
 import '../features/mcp_servers/mcp_server_endpoint.dart' as _im1tu8co;
@@ -257,6 +258,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'codexOAuth',
+          null,
+        ),
+      'connectorTool': _iyem2mue.ConnectorToolEndpoint()
+        ..initialize(
+          server,
+          'connectorTool',
           null,
         ),
       'conversation': _ie3ymqip.ConversationEndpoint()
@@ -682,6 +689,57 @@ class Endpoints extends _is.EndpointDispatch {
                       .complete(
                         session,
                         params['request'],
+                      ),
+        ),
+      },
+    );
+    connectors['connectorTool'] = _is.EndpointConnector(
+      name: 'connectorTool',
+      endpoint: endpoints['connectorTool']!,
+      methodConnectors: {
+        'sampleRead': _is.MethodConnector(
+          name: 'sampleRead',
+          params: {
+            'workspaceId': _is.ParameterDescription(
+              name: 'workspaceId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'toolId': _is.ParameterDescription(
+              name: 'toolId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'revision': _is.ParameterDescription(
+              name: 'revision',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'argumentsJson': _is.ParameterDescription(
+              name: 'argumentsJson',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'connectionId': _is.ParameterDescription(
+              name: 'connectionId',
+              type: _is.getType<String?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['connectorTool']
+                          as _iyem2mue.ConnectorToolEndpoint)
+                      .sampleRead(
+                        session,
+                        params['workspaceId'],
+                        params['toolId'],
+                        params['revision'],
+                        params['argumentsJson'],
+                        params['connectionId'],
                       ),
         ),
       },

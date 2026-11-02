@@ -29,7 +29,17 @@ void main() {
                         data: jsonEncode({
                           'name': 'Current',
                           'parentId': null,
-                          if (page.resourceKind == .table) ...{
+                          if (page.resourceKind == .workflow) ...{
+                            'description': 'Workflow',
+                            'definition': {
+                              'version': 1,
+                              'inputs': const <Object?>[],
+                              'outputs': const <Object?>[],
+                              'nodes': const <Object?>[],
+                              'connections': const <Object?>[],
+                            },
+                            'canManageWorkflow': permitted,
+                          } else if (page.resourceKind == .table) ...{
                             'labelColumnId': 'label',
                             'schemaRevision': 1,
                             'columns': [
@@ -78,6 +88,12 @@ void main() {
           canManage: true,
         ),
         WorkspaceDirectoryMoveItem(
+          key: (kind: .workflow, id: 'shared'),
+          name: 'Workflow',
+          revision: 1,
+          canManage: true,
+        ),
+        WorkspaceDirectoryMoveItem(
           key: (kind: .view, id: 'view'),
           name: 'Overview',
           revision: 7,
@@ -89,9 +105,13 @@ void main() {
       expect(sent, hasLength(1));
       expect(
         sent.single.operations.map((operation) => operation.resourceKind),
-        [cloud.WorkspaceResourceKind.folder, cloud.WorkspaceResourceKind.table],
+        [
+          cloud.WorkspaceResourceKind.folder,
+          cloud.WorkspaceResourceKind.table,
+          cloud.WorkspaceResourceKind.workflow,
+        ],
       );
-      final raw = sent.single.operations.last.data;
+      final raw = sent.single.operations[1].data;
       if (raw == null) throw StateError('Missing patch data');
       final data = jsonDecode(raw) as Map<String, dynamic>;
       expect(data['memberAccess'], {'reader': 'read'});
@@ -99,6 +119,10 @@ void main() {
       expect(data['name'], 'Current');
       expect(data['parentId'], 'destination');
       expect(data.containsKey('canManageTable'), isFalse);
+      final workflowData =
+          jsonDecode(sent.single.operations[2].data!) as Map<String, dynamic>;
+      expect(workflowData['parentId'], 'destination');
+      expect(workflowData.containsKey('canManageWorkflow'), isFalse);
       expect(
         sent.single.operations.every(
           (operation) =>

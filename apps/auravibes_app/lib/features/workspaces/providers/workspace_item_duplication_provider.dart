@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_item_duplication
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_item_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -55,6 +56,7 @@ Future<DuplicateWorkspaceItemUsecase> _cloud(
     CloudWorkspaceItemDuplicationRepository(
       gateway.client,
       cloud.cloudWorkspaceId,
+      store: CloudWorkspaceResourceStore(gateway),
     ),
   );
 }

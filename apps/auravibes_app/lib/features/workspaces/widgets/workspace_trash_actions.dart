@@ -1,3 +1,5 @@
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
@@ -54,6 +56,7 @@ abstract final class WorkspaceTrashActions {
     _refreshAssets(ref);
     _refreshTables(ref);
     _refreshViews(ref);
+    _refreshWorkflows(ref);
   }
 
   static void _refreshAssets(WidgetRef ref) {
@@ -82,6 +85,13 @@ abstract final class WorkspaceTrashActions {
       ..invalidate(workspaceViewDataProvider)
       ..invalidate(workspaceViewChoicesProvider)
       ..invalidate(workspaceViewHistoryProvider);
+  }
+
+  static void _refreshWorkflows(WidgetRef ref) {
+    ref
+      ..invalidate(workflowProvider)
+      ..invalidate(workflowsProvider)
+      ..invalidate(workspaceDirectoryWorkflowsProvider);
   }
 
   static Future<bool> _apply(

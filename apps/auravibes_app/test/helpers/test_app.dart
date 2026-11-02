@@ -16,6 +16,7 @@ class TestableApp extends StatefulWidget {
     this.overrides = const [],
     this.workspaceId = 'test-workspace',
     this.workspaceSession,
+    this.retry,
     this.startLocale = const Locale('en'),
     super.key,
   });
@@ -31,6 +32,9 @@ class TestableApp extends StatefulWidget {
 
   /// Session instance used as the generated provider family argument.
   final WorkspaceSession? workspaceSession;
+
+  /// Optional retry policy for providers in the test container.
+  final Duration? Function(int attempt, Object error)? retry;
 
   /// Locale used by EasyLocalization in the test app.
   final Locale startLocale;
@@ -56,6 +60,7 @@ class _TestableAppState extends State<TestableApp> {
         workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
         ...widget.overrides.cast(),
       ],
+      retry: widget.retry,
     );
   }
 

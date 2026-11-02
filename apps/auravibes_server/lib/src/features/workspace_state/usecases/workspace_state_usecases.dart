@@ -1062,9 +1062,12 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       _validationFailed();
     }
     final authType = data['authType'];
-    if (!const {'none', 'bearerToken', 'httpHeaders', 'oauth'}.contains(
-          authType,
-        ) ||
+    if (!const {
+          'none',
+          'bearerToken',
+          'httpHeaders',
+          'oauth',
+        }.contains(authType) ||
         configured != (authType != 'none')) {
       _validationFailed();
     }
@@ -1526,6 +1529,22 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             transaction,
           );
         }
+        if (operation.resourceKind == WorkspaceResourceKind.workflow) {
+          await _validateFolderParent(
+            session,
+            workspaceId,
+            operation.resourceId,
+            decoded['parentId'] as String?,
+            transaction,
+          );
+          await _validateWorkflowDependencyAcyclicity(
+            session,
+            workspaceId: workspaceId,
+            workflowId: operation.resourceId,
+            candidateData: decoded,
+            transaction: transaction,
+          );
+        }
       } on FormatException {
         throw CloudWorkspaceException(
           code: CloudWorkspaceErrorCode.validationFailed,
@@ -1611,6 +1630,55 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       conversationId: conversationId,
     );
     return written;
+  }
+
+  Future<void> _validateWorkflowDependencyAcyclicity(
+    Session session, {
+    required int workspaceId,
+    required String workflowId,
+    required Map<String, Object?> candidateData,
+    required Transaction transaction,
+  }) async {
+    final visitState = <String, int>{};
+
+    Future<void> visit(String id) async {
+      final currentState = visitState[id] ?? 0;
+      if (currentState == 1) throw const FormatException();
+      if (currentState == 2) return;
+      visitState[id] = 1;
+
+      final Map<String, Object?> data;
+      if (id == workflowId) {
+        data = candidateData;
+      } else {
+        final resource = await _repository.findResource(
+          session,
+          workspaceId: workspaceId,
+          kind: WorkspaceResourceKind.workflow,
+          resourceId: id,
+          transaction: transaction,
+        );
+        if (resource == null || resource.deletedAt != null) {
+          visitState[id] = 2;
+
+          return;
+        }
+        data = _decodeResource(resource);
+      }
+
+      final references = WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.workflow,
+        data,
+      );
+      for (final reference in references) {
+        if (reference.kind == WorkspaceResourceKind.workflow) {
+          await visit(reference.id);
+        }
+      }
+      visitState[id] = 2;
+    }
+
+    await visit(workflowId);
   }
 
   Future<CloudWorkspace> _requireLockedWorkspace(

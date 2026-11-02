@@ -7,6 +7,9 @@ import 'package:auravibes_app/features/browser/providers/browser_session_provide
 import 'package:auravibes_app/features/browser/providers/sidebar_workspace_tab_count.dart';
 import 'package:auravibes_app/features/browser/screens/sidebar_directory.dart';
 import 'package:auravibes_app/features/browser/services/browser_web_view_service.dart';
+import 'package:auravibes_app/features/workflows/notifiers/workflow_editor_notifier.dart';
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
+import 'package:auravibes_app/features/workflows/screens/workflow_editor_screen.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_open_view_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_file_screen.dart';
@@ -14,6 +17,7 @@ import 'package:auravibes_app/features/workspaces/screens/workspace_table_screen
 import 'package:auravibes_app/features/workspaces/screens/workspace_view_screen.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -1297,12 +1301,14 @@ class const _WorkspaceItemChip({
         data.workspaceTabs.names.value[_WorkspaceTabs.key(item)] ??
         _title(item.kind),
     tableId: item.kind == 'table' ? item.id : null,
+    workflowId: item.kind == 'workflow' ? item.id : null,
   );
 
   String _title(String kind) => switch (kind) {
     'table' => LocaleKeys.workspace_items_table.tr(),
     'file' => LocaleKeys.workspace_assets_file.tr(),
     'view' => LocaleKeys.workspace_views_title.tr(),
+    'workflow' => LocaleKeys.workflow_editor_title.tr(),
     _ => LocaleKeys.workspace_items_title.tr(),
   };
 }
@@ -1312,6 +1318,7 @@ class const _WorkspaceChip({
   required final String id,
   required final String title,
   final String? tableId,
+  final String? workflowId,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1319,26 +1326,38 @@ class const _WorkspaceChip({
     final selected = data.workspaceTabs.selected.value == id;
 
     return _SidebarTabChip(
-      data: _tileData(label, selected),
+      data: _tileData(label, selected, context, ref),
       key: selected ? data.activeTabKey : null,
     );
   }
 
   String _label(WidgetRef ref) {
     final tableIdentifier = tableId;
-    final table = tableIdentifier == null
-        ? null
-        : ref.watch(
-            workspaceTableProvider(data.request.workspaceId, tableIdentifier),
-          );
+    if (tableIdentifier != null) {
+      return switch (ref.watch(
+        workspaceTableProvider(data.request.workspaceId, tableIdentifier),
+      )) {
+        AsyncData(:final value) => value.name,
+        AsyncLoading() || AsyncError() => title,
+      };
+    }
+    final workflowIdentifier = workflowId;
+    if (workflowIdentifier == null) return title;
 
-    return switch (table) {
-      AsyncData(:final value) => value.name,
-      AsyncLoading() || AsyncError() || null => title,
+    return switch (ref.watch(
+      workflowProvider(data.request.workspaceId, workflowIdentifier),
+    )) {
+      AsyncData(:final value?) => value.name,
+      AsyncData() || AsyncLoading() || AsyncError() => title,
     };
   }
 
-  _SidebarTabTileData _tileData(String label, bool selected) => (
+  _SidebarTabTileData _tileData(
+    String label,
+    bool selected,
+    BuildContext context,
+    WidgetRef ref,
+  ) => (
     identifiers: (
       tile: 'sidebar_workspace_$id',
       closeButton: 'sidebar_close_workspace_$id',
@@ -1347,7 +1366,7 @@ class const _WorkspaceChip({
     child: Text(label, overflow: .ellipsis, maxLines: 1),
     selected: selected,
     onSelect: _select,
-    onClose: _close,
+    onClose: () => _close(context, ref),
   );
 
   void _select() {
@@ -1355,8 +1374,29 @@ class const _WorkspaceChip({
     data.workspaceTabs.select(id);
   }
 
-  void _close() =>
-      unawaited(_closeSidebarTab(data, (kind: 'workspace', id: id)));
+  void _close(BuildContext context, WidgetRef ref) =>
+      unawaited(_closeAfterConfirmation(context, ref));
+
+  Future<void> _closeAfterConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final workflowIdentifier = workflowId;
+    if (workflowIdentifier != null &&
+        ref
+            .read(
+              workflowEditorProvider(
+                data.request.workspaceId,
+                workflowIdentifier,
+              ),
+            )
+            .isDirty &&
+        await UnsavedChangesDialog.confirm(context) != true) {
+      return;
+    }
+    if (!context.mounted) return;
+    await _closeSidebarTab(data, (kind: 'workspace', id: id));
+  }
 }
 
 class const _WorkspaceTabSlot({required final _BrowserPanelData data})
@@ -1426,6 +1466,7 @@ class const _WorkspaceTabContent({
       'view' => _WorkspaceViewTab(data: data, item: item),
       'table' => _WorkspaceTableTab(data: data, item: item),
       'file' => _WorkspaceFileTab(data: data, item: item),
+      'workflow' => _WorkspaceWorkflowTab(data: data, item: item),
       _ => const SizedBox.shrink(),
     };
   }
@@ -1472,5 +1513,18 @@ class const _WorkspaceFileTab({
     fileId: item.id,
     onBack: () => _closeWorkspaceContent(data, item),
     compact: true,
+  );
+}
+
+class const _WorkspaceWorkflowTab({
+  required final _BrowserPanelData data,
+  required final WorkspaceChatItem item,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkflowEditorScreen(
+    workspaceId: data.request.workspaceId,
+    workflowId: item.id,
+    compact: true,
+    onBack: () => _closeWorkspaceContent(data, item),
   );
 }

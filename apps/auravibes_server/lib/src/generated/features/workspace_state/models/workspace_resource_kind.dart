@@ -36,7 +36,8 @@ enum WorkspaceResourceKind implements _is.SerializableModel {
   conversationToolSelection,
   conversationSkillSelection,
   compactionSetting,
-  workspaceSetting;
+  workspaceSetting,
+  workflow;
 
   static WorkspaceResourceKind fromJson(String name) {
     switch (name) {
@@ -88,6 +89,8 @@ enum WorkspaceResourceKind implements _is.SerializableModel {
         return WorkspaceResourceKind.compactionSetting;
       case 'workspaceSetting':
         return WorkspaceResourceKind.workspaceSetting;
+      case 'workflow':
+        return WorkspaceResourceKind.workflow;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "WorkspaceResourceKind"',

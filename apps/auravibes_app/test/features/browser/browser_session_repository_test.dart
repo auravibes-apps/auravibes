@@ -57,9 +57,10 @@ void main() {
       activeTabId: '',
       workspaceTabs: [
         WorkspaceContentTab(id: 'table-1', kind: 'table'),
+        WorkspaceContentTab(id: 'workflow-1', kind: 'workflow'),
         WorkspaceContentTab(id: '', kind: 'directory'),
       ],
-      selectedWorkspaceTabId: 'table:table-1',
+      selectedWorkspaceTabId: 'workflow:workflow-1',
     );
 
     await repository.save('conversation', session);
@@ -69,7 +70,7 @@ void main() {
       restored.workspaceTabs.map((tab) => tab.toJson()).toList(),
       session.workspaceTabs.map((tab) => tab.toJson()).toList(),
     );
-    expect(restored.selectedWorkspaceTabId, 'table:table-1');
+    expect(restored.selectedWorkspaceTabId, 'workflow:workflow-1');
   });
 
   test('recovers from malformed persisted browser state', () async {

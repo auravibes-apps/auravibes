@@ -1,3 +1,5 @@
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
@@ -57,7 +59,18 @@ class const _WatchOthers(
     final views = ref.watch(workspaceViewsProvider(owner.workspaceId, parent));
     final files = ref.watch(workspaceFilesProvider(owner.workspaceId, parent));
 
-    return _DirectoryResults(owner, path, folders, tables, views, files);
+    final workflows = ref.watch(
+      workspaceDirectoryWorkflowsProvider(owner.workspaceId, parent),
+    );
+    return _DirectoryResults(
+      owner,
+      path,
+      folders,
+      tables,
+      views,
+      files,
+      workflows,
+    );
   }
 }
 
@@ -70,6 +83,7 @@ class const _DirectoryResults(
   final AsyncValue<List<WorkspaceTable>> tables,
   final AsyncValue<List<WorkspaceView>> views,
   final AsyncValue<List<WorkspaceFile>> files,
+  final AsyncValue<List<WorkspaceWorkflow>> workflows,
 ) extends StatelessWidget {
   bool get _loading =>
       folders.isLoading ||
@@ -79,9 +93,16 @@ class const _DirectoryResults(
 
   @override
   Widget build(BuildContext context) {
-    final error = folders.error ?? tables.error ?? views.error ?? files.error;
+    final error =
+        folders.error ??
+        tables.error ??
+        views.error ??
+        files.error ??
+        workflows.error;
     if (error != null) return WorkspaceItemFailure(error: error);
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading || workflows.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return _DirectoryEntries(owner, path, _folders(), _items());
   }
@@ -89,9 +110,12 @@ class const _DirectoryResults(
   List<WorkspaceFolder> _folders() =>
       [...?folders.value]..sort((a, b) => a.name.compareTo(b.name));
 
-  List<_Entry> _items() =>
-      [..._tableEntries(), ..._viewEntries(), ..._fileEntries()]
-        ..sort((a, b) => a.name.compareTo(b.name));
+  List<_Entry> _items() => [
+    ..._tableEntries(),
+    ..._viewEntries(),
+    ..._fileEntries(),
+    ..._workflowEntries(),
+  ]..sort((a, b) => a.name.compareTo(b.name));
 
   Iterable<_Entry> _tableEntries() => [
     for (final table in tables.value ?? <WorkspaceTable>[])
@@ -120,6 +144,16 @@ class const _DirectoryResults(
         id: file.id,
         kind: 'file',
         icon: Icons.insert_drive_file_outlined,
+      ),
+  ];
+
+  Iterable<_Entry> _workflowEntries() => [
+    for (final workflow in workflows.value ?? <WorkspaceWorkflow>[])
+      (
+        name: workflow.name,
+        id: workflow.id,
+        kind: 'workflow',
+        icon: Icons.account_tree_outlined,
       ),
   ];
 }

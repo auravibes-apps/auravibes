@@ -366,14 +366,15 @@ ToolSpec workspaceUpdateRecordToolSpec() => ToolSpec(
 ToolSpec workspaceReadDirectoryToolSpec() => ToolSpec(
   name: workspaceReadDirectoryToolName,
   description:
-      'List files and folders in the workspace Directory. Omit all arguments '
-      'to list root. Set path to a folder path such as "Sales/Leads" to list '
-      'that folder. Add pathRegex to search matching paths below that folder, '
-      'or nameRegex to search file and folder names. Regex searches include '
+      'List folders, tables, files, Views, and Workflows in the workspace '
+      'Directory. Omit all arguments to list root. Set path to a folder path '
+      'such as "Sales/Leads" to list that folder. Add pathRegex to search '
+      'matching paths below that folder, or nameRegex to search item names. '
+      'Regex searches include '
       'nested folders and return at most 100 matches. Use ECMAScript regex '
       'syntax; prefix with (?i) for case-insensitive matching. Use returned '
       'paths to '
-      'read a file or table. An empty entries list means no matches. '
+      'read an item. An empty entries list means no matches. '
       'Previous results do not grant access.',
   inputJsonSchema: const {
     'type': 'object',
@@ -590,7 +591,8 @@ ToolSpec workspaceReadTableToolSpec() => ToolSpec(
 ToolSpec workspaceReadItemToolSpec() => ToolSpec(
   name: workspaceReadItemToolName,
   description:
-      'Read a workspace folder, file or View the current user can access. Use '
+      'Read a workspace folder, file, View, or Workflow the current user can '
+      'access. Use '
       'an item ID from a Directory or folder listing to navigate visible '
       'items. Folder reads list visible children. '
       'Pass itemId only; never send an empty ID. File reads return only small '

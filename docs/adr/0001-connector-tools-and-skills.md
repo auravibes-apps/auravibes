@@ -48,5 +48,6 @@ exists; require an explicit choice when several match.
   records.
 - The current skill-owned tool runtime must migrate to Connector-owned tools.
 
-Workflow node design and MCP tool discovery are outside this decision. They
-remain separate future work.
+Workflow node design and MCP tool discovery are outside this decision. See
+[ADR 0002](0002-workflow-connector-tool-nodes.md) for the separate Workflow
+node decision.

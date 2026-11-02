@@ -16,6 +16,9 @@ Outputs include localized views, persisted app state, engine requests, and authe
 - **Cloud mirror**: a remote workspace linked through both cloud workspace and account identifiers.
 - **Conversation**: a workspace-owned transcript with optional model, agent, fork, and subagent metadata.
 - **Agent**: workspace configuration with instructions, visibility, enabled state, and skill references.
+- **Workflow**: reusable sequence of connected steps with named inputs and outputs.
+- **Connector tool node**: Workflow step that references one stable Connector tool ID; Workspace Connections are resolved separately.
+- **Workflow value binding**: a node field that reads a value from an earlier node, selected by source and readable field labels.
 - **Cloud account session**: authentication state scoped to a server origin and account identity.
 
 ## Invariants
@@ -25,6 +28,8 @@ Outputs include localized views, persisted app state, engine requests, and authe
 - Remote workspace creation needs a nonempty URL or two nonempty cloud mirror identifiers.
 - Cloud clients use account-scoped authentication storage. Provider disposal closes their connections.
 - App adapters own persistence, permissions, and localization. Engine code does not own these concerns.
+- Workflow nodes store Connector tool IDs, not Connection IDs. Connector output ports store inferred names and types, never sample values.
+- Workflow value bindings store source node IDs and field paths internally. When a node binding is active, preserve its inactive static-value draft through local and cloud persistence, including explicit `null`.
 - User-facing text uses localization keys. Shared UI components receive content from their host.
 
 ## Relationships and evidence
@@ -37,4 +42,5 @@ Outputs include localized views, persisted app state, engine requests, and authe
 - [Workspace entities](lib/domain/entities/workspace_entity.dart) define local and remote validation.
 - [Conversation entities](lib/domain/entities/conversation_entity.dart) define transcript identity and fork metadata.
 - [Agent entities](lib/domain/entities/agent_entity.dart) define agent configuration and skill references.
+- [Workflow definition](lib/features/workflows/models/workflow_definition.dart) defines graph nodes, value bindings, and their serialization.
 - [Client providers](lib/features/cloud_accounts/providers/serverpod_client_provider.dart) bind cloud clients to account sessions.

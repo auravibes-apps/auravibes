@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_assets_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_folders_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_tables_provider.dart';
@@ -36,6 +37,8 @@ class const WorkspaceCommandDependencies(
       tables: await pending.tables,
       folders: await pending.folders,
       views: await pending.views,
+      workflows: ref.watch(workflowRepositoryProvider(workspaceId)),
+      workspaceId: workspaceId,
       files: await pending.files,
       assets: await pending.assets,
     );

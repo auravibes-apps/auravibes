@@ -18,6 +18,8 @@ agentCatalog:
 codexOAuth:
   - start:
   - complete:
+connectorTool:
+  - sampleRead:
 conversation:
   - create:
   - fork:

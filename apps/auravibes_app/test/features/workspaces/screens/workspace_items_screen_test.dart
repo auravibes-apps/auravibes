@@ -1,6 +1,13 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_folder_repository.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_table_repository.dart';
+import 'package:auravibes_app/features/workflows/adapters/workflow_repository.dart';
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workflow_providers.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
+import 'package:auravibes_app/features/workflows/screens/workflow_editor_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
@@ -20,6 +27,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,6 +50,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
           ],
@@ -56,6 +67,111 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.text('Folder'), findsOneWidget);
     expect(find.text('Table'), findsOneWidget);
+  });
+
+  testWidgets('Directory creates and opens a Workflow item', (tester) async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final _ = await database
+        .into(database.workspaces)
+        .insert(
+          WorkspacesCompanion.insert(
+            id: const .new('one'),
+            name: 'One',
+            type: .local,
+          ),
+        );
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            workspaceDirectoryWorkflowsProvider(
+              'one',
+              null,
+            ).overrideWith((ref) => Stream.value(<WorkspaceWorkflow>[])),
+            workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('New workflow'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byType(WorkflowEditorScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('Directory logs failed Workflow creation', (tester) async {
+    final database = AppDatabase(connection: NativeDatabase.memory());
+    addTearDown(database.close);
+    final _ = await database
+        .into(database.workspaces)
+        .insert(
+          WorkspacesCompanion.insert(
+            id: const .new('one'),
+            name: 'One',
+            type: .local,
+          ),
+        );
+    final records = <LogRecord>[];
+    final subscription = Logger.root.onRecord.listen(records.add);
+    addTearDown(subscription.cancel);
+    final previousLevel = Logger.root.level;
+    Logger.root.level = .ALL;
+    addTearDown(() => Logger.root.level = previousLevel);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const WorkspaceItemsScreen(workspaceId: 'one'),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            workflowRepositoryProvider('one')
+                .overrideWithValue(_FailingWorkflowRepository()),
+            workspaceDirectoryWorkflowsProvider(
+              'one',
+              null,
+            ).overrideWith((ref) => Stream.value(<WorkspaceWorkflow>[])),
+            workspaceViewsProvider.overrideWith((ref, arguments) async => []),
+            workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceTablesProvider.overrideWith((ref, arguments) async => []),
+            workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
+          ],
+          workspaceId: 'one',
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('directory_create')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('New workflow'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Could not save workflow'), findsOneWidget);
+    final failures = records
+        .where(
+          (record) =>
+              record.loggerName == 'workspace_items_screen' &&
+              record.message.contains('Workflow creation failed'),
+        )
+        .toList();
+    expect(failures, hasLength(1));
+    expect(failures.single.level, Level.SEVERE);
+    expect(failures.single.error, isA<StateError>());
+    expect(failures.single.stackTrace, isNotNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
   });
 
   testWidgets('Back and shell remount retain current folder and scroll', (
@@ -80,6 +196,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -89,9 +208,18 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Folder35'));
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Folder35'));
+    final directoryScroll = find.byType(Scrollable).first;
+    final targetFolder = find.text('Folder35').first;
+    for (
+      var attempt = 0;
+      attempt < 12 && find.text('Folder35').hitTestable().evaluate().isEmpty;
+      attempt++
+    ) {
+      await tester.drag(directoryScroll, const Offset(0, -300));
+      final _ = await tester.pumpAndSettle();
+    }
+    expect(find.text('Folder35').hitTestable(), findsOneWidget);
+    await tester.tap(targetFolder);
     final _ = await tester.pumpAndSettle();
     generation.value++;
     final _ = await tester.pumpAndSettle();
@@ -118,6 +246,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFoldersProvider.overrideWith(
               (ref, arguments) async => [
@@ -175,6 +306,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceAccessProvider('one')
                 .overrideWith((ref) async => (role: 'member')),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
@@ -200,6 +334,9 @@ void main() {
             overrides: [
               workspaceViewsProvider.overrideWith((ref, arguments) async => []),
               workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+              workspaceDirectoryWorkflowsProvider.overrideWith(
+                (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+              ),
               workspaceTablesProvider.overrideWith(
                 (ref, arguments) async => [],
               ),
@@ -241,6 +378,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceFoldersProvider.overrideWith((ref, arguments) async => []),
           ],
           workspaceId: 'one',
@@ -308,6 +448,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             appDatabaseProvider.overrideWithValue(database),
             workspaceTableUsecaseProvider('one')
                 .overrideWith((ref) async => tables),
@@ -367,6 +510,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith(
               (ref, arguments) async => [
                 const WorkspaceTable(
@@ -427,6 +573,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -479,6 +628,9 @@ void main() {
           overrides: [
             workspaceViewsProvider.overrideWith((ref, arguments) async => []),
             workspaceFilesProvider.overrideWith((ref, arguments) async => []),
+            workspaceDirectoryWorkflowsProvider.overrideWith(
+              (ref, arguments) => Stream.value(<WorkspaceWorkflow>[]),
+            ),
             workspaceTablesProvider.overrideWith((ref, arguments) async => []),
             workspaceFolderUsecaseProvider('one')
                 .overrideWith((ref) async => folders),
@@ -580,4 +732,26 @@ class _MemoryFolders implements WorkspaceFolderRepository {
 
     return folder;
   }
+}
+
+class _FailingWorkflowRepository implements WorkflowRepository {
+  @override
+  Stream<List<WorkspaceWorkflow>> watchWorkflows(String workspaceId) =>
+      const Stream.empty();
+
+  @override
+  Stream<List<WorkspaceWorkflow>> watchDirectory(
+    String workspaceId,
+    String? parentId,
+  ) => const Stream.empty();
+
+  @override
+  Future<List<WorkspaceWorkflow>> getWorkflows(String workspaceId) async => [];
+
+  @override
+  Future<WorkspaceWorkflow?> getWorkflow(String id) async => null;
+
+  @override
+  Future<WorkspaceWorkflow> saveWorkflow(WorkspaceWorkflow workflow) =>
+      Future.error(StateError('Database write failed'));
 }

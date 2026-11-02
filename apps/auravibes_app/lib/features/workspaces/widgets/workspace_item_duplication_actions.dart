@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_item_duplication.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
@@ -56,6 +57,14 @@ _CopySource _source(Object source) => switch (source) {
     revision: revision,
     parentId: parentId,
   ),
+  WorkspaceWorkflow(:final id, :final name, :final revision, :final parentId) =>
+    (
+      kind: WorkspaceDuplicateKind.workflow,
+      id: id,
+      name: name,
+      revision: revision,
+      parentId: parentId,
+    ),
   _ => throw const WorkspaceTableException(),
 };
 WorkspaceItemDuplication _draft(_CopySource source) => .new(

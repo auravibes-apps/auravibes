@@ -37,6 +37,7 @@ export 'src/connectors/execution/connector_request_execution.dart';
 export 'src/connectors/execution/connector_response_decoder.dart'
     show ConnectorStreamFailure;
 export 'src/connectors/execution/connector_tool_request_preview.dart';
+export 'src/connectors/execution/connector_tool_sample_shape.dart';
 export 'src/connectors/execution/connector_write_executor.dart';
 export 'src/connectors/execution/resolve_connector_request_template.dart';
 export 'src/connectors/execution/run_connector_tool_template.dart';

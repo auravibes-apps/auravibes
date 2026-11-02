@@ -352,6 +352,29 @@ void main() {
       expect(updated?.inputSchema, equals('{"type":"object"}'));
     });
 
+    test('updateOutputSchema saves and clears shared schema', () async {
+      final created = await seedTool(toolId: 'output-schema');
+      await fixture.database.workspaceToolsDao.updateOutputSchema(
+        id: created.id,
+        outputSchemaJson: '{"type":"object"}',
+      );
+      var updated = await fixture.database.workspaceToolsDao.getWorkspaceTool(
+        workspaceId,
+        created.id,
+      );
+      expect(updated?.outputSchema, '{"type":"object"}');
+
+      await fixture.database.workspaceToolsDao.updateOutputSchema(
+        id: created.id,
+        outputSchemaJson: null,
+      );
+      updated = await fixture.database.workspaceToolsDao.getWorkspaceTool(
+        workspaceId,
+        created.id,
+      );
+      expect(updated?.outputSchema, isNull);
+    });
+
     test('updateToolMetadata throws when tool id is missing', () {
       expect(
         () => fixture.database.workspaceToolsDao.updateToolMetadata(

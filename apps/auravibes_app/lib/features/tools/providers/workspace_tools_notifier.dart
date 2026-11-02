@@ -76,6 +76,12 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _replaceTools(success);
   }
 
+  Future<void> updateToolOutputSchema(String toolId, String? schema) async {
+    final tools = await _requiredWorkspaceToolsRepository(this)
+        .updateToolOutputSchema(_workspaceId, toolId, schema);
+    _replaceTools(tools);
+  }
+
   /// Remove a workspace tool by its database ID.
   Future<bool> removeToolById(String id) async {
     final success = await _requiredWorkspaceToolsRepository(this)

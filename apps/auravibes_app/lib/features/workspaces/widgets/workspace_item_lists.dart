@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/workflows/models/workflow_definition.dart';
+import 'package:auravibes_app/features/workflows/providers/workspace_directory_workflows_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_asset.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_directory_move_item.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_folder.dart';
@@ -27,6 +29,7 @@ class const WorkspaceItemLists({
   required final ValueChanged<String> onOpenTable,
   required final ValueChanged<String> onOpenView,
   required final ValueChanged<String> onOpenFile,
+  required final ValueChanged<String> onOpenWorkflow,
   required final ValueChanged<Object> onEdit,
   final Set<WorkspaceDirectoryItemKey>? selection,
   final ValueChanged<WorkspaceDirectoryMoveItem>? onSelect,
@@ -45,6 +48,7 @@ class const WorkspaceItemLists({
       tables,
       views,
       ref.watch(workspaceFilesProvider(workspaceId, parentId)),
+      ref.watch(workspaceDirectoryWorkflowsProvider(workspaceId, parentId)),
     );
   }
 }
@@ -55,10 +59,16 @@ class const _State(
   final AsyncValue<List<WorkspaceTable>> tables,
   final AsyncValue<List<WorkspaceView>> views,
   final AsyncValue<List<WorkspaceFile>> files,
+  final AsyncValue<List<WorkspaceWorkflow>> workflows,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final failure = folders.error ?? tables.error ?? views.error ?? files.error;
+    final failure =
+        folders.error ??
+        tables.error ??
+        views.error ??
+        files.error ??
+        workflows.error;
     if (failure != null) return WorkspaceItemFailure(error: failure);
 
     return _Loaded(
@@ -67,6 +77,7 @@ class const _State(
       tables.value,
       views.value,
       files.value,
+      workflows.value,
     );
   }
 }
@@ -77,19 +88,33 @@ class const _Loaded(
   final List<WorkspaceTable>? tables,
   final List<WorkspaceView>? views,
   final List<WorkspaceFile>? files,
+  final List<WorkspaceWorkflow>? workflows,
 ) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      switch ((folders: folders, tables: tables, views: views, files: files)) {
-        (
-          folders: final folderItems?,
-          tables: final tableItems?,
-          views: final viewItems?,
-          files: final fileItems?,
-        ) =>
-          _Contents(owner, folderItems, tableItems, viewItems, fileItems),
-        _ => const Center(child: CircularProgressIndicator()),
-      };
+  Widget build(BuildContext context) => switch ((
+    folders: folders,
+    tables: tables,
+    views: views,
+    files: files,
+    workflows: workflows,
+  )) {
+    (
+      folders: final folderItems?,
+      tables: final tableItems?,
+      views: final viewItems?,
+      files: final fileItems?,
+      workflows: final workflowItems?,
+    ) =>
+      _Contents(
+        owner,
+        folderItems,
+        tableItems,
+        viewItems,
+        fileItems,
+        workflowItems,
+      ),
+    _ => const Center(child: CircularProgressIndicator()),
+  };
 }
 
 class const _Contents(
@@ -98,10 +123,15 @@ class const _Contents(
   final List<WorkspaceTable> tables,
   final List<WorkspaceView> views,
   final List<WorkspaceFile> files,
+  final List<WorkspaceWorkflow> workflows,
 ) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (folders.isEmpty && tables.isEmpty && views.isEmpty && files.isEmpty) {
+    if (folders.isEmpty &&
+        tables.isEmpty &&
+        views.isEmpty &&
+        files.isEmpty &&
+        workflows.isEmpty) {
       return const TextLocale(LocaleKeys.workspace_items_empty);
     }
 
@@ -116,7 +146,7 @@ class const _Contents(
   List<WorkspaceFolder> _folders() =>
       folders.toList()..sort((a, b) => _compare(a.name, b.name));
   List<Object> _elements() =>
-      [...tables, ...views, ...files]
+      [...tables, ...views, ...files, ...workflows]
         ..sort((a, b) => _compare(_elementName(a), _elementName(b)));
 }
 
@@ -124,6 +154,7 @@ String _elementName(Object element) => switch (element) {
   WorkspaceTable(:final name) ||
   WorkspaceView(:final name) ||
   WorkspaceFile(:final name) => name,
+  WorkspaceWorkflow(:final name) => name,
   _ => '',
 };
 
@@ -134,6 +165,7 @@ class const _ElementRow(final WorkspaceItemLists owner, final Object element)
     final WorkspaceTable table => _TableRow(owner, table),
     final WorkspaceView view => _ViewRow(owner, view),
     final WorkspaceFile file => _FileRow(owner, file),
+    final WorkspaceWorkflow workflow => _WorkflowRow(owner, workflow),
     _ => const SizedBox.shrink(),
   };
 }
@@ -147,6 +179,21 @@ class const _FileRow(final WorkspaceItemLists owner, final WorkspaceFile file)
     icon: Icons.insert_drive_file_outlined,
     onOpen: () => owner.onOpenFile(file.id),
     onEdit: () => owner.onEdit(file),
+  );
+}
+
+class const _WorkflowRow(
+  final WorkspaceItemLists owner,
+  final WorkspaceWorkflow workflow,
+) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ItemRow(
+    owner,
+    item: .workflow(workflow),
+    icon: Icons.account_tree_outlined,
+    onOpen: () => owner.onOpenWorkflow(workflow.id),
+    onEdit: () => owner.onOpenWorkflow(workflow.id),
+    source: workflow,
   );
 }
 
@@ -240,7 +287,9 @@ class const _Leading(final _ItemRow row) extends StatelessWidget {
 
 class const _Menu(final _ItemRow row) extends ConsumerWidget {
   bool get _duplicable =>
-      row.item.key.kind == .table || row.item.key.kind == .view;
+      row.item.key.kind == .table ||
+      row.item.key.kind == .view ||
+      row.item.key.kind == .workflow;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (row.owner.selection != null || !row.item.canManage) {
@@ -285,8 +334,10 @@ class const _Menu(final _ItemRow row) extends ConsumerWidget {
   void _openCopy(String id) {
     if (row.item.key.kind == .table) {
       row.owner.onOpenTable(id);
-    } else {
+    } else if (row.item.key.kind == .view) {
       row.owner.onOpenView(id);
+    } else {
+      row.owner.onOpenWorkflow(id);
     }
   }
 
@@ -314,6 +365,7 @@ WorkspaceTrashTarget _trashTarget(WorkspaceDirectoryMoveItem item) => .new(
     .table => .table,
     .view => .view,
     .file => .file,
+    .workflow => .workflow,
   },
   id: item.key.id,
   revision: item.revision,

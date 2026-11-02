@@ -1,13 +1,110 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/cloud_workspace_item_duplication_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_item_duplication.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_item_usecase.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart' as cloud;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 void main() {
+  test(
+    'cloud workflow copies retain graph references with new item identity',
+    () async {
+      final now = DateTime.utc(2026, 10, 29);
+      final patches = <cloud.WorkspacePatchOperation>[];
+      final store = CloudWorkspaceResourceStore.forTesting(
+        watch: (_) => Stream.value([
+          cloud.WorkspaceResource(
+            workspaceId: 42,
+            resourceKind: .workflow,
+            resourceId: 'source',
+            data: jsonEncode({
+              'name': 'Source',
+              'description': 'Graph copy',
+              'parentId': 'old-folder',
+              'canManageWorkflow': true,
+              'definition': {
+                'version': 1,
+                'inputs': const <Object?>[],
+                'outputs': const <Object?>[],
+                'nodes': [
+                  {
+                    'id': 'connector-node',
+                    'kind': 'connectorTool',
+                    'targetId': 'crm.create_record',
+                    'label': 'Create record',
+                    'x': 0,
+                    'y': 0,
+                    'inputs': const <Object?>[],
+                    'outputs': const <Object?>[],
+                    'hasSampledOutputs': false,
+                  },
+                  {
+                    'id': 'nested-node',
+                    'kind': 'workflow',
+                    'targetId': 'nested-workflow',
+                    'label': 'Nested workflow',
+                    'x': 1,
+                    'y': 1,
+                    'inputs': const <Object?>[],
+                    'outputs': const <Object?>[],
+                    'hasSampledOutputs': false,
+                  },
+                ],
+                'connections': const <Object?>[],
+              },
+            }),
+            revision: 6,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ]),
+        patch: ({required requestId, required operations}) async {
+          patches.addAll(operations);
+
+          return cloud.PatchWorkspaceStateResponse(resources: [], sequence: 1);
+        },
+        putSecret: (_) => Future.error(StateError('Unexpected secret write')),
+        mutateCredential: (_) =>
+            Future.error(StateError('Unexpected credential mutation')),
+      );
+      final repository = CloudWorkspaceItemDuplicationRepository(
+        _Client(),
+        42,
+        store: store,
+      );
+
+      await repository.copy(
+        const WorkspaceItemDuplication(
+          kind: .workflow,
+          sourceId: 'source',
+          expectedRevision: 6,
+          targetId: 'copy',
+          requestId: 'copy-request',
+          name: 'Copy',
+          parentId: 'new-folder',
+        ),
+      );
+
+      final operation = patches.single;
+      expect(operation.operation, cloud.WorkspacePatchOperationKind.create);
+      expect(operation.resourceKind, cloud.WorkspaceResourceKind.workflow);
+      expect(operation.resourceId, 'copy');
+      final data = jsonDecode(operation.data!) as Map<String, dynamic>;
+      expect(data['name'], 'Copy');
+      expect(data['parentId'], 'new-folder');
+      expect(data.containsKey('canManageWorkflow'), isFalse);
+      final definition = data['definition'] as Map<String, dynamic>;
+      final nodes = definition['nodes'] as List<dynamic>;
+      expect((nodes[0] as Map)['targetId'], 'crm.create_record');
+      expect((nodes[1] as Map)['targetId'], 'nested-workflow');
+    },
+  );
+
   test(
     'cloud duplication uses the authenticated adapter without local storage',
     () async {
