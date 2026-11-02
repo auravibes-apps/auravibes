@@ -143,33 +143,40 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  Future<ConversationEntity> _updateConversation(
-    ConversationEntity conversation,
-    ConversationPatch patch,
-  ) async {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(_workspaceId).future,
-    );
-    if (cloud != null) {
-      final updated = await cloud.update(conversation, patch);
-
-      return _updatedConversation(conversation, updated);
-    }
-
-    return await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(conversation.id, patch);
-  }
-
   Future<void> _saveConversationPatch(
     ConversationEntity conversation,
     ConversationPatch patch,
   ) async {
-    final updated = await _updateConversation(conversation, patch);
+    final updated = await _updateConversation(
+      ref,
+      _workspaceId,
+      conversation,
+      patch,
+    );
     if (!ref.mounted) return;
 
     state = AsyncData(ConversationFound(updated));
   }
+}
+
+Future<ConversationEntity> _updateConversation(
+  Ref ref,
+  String workspaceId,
+  ConversationEntity conversation,
+  ConversationPatch patch,
+) async {
+  final cloud = await ref.read(
+    cloudConversationUsecaseProvider(workspaceId).future,
+  );
+  if (cloud != null) {
+    final updated = await cloud.update(conversation, patch);
+
+    return _updatedConversation(conversation, updated);
+  }
+
+  return await ref
+      .read(conversationRepositoryProvider)
+      .patchConversation(conversation.id, patch);
 }
 
 Future<ConversationPatch> _modelUpdatePatch(

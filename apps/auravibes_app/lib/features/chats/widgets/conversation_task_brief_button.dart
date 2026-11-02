@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_task_brief_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -14,15 +15,13 @@ class const ConversationTaskBriefButton({
   required final ConversationEntity conversation,
   super.key,
 }) extends ConsumerWidget {
+  String get _tooltipKey => conversation.taskBrief == null
+      ? LocaleKeys.chats_screens_chat_conversation_task_brief_add_tooltip
+      : LocaleKeys.chats_screens_chat_conversation_task_brief_edit_tooltip;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final label =
-        (conversation.taskBrief == null
-                ? LocaleKeys
-                      .chats_screens_chat_conversation_task_brief_add_tooltip
-                : LocaleKeys
-                      .chats_screens_chat_conversation_task_brief_edit_tooltip)
-            .tr(context: context);
+    final label = _tooltipKey.tr(context: context);
 
     return AuraIconButton(
       icon: conversation.taskBrief == null
@@ -42,22 +41,25 @@ class const ConversationTaskBriefButton({
     );
     if (!context.mounted || result == null) return;
 
-    final notifier = ref.read(
-      conversationChatProvider(workspaceId, conversation.id).notifier,
-    );
     try {
-      await notifier.setTaskBrief(result.clear ? null : result.value);
+      await _save(ref, result);
     } on Object {
-      if (!context.mounted) return;
-      final _ = ScaffoldMessenger.of(context).showSnackBar(
-        .new(
-          content: Text(
-            LocaleKeys.chats_screens_chat_conversation_task_brief_save_error.tr(
-              context: context,
-            ),
-          ),
-        ),
-      );
+      if (context.mounted) _showTaskBriefSaveError(context);
     }
   }
+
+  Future<void> _save(WidgetRef ref, ConversationTaskBriefEditResult result) =>
+      ref
+          .read(conversationChatProvider(workspaceId, conversation.id).notifier)
+          .setTaskBrief(result.clear ? null : result.value);
+}
+
+void _showTaskBriefSaveError(BuildContext context) {
+  final _ = ScaffoldMessenger.of(context).showSnackBar(
+    const .new(
+      content: TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_task_brief_save_error,
+      ),
+    ),
+  );
 }

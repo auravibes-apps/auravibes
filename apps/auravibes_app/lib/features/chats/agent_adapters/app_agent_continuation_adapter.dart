@@ -174,27 +174,11 @@ class AppAgentContinuationAdapter({
     required List<ChatMessage> skillContextMessages,
     required String? taskBrief,
   }) async {
-    final summaryMessageIds = {
-      for (final message in messages)
-        if (message.messageType == .system &&
-            message.metadata?.isCompactionSummary == true)
-          message.id,
-    };
-    final transcript = await BuildPromptChatMessages(
-      modalitiesInput: model.workspaceModelSelection.modalitiesInput,
-      supportsImageToolResults:
-          model.modelsProvider.type == ModelProvidersType.anthropic &&
-          (model.modelConnection.url?.trim().isEmpty ?? true),
-    )(messages);
+    final summaryMessageIds = _compactionSummaryMessageIds(messages);
+    final transcript = await _buildPromptTranscript(model, messages);
 
     return [
-      ...skillContextMessages,
-      if (taskBrief case final brief? when brief.trim().isNotEmpty)
-        ChatMessage(
-          role: .user,
-          content: 'User-authored conversation brief:\n\n$brief',
-          metadata: const {'kind': _conversationTaskBriefMetadataKind},
-        ),
+      ..._conversationContextMessages(skillContextMessages, taskBrief),
       for (final message in transcript)
         _tagCompactionSummary(message, summaryMessageIds),
     ];
@@ -204,6 +188,40 @@ class AppAgentContinuationAdapter({
   bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) =>
       !model.workspaceModelSelection.supportsToolCalls;
 }
+
+Set<String> _compactionSummaryMessageIds(List<MessageEntity> messages) => {
+  for (final message in messages)
+    if (message.messageType == .system &&
+        message.metadata?.isCompactionSummary == true)
+      message.id,
+};
+
+Future<List<ChatMessage>> _buildPromptTranscript(
+  WorkspaceModelSelectionWithConnectionEntity model,
+  List<MessageEntity> messages,
+) => BuildPromptChatMessages(
+  modalitiesInput: model.workspaceModelSelection.modalitiesInput,
+  supportsImageToolResults: _supportsImageToolResults(model),
+)(messages);
+
+bool _supportsImageToolResults(
+  WorkspaceModelSelectionWithConnectionEntity model,
+) =>
+    model.modelsProvider.type == ModelProvidersType.anthropic &&
+    (model.modelConnection.url?.trim().isEmpty ?? true);
+
+List<ChatMessage> _conversationContextMessages(
+  List<ChatMessage> skillContextMessages,
+  String? taskBrief,
+) => [
+  ...skillContextMessages,
+  if (taskBrief case final brief? when brief.trim().isNotEmpty)
+    ChatMessage(
+      role: .user,
+      content: 'User-authored conversation brief:\n\n$brief',
+      metadata: const {'kind': _conversationTaskBriefMetadataKind},
+    ),
+];
 
 mixin _AgentContinuationMessageRoleChecks {
   bool isSystemMessage(ChatMessage message) {

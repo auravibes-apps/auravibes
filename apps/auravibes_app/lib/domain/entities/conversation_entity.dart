@@ -187,26 +187,31 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       _isNullOrNonEmpty(title) &&
       _isNullOrNonEmpty(modelId) &&
       _isNullOrNonEmpty(agentId) &&
-      _isNullOrNonBlank(taskBrief) &&
+      _hasValidTaskBrief &&
       (!clearAgent || agentId == null) &&
       (!clearActiveCompactionCheckpointId ||
           activeCompactionCheckpointId == null) &&
-      _isNullOrNonEmpty(activeCompactionCheckpointId) &&
-      (!clearTaskBrief || taskBrief == null);
+      _isNullOrNonEmpty(activeCompactionCheckpointId);
+
+  bool get _hasValidTaskBrief =>
+      _isNullOrNonBlank(taskBrief) && (!clearTaskBrief || taskBrief == null);
 
   bool get _hasChanges =>
+      _hasContentChanges || _hasConfigurationChanges || _hasCheckpointChanges;
+
+  bool get _hasContentChanges =>
+      title != null || isPinned != null || taskBrief != null || clearTaskBrief;
+
+  bool get _hasConfigurationChanges =>
       toolAccessMode != null ||
-      title != null ||
       modelId != null ||
       agentId != null ||
       clearAgent ||
       reasoningConfiguration != null ||
-      clearReasoningConfiguration ||
-      isPinned != null ||
-      clearActiveCompactionCheckpointId ||
-      activeCompactionCheckpointId != null ||
-      taskBrief != null ||
-      clearTaskBrief;
+      clearReasoningConfiguration;
+
+  bool get _hasCheckpointChanges =>
+      clearActiveCompactionCheckpointId || activeCompactionCheckpointId != null;
 
   bool hasChanges() => _hasChanges;
 

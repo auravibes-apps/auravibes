@@ -27,62 +27,117 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
     final controller = useTextEditingController(text: taskBrief ?? '');
     final canSave = useState((taskBrief ?? '').trim().isNotEmpty);
 
-    return AlertDialog(
-      title: const TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_task_brief_title,
-      ),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .stretch,
-          children: [
-            const TextLocale(
-              LocaleKeys.chats_screens_chat_conversation_task_brief_description,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: .new(
-                labelText: LocaleKeys
-                    .chats_screens_chat_conversation_task_brief_field_label
-                    .tr(context: context),
-                hintText: LocaleKeys
-                    .chats_screens_chat_conversation_task_brief_field_hint
-                    .tr(context: context),
-                alignLabelWithHint: true,
-              ),
-              textCapitalization: .sentences,
-              autofocus: true,
-              maxLines: 10,
-              minLines: 5,
-              onChanged: (value) => canSave.value = value.trim().isNotEmpty,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => _cancel(context),
-          child: const TextLocale(LocaleKeys.common_cancel),
-        ),
-        if (taskBrief != null)
-          TextButton(
-            onPressed: () => _clear(context),
-            child: const TextLocale(
-              LocaleKeys.chats_screens_chat_conversation_task_brief_clear,
-            ),
-          ),
-        TextButton(
-          onPressed: canSave.value
-              ? () => _save(context, controller.text)
-              : null,
-          child: const TextLocale(LocaleKeys.common_save),
-        ),
-      ],
-      scrollable: true,
+    return _TaskBriefDialogLayout(
+      controller: controller,
+      canSave: canSave,
+      hasBrief: taskBrief != null,
     );
   }
+}
+
+class const _TaskBriefDialogLayout({
+  required final TextEditingController controller,
+  required final ValueNotifier<bool> canSave,
+  required final bool hasBrief,
+}) extends StatelessWidget {
+  List<Widget> get _actions => [
+    const _TaskBriefCancelButton(),
+    if (hasBrief) const _TaskBriefClearButton(),
+    _TaskBriefSaveButton(controller: controller, canSave: canSave.value),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_task_brief_title,
+    ),
+    content: _TaskBriefContent(controller: controller, canSave: canSave),
+    actions: _actions,
+    scrollable: true,
+  );
+}
+
+class const _TaskBriefContent({
+  required final TextEditingController controller,
+  required final ValueNotifier<bool> canSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 560),
+    child: _TaskBriefEditor(controller: controller, canSave: canSave),
+  );
+}
+
+class const _TaskBriefEditor({
+  required final TextEditingController controller,
+  required final ValueNotifier<bool> canSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_task_brief_description,
+      ),
+      const SizedBox(height: 16),
+      _TaskBriefField(controller: controller, canSave: canSave),
+    ],
+  );
+}
+
+class const _TaskBriefField({
+  required final TextEditingController controller,
+  required final ValueNotifier<bool> canSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    decoration: _taskBriefDecoration(context),
+    textCapitalization: .sentences,
+    autofocus: true,
+    maxLines: 10,
+    minLines: 5,
+    onChanged: (value) => canSave.value = value.trim().isNotEmpty,
+  );
+}
+
+InputDecoration _taskBriefDecoration(BuildContext context) => .new(
+  labelText: LocaleKeys.chats_screens_chat_conversation_task_brief_field_label
+      .tr(context: context),
+  hintText: LocaleKeys.chats_screens_chat_conversation_task_brief_field_hint.tr(
+    context: context,
+  ),
+  alignLabelWithHint: true,
+);
+
+class const _TaskBriefCancelButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: () => _cancel(context),
+    child: const TextLocale(LocaleKeys.common_cancel),
+  );
+}
+
+class const _TaskBriefClearButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: () => _clear(context),
+    child: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_task_brief_clear,
+    ),
+  );
+}
+
+class const _TaskBriefSaveButton({
+  required final TextEditingController controller,
+  required final bool canSave,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: canSave ? () => _save(context, controller.text) : null,
+    child: const TextLocale(LocaleKeys.common_save),
+  );
 }
 
 void _cancel(BuildContext context) => Navigator.of(context).pop();

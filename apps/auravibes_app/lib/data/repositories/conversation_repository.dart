@@ -1195,6 +1195,7 @@ extension on ConversationRepository {
     toolAccessMode: ConversationToolAccessModeStorage.decode(
       conversationTable.toolAccessMode,
     ),
+    taskBrief: conversationTable.taskBrief,
   );
 
   ConversationEntity _mapConversationFields(
@@ -1210,7 +1211,6 @@ extension on ConversationRepository {
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
       reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
-      taskBrief: conversationTable.taskBrief,
       parentConversationId: conversationTable.parentConversationId,
       activeCompactionCheckpointId:
           conversationTable.activeCompactionCheckpointId,
@@ -1222,6 +1222,7 @@ extension on ConversationRepository {
   ) => _mapConversationFieldsToCompanion(conversation).copyWith(
     createdAt: .absentIfNull(conversation.createdAt),
     updatedAt: .absentIfNull(conversation.updatedAt ?? conversation.createdAt),
+    taskBrief: .new(conversation.taskBrief),
   );
 
   ConversationsCompanion _mapConversationFieldsToCompanion(
@@ -1233,7 +1234,6 @@ extension on ConversationRepository {
       modelId: .new(conversation.modelId),
       agentId: .new(conversation.agentId),
       reasoningConfigJson: _reasoningConfigCompanion(conversation),
-      taskBrief: .new(conversation.taskBrief),
       parentConversationId: .new(conversation.parentConversationId),
       activeCompactionCheckpointId: const Value(null),
       toolAccessMode: _toolAccessModeCompanion(conversation),
