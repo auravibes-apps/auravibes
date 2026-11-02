@@ -161,7 +161,7 @@ Future<void> _capture(
 class _OversizedFilePicker(final _OversizedFile file)
     extends fp.FilePickerPlatform {
   @override
-  Future<List<fp.PlatformFile>> pickFiles({
+  Future<fp.PlatformFile?> pickFile({
     String? dialogTitle,
     String? initialDirectory,
     fp.FileType type = fp.FileType.any,
@@ -173,7 +173,7 @@ class _OversizedFilePicker(final _OversizedFile file)
     fp.WindowsOptions windowsOptions = const fp.WindowsOptions(),
     fp.LinuxOptions linuxOptions = const fp.LinuxOptions(),
     fp.WebOptions webOptions = const fp.WebOptions(),
-  }) async => [file];
+  }) async => file;
 }
 
 base class _OversizedFile({required final int size}) extends fp.PlatformFile {
