@@ -14,7 +14,6 @@ import 'package:auravibes_app/features/chats/providers/conversation_archive_stat
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/set_conversation_archived_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_export_review_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
@@ -743,21 +742,23 @@ extension on _ChatTileState {
             isArchived: isArchived,
           );
       if (!context.mounted) return;
-      final messageKey = isArchived
-          ? LocaleKeys.chats_screens_chat_conversation_archived
-          : LocaleKeys.chats_screens_chat_conversation_restored;
       final _ = AuraSnackBars.show(
         context: context,
-        content: TextLocale(messageKey),
+        content: isArchived
+            ? const TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_archived,
+              )
+            : const TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_restored,
+              ),
       );
-    } on Object catch (error) {
+    } on Object {
       if (!context.mounted) return;
-      final messageKey = error is ConversationArchiveStateException
-          ? error.localizationKey
-          : LocaleKeys.chats_screens_chat_conversation_archive_state_error;
       final _ = AuraSnackBars.show(
         context: context,
-        content: TextLocale(messageKey),
+        content: const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_archive_state_error,
+        ),
         variant: .error,
       );
     }
