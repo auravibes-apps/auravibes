@@ -293,7 +293,10 @@ void main() {
           ]);
           final container = _cloudContainer(endpoint);
           final provider = conversationsStreamProvider(workspaceId: 'cloud');
-          final subscription = container.listen(provider, (_, next) => next.toString());
+          final subscription = container.listen(
+            provider,
+            (_, next) => next.toString(),
+          );
           try {
             final conversations = await container.read(
               conversationsStreamProvider(workspaceId: 'cloud').future,

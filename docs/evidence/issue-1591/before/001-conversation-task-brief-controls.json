@@ -1,6 +1,6 @@
 {
   "name": "conversation-task-brief-controls",
-  "route": "/workspaces/01a19d1e-256c-7119-a68a-0bce274640b6/chats/01a19d1e-2620-7ba8-8943-ec8708101d73",
+  "route": "/workspaces/01a19d28-4be6-7ea1-a3d4-67814c7d5e49/chats/01a19d28-4c9b-7bf0-be9c-3502e9dc24bd",
   "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
   "sourceFingerprint": "1aaa31f61128fe810ca35ef7a00205edb9233175",
   "renderer": "Flutter widget-test Skia, linux",

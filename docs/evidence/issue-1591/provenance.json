@@ -1,10 +1,13 @@
 {
-  "workflow_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41482674673/attempts/1",
+  "workflow_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41484501815/attempts/1",
+  "original_successful_capture_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41482674673/attempts/1",
+  "original_png_bytes_preserved": true,
   "baseline_sha": "1aaa31f61128fe810ca35ef7a00205edb9233175",
-  "feature_sha": "813373d0f8445b81857887774717203cb663d916",
-  "generated_patch_sha256": "c3db0b9f34b28c0403a911f1faed796f4444a716d7eb5922abf43d1c4cbde56a",
-  "capture_harness_sha256": "23d7d6992b4b973c8959915b74d0e514e664e0c02756f9e72c93004cfa4d079b",
-  "scope": "Production MyApp ConversationRoute with real router, session, repositories, and SQLite storage; widget-test renderer, not native device evidence.",
+  "feature_sha": "750e91b32f5f211010bed263156387b17e87d13b",
+  "generated_patch_sha256": "39bf15ca976e74649df0300320b0e3d429d3b131df7ec3d945af8a57acc8cab6",
+  "capture_harness_sha256": "943ee412cf685ead3d3b789fc5fc11ac6fe08a6168475d9e0a19464ca5a026a2",
+  "identical_before_after_harness_verified": true,
+  "scope": "Production MyApp ConversationRoute with real router, sessions, repositories, and SQLite storage; Flutter widget-test renderer.",
   "viewport": [
     466,
     678
@@ -12,5 +15,5 @@
   "locale": "en",
   "theme": "light",
   "text_scale": 1,
-  "validation": "Both production captures and persisted editor save passed; images visually inspected. Focused engine tests passed; app test harness failures fixed in subsequent commit."
+  "validation": "Both production captures and persisted editor save passed; all four PNGs visually inspected and byte-identical to the original successful captures. Engine 7/7 and server protocol/runtime 45/45 passed. Final app/widget/cloud validation is assigned to required PR CI."
 }

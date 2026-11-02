@@ -1,8 +1,8 @@
 {
   "name": "conversation-task-brief-saved",
-  "route": "/workspaces/01a19d21-bcf0-7468-80e7-cbbfcda18bc3/chats/01a19d21-bda4-77c0-b1f7-bd0ddae5a88e",
+  "route": "/workspaces/01a19d2b-d8b5-7ce6-8a3e-272d534c25cd/chats/01a19d2b-d962-711c-8597-b9e7ab40a902",
   "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
-  "sourceFingerprint": "813373d0f8445b81857887774717203cb663d916+generated:c3db0b9f34b28c0403a911f1faed796f4444a716d7eb5922abf43d1c4cbde56a",
+  "sourceFingerprint": "750e91b32f5f211010bed263156387b17e87d13b+generated:39bf15ca976e74649df0300320b0e3d429d3b131df7ec3d945af8a57acc8cab6",
   "renderer": "Flutter widget-test Skia, linux",
   "viewport": [
     466.0,

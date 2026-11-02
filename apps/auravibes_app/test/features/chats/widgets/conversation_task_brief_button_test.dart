@@ -111,6 +111,13 @@ void main() {
       final _ = await tester.pumpAndSettle();
       const brief = '  Objetivo 🎯\nKeep the deadline.  ';
       await tester.enterText(find.byType(TextField), brief);
+      await tester.pump();
+      expect(
+        tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Save'),
+        ).onPressed,
+        isNotNull,
+      );
       await tester.tap(find.text('Save'));
       final _ = await tester.pumpAndSettle();
 
