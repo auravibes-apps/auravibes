@@ -197,12 +197,23 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: null,
       ));
 
-      return const AgentToolExecutionResult(
+      const executionResult = AgentToolExecutionResult(
         resultStatus: .executionError,
         responseRaw:
             '{"outcome":"failed","code":"invalid_request","error":"Tool '
             'rejected the request format.","nextAction":"Check this tool\'s '
             'schema and send a corrected request."}',
+      );
+      return await _runPostToolHook(
+        executionResult,
+        lifecycleHookRunner: lifecycleHookRunner,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        tool: tool,
+        argumentsRaw: argumentsRaw,
+        isCancellationRequested: isCancellationRequested,
+        logToolExecutionError: logToolExecutionError,
       );
     } on AgentToolExecutionFailure catch (failure) {
       logToolExecutionError((
