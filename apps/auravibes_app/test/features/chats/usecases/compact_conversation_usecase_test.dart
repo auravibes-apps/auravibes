@@ -245,7 +245,8 @@ void main() {
     test(
       '$trigger compaction never writes the user-owned task brief',
       () async {
-        const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
+        final brief =
+            '  Objetivo ${String.fromCharCode(0x1F3AF)}\nKeep the deadline.  ';
         final transcript = [
           _makeMessage(),
           _makeMessage(id: 'msg-2', isUser: false),

@@ -347,7 +347,7 @@ void main() {
           conversationChatProvider('ws-1', 'conv-1').notifier,
         );
 
-        const brief = '  Keep the objective in view.\nReview the open tasks.  ';
+        final brief = '  Keep the objective in view.\nReview the open tasks.  ';
         await notifier.setTaskBrief(brief);
         expect(patched.single.taskBrief, brief);
         expect(patched.single.clearTaskBrief, isFalse);
@@ -369,8 +369,7 @@ void main() {
     );
 
     for (final isCloud in [false, true]) {
-      test('blank edits preserve the brief and explicit clear removes it '
-          'for cloud=$isCloud', () async {
+      test('blank preserves and null clears: cloud=$isCloud', () async {
         final patches = <ConversationPatch>[];
         final requests = <UpdateConversationRequest>[];
         final gateway = _CloudChatGateway();
@@ -445,7 +444,8 @@ void main() {
               .taskBrief,
           'Original brief',
         );
-        const saved = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
+        final saved =
+            '  Objetivo ${String.fromCharCode(0x1F3AF)}\nKeep the deadline.  ';
         await notifier.setTaskBrief(saved);
         expect(
           (container.read(provider).requireValue as ConversationFound)

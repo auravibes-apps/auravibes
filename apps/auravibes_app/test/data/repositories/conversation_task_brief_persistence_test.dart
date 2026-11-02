@@ -7,7 +7,8 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
+final _brief =
+    '  Objetivo ${String.fromCharCode(0x1F3AF)}\nKeep the deadline.  ';
 
 void main() {
   test('task brief reloads exactly after create and edit', () async {
@@ -18,11 +19,12 @@ void main() {
 
     await fixture.reopen();
     expect((await fixture.read(created.id))?.taskBrief, _brief);
-    const edited =
-        '  Decisiones: keep Unicode \u{1F3AF}.\nOpen tasks: review.  ';
+    final edited =
+        '  Decisiones: keep Unicode ${String.fromCharCode(0x1F3AF)}.\n'
+        'Open tasks: review.  ';
     final _ = await fixture.repository.patchConversation(
       created.id,
-      const ConversationPatch(taskBrief: edited),
+      ConversationPatch(taskBrief: edited),
     );
     final _ = await fixture.repository.patchConversation(
       created.id,
@@ -84,7 +86,7 @@ void main() {
     expect(fork.taskBrief, isNull);
     final _ = await fixture.repository.patchConversation(
       source.id,
-      const ConversationPatch(taskBrief: _brief),
+      ConversationPatch(taskBrief: _brief),
     );
     final _ = await fixture.repository.patchConversation(
       fork.id,

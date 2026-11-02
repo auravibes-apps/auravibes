@@ -114,7 +114,8 @@ void main() {
       );
       await tester.tap(_button);
       final _ = await tester.pumpAndSettle();
-      const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
+      final brief =
+          '  Objetivo ${String.fromCharCode(0x1F3AF)}\nKeep the deadline.  ';
       await tester.enterText(find.byType(TextField), brief);
       await tester.pump();
       expect(

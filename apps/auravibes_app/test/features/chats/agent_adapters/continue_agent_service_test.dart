@@ -243,7 +243,8 @@ void main() {
     test(
       'next request uses the current brief and omits it after clear',
       () async {
-        const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
+        final brief =
+            '  Objetivo ${String.fromCharCode(0x1F3AF)}\nKeep the deadline.  ';
         var currentConversation = _conversation.copyWith(taskBrief: brief);
         when(() => conversationRepository.getConversationById('conversation-1'))
             .thenAnswer((_) async => currentConversation);

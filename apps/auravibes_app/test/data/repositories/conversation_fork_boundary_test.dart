@@ -62,8 +62,7 @@ void main() {
     ),
   );
 
-  test('task briefs persist, copy to forks, isolate edits, '
-      'and clear without changing messages', () async {
+  test('briefs persist and fork independently of transcript edits', () async {
     await insertSource(taskBrief: 'Keep the user objective in view.');
     final _ = await insertMessage(
       id: 'user-1',

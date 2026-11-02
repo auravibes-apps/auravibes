@@ -2880,8 +2880,13 @@ void main() {
         },
       );
     },
+    configOverride: (config) => config.copyWith(
+      sessionLogs: config.sessionLogs.copyWith(consoleEnabled: true),
+    ),
+    enableSessionLogging: true,
     rollbackDatabase: RollbackDatabase.disabled,
     ephemeralDatabase: true,
+    testServerOutputMode: TestServerOutputMode.verbose,
   );
 
   // Provider latency and workspace erasure overlap database transactions.
