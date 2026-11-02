@@ -1318,7 +1318,7 @@ void main() {
 
       await tester.tap(find.text('Export selected'));
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Review your conversation archive'), findsOneWidget);
+      expect(find.text('Review your conversation backup'), findsOneWidget);
       expect(
         find.text(
           'In the next save dialog, choose where to save '
