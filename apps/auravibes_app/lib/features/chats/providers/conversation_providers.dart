@@ -336,7 +336,9 @@ Future<List<ConversationSummary>> _readFilteredCloudConversationPage(
   final conversations = <ConversationSummary>[];
   final seenCursors = <String>{};
   final stopAfterFirstPage =
-      options.pagination.limit == null && options.pagination.offset == 0;
+      options.scope == ConversationListScope.active &&
+      options.pagination.limit == null &&
+      options.pagination.offset == 0;
   var skipped = 0;
   String? cursor;
 

@@ -405,12 +405,13 @@ void main() {
       () async {
         final endpoint = _TestConversationEndpoint([
           ConversationPage(
-            conversations: [
-              _cloudConversationSummary(id: 'active'),
-              _cloudConversationSummary(id: 'archived'),
-            ],
+            conversations: [_cloudConversationSummary(id: 'active')],
+            nextCursor: 'page-2',
           ),
-        ], repeatLastPage: true);
+          ConversationPage(
+            conversations: [_cloudConversationSummary(id: 'archived')],
+          ),
+        ]);
         final database = AppDatabase(
           connection: DatabaseConnection(NativeDatabase.memory()),
         );
@@ -440,7 +441,7 @@ void main() {
         expect(
           (await container.read(activeProvider.future))
               .map((conversation) => conversation.id),
-          ['active', 'archived'],
+          ['active'],
         );
 
         await database.conversationArchiveStateDao.setArchived(
@@ -824,21 +825,24 @@ class _TestClient extends Fake implements Client {
 }
 
 class _TestConversationEndpoint extends Fake implements EndpointConversation {
-  new(this._pages, {this.repeatLastPage = false});
+  new(this._pages);
 
   final requests = <ListConversationsRequest>[];
-  final bool repeatLastPage;
   final List<ConversationPage> _pages;
 
   @override
   Future<ConversationPage> listPage(ListConversationsRequest request) async {
     requests.add(request);
-    if (requests.length > _pages.length && repeatLastPage) return _pages.last;
-    if (requests.length > _pages.length) {
+    final previousPageIndex = request.cursor == null
+        ? -1
+        : _pages.indexWhere((page) => page.nextCursor == request.cursor);
+    final pageIndex = previousPageIndex + 1;
+    if (pageIndex >= _pages.length ||
+        (request.cursor != null && previousPageIndex < 0)) {
       throw StateError('Unexpected conversation page request.');
     }
 
-    return _pages[requests.length - 1];
+    return _pages[pageIndex];
   }
 }
 
