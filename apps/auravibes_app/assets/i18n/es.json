@@ -80,6 +80,7 @@
       "start": "Elegir opciones de configuración",
       "skip": "Configurar un espacio de trabajo",
       "local_storage": "Se guarda en este dispositivo. Mantén AuraVibes abierta. Al enviar un mensaje, es posible que se comparta con el proveedor de IA que elijas.",
+      "workspace_name": "Trabajo personal",
       "quick_start": "Empezar en este dispositivo",
       "advanced_setup": "Más opciones de configuración"
     },

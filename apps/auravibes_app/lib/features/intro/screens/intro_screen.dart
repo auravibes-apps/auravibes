@@ -143,7 +143,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     try {
       return await ref
           .read(createWorkspaceUseCaseProvider)
-          .call(name: 'intro_flow.preview.project_b'.tr(context: context));
+          .call(name: 'intro_flow.welcome.workspace_name'.tr(context: context));
     } on Object {
       if (mounted) {
         setState(

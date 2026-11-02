@@ -80,6 +80,7 @@
       "start": "Choose setup options",
       "skip": "Set up a workspace",
       "local_storage": "Saved on this device. Keep AuraVibes open. Sending a message may share it with the AI provider you choose.",
+      "workspace_name": "Personal work",
       "quick_start": "Start on this device",
       "advanced_setup": "More setup options"
     },
