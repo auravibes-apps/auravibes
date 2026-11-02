@@ -12,28 +12,19 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_io.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
-  late AppDatabase database;
-  late WorkspaceRepository workspaceRepository;
-  late WorkspaceAgentHookSettingsRepository settingsRepository;
-
-  setUp(() {
-    database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    workspaceRepository = WorkspaceRepository(database);
-    settingsRepository = WorkspaceAgentHookSettingsRepository(
-      database.workspaceAgentHookSettingsDao,
-    );
-  });
-
-  tearDown(() async {
-    await database.close();
-  });
+  final database = AppDatabase(connection: NativeDatabase.memory());
+  final workspaceRepository = WorkspaceRepository(database);
+  final settingsRepository = WorkspaceAgentHookSettingsRepository(
+    database.workspaceAgentHookSettingsDao,
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   final secretExamples = {
     'api_key=private-api-key': ['private-api-key'],
@@ -148,31 +139,33 @@ void main() {
           workspaceRepository,
           runtime,
         );
-        final pending = event == AgentLifecycleHookEvent.beforeTool
-            ? runner
-                  .beforeTool(
-                    request: _request(workspace.id),
-                    isCancellationRequested: (_) => cancelled,
-                  )
-                  .then((result) => result.outcome)
-            : runner
-                  .afterTool(
-                    request: _request(workspace.id),
-                    toolSucceeded: true,
-                    isCancellationRequested: (_) => cancelled,
-                  )
-                  .then((result) {
-                    expect(result.context, isNull);
-                    return result.outcome;
-                  });
+        Future<agent.AgentToolHookOutcome> runHook() async {
+          if (event == AgentLifecycleHookEvent.beforeTool) {
+            final result = await runner.beforeTool(
+              request: _request(workspace.id),
+              isCancellationRequested: (_) => cancelled,
+            );
+
+            return result.outcome;
+          }
+          final result = await runner.afterTool(
+            request: _request(workspace.id),
+            toolSucceeded: true,
+            isCancellationRequested: (_) => cancelled,
+          );
+          expect(result.context, isNull);
+
+          return result.outcome;
+        }
+        final pending = runHook();
         await started.future;
         switch (change) {
           case 'revoke':
-            await settingsRepository.revokeTrust(workspace.id);
+            final _ = await settingsRepository.revokeTrust(workspace.id);
           case 'disable':
-            await settingsRepository.setEnabled(workspace.id, enabled: false);
+            final _ = await settingsRepository.setEnabled(workspace.id, enabled: false);
           case 'replace':
-            await settingsRepository.selectConfig(
+            final _ = await settingsRepository.selectConfig(
               workspace.id,
               canonicalPath: '/tmp/other-hooks.json',
             );
@@ -202,7 +195,7 @@ void main() {
       addTearDown(() => directory.delete(recursive: true));
       final marker = File('${directory.path}/executed');
       final configFile = File('${directory.path}/hooks.json');
-      await configFile.writeAsString(
+      final _ = await configFile.writeAsString(
         jsonEncode({
           'version': 1,
           'hooks': [
@@ -211,27 +204,27 @@ void main() {
               'command': '/usr/bin/python3',
               'args': [
                 '-c',
-                'from pathlib import Path; '
+                ('from pathlib import Path; '
                     'Path(${jsonEncode(marker.path)}).write_text("executed"); '
-                    'print(\'{"decision":"allow"}\')',
+                    'print(\'{"decision":"allow"}\')'),
               ],
             },
           ],
         }),
       );
-      final snapshot = await const IoAgentLifecycleHookRuntime().inspect(
+      final snapshot = await const AgentLifecycleHookRuntimeIo().inspect(
         configFile.path,
       );
-      await settingsRepository.selectConfig(
+      final _ = await settingsRepository.selectConfig(
         workspace.id,
         canonicalPath: snapshot.canonicalPath,
       );
-      await settingsRepository.trustConfig(
+      final _ = await settingsRepository.trustConfig(
         workspace.id,
         canonicalPath: snapshot.canonicalPath,
         digest: snapshot.digest,
       );
-      await settingsRepository.setEnabled(workspace.id, enabled: true);
+      final _ = await settingsRepository.setEnabled(workspace.id, enabled: true);
       final runtime = _PausingReinspectionRuntime();
       final runner = _runner(settingsRepository, workspaceRepository, runtime);
       final pending = runner.beforeTool(
@@ -239,11 +232,11 @@ void main() {
         isCancellationRequested: (_) => false,
       );
       await runtime.started.future;
-      await settingsRepository.revokeTrust(workspace.id);
+      final _ = await settingsRepository.revokeTrust(workspace.id);
       runtime.release.complete();
 
       expect((await pending).outcome, agent.AgentToolHookOutcome.unavailable);
-      expect(await marker.exists(), isFalse);
+      expect(marker.existsSync(), isFalse);
     },
     skip:
         !(Platform.isLinux || Platform.isMacOS) ||
@@ -338,7 +331,7 @@ void main() {
     expect(result.outcome, agent.AgentToolHookOutcome.block);
     expect(result.reason, contains('[REDACTED]'));
     expect(result.reason, isNot(contains('do-not-leak')));
-    final hookInput = jsonDecode(runtime.lastInput!) as Map<String, dynamic>;
+    final hookInput = jsonDecode((runtime.lastInput ?? (throw StateError('Hook input was not captured.')))) as Map<String, dynamic>;
     expect(hookInput['tool'], 'search');
     expect(hookInput['argumentNames'], ['api_key', 'query']);
     expect(runtime.lastInput, isNot(contains('secret-value')));
@@ -350,18 +343,18 @@ void main() {
     final runtime = _FakeHookRuntime();
     final runner = _runner(settingsRepository, workspaceRepository, runtime);
 
-    await runner.beforeTool(
-      request: agent.AgentToolLifecycleHookRequest(
+    final _ = await runner.beforeTool(
+      request: .new(
         workspaceId: workspace.id,
         conversationId: 'conversation-1',
         toolCallId: 'c' * 1000,
         tool: ResolvedTool.skillControl(toolIdentifier: 'search'),
-        argumentNames: List.filled(100, 'name' * 100),
+        argumentNames: .filled(100, 'name' * 100),
       ),
       isCancellationRequested: (_) => false,
     );
 
-    final inputRaw = runtime.lastInput!;
+    final inputRaw = (runtime.lastInput ?? (throw StateError('Hook input was not captured.')));
     expect(utf8.encode(inputRaw).length, lessThanOrEqualTo(8192));
     final input = jsonDecode(inputRaw) as Map<String, dynamic>;
     expect(input['toolCallId'], hasLength(128));
@@ -412,7 +405,7 @@ void main() {
     final workspace = await _createWorkspace(workspaceRepository);
     await _trust(settingsRepository, workspace.id, enabled: true);
     final runtime = _FakeHookRuntime(
-      event: AgentLifecycleHookEvent.afterTool,
+      event: .afterTool,
       output: const AgentLifecycleHookInvocationResult(
         outcome: agent.AgentToolHookOutcome.success,
         stdout: '{"context":"token=do-not-leak"}',
@@ -442,13 +435,15 @@ Future<void> _trust(
   String workspaceId, {
   bool enabled = false,
 }) async {
-  await repository.selectConfig(workspaceId, canonicalPath: '/tmp/hooks.json');
-  await repository.trustConfig(
+  final _ = await repository.selectConfig(workspaceId, canonicalPath: '/tmp/hooks.json');
+  final _ = await repository.trustConfig(
     workspaceId,
     canonicalPath: '/tmp/hooks.json',
     digest: 'trusted',
   );
-  if (enabled) await repository.setEnabled(workspaceId, enabled: true);
+  if (enabled) {
+    final _ = await repository.setEnabled(workspaceId, enabled: true);
+  }
 }
 
 WorkspaceLifecycleHookRunner _runner(
@@ -472,7 +467,7 @@ agent.AgentToolLifecycleHookRequest<ResolvedTool> _request(
 );
 
 class _FakeHookRuntime implements AgentLifecycleHookRuntime {
-  _FakeHookRuntime({
+  new({
     this.digest = 'trusted',
     this.event = AgentLifecycleHookEvent.beforeTool,
     this.onInspect,
@@ -486,8 +481,8 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
   final AgentLifecycleHookEvent event;
   final Future<void> Function()? onInspect;
   final AgentLifecycleHookInvocationResult output;
-  var inspectCount = 0;
-  var invokeCount = 0;
+  int inspectCount = 0;
+  int invokeCount = 0;
   String? lastInput;
 
   @override
@@ -527,10 +522,10 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
   }
 }
 
-class _PausingReinspectionRuntime extends IoAgentLifecycleHookRuntime {
+class _PausingReinspectionRuntime extends AgentLifecycleHookRuntimeIo {
   final started = Completer<void>();
   final release = Completer<void>();
-  var inspections = 0;
+  int inspections = 0;
 
   @override
   Future<AgentLifecycleHookSourceSnapshot> inspect(String sourcePath) async {
@@ -539,6 +534,7 @@ class _PausingReinspectionRuntime extends IoAgentLifecycleHookRuntime {
       started.complete();
       await release.future;
     }
-    return super.inspect(sourcePath);
+
+    return await super.inspect(sourcePath);
   }
 }

@@ -1,20 +1,12 @@
 import 'dart:convert';
 
-const maxAgentLifecycleHookConfigBytes = 32 * 1024;
+const int maxAgentLifecycleHookConfigBytes = 32 * 1024;
 const maxAgentLifecycleHooks = 2;
 const maxAgentLifecycleHookArgs = 16;
 const maxAgentLifecycleHookArgBytes = 2048;
 const maxAgentLifecycleHookSourceFiles = 8;
 const agentLifecycleHookTimeout = Duration(seconds: 5);
 const maxAgentLifecycleHookOutputBytes = 8192;
-
-enum AgentLifecycleHookEvent { beforeTool, afterTool }
-
-class const AgentLifecycleHookDefinition({
-  required final AgentLifecycleHookEvent event,
-  required final String command,
-  required final List<String> args,
-});
 
 class const AgentLifecycleHookConfig({
   required final List<AgentLifecycleHookDefinition> hooks,
@@ -24,8 +16,17 @@ class const AgentLifecycleHookConfig({
       hooks.where((hook) => hook.event == event).firstOrNull;
 }
 
+enum AgentLifecycleHookEvent { beforeTool, afterTool }
+
+class const AgentLifecycleHookDefinition({
+  required final AgentLifecycleHookEvent event,
+  required final String command,
+  required final List<String> args,
+});
+
+
 class AgentLifecycleHookConfigException implements Exception {
-  const AgentLifecycleHookConfigException(this.code);
+  const new(this.code);
 
   final String code;
 
@@ -44,11 +45,11 @@ AgentLifecycleHookConfig parseAgentLifecycleHookConfig(String source) {
   final Object? decoded;
   try {
     decoded = jsonDecode(source);
-  } on FormatException {
-    throw const AgentLifecycleHookConfigException('invalid_json');
+  } on FormatException catch (_, stackTrace) {
+    Error.throwWithStackTrace(const AgentLifecycleHookConfigException('invalid_json'), stackTrace);
   }
   if (decoded is! Map<String, dynamic> ||
-      decoded.keys.toSet().difference({
+      decoded.keys.toSet().difference(<String>{
         'version',
         'hooks',
         'sourceFiles',
@@ -91,7 +92,7 @@ AgentLifecycleHookConfig parseAgentLifecycleHookConfig(String source) {
 
 AgentLifecycleHookDefinition _parseHook(Object? rawHook) {
   if (rawHook is! Map<String, dynamic> ||
-      rawHook.keys.toSet().difference({
+      rawHook.keys.toSet().difference(<String>{
         'event',
         'command',
         'args',

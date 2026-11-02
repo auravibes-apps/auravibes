@@ -10,9 +10,9 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
-    const IoAgentLifecycleHookRuntime();
+    const AgentLifecycleHookRuntimeIo();
 
-class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
+class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   @override
   bool get isSupported =>
       Platform.isLinux || Platform.isMacOS || Platform.isWindows;
@@ -47,7 +47,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
           : p.join(p.dirname(canonicalPath), hook.command);
       final resolved = await File(unresolved).resolveSymbolicLinks();
       final commandFile = File(resolved);
-      if (!await commandFile.exists()) {
+      if (!commandFile.existsSync()) {
         throw const AgentLifecycleHookConfigException('command_missing');
       }
       final commandBytes = await _readBoundedFile(
@@ -166,7 +166,6 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
         workingDirectory: p.dirname(current.canonicalPath),
         environment: const {},
         includeParentEnvironment: false,
-        runInShell: false,
       );
     } on Object {
       return const AgentLifecycleHookInvocationResult(outcome: .failed);
@@ -178,11 +177,13 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
     var outputBytes = 0;
     var outcome = AgentToolHookOutcome.success;
     var processExited = false;
-    final exitCodeFuture = process.exitCode.then((code) {
+    Future<int> trackExit() async {
+      final code = await process.exitCode;
       processExited = true;
 
       return code;
-    });
+    }
+    final exitCodeFuture = trackExit();
     Future<void>? termination;
 
     Future<void> terminateProcess() => termination ??= () async {
@@ -193,19 +194,19 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
         // Continue to the forced termination attempt below.
       }
       try {
-        await exitCodeFuture.timeout(const Duration(milliseconds: 150));
+        final _ = await exitCodeFuture.timeout(const Duration(milliseconds: 150));
 
         return;
       } on TimeoutException {
         if (processExited) return;
       }
       try {
-        final _ = process.kill(ProcessSignal.sigkill);
+        final _ = process.kill(.sigkill);
       } on Object {
         // Some platforms only support terminating the direct child.
       }
       try {
-        await exitCodeFuture.timeout(const Duration(milliseconds: 250));
+        final _ = await exitCodeFuture.timeout(const Duration(milliseconds: 250));
       } on TimeoutException {
         // The invocation still returns within its hard runtime bound.
       }
@@ -221,7 +222,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
       if (outcome != AgentToolHookOutcome.success) return;
       outputBytes += chunk.length;
       if (outputBytes > maxAgentLifecycleHookOutputBytes) {
-        fail(AgentToolHookOutcome.outputLimitExceeded);
+        fail(.outputLimitExceeded);
 
         return;
       }
@@ -230,20 +231,20 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
 
     final stdoutSubscription = process.stdout.listen(
       (chunk) => consume(chunk, capture: true),
-      onError: (Object _) => fail(AgentToolHookOutcome.failed),
+      onError: (Object _) => fail(.failed),
       onDone: outputDone.complete,
       cancelOnError: false,
     );
     final stderrSubscription = process.stderr.listen(
       (chunk) => consume(chunk, capture: false),
-      onError: (Object _) => fail(AgentToolHookOutcome.failed),
+      onError: (Object _) => fail(.failed),
       onDone: errorDone.complete,
       cancelOnError: false,
     );
     unawaited(_writeInput(process, inputBytes));
 
     final timeoutTimer = Timer(agentLifecycleHookTimeout, () {
-      fail(AgentToolHookOutcome.timedOut);
+      fail(.timedOut);
     });
     final cancellationTimer = Timer.periodic(const Duration(milliseconds: 25), (
       _,
@@ -252,7 +253,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
           !isCancellationRequested(conversationId)) {
         return;
       }
-      fail(AgentToolHookOutcome.cancelled);
+      fail(.cancelled);
     });
 
     int exitCode;
@@ -269,7 +270,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
         },
       );
     } on Object {
-      fail(AgentToolHookOutcome.failed);
+      fail(.failed);
       await terminateProcess();
       exitCode = -1;
     } finally {
@@ -278,10 +279,10 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
     }
 
     try {
-      await Future.wait([outputDone.future, errorDone.future])
+      final _ = await Future.wait([outputDone.future, errorDone.future])
           .timeout(const Duration(milliseconds: 100));
     } on Object {
-      fail(AgentToolHookOutcome.failed);
+      fail(.failed);
       final _ = await stdoutSubscription.cancel();
       final _ = await stderrSubscription.cancel();
     }
@@ -312,7 +313,7 @@ Future<Uint8List> _readBoundedFile(
   int maxBytes,
   String failureCode,
 ) async {
-  final stat = await file.stat();
+  final stat = file.statSync();
   if (stat.type != FileSystemEntityType.file) {
     throw AgentLifecycleHookConfigException(failureCode);
   }
@@ -336,8 +337,8 @@ Future<Uint8List> _readBoundedFile(
 Future<void> _writeInput(Process process, List<int> inputBytes) async {
   try {
     process.stdin.add(inputBytes);
-    await process.stdin.flush();
-    await process.stdin.close();
+    final _ = await process.stdin.flush();
+    final _ = await process.stdin.close();
   } on Object {
     // A hook may exit before consuming its bounded input.
   }

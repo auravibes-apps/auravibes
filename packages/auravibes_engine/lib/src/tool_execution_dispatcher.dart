@@ -263,7 +263,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: null,
       ));
 
-      final executionResult = const AgentToolExecutionResult(
+      const executionResult = AgentToolExecutionResult(
         resultStatus: .executionError,
         responseRaw:
             '{"outcome":"failed","code":"execution_error","error":"Tool '
@@ -356,13 +356,14 @@ Future<AgentToolExecutionResult> _runPostToolHook<TTool extends Object>(
       executionResult.responseContextRaw ?? executionResult.responseRaw;
   final combinedContext = existingContext == null
       ? hookContext
-      : 'Post-tool hook context:\n$hookContext\n\nTool output:\n$existingContext';
+      : 'Post-tool hook context:\n$hookContext\n\n'
+            'Tool output:\n$existingContext';
   final context =
       executionResult.fullOutputForContext || existingContext == null
       ? combinedContext
       : projectToolOutput(
           combinedContext,
-          policy: const AgentToolOutputPolicy(maxBytes: defaultToolOutputBytes),
+          policy: const AgentToolOutputPolicy(),
         ).text;
 
   return AgentToolExecutionResult(

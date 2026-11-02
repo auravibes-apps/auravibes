@@ -3,9 +3,9 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_api.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
-    const UnsupportedAgentLifecycleHookRuntime();
+    const AgentLifecycleHookRuntimeStub();
 
-class const UnsupportedAgentLifecycleHookRuntime()
+class const AgentLifecycleHookRuntimeStub()
     implements AgentLifecycleHookRuntime {
   @override
   bool get isSupported => false;

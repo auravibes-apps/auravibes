@@ -14,7 +14,7 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -51,7 +51,10 @@ void main() {
       find.text('Hooks are available only for local workspaces.'),
       findsOneWidget,
     );
-    expect(find.text('To use hooks, open a local workspace in the desktop app.'), findsOneWidget);
+    expect(
+      find.text('To use hooks, open a local workspace in the desktop app.'),
+      findsOneWidget,
+    );
     await expectLater(
       find.byKey(const ValueKey('workspace-settings-screenshot')),
       matchesGoldenFile('goldens/workspace_settings_hooks_remote.png'),
@@ -83,7 +86,7 @@ Future<void> _pumpSettings(
         key: const ValueKey('workspace-settings-screenshot'),
         child: WorkspaceSettingsScreen(
           workspaceId: workspace.id,
-          guard: DraftExitGuard(),
+          guard: .new(),
         ),
       ),
       workspaceId: workspace.id,
@@ -97,5 +100,5 @@ Future<void> _pumpSettings(
       ],
     ),
   );
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
 }

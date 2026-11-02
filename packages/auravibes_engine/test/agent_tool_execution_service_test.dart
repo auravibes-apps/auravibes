@@ -1053,7 +1053,7 @@ LoadLatestMessageToolCallsResult<String> _singleToolCall() =>
     );
 
 class _FakeLifecycleHookRunner implements AgentToolLifecycleHookRunner<String> {
-  _FakeLifecycleHookRunner({
+  new({
     this.beforeResult = const AgentPreToolHookResult(
       outcome: AgentToolHookOutcome.allow,
     ),

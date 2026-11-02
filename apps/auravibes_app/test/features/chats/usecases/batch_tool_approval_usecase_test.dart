@@ -26,7 +26,7 @@ class _MockResolvedToolService extends Mock implements ResolvedToolService;
 
 class _RecordingWorkspaceHookRunner
     implements agent.AgentToolLifecycleHookRunner<ResolvedTool> {
-  _RecordingWorkspaceHookRunner({
+  new({
     this.beforeOutcome = agent.AgentToolHookOutcome.allow,
     this.onBefore,
   });
@@ -401,7 +401,7 @@ void main() {
       when(() => messageRepository.persistToolCallBatchResults(any()))
           .thenAnswer((_) => Future<void>.value());
 
-      await createUsecase(lifecycleHookRunner: hooks).approveOnce(
+      final _ = await createUsecase(lifecycleHookRunner: hooks).approveOnce(
         rootConversationId: 'root',
         workspaceId: 'root-workspace',
         pendingCalls: [call],
@@ -470,7 +470,7 @@ void main() {
         when(() => messageRepository.persistToolCallBatchResults(any()))
             .thenAnswer((_) => Future<void>.value());
 
-        await createUsecase(
+        final _ = await createUsecase(
           lifecycleHookRunner: hooks,
           cancellationRuntime: cancellation,
         ).approveOnce(

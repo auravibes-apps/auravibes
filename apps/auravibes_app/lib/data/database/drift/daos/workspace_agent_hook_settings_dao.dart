@@ -32,7 +32,7 @@ class WorkspaceAgentHookSettingsDao(super.attachedDatabase)
           .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
     }
 
-    await (update(workspaceAgentHookSettings)
+    final _ = await (update(workspaceAgentHookSettings)
           ..where((row) => row.workspaceId.equals(workspaceId)))
         .write(companion.copyWith(workspaceId: const .absent()));
     final updated = await getByWorkspaceId(workspaceId);

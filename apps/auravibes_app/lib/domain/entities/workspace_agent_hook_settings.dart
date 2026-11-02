@@ -10,6 +10,6 @@ class const WorkspaceAgentHookSettings({
       trustedSourcePath == configPath &&
       trustedDigest != null;
 
-  static WorkspaceAgentHookSettings defaults(String workspaceId) =>
-      WorkspaceAgentHookSettings(workspaceId: workspaceId, enabled: false);
+  const WorkspaceAgentHookSettings.defaults(String workspaceId)
+    : this(workspaceId: workspaceId, enabled: false);
 }

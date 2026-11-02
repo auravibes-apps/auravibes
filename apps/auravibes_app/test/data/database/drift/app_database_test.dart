@@ -124,7 +124,7 @@ void main() {
           variables: [const Variable<String>('existing')],
         ).getSingle();
         expect(retained.read<String>('name'), 'Retained workspace');
-        await repository.selectConfig(
+        final _ = await repository.selectConfig(
           'existing',
           canonicalPath: '/tmp/hooks.json',
         );
@@ -144,22 +144,22 @@ void main() {
             WorkspacesCompanion.insert(
               id: const Value('hooks-owner'),
               name: 'Hooks',
-              type: WorkspaceType.local,
+              type: .local,
             ),
           );
       final repository = WorkspaceAgentHookSettingsRepository(
         database.workspaceAgentHookSettingsDao,
       );
-      await repository.selectConfig(
+      final _ = await repository.selectConfig(
         'hooks-owner',
         canonicalPath: '/tmp/hooks.json',
       );
-      await repository.trustConfig(
+      final _ = await repository.trustConfig(
         'hooks-owner',
         canonicalPath: '/tmp/hooks.json',
         digest: 'trusted-digest',
       );
-      await repository.setEnabled('hooks-owner', enabled: true);
+      final _ = await repository.setEnabled('hooks-owner', enabled: true);
       final _ = await (database.delete(
         database.workspaces,
       )..where((row) => row.id.equals('hooks-owner'))).go();

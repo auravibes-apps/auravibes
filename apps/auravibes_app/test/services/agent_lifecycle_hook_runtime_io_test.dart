@@ -9,7 +9,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final runtime = const IoAgentLifecycleHookRuntime();
+  const runtime = AgentLifecycleHookRuntimeIo();
   final supported = Platform.isLinux || Platform.isMacOS;
   final pythonAvailable = supported && File('/usr/bin/python3').existsSync();
 
@@ -21,8 +21,8 @@ void main() {
         runtime,
         args: [
           '-c',
-          'import sys; print(\'{"decision":"allow"}\'); '
-              'sys.stderr.write("token=private-stderr-secret"); sys.exit($exitCode)',
+          ('import sys; print(\'{"decision":"allow"}\'); '
+              'sys.stderr.write("token=private-stderr-secret"); sys.exit($exitCode)'),
         ],
       );
       expect(
@@ -34,7 +34,7 @@ void main() {
       expect(result.stdout, exitCode == 0 ? '{"decision":"allow"}\n' : isNull);
       expect(result.stdout, isNot(contains('private-stderr-secret')));
     }
-  }, skip: !pythonAvailable);
+  }, skip: !pythonAvailable,);
 
   for (final count in [8192, 8193]) {
     test('combined stdout and stderr boundary $count bytes', () async {
@@ -44,8 +44,8 @@ void main() {
         runtime,
         args: [
           '-c',
-          'import sys; sys.stdout.buffer.write(b"x" * 4096); '
-              'sys.stderr.buffer.write(b"y" * ${count - 4096})',
+          ('import sys; sys.stdout.buffer.write(b"x" * 4096); '
+              'sys.stderr.buffer.write(b"y" * ${count - 4096})'),
         ],
       );
 
@@ -56,7 +56,7 @@ void main() {
             : AgentToolHookOutcome.outputLimitExceeded,
       );
       expect(result.stdout, count == 8192 ? 'x' * 4096 : isNull);
-    }, skip: !pythonAvailable);
+    }, skip: !pythonAvailable,);
   }
 
   test('UTF-8 output is counted in bytes rather than characters', () async {
@@ -71,7 +71,7 @@ void main() {
     );
     expect(result.outcome, AgentToolHookOutcome.outputLimitExceeded);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable);
+  }, skip: !pythonAvailable,);
 
   test('invalid UTF-8 is a failure without captured output', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -82,7 +82,7 @@ void main() {
     );
     expect(result.outcome, AgentToolHookOutcome.failed);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable);
+  }, skip: !pythonAvailable,);
 
   test('pre-cancelled invocation never launches the command', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -97,9 +97,9 @@ void main() {
       isCancelled: () => true,
     );
     expect(result.outcome, AgentToolHookOutcome.cancelled);
-    expect(await marker.exists(), isFalse);
+    expect(marker.existsSync(), isFalse);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable);
+  }, skip: !pythonAvailable,);
 
   test('output after cancellation cannot replace the cancelled outcome', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -109,26 +109,26 @@ void main() {
       runtime,
       args: [
         '-c',
-        'import signal,sys,time; from pathlib import Path; '
+        ('import signal,sys,time; from pathlib import Path; '
             'signal.signal(signal.SIGTERM, lambda *_: '
             '(sys.stdout.write("x" * 9000), sys.stdout.flush(), sys.exit(0))); '
-            'Path(${jsonEncode(ready.path)}).touch(); time.sleep(10)',
+            'Path(${jsonEncode(ready.path)}).touch(); time.sleep(10)'),
       ],
       isCancelled: ready.existsSync,
     );
     expect(result.outcome, AgentToolHookOutcome.cancelled);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable);
+  }, skip: !pythonAvailable,);
 
   test('unclosed child output pipes do not return partial success', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
     addTearDown(fixture.dispose);
     final childPid = File('${fixture.directory.path}/child-pid');
     addTearDown(() async {
-      if (await childPid.exists()) {
+      if (childPid.existsSync()) {
         final _ = Process.killPid(
-          int.parse(await childPid.readAsString()),
-          ProcessSignal.sigkill,
+          .parse(await childPid.readAsString()),
+          .sigkill,
         );
       }
     });
@@ -137,17 +137,17 @@ void main() {
       runtime,
       args: [
         '-c',
-        'import subprocess; from pathlib import Path; '
+        ('import subprocess; from pathlib import Path; '
             'child = subprocess.Popen(["/usr/bin/python3", "-c", '
             '"import time; time.sleep(10)"]); '
             'Path(${jsonEncode(childPid.path)}).write_text(str(child.pid)); '
-            'print(\'{"decision":"allow"}\', flush=True)',
+            'print(\'{"decision":"allow"}\', flush=True)'),
       ],
     );
     expect(result.outcome, AgentToolHookOutcome.failed);
     expect(result.stdout, isNull);
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
-  }, skip: !pythonAvailable);
+  }, skip: !pythonAvailable,);
 
   for (final change in ['config', 'executable', 'symlink', 'missing']) {
     test('changed $change is rejected before command launch', () async {
@@ -159,16 +159,16 @@ void main() {
       final configFile = File(fixture.snapshot.canonicalPath);
       switch (change) {
         case 'config':
-          await configFile.writeAsString('{"version":1,"hooks":[]}');
+          final _ = await configFile.writeAsString('{"version":1,"hooks":[]}');
         case 'executable':
-          await File(fixture.hook.command).writeAsString('changed executable');
+          final _ = await File(fixture.hook.command).writeAsString('changed executable');
         case 'symlink':
           final target = File('${fixture.directory.path}/replacement.json');
-          await configFile.copy(target.path);
-          await configFile.delete();
-          await Link(configFile.path).create(target.path);
+          final _ = await configFile.copy(target.path);
+          final _ = await configFile.delete();
+          final _ = await Link(configFile.path).create(target.path);
         case 'missing':
-          await File(fixture.hook.command).delete();
+          final _ = await File(fixture.hook.command).delete();
       }
       final result = await runtime.invoke(
         snapshot: fixture.snapshot,
@@ -184,7 +184,7 @@ void main() {
             : AgentToolHookOutcome.unavailable,
       );
       expect(result.stdout, isNull);
-    }, skip: !supported || !File('/usr/bin/printf').existsSync());
+    }, skip: !supported || !File('/usr/bin/printf').existsSync(),);
   }
 
   test('executes trusted argv hook without rewriting its command', () async {
@@ -199,7 +199,7 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.success);
     expect(result.stdout, '{"decision":"allow"}');
-  }, skip: !supported || !File('/usr/bin/printf').existsSync());
+  }, skip: !supported || !File('/usr/bin/printf').existsSync(),);
 
   test(
     'does not inherit process environment or evaluate shell syntax',
@@ -208,15 +208,17 @@ void main() {
       final marker = File(
         '${Directory.systemTemp.path}/aura-hook-shell-marker',
       );
-      if (await marker.exists()) await marker.delete();
+      if (marker.existsSync()) {
+        final _ = marker.deleteSync();
+      }
       final fixture = await _HookFixture.create('/usr/bin/printf');
       addTearDown(fixture.dispose);
-      final shellSyntax = r'$(touch ' + marker.path + ')';
+      final shellSyntax = '\$(touch ${marker.path})';
 
       final result = await fixture.invoke(runtime, args: [shellSyntax]);
 
       expect(result.stdout, shellSyntax);
-      expect(await marker.exists(), isFalse);
+      expect(marker.existsSync(), isFalse);
     },
     skip: !supported || !File('/usr/bin/printf').existsSync(),
   );
@@ -230,20 +232,20 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.success);
     expect(result.stdout, isEmpty);
-  }, skip: !supported || !File('/usr/bin/env').existsSync());
+  }, skip: !supported || !File('/usr/bin/env').existsSync(),);
 
   test('rejects non-file command sources while inspecting config', () async {
     if (!runtime.isSupported) return;
     final directory = await Directory.systemTemp.createTemp('aura-hooks-');
     addTearDown(() async {
-      await directory.delete(recursive: true);
+      final _ = await directory.delete(recursive: true);
     });
     final config = File('${directory.path}/hooks.json');
-    await config.writeAsString(
+    final _ = await config.writeAsString(
       jsonEncode({
         'version': 1,
         'hooks': [
-          {'event': 'beforeTool', 'command': directory.path, 'args': []},
+          {'event': 'beforeTool', 'command': directory.path, 'args': <String>[]},
         ],
       }),
     );
@@ -263,7 +265,7 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.outputLimitExceeded);
     expect(result.stdout, isNull);
-  }, skip: !supported || !File('/usr/bin/yes').existsSync());
+  }, skip: !supported || !File('/usr/bin/yes').existsSync(),);
 
   test('stderr counts toward the combined output limit', () async {
     if (!supported || !File('/usr/bin/python3').existsSync()) return;
@@ -277,7 +279,7 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.outputLimitExceeded);
     expect(result.stdout, isNull);
-  }, skip: !supported || !File('/usr/bin/python3').existsSync());
+  }, skip: !supported || !File('/usr/bin/python3').existsSync(),);
 
   test('reports a non-zero process exit as a hook failure', () async {
     if (!supported || !File('/usr/bin/false').existsSync()) return;
@@ -287,7 +289,7 @@ void main() {
     final result = await fixture.invoke(runtime, args: const []);
 
     expect(result.outcome, AgentToolHookOutcome.failed);
-  }, skip: !supported || !File('/usr/bin/false').existsSync());
+  }, skip: !supported || !File('/usr/bin/false').existsSync(),);
 
   test('kills a timed out hook', () async {
     if (!supported || !File('/usr/bin/sleep').existsSync()) return;
@@ -299,7 +301,7 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.timedOut);
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 6)));
-  }, skip: !supported || !File('/usr/bin/sleep').existsSync());
+  }, skip: !supported || !File('/usr/bin/sleep').existsSync(),);
 
   test('cancellation terminates an active hook process', () async {
     if (!supported || !File('/usr/bin/sleep').existsSync()) return;
@@ -319,7 +321,7 @@ void main() {
     cancellation.cancel();
 
     expect(result.outcome, AgentToolHookOutcome.cancelled);
-  }, skip: !supported || !File('/usr/bin/sleep').existsSync());
+  }, skip: !supported || !File('/usr/bin/sleep').existsSync(),);
 
   test(
     'cancellation force-kills a hook that ignores graceful termination',
@@ -338,8 +340,8 @@ void main() {
         runtime,
         args: [
           '-c',
-          'import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); '
-              'time.sleep(10)',
+          ('import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); '
+              'time.sleep(10)'),
         ],
         isCancelled: () => cancelled,
       );
@@ -361,7 +363,7 @@ void main() {
       );
       addTearDown(fixture.dispose);
       final changedSource = File('${fixture.directory.path}/policy.json');
-      await changedSource.writeAsString('{"version":2}');
+      final _ = await changedSource.writeAsString('{"version":2}');
 
       final result = await runtime.invoke(
         snapshot: fixture.snapshot,
@@ -378,7 +380,7 @@ void main() {
 }
 
 class _HookFixture {
-  _HookFixture({
+  new({
     required this.directory,
     required this.snapshot,
     required this.hook,
@@ -394,22 +396,22 @@ class _HookFixture {
     bool copyCommand = false,
   }) async {
     final directory = await Directory.systemTemp.createTemp('aura-hooks-');
-    if (copyCommand) {
-      command = (await File(command).copy('${directory.path}/command')).path;
-    }
+    final executable = copyCommand
+        ? (await File(command).copy('${directory.path}/command')).path
+        : command;
     final source = jsonEncode({
       'version': 1,
       'sourceFiles': sourceFiles,
       'hooks': [
-        {'event': 'beforeTool', 'command': command, 'args': []},
+        {'event': 'beforeTool', 'command': executable, 'args': <String>[]} ,
       ],
     });
     final config = File('${directory.path}/hooks.json');
-    await config.writeAsString(source);
+    final _ = await config.writeAsString(source);
     for (final sourceFile in sourceFiles) {
-      await File('${directory.path}/$sourceFile').writeAsString('trusted');
+      final _ = await File('${directory.path}/$sourceFile').writeAsString('trusted');
     }
-    final runtime = const IoAgentLifecycleHookRuntime();
+    const runtime = AgentLifecycleHookRuntimeIo();
     final snapshot = await runtime.inspect(config.path);
 
     return _HookFixture(
@@ -420,7 +422,7 @@ class _HookFixture {
   }
 
   Future<AgentLifecycleHookInvocationResult> invoke(
-    IoAgentLifecycleHookRuntime runtime, {
+    AgentLifecycleHookRuntimeIo runtime, {
     required List<String> args,
     bool Function()? isCancelled,
   }) async {
@@ -436,7 +438,7 @@ class _HookFixture {
         {'event': 'beforeTool', 'command': hook.command, 'args': args},
       ],
     });
-    await configPath.writeAsString(source);
+    final _ = await configPath.writeAsString(source);
     final snapshot = await runtime.inspect(configPath.path);
 
     return await runtime.invoke(

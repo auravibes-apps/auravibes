@@ -25,16 +25,16 @@ void main() {
     final source = await workspaces.createWorkspace(
       const WorkspaceToCreate(name: 'Source', type: .local),
     );
-    await hooks.selectConfig(
+    final _ = await hooks.selectConfig(
       source.id,
       canonicalPath: '/private/source-hooks.json',
     );
-    await hooks.trustConfig(
+    final _ = await hooks.trustConfig(
       source.id,
       canonicalPath: '/private/source-hooks.json',
       digest: 'source-secret-fingerprint',
     );
-    await hooks.setEnabled(source.id, enabled: true);
+    final _ = await hooks.setEnabled(source.id, enabled: true);
     final archive = WorkspaceConfigurationArchiveCodec.encode(
       await LocalWorkspaceConfigurationRepository(database).export(source.id),
     );
@@ -50,16 +50,16 @@ void main() {
     final destination = await workspaces.createWorkspace(
       const WorkspaceToCreate(name: 'Destination', type: .local),
     );
-    await hooks.selectConfig(
+    final _ = await hooks.selectConfig(
       destination.id,
       canonicalPath: '/private/destination-hooks.json',
     );
-    await hooks.trustConfig(
+    final _ = await hooks.trustConfig(
       destination.id,
       canonicalPath: '/private/destination-hooks.json',
       digest: 'destination-fingerprint',
     );
-    await hooks.setEnabled(destination.id, enabled: true);
+    final _ = await hooks.setEnabled(destination.id, enabled: true);
     final _ = await importer.importJson(
       archive,
       targetWorkspaceId: destination.id,

@@ -19,20 +19,20 @@ void main() {
     final oversizedConfig = jsonEncode({
       'version': 1,
       'hooks': [],
-      'sourceFiles': ['é' * 16384],
+      'sourceFiles': ['\u{e9}' * 16384],
     });
     expect(oversizedConfig.length, lessThan(maxAgentLifecycleHookConfigBytes));
     expect(
       () => parseAgentLifecycleHookConfig(oversizedConfig),
       _configError('config_too_large'),
     );
-    final valid = _configWithHook(args: ['😀' * 512]);
+    final valid = _configWithHook(args: ['\u{1f600}' * 512]);
     expect(
       parseAgentLifecycleHookConfig(valid).hooks.single.args.single,
-      '😀' * 512,
+      '\u{1f600}' * 512,
     );
     expect(
-      () => parseAgentLifecycleHookConfig(_configWithHook(args: ['😀' * 513])),
+      () => parseAgentLifecycleHookConfig(_configWithHook(args: ['\u{1f600}' * 513])),
       _configError('invalid_hook_argument'),
     );
   });
@@ -51,7 +51,7 @@ void main() {
     _configWithHook(event: 'beforeTurn'): 'unsupported_event',
     _configWithHook(command: 'a\u0000b'): 'invalid_hook',
     _configWithHook(args: ['a\u0000b']): 'invalid_hook_argument',
-    _configWithHook(args: List.filled(17, 'arg')): 'invalid_hook',
+    _configWithHook(args: .filled(17, 'arg')): 'invalid_hook',
     _configWithHook(extra: {'result': 'replacement'}): 'invalid_hook',
   };
   for (final entry in invalidConfigs.entries) {

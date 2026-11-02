@@ -5,24 +5,16 @@ import 'package:auravibes_app/features/settings/models/workspace_agent_hook_conf
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 
-class WorkspaceAgentHookSettingsUsecase {
-  const WorkspaceAgentHookSettingsUsecase({
-    required WorkspaceAgentHookSettingsRepository settingsRepository,
-    required WorkspaceRepository workspaceRepository,
-    required AgentLifecycleHookRuntime runtime,
-  }) : _settingsRepository = settingsRepository,
-       _workspaceRepository = workspaceRepository,
-       _runtime = runtime;
-
-  final WorkspaceAgentHookSettingsRepository _settingsRepository;
-  final WorkspaceRepository _workspaceRepository;
-  final AgentLifecycleHookRuntime _runtime;
-
+class const WorkspaceAgentHookSettingsUsecase({
+  required final WorkspaceAgentHookSettingsRepository settingsRepository,
+  required final WorkspaceRepository workspaceRepository,
+  required final AgentLifecycleHookRuntime runtime,
+}) {
   Future<void> selectConfig(String workspaceId, String sourcePath) async {
     await _requireLocalWorkspace(workspaceId);
     _requireSupported();
     final snapshot = await _inspect(sourcePath);
-    await _settingsRepository.selectConfig(
+    final _ = await settingsRepository.selectConfig(
       workspaceId,
       canonicalPath: snapshot.canonicalPath,
     );
@@ -34,7 +26,7 @@ class WorkspaceAgentHookSettingsUsecase {
   ) async {
     await _requireLocalWorkspace(workspaceId);
     _requireSupported();
-    final settings = await _settingsRepository.get(workspaceId);
+    final settings = await settingsRepository.get(workspaceId);
     final snapshot = await _inspect(sourcePath);
     if (snapshot.canonicalPath != settings.configPath) {
       throw const WorkspaceAgentHookSettingsException(
@@ -51,7 +43,7 @@ class WorkspaceAgentHookSettingsUsecase {
   ) async {
     await _requireLocalWorkspace(workspaceId);
     _requireSupported();
-    final settings = await _settingsRepository.get(workspaceId);
+    final settings = await settingsRepository.get(workspaceId);
     if (settings.configPath != review.canonicalPath) {
       throw const WorkspaceAgentHookSettingsException(
         'agent_lifecycle_hooks.configuration_changed',
@@ -65,7 +57,7 @@ class WorkspaceAgentHookSettingsUsecase {
         'agent_lifecycle_hooks.configuration_changed',
       );
     }
-    await _settingsRepository.trustConfig(
+    final _ = await settingsRepository.trustConfig(
       workspaceId,
       canonicalPath: review.canonicalPath,
       digest: review.digest,
@@ -76,7 +68,7 @@ class WorkspaceAgentHookSettingsUsecase {
     if (enabled) {
       await _requireLocalWorkspace(workspaceId);
       _requireSupported();
-      final settings = await _settingsRepository.get(workspaceId);
+      final settings = await settingsRepository.get(workspaceId);
       final configPath = settings.configPath;
       if (!settings.isTrusted || configPath == null) {
         throw const WorkspaceAgentHookSettingsException(
@@ -93,15 +85,15 @@ class WorkspaceAgentHookSettingsUsecase {
       }
     }
 
-    await _settingsRepository.setEnabled(workspaceId, enabled: enabled);
+    final _ = await settingsRepository.setEnabled(workspaceId, enabled: enabled);
   }
 
   Future<void> revokeTrust(String workspaceId) async {
-    await _settingsRepository.revokeTrust(workspaceId);
+    final _ = await settingsRepository.revokeTrust(workspaceId);
   }
 
   Future<void> _requireLocalWorkspace(String workspaceId) async {
-    final workspace = await _workspaceRepository.getWorkspaceById(workspaceId);
+    final workspace = await workspaceRepository.getWorkspaceById(workspaceId);
     if (workspace == null || workspace.type != WorkspaceType.local) {
       throw const WorkspaceAgentHookSettingsException(
         'agent_lifecycle_hooks.local_only',
@@ -110,7 +102,7 @@ class WorkspaceAgentHookSettingsUsecase {
   }
 
   void _requireSupported() {
-    if (!_runtime.isSupported) {
+    if (!runtime.isSupported) {
       throw const WorkspaceAgentHookSettingsException(
         'agent_lifecycle_hooks.unsupported_platform',
       );
@@ -119,20 +111,20 @@ class WorkspaceAgentHookSettingsUsecase {
 
   Future<AgentLifecycleHookSourceSnapshot> _inspect(String sourcePath) async {
     try {
-      return await _runtime.inspect(sourcePath);
-    } on AgentLifecycleHookConfigException catch (error) {
+      return await runtime.inspect(sourcePath);
+    } on AgentLifecycleHookConfigException catch (error, stackTrace) {
       if (error.code == 'unsupported_platform') {
-        throw const WorkspaceAgentHookSettingsException(
+        Error.throwWithStackTrace(const WorkspaceAgentHookSettingsException(
           'agent_lifecycle_hooks.unsupported_platform',
-        );
+        ), stackTrace);
       }
-      throw const WorkspaceAgentHookSettingsException(
+      Error.throwWithStackTrace(const WorkspaceAgentHookSettingsException(
         'agent_lifecycle_hooks.invalid_configuration',
-      );
-    } on Object {
-      throw const WorkspaceAgentHookSettingsException(
+      ), stackTrace);
+    } on Object catch (_, stackTrace) {
+      Error.throwWithStackTrace(const WorkspaceAgentHookSettingsException(
         'agent_lifecycle_hooks.invalid_configuration',
-      );
+      ), stackTrace);
     }
   }
 
@@ -156,7 +148,7 @@ class WorkspaceAgentHookSettingsUsecase {
 }
 
 class WorkspaceAgentHookSettingsException implements Exception {
-  const WorkspaceAgentHookSettingsException(this.localizationKey);
+  const new(this.localizationKey);
 
   final String localizationKey;
 }

@@ -2,31 +2,23 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_agent_hook_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/settings/usecases/workspace_agent_hook_settings_usecase.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
-  late AppDatabase database;
-  late WorkspaceRepository workspaceRepository;
-  late WorkspaceAgentHookSettingsRepository settingsRepository;
-
-  setUp(() {
-    database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    workspaceRepository = WorkspaceRepository(database);
-    settingsRepository = WorkspaceAgentHookSettingsRepository(
-      database.workspaceAgentHookSettingsDao,
-    );
-  });
-
-  tearDown(() async => database.close());
+  final database = AppDatabase(connection: NativeDatabase.memory());
+  final workspaceRepository = WorkspaceRepository(database);
+  final settingsRepository = WorkspaceAgentHookSettingsRepository(
+    database.workspaceAgentHookSettingsDao,
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   test('trust is separate from opt-in and revocation clears both', () async {
     final workspace = await _createLocalWorkspace(workspaceRepository);
@@ -158,7 +150,7 @@ void main() {
     final workspace = await workspaceRepository.createWorkspace(
       const WorkspaceToCreate(
         name: 'Remote',
-        type: WorkspaceType.remote,
+        type: .remote,
         url: 'https://example.invalid',
       ),
     );
@@ -191,7 +183,7 @@ void main() {
 
 Future<WorkspaceEntity> _createLocalWorkspace(WorkspaceRepository repository) =>
     repository.createWorkspace(
-      const WorkspaceToCreate(name: 'Local', type: WorkspaceType.local),
+      const WorkspaceToCreate(name: 'Local', type: .local),
     );
 
 WorkspaceAgentHookSettingsUsecase _usecase(
@@ -219,17 +211,20 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
     return AgentLifecycleHookSourceSnapshot(
       canonicalPath: sourcePath,
       digest: digest,
-      config: AgentLifecycleHookConfig(
+      config: const AgentLifecycleHookConfig(
         hooks: [
-          const AgentLifecycleHookDefinition(
-            event: AgentLifecycleHookEvent.beforeTool,
+          AgentLifecycleHookDefinition(
+            event: .beforeTool,
             command: './hooks/check-tool',
             args: ['--safe'],
           ),
         ],
         sourceFiles: const ['policy.json'],
       ),
-      commandPaths: const {AgentLifecycleHookEvent.beforeTool: '/tmp/check'},
+      commandPaths: {
+        for (final event in [AgentLifecycleHookEvent.beforeTool])
+          event: '/tmp/check',
+      },
       sourceFilePaths: const ['/tmp/policy.json'],
     );
   }
@@ -243,6 +238,6 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
     required String conversationId,
     Future<bool> Function()? isStillTrusted,
   }) async => const AgentLifecycleHookInvocationResult(
-    outcome: AgentToolHookOutcome.unavailable,
+    outcome: .unavailable,
   );
 }

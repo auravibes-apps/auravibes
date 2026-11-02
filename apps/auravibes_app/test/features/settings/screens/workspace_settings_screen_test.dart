@@ -4,6 +4,8 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
+import 'package:auravibes_app/features/settings/providers/workspace_agent_hook_settings_provider.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
@@ -52,6 +54,9 @@ void main() {
                     updatedAt: .new(2026),
                   ),
                 ]),
+              ),
+              workspaceAgentHookSettingsProvider('A').overrideWith(
+                (_) => Stream.value(const WorkspaceAgentHookSettings.defaults('A')),
               ),
               compactionSettingsProvider('A')
                   .overrideWith((_) => stream.stream),
@@ -159,6 +164,9 @@ void main() {
           child: Router.withConfig(config: router),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
+            workspaceAgentHookSettingsProvider(a.id).overrideWith(
+              (_) => Stream.value(WorkspaceAgentHookSettings.defaults(a.id)),
+            ),
             cloudWorkspaceStateGatewayProvider.overrideWith(
               (_, _) async => null,
             ),

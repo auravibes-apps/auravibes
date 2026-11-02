@@ -21,6 +21,70 @@ abstract class LocaleKeys {
       'navigation_drawer.collapse_sidebar_tooltip';
   static const navigation_drawer_expand_sidebar_tooltip =
       'navigation_drawer.expand_sidebar_tooltip';
+  static const agent_lifecycle_hooks_title = 'agent_lifecycle_hooks.title';
+  static const agent_lifecycle_hooks_description =
+      'agent_lifecycle_hooks.description';
+  static const agent_lifecycle_hooks_enable = 'agent_lifecycle_hooks.enable';
+  static const agent_lifecycle_hooks_status_not_configured =
+      'agent_lifecycle_hooks.status_not_configured';
+  static const agent_lifecycle_hooks_status_trust_required =
+      'agent_lifecycle_hooks.status_trust_required';
+  static const agent_lifecycle_hooks_status_trusted =
+      'agent_lifecycle_hooks.status_trusted';
+  static const agent_lifecycle_hooks_status_changed =
+      'agent_lifecycle_hooks.status_changed';
+  static const agent_lifecycle_hooks_status_invalid =
+      'agent_lifecycle_hooks.status_invalid';
+  static const agent_lifecycle_hooks_status_unsupported_platform =
+      'agent_lifecycle_hooks.status_unsupported_platform';
+  static const agent_lifecycle_hooks_status_unsupported_workspace =
+      'agent_lifecycle_hooks.status_unsupported_workspace';
+  static const agent_lifecycle_hooks_recovery_local_desktop =
+      'agent_lifecycle_hooks.recovery_local_desktop';
+  static const agent_lifecycle_hooks_unsupported_platform =
+      'agent_lifecycle_hooks.unsupported_platform';
+  static const agent_lifecycle_hooks_choose_config =
+      'agent_lifecycle_hooks.choose_config';
+  static const agent_lifecycle_hooks_trust_config =
+      'agent_lifecycle_hooks.trust_config';
+  static const agent_lifecycle_hooks_revoke_trust =
+      'agent_lifecycle_hooks.revoke_trust';
+  static const agent_lifecycle_hooks_trusted_digest =
+      'agent_lifecycle_hooks.trusted_digest';
+  static const agent_lifecycle_hooks_trust_title =
+      'agent_lifecycle_hooks.trust_title';
+  static const agent_lifecycle_hooks_trust_warning =
+      'agent_lifecycle_hooks.trust_warning';
+  static const agent_lifecycle_hooks_commands =
+      'agent_lifecycle_hooks.commands';
+  static const agent_lifecycle_hooks_before_tool =
+      'agent_lifecycle_hooks.before_tool';
+  static const agent_lifecycle_hooks_after_tool =
+      'agent_lifecycle_hooks.after_tool';
+  static const agent_lifecycle_hooks_arguments =
+      'agent_lifecycle_hooks.arguments';
+  static const agent_lifecycle_hooks_source_files =
+      'agent_lifecycle_hooks.source_files';
+  static const agent_lifecycle_hooks_no_hooks =
+      'agent_lifecycle_hooks.no_hooks';
+  static const agent_lifecycle_hooks_local_only =
+      'agent_lifecycle_hooks.local_only';
+  static const agent_lifecycle_hooks_configuration_changed =
+      'agent_lifecycle_hooks.configuration_changed';
+  static const agent_lifecycle_hooks_invalid_configuration =
+      'agent_lifecycle_hooks.invalid_configuration';
+  static const agent_lifecycle_hooks_digest_value =
+      'agent_lifecycle_hooks.digest_value';
+  static const agent_lifecycle_hooks_trust_confirm =
+      'agent_lifecycle_hooks.trust_confirm';
+  static const agent_lifecycle_hooks_trust_required =
+      'agent_lifecycle_hooks.trust_required';
+  static const agent_lifecycle_hooks_file_unavailable =
+      'agent_lifecycle_hooks.file_unavailable';
+  static const agent_lifecycle_hooks_error = 'agent_lifecycle_hooks.error';
+  static const agent_lifecycle_hooks_load_error =
+      'agent_lifecycle_hooks.load_error';
+  static const agent_lifecycle_hooks_retry = 'agent_lifecycle_hooks.retry';
   static const quick_switcher_title = 'quick_switcher.title';
   static const quick_switcher_search = 'quick_switcher.search';
   static const quick_switcher_keyboard_hint = 'quick_switcher.keyboard_hint';

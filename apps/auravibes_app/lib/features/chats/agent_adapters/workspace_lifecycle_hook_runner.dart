@@ -2,27 +2,17 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/workspace_agent_hook_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
-class WorkspaceLifecycleHookRunner
-    implements agent.AgentToolLifecycleHookRunner<ResolvedTool> {
-  const WorkspaceLifecycleHookRunner({
-    required WorkspaceAgentHookSettingsRepository settingsRepository,
-    required WorkspaceRepository workspaceRepository,
-    required AgentLifecycleHookRuntime runtime,
-  }) : _settingsRepository = settingsRepository,
-       _workspaceRepository = workspaceRepository,
-       _runtime = runtime;
-
-  final WorkspaceAgentHookSettingsRepository _settingsRepository;
-  final WorkspaceRepository _workspaceRepository;
-  final AgentLifecycleHookRuntime _runtime;
-
+class const WorkspaceLifecycleHookRunner({
+  required final WorkspaceAgentHookSettingsRepository settingsRepository,
+  required final WorkspaceRepository workspaceRepository,
+  required final AgentLifecycleHookRuntime runtime,
+}) implements agent.AgentToolLifecycleHookRunner<ResolvedTool> {
   @override
   Future<agent.AgentPreToolHookResult> beforeTool({
     required agent.AgentToolLifecycleHookRequest<ResolvedTool> request,
@@ -32,14 +22,16 @@ class WorkspaceLifecycleHookRunner
     if (loaded == null) {
       return const agent.AgentPreToolHookResult(outcome: .allow);
     }
-    if (loaded.failure != null) {
-      return _preFailure(loaded.failure!);
+    if (loaded.failure case final failure?) {
+      return _preFailure(failure);
     }
 
-    final snapshot = loaded.snapshot!;
-    final hook = snapshot.config.hookFor(AgentLifecycleHookEvent.beforeTool);
-    if (hook == null)
+    final snapshot = loaded.snapshot;
+    if (snapshot == null) return _preFailure(agent.AgentToolHookOutcome.failed);
+    final hook = snapshot.config.hookFor(.beforeTool);
+    if (hook == null) {
       return const agent.AgentPreToolHookResult(outcome: .allow);
+    }
     if (!await _isStillTrusted(request.workspaceId, snapshot)) {
       return _preFailure(agent.AgentToolHookOutcome.unavailable);
     }
@@ -47,7 +39,7 @@ class WorkspaceLifecycleHookRunner
       return const agent.AgentPreToolHookResult(outcome: .cancelled);
     }
 
-    final invocation = await _runtime.invoke(
+    final invocation = await runtime.invoke(
       snapshot: snapshot,
       hook: hook,
       input: _hookInput(request, event: 'beforeTool'),
@@ -67,11 +59,11 @@ class WorkspaceLifecycleHookRunner
       );
     }
     if (response['decision'] == 'allow' &&
-        response.keys.toSet().difference({'decision'}).isEmpty) {
+        response.keys.toSet().difference(<String>{'decision'}).isEmpty) {
       return const agent.AgentPreToolHookResult(outcome: .allow);
     }
     if (response['decision'] == 'block' &&
-        response.keys.toSet().difference({'decision', 'reason'}).isEmpty) {
+        response.keys.toSet().difference(<String>{'decision', 'reason'}).isEmpty) {
       final rawReason = response['reason'];
       final reason = rawReason is String ? _redactAndTrim(rawReason) : null;
 
@@ -99,12 +91,15 @@ class WorkspaceLifecycleHookRunner
     if (loaded == null) {
       return const agent.AgentPostToolHookResult(outcome: .success);
     }
-    if (loaded.failure != null) {
-      return agent.AgentPostToolHookResult(outcome: loaded.failure!);
+    if (loaded.failure case final failure?) {
+      return agent.AgentPostToolHookResult(outcome: failure);
     }
 
-    final snapshot = loaded.snapshot!;
-    final hook = snapshot.config.hookFor(AgentLifecycleHookEvent.afterTool);
+    final snapshot = loaded.snapshot;
+    if (snapshot == null) {
+      return const agent.AgentPostToolHookResult(outcome: .failed);
+    }
+    final hook = snapshot.config.hookFor(.afterTool);
     if (hook == null) {
       return const agent.AgentPostToolHookResult(outcome: .success);
     }
@@ -115,7 +110,7 @@ class WorkspaceLifecycleHookRunner
       return const agent.AgentPostToolHookResult(outcome: .cancelled);
     }
 
-    final invocation = await _runtime.invoke(
+    final invocation = await runtime.invoke(
       snapshot: snapshot,
       hook: hook,
       input: _hookInput(
@@ -132,15 +127,16 @@ class WorkspaceLifecycleHookRunner
     }
 
     final response = _decodeHookResponse(invocation.stdout);
+    final context = response?['context'];
     if (response == null ||
-        response.keys.toSet().difference({'context'}).isNotEmpty ||
-        response['context'] is! String) {
+        response.keys.toSet().difference(<String>{'context'}).isNotEmpty ||
+        context is! String) {
       return const agent.AgentPostToolHookResult(outcome: .failed);
     }
 
     return agent.AgentPostToolHookResult(
       outcome: .success,
-      context: _redactAndTrim(response['context']! as String),
+      context: _redactAndTrim(context),
     );
   }
 
@@ -148,9 +144,9 @@ class WorkspaceLifecycleHookRunner
     String workspaceId,
     AgentLifecycleHookSourceSnapshot snapshot,
   ) async {
-    final workspace = await _workspaceRepository.getWorkspaceById(workspaceId);
+    final workspace = await workspaceRepository.getWorkspaceById(workspaceId);
     if (workspace == null || !workspace.type.isLocal) return false;
-    final settings = await _settingsRepository.get(workspaceId);
+    final settings = await settingsRepository.get(workspaceId);
 
     return settings.enabled &&
         settings.isTrusted &&
@@ -170,14 +166,14 @@ class WorkspaceLifecycleHookRunner
       return (failure: agent.AgentToolHookOutcome.unavailable, snapshot: null);
     }
 
-    final workspace = await _workspaceRepository.getWorkspaceById(workspaceId);
+    final workspace = await workspaceRepository.getWorkspaceById(workspaceId);
     if (workspace == null) {
       return (failure: agent.AgentToolHookOutcome.unavailable, snapshot: null);
     }
 
-    final settings = await _settingsRepository.get(workspaceId);
+    final settings = await settingsRepository.get(workspaceId);
     if (!settings.enabled) return null;
-    if (!_runtime.isSupported) {
+    if (!runtime.isSupported) {
       return (failure: agent.AgentToolHookOutcome.unavailable, snapshot: null);
     }
 
@@ -191,7 +187,7 @@ class WorkspaceLifecycleHookRunner
     }
 
     try {
-      final snapshot = await _runtime.inspect(configPath);
+      final snapshot = await runtime.inspect(configPath);
       if (snapshot.canonicalPath != settings.trustedSourcePath ||
           snapshot.canonicalPath != configPath ||
           snapshot.digest != settings.trustedDigest) {
@@ -252,7 +248,7 @@ String _hookInput(
       .take(24)
       .map((name) => _truncateUtf8(name, 24))
       .toList(growable: false),
-  if (toolSucceeded != null) 'toolSucceeded': toolSucceeded,
+  'toolSucceeded': ?toolSucceeded,
 });
 
 String _redactAndTrim(String value) => LogRedaction.redact(value).trim();
