@@ -1595,6 +1595,9 @@ String _fixtureDescription(String name) => switch (name) {
     'Same Services route and rows after a controlled network test failure; '
         'no remote request',
   'IntroRoute' => 'Empty in-memory database; no workspace or account',
+  _ when name.startsWith('Intro-') =>
+    'Empty in-memory database; no workspace or account; intro journey '
+        'captured before creating a workspace or connecting an AI provider',
   'MixedConnections' =>
     'Four controlled connection rows: model provider, '
         'expired MCP, two saved credentials; no remote access '
