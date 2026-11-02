@@ -88,6 +88,15 @@ jobs:
             --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
           git diff --exit-code
 
+      - name: Capture intro guide baseline at default text scale
+        working-directory: ${{ runner.temp }}/issue-1527-baseline/apps/auravibes_app
+        run: |
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route IntroRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/before-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
+          git diff --exit-code
+
       - name: Capture empty conversation baseline
         working-directory: ${{ runner.temp }}/issue-1527-baseline/apps/auravibes_app
         run: |
@@ -103,6 +112,16 @@ jobs:
           test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
           flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
             --plain-name='Intro journey forms and recovery en mobile=true' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/after-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
+          git diff --exit-code
+
+      - name: Capture intro guide feature at default text scale
+        working-directory: apps/auravibes_app
+        run: |
+          test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route IntroRoute duo_closed light' \
             --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/after-raw" \
             --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
           git diff --exit-code
@@ -127,8 +146,8 @@ jobs:
 
           root = Path(os.environ['RUNNER_TEMP']) / 'issue-1527-ui-evidence'
           expected = {
-              ('before-raw', '*Intro-Welcome1-en-mobile.png'): 'before-first-chat',
-              ('after-raw', '*Intro-FirstChatGuide-en-mobile.png'): 'after-first-chat',
+              ('before-raw', '*IntroRoute-duo_closed-light.png'): 'before-first-chat',
+              ('after-raw', '*IntroRoute-duo_closed-light.png'): 'after-first-chat',
               ('before-raw', '*Intro-Chooser-en-mobile.png'): 'before-setup-choice',
               ('after-raw', '*Intro-Chooser-en-mobile.png'): 'after-setup-choice',
               ('before-raw', '*ConversationRoute-duo_closed-light.png'): 'before-empty-conversation',
@@ -149,6 +168,7 @@ jobs:
                   raise SystemExit(f'Wrong source fingerprint in {sidecar.name}')
               conversation_capture = 'ConversationRoute-' in metadata.get('name', '')
               route = metadata.get('route', '')
+              default_scale_guide = metadata.get('name', '').startswith('IntroRoute-')
               if conversation_capture:
                   if not route.startswith('/workspaces/') or '/chats/' not in route:
                       raise SystemExit(f'Unexpected conversation route in {sidecar.name}')
@@ -156,6 +176,16 @@ jobs:
                       raise SystemExit(f'Unexpected conversation viewport in {sidecar.name}')
               elif route != '/intro':
                   raise SystemExit(f'Unexpected intro route in {sidecar.name}')
+              if default_scale_guide and (
+                  metadata.get('viewport') != [466.0, 678.0]
+                  or metadata.get('textScale') != 1.0
+              ):
+                  raise SystemExit(f'Unexpected guide viewport in {sidecar.name}')
+              if not default_scale_guide and not conversation_capture and (
+                  metadata.get('viewport') != [360.0, 640.0]
+                  or metadata.get('textScale') != 1.8
+              ):
+                  raise SystemExit(f'Unexpected large-text chooser viewport in {sidecar.name}')
               if metadata.get('locale') != 'en':
                   raise SystemExit(f'Unexpected route or locale in {sidecar.name}')
               if metadata.get('renderer') != 'Flutter widget-test Skia, linux':
@@ -169,8 +199,8 @@ jobs:
                   'Persisted local workspace with one empty conversation, no messages, '
                   'and an empty composer; no models or cloud accounts'
                   if conversation_capture
-                  else 'Empty in-memory database; no workspace or account; intro journey '
-                       'captured before creating a workspace or connecting an AI provider'
+                  else 'Empty in-memory database; no workspace or account; first-run '
+                       'intro guide and advanced setup before workspace creation'
               )
               sidecar.write_text(json.dumps(metadata, indent=2) + '\n')
               shutil.copy2(png, root / f'{output_name}.png')
