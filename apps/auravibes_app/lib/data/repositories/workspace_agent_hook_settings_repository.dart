@@ -26,7 +26,7 @@ class WorkspaceAgentHookSettingsRepository(
   }) async {
     final row = await _dao.save(
       workspaceId,
-      WorkspaceAgentHookSettingsCompanion(
+      .new(
         enabled: const .new(false),
         configPath: .new(canonicalPath),
         trustedSourcePath: const .new(null),
@@ -48,7 +48,7 @@ class WorkspaceAgentHookSettingsRepository(
     }
     final row = await _dao.save(
       workspaceId,
-      WorkspaceAgentHookSettingsCompanion(
+      .new(
         trustedSourcePath: .new(canonicalPath),
         trustedDigest: .new(digest),
       ),
@@ -67,7 +67,7 @@ class WorkspaceAgentHookSettingsRepository(
     }
     final row = await _dao.save(
       workspaceId,
-      WorkspaceAgentHookSettingsCompanion(enabled: .new(enabled)),
+      .new(enabled: .new(enabled)),
     );
 
     return _mapRow(row);

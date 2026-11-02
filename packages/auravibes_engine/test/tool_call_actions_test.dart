@@ -119,7 +119,11 @@ void main() {
         'resolve:conversation-1:calculator:{"input": "1+1"}',
         'running:message-1:tool-1',
         'pre:workspace-1:tool-1:input',
-        'update:AgentToolResultStatus.executionError:{"outcome":"blocked","code":"hook_blocked","reason":"Policy blocked this tool call."}',
+        [
+          'update:AgentToolResultStatus.executionError:',
+          '{"outcome":"blocked","code":"hook_blocked",',
+          '"reason":"Policy blocked this tool call."}',
+        ].join(),
         'resume:message-1',
       ]);
       expect(provider.updates, [AgentToolResultStatus.executionError]);

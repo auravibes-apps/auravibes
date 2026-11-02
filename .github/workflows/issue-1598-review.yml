@@ -64,10 +64,6 @@ jobs:
         run: python3 tool/validation_lease.py --label hooks-feature-generate -- dart run melos run generate
       - name: Generate locale keys
         run: python3 tool/validation_lease.py --label hooks-localization-generate -- dart run melos run generate:localization
-      - name: Export standard analyzer corrections for review
-        run: |
-          python3 tool/validation_lease.py --label hooks-app-fixes -- dart fix --apply apps/auravibes_app
-          python3 tool/validation_lease.py --label hooks-engine-fixes -- dart fix --apply packages/auravibes_engine
       - name: Export formatting corrections for review
         run: |
           python3 tool/validation_lease.py --label hooks-feature-format -- dart format apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_engine/lib packages/auravibes_engine/test

@@ -42,7 +42,7 @@ void main() {
         await _trust(settingsRepository, workspace.id, enabled: true);
         final runtime = _FakeHookRuntime(
           event: event,
-          output: AgentLifecycleHookInvocationResult(
+          output: .new(
             outcome: agent.AgentToolHookOutcome.success,
             stdout: jsonEncode(
               event == AgentLifecycleHookEvent.beforeTool
@@ -89,7 +89,7 @@ void main() {
         await _trust(settingsRepository, workspace.id, enabled: true);
         final runtime = _FakeHookRuntime(
           event: event,
-          output: AgentLifecycleHookInvocationResult(
+          output: .new(
             outcome: agent.AgentToolHookOutcome.success,
             stdout: output,
           ),
@@ -157,13 +157,17 @@ void main() {
 
           return result.outcome;
         }
+
         final pending = runHook();
         await started.future;
         switch (change) {
           case 'revoke':
             final _ = await settingsRepository.revokeTrust(workspace.id);
           case 'disable':
-            final _ = await settingsRepository.setEnabled(workspace.id, enabled: false);
+            final _ = await settingsRepository.setEnabled(
+              workspace.id,
+              enabled: false,
+            );
           case 'replace':
             final _ = await settingsRepository.selectConfig(
               workspace.id,
@@ -204,9 +208,11 @@ void main() {
               'command': '/usr/bin/python3',
               'args': [
                 '-c',
-                ('from pathlib import Path; '
-                    'Path(${jsonEncode(marker.path)}).write_text("executed"); '
-                    'print(\'{"decision":"allow"}\')'),
+                [
+                  'from pathlib import Path; ',
+                  'Path(${jsonEncode(marker.path)}).write_text("executed"); ',
+                  'print(\'{"decision":"allow"}\')',
+                ].join(),
               ],
             },
           ],
@@ -224,7 +230,10 @@ void main() {
         canonicalPath: snapshot.canonicalPath,
         digest: snapshot.digest,
       );
-      final _ = await settingsRepository.setEnabled(workspace.id, enabled: true);
+      final _ = await settingsRepository.setEnabled(
+        workspace.id,
+        enabled: true,
+      );
       final runtime = _PausingReinspectionRuntime();
       final runner = _runner(settingsRepository, workspaceRepository, runtime);
       final pending = runner.beforeTool(
@@ -331,7 +340,9 @@ void main() {
     expect(result.outcome, agent.AgentToolHookOutcome.block);
     expect(result.reason, contains('[REDACTED]'));
     expect(result.reason, isNot(contains('do-not-leak')));
-    final hookInput = jsonDecode((runtime.lastInput ?? (throw StateError('Hook input was not captured.')))) as Map<String, dynamic>;
+    final hookInput = jsonDecode(
+      runtime.lastInput ?? (throw StateError('Hook input was not captured.')),
+    ) as Map<String, dynamic>;
     expect(hookInput['tool'], 'search');
     expect(hookInput['argumentNames'], ['api_key', 'query']);
     expect(runtime.lastInput, isNot(contains('secret-value')));
@@ -354,7 +365,8 @@ void main() {
       isCancellationRequested: (_) => false,
     );
 
-    final inputRaw = (runtime.lastInput ?? (throw StateError('Hook input was not captured.')));
+    final inputRaw =
+        runtime.lastInput ?? (throw StateError('Hook input was not captured.'));
     expect(utf8.encode(inputRaw).length, lessThanOrEqualTo(8192));
     final input = jsonDecode(inputRaw) as Map<String, dynamic>;
     expect(input['toolCallId'], hasLength(128));
@@ -435,7 +447,10 @@ Future<void> _trust(
   String workspaceId, {
   bool enabled = false,
 }) async {
-  final _ = await repository.selectConfig(workspaceId, canonicalPath: '/tmp/hooks.json');
+  final _ = await repository.selectConfig(
+    workspaceId,
+    canonicalPath: '/tmp/hooks.json',
+  );
   final _ = await repository.trustConfig(
     workspaceId,
     canonicalPath: '/tmp/hooks.json',
@@ -501,7 +516,7 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
     return AgentLifecycleHookSourceSnapshot(
       canonicalPath: sourcePath,
       digest: digest,
-      config: AgentLifecycleHookConfig(hooks: [hook]),
+      config: .new(hooks: [hook]),
       commandPaths: {event: '/bin/true'},
     );
   }

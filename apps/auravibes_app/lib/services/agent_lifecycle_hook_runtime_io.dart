@@ -29,7 +29,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     }
     final canonicalPath = await rawConfigFile.resolveSymbolicLinks();
     final configBytes = await _readBoundedFile(
-      File(canonicalPath),
+      .new(canonicalPath),
       maxAgentLifecycleHookConfigBytes,
       'config_too_large',
     );
@@ -69,7 +69,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
           : p.join(p.dirname(canonicalPath), sourceFilePath);
       final resolved = await File(unresolved).resolveSymbolicLinks();
       final sourceBytes = await _readBoundedFile(
-        File(resolved),
+        .new(resolved),
         maxAgentLifecycleHookExecutableBytes,
         'source_too_large',
       );
@@ -183,6 +183,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
 
       return code;
     }
+
     final exitCodeFuture = trackExit();
     Future<void>? termination;
 
@@ -194,7 +195,9 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
         // Continue to the forced termination attempt below.
       }
       try {
-        final _ = await exitCodeFuture.timeout(const Duration(milliseconds: 150));
+        final _ = await exitCodeFuture.timeout(
+          const Duration(milliseconds: 150),
+        );
 
         return;
       } on TimeoutException {
@@ -206,7 +209,9 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
         // Some platforms only support terminating the direct child.
       }
       try {
-        final _ = await exitCodeFuture.timeout(const Duration(milliseconds: 250));
+        final _ = await exitCodeFuture.timeout(
+          const Duration(milliseconds: 250),
+        );
       } on TimeoutException {
         // The invocation still returns within its hard runtime bound.
       }

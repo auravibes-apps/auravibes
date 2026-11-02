@@ -24,8 +24,8 @@ final batchToolApprovalUsecaseProvider = Provider<BatchToolApprovalActions>(
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
     resolveCloudTurn: (workspaceId) =>
         ref.read(cloudTurnUsecaseProvider(workspaceId).future),
-    lifecycleHookRunner: ref.watch(workspaceLifecycleHookRunnerProvider),
     onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
+    lifecycleHookRunner: ref.watch(workspaceLifecycleHookRunnerProvider),
   ),
   dependencies: [agentToolResumeServiceProvider],
 );

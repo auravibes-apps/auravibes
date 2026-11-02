@@ -5,10 +5,10 @@ import 'package:auravibes_app/data/repositories/workspace_compaction_settings_re
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
-import 'package:auravibes_app/features/settings/providers/workspace_agent_hook_settings_provider.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
+import 'package:auravibes_app/features/settings/providers/workspace_agent_hook_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycle_hooks_section.dart';
@@ -56,7 +56,9 @@ void main() {
                 ]),
               ),
               workspaceAgentHookSettingsProvider('A').overrideWith(
-                (_) => Stream.value(const WorkspaceAgentHookSettings.defaults('A')),
+                (_) => Stream.value(
+                  const WorkspaceAgentHookSettings.defaults('A'),
+                ),
               ),
               compactionSettingsProvider('A')
                   .overrideWith((_) => stream.stream),

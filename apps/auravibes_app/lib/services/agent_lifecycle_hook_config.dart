@@ -24,7 +24,6 @@ class const AgentLifecycleHookDefinition({
   required final List<String> args,
 });
 
-
 class AgentLifecycleHookConfigException implements Exception {
   const new(this.code);
 
@@ -46,7 +45,10 @@ AgentLifecycleHookConfig parseAgentLifecycleHookConfig(String source) {
   try {
     decoded = jsonDecode(source);
   } on FormatException catch (_, stackTrace) {
-    Error.throwWithStackTrace(const AgentLifecycleHookConfigException('invalid_json'), stackTrace);
+    Error.throwWithStackTrace(
+      const AgentLifecycleHookConfigException('invalid_json'),
+      stackTrace,
+    );
   }
   if (decoded is! Map<String, dynamic> ||
       decoded.keys.toSet().difference(<String>{

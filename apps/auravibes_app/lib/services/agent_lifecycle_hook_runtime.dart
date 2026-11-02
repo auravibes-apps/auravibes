@@ -40,6 +40,5 @@ class const AgentLifecycleHookInvocationResult({
   final String? stdout,
 });
 
-
 AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
     platform.createAgentLifecycleHookRuntime();

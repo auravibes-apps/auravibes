@@ -219,7 +219,7 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
             args: ['--safe'],
           ),
         ],
-        sourceFiles: const ['policy.json'],
+        sourceFiles: ['policy.json'],
       ),
       commandPaths: {
         for (final event in [AgentLifecycleHookEvent.beforeTool])
@@ -237,7 +237,5 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
     Future<bool> Function()? isStillTrusted,
-  }) async => const AgentLifecycleHookInvocationResult(
-    outcome: .unavailable,
-  );
+  }) async => const AgentLifecycleHookInvocationResult(outcome: .unavailable);
 }

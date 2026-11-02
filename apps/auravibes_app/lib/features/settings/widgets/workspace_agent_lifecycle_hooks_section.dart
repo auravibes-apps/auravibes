@@ -37,9 +37,13 @@ class _WorkspaceAgentLifecycleHooksSectionState
 
     return switch (settings) {
       AsyncData(:final value) => _WorkspaceHookSettingsView(
-        settings: value, trustStatus: trust.value, busy: _busy,
-        onChoose: _choosePressed, onReview: _reviewPressed,
-        onRevoke: _revokePressed, onEnabled: _enabledChanged,
+        settings: value,
+        trustStatus: trust.value,
+        busy: _busy,
+        onChoose: _choosePressed,
+        onReview: _reviewPressed,
+        onRevoke: _revokePressed,
+        onEnabled: _enabledChanged,
       ),
       AsyncLoading() => const Center(child: AuraSpinner()),
       AsyncError() => _WorkspaceHookLoadFailure(onRetry: _retry),
@@ -66,7 +70,9 @@ class _WorkspaceAgentLifecycleHooksSectionState
       if (file == null) return;
       final path = file.path;
       if (path == null) {
-        _showMessage(const TextLocale('agent_lifecycle_hooks.file_unavailable'));
+        _showMessage(
+          const TextLocale('agent_lifecycle_hooks.file_unavailable'),
+        );
 
         return;
       }
@@ -114,8 +120,8 @@ class _WorkspaceAgentLifecycleHooksSectionState
                   const TextLocale('agent_lifecycle_hooks.arguments'),
                   AuraSelectableText(jsonEncode(command.arguments)),
                 ],
-                crossAxisAlignment: .start,
                 spacing: .xs,
+                crossAxisAlignment: .start,
               ),
             if (review.sourceFiles.isNotEmpty) ...[
               const TextLocale('agent_lifecycle_hooks.source_files'),
@@ -159,9 +165,17 @@ class _WorkspaceAgentLifecycleHooksSectionState
     try {
       await action();
     } on WorkspaceAgentHookSettingsException catch (error) {
-      if (mounted) _showMessage(_WorkspaceHookSettingsErrorText(localizationKey: error.localizationKey));
+      if (mounted) {
+        _showMessage(
+          _WorkspaceHookSettingsErrorText(
+            localizationKey: error.localizationKey,
+          ),
+        );
+      }
     } on Object {
-      if (mounted) _showMessage(const TextLocale('agent_lifecycle_hooks.error'));
+      if (mounted) {
+        _showMessage(const TextLocale('agent_lifecycle_hooks.error'));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -190,7 +204,7 @@ class const _WorkspaceHookSettingsView({
   required final VoidCallback onChoose,
   required final void Function(String) onReview,
   required final VoidCallback onRevoke,
-  required final void Function(bool) onEnabled,
+  required final ValueChanged<bool> onEnabled,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -204,8 +218,8 @@ class const _WorkspaceHookSettingsView({
     return AuraCard(
       child: AuraColumn(
         children: [
-          AuraText(
-            child: const TextLocale('agent_lifecycle_hooks.title'),
+          const AuraText(
+            child: TextLocale('agent_lifecycle_hooks.title'),
             style: .heading6,
           ),
           const AuraText(
@@ -223,15 +237,32 @@ class const _WorkspaceHookSettingsView({
               ),
             ],
           ),
-          AuraText(child: switch (status) {
-            .notConfigured => const TextLocale('agent_lifecycle_hooks.status_not_configured'),
-            .trustRequired => const TextLocale('agent_lifecycle_hooks.status_trust_required'),
-            .trusted => const TextLocale('agent_lifecycle_hooks.status_trusted'),
-            .changed => const TextLocale('agent_lifecycle_hooks.status_changed'),
-            .invalid => const TextLocale('agent_lifecycle_hooks.status_invalid'),
-            .unsupportedPlatform => const TextLocale('agent_lifecycle_hooks.status_unsupported_platform'),
-            .unsupportedWorkspace => const TextLocale('agent_lifecycle_hooks.status_unsupported_workspace'),
-          }, style: .bodySmall),
+          AuraText(
+            child: switch (status) {
+              .notConfigured => const TextLocale(
+                'agent_lifecycle_hooks.status_not_configured',
+              ),
+              .trustRequired => const TextLocale(
+                'agent_lifecycle_hooks.status_trust_required',
+              ),
+              .trusted => const TextLocale(
+                'agent_lifecycle_hooks.status_trusted',
+              ),
+              .changed => const TextLocale(
+                'agent_lifecycle_hooks.status_changed',
+              ),
+              .invalid => const TextLocale(
+                'agent_lifecycle_hooks.status_invalid',
+              ),
+              .unsupportedPlatform => const TextLocale(
+                'agent_lifecycle_hooks.status_unsupported_platform',
+              ),
+              .unsupportedWorkspace => const TextLocale(
+                'agent_lifecycle_hooks.status_unsupported_workspace',
+              ),
+            },
+            style: .bodySmall,
+          ),
           if (!isSupported)
             const AuraText(
               child: TextLocale('agent_lifecycle_hooks.recovery_local_desktop'),
@@ -243,7 +274,10 @@ class const _WorkspaceHookSettingsView({
               child: TextLocale(
                 'agent_lifecycle_hooks.trusted_digest',
                 args: [
-                  if (digest != null) digest.characters.take(12).toString() else '',
+                  if (digest != null)
+                    digest.characters.take(12).toString()
+                  else
+                    '',
                 ],
               ),
               style: .bodySmall,
@@ -255,20 +289,20 @@ class const _WorkspaceHookSettingsView({
             children: [
               AuraButton(
                 onPressed: onChoose,
-                disabled: busy || !isSupported,
                 child: const TextLocale('agent_lifecycle_hooks.choose_config'),
+                disabled: busy || !isSupported,
               ),
               if (settings.configPath case final String path)
                 AuraButton(
                   onPressed: () => onReview(path),
-                  disabled: busy || !isSupported,
                   child: const TextLocale('agent_lifecycle_hooks.trust_config'),
+                  disabled: busy || !isSupported,
                 ),
               if (settings.isTrusted)
                 AuraButton(
                   onPressed: onRevoke,
-                  disabled: busy,
                   child: const TextLocale('agent_lifecycle_hooks.revoke_trust'),
+                  disabled: busy,
                 ),
             ],
           ),
@@ -286,20 +320,34 @@ class const _WorkspaceHookLoadFailure({required final VoidCallback onRetry})
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const TextLocale('agent_lifecycle_hooks.load_error'),
-      AuraButton(onPressed: onRetry, child: const TextLocale('agent_lifecycle_hooks.retry')),
+      AuraButton(
+        onPressed: onRetry,
+        child: const TextLocale('agent_lifecycle_hooks.retry'),
+      ),
     ],
   );
 }
 
-class const _WorkspaceHookSettingsErrorText({required final String localizationKey})
-    extends StatelessWidget {
+class const _WorkspaceHookSettingsErrorText({
+  required final String localizationKey,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (localizationKey) {
-    'agent_lifecycle_hooks.unsupported_platform' => const TextLocale('agent_lifecycle_hooks.unsupported_platform'),
-    'agent_lifecycle_hooks.local_only' => const TextLocale('agent_lifecycle_hooks.local_only'),
-    'agent_lifecycle_hooks.configuration_changed' => const TextLocale('agent_lifecycle_hooks.configuration_changed'),
-    'agent_lifecycle_hooks.invalid_configuration' => const TextLocale('agent_lifecycle_hooks.invalid_configuration'),
-    'agent_lifecycle_hooks.trust_required' => const TextLocale('agent_lifecycle_hooks.trust_required'),
+    'agent_lifecycle_hooks.unsupported_platform' => const TextLocale(
+      'agent_lifecycle_hooks.unsupported_platform',
+    ),
+    'agent_lifecycle_hooks.local_only' => const TextLocale(
+      'agent_lifecycle_hooks.local_only',
+    ),
+    'agent_lifecycle_hooks.configuration_changed' => const TextLocale(
+      'agent_lifecycle_hooks.configuration_changed',
+    ),
+    'agent_lifecycle_hooks.invalid_configuration' => const TextLocale(
+      'agent_lifecycle_hooks.invalid_configuration',
+    ),
+    'agent_lifecycle_hooks.trust_required' => const TextLocale(
+      'agent_lifecycle_hooks.trust_required',
+    ),
     _ => const TextLocale('agent_lifecycle_hooks.error'),
   };
 }

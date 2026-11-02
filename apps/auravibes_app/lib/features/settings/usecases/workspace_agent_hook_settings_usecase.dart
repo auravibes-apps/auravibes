@@ -85,7 +85,10 @@ class const WorkspaceAgentHookSettingsUsecase({
       }
     }
 
-    final _ = await settingsRepository.setEnabled(workspaceId, enabled: enabled);
+    final _ = await settingsRepository.setEnabled(
+      workspaceId,
+      enabled: enabled,
+    );
   }
 
   Future<void> revokeTrust(String workspaceId) async {
@@ -114,17 +117,26 @@ class const WorkspaceAgentHookSettingsUsecase({
       return await runtime.inspect(sourcePath);
     } on AgentLifecycleHookConfigException catch (error, stackTrace) {
       if (error.code == 'unsupported_platform') {
-        Error.throwWithStackTrace(const WorkspaceAgentHookSettingsException(
-          'agent_lifecycle_hooks.unsupported_platform',
-        ), stackTrace);
+        Error.throwWithStackTrace(
+          const WorkspaceAgentHookSettingsException(
+            'agent_lifecycle_hooks.unsupported_platform',
+          ),
+          stackTrace,
+        );
       }
-      Error.throwWithStackTrace(const WorkspaceAgentHookSettingsException(
-        'agent_lifecycle_hooks.invalid_configuration',
-      ), stackTrace);
+      Error.throwWithStackTrace(
+        const WorkspaceAgentHookSettingsException(
+          'agent_lifecycle_hooks.invalid_configuration',
+        ),
+        stackTrace,
+      );
     } on Object catch (_, stackTrace) {
-      Error.throwWithStackTrace(const WorkspaceAgentHookSettingsException(
-        'agent_lifecycle_hooks.invalid_configuration',
-      ), stackTrace);
+      Error.throwWithStackTrace(
+        const WorkspaceAgentHookSettingsException(
+          'agent_lifecycle_hooks.invalid_configuration',
+        ),
+        stackTrace,
+      );
     }
   }
 

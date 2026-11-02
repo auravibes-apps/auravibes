@@ -7,4 +7,3 @@ enum WorkspaceAgentHookTrustStatus {
   unsupportedPlatform,
   unsupportedWorkspace,
 }
-

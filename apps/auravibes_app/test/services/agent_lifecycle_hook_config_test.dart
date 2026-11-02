@@ -16,23 +16,27 @@ void main() {
   });
 
   test('configuration and arguments use UTF-8 byte limits', () {
+    final accented = String.fromCharCode(0xe9);
+    final emoji = String.fromCharCode(0x1f600);
     final oversizedConfig = jsonEncode({
       'version': 1,
-      'hooks': [],
-      'sourceFiles': ['\u{e9}' * 16384],
+      'hooks': <Object?>[],
+      'sourceFiles': [accented * 16384],
     });
     expect(oversizedConfig.length, lessThan(maxAgentLifecycleHookConfigBytes));
     expect(
       () => parseAgentLifecycleHookConfig(oversizedConfig),
       _configError('config_too_large'),
     );
-    final valid = _configWithHook(args: ['\u{1f600}' * 512]);
+    final valid = _configWithHook(args: [emoji * 512]);
     expect(
       parseAgentLifecycleHookConfig(valid).hooks.single.args.single,
-      '\u{1f600}' * 512,
+      emoji * 512,
     );
     expect(
-      () => parseAgentLifecycleHookConfig(_configWithHook(args: ['\u{1f600}' * 513])),
+      () => parseAgentLifecycleHookConfig(
+        _configWithHook(args: [emoji * 513]),
+      ),
       _configError('invalid_hook_argument'),
     );
   });
@@ -45,7 +49,7 @@ void main() {
     '{"version":1,"hooks":[],"sourceFiles":[null]}': 'invalid_source_files',
     jsonEncode({
       'version': 1,
-      'hooks': [],
+      'hooks': <Object?>[],
       'sourceFiles': List.filled(9, 'file'),
     }): 'invalid_source_files',
     _configWithHook(event: 'beforeTurn'): 'unsupported_event',

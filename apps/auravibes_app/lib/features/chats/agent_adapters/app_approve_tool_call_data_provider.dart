@@ -308,9 +308,9 @@ agent.AgentApprovableToolCall _toApprovableToolCall(
   MessageToolCallEntity toolCall,
 ) => agent.AgentApprovableToolCall(
   conversationId: conversationId,
-  workspaceId: workspaceId,
   name: toolCall.name,
   argumentsRaw: toolCall.argumentsRaw,
+  workspaceId: workspaceId,
 );
 
 Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {

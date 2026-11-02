@@ -361,10 +361,7 @@ Future<AgentToolExecutionResult> _runPostToolHook<TTool extends Object>(
   final context =
       executionResult.fullOutputForContext || existingContext == null
       ? combinedContext
-      : projectToolOutput(
-          combinedContext,
-          policy: const AgentToolOutputPolicy(),
-        ).text;
+      : projectToolOutput(combinedContext).text;
 
   return AgentToolExecutionResult(
     resultStatus: executionResult.resultStatus,

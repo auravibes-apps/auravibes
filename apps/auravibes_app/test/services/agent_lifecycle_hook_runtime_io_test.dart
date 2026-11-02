@@ -21,8 +21,11 @@ void main() {
         runtime,
         args: [
           '-c',
-          ('import sys; print(\'{"decision":"allow"}\'); '
-              'sys.stderr.write("token=private-stderr-secret"); sys.exit($exitCode)'),
+          [
+            'import sys; print(\'{"decision":"allow"}\'); ',
+            'sys.stderr.write("token=private-stderr-secret"); ',
+            'sys.exit($exitCode)',
+          ].join(),
         ],
       );
       expect(
@@ -34,7 +37,10 @@ void main() {
       expect(result.stdout, exitCode == 0 ? '{"decision":"allow"}\n' : isNull);
       expect(result.stdout, isNot(contains('private-stderr-secret')));
     }
-  }, skip: !pythonAvailable,);
+  },
+  skip: !pythonAvailable,
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   for (final count in [8192, 8193]) {
     test('combined stdout and stderr boundary $count bytes', () async {
@@ -44,8 +50,10 @@ void main() {
         runtime,
         args: [
           '-c',
-          ('import sys; sys.stdout.buffer.write(b"x" * 4096); '
-              'sys.stderr.buffer.write(b"y" * ${count - 4096})'),
+          [
+            'import sys; sys.stdout.buffer.write(b"x" * 4096); ',
+            'sys.stderr.buffer.write(b"y" * ${count - 4096})',
+          ].join(),
         ],
       );
 
@@ -56,7 +64,10 @@ void main() {
             : AgentToolHookOutcome.outputLimitExceeded,
       );
       expect(result.stdout, count == 8192 ? 'x' * 4096 : isNull);
-    }, skip: !pythonAvailable,);
+    },
+    skip: !pythonAvailable,
+    timeout: const Timeout(Duration(seconds: 10)),
+    );
   }
 
   test('UTF-8 output is counted in bytes rather than characters', () async {
@@ -71,7 +82,10 @@ void main() {
     );
     expect(result.outcome, AgentToolHookOutcome.outputLimitExceeded);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable,);
+  },
+  skip: !pythonAvailable,
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('invalid UTF-8 is a failure without captured output', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -82,7 +96,10 @@ void main() {
     );
     expect(result.outcome, AgentToolHookOutcome.failed);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable,);
+  },
+  skip: !pythonAvailable,
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('pre-cancelled invocation never launches the command', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -99,7 +116,10 @@ void main() {
     expect(result.outcome, AgentToolHookOutcome.cancelled);
     expect(marker.existsSync(), isFalse);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable,);
+  },
+  skip: !pythonAvailable,
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('output after cancellation cannot replace the cancelled outcome', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -109,16 +129,21 @@ void main() {
       runtime,
       args: [
         '-c',
-        ('import signal,sys,time; from pathlib import Path; '
-            'signal.signal(signal.SIGTERM, lambda *_: '
-            '(sys.stdout.write("x" * 9000), sys.stdout.flush(), sys.exit(0))); '
-            'Path(${jsonEncode(ready.path)}).touch(); time.sleep(10)'),
+        [
+          'import signal,sys,time; from pathlib import Path; ',
+          'signal.signal(signal.SIGTERM, lambda *_: ',
+          '(sys.stdout.write("x" * 9000), sys.stdout.flush(), sys.exit(0))); ',
+          'Path(${jsonEncode(ready.path)}).touch(); time.sleep(10)',
+        ].join(),
       ],
       isCancelled: ready.existsSync,
     );
     expect(result.outcome, AgentToolHookOutcome.cancelled);
     expect(result.stdout, isNull);
-  }, skip: !pythonAvailable,);
+  },
+  skip: !pythonAvailable,
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('unclosed child output pipes do not return partial success', () async {
     final fixture = await _HookFixture.create('/usr/bin/python3');
@@ -137,17 +162,22 @@ void main() {
       runtime,
       args: [
         '-c',
-        ('import subprocess; from pathlib import Path; '
-            'child = subprocess.Popen(["/usr/bin/python3", "-c", '
-            '"import time; time.sleep(10)"]); '
-            'Path(${jsonEncode(childPid.path)}).write_text(str(child.pid)); '
-            'print(\'{"decision":"allow"}\', flush=True)'),
+        [
+          'import subprocess; from pathlib import Path; ',
+          'child = subprocess.Popen(["/usr/bin/python3", "-c", ',
+          '"import time; time.sleep(10)"]); ',
+          'Path(${jsonEncode(childPid.path)}).write_text(str(child.pid)); ',
+          'print(\'{"decision":"allow"}\', flush=True)',
+        ].join(),
       ],
     );
     expect(result.outcome, AgentToolHookOutcome.failed);
     expect(result.stdout, isNull);
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
-  }, skip: !pythonAvailable,);
+  },
+  skip: !pythonAvailable,
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   for (final change in ['config', 'executable', 'symlink', 'missing']) {
     test('changed $change is rejected before command launch', () async {
@@ -161,7 +191,8 @@ void main() {
         case 'config':
           final _ = await configFile.writeAsString('{"version":1,"hooks":[]}');
         case 'executable':
-          final _ = await File(fixture.hook.command).writeAsString('changed executable');
+          final _ = await File(fixture.hook.command)
+              .writeAsString('changed executable');
         case 'symlink':
           final target = File('${fixture.directory.path}/replacement.json');
           final _ = await configFile.copy(target.path);
@@ -184,7 +215,10 @@ void main() {
             : AgentToolHookOutcome.unavailable,
       );
       expect(result.stdout, isNull);
-    }, skip: !supported || !File('/usr/bin/printf').existsSync(),);
+    },
+    skip: !supported || !File('/usr/bin/printf').existsSync(),
+    timeout: const Timeout(Duration(seconds: 10)),
+    );
   }
 
   test('executes trusted argv hook without rewriting its command', () async {
@@ -199,7 +233,10 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.success);
     expect(result.stdout, '{"decision":"allow"}');
-  }, skip: !supported || !File('/usr/bin/printf').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/printf').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test(
     'does not inherit process environment or evaluate shell syntax',
@@ -221,6 +258,7 @@ void main() {
       expect(marker.existsSync(), isFalse);
     },
     skip: !supported || !File('/usr/bin/printf').existsSync(),
+    timeout: const Timeout(Duration(seconds: 10)),
   );
 
   test('starts commands with an empty inherited environment', () async {
@@ -232,7 +270,10 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.success);
     expect(result.stdout, isEmpty);
-  }, skip: !supported || !File('/usr/bin/env').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/env').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('rejects non-file command sources while inspecting config', () async {
     if (!runtime.isSupported) return;
@@ -245,7 +286,11 @@ void main() {
       jsonEncode({
         'version': 1,
         'hooks': [
-          {'event': 'beforeTool', 'command': directory.path, 'args': <String>[]},
+          {
+            'event': 'beforeTool',
+            'command': directory.path,
+            'args': <String>[],
+          },
         ],
       }),
     );
@@ -265,7 +310,10 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.outputLimitExceeded);
     expect(result.stdout, isNull);
-  }, skip: !supported || !File('/usr/bin/yes').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/yes').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('stderr counts toward the combined output limit', () async {
     if (!supported || !File('/usr/bin/python3').existsSync()) return;
@@ -279,7 +327,10 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.outputLimitExceeded);
     expect(result.stdout, isNull);
-  }, skip: !supported || !File('/usr/bin/python3').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/python3').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('reports a non-zero process exit as a hook failure', () async {
     if (!supported || !File('/usr/bin/false').existsSync()) return;
@@ -289,7 +340,10 @@ void main() {
     final result = await fixture.invoke(runtime, args: const []);
 
     expect(result.outcome, AgentToolHookOutcome.failed);
-  }, skip: !supported || !File('/usr/bin/false').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/false').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('kills a timed out hook', () async {
     if (!supported || !File('/usr/bin/sleep').existsSync()) return;
@@ -301,7 +355,10 @@ void main() {
 
     expect(result.outcome, AgentToolHookOutcome.timedOut);
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 6)));
-  }, skip: !supported || !File('/usr/bin/sleep').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/sleep').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test('cancellation terminates an active hook process', () async {
     if (!supported || !File('/usr/bin/sleep').existsSync()) return;
@@ -321,7 +378,10 @@ void main() {
     cancellation.cancel();
 
     expect(result.outcome, AgentToolHookOutcome.cancelled);
-  }, skip: !supported || !File('/usr/bin/sleep').existsSync(),);
+  },
+  skip: !supported || !File('/usr/bin/sleep').existsSync(),
+  timeout: const Timeout(Duration(seconds: 10)),
+  );
 
   test(
     'cancellation force-kills a hook that ignores graceful termination',
@@ -340,8 +400,11 @@ void main() {
         runtime,
         args: [
           '-c',
-          ('import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); '
-              'time.sleep(10)'),
+          [
+            'import signal,time; ',
+            'signal.signal(signal.SIGTERM, signal.SIG_IGN); ',
+            'time.sleep(10)',
+          ].join(),
         ],
         isCancelled: () => cancelled,
       );
@@ -351,6 +414,7 @@ void main() {
       expect(stopwatch.elapsed, lessThan(const Duration(seconds: 2)));
     },
     skip: !supported || !File('/usr/bin/python3').existsSync(),
+    timeout: const Timeout(Duration(seconds: 10)),
   );
 
   test(
@@ -376,15 +440,12 @@ void main() {
       expect(result.outcome, AgentToolHookOutcome.unavailable);
     },
     skip: !supported || !File('/usr/bin/printf').existsSync(),
+    timeout: const Timeout(Duration(seconds: 10)),
   );
 }
 
 class _HookFixture {
-  new({
-    required this.directory,
-    required this.snapshot,
-    required this.hook,
-  });
+  new({required this.directory, required this.snapshot, required this.hook});
 
   final Directory directory;
   final AgentLifecycleHookSourceSnapshot snapshot;
@@ -403,13 +464,14 @@ class _HookFixture {
       'version': 1,
       'sourceFiles': sourceFiles,
       'hooks': [
-        {'event': 'beforeTool', 'command': executable, 'args': <String>[]} ,
+        {'event': 'beforeTool', 'command': executable, 'args': <String>[]},
       ],
     });
     final config = File('${directory.path}/hooks.json');
     final _ = await config.writeAsString(source);
     for (final sourceFile in sourceFiles) {
-      final _ = await File('${directory.path}/$sourceFile').writeAsString('trusted');
+      final _ = await File('${directory.path}/$sourceFile')
+          .writeAsString('trusted');
     }
     const runtime = AgentLifecycleHookRuntimeIo();
     final snapshot = await runtime.inspect(config.path);

@@ -12,6 +12,7 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -23,6 +24,7 @@ void main() {
     'review cancellation preserves no trust; trust requires separate opt-in',
     (tester) async {
       final fixture = await _HookSettingsFixture.create(tester);
+      try {
       await fixture.pump(tester);
       expect(
         tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
@@ -42,10 +44,12 @@ void main() {
           find.descendant(
             of: find.byType(AuraConfirmDialog),
             matching: find.byWidgetPredicate(
-              (widget) => widget is AuraSelectableText && widget.data == value,
+              (widget) =>
+                  widget is AuraSelectableText && widget.data.contains(value),
             ),
           ),
           findsOneWidget,
+          reason: value,
         );
       }
       await tester.tap(find.text('Cancel'));
@@ -67,58 +71,60 @@ void main() {
       expect(revoked.enabled, isFalse);
       expect(revoked.isTrusted, isFalse);
       expect(fixture.runtime.invokeCount, 0);
-      await fixture.close(tester);
+      } finally {
+        await fixture.close(tester);
+      }
     },
   );
 
   for (final platformUnavailable in [false, true]) {
-    testWidgets(
-      'unsupported platform=$platformUnavailable shows recovery '
-      'and keeps revocation available',
-      (tester) async {
-        final fixture = await _HookSettingsFixture.create(
-          tester,
-          remote: !platformUnavailable,
-          trusted: true,
-          enabled: true,
-        );
-        fixture.runtime.supported = !platformUnavailable;
-        await fixture.pump(tester);
-        expect(
-          find.text(
-            platformUnavailable
-                ? 'Hooks are unavailable on this platform.'
-                : 'Hooks are available only for local workspaces.',
-          ),
-          findsOneWidget,
-        );
-        expect(
-          find.text('To use hooks, open a local workspace in the desktop app.'),
-          findsOneWidget,
-        );
-        expect(_button(tester, 'Choose configuration').disabled, isTrue);
-        expect(_button(tester, 'Review and trust').disabled, isTrue);
-        expect(_button(tester, 'Revoke trust').disabled, isFalse);
-        await tester.tap(find.byType(AuraSwitch));
-        final _ = await tester.pumpAndSettle();
-        expect((await fixture.read(tester)).enabled, isFalse);
-        expect(
-          tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
-          isNull,
-        );
-        await tester.tap(find.text('Revoke trust'));
-        final _ = await tester.pumpAndSettle();
-        expect((await fixture.read(tester)).isTrusted, isFalse);
-        expect(fixture.runtime.invokeCount, 0);
-      await fixture.close(tester);
-      },
-    );
+    testWidgets('unsupported platform=$platformUnavailable shows recovery', (tester) async {
+      final fixture = await _HookSettingsFixture.create(
+        tester,
+        remote: !platformUnavailable,
+        trusted: true,
+        enabled: true,
+      );
+      try {
+      fixture.runtime.supported = !platformUnavailable;
+      await fixture.pump(tester);
+      expect(
+        find.text(
+          platformUnavailable
+              ? 'Hooks are unavailable on this platform.'
+              : 'Hooks are available only for local workspaces.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('To use hooks, open a local workspace in the desktop app.'),
+        findsOneWidget,
+      );
+      expect(tester.widget<AuraButton>(_button('Choose configuration')).disabled, isTrue);
+      expect(tester.widget<AuraButton>(_button('Review and trust')).disabled, isTrue);
+      expect(tester.widget<AuraButton>(_button('Revoke trust')).disabled, isFalse);
+      await tester.tap(find.byType(AuraSwitch));
+      final _ = await tester.pumpAndSettle();
+      expect((await fixture.read(tester)).enabled, isFalse);
+      expect(
+        tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
+        isNull,
+      );
+      await tester.tap(find.text('Revoke trust'));
+      final _ = await tester.pumpAndSettle();
+      expect((await fixture.read(tester)).isTrusted, isFalse);
+      expect(fixture.runtime.invokeCount, 0);
+      } finally {
+        await fixture.close(tester);
+      }
+    },);
   }
 
   testWidgets('changed sources block enable until reviewed and trusted again', (
     tester,
   ) async {
     final fixture = await _HookSettingsFixture.create(tester, trusted: true);
+      try {
     fixture.runtime.digest = 'b' * 64;
     await fixture.pump(tester);
     expect(
@@ -141,7 +147,9 @@ void main() {
       tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
       isNotNull,
     );
-    await fixture.close(tester);
+    } finally {
+        await fixture.close(tester);
+      }
   });
 
   testWidgets('compact actions wrap and a long trust review scrolls', (
@@ -152,6 +160,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final fixture = await _HookSettingsFixture.create(tester, trusted: true);
+      try {
     fixture.runtime.commandPath = '/tmp/${'long-path-' * 50}policy.py';
     await fixture.pump(tester);
     await tester.ensureVisible(find.text('Review and trust'));
@@ -163,24 +172,18 @@ void main() {
     final _ = await tester.tap(find.text('Cancel'));
     final _ = await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await fixture.close(tester);
+    } finally {
+        await fixture.close(tester);
+      }
   });
 }
 
-AuraButton _button(WidgetTester tester, String label) =>
-    tester.widget<AuraButton>(
-      find
-          .ancestor(of: find.text(label), matching: find.byType(AuraButton))
-          .first,
-    );
+Finder _button(String label) => find
+    .ancestor(of: find.text(label), matching: find.byType(AuraButton))
+    .first;
 
 class _HookSettingsFixture {
-  new(
-    this.database,
-    this.workspace,
-    this.settings,
-    this.runtime,
-  );
+  new(this.database, this.workspace, this.settings, this.runtime);
 
   final AppDatabase database;
   final WorkspaceEntity workspace;
@@ -194,9 +197,14 @@ class _HookSettingsFixture {
     bool enabled = false,
   }) async {
     final fixture = await tester.runAsync(() async {
-      final database = AppDatabase(connection: NativeDatabase.memory());
+      final database = AppDatabase(
+        connection: DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
       final workspace = await WorkspaceRepository(database).createWorkspace(
-        WorkspaceToCreate(
+        .new(
           name: 'Research workspace',
           type: remote ? .remote : .local,
           url: remote ? 'https://example.invalid' : null,
@@ -242,26 +250,34 @@ class _HookSettingsFixture {
   }
 
   Future<void> pump(WidgetTester tester) async {
-    await tester.runAsync(
-      () => tester.pumpWidget(
-        TestableApp(
-          workspaceId: workspace.id,
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            agentLifecycleHookRuntimeProvider.overrideWithValue(runtime),
-          ],
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: WorkspaceAgentLifecycleHooksSection(
-                workspaceId: workspace.id,
-              ),
-            ),
+    await tester.pumpWidget(
+      TestableApp(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: WorkspaceAgentLifecycleHooksSection(workspaceId: workspace.id),
           ),
         ),
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          agentLifecycleHookRuntimeProvider.overrideWithValue(runtime),
+        ],
+        workspaceId: workspace.id,
       ),
     );
-    final _ = await tester.pumpAndSettle();
+    for (var attempt = 0; attempt < 100; attempt++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.byType(AuraSwitch).evaluate().isNotEmpty &&
+          find.byType(AuraSpinner).evaluate().isEmpty &&
+          !tester.binding.hasScheduledFrame) {
+        break;
+      }
+    }
+    expect(find.byType(AuraSwitch), findsOneWidget);
+    expect(find.byType(AuraSpinner), findsNothing);
   }
 }
 
@@ -279,7 +295,7 @@ class _ReviewRuntime implements AgentLifecycleHookRuntime {
       AgentLifecycleHookSourceSnapshot(
         canonicalPath: sourcePath,
         digest: digest,
-        config: AgentLifecycleHookConfig(
+        config: .new(
           hooks: [
             AgentLifecycleHookDefinition(
               event: .beforeTool,

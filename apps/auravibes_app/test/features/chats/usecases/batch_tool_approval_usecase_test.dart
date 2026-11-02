@@ -26,10 +26,7 @@ class _MockResolvedToolService extends Mock implements ResolvedToolService;
 
 class _RecordingWorkspaceHookRunner
     implements agent.AgentToolLifecycleHookRunner<ResolvedTool> {
-  new({
-    this.beforeOutcome = agent.AgentToolHookOutcome.allow,
-    this.onBefore,
-  });
+  new({this.beforeOutcome = agent.AgentToolHookOutcome.allow, this.onBefore});
   final agent.AgentToolHookOutcome beforeOutcome;
   final void Function(String conversationId)? onBefore;
   final beforeWorkspaceIds = <String>[];
@@ -236,7 +233,7 @@ void main() {
 
       expect(result.claimed, hasLength(1));
       expect(changeCount, 2);
-      verifyNever(
+      final _ = verifyNever(
         () => loadToolSpecs.buildCatalog(
           conversationId: any(named: 'conversationId'),
           workspaceId: any(named: 'workspaceId'),
@@ -459,6 +456,7 @@ void main() {
         when(() => conversationRepository.getConversationById(any()))
             .thenAnswer((invocation) async {
               final id = invocation.positionalArguments.single as String;
+
               return _conversation(id, '$id-workspace');
             });
         when(
@@ -470,14 +468,15 @@ void main() {
         when(() => messageRepository.persistToolCallBatchResults(any()))
             .thenAnswer((_) => Future<void>.value());
 
-        final _ = await createUsecase(
-          lifecycleHookRunner: hooks,
-          cancellationRuntime: cancellation,
-        ).approveOnce(
-          rootConversationId: 'root',
-          workspaceId: 'root-workspace',
-          pendingCalls: calls,
-        );
+        final _ =
+            await createUsecase(
+              cancellationRuntime: cancellation,
+              lifecycleHookRunner: hooks,
+            ).approveOnce(
+              rootConversationId: 'root',
+              workspaceId: 'root-workspace',
+              pendingCalls: calls,
+            );
 
         expect(
           hooks.beforeWorkspaceIds,
@@ -496,7 +495,7 @@ void main() {
           if (outcome == agent.AgentToolHookOutcome.block) {
             expect(update.resultStatus, ToolCallResultStatus.executionError);
             final payload =
-                jsonDecode(update.responseRaw!) as Map<String, dynamic>;
+                jsonDecode(update.responseRaw ?? (throw StateError('Missing hook failure.'))) as Map<String, dynamic>;
             expect(payload['code'], 'hook_blocked');
             expect(payload['reason'], 'Policy blocked this tool call.');
           } else {

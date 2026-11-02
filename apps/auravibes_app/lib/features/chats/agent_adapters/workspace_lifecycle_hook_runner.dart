@@ -63,7 +63,10 @@ class const WorkspaceLifecycleHookRunner({
       return const agent.AgentPreToolHookResult(outcome: .allow);
     }
     if (response['decision'] == 'block' &&
-        response.keys.toSet().difference(<String>{'decision', 'reason'}).isEmpty) {
+        response.keys.toSet().difference(<String>{
+          'decision',
+          'reason',
+        }).isEmpty) {
       final rawReason = response['reason'];
       final reason = rawReason is String ? _redactAndTrim(rawReason) : null;
 

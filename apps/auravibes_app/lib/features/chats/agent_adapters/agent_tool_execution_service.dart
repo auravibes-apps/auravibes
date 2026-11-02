@@ -82,7 +82,7 @@ class AgentToolExecutionService({
   ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionForWorkspace,
   PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
-  agent.AgentToolLifecycleHookRunner<ResolvedTool>? lifecycleHookRunner,
+  super.lifecycleHookRunner,
   super.outputPolicyForTool,
 }) extends agent.AgentToolExecutionRunner<ResolvedTool> {
   this
@@ -98,7 +98,6 @@ class AgentToolExecutionService({
               resolveToolApprovalDecisionForWorkspace,
           persistToolCallResultsUsecase: persistToolCallResultsUsecase,
         ),
-        lifecycleHookRunner: lifecycleHookRunner,
       );
 }
 

@@ -32,9 +32,10 @@ class WorkspaceAgentHookSettingsDao(super.attachedDatabase)
           .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
     }
 
-    final _ = await (update(workspaceAgentHookSettings)
-          ..where((row) => row.workspaceId.equals(workspaceId)))
-        .write(companion.copyWith(workspaceId: const .absent()));
+    final _ =
+        await (update(workspaceAgentHookSettings)
+              ..where((row) => row.workspaceId.equals(workspaceId)))
+            .write(companion.copyWith(workspaceId: const .absent()));
     final updated = await getByWorkspaceId(workspaceId);
     if (updated == null) {
       throw StateError('Updated lifecycle hook settings were not found');

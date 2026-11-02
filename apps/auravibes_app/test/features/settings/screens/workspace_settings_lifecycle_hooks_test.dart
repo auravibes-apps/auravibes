@@ -11,10 +11,9 @@ import 'package:auravibes_app/features/settings/screens/workspace_settings_scree
 import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycle_hooks_section.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
-import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -25,9 +24,9 @@ void main() {
     tester,
   ) async {
     final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
+      connection: DatabaseConnection(NativeDatabase.memory(), closeStreamsSynchronously: true),
     );
-    addTearDown(database.close);
+
     tester.view.physicalSize = const Size(1200, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -45,6 +44,7 @@ void main() {
       const WorkspaceToCreate(name: 'Research workspace', type: .local),
     );
 
+    try {
     await _pumpSettings(tester, database: database, workspace: remoteWorkspace);
     expect(find.byType(WorkspaceAgentLifecycleHooksSection), findsOneWidget);
     expect(
@@ -71,6 +71,11 @@ void main() {
       find.byKey(const ValueKey('workspace-settings-screenshot')),
       matchesGoldenFile('goldens/workspace_settings_hooks_local.png'),
     );
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(database.close);
+    }
   });
 }
 
@@ -81,7 +86,6 @@ Future<void> _pumpSettings(
 }) async {
   await tester.pumpWidget(
     TestableApp(
-      key: ValueKey(workspace.id),
       child: RepaintBoundary(
         key: const ValueKey('workspace-settings-screenshot'),
         child: WorkspaceSettingsScreen(
@@ -89,7 +93,6 @@ Future<void> _pumpSettings(
           guard: .new(),
         ),
       ),
-      workspaceId: workspace.id,
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
         allWorkspacesProvider.overrideWith((_) => Stream.value([workspace])),
@@ -98,7 +101,20 @@ Future<void> _pumpSettings(
         listWorkspaceModelSelectionsProvider(workspaceId: workspace.id)
             .overrideWith((_) => Stream.value(const [])),
       ],
+      workspaceId: workspace.id,
+      key: ValueKey(workspace.id),
     ),
   );
-  final _ = await tester.pumpAndSettle();
+  for (var attempt = 0; attempt < 100; attempt++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    if (find.byType(WorkspaceAgentLifecycleHooksSection).evaluate().isNotEmpty &&
+        find.byType(AuraSpinner).evaluate().isEmpty &&
+        !tester.binding.hasScheduledFrame) {
+      break;
+    }
+  }
+  expect(find.byType(AuraSpinner), findsNothing);
 }
