@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -28,7 +29,7 @@ void main() {
         ),
         overrides: [
           workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
-              .overrideWithValue(session),
+              .overrideWithValue(const AsyncData(session)),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
@@ -78,7 +79,9 @@ void main() {
         ),
         overrides: [
           workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
-              .overrideWithValue(const WorkspaceSession(cloudWorkspace)),
+              .overrideWithValue(
+                const AsyncData(WorkspaceSession(cloudWorkspace)),
+              ),
           conversationsStreamProvider(
             workspaceId: cloudWorkspace.localWorkspaceId,
             scope: ConversationListScope.archived,
@@ -97,9 +100,7 @@ void main() {
     expect(find.text('Archivadas en este dispositivo'), findsOneWidget);
     expect(
       find.text(
-        'En los espacios en la nube, el archivo se guarda solo en esta app y '
-        'en este dispositivo. Los dem\u00e1s miembros y tus otros dispositivos '
-        'a\u00fan pueden ver esta conversaci\u00f3n compartida.',
+        'En los espacios en la nube, el archivo se guarda solo en esta app',
       ),
       findsOneWidget,
     );

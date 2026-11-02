@@ -9,7 +9,6 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
-import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -61,7 +60,9 @@ void main() {
     ),
     overrides: [
       workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
-        WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
+        AsyncData(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
+        ),
       ),
       ...overrides,
     ],

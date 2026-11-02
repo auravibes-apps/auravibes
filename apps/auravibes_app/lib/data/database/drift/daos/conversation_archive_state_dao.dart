@@ -28,7 +28,7 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
     required bool isArchived,
   }) async {
     if (isArchived) {
-      await into(conversationArchiveStates).insertOnConflictUpdate(
+      final _ = await into(conversationArchiveStates).insertOnConflictUpdate(
         ConversationArchiveStatesCompanion.insert(
           workspaceId: workspaceId,
           conversationId: conversationId,

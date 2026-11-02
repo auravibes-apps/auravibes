@@ -1,10 +1,10 @@
 import 'package:auravibes_app/data/repositories/conversation_archive_state_repository.dart';
 
-import 'conversation_archive_state_exception.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_archive_state_exception.dart';
 
-class const SetConversationArchivedUsecase({required this.repository}) {
-  final ConversationArchiveStateRepository repository;
-
+class const SetConversationArchivedUsecase({
+  required final ConversationArchiveStateRepository repository,
+}) {
   Future<void> call({
     required String workspaceId,
     required String conversationId,
