@@ -369,6 +369,15 @@ jobs:
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: melos run generate:serverpod
 
+      - name: Export generated conversation result for repair
+        if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: generated-conversation-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/auravibes_app/lib/features/chats/notifiers/conversation_result.g.dart
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Check generated artifact drift
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: |

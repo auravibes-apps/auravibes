@@ -56,14 +56,15 @@ void main() {
           'parent_conversation_id',
           'tool_access_mode',
           'is_pinned',
+          'task_brief',
 
           'active_compaction_checkpoint_id',
         ]),
       );
     });
 
-    test('has 16 columns', () {
-      expect(columns.length, 16);
+    test('has 17 columns', () {
+      expect(columns.length, 17);
     });
 
     test('workspace_id is not null', () {

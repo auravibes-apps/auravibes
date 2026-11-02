@@ -40,21 +40,23 @@ class const _TaskBriefDialogLayout({
   required final ValueNotifier<bool> canSave,
   required final bool hasBrief,
 }) extends StatelessWidget {
-  List<Widget> get _actions => [
-    const _TaskBriefCancelButton(),
-    if (hasBrief) const _TaskBriefClearButton(),
-    _TaskBriefSaveButton(controller: controller, canSave: canSave.value),
-  ];
-
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const TextLocale(
-      LocaleKeys.chats_screens_chat_conversation_task_brief_title,
-    ),
-    content: _TaskBriefContent(controller: controller, canSave: canSave),
-    actions: _actions,
-    scrollable: true,
-  );
+  Widget build(BuildContext context) {
+    final actions = <Widget>[
+      const _TaskBriefCancelButton(),
+      if (hasBrief) const _TaskBriefClearButton(),
+      _TaskBriefSaveButton(controller: controller, canSave: canSave.value),
+    ];
+
+    return AlertDialog(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_task_brief_title,
+      ),
+      content: _TaskBriefContent(controller: controller, canSave: canSave),
+      actions: actions,
+      scrollable: true,
+    );
+  }
 }
 
 class const _TaskBriefContent({
