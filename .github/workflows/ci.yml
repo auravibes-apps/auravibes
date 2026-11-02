@@ -743,6 +743,7 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup-workspace
+        id: setup_workspace
 
       - name: Download test plan
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
@@ -804,7 +805,8 @@ jobs:
           exit "$status"
 
       - name: Checkout current main for workspace File baseline
-        if: ${{ success() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
+        id: workspace_capacity_baseline_checkout
+        if: ${{ always() && steps.setup_workspace.outcome == 'success' && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: 1aaa31f61128fe810ca35ef7a00205edb9233175
@@ -812,7 +814,7 @@ jobs:
           persist-credentials: false
 
       - name: Capture current-main workspace File baseline
-        if: ${{ success() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
+        if: ${{ always() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 && steps.workspace_capacity_baseline_checkout.outcome == 'success' }}
         working-directory: .ux-current-main
         shell: bash
         env:
@@ -824,11 +826,14 @@ jobs:
           cp "$TEST_SOURCE" apps/auravibes_app/test/features/workspaces/widgets/
           source_revision="$(git rev-parse HEAD)"
           flutter_pin="$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')"
-          fvm use "$flutter_pin" --skip-pub-get
-          fvm dart run melos bootstrap
-          flutter_version="$(fvm flutter --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
+          flutter_version="$(flutter --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
+          if [ "$flutter_pin" != "$flutter_version" ]; then
+            echo "Expected Flutter $flutter_pin for current main, but CI installed $flutter_version." >&2
+            exit 1
+          fi
+          dart run melos bootstrap
           cd apps/auravibes_app
-          fvm flutter test test/features/workspaces/widgets/workspace_capacity_error_capture_test.dart \
+          flutter test test/features/workspaces/widgets/workspace_capacity_error_capture_test.dart \
             --no-pub \
             --plain-name='workspace File size-limit copy on the production route' \
             --dart-define="UX_CAPTURE_DIR=$CAPTURE_DIRECTORY" \
