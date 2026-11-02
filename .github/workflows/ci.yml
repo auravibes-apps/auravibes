@@ -391,6 +391,21 @@ jobs:
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: melos run generate:serverpod
 
+      - name: Export generated source patch
+        if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
+        run: |
+          git add -N --all
+          git diff --binary HEAD > "$RUNNER_TEMP/generated-source.patch"
+
+      - name: Upload generated source patch
+        if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: generated-source-patch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/generated-source.patch
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Check generated artifact drift
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: |
