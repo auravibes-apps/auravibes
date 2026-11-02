@@ -522,7 +522,7 @@ void _requireVerificationConnectionActive(
 }
 
 final class _McpVerificationSessionConnector {
-  _McpVerificationSessionConnector(
+  new(
     this.manager,
     this.request,
     this.remaining,

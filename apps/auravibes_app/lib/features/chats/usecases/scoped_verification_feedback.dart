@@ -26,13 +26,11 @@ Map<String, Object?> buildScopedVerificationFeedback(
 }
 
 Map<String, Object?> _verificationFeedback(ScopedVerificationResult result) {
-  final verification = <String, Object?>{
+  return <String, Object?>{
     ...result.toJson(),
     'pathCount': result.paths.length,
     'output': '',
   }..remove('paths');
-
-  return verification;
 }
 
 Map<String, Object?> _emptyFeedback(Map<String, Object?> verification) => {

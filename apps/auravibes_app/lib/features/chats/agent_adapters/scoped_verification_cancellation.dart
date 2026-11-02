@@ -50,7 +50,7 @@ class ScopedVerificationCancellation {
 }
 
 final class _ScopedVerificationRun {
-  _ScopedVerificationRun({
+  new({
     required this.owner,
     required this.invocation,
     required this.lease,

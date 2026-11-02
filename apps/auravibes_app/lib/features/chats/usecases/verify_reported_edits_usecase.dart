@@ -60,7 +60,7 @@ class const VerifyReportedEditsUsecase({
       );
     }
 
-    return _runReservedVerification(input, id);
+    return await _runReservedVerification(input, id);
   }
 
   Future<ScopedVerificationResult> _runReservedVerification(
@@ -178,7 +178,7 @@ Future<Object> _verifyCandidateEdit(
   final context = await _verificationContext(usecase, invocation, request.tool);
   if (context == null) return request.result.modelText;
 
-  return _verifyEligibleEdit(usecase, invocation, request, context);
+  return await _verifyEligibleEdit(usecase, invocation, request, context);
 }
 
 Future<_VerificationContext?> _verificationContext(
@@ -212,7 +212,7 @@ Future<Object> _verifyEligibleEdit(
     request.result.structuredContent,
   );
   if (selection.result case final ScopedVerificationResult result) {
-    return _feedback(request.result, result.outcome, result.reason ?? '');
+    return _feedback(request.result, result.outcome, result.reason);
   }
   final selections = selection.selections;
   if (selections == null || context.identity.turnId == null) {

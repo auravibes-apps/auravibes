@@ -110,7 +110,11 @@ Future<bool> _runnerPermissionAllowed(
     return false;
   }
 
-  return _settingsRemainCurrent(dependencies.repository, input, workspaceId);
+  return await _settingsRemainCurrent(
+    dependencies.repository,
+    input,
+    workspaceId,
+  );
 }
 
 Future<String?> _workspaceId(
