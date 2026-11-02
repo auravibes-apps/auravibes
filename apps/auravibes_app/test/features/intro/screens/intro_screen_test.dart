@@ -115,9 +115,7 @@ void main() {
       await tester.pump();
       final _ = await tester.sendKeyEvent(.enter);
       await tester.pump();
-      final selectedSemantics = tester.getSemantics(
-        find.byKey(_dayStarterKey),
-      );
+      final selectedSemantics = tester.getSemantics(find.byKey(_dayStarterKey));
       expect(selectedSemantics.flagsCollection.isSelected, ui.Tristate.isTrue);
 
       for (var index = 0; index < 4; index++) {
@@ -193,9 +191,8 @@ void main() {
     }
 
     final localWorkspace = await tester.runAsync(() {
-      return WorkspaceRepository(fixture.database).createWorkspace(
-        const .new(name: 'Personal work', type: .local),
-      );
+      return WorkspaceRepository(fixture.database)
+          .createWorkspace(const .new(name: 'Personal work', type: .local));
     });
     if (localWorkspace == null) {
       fail('Quick-start workspace creation did not finish');
