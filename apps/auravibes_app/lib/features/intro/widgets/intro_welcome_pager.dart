@@ -164,6 +164,7 @@ class const _FirstChatGuide({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
+    key: const PageStorageKey<String>('intro_first_chat_guide'),
     padding: const EdgeInsets.all(24),
     primary: false,
     child: AuraColumn(
