@@ -54,7 +54,7 @@ void main() {
       );
       await _pumpUntilFound(tester, find.byKey(_quickStartKey));
 
-      expect(find.text('¿Qué te gustaría hacer hoy?'), findsOneWidget);
+      expect(find.text('intro_flow.welcome.title'.tr()), findsOneWidget);
       expect(find.textContaining('dispositivo'), findsOneWidget);
       expect(find.byKey(_dayStarterKey), findsOneWidget);
       expect(find.byKey(_shoppingStarterKey), findsOneWidget);
@@ -111,9 +111,9 @@ void main() {
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
       await _pumpUntilFound(tester, find.byKey(_quickStartKey));
 
-      await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.tab);
       await tester.pump();
-      await tester.sendKeyEvent(.enter);
+      final _ = await tester.sendKeyEvent(.enter);
       await tester.pump();
       final selectedSemantics = tester.getSemantics(
         find.byKey(_dayStarterKey),
@@ -121,10 +121,10 @@ void main() {
       expect(selectedSemantics.flagsCollection.isSelected, ui.Tristate.isTrue);
 
       for (var index = 0; index < 4; index++) {
-        await tester.sendKeyEvent(.tab);
+        final _ = await tester.sendKeyEvent(.tab);
         await tester.pump();
       }
-      await tester.sendKeyEvent(.enter);
+      final _ = await tester.sendKeyEvent(.enter);
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       expect(find.byKey(_cloudRouteKey), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -140,7 +140,7 @@ void main() {
     final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
     addTearDown(fixture.dispose);
     var attempts = 0;
-    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) async {
+    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) {
       attempts++;
       if (attempts == 1) throw StateError('storage unavailable');
 
@@ -219,11 +219,7 @@ void main() {
       expect(find.byKey(_cloudRouteKey), findsOneWidget);
       expect(find.byKey(_connectExistingKey), findsOneWidget);
       expect(
-        find.textContaining(
-          locale.languageCode == 'es'
-              ? 'se guarda en línea y requiere internet y una cuenta'
-              : 'is stored online and needs internet and an account',
-        ),
+        find.textContaining('intro_flow.choice.select_hint'.tr()),
         findsOneWidget,
       );
       expect(
@@ -331,7 +327,7 @@ void main() {
 
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Connect AI when you\'re ready'), findsOneWidget);
+      expect(find.text("Connect AI when you're ready"), findsOneWidget);
       await tester.tap(find.byKey(_welcomeNextKey));
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       await expectLater(
@@ -512,7 +508,7 @@ void main() {
       expect(find.text('1 of 4'), findsOneWidget);
 
       if (reducedMotion) {
-        await tester.sendKeyEvent(.arrowRight);
+        final _ = await tester.sendKeyEvent(.arrowRight);
       } else {
         await tester.drag(
           find.byKey(const Key('intro_welcome_pages')),
@@ -524,7 +520,7 @@ void main() {
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
       expect(find.text('3 of 4'), findsOneWidget);
-      expect(find.text('Connect AI when you\'re ready'), findsOneWidget);
+      expect(find.text("Connect AI when you're ready"), findsOneWidget);
       expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();

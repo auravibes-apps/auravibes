@@ -588,7 +588,6 @@ class const _NewChatInput({required final Widget child})
                _NewChatAgentCompactControl(data: data, onCompactTap: onPressed),
            onDraftStatusChanged: (hasDraft) =>
                data.draftStatus.value = hasDraft,
-           draftToLoad: data.draftToLoad,
            onDraftLoaded: data.onDraftLoaded,
            autofocus: true,
            toolAccessMode: data.state.toolAccessMode,
@@ -604,6 +603,7 @@ class const _NewChatInput({required final Widget child})
                    onChanged: data.actions.setReasoningConfiguration,
                  )
                : null,
+           draftToLoad: data.draftToLoad,
            modalitiesInput: modalitiesInput,
            disabledHint:
                data.state.modelId == null &&
@@ -740,8 +740,8 @@ class const _UnavailableChatInput({
     agentSheetControl: const SizedBox.shrink(),
     modelCompactControl: (_) => const SizedBox.shrink(),
     agentCompactControl: (_) => const SizedBox.shrink(),
-    draftToLoad: draftToLoad,
     onDraftLoaded: onDraftLoaded,
+    draftToLoad: draftToLoad,
     disabled: true,
   );
 }

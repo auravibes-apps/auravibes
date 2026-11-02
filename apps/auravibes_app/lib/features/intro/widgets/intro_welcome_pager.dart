@@ -1,5 +1,5 @@
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-import 'package:auravibes_app/features/chats/widgets/empty_conversation_starters.dart';
+import 'package:auravibes_app/features/chats/widgets/empty_conversation_starter_choices.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -42,12 +42,19 @@ class _IntroWelcomePagerState extends State<IntroWelcomePager> {
 
   PageController get _controller => widget.controller;
 
-  void _selectStarter(ChatDraft draft) =>
-      setState(() => _selectedStarter = draft);
-
   bool get _reducedMotion =>
       MediaQuery.disableAnimationsOf(context) ||
       MediaQuery.accessibleNavigationOf(context);
+
+  void _selectStarter(ChatDraft draft) =>
+      setState(() => _selectedStarter = draft);
+
+  void _startSelectedStarter() {
+    final draft = _selectedStarter;
+    if (draft == null) return;
+
+    widget.onQuickStart(draft);
+  }
 
   @override
   Widget build(BuildContext context) => CallbackShortcuts(
@@ -109,9 +116,7 @@ class _IntroWelcomeViewport extends StatelessWidget {
                     onSelect: state._selectStarter,
                     onStart: state._selectedStarter == null
                         ? null
-                        : () => state.widget.onQuickStart(
-                            state._selectedStarter!,
-                          ),
+                        : state._startSelectedStarter,
                     onAdvancedSetup: () => state._goToPage(_chooserPage),
                     pending: state.widget.quickStartPending,
                     showError: state.widget.quickStartFailed,
@@ -177,7 +182,7 @@ class const _FirstChatGuide({
           header: true,
         ),
         const AuraText(child: TextLocale('intro_flow.welcome.body')),
-        AuraCard(
+        const AuraCard(
           child: AuraText(
             child: TextLocale('intro_flow.welcome.local_storage'),
             style: .bodySmall,
@@ -191,8 +196,8 @@ class const _FirstChatGuide({
           keyPrefix: 'intro_starter',
         ),
         if (showError)
-          const Semantics(
-            child: TextLocale('workspace_management.unexpected_error'),
+          Semantics(
+            child: const TextLocale('workspace_management.unexpected_error'),
             liveRegion: true,
           ),
         AuraButton(
@@ -210,8 +215,8 @@ class const _FirstChatGuide({
           },
           child: const TextLocale('intro_flow.welcome.advanced_setup'),
           key: const Key('intro_advanced_setup_button'),
-          isFullWidth: true,
           variant: .outlined,
+          isFullWidth: true,
           disabled: pending,
         ),
       ],

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -146,9 +148,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
           .call(name: 'intro_flow.welcome.workspace_name'.tr(context: context));
     } on Object {
       if (mounted) {
-        setState(
-          () => _quickStartFailed = true,
-        );
+        setState(() => _quickStartFailed = true);
       }
 
       return null;
@@ -219,7 +219,7 @@ class _IntroSetup extends StatelessWidget {
          ),
          canNavigate: state._setupStage == .chooser && !state._pending,
          controller: state._pages,
-         onQuickStart: state._startWithStarter,
+         onQuickStart: (draft) => unawaited(state._startWithStarter(draft)),
          quickStartPending: state._pending,
          quickStartFailed: state._quickStartFailed,
        );

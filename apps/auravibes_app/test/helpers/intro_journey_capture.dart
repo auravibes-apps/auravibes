@@ -16,8 +16,14 @@ void _registerIntroJourneyCaptures() {
         final chooserHeading = find.text('intro_flow.choice.title'.tr());
         expect(chooserHeading, findsOneWidget);
         expect(tester.getRect(chooserHeading).top, greaterThanOrEqualTo(0));
-        expect(find.byKey(const Key('intro_route_local_button')), findsOneWidget);
-        expect(find.byKey(const Key('intro_route_cloud_button')), findsOneWidget);
+        expect(
+          find.byKey(const Key('intro_route_local_button')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('intro_route_cloud_button')),
+          findsOneWidget,
+        );
         await journey.capture('Chooser');
         await journey.tapKey('intro_route_local_button');
         await journey.capture('LocalName');
