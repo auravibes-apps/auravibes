@@ -52,7 +52,8 @@ typedef _RunnerFactoryDependencies = ({
   WorkspaceVerificationRepository repository,
   Future<ToolApprovalDecision> Function(
     AgentToolApprovalRequest<ResolvedTool> request,
-  ) permission,
+  )
+  permission,
 });
 
 Future<ResolvedTool?> _runnerTarget(
@@ -115,16 +116,14 @@ Future<bool> _runnerPermissionAllowed(
 Future<String?> _workspaceId(
   AppDatabase database,
   ScopedVerificationRunnerInput input,
-) async =>
-    (await database.conversationDao.getConversationById(
-      input.invocation.conversationId,
-    ))?.workspaceId;
+) async => (await database.conversationDao.getConversationById(
+  input.invocation.conversationId,
+))?.workspaceId;
 
 bool _settingsMatch(
   ScopedVerificationSettings requested,
   ScopedVerificationSettings current,
-) =>
-    current.enabled && current.revision == requested.revision;
+) => current.enabled && current.revision == requested.revision;
 
 Future<bool> _toolsMatch(
   AppDatabase database,
@@ -280,12 +279,11 @@ ScopedVerificationRunner _scopedRunner(
   ResolvedTool target,
   ScopedVerificationOwnedCaller session,
   _RunnerFactoryDependencies dependencies,
-) =>
-    McpScopedVerificationRunner(
-      mcpServerId: input.settings.mcpServerId,
-      editMcpServerId: input.invocation.tool.mcpServerId ?? '',
-      runnerToolIdentifier: target.toolIdentifier,
-      caller: session.call,
-      isAllowed: () => _runnerPermissionAllowed(dependencies, input, target),
-      onClose: session.close,
-    );
+) => McpScopedVerificationRunner(
+  mcpServerId: input.settings.mcpServerId,
+  editMcpServerId: input.invocation.tool.mcpServerId ?? '',
+  runnerToolIdentifier: target.toolIdentifier,
+  caller: session.call,
+  isAllowed: () => _runnerPermissionAllowed(dependencies, input, target),
+  onClose: session.close,
+);

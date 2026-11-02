@@ -102,8 +102,6 @@ bool _splitsSurrogatePair(String source, int length) =>
     _isHighSurrogate(source.codeUnitAt(length - 1)) &&
     _isLowSurrogate(source.codeUnitAt(length));
 
-bool _isHighSurrogate(int codeUnit) =>
-    codeUnit >= 0xd800 && codeUnit <= 0xdbff;
+bool _isHighSurrogate(int codeUnit) => codeUnit >= 0xd800 && codeUnit <= 0xdbff;
 
-bool _isLowSurrogate(int codeUnit) =>
-    codeUnit >= 0xdc00 && codeUnit <= 0xdfff;
+bool _isLowSurrogate(int codeUnit) => codeUnit >= 0xdc00 && codeUnit <= 0xdfff;

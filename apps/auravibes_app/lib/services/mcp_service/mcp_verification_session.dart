@@ -45,15 +45,12 @@ class McpVerificationSession {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
     McpElicitationHandler? onElicitation,
-  }) => _callVerificationTool(
-    this,
-    (
-      mcpServerId: mcpServerId,
-      toolIdentifier: toolIdentifier,
-      arguments: arguments,
-      onElicitation: onElicitation,
-    ),
-  );
+  }) => _callVerificationTool(this, (
+    mcpServerId: mcpServerId,
+    toolIdentifier: toolIdentifier,
+    arguments: arguments,
+    onElicitation: onElicitation,
+  ));
 
   void close() {
     if (_closed) return;
@@ -112,10 +109,7 @@ Future<Object?> _callVerificationTool(
   );
   final result = _isVerificationCleanup(request.arguments)
       ? await pending
-      : await Future.any([
-          pending,
-          session._rejectPendingInteraction(),
-        ]);
+      : await Future.any([pending, session._rejectPendingInteraction()]);
 
   return _adaptVerificationToolResult(result);
 }

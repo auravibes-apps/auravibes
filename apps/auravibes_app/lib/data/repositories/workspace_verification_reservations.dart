@@ -130,9 +130,11 @@ class const WorkspaceVerificationReservations(
   Future<void> _recoverInterruptedRow(WorkspaceVerificationRunRow row) async {
     if (row.resultJson != null || row.sessionId == sessionId) return;
     final saved = jsonEncode(verificationUnavailable('interrupted').toJson());
-    final _ = await (database.update(database.workspaceVerificationRuns)..where(
-          (entry) => entry.id.equals(row.id) & entry.resultJson.isNull(),
-        )).write(WorkspaceVerificationRunsCompanion(resultJson: .new(saved)));
+    final _ =
+        await (database.update(database.workspaceVerificationRuns)..where(
+              (entry) => entry.id.equals(row.id) & entry.resultJson.isNull(),
+            ))
+            .write(WorkspaceVerificationRunsCompanion(resultJson: .new(saved)));
   }
 }
 

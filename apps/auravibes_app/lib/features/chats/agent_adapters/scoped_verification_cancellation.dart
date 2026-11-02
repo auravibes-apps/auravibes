@@ -84,19 +84,18 @@ final class _ScopedVerificationRun {
   AgentToolCancellationHandle _registerHandle(
     AgentCancellationScope child,
     Completer<Object?> completion,
-  ) =>
-      runtime.registerToolCancellationHandle((
-        conversationId: invocation.conversationId,
-        toolCallId: invocation.toolCallId,
-        isSupported: true,
-        cancel: () async {
-          child.requestStop();
-          final _ = await completion.future;
-        },
-        operationResult: completion.future,
-        isCancellationConfirmed: () =>
-            _terminal?.outcome == ScopedVerificationOutcome.cancelled,
-      ));
+  ) => runtime.registerToolCancellationHandle((
+    conversationId: invocation.conversationId,
+    toolCallId: invocation.toolCallId,
+    isSupported: true,
+    cancel: () async {
+      child.requestStop();
+      final _ = await completion.future;
+    },
+    operationResult: completion.future,
+    isCancellationConfirmed: () =>
+        _terminal?.outcome == ScopedVerificationOutcome.cancelled,
+  ));
 
   void _finish(
     AgentCancellationScope child,

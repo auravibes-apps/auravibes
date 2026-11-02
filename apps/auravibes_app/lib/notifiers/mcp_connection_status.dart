@@ -534,15 +534,12 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     required String toolIdentifier,
     required DateTime deadline,
     required AgentCancellationScope cancellation,
-  }) => _openMcpVerificationSession(
-    this,
-    (
-      mcpServerId: mcpServerId,
-      toolIdentifier: toolIdentifier,
-      deadline: deadline,
-      cancellation: cancellation,
-    ),
-  );
+  }) => _openMcpVerificationSession(this, (
+    mcpServerId: mcpServerId,
+    toolIdentifier: toolIdentifier,
+    deadline: deadline,
+    cancellation: cancellation,
+  ));
 
   /// Read a UI resource declared by [toolIdentifier].
   Future<Map<String, Object?>> readAppResource({

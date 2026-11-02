@@ -99,13 +99,12 @@ Future<void> _saveWorkspaceSettings(
   Future<ScopedVerificationSettings> Function(String workspaceId) getSettings,
   String workspaceId,
   ScopedVerificationSettings settings,
-) =>
-    _saveWorkspaceSettingsInTransaction((
-      database: database,
-      getSettings: getSettings,
-      workspaceId: workspaceId,
-      settings: settings,
-    ));
+) => _saveWorkspaceSettingsInTransaction((
+  database: database,
+  getSettings: getSettings,
+  workspaceId: workspaceId,
+  settings: settings,
+));
 
 Future<void> _saveWorkspaceSettingsInTransaction(
   _SaveWorkspaceSettings request,
@@ -174,13 +173,14 @@ Future<ScopedVerificationResult> _resultWithCurrentAuthority(
   final safe = settings.enabled && settings.revision == row.configRevision
       ? request.result
       : verificationUnavailable('configuration_changed');
-  final rows = await (request.database.select(
-    request.database.workspaceVerificationRuns,
-  )..where(
-    (entry) =>
-        entry.workspaceId.equals(row.workspaceId) &
-        entry.turnId.equals(row.turnId),
-  )).get();
+  final rows =
+      await (request.database.select(request.database.workspaceVerificationRuns)
+            ..where(
+              (entry) =>
+                  entry.workspaceId.equals(row.workspaceId) &
+                  entry.turnId.equals(row.turnId),
+            ))
+          .get();
   final remaining = verificationRepairsRemaining(rows);
 
   return ScopedVerificationResult.fromJson({
@@ -195,24 +195,23 @@ Future<void> _saveCompletedResult(
   String operationId,
   ScopedVerificationResult result,
 ) async {
-  final _ = await (database.update(database.workspaceVerificationRuns)
-        ..where(
-          (entry) => entry.id.equals(operationId) & entry.resultJson.isNull(),
-        ))
-      .write(
-        WorkspaceVerificationRunsCompanion(
-          resultJson: .new(jsonEncode(result.toJson())),
-        ),
-      );
+  final _ =
+      await (database.update(database.workspaceVerificationRuns)..where(
+            (entry) => entry.id.equals(operationId) & entry.resultJson.isNull(),
+          ))
+          .write(
+            WorkspaceVerificationRunsCompanion(
+              resultJson: .new(jsonEncode(result.toJson())),
+            ),
+          );
 }
 
 ScopedVerificationSettings _nextSettingsRevision(
   ScopedVerificationSettings settings,
   int currentRevision,
-) =>
-    ScopedVerificationSettings.decode(
-      jsonEncode({...settings.toJson(), 'revision': currentRevision + 1}),
-    );
+) => ScopedVerificationSettings.decode(
+  jsonEncode({...settings.toJson(), 'revision': currentRevision + 1}),
+);
 
 ScopedVerificationSettings _decodeSettings(
   WorkspaceVerificationSettingsRow? row,

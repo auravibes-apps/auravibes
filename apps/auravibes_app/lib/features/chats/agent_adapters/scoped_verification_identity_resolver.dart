@@ -64,12 +64,16 @@ _SequencedMessage? _uniqueToolCall(
   List<_SequencedMessage> messages,
   String toolCallId,
 ) {
-  final calls = messages.where((message) {
-    if (message.isUser) return false;
-    final metadata = MessageMetadataEntity.fromJsonString(message.metadata);
+  final calls = messages
+      .where((message) {
+        if (message.isUser) return false;
+        final metadata = MessageMetadataEntity.fromJsonString(message.metadata);
 
-    return metadata?.toolCalls.any((call) => call.id == toolCallId) ?? false;
-  }).take(2).toList();
+        return metadata?.toolCalls.any((call) => call.id == toolCallId) ??
+            false;
+      })
+      .take(2)
+      .toList();
   if (calls.length != 1) return null;
 
   return calls.single;
@@ -78,7 +82,6 @@ _SequencedMessage? _uniqueToolCall(
 _SequencedMessage? _originatingUserMessage(
   List<_SequencedMessage> messages,
   int sequence,
-) =>
-    messages
-        .where((message) => message.isUser && message.sequence < sequence)
-        .lastOrNull;
+) => messages
+    .where((message) => message.isUser && message.sequence < sequence)
+    .lastOrNull;

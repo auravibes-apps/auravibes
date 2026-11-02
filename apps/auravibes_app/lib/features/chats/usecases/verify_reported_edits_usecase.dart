@@ -27,15 +27,12 @@ class const VerifyReportedEditsUsecase({
     required String toolCallId,
     required ResolvedTool tool,
     required McpToolCallerResult result,
-  }) => _verifyReportedEdit(
-    this,
-    (
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      result: result,
-    ),
-  );
+  }) => _verifyReportedEdit(this, (
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+    tool: tool,
+    result: result,
+  ));
 
   Future<ScopedVerificationResult> _verify(_VerificationInput input) async {
     final turnId = input.identity.turnId;
@@ -103,10 +100,8 @@ class const VerifyReportedEditsUsecase({
     ));
     if (runner == null) return _unavailableRunnerResult(input, request);
 
-    return await ScopedVerificationService(runner: runner).call(
-      request,
-      cancellation: input.cancellation,
-    );
+    return await ScopedVerificationService(runner: runner)
+        .call(request, cancellation: input.cancellation);
   }
 
   Future<ScopedVerificationRunner?> _createBounded(
@@ -301,9 +296,7 @@ _VerificationSelection _verificationSelection(
   }
 }
 
-Future<Object> _runSelectedVerification(
-  _SelectedVerification request,
-) async {
+Future<Object> _runSelectedVerification(_SelectedVerification request) async {
   final verified = await request.usecase.cancellation.run(
     request.invocation,
     (scope) => request.usecase._verify((
