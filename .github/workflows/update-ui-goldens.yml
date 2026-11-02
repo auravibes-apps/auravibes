@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     env:
-      FIRST_CHAT_BASELINE_SHA: 1aaa31f61128fe810ca35ef7a00205edb9233175
+      FIRST_CHAT_BASELINE_SHA: 0f46f924e00680d857f8dcddc5d3c9a5df75c481
       FIRST_CHAT_FEATURE_SHA: ${{ github.sha }}
     steps:
       - name: Checkout exact feature revision
