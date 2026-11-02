@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
@@ -19,7 +18,7 @@ import '../../../helpers/ux_validation_fixture.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
-  setUpAll(() async => EasyLocalization.ensureInitialized());
+  setUpAll(EasyLocalization.ensureInitialized);
   tearDownAll(UxValidationFixture.closeDatabase);
 
   test(
@@ -66,7 +65,6 @@ void main() {
       tester,
       WorkspaceItemsRoute(workspaceId: fixture.workspaceId).location,
       size: size,
-      locale: 'en',
     );
     expect(find.byKey(const ValueKey('directory_create')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('directory_create')));
