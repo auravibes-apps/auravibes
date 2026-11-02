@@ -116,19 +116,18 @@ final class ScopedVerificationJob {
     required this.workspaceRoot,
     required this.state,
     required this.scopeValidated,
+    required this.originalOutputBytes,
     Map<String, int> exitCodes = const {},
     this.output = '',
     this.outputTruncated = false,
     this.cancellationRecorded = false,
-    int? originalOutputBytes,
-  }) : exitCodes = Map.unmodifiable(exitCodes),
-       originalOutputBytes = originalOutputBytes ?? utf8.encode(output).length {
+  }) : exitCodes = Map.unmodifiable(exitCodes) {
     final retainedBytes = utf8.encode(output).length;
     if (exitCodes.length > ScopedVerificationLimits.maxChecks ||
         output.length > ScopedVerificationLimits.maxOutputBytes ||
         retainedBytes > ScopedVerificationLimits.maxOutputBytes ||
-        this.originalOutputBytes < retainedBytes ||
-        outputTruncated != (this.originalOutputBytes > retainedBytes) ||
+        originalOutputBytes < retainedBytes ||
+        outputTruncated != (originalOutputBytes > retainedBytes) ||
         (state == .cancelled && !cancellationRecorded)) {
       throw const FormatException('Invalid verification job bounds.');
     }

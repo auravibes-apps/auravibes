@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
@@ -318,6 +319,7 @@ final class _Runner
     Map<String, int> exitCodes = const {'dart': 0},
     String output = '',
   }) => ScopedVerificationJob(
+    originalOutputBytes: utf8.encode(output).length,
     operationId: operationId,
     workspaceRoot: root,
     state: state,

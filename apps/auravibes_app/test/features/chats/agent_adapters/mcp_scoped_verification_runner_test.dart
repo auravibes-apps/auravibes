@@ -65,6 +65,7 @@ void main() {
       mcpServerId: 'server',
       editMcpServerId: 'other',
       runnerToolIdentifier: 'verify',
+      onClose: () {},
       caller: fixture.caller,
       isAllowed: () async => true,
     );
@@ -143,6 +144,7 @@ void main() {
         mcpServerId: 'server',
         editMcpServerId: 'server',
         runnerToolIdentifier: 'verify',
+        onClose: () {},
         isAllowed: () async => fixture.allowed,
         caller:
             ({
@@ -219,6 +221,7 @@ void main() {
         mcpServerId: 'server',
         editMcpServerId: 'server',
         runnerToolIdentifier: 'verify',
+        onClose: () {},
         isAllowed: () => permission.future,
         caller:
             ({
@@ -391,6 +394,7 @@ final class _Fixture {
     mcpServerId: 'server',
     editMcpServerId: 'server',
     runnerToolIdentifier: 'verify',
+    onClose: () {},
     caller: caller,
     isAllowed: () async => allowed,
   );

@@ -15,7 +15,7 @@ class McpScopedVerificationRunner
     required this.runnerToolIdentifier,
     required this.caller,
     required this.isAllowed,
-    this.onClose,
+    required this.onClose,
   });
 
   final String mcpServerId;
@@ -23,7 +23,7 @@ class McpScopedVerificationRunner
   final String runnerToolIdentifier;
   final McpToolCaller caller;
   final Future<bool> Function() isAllowed;
-  final void Function()? onClose;
+  final void Function() onClose;
   ({
     String operationId,
     String workspaceRoot,
@@ -33,7 +33,7 @@ class McpScopedVerificationRunner
   _bound;
   bool _cancelRequested = false;
   @override
-  void close() => onClose?.call();
+  void close() => onClose();
   @override
   Future<ScopedVerificationCapabilities> capabilities() async =>
       ScopedVerificationCapabilities.fromJson(
