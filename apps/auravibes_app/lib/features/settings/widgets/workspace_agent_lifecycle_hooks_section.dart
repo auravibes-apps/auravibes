@@ -9,7 +9,6 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -53,6 +52,7 @@ class _WorkspaceAgentLifecycleHooksSectionState
         status != WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
     final canEnable = status == WorkspaceAgentHookTrustStatus.trusted;
     final trustKey = _trustStatusKey(status);
+    final digest = settings.trustedDigest;
 
     return AuraCard(
       child: AuraColumn(
@@ -78,14 +78,14 @@ class _WorkspaceAgentLifecycleHooksSectionState
           ),
           AuraText(child: TextLocale(trustKey), style: .bodySmall),
           if (settings.configPath case final String path) ...[
-            SelectableText(path),
+            AuraSelectableText(path),
             AuraText(
               child: TextLocale(
                 'agent_lifecycle_hooks.trusted_digest',
                 args: [
-                  settings.trustedDigest == null
+                  digest == null
                       ? ''
-                      : settings.trustedDigest.substring(0, 12),
+                      : digest.substring(0, digest.length < 12 ? digest.length : 12),
                 ],
               ),
               style: .bodySmall,
@@ -94,19 +94,20 @@ class _WorkspaceAgentLifecycleHooksSectionState
           AuraRow(
             children: [
               AuraButton(
-                onPressed: _busy || !isSupported ? null : _chooseConfig,
+                disabled: _busy || !isSupported,
+                onPressed: _chooseConfig,
                 child: const TextLocale('agent_lifecycle_hooks.choose_config'),
               ),
               if (settings.configPath != null)
                 AuraButton(
-                  onPressed: _busy || !isSupported
-                      ? null
-                      : () => _trustConfig(settings.configPath!),
+                  disabled: _busy || !isSupported,
+                  onPressed: () => _trustConfig(settings.configPath!),
                   child: const TextLocale('agent_lifecycle_hooks.trust_config'),
                 ),
               if (settings.isTrusted)
                 AuraButton(
-                  onPressed: _busy ? null : _revokeTrust,
+                  disabled: _busy,
+                  onPressed: _revokeTrust,
                   child: const TextLocale('agent_lifecycle_hooks.revoke_trust'),
                 ),
             ],
@@ -176,7 +177,7 @@ class _WorkspaceAgentLifecycleHooksSectionState
         message: AuraColumn(
           children: [
             const TextLocale('agent_lifecycle_hooks.trust_warning'),
-            SelectableText(review.canonicalPath),
+            AuraSelectableText(review.canonicalPath),
             const TextLocale('agent_lifecycle_hooks.commands'),
             if (review.commands.isEmpty)
               const TextLocale('agent_lifecycle_hooks.no_hooks'),
@@ -188,9 +189,9 @@ class _WorkspaceAgentLifecycleHooksSectionState
                         ? 'agent_lifecycle_hooks.before_tool'
                         : 'agent_lifecycle_hooks.after_tool',
                   ),
-                  SelectableText(command.canonicalCommandPath),
+                  AuraSelectableText(command.canonicalCommandPath),
                   const TextLocale('agent_lifecycle_hooks.arguments'),
-                  SelectableText(jsonEncode(command.arguments)),
+                  AuraSelectableText(jsonEncode(command.arguments)),
                 ],
                 crossAxisAlignment: .start,
                 spacing: .xs,
@@ -198,9 +199,9 @@ class _WorkspaceAgentLifecycleHooksSectionState
             if (review.sourceFiles.isNotEmpty) ...[
               const TextLocale('agent_lifecycle_hooks.source_files'),
               for (final sourceFile in review.sourceFiles)
-                SelectableText(sourceFile),
+                AuraSelectableText(sourceFile),
             ],
-            SelectableText(
+            AuraSelectableText(
               'agent_lifecycle_hooks.digest_value'.tr(args: [review.digest]),
             ),
           ],
@@ -252,8 +253,11 @@ class _WorkspaceAgentLifecycleHooksSectionState
 
   void _showMessage(String key) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(key.tr())));
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: TextLocale(key),
+      variant: .error,
+    );
   }
 }
 

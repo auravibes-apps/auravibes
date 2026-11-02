@@ -38,8 +38,10 @@ jobs:
           XDG_DATA_HOME: ${{ runner.temp }}/issue1598-baseline-data
           XDG_CONFIG_HOME: ${{ runner.temp }}/issue1598-baseline-config
         run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/issue1598-before"
           cp "$RUNNER_TEMP/issue1598_capture_test.dart" test/widgets/issue1598_capture_test.dart
-          python3 ../../tool/validation_lease.py --label hooks-baseline-capture -- flutter test test/widgets/issue1598_capture_test.dart --no-pub --dart-define=HOOK_CAPTURE_DIR="$RUNNER_TEMP/issue1598-before" --dart-define=HOOK_CAPTURE_SHA="$BASELINE_SHA" --dart-define=HOOK_CAPTURE_LABEL=before
+          python3 ../../tool/validation_lease.py --label hooks-baseline-capture -- flutter test test/widgets/issue1598_capture_test.dart --no-pub --timeout=2m --dart-define=HOOK_CAPTURE_DIR="$RUNNER_TEMP/issue1598-before" --dart-define=HOOK_CAPTURE_SHA="$BASELINE_SHA" --dart-define=HOOK_CAPTURE_LABEL=before 2>&1 | tee "$RUNNER_TEMP/issue1598-before/capture.log"
       - name: Upload genuine baseline image and provenance
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -63,6 +65,7 @@ jobs:
       - name: Export formatting corrections for review
         run: |
           python3 tool/validation_lease.py --label hooks-feature-format -- dart format apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_engine/lib packages/auravibes_engine/test
+          git ls-files -z --others --exclude-standard -- '*.g.dart' '*.freezed.dart' | xargs -0 -r git add --intent-to-add
           git diff > "$RUNNER_TEMP/issue1598-format.patch"
       - name: Engine hook suites
         if: success() || failure()

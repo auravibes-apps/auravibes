@@ -213,8 +213,13 @@ extension on BatchToolApprovalUsecase {
     final messageByConversation = _sourceMessagesByConversation(claims);
     final _ = await Future.wait(
       messageByConversation.entries
-          .where((source) => !cancellationRuntime.isCancellationRequested(source.key))
-          .map((source) => agentToolResumeService.call(messageId: source.value)),
+          .where(
+            (source) =>
+                !cancellationRuntime.isCancellationRequested(source.key),
+          )
+          .map(
+            (source) => agentToolResumeService.call(messageId: source.value),
+          ),
     );
   }
 

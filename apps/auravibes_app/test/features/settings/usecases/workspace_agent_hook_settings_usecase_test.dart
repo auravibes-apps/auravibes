@@ -7,7 +7,7 @@ import 'package:auravibes_app/features/settings/usecases/workspace_agent_hook_se
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,7 +30,11 @@ void main() {
 
   test('trust is separate from opt-in and revocation clears both', () async {
     final workspace = await _createLocalWorkspace(workspaceRepository);
-    final usecase = _usecase(settingsRepository, workspaceRepository, _FakeHookRuntime());
+    final usecase = _usecase(
+      settingsRepository,
+      workspaceRepository,
+      _FakeHookRuntime(),
+    );
     await usecase.selectConfig(workspace.id, '/tmp/hooks.json');
     final review = await usecase.reviewConfig(workspace.id, '/tmp/hooks.json');
     await usecase.trustReviewedConfig(workspace.id, review);
@@ -47,19 +51,29 @@ void main() {
     expect(revoked.trustedSourcePath, isNull);
   });
 
-  test('selecting another configuration clears prior trust and enablement', () async {
-    final workspace = await _createLocalWorkspace(workspaceRepository);
-    final usecase = _usecase(settingsRepository, workspaceRepository, _FakeHookRuntime());
-    await usecase.selectConfig(workspace.id, '/tmp/hooks.json');
-    await usecase.trustReviewedConfig(workspace.id, await usecase.reviewConfig(workspace.id, '/tmp/hooks.json'));
-    await usecase.setEnabled(workspace.id, enabled: true);
-    await usecase.selectConfig(workspace.id, '/tmp/replacement.json');
-    final replacement = await settingsRepository.get(workspace.id);
-    expect(replacement.enabled, isFalse);
-    expect(replacement.isTrusted, isFalse);
-    expect(replacement.configPath, '/tmp/replacement.json');
-    expect(replacement.trustedDigest, isNull);
-  });
+  test(
+    'selecting another configuration clears prior trust and enablement',
+    () async {
+      final workspace = await _createLocalWorkspace(workspaceRepository);
+      final usecase = _usecase(
+        settingsRepository,
+        workspaceRepository,
+        _FakeHookRuntime(),
+      );
+      await usecase.selectConfig(workspace.id, '/tmp/hooks.json');
+      await usecase.trustReviewedConfig(
+        workspace.id,
+        await usecase.reviewConfig(workspace.id, '/tmp/hooks.json'),
+      );
+      await usecase.setEnabled(workspace.id, enabled: true);
+      await usecase.selectConfig(workspace.id, '/tmp/replacement.json');
+      final replacement = await settingsRepository.get(workspace.id);
+      expect(replacement.enabled, isFalse);
+      expect(replacement.isTrusted, isFalse);
+      expect(replacement.configPath, '/tmp/replacement.json');
+      expect(replacement.trustedDigest, isNull);
+    },
+  );
 
   test('selecting a config stores it disabled and untrusted', () async {
     final workspace = await _createLocalWorkspace(workspaceRepository);

@@ -9,7 +9,9 @@ part 'workspace_agent_hook_settings_usecase_provider.g.dart';
 @Riverpod(keepAlive: true)
 WorkspaceAgentHookSettingsUsecase workspaceAgentHookSettingsUsecase(Ref ref) =>
     WorkspaceAgentHookSettingsUsecase(
-      settingsRepository: ref.watch(workspaceAgentHookSettingsRepositoryProvider),
+      settingsRepository: ref.watch(
+        workspaceAgentHookSettingsRepositoryProvider,
+      ),
       workspaceRepository: ref.watch(workspaceRepositoryProvider),
       runtime: ref.watch(agentLifecycleHookRuntimeProvider),
     );

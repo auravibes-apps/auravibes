@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/workspace_agent_hook_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -149,7 +149,7 @@ class WorkspaceLifecycleHookRunner
     AgentLifecycleHookSourceSnapshot snapshot,
   ) async {
     final workspace = await _workspaceRepository.getWorkspaceById(workspaceId);
-    if (workspace == null || !workspace.isLocal) return false;
+    if (workspace == null || !workspace.type.isLocal) return false;
     final settings = await _settingsRepository.get(workspaceId);
 
     return settings.enabled &&
@@ -181,7 +181,7 @@ class WorkspaceLifecycleHookRunner
       return (failure: agent.AgentToolHookOutcome.unavailable, snapshot: null);
     }
 
-    if (!workspace.isLocal) {
+    if (!workspace.type.isLocal) {
       return (failure: agent.AgentToolHookOutcome.unavailable, snapshot: null);
     }
 

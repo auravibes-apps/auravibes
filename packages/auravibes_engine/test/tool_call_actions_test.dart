@@ -365,10 +365,9 @@ class _FakeApproveToolCallProvider({
 }
 
 class _BlockingPreToolHookRunner(
-  List<String> calls, {
-  AgentToolHookOutcome outcome = AgentToolHookOutcome.block,
-})
-    implements AgentToolLifecycleHookRunner<String> {
+  final List<String> calls, {
+  final AgentToolHookOutcome outcome = AgentToolHookOutcome.block,
+}) implements AgentToolLifecycleHookRunner<String> {
   bool afterToolCalled = false;
 
   @override

@@ -5,7 +5,7 @@ import 'package:auravibes_app/data/repositories/workspace_agent_hook_settings_re
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,10 +19,21 @@ void main() {
   tearDownAll(database.close);
   test('archives never transfer hook opt-in or local trust', () async {
     final workspaces = WorkspaceRepository(database);
-    final hooks = WorkspaceAgentHookSettingsRepository(database.workspaceAgentHookSettingsDao);
-    final source = await workspaces.createWorkspace(const WorkspaceToCreate(name: 'Source', type: .local));
-    await hooks.selectConfig(source.id, canonicalPath: '/private/source-hooks.json');
-    await hooks.trustConfig(source.id, canonicalPath: '/private/source-hooks.json', digest: 'source-secret-fingerprint');
+    final hooks = WorkspaceAgentHookSettingsRepository(
+      database.workspaceAgentHookSettingsDao,
+    );
+    final source = await workspaces.createWorkspace(
+      const WorkspaceToCreate(name: 'Source', type: .local),
+    );
+    await hooks.selectConfig(
+      source.id,
+      canonicalPath: '/private/source-hooks.json',
+    );
+    await hooks.trustConfig(
+      source.id,
+      canonicalPath: '/private/source-hooks.json',
+      digest: 'source-secret-fingerprint',
+    );
     await hooks.setEnabled(source.id, enabled: true);
     final archive = WorkspaceConfigurationArchiveCodec.encode(
       await LocalWorkspaceConfigurationRepository(database).export(source.id),
@@ -36,11 +47,23 @@ void main() {
     expect(imported.isTrusted, isFalse);
     expect(imported.configPath, isNull);
 
-    final destination = await workspaces.createWorkspace(const WorkspaceToCreate(name: 'Destination', type: .local));
-    await hooks.selectConfig(destination.id, canonicalPath: '/private/destination-hooks.json');
-    await hooks.trustConfig(destination.id, canonicalPath: '/private/destination-hooks.json', digest: 'destination-fingerprint');
+    final destination = await workspaces.createWorkspace(
+      const WorkspaceToCreate(name: 'Destination', type: .local),
+    );
+    await hooks.selectConfig(
+      destination.id,
+      canonicalPath: '/private/destination-hooks.json',
+    );
+    await hooks.trustConfig(
+      destination.id,
+      canonicalPath: '/private/destination-hooks.json',
+      digest: 'destination-fingerprint',
+    );
     await hooks.setEnabled(destination.id, enabled: true);
-    final _ = await importer.importJson(archive, targetWorkspaceId: destination.id);
+    final _ = await importer.importJson(
+      archive,
+      targetWorkspaceId: destination.id,
+    );
     final retained = await hooks.get(destination.id);
     expect(retained.enabled, isTrue);
     expect(retained.configPath, '/private/destination-hooks.json');

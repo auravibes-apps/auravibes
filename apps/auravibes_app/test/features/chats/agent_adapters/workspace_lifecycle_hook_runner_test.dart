@@ -12,7 +12,7 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_io.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -40,7 +40,8 @@ void main() {
     'Authorization: Bearer private-bearer': ['private-bearer'],
     'Authorization: Basic cHJpdmF0ZS1iYXNpYw==': ['cHJpdmF0ZS1iYXNpYw=='],
     '{"password":"private-password"}': ['private-password'],
-    'https://private-user:private-password@example.invalid/?token=private-token': ['private-user', 'private-password', 'private-token'],
+    'https://private-user:private-password@example.invalid/?token=private-token':
+        ['private-user', 'private-password', 'private-token'],
     'Cookie: session=private-cookie': ['private-cookie'],
   };
   for (final event in AgentLifecycleHookEvent.values) {
@@ -52,15 +53,28 @@ void main() {
           event: event,
           output: AgentLifecycleHookInvocationResult(
             outcome: agent.AgentToolHookOutcome.success,
-            stdout: jsonEncode(event == AgentLifecycleHookEvent.beforeTool
-                ? {'decision': 'block', 'reason': example.key}
-                : {'context': example.key}),
+            stdout: jsonEncode(
+              event == AgentLifecycleHookEvent.beforeTool
+                  ? {'decision': 'block', 'reason': example.key}
+                  : {'context': example.key},
+            ),
           ),
         );
-        final runner = _runner(settingsRepository, workspaceRepository, runtime);
+        final runner = _runner(
+          settingsRepository,
+          workspaceRepository,
+          runtime,
+        );
         final text = event == AgentLifecycleHookEvent.beforeTool
-            ? (await runner.beforeTool(request: _request(workspace.id), isCancellationRequested: (_) => false)).reason
-            : (await runner.afterTool(request: _request(workspace.id), toolSucceeded: true, isCancellationRequested: (_) => false)).context;
+            ? (await runner.beforeTool(
+                request: _request(workspace.id),
+                isCancellationRequested: (_) => false,
+              )).reason
+            : (await runner.afterTool(
+                request: _request(workspace.id),
+                toolSucceeded: true,
+                isCancellationRequested: (_) => false,
+              )).context;
         expect(text, contains('[REDACTED]'));
         for (final secret in example.value) {
           expect(text, isNot(contains(secret)));
@@ -70,21 +84,43 @@ void main() {
 
     for (final output in [
       'token=private-malformed-response',
-      jsonEncode(event == AgentLifecycleHookEvent.beforeTool
-          ? {'decision': 'allow', 'arguments': {'query': 'replacement'}}
-          : {'context': 'supplemental', 'result': 'replacement'}),
+      jsonEncode(
+        event == AgentLifecycleHookEvent.beforeTool
+            ? {
+                'decision': 'allow',
+                'arguments': {'query': 'replacement'},
+              }
+            : {'context': 'supplemental', 'result': 'replacement'},
+      ),
     ]) {
       test('$event rejects malformed or rewriting output: $output', () async {
         final workspace = await _createWorkspace(workspaceRepository);
         await _trust(settingsRepository, workspace.id, enabled: true);
-        final runtime = _FakeHookRuntime(event: event, output: AgentLifecycleHookInvocationResult(outcome: agent.AgentToolHookOutcome.success, stdout: output));
-        final runner = _runner(settingsRepository, workspaceRepository, runtime);
+        final runtime = _FakeHookRuntime(
+          event: event,
+          output: AgentLifecycleHookInvocationResult(
+            outcome: agent.AgentToolHookOutcome.success,
+            stdout: output,
+          ),
+        );
+        final runner = _runner(
+          settingsRepository,
+          workspaceRepository,
+          runtime,
+        );
         if (event == AgentLifecycleHookEvent.beforeTool) {
-          final result = await runner.beforeTool(request: _request(workspace.id), isCancellationRequested: (_) => false);
+          final result = await runner.beforeTool(
+            request: _request(workspace.id),
+            isCancellationRequested: (_) => false,
+          );
           expect(result.outcome, agent.AgentToolHookOutcome.failed);
           expect(result.reason, isNot(contains('private-malformed-response')));
         } else {
-          final result = await runner.afterTool(request: _request(workspace.id), toolSucceeded: true, isCancellationRequested: (_) => false);
+          final result = await runner.afterTool(
+            request: _request(workspace.id),
+            toolSucceeded: true,
+            isCancellationRequested: (_) => false,
+          );
           expect(result.outcome, agent.AgentToolHookOutcome.failed);
           expect(result.context, isNull);
         }
@@ -107,20 +143,28 @@ void main() {
             await release.future;
           },
         );
-        final runner = _runner(settingsRepository, workspaceRepository, runtime);
+        final runner = _runner(
+          settingsRepository,
+          workspaceRepository,
+          runtime,
+        );
         final pending = event == AgentLifecycleHookEvent.beforeTool
-            ? runner.beforeTool(
-                request: _request(workspace.id),
-                isCancellationRequested: (_) => cancelled,
-              ).then((result) => result.outcome)
-            : runner.afterTool(
-                request: _request(workspace.id),
-                toolSucceeded: true,
-                isCancellationRequested: (_) => cancelled,
-              ).then((result) {
-                expect(result.context, isNull);
-                return result.outcome;
-              });
+            ? runner
+                  .beforeTool(
+                    request: _request(workspace.id),
+                    isCancellationRequested: (_) => cancelled,
+                  )
+                  .then((result) => result.outcome)
+            : runner
+                  .afterTool(
+                    request: _request(workspace.id),
+                    toolSucceeded: true,
+                    isCancellationRequested: (_) => cancelled,
+                  )
+                  .then((result) {
+                    expect(result.context, isNull);
+                    return result.outcome;
+                  });
         await started.future;
         switch (change) {
           case 'revoke':
@@ -148,47 +192,63 @@ void main() {
     }
   }
 
-  test('revoking trust during runtime reinspection prevents process launch', () async {
-    final workspace = await _createWorkspace(workspaceRepository);
-    final directory = await Directory.systemTemp.createTemp('aura-hook-trust-');
-    addTearDown(() => directory.delete(recursive: true));
-    final marker = File('${directory.path}/executed');
-    final configFile = File('${directory.path}/hooks.json');
-    await configFile.writeAsString(jsonEncode({
-      'version': 1,
-      'hooks': [{
-        'event': 'beforeTool',
-        'command': '/usr/bin/python3',
-        'args': [
-          '-c',
-          'from pathlib import Path; '
-              'Path(${jsonEncode(marker.path)}).write_text("executed"); '
-              'print(\'{"decision":"allow"}\')',
-        ],
-      }],
-    }));
-    final snapshot = await const IoAgentLifecycleHookRuntime().inspect(configFile.path);
-    await settingsRepository.selectConfig(workspace.id, canonicalPath: snapshot.canonicalPath);
-    await settingsRepository.trustConfig(
-      workspace.id,
-      canonicalPath: snapshot.canonicalPath,
-      digest: snapshot.digest,
-    );
-    await settingsRepository.setEnabled(workspace.id, enabled: true);
-    final runtime = _PausingReinspectionRuntime();
-    final runner = _runner(settingsRepository, workspaceRepository, runtime);
-    final pending = runner.beforeTool(
-      request: _request(workspace.id),
-      isCancellationRequested: (_) => false,
-    );
-    await runtime.started.future;
-    await settingsRepository.revokeTrust(workspace.id);
-    runtime.release.complete();
+  test(
+    'revoking trust during runtime reinspection prevents process launch',
+    () async {
+      final workspace = await _createWorkspace(workspaceRepository);
+      final directory = await Directory.systemTemp.createTemp(
+        'aura-hook-trust-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final marker = File('${directory.path}/executed');
+      final configFile = File('${directory.path}/hooks.json');
+      await configFile.writeAsString(
+        jsonEncode({
+          'version': 1,
+          'hooks': [
+            {
+              'event': 'beforeTool',
+              'command': '/usr/bin/python3',
+              'args': [
+                '-c',
+                'from pathlib import Path; '
+                    'Path(${jsonEncode(marker.path)}).write_text("executed"); '
+                    'print(\'{"decision":"allow"}\')',
+              ],
+            },
+          ],
+        }),
+      );
+      final snapshot = await const IoAgentLifecycleHookRuntime().inspect(
+        configFile.path,
+      );
+      await settingsRepository.selectConfig(
+        workspace.id,
+        canonicalPath: snapshot.canonicalPath,
+      );
+      await settingsRepository.trustConfig(
+        workspace.id,
+        canonicalPath: snapshot.canonicalPath,
+        digest: snapshot.digest,
+      );
+      await settingsRepository.setEnabled(workspace.id, enabled: true);
+      final runtime = _PausingReinspectionRuntime();
+      final runner = _runner(settingsRepository, workspaceRepository, runtime);
+      final pending = runner.beforeTool(
+        request: _request(workspace.id),
+        isCancellationRequested: (_) => false,
+      );
+      await runtime.started.future;
+      await settingsRepository.revokeTrust(workspace.id);
+      runtime.release.complete();
 
-    expect((await pending).outcome, agent.AgentToolHookOutcome.unavailable);
-    expect(await marker.exists(), isFalse);
-  }, skip: !(Platform.isLinux || Platform.isMacOS) ||
-      !File('/usr/bin/python3').existsSync());
+      expect((await pending).outcome, agent.AgentToolHookOutcome.unavailable);
+      expect(await marker.exists(), isFalse);
+    },
+    skip:
+        !(Platform.isLinux || Platform.isMacOS) ||
+        !File('/usr/bin/python3').existsSync(),
+  );
 
   test(
     'workspace opt-in is required before inspecting or running hooks',
@@ -350,11 +410,7 @@ void main() {
 
   test('post-hook context is redacted before reaching model context', () async {
     final workspace = await _createWorkspace(workspaceRepository);
-    await _trust(
-      settingsRepository,
-      workspace.id,
-      enabled: true,
-    );
+    await _trust(settingsRepository, workspace.id, enabled: true);
     final runtime = _FakeHookRuntime(
       event: AgentLifecycleHookEvent.afterTool,
       output: const AgentLifecycleHookInvocationResult(

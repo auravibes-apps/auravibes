@@ -9,7 +9,9 @@ part 'workspace_lifecycle_hook_runner_provider.g.dart';
 @Riverpod(keepAlive: true)
 WorkspaceLifecycleHookRunner workspaceLifecycleHookRunner(Ref ref) =>
     WorkspaceLifecycleHookRunner(
-      settingsRepository: ref.watch(workspaceAgentHookSettingsRepositoryProvider),
+      settingsRepository: ref.watch(
+        workspaceAgentHookSettingsRepositoryProvider,
+      ),
       workspaceRepository: ref.watch(workspaceRepositoryProvider),
       runtime: ref.watch(agentLifecycleHookRuntimeProvider),
     );

@@ -33,12 +33,13 @@ void main() {
     expect(sourceSha, matches(RegExp(r'^[0-9a-f]{40}$')));
     expect(label, anyOf('before', 'after'));
     final output = Directory(outputPath);
-    final storage = await Directory.systemTemp.createTemp('aura-hooks-capture-');
+    stdout.writeln('capture: create isolated file storage');
+    final storage = (await tester.runAsync(() => Directory.systemTemp.createTemp('aura-hooks-capture-')))!;
     final database = AppDatabase(connection: NativeDatabase(File('${storage.path}/app.sqlite')));
     final container = ProviderContainer(overrides: [appDatabaseProvider.overrideWithValue(database)]);
-    addTearDown(container.dispose);
-    addTearDown(database.close);
     addTearDown(() => storage.delete(recursive: true));
+    addTearDown(database.close);
+    addTearDown(container.dispose);
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 1200);
     addTearDown(tester.view.resetPhysicalSize);
@@ -49,6 +50,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     final fonts = <Map<String, String>>[];
     await tester.runAsync(() async {
+      stdout.writeln('capture: initialize real Linux preferences');
       PathProviderLinux.registerWith();
       SharedPreferencesLinux.registerWith();
       SharedPreferences.resetStatic();
@@ -59,6 +61,7 @@ void main() {
       final _ = await preferences.setString('app_language_preference', 'english');
       await MainLocale.ensureInitialized();
       AppFlavorConfig.instance.setAppFlavor(.prod);
+      stdout.writeln('capture: seed file-backed SQLite');
       final _ = await database.workspaceDao.insertWorkspace(.insert(
         id: .new(workspaceId),
         createdAt: .new(.utc(2026, 10, 30)),
@@ -67,6 +70,7 @@ void main() {
         type: .local,
       ));
       expect((await container.read(workspaceRepositoryProvider).getWorkspaceById(workspaceId))?.name, 'Research workspace');
+      stdout.writeln('capture: load production fonts');
       for (final font in const {
         'Inter': 'assets/fonts/Inter.ttf',
         'JetBrains Mono': 'packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf',
@@ -84,6 +88,7 @@ void main() {
       fonts.add({'family': 'Roboto', 'source': 'Flutter SDK Roboto-Regular.ttf', 'sha256': sha256.convert(roboto).toString()});
       final router = container.read(routerProvider);
       router.go(WorkspaceSettingsRoute(workspaceId: workspaceId).location);
+      stdout.writeln('capture: mount MyApp and production router');
       await tester.pumpWidget(UncontrolledProviderScope(
         container: container,
         child: const MainLocale(child: RepaintBoundary(key: ValueKey('issue1598-production-capture'), child: MyApp())),
@@ -99,6 +104,7 @@ void main() {
     expect(tester.takeException(), isNull);
     final route = container.read(routerProvider).routeInformationProvider.value.uri.toString();
     expect(route, WorkspaceSettingsRoute(workspaceId: workspaceId).location);
+    stdout.writeln('capture: settled actual route $route');
     expect(find.text('Research workspace'), findsWidgets);
     final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(const ValueKey('issue1598-production-capture')));
     await tester.runAsync(() async {
@@ -125,7 +131,8 @@ void main() {
         'fonts': fonts,
         'limitations': 'Native OS window chrome, native credential storage, and assistive technology are not captured.',
       }));
+      stdout.writeln('capture: wrote $label.png and provenance');
     });
     await tester.pumpWidget(const SizedBox.shrink());
-  });
+  }, timeout: const Timeout(Duration(minutes: 2)));
 }

@@ -22750,6 +22750,421 @@ class WorkspaceCommandReceiptsCompanion
   }
 }
 
+class $WorkspaceAgentHookSettingsTable extends WorkspaceAgentHookSettings
+    with
+        TableInfo<
+          $WorkspaceAgentHookSettingsTable,
+          WorkspaceAgentHookSettingsTable
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceAgentHookSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _configPathMeta = const VerificationMeta(
+    'configPath',
+  );
+  @override
+  late final GeneratedColumn<String> configPath = GeneratedColumn<String>(
+    'config_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _trustedSourcePathMeta = const VerificationMeta(
+    'trustedSourcePath',
+  );
+  @override
+  late final GeneratedColumn<String> trustedSourcePath =
+      GeneratedColumn<String>(
+        'trusted_source_path',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _trustedDigestMeta = const VerificationMeta(
+    'trustedDigest',
+  );
+  @override
+  late final GeneratedColumn<String> trustedDigest = GeneratedColumn<String>(
+    'trusted_digest',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workspaceId,
+    enabled,
+    configPath,
+    trustedSourcePath,
+    trustedDigest,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_agent_hook_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceAgentHookSettingsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('config_path')) {
+      context.handle(
+        _configPathMeta,
+        configPath.isAcceptableOrUnknown(data['config_path']!, _configPathMeta),
+      );
+    }
+    if (data.containsKey('trusted_source_path')) {
+      context.handle(
+        _trustedSourcePathMeta,
+        trustedSourcePath.isAcceptableOrUnknown(
+          data['trusted_source_path']!,
+          _trustedSourcePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('trusted_digest')) {
+      context.handle(
+        _trustedDigestMeta,
+        trustedDigest.isAcceptableOrUnknown(
+          data['trusted_digest']!,
+          _trustedDigestMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId};
+  @override
+  WorkspaceAgentHookSettingsTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceAgentHookSettingsTable(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      configPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}config_path'],
+      ),
+      trustedSourcePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trusted_source_path'],
+      ),
+      trustedDigest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}trusted_digest'],
+      ),
+    );
+  }
+
+  @override
+  $WorkspaceAgentHookSettingsTable createAlias(String alias) {
+    return $WorkspaceAgentHookSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceAgentHookSettingsTable extends DataClass
+    implements Insertable<WorkspaceAgentHookSettingsTable> {
+  final String workspaceId;
+  final bool enabled;
+  final String? configPath;
+  final String? trustedSourcePath;
+  final String? trustedDigest;
+  const WorkspaceAgentHookSettingsTable({
+    required this.workspaceId,
+    required this.enabled,
+    this.configPath,
+    this.trustedSourcePath,
+    this.trustedDigest,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['enabled'] = Variable<bool>(enabled);
+    if (!nullToAbsent || configPath != null) {
+      map['config_path'] = Variable<String>(configPath);
+    }
+    if (!nullToAbsent || trustedSourcePath != null) {
+      map['trusted_source_path'] = Variable<String>(trustedSourcePath);
+    }
+    if (!nullToAbsent || trustedDigest != null) {
+      map['trusted_digest'] = Variable<String>(trustedDigest);
+    }
+    return map;
+  }
+
+  WorkspaceAgentHookSettingsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceAgentHookSettingsCompanion(
+      workspaceId: Value(workspaceId),
+      enabled: Value(enabled),
+      configPath: configPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(configPath),
+      trustedSourcePath: trustedSourcePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trustedSourcePath),
+      trustedDigest: trustedDigest == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trustedDigest),
+    );
+  }
+
+  factory WorkspaceAgentHookSettingsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceAgentHookSettingsTable(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      configPath: serializer.fromJson<String?>(json['configPath']),
+      trustedSourcePath: serializer.fromJson<String?>(
+        json['trustedSourcePath'],
+      ),
+      trustedDigest: serializer.fromJson<String?>(json['trustedDigest']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'enabled': serializer.toJson<bool>(enabled),
+      'configPath': serializer.toJson<String?>(configPath),
+      'trustedSourcePath': serializer.toJson<String?>(trustedSourcePath),
+      'trustedDigest': serializer.toJson<String?>(trustedDigest),
+    };
+  }
+
+  WorkspaceAgentHookSettingsTable copyWith({
+    String? workspaceId,
+    bool? enabled,
+    Value<String?> configPath = const Value.absent(),
+    Value<String?> trustedSourcePath = const Value.absent(),
+    Value<String?> trustedDigest = const Value.absent(),
+  }) => WorkspaceAgentHookSettingsTable(
+    workspaceId: workspaceId ?? this.workspaceId,
+    enabled: enabled ?? this.enabled,
+    configPath: configPath.present ? configPath.value : this.configPath,
+    trustedSourcePath: trustedSourcePath.present
+        ? trustedSourcePath.value
+        : this.trustedSourcePath,
+    trustedDigest: trustedDigest.present
+        ? trustedDigest.value
+        : this.trustedDigest,
+  );
+  WorkspaceAgentHookSettingsTable copyWithCompanion(
+    WorkspaceAgentHookSettingsCompanion data,
+  ) {
+    return WorkspaceAgentHookSettingsTable(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      configPath: data.configPath.present
+          ? data.configPath.value
+          : this.configPath,
+      trustedSourcePath: data.trustedSourcePath.present
+          ? data.trustedSourcePath.value
+          : this.trustedSourcePath,
+      trustedDigest: data.trustedDigest.present
+          ? data.trustedDigest.value
+          : this.trustedDigest,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceAgentHookSettingsTable(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('enabled: $enabled, ')
+          ..write('configPath: $configPath, ')
+          ..write('trustedSourcePath: $trustedSourcePath, ')
+          ..write('trustedDigest: $trustedDigest')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    workspaceId,
+    enabled,
+    configPath,
+    trustedSourcePath,
+    trustedDigest,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceAgentHookSettingsTable &&
+          other.workspaceId == this.workspaceId &&
+          other.enabled == this.enabled &&
+          other.configPath == this.configPath &&
+          other.trustedSourcePath == this.trustedSourcePath &&
+          other.trustedDigest == this.trustedDigest);
+}
+
+class WorkspaceAgentHookSettingsCompanion
+    extends UpdateCompanion<WorkspaceAgentHookSettingsTable> {
+  final Value<String> workspaceId;
+  final Value<bool> enabled;
+  final Value<String?> configPath;
+  final Value<String?> trustedSourcePath;
+  final Value<String?> trustedDigest;
+  final Value<int> rowid;
+  const WorkspaceAgentHookSettingsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.configPath = const Value.absent(),
+    this.trustedSourcePath = const Value.absent(),
+    this.trustedDigest = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceAgentHookSettingsCompanion.insert({
+    required String workspaceId,
+    this.enabled = const Value.absent(),
+    this.configPath = const Value.absent(),
+    this.trustedSourcePath = const Value.absent(),
+    this.trustedDigest = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId);
+  static Insertable<WorkspaceAgentHookSettingsTable> custom({
+    Expression<String>? workspaceId,
+    Expression<bool>? enabled,
+    Expression<String>? configPath,
+    Expression<String>? trustedSourcePath,
+    Expression<String>? trustedDigest,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (enabled != null) 'enabled': enabled,
+      if (configPath != null) 'config_path': configPath,
+      if (trustedSourcePath != null) 'trusted_source_path': trustedSourcePath,
+      if (trustedDigest != null) 'trusted_digest': trustedDigest,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceAgentHookSettingsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<bool>? enabled,
+    Value<String?>? configPath,
+    Value<String?>? trustedSourcePath,
+    Value<String?>? trustedDigest,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceAgentHookSettingsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      enabled: enabled ?? this.enabled,
+      configPath: configPath ?? this.configPath,
+      trustedSourcePath: trustedSourcePath ?? this.trustedSourcePath,
+      trustedDigest: trustedDigest ?? this.trustedDigest,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (configPath.present) {
+      map['config_path'] = Variable<String>(configPath.value);
+    }
+    if (trustedSourcePath.present) {
+      map['trusted_source_path'] = Variable<String>(trustedSourcePath.value);
+    }
+    if (trustedDigest.present) {
+      map['trusted_digest'] = Variable<String>(trustedDigest.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceAgentHookSettingsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('enabled: $enabled, ')
+          ..write('configPath: $configPath, ')
+          ..write('trustedSourcePath: $trustedSourcePath, ')
+          ..write('trustedDigest: $trustedDigest, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $WorkspaceContentReportsTable extends WorkspaceContentReports
     with TableInfo<$WorkspaceContentReportsTable, WorkspaceContentReportRow> {
   @override
@@ -23560,6 +23975,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceContextSelectionsTable(this);
   late final $WorkspaceCommandReceiptsTable workspaceCommandReceipts =
       $WorkspaceCommandReceiptsTable(this);
+  late final $WorkspaceAgentHookSettingsTable workspaceAgentHookSettings =
+      $WorkspaceAgentHookSettingsTable(this);
   late final $WorkspaceContentReportsTable workspaceContentReports =
       $WorkspaceContentReportsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
@@ -23653,6 +24070,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final McpServersDao mcpServersDao = McpServersDao(this as AppDatabase);
   late final WorkspaceCompactionSettingsDao workspaceCompactionSettingsDao =
       WorkspaceCompactionSettingsDao(this as AppDatabase);
+  late final WorkspaceAgentHookSettingsDao workspaceAgentHookSettingsDao =
+      WorkspaceAgentHookSettingsDao(this as AppDatabase);
   late final SkillsDao skillsDao = SkillsDao(this as AppDatabase);
   late final SkillResourcesDao skillResourcesDao = SkillResourcesDao(
     this as AppDatabase,
@@ -23711,6 +24130,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceCredentialDeletions,
     workspaceContextSelections,
     workspaceCommandReceipts,
+    workspaceAgentHookSettings,
     workspaceContentReports,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
@@ -24105,6 +24525,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [
         TableUpdate('workspace_command_receipts', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_agent_hook_settings', kind: UpdateKind.delete),
       ],
     ),
   ]);
@@ -24628,6 +25057,32 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceCommandReceiptsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceAgentHookSettingsTable,
+    List<WorkspaceAgentHookSettingsTable>
+  >
+  _workspaceAgentHookSettingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceAgentHookSettings,
+        aliasName:
+            'workspaces__id__workspace_agent_hook_settings__workspace_id',
+      );
+
+  $$WorkspaceAgentHookSettingsTableProcessedTableManager
+  get workspaceAgentHookSettingsRefs {
+    final manager = $$WorkspaceAgentHookSettingsTableTableManager(
+      $_db,
+      $_db.workspaceAgentHookSettings,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceAgentHookSettingsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -25269,6 +25724,33 @@ class $$WorkspacesTableFilterComposer
               }) => $$WorkspaceCommandReceiptsTableFilterComposer(
                 $db: $db,
                 $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceAgentHookSettingsRefs(
+    Expression<bool> Function($$WorkspaceAgentHookSettingsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceAgentHookSettingsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceAgentHookSettings,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceAgentHookSettingsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceAgentHookSettings,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -25962,6 +26444,35 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> workspaceAgentHookSettingsRefs<T extends Object>(
+    Expression<T> Function(
+      $$WorkspaceAgentHookSettingsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$WorkspaceAgentHookSettingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceAgentHookSettings,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceAgentHookSettingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceAgentHookSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -26001,6 +26512,7 @@ class $$WorkspacesTableTableManager
             bool workspaceFilesRefs,
             bool workspaceContextSelectionsRefs,
             bool workspaceCommandReceiptsRefs,
+            bool workspaceAgentHookSettingsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -26091,6 +26603,7 @@ class $$WorkspacesTableTableManager
                 workspaceFilesRefs = false,
                 workspaceContextSelectionsRefs = false,
                 workspaceCommandReceiptsRefs = false,
+                workspaceAgentHookSettingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -26124,6 +26637,8 @@ class $$WorkspacesTableTableManager
                       db.workspaceContextSelections,
                     if (workspaceCommandReceiptsRefs)
                       db.workspaceCommandReceipts,
+                    if (workspaceAgentHookSettingsRefs)
+                      db.workspaceAgentHookSettings,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -26611,6 +27126,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceAgentHookSettingsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceAgentHookSettingsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceAgentHookSettingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceAgentHookSettingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -26655,6 +27191,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceFilesRefs,
         bool workspaceContextSelectionsRefs,
         bool workspaceCommandReceiptsRefs,
+        bool workspaceAgentHookSettingsRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -46389,6 +46926,360 @@ typedef $$WorkspaceCommandReceiptsTableProcessedTableManager =
         bool selectionId,
       })
     >;
+typedef $$WorkspaceAgentHookSettingsTableCreateCompanionBuilder =
+    WorkspaceAgentHookSettingsCompanion Function({
+      required String workspaceId,
+      Value<bool> enabled,
+      Value<String?> configPath,
+      Value<String?> trustedSourcePath,
+      Value<String?> trustedDigest,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceAgentHookSettingsTableUpdateCompanionBuilder =
+    WorkspaceAgentHookSettingsCompanion Function({
+      Value<String> workspaceId,
+      Value<bool> enabled,
+      Value<String?> configPath,
+      Value<String?> trustedSourcePath,
+      Value<String?> trustedDigest,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceAgentHookSettingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceAgentHookSettingsTable,
+          WorkspaceAgentHookSettingsTable
+        > {
+  $$WorkspaceAgentHookSettingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        'workspace_agent_hook_settings__workspace_id__workspaces__id',
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceAgentHookSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceAgentHookSettingsTable> {
+  $$WorkspaceAgentHookSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get configPath => $composableBuilder(
+    column: $table.configPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get trustedSourcePath => $composableBuilder(
+    column: $table.trustedSourcePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get trustedDigest => $composableBuilder(
+    column: $table.trustedDigest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceAgentHookSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceAgentHookSettingsTable> {
+  $$WorkspaceAgentHookSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get configPath => $composableBuilder(
+    column: $table.configPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get trustedSourcePath => $composableBuilder(
+    column: $table.trustedSourcePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get trustedDigest => $composableBuilder(
+    column: $table.trustedDigest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceAgentHookSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceAgentHookSettingsTable> {
+  $$WorkspaceAgentHookSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<String> get configPath => $composableBuilder(
+    column: $table.configPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get trustedSourcePath => $composableBuilder(
+    column: $table.trustedSourcePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get trustedDigest => $composableBuilder(
+    column: $table.trustedDigest,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceAgentHookSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceAgentHookSettingsTable,
+          WorkspaceAgentHookSettingsTable,
+          $$WorkspaceAgentHookSettingsTableFilterComposer,
+          $$WorkspaceAgentHookSettingsTableOrderingComposer,
+          $$WorkspaceAgentHookSettingsTableAnnotationComposer,
+          $$WorkspaceAgentHookSettingsTableCreateCompanionBuilder,
+          $$WorkspaceAgentHookSettingsTableUpdateCompanionBuilder,
+          (
+            WorkspaceAgentHookSettingsTable,
+            $$WorkspaceAgentHookSettingsTableReferences,
+          ),
+          WorkspaceAgentHookSettingsTable,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceAgentHookSettingsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceAgentHookSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceAgentHookSettingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceAgentHookSettingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceAgentHookSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<String?> configPath = const Value.absent(),
+                Value<String?> trustedSourcePath = const Value.absent(),
+                Value<String?> trustedDigest = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceAgentHookSettingsCompanion(
+                workspaceId: workspaceId,
+                enabled: enabled,
+                configPath: configPath,
+                trustedSourcePath: trustedSourcePath,
+                trustedDigest: trustedDigest,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                Value<bool> enabled = const Value.absent(),
+                Value<String?> configPath = const Value.absent(),
+                Value<String?> trustedSourcePath = const Value.absent(),
+                Value<String?> trustedDigest = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceAgentHookSettingsCompanion.insert(
+                workspaceId: workspaceId,
+                enabled: enabled,
+                configPath: configPath,
+                trustedSourcePath: trustedSourcePath,
+                trustedDigest: trustedDigest,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceAgentHookSettingsTable,
+                    WorkspaceAgentHookSettingsTable
+                  >(table),
+                  $$WorkspaceAgentHookSettingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$WorkspaceAgentHookSettingsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceAgentHookSettingsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceAgentHookSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceAgentHookSettingsTable,
+      WorkspaceAgentHookSettingsTable,
+      $$WorkspaceAgentHookSettingsTableFilterComposer,
+      $$WorkspaceAgentHookSettingsTableOrderingComposer,
+      $$WorkspaceAgentHookSettingsTableAnnotationComposer,
+      $$WorkspaceAgentHookSettingsTableCreateCompanionBuilder,
+      $$WorkspaceAgentHookSettingsTableUpdateCompanionBuilder,
+      (
+        WorkspaceAgentHookSettingsTable,
+        $$WorkspaceAgentHookSettingsTableReferences,
+      ),
+      WorkspaceAgentHookSettingsTable,
+      PrefetchHooks Function({bool workspaceId})
+    >;
 typedef $$WorkspaceContentReportsTableCreateCompanionBuilder =
     WorkspaceContentReportsCompanion Function({
       required String workspaceId,
@@ -46885,6 +47776,12 @@ class $AppDatabaseManager {
       $$WorkspaceCommandReceiptsTableTableManager(
         _db,
         _db.workspaceCommandReceipts,
+      );
+  $$WorkspaceAgentHookSettingsTableTableManager
+  get workspaceAgentHookSettings =>
+      $$WorkspaceAgentHookSettingsTableTableManager(
+        _db,
+        _db.workspaceAgentHookSettings,
       );
   $$WorkspaceContentReportsTableTableManager get workspaceContentReports =>
       $$WorkspaceContentReportsTableTableManager(

@@ -412,73 +412,112 @@ void main() {
     },
   );
 
-  for (final outcome in [agent.AgentToolHookOutcome.block, agent.AgentToolHookOutcome.cancelled]) {
-    test('batch hook $outcome preserves source workspace and prevents dispatch', () async {
-      final calls = [
-        _pending(toolCallId: 'first', sourceConversationId: 'child-a'),
-        _pending(toolCallId: 'second', sourceConversationId: 'child-b', messageId: 'child-message'),
-      ];
-      final cancellation = AgentCancellationRuntime();
-      addTearDown(cancellation.dispose);
-      final _ = cancellation.start('child-a');
-      final _ = cancellation.start('child-b');
-      final resolved = ResolvedTool.builtIn(
-        tableId: 'tool', toolIdentifier: 'tool', tooltype: .calculator,
-      );
-      final catalog = agent.buildToolCatalog<ResolvedTool>([
-        agent.ToolCatalogCandidate.reserved(
-          spec: .new(name: 'tool', description: 'test tool', inputJsonSchema: const {}),
-          target: resolved,
-        ),
-      ]);
-      final hooks = _RecordingWorkspaceHookRunner(
-        beforeOutcome: outcome,
-        onBefore: outcome == agent.AgentToolHookOutcome.cancelled
-            ? cancellation.requestStop
-            : null,
-      );
-      when(() => messageRepository.claimToolCallBatch(any(), approve: true))
-          .thenAnswer((_) async => [for (final call in calls) _claim(call, .claimed)]);
-      when(() => conversationRepository.getConversationById(any()))
-          .thenAnswer((invocation) async {
-            final id = invocation.positionalArguments.single as String;
-            return _conversation(id, '$id-workspace');
-          });
-      when(() => loadToolSpecs.buildCatalog(
-        conversationId: any(named: 'conversationId'),
-        workspaceId: any(named: 'workspaceId'),
-      )).thenAnswer((_) async => catalog);
-      when(() => messageRepository.persistToolCallBatchResults(any()))
-          .thenAnswer((_) => Future<void>.value());
+  for (final outcome in [
+    agent.AgentToolHookOutcome.block,
+    agent.AgentToolHookOutcome.cancelled,
+  ]) {
+    test(
+      'batch hook $outcome preserves source workspace and prevents dispatch',
+      () async {
+        final calls = [
+          _pending(toolCallId: 'first', sourceConversationId: 'child-a'),
+          _pending(
+            toolCallId: 'second',
+            sourceConversationId: 'child-b',
+            messageId: 'child-message',
+          ),
+        ];
+        final cancellation = AgentCancellationRuntime();
+        addTearDown(cancellation.dispose);
+        final _ = cancellation.start('child-a');
+        final _ = cancellation.start('child-b');
+        final resolved = ResolvedTool.builtIn(
+          tableId: 'tool',
+          toolIdentifier: 'tool',
+          tooltype: .calculator,
+        );
+        final catalog = agent.buildToolCatalog<ResolvedTool>([
+          agent.ToolCatalogCandidate.reserved(
+            spec: .new(
+              name: 'tool',
+              description: 'test tool',
+              inputJsonSchema: const {},
+            ),
+            target: resolved,
+          ),
+        ]);
+        final hooks = _RecordingWorkspaceHookRunner(
+          beforeOutcome: outcome,
+          onBefore: outcome == agent.AgentToolHookOutcome.cancelled
+              ? cancellation.requestStop
+              : null,
+        );
+        when(() => messageRepository.claimToolCallBatch(any(), approve: true))
+            .thenAnswer(
+              (_) async => [for (final call in calls) _claim(call, .claimed)],
+            );
+        when(() => conversationRepository.getConversationById(any()))
+            .thenAnswer((invocation) async {
+              final id = invocation.positionalArguments.single as String;
+              return _conversation(id, '$id-workspace');
+            });
+        when(
+          () => loadToolSpecs.buildCatalog(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+          ),
+        ).thenAnswer((_) async => catalog);
+        when(() => messageRepository.persistToolCallBatchResults(any()))
+            .thenAnswer((_) => Future<void>.value());
 
-      await createUsecase(lifecycleHookRunner: hooks, cancellationRuntime: cancellation)
-          .approveOnce(rootConversationId: 'root', workspaceId: 'root-workspace', pendingCalls: calls);
+        await createUsecase(
+          lifecycleHookRunner: hooks,
+          cancellationRuntime: cancellation,
+        ).approveOnce(
+          rootConversationId: 'root',
+          workspaceId: 'root-workspace',
+          pendingCalls: calls,
+        );
 
-      expect(hooks.beforeWorkspaceIds, unorderedEquals(['child-a-workspace', 'child-b-workspace']));
-      expect(hooks.afterWorkspaceIds, isEmpty);
-      final updates = verify(() => messageRepository.persistToolCallBatchResults(captureAny()))
-          .captured.single as List<ToolCallExecutionBatchUpdate>;
-      expect(updates, hasLength(2));
-      for (final update in updates) {
-        if (outcome == agent.AgentToolHookOutcome.block) {
-          expect(update.resultStatus, ToolCallResultStatus.executionError);
-          final payload = jsonDecode(update.responseRaw!) as Map<String, dynamic>;
-          expect(payload['code'], 'hook_blocked');
-          expect(payload['reason'], 'Policy blocked this tool call.');
-        } else {
-          expect(update.resultStatus, ToolCallResultStatus.stoppedByUser);
+        expect(
+          hooks.beforeWorkspaceIds,
+          unorderedEquals(['child-a-workspace', 'child-b-workspace']),
+        );
+        expect(hooks.afterWorkspaceIds, isEmpty);
+        final updates =
+            verify(
+                  () => messageRepository.persistToolCallBatchResults(
+                    captureAny(),
+                  ),
+                ).captured.single
+                as List<ToolCallExecutionBatchUpdate>;
+        expect(updates, hasLength(2));
+        for (final update in updates) {
+          if (outcome == agent.AgentToolHookOutcome.block) {
+            expect(update.resultStatus, ToolCallResultStatus.executionError);
+            final payload =
+                jsonDecode(update.responseRaw!) as Map<String, dynamic>;
+            expect(payload['code'], 'hook_blocked');
+            expect(payload['reason'], 'Policy blocked this tool call.');
+          } else {
+            expect(update.resultStatus, ToolCallResultStatus.stoppedByUser);
+          }
         }
-      }
-      final _ = verifyNever(() => resolvedToolService.call(
-        conversationId: any(named: 'conversationId'),
-        tool: any(named: 'tool'),
-        arguments: any(named: 'arguments'),
-        toolCallId: any(named: 'toolCallId'),
-      ));
-      if (outcome == agent.AgentToolHookOutcome.cancelled) {
-        final _ = verifyNever(() => resumeService.call(messageId: any(named: 'messageId')));
-      }
-    });
+        final _ = verifyNever(
+          () => resolvedToolService.call(
+            conversationId: any(named: 'conversationId'),
+            tool: any(named: 'tool'),
+            arguments: any(named: 'arguments'),
+            toolCallId: any(named: 'toolCallId'),
+          ),
+        );
+        if (outcome == agent.AgentToolHookOutcome.cancelled) {
+          final _ = verifyNever(
+            () => resumeService.call(messageId: any(named: 'messageId')),
+          );
+        }
+      },
+    );
   }
 
   test('maps cloud approval results and preserves source identities', () async {

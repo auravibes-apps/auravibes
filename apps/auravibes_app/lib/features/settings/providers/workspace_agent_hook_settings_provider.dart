@@ -28,37 +28,37 @@ Future<WorkspaceAgentHookTrustStatus> workspaceAgentHookTrustStatus(
   Ref ref,
   String workspaceId,
 ) async {
-      final workspaces = ref.watch(allWorkspacesProvider).asData?.value;
-      final workspace = workspaces
-          ?.where((workspace) => workspace.id == workspaceId)
-          .firstOrNull;
-      if (workspace == null || workspace.type != WorkspaceType.local) {
-        return WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
-      }
+  final workspaces = ref.watch(allWorkspacesProvider).asData?.value;
+  final workspace = workspaces
+      ?.where((workspace) => workspace.id == workspaceId)
+      .firstOrNull;
+  if (workspace == null || workspace.type != WorkspaceType.local) {
+    return WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
+  }
 
-      final runtime = ref.watch(agentLifecycleHookRuntimeProvider);
-      if (!runtime.isSupported) {
-        return WorkspaceAgentHookTrustStatus.unsupportedPlatform;
-      }
+  final runtime = ref.watch(agentLifecycleHookRuntimeProvider);
+  if (!runtime.isSupported) {
+    return WorkspaceAgentHookTrustStatus.unsupportedPlatform;
+  }
 
-      final settings = await ref.watch(
-        workspaceAgentHookSettingsProvider(workspaceId).future,
-      );
-      final path = settings.configPath;
-      if (path == null) return WorkspaceAgentHookTrustStatus.notConfigured;
+  final settings = await ref.watch(
+    workspaceAgentHookSettingsProvider(workspaceId).future,
+  );
+  final path = settings.configPath;
+  if (path == null) return WorkspaceAgentHookTrustStatus.notConfigured;
 
-      if (!settings.isTrusted) {
-        return WorkspaceAgentHookTrustStatus.trustRequired;
-      }
+  if (!settings.isTrusted) {
+    return WorkspaceAgentHookTrustStatus.trustRequired;
+  }
 
-      try {
-        final snapshot = await runtime.inspect(path);
-        return snapshot.canonicalPath == settings.trustedSourcePath &&
-                snapshot.canonicalPath == path &&
-                snapshot.digest == settings.trustedDigest
-            ? WorkspaceAgentHookTrustStatus.trusted
-            : WorkspaceAgentHookTrustStatus.changed;
-      } on Object {
-        return WorkspaceAgentHookTrustStatus.invalid;
-      }
+  try {
+    final snapshot = await runtime.inspect(path);
+    return snapshot.canonicalPath == settings.trustedSourcePath &&
+            snapshot.canonicalPath == path &&
+            snapshot.digest == settings.trustedDigest
+        ? WorkspaceAgentHookTrustStatus.trusted
+        : WorkspaceAgentHookTrustStatus.changed;
+  } on Object {
+    return WorkspaceAgentHookTrustStatus.invalid;
+  }
 }

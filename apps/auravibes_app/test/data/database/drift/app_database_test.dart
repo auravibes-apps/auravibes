@@ -138,15 +138,37 @@ void main() {
 
     test('deleting a workspace cascades to its local hook trust', () async {
       final database = fixture.database;
-      final _ = await database.into(database.workspaces).insert(
-        WorkspacesCompanion.insert(id: const Value('hooks-owner'), name: 'Hooks', type: WorkspaceType.local),
+      final _ = await database
+          .into(database.workspaces)
+          .insert(
+            WorkspacesCompanion.insert(
+              id: const Value('hooks-owner'),
+              name: 'Hooks',
+              type: WorkspaceType.local,
+            ),
+          );
+      final repository = WorkspaceAgentHookSettingsRepository(
+        database.workspaceAgentHookSettingsDao,
       );
-      final repository = WorkspaceAgentHookSettingsRepository(database.workspaceAgentHookSettingsDao);
-      await repository.selectConfig('hooks-owner', canonicalPath: '/tmp/hooks.json');
-      await repository.trustConfig('hooks-owner', canonicalPath: '/tmp/hooks.json', digest: 'trusted-digest');
+      await repository.selectConfig(
+        'hooks-owner',
+        canonicalPath: '/tmp/hooks.json',
+      );
+      await repository.trustConfig(
+        'hooks-owner',
+        canonicalPath: '/tmp/hooks.json',
+        digest: 'trusted-digest',
+      );
       await repository.setEnabled('hooks-owner', enabled: true);
-      final _ = await (database.delete(database.workspaces)..where((row) => row.id.equals('hooks-owner'))).go();
-      expect(await database.workspaceAgentHookSettingsDao.getByWorkspaceId('hooks-owner'), isNull);
+      final _ = await (database.delete(
+        database.workspaces,
+      )..where((row) => row.id.equals('hooks-owner'))).go();
+      expect(
+        await database.workspaceAgentHookSettingsDao.getByWorkspaceId(
+          'hooks-owner',
+        ),
+        isNull,
+      );
     });
 
     test('schema41 assets survive context and reporting migrations', () async {

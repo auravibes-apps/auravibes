@@ -9,7 +9,7 @@ import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycl
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

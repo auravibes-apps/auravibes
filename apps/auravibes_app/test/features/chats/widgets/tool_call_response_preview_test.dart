@@ -69,16 +69,23 @@ void main() {
   }
 
   group('ToolCallResponsePreview', () {
-    testWidgets('shows a hook block and its redacted policy reason', (tester) async {
+    testWidgets('shows a hook block and its redacted policy reason', (
+      tester,
+    ) async {
       final content = jsonEncode({
         'outcome': 'blocked',
         'code': 'hook_blocked',
-        'reason': LogRedaction.redact('Policy denied this call. token=private-secret'),
+        'reason': LogRedaction.redact(
+          'Policy denied this call. token=private-secret',
+        ),
       });
       await pumpAndInit(tester, buildSubject(content: content));
 
       expect(find.textContaining('hook_blocked'), findsOneWidget);
-      expect(find.textContaining('Policy denied this call. token=[REDACTED]'), findsOneWidget);
+      expect(
+        find.textContaining('Policy denied this call. token=[REDACTED]'),
+        findsOneWidget,
+      );
       expect(find.textContaining('private-secret'), findsNothing);
     });
     testWidgets(

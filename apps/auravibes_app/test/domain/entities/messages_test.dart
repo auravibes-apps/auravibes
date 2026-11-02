@@ -8,7 +8,9 @@ void main() {
   group('MessageToolCallEntity', () {
     test('hook context survives serialization while arguments and output remain intact', () {
       const call = MessageToolCallEntity(
-        id: 'hook-call', name: 'tool', argumentsRaw: '{"query":"original"}',
+        id: 'hook-call',
+        name: 'tool',
+        argumentsRaw: '{"query":"original"}',
         responseRaw: 'original tool result',
         responseContextRaw: 'Post-tool hook context:\ncontext\n\nTool output:\noriginal tool result',
         fullOutputForContext: true,
