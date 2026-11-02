@@ -297,8 +297,17 @@ void main() {
     await tester.tap(find.text('Archive'));
     await fixture.settle(tester);
     expect(find.text('Project research'), findsNothing);
-    await tester.tap(find.byTooltip('Archived conversations'));
+    final archivedConversationsButton = find.descendant(
+      of: find.byType(ChatsListScreen),
+      matching: find.byTooltip('Archived conversations'),
+    );
+    expect(archivedConversationsButton, findsOneWidget);
+    await tester.tap(archivedConversationsButton);
     await fixture.settle(tester);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ArchivedConversationsRoute(workspaceId: fixture.workspaceId).location,
+    );
     expect(find.byType(ArchivedConversationsScreen), findsOneWidget);
     expect(find.text('Project research'), findsOneWidget);
     await _capture(
