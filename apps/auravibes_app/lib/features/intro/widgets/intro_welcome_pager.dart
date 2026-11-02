@@ -40,6 +40,17 @@ class _IntroWelcomePagerState extends State<IntroWelcomePager> {
   int _page = 0;
   ChatDraft? _selectedStarter;
 
+  @override
+  Widget build(BuildContext context) => CallbackShortcuts(
+    bindings: widget.canNavigate
+        ? {
+            const SingleActivator(.arrowLeft): () => _goToPage(_page - 1),
+            const SingleActivator(.arrowRight): () => _goToPage(_page + 1),
+          }
+        : {},
+    child: Focus(child: _IntroWelcomeViewport(state: this), autofocus: true),
+  );
+
   PageController get _controller => widget.controller;
 
   bool get _reducedMotion =>
@@ -55,17 +66,6 @@ class _IntroWelcomePagerState extends State<IntroWelcomePager> {
 
     widget.onQuickStart(draft);
   }
-
-  @override
-  Widget build(BuildContext context) => CallbackShortcuts(
-    bindings: widget.canNavigate
-        ? {
-            const SingleActivator(.arrowLeft): () => _goToPage(_page - 1),
-            const SingleActivator(.arrowRight): () => _goToPage(_page + 1),
-          }
-        : {},
-    child: Focus(child: _IntroWelcomeViewport(state: this), autofocus: true),
-  );
 
   bool _settled(ScrollEndNotification notification) {
     if (notification.depth != 0 || !_controller.hasClients) return false;

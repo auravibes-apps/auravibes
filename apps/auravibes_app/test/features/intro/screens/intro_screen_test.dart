@@ -324,7 +324,7 @@ void main() {
 
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
-      expect(find.text("Connect AI when you're ready"), findsOneWidget);
+      expect(find.text('Connect AI when you\'re ready'), findsOneWidget);
       await tester.tap(find.byKey(_welcomeNextKey));
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       await expectLater(
@@ -517,7 +517,7 @@ void main() {
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
       expect(find.text('3 of 4'), findsOneWidget);
-      expect(find.text("Connect AI when you're ready"), findsOneWidget);
+      expect(find.text('Connect AI when you\'re ready'), findsOneWidget);
       expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
