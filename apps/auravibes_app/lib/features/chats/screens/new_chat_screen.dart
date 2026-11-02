@@ -192,17 +192,15 @@ class const _NewChatAvailable({
   Widget build(BuildContext context, WidgetRef ref) {
     final draftStatus = useState(false);
     final guard = useMemoized(DraftExitGuard.new);
-    final data = _newChatBodyData(
-      (
-        context: context,
-        ref: ref,
-        workspaceId: workspaceId,
-        state: ref.watch(newChatProvider(workspaceId)),
-        draftStatus: draftStatus,
-        draftToLoad: draftToLoad,
-        onDraftLoaded: onDraftLoaded,
-      ),
-    );
+    final data = _newChatBodyData((
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      state: ref.watch(newChatProvider(workspaceId)),
+      draftStatus: draftStatus,
+      draftToLoad: draftToLoad,
+      onDraftLoaded: onDraftLoaded,
+    ));
     _bindNewChatGuard((
       guard: guard,
       ref: ref,

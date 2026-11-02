@@ -256,14 +256,8 @@ class const _FirstChatGuideButtons({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      _QuickStartButton(
-        onStart: onStart,
-        pending: pending,
-      ),
-      _AdvancedSetupButton(
-        onAdvancedSetup: onAdvancedSetup,
-        pending: pending,
-      ),
+      _QuickStartButton(onStart: onStart, pending: pending),
+      _AdvancedSetupButton(onAdvancedSetup: onAdvancedSetup, pending: pending),
     ],
     spacing: .md,
     crossAxisAlignment: .stretch,
