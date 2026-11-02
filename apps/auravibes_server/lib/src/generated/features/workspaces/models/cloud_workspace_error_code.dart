@@ -31,6 +31,7 @@ enum CloudWorkspaceErrorCode implements _is.SerializableModel {
   duplicateMembership,
   confirmationNameMismatch,
   validationFailed,
+  resourceSizeLimitExceeded,
   invalidCursor,
   staleRevision,
   idempotencyConflict,
@@ -76,6 +77,8 @@ enum CloudWorkspaceErrorCode implements _is.SerializableModel {
         return CloudWorkspaceErrorCode.confirmationNameMismatch;
       case 'validationFailed':
         return CloudWorkspaceErrorCode.validationFailed;
+      case 'resourceSizeLimitExceeded':
+        return CloudWorkspaceErrorCode.resourceSizeLimitExceeded;
       case 'invalidCursor':
         return CloudWorkspaceErrorCode.invalidCursor;
       case 'staleRevision':
