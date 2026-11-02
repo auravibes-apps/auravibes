@@ -308,7 +308,24 @@ void main() {
       router.routeInformationProvider.value.uri.path,
       ArchivedConversationsRoute(workspaceId: fixture.workspaceId).location,
     );
-    expect(find.byType(ArchivedConversationsScreen), findsOneWidget);
+    final archivedScreen = find.byType(ArchivedConversationsScreen);
+    final archivedScreenIncludingOffstage = find.byType(
+      ArchivedConversationsScreen,
+      skipOffstage: false,
+    );
+    expect(
+      archivedScreenIncludingOffstage,
+      findsOneWidget,
+      reason:
+          'The route URI changed to ${router.routeInformationProvider.value.uri}, '
+          'but the archived destination was not mounted. Router configuration: '
+          '${router.routerDelegate.currentConfiguration}',
+    );
+    expect(
+      archivedScreen,
+      findsOneWidget,
+      reason: 'The archived destination was mounted but is not visible.',
+    );
     expect(find.text('Project research'), findsOneWidget);
     await _capture(
       tester,
