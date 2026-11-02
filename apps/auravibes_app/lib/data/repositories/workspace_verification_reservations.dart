@@ -73,6 +73,7 @@ class const WorkspaceVerificationReservations(
     if (!_validToolCallId(request.toolCallId)) return false;
     final message = await database.messageDao.getMessageById(request.turnId);
     if (message == null || !message.isUser) return false;
+
     return await _messageBelongsToWorkspace(message.conversationId, request);
   }
 
@@ -140,7 +141,9 @@ class const WorkspaceVerificationReservations(
       repairLimit: entry.limit,
       isRepair: entry.repair,
     );
-    await database.into(database.workspaceVerificationRuns).insert(companion);
+    final _ = await database
+        .into(database.workspaceVerificationRuns)
+        .insert(companion);
   }
 
   ScopedVerificationReservation _createdReservation(
@@ -167,13 +170,13 @@ class const WorkspaceVerificationReservations(
     VerificationReservationRequest request,
   ) async {
     final table = database.workspaceVerificationRuns;
-    final query = database.select(table);
-    query.where(
-      (row) =>
-          row.workspaceId.equals(request.workspaceId) &
-          row.turnId.equals(request.turnId),
-    );
-    query.orderBy([(row) => OrderingTerm.asc(row.ordinal)]);
+    final query = database.select(table)
+      ..where(
+        (row) =>
+            row.workspaceId.equals(request.workspaceId) &
+            row.turnId.equals(request.turnId),
+      )
+      ..orderBy([(row) => OrderingTerm.asc(row.ordinal)]);
 
     return await query.get();
   }

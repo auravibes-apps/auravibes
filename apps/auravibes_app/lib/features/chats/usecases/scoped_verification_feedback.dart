@@ -98,10 +98,11 @@ int _maximumEncodedPrefixLength(String source, int budget) {
   var high = source.length;
   while (low < high) {
     final middle = (low + high + 1) ~/ 2;
-    if (_encodedPrefixFits(source, middle, budget))
+    if (_encodedPrefixFits(source, middle, budget)) {
       low = middle;
-    else
+    } else {
       high = middle - 1;
+    }
   }
 
   return low;

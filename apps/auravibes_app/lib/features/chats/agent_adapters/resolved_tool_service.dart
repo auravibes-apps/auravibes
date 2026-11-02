@@ -156,9 +156,9 @@ class ResolvedToolService {
 
   Future<Object?> call({
     required String conversationId,
-    String toolCallId = '',
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
+    String toolCallId = '',
   }) async {
     final request = (
       conversationId: conversationId,

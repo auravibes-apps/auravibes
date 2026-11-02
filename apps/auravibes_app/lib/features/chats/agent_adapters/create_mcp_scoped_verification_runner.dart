@@ -111,6 +111,7 @@ Future<bool> _runnerPermissionAllowed(
   if (workspaceId == null) return false;
   final current = await dependencies.repository.getSettings(workspaceId);
   if (!_settingsMatch(input.settings, current)) return false;
+
   return await _runnerPermissionsCurrent((
     dependencies: dependencies,
     input: input,
@@ -248,6 +249,7 @@ Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
     request.workspaceId,
   );
   if (row == null) return null;
+
   return await _resolveToolGroup(row, request);
 }
 

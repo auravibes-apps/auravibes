@@ -73,7 +73,7 @@ class McpScopedVerificationRunner
       arguments: _protocolArguments(payload, operation),
     );
 
-    return _structuredResult(response);
+    return _structuredMcpResult(response);
   }
 
   void _requireServerBinding() {
@@ -100,16 +100,6 @@ class McpScopedVerificationRunner
     'protocol': ScopedVerificationLimits.protocol,
     'operation': operation,
   };
-
-  Object? _structuredResult(Object? response) {
-    if (response is! McpToolCallerResult || response.isError == true) {
-      throw const FormatException(
-        'Verification needs a structured MCP receipt.',
-      );
-    }
-
-    return response.structuredContent;
-  }
 
   Future<Map<String, Object?>> _authorizedPayload(
     String operation,
@@ -170,4 +160,14 @@ class McpScopedVerificationRunner
     deadlineMs: arguments['deadlineMs']! as int,
     fingerprint: fingerprint,
   );
+}
+
+Object? _structuredMcpResult(Object? response) {
+  if (response is! McpToolCallerResult || response.isError == true) {
+    throw const FormatException(
+      'Verification needs a structured MCP receipt.',
+    );
+  }
+
+  return response.structuredContent;
 }

@@ -126,6 +126,7 @@ class const VerifyReportedEditsUsecase({
     if (input.cancellation.isCancellationRequested || remaining <= .zero) {
       return null;
     }
+
     return await _raceRunnerCreation(input, remaining, createRunner);
   }
 

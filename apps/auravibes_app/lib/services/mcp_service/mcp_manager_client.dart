@@ -538,6 +538,7 @@ final class _McpVerificationSessionConnector {
     );
     try {
       await _connectOrAbort(attempt.aborted);
+
       return session;
     } on Object {
       session.close();
@@ -577,19 +578,15 @@ final class _McpVerificationSessionConnector {
   }
 }
 
-final class _McpVerificationConnectAttempt {
-  _McpVerificationConnectAttempt({
-    required Duration remaining,
-    required AgentCancellationScope cancellation,
-    required void Function(Completer<void>) abort,
-  }) {
-    timer = Timer(remaining, () => abort(aborted));
-    registration = cancellation.registerCleanup(() => abort(aborted));
-  }
-
+final class _McpVerificationConnectAttempt({
+  required final Duration remaining,
+  required final AgentCancellationScope cancellation,
+  required final void Function(Completer<void>) abort,
+}) {
   final Completer<void> aborted = Completer<void>();
-  late final Timer timer;
-  late final AgentCancellationCleanupRegistration registration;
+  final Timer timer = .new(remaining, () => abort(aborted));
+  final AgentCancellationCleanupRegistration registration = cancellation
+      .registerCleanup(() => abort(aborted));
 
   void close() {
     timer.cancel();

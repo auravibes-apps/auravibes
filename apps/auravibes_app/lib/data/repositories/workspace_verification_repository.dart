@@ -156,8 +156,8 @@ Future<WorkspaceVerificationRunRow?> _verificationRun(
   _CompleteWorkspaceVerification request,
 ) async {
   final database = request.database;
-  final query = database.select(database.workspaceVerificationRuns);
-  query.where((row) => row.id.equals(request.operationId));
+  final query = database.select(database.workspaceVerificationRuns)
+    ..where((row) => row.id.equals(request.operationId));
 
   return await query.getSingleOrNull();
 }
@@ -209,12 +209,12 @@ Future<List<WorkspaceVerificationRunRow>> _runsForTurn(
   AppDatabase database,
   WorkspaceVerificationRunRow row,
 ) async {
-  final query = database.select(database.workspaceVerificationRuns);
-  query.where(
-    (entry) =>
-        entry.workspaceId.equals(row.workspaceId) &
-        entry.turnId.equals(row.turnId),
-  );
+  final query = database.select(database.workspaceVerificationRuns)
+    ..where(
+      (entry) =>
+          entry.workspaceId.equals(row.workspaceId) &
+          entry.turnId.equals(row.turnId),
+    );
 
   return await query.get();
 }
