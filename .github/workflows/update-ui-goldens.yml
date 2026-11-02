@@ -8,6 +8,11 @@ on:
         type: boolean
         required: false
         default: false
+      scoped_verification_lint_fix:
+        description: Prepare reviewable lint fixes in the scoped verification evidence artifact
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -52,6 +57,7 @@ jobs:
     env:
       VERIFICATION_BASELINE_SHA: 1aaa31f61128fe810ca35ef7a00205edb9233175
       VERIFICATION_FEATURE_SHA: ${{ github.sha }}
+      VERIFICATION_LINT_FIX: ${{ inputs.scoped_verification_lint_fix }}
     steps:
       - name: Checkout exact feature revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -97,6 +103,26 @@ jobs:
         run: |
           dart run melos run generate --no-select
           dart run melos run generate:localization --no-select
+          if test "$VERIFICATION_LINT_FIX" = true; then
+            mapfile -d '' verification_lint_targets < <(git diff --name-only --diff-filter=ACMRT -z "$VERIFICATION_BASELINE_SHA" HEAD -- '*.dart' ':!**/*.g.dart' ':!**/*.freezed.dart' ':!**/locale_keys.dart')
+            git diff --name-only -z > "$RUNNER_TEMP/scoped-verification-generated-paths"
+            dart fix --apply apps/auravibes_app
+            dart fix --apply packages/auravibes_engine
+            dart run dart_code_linter:metrics fix "${verification_lint_targets[@]}" --no-congratulate
+            # A package-wide Dart fix may discover baseline issues. Never export
+            # unrelated source repairs as part of this feature's fix artifact.
+            python3 - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          baseline = os.environ['VERIFICATION_BASELINE_SHA']
+          git_paths = lambda *args: set(filter(None, subprocess.check_output(['git', 'diff', '--name-only', '-z', *args]).decode().split('\0')))
+          allowed = git_paths(baseline, 'HEAD')
+          allowed.update(filter(None, (Path(os.environ['RUNNER_TEMP']) / 'scoped-verification-generated-paths').read_text().split('\0')))
+          unexpected = git_paths() - allowed
+          if unexpected:
+              raise SystemExit('Lint fix touched unrelated paths: ' + ', '.join(sorted(unexpected)))
+          PY
+          fi
           git diff --name-only --diff-filter=ACMRT -z "$VERIFICATION_BASELINE_SHA" HEAD -- '*.dart' | xargs -0 -r dart format
           git add -N .
           git diff --check
@@ -106,6 +132,17 @@ jobs:
           else
             echo 'needs_patch=false' >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Record remaining scoped analyzer findings for repair review
+        if: ${{ steps.prepare.outcome == 'success' && inputs.scoped_verification_lint_fix == true }}
+        run: |
+          mapfile -d '' verification_lint_targets < <(git diff --name-only --diff-filter=ACMRT -z "$VERIFICATION_BASELINE_SHA" HEAD -- '*.dart' ':!**/*.g.dart' ':!**/*.freezed.dart' ':!**/locale_keys.dart')
+          set +e
+          dart analyze --fatal-infos --fatal-warnings --format=machine "${verification_lint_targets[@]}" > "$RUNNER_TEMP/scoped-verification-evidence/remaining-analysis.machine" 2>&1
+          verification_analysis_status=$?
+          set -e
+          printf '%s\n' "$verification_analysis_status" > "$RUNNER_TEMP/scoped-verification-evidence/remaining-analysis-exit-code.txt"
+          cat "$RUNNER_TEMP/scoped-verification-evidence/remaining-analysis.machine"
 
       - name: Focused engine verification tests
         if: ${{ steps.prepare.outcome == 'success' }}
