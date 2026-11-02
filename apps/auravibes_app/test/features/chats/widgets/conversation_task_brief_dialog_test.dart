@@ -126,7 +126,7 @@ void main() {
     tester,
   ) async {
     final result = Completer<ConversationTaskBriefEditResult?>();
-    final brief = '  Keep the deadline in view.\nReview open tasks.  ';
+    const brief = '  Keep the deadline in view.\nReview open tasks.  ';
     await pumpSubject(tester, result, taskBrief: brief);
 
     await tester.tap(find.text('Open'));

@@ -347,7 +347,7 @@ void main() {
           conversationChatProvider('ws-1', 'conv-1').notifier,
         );
 
-        final brief = '  Keep the objective in view.\nReview the open tasks.  ';
+        const brief = '  Keep the objective in view.\nReview the open tasks.  ';
         await notifier.setTaskBrief(brief);
         expect(patched.single.taskBrief, brief);
         expect(patched.single.clearTaskBrief, isFalse);

@@ -24,7 +24,7 @@ void main() {
         'Open tasks: review.  ';
     final _ = await fixture.repository.patchConversation(
       created.id,
-      ConversationPatch(taskBrief: edited),
+      .new(taskBrief: edited),
     );
     final _ = await fixture.repository.patchConversation(
       created.id,
@@ -86,7 +86,7 @@ void main() {
     expect(fork.taskBrief, isNull);
     final _ = await fixture.repository.patchConversation(
       source.id,
-      ConversationPatch(taskBrief: _brief),
+      .new(taskBrief: _brief),
     );
     final _ = await fixture.repository.patchConversation(
       fork.id,
