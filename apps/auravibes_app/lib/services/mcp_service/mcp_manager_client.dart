@@ -531,7 +531,7 @@ final class _McpVerificationSessionConnector {
   final McpVerificationSession session;
 
   Future<McpVerificationSession> connect() async {
-    final attempt = _McpVerificationConnectAttempt(
+    final attempt = _McpVerificationConnectAttempt.create(
       remaining: remaining,
       cancellation: request.cancellation,
       abort: _abort,
@@ -578,15 +578,29 @@ final class _McpVerificationSessionConnector {
   }
 }
 
-final class _McpVerificationConnectAttempt({
-  required final Duration remaining,
-  required final AgentCancellationScope cancellation,
-  required final void Function(Completer<void>) abort,
-}) {
-  final Completer<void> aborted = Completer<void>();
-  final Timer timer = .new(remaining, () => abort(aborted));
-  final AgentCancellationCleanupRegistration registration = cancellation
-      .registerCleanup(() => abort(aborted));
+final class _McpVerificationConnectAttempt {
+  factory _McpVerificationConnectAttempt.create({
+    required Duration remaining,
+    required AgentCancellationScope cancellation,
+    required void Function(Completer<void>) abort,
+  }) {
+    final aborted = Completer<void>();
+    return _McpVerificationConnectAttempt._(
+      aborted: aborted,
+      timer: .new(remaining, () => abort(aborted)),
+      registration: cancellation.registerCleanup(() => abort(aborted)),
+    );
+  }
+
+  _McpVerificationConnectAttempt._({
+    required this.aborted,
+    required this.timer,
+    required this.registration,
+  });
+
+  final Completer<void> aborted;
+  final Timer timer;
+  final AgentCancellationCleanupRegistration registration;
 
   void close() {
     timer.cancel();

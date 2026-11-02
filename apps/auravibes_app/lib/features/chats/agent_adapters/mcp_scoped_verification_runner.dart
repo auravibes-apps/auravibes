@@ -164,9 +164,7 @@ class McpScopedVerificationRunner
 
 Object? _structuredMcpResult(Object? response) {
   if (response is! McpToolCallerResult || response.isError == true) {
-    throw const FormatException(
-      'Verification needs a structured MCP receipt.',
-    );
+    throw const FormatException('Verification needs a structured MCP receipt.');
   }
 
   return response.structuredContent;
