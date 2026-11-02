@@ -16,12 +16,7 @@ class const AgentLifecycleHookRuntimeStub()
   }
 
   @override
-  Future<AgentLifecycleHookInvocationResult> invoke({
-    required AgentLifecycleHookSourceSnapshot snapshot,
-    required AgentLifecycleHookDefinition hook,
-    required String input,
-    required AgentToolHookCancellationChecker isCancellationRequested,
-    required String conversationId,
-    required Future<bool> Function() isStillTrusted,
-  }) async => const AgentLifecycleHookInvocationResult(outcome: .unavailable);
+  Future<AgentLifecycleHookInvocationResult> invoke(
+    AgentLifecycleHookInvocationRequest request,
+  ) async => const AgentLifecycleHookInvocationResult(outcome: .unavailable);
 }

@@ -39,16 +39,18 @@ class const AgentLifecycleHookProcess() {
 }
 
 Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
+  final bool trusted;
   try {
-    if (!await request.isStillTrusted()) {
-      return (process: null, failure: AgentToolHookOutcome.unavailable);
-    }
+    trusted = await request.isStillTrusted();
   } on Object {
-    return (process: null, failure: AgentToolHookOutcome.failed);
+    return _launchFailure(.failed);
+  }
+  if (!trusted) {
+    return _launchFailure(.unavailable);
   }
   // Keep this synchronous check adjacent to launch after the final trust await.
   if (request.isCancellationRequested()) {
-    return (process: null, failure: AgentToolHookOutcome.cancelled);
+    return _launchFailure(.cancelled);
   }
   try {
     final process = await Process.start(
@@ -61,8 +63,67 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
 
     return (process: process, failure: null);
   } on Object {
-    return (process: null, failure: AgentToolHookOutcome.failed);
+    return _launchFailure(.failed);
   }
+}
+
+_LaunchResult _launchFailure(AgentToolHookOutcome outcome) =>
+    (process: null, failure: outcome);
+
+class _HookProcessOutput {
+  _HookProcessOutput(this.process, this.onFailure, this.isAccepting);
+
+  final Process process;
+  final void Function(AgentToolHookOutcome) onFailure;
+  final bool Function() isAccepting;
+  final _output = BytesBuilder(copy: false);
+  final outputDone = Completer<void>();
+  final errorDone = Completer<void>();
+  StreamSubscription<List<int>>? _stdoutSubscription;
+  StreamSubscription<List<int>>? _stderrSubscription;
+  int _outputBytes = 0;
+
+  void attach() {
+    _stdoutSubscription = _listen(
+      process.stdout,
+      capture: true,
+      done: outputDone,
+    );
+    _stderrSubscription = _listen(
+      process.stderr,
+      capture: false,
+      done: errorDone,
+    );
+  }
+
+  StreamSubscription<List<int>> _listen(
+    Stream<List<int>> stream, {
+    required bool capture,
+    required Completer<void> done,
+  }) => stream.listen(
+    (chunk) => _consume(chunk, capture: capture),
+    onError: (Object _) => onFailure(.failed),
+    onDone: done.complete,
+    cancelOnError: false,
+  );
+
+  void _consume(List<int> chunk, {required bool capture}) {
+    if (!isAccepting()) return;
+    _outputBytes += chunk.length;
+    if (_outputBytes > maxAgentLifecycleHookOutputBytes) {
+      onFailure(.outputLimitExceeded);
+
+      return;
+    }
+    if (capture) _output.add(chunk);
+  }
+
+  Future<void> cancel() async {
+    await _stdoutSubscription?.cancel();
+    await _stderrSubscription?.cancel();
+  }
+
+  List<int> takeBytes() => _output.takeBytes();
 }
 
 class _HookProcessSupervisor {
@@ -72,36 +133,22 @@ class _HookProcessSupervisor {
   final Process process;
   final bool Function() isCancellationRequested;
   final _HookProcessTermination _termination;
-  final _output = BytesBuilder(copy: false);
-  final _outputDone = Completer<void>();
-  final _errorDone = Completer<void>();
-  StreamSubscription<List<int>>? _stdoutSubscription;
-  StreamSubscription<List<int>>? _stderrSubscription;
-  int _outputBytes = 0;
+  late final _HookProcessOutput _output = _HookProcessOutput(
+    process,
+    _fail,
+    () => _outcome == AgentToolHookOutcome.success,
+  );
   AgentToolHookOutcome _outcome = .success;
 
   Future<AgentLifecycleHookInvocationResult> run(List<int> inputBytes) async {
     final exitCodeFuture = _termination.exitCode;
-    _attachStreams();
+    _output.attach();
     unawaited(_writeInput(process, inputBytes));
     final exitCode = await _waitWithTimers(exitCodeFuture);
     await _drain();
     _recordExitOutcome(exitCode);
 
     return _result();
-  }
-
-  void _attachStreams() {
-    _stdoutSubscription = _listen(
-      process.stdout,
-      capture: true,
-      done: _outputDone,
-    );
-    _stderrSubscription = _listen(
-      process.stderr,
-      capture: false,
-      done: _errorDone,
-    );
   }
 
   Future<int> _waitWithTimers(Future<int> exitCode) async {
@@ -116,28 +163,6 @@ class _HookProcessSupervisor {
       timeout.cancel();
       cancellation.cancel();
     }
-  }
-
-  StreamSubscription<List<int>> _listen(
-    Stream<List<int>> stream, {
-    required bool capture,
-    required Completer<void> done,
-  }) => stream.listen(
-    (chunk) => _consume(chunk, capture: capture),
-    onError: (Object _) => _fail(.failed),
-    onDone: done.complete,
-    cancelOnError: false,
-  );
-
-  void _consume(List<int> chunk, {required bool capture}) {
-    if (_outcome != AgentToolHookOutcome.success) return;
-    _outputBytes += chunk.length;
-    if (_outputBytes > maxAgentLifecycleHookOutputBytes) {
-      _fail(.outputLimitExceeded);
-
-      return;
-    }
-    if (capture) _output.add(chunk);
   }
 
   void _fail(AgentToolHookOutcome failure) {
@@ -175,12 +200,14 @@ class _HookProcessSupervisor {
 
   Future<void> _drain() async {
     try {
-      final _ = await Future.wait([_outputDone.future, _errorDone.future])
+      final _ = await Future.wait([
+        _output.outputDone.future,
+        _output.errorDone.future,
+      ])
           .timeout(_streamDrainTimeout);
     } on Object {
       _fail(.failed);
-      await _stdoutSubscription?.cancel();
-      await _stderrSubscription?.cancel();
+      await _output.cancel();
     }
   }
 
@@ -197,7 +224,10 @@ class _HookProcessSupervisor {
     if (_outcome != AgentToolHookOutcome.success)
       return .new(outcome: _outcome);
     try {
-      return .new(outcome: .success, stdout: utf8.decode(_output.takeBytes()));
+      return .new(
+        outcome: .success,
+        stdout: utf8.decode(_output.takeBytes()),
+      );
     } on FormatException {
       return const .new(outcome: .failed);
     }

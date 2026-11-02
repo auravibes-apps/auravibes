@@ -31,6 +31,13 @@ typedef _LocalBatchRequest = ({
   String workspaceId,
   bool approve,
 });
+typedef _ExecuteResolvedToolsRequest = ({
+  Iterable<agent.AgentToolBatchCall<ResolvedTool>> calls,
+  ResolvedToolService runResolvedTool,
+  agent.AgentToolCancellationChecker isCancellationRequested,
+  agent.AgentToolLifecycleHookRunner<ResolvedTool>? lifecycleHookRunner,
+  String workspaceId,
+});
 typedef _McpAppResultIdentity = ({String conversationId, String toolCallId});
 
 class const BatchToolApprovalUsecase({
@@ -125,13 +132,13 @@ extension on BatchToolApprovalUsecase {
   }) async {
     final resolved = await _resolveClaimedTools(claims);
     final plan = _prepareBatchExecution(resolved);
-    final executionResults = await _executeResolvedTools(
-      plan.executable,
+    final executionResults = await _executeResolvedTools((
+      calls: plan.executable,
       runResolvedTool: runResolvedTool,
       isCancellationRequested: cancellationRuntime.isCancellationRequested,
       lifecycleHookRunner: lifecycleHookRunner,
       workspaceId: workspaceId,
-    );
+    ));
     await _persistBatchExecutionResults(this, plan, executionResults);
     onToolCallChanged();
   }
@@ -211,16 +218,12 @@ extension on BatchToolApprovalUsecase {
     Iterable<ToolCallApprovalBatchClaim> claims,
   ) async {
     final messageByConversation = _sourceMessagesByConversation(claims);
-    final _ = await Future.wait(
-      messageByConversation.entries
-          .where(
-            (source) =>
-                !cancellationRuntime.isCancellationRequested(source.key),
-          )
-          .map(
-            (source) => agentToolResumeService.call(messageId: source.value),
-          ),
+    final resumes = _sourceResumeCalls(
+      messageByConversation,
+      cancellationRuntime.isCancellationRequested,
+      agentToolResumeService.call,
     );
+    final _ = await Future.wait(resumes);
   }
 
   Future<BatchToolApprovalResult> _runLocal(_LocalBatchRequest request) {
@@ -398,9 +401,8 @@ ToolCallExecutionBatchUpdate _executionUpdateFromParts(
   output: output,
 );
 
-agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
-  _ResolvedBatchClaim entry,
-) {
+({ResolvedTool tool, PendingToolCall toolCall, ToolCallApprovalBatchItem item})
+_executionCallParts(_ResolvedBatchClaim entry) {
   final tool = entry.tool;
   final toolCall = entry.claim.toolCall;
   final item = entry.claim.item;
@@ -408,12 +410,20 @@ agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
     throw StateError('Claimed tool call is missing its metadata.');
   }
 
+  return (tool: tool, toolCall: toolCall, item: item);
+}
+
+agent.AgentToolBatchCall<ResolvedTool> _executionCallForResolvedClaim(
+  _ResolvedBatchClaim entry,
+) {
+  final parts = _executionCallParts(entry);
+
   return agent.AgentToolBatchCall(
-    conversationId: item.conversationId,
-    messageId: item.messageId,
-    toolCallId: item.toolCallId,
-    tool: tool,
-    argumentsRaw: toolCall.argumentsRaw,
+    conversationId: parts.item.conversationId,
+    messageId: parts.item.messageId,
+    toolCallId: parts.item.toolCallId,
+    tool: parts.tool,
+    argumentsRaw: parts.toolCall.argumentsRaw,
     workspaceId: entry.workspaceId,
   );
 }
@@ -568,20 +578,23 @@ Map<String, String> _sourceMessagesByConversation(
   return messageByConversation;
 }
 
+Iterable<Future<void>> _sourceResumeCalls(
+  Map<String, String> messageByConversation,
+  bool Function(String) isCancellationRequested,
+  Future<void> Function({required String messageId}) resume,
+) => messageByConversation.entries
+    .where((source) => !isCancellationRequested(source.key))
+    .map((source) => resume(messageId: source.value));
+
 Future<List<agent.AgentToolBatchResult<ResolvedTool>>> _executeResolvedTools(
-  Iterable<agent.AgentToolBatchCall<ResolvedTool>> calls, {
-  required ResolvedToolService runResolvedTool,
-  required agent.AgentToolCancellationChecker isCancellationRequested,
-  required agent.AgentToolLifecycleHookRunner<ResolvedTool>?
-  lifecycleHookRunner,
-  required String workspaceId,
-}) => agent.AgentToolBatchExecutor<ResolvedTool>(
-  runResolvedTool: _resolvedToolBatchRunner(runResolvedTool),
-  isCancellationRequested: isCancellationRequested,
+  _ExecuteResolvedToolsRequest request,
+) => agent.AgentToolBatchExecutor<ResolvedTool>(
+  runResolvedTool: _resolvedToolBatchRunner(request.runResolvedTool),
+  isCancellationRequested: request.isCancellationRequested,
   logToolExecutionError: _logToolExecutionError,
-  lifecycleHookRunner: lifecycleHookRunner,
-  workspaceId: workspaceId,
-).call(calls);
+  lifecycleHookRunner: request.lifecycleHookRunner,
+  workspaceId: request.workspaceId,
+).call(request.calls);
 
 agent.AgentResolvedToolRunner<ResolvedTool> _resolvedToolBatchRunner(
   ResolvedToolService runResolvedTool,

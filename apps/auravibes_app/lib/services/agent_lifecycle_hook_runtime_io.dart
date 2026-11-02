@@ -8,14 +8,7 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_source_inspector.dar
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:path/path.dart' as p;
 
-typedef _Invocation = ({
-  AgentLifecycleHookSourceSnapshot snapshot,
-  AgentLifecycleHookDefinition hook,
-  String input,
-  AgentToolHookCancellationChecker isCancellationRequested,
-  String conversationId,
-  Future<bool> Function() isStillTrusted,
-});
+typedef _Invocation = AgentLifecycleHookInvocationRequest;
 typedef _Reinspection = ({
   AgentLifecycleHookSourceSnapshot? snapshot,
   AgentToolHookOutcome? failure,
@@ -39,27 +32,21 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   }
 
   @override
-  Future<AgentLifecycleHookInvocationResult> invoke({
-    required AgentLifecycleHookSourceSnapshot snapshot,
-    required AgentLifecycleHookDefinition hook,
-    required String input,
-    required AgentToolHookCancellationChecker isCancellationRequested,
-    required String conversationId,
-    required Future<bool> Function() isStillTrusted,
-  }) => _invoke((
-    snapshot: snapshot,
-    hook: hook,
-    input: input,
-    isCancellationRequested: isCancellationRequested,
-    conversationId: conversationId,
-    isStillTrusted: isStillTrusted,
-  ));
+  Future<AgentLifecycleHookInvocationResult> invoke(
+    AgentLifecycleHookInvocationRequest request,
+  ) => _invoke(request);
 
   Future<AgentLifecycleHookInvocationResult> _invoke(
     _Invocation request,
   ) async {
     final failure = _inputFailure(request);
     if (failure != null) return .new(outcome: failure);
+    return await _invokeReinspected(request);
+  }
+
+  Future<AgentLifecycleHookInvocationResult> _invokeReinspected(
+    _Invocation request,
+  ) async {
     final checked = await _reinspect(request);
     if (checked.failure case final failure?) return .new(outcome: failure);
     final current = checked.snapshot;
@@ -67,9 +54,9 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     final commandPath = current.commandPaths[request.hook.event];
     if (commandPath == null) return const .new(outcome: .unavailable);
 
-    return await const AgentLifecycleHookProcess().run(
-      _processRequest(current, request, commandPath),
-    );
+    final processRequest = _processRequest(current, request, commandPath);
+
+    return await const AgentLifecycleHookProcess().run(processRequest);
   }
 
   AgentToolHookOutcome? _inputFailure(_Invocation request) {
@@ -101,15 +88,20 @@ AgentLifecycleHookProcessRequest _processRequest(
   AgentLifecycleHookSourceSnapshot current,
   _Invocation request,
   String commandPath,
-) => (
-  commandPath: commandPath,
-  arguments: request.hook.args,
-  workingDirectory: p.dirname(current.canonicalPath),
-  inputBytes: utf8.encode(request.input),
-  isCancellationRequested: () =>
-      request.isCancellationRequested(request.conversationId),
-  isStillTrusted: request.isStillTrusted,
-);
+) {
+  final hook = request.hook;
+  final conversationId = request.conversationId;
+  final cancellationCheck = request.isCancellationRequested;
+
+  return (
+    commandPath: commandPath,
+    arguments: hook.args,
+    workingDirectory: p.dirname(current.canonicalPath),
+    inputBytes: utf8.encode(request.input),
+    isCancellationRequested: () => cancellationCheck(conversationId),
+    isStillTrusted: request.isStillTrusted,
+  );
+}
 
 bool _inputExceedsLimit(String input) =>
     input.length > maxAgentLifecycleHookInputBytes ||
@@ -120,12 +112,18 @@ bool _matchesInvocation(
   _Invocation request,
 ) {
   if (current.digest != request.snapshot.digest) return false;
-  final hook = current.config.hookFor(request.hook.event);
-  if (hook == null || current.commandPaths[request.hook.event] == null)
-    return false;
+  final expectedHook = request.hook;
+  final event = expectedHook.event;
+  final hook = current.config.hookFor(event);
+  final commandPath = current.commandPaths[event];
+  if (hook == null || commandPath == null) return false;
+  final expectedCommand = expectedHook.command;
+  final expectedArguments = expectedHook.args;
+  final actualCommand = hook.command;
+  final actualArguments = hook.args;
 
-  return hook.command == request.hook.command &&
-      _sameArguments(hook.args, request.hook.args);
+  return actualCommand == expectedCommand &&
+      _sameArguments(actualArguments, expectedArguments);
 }
 
 bool _sameArguments(List<String> left, List<String> right) {

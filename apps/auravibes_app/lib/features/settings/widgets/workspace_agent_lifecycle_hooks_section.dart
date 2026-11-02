@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
@@ -35,19 +34,11 @@ class _WorkspaceAgentLifecycleHooksSectionState
       workspaceAgentHookTrustStatusProvider(widget.workspaceId),
     );
 
-    return switch (settings) {
-      AsyncData(:final value) => _WorkspaceHookSettingsView(
-        settings: value,
-        trustStatus: trust.value,
-        busy: _busy,
-        onChoose: _choosePressed,
-        onReview: _reviewPressed,
-        onRevoke: _revokePressed,
-        onEnabled: _enabledChanged,
-      ),
-      AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncError() => _WorkspaceHookLoadFailure(onRetry: _retry),
-    };
+    return _workspaceHookSectionContent((
+      settings: settings,
+      trust: trust.value,
+      state: this,
+    ));
   }
 
   void _retry() {
@@ -56,75 +47,71 @@ class _WorkspaceAgentLifecycleHooksSectionState
       ..invalidate(workspaceAgentHookTrustStatusProvider(widget.workspaceId));
   }
 
-  void _choosePressed() => unawaited(_chooseConfig());
-  void _reviewPressed(String path) => unawaited(_trustConfig(path));
-  void _revokePressed() => unawaited(_revokeTrust());
-  void _enabledChanged(bool enabled) => unawaited(_setEnabled(enabled));
-
   Future<void> _chooseConfig() async {
     await _runBusy(() async {
-      final file = await FilePicker.pickFile(
-        type: .custom,
-        allowedExtensions: const ['json'],
-      );
-      if (file == null) return;
-      final path = file.path;
-      if (path == null) {
-        _showMessage(
-          const TextLocale('agent_lifecycle_hooks.file_unavailable'),
-        );
-
-        return;
-      }
-
+      final path = await _chooseConfigPath();
+      if (path == null) return;
       await ref
           .read(workspaceAgentHookSettingsUsecaseProvider)
           .selectConfig(widget.workspaceId, path);
-      _refresh();
+      _retry();
     });
   }
 
   Future<void> _trustConfig(String path) async {
-    await _runBusy(() async {
-      final usecase = ref.read(workspaceAgentHookSettingsUsecaseProvider);
-      final review = await usecase.reviewConfig(widget.workspaceId, path);
-      if (!mounted) return;
-      final shouldTrust = await _confirmTrust(review);
-      if (shouldTrust != true || !mounted) return;
-
-      await usecase.trustReviewedConfig(widget.workspaceId, review);
-      _refresh();
-    });
+    await _runBusy(() => _reviewAndTrust(path));
   }
 
-  Future<bool?> _confirmTrust(WorkspaceAgentHookConfigReview review) =>
-      AuraDialogs.confirm(
-        context: context,
-        title: const TextLocale('agent_lifecycle_hooks.trust_title'),
-        message: _WorkspaceHookReviewBody(review: review),
-        actions: const AuraConfirmDialogActions(
-          confirmLabel: TextLocale('agent_lifecycle_hooks.trust_confirm'),
-          cancelLabel: TextLocale('settings_screen.actions.cancel'),
-        ),
+  Future<String?> _chooseConfigPath() async {
+    final file = await FilePicker.pickFile(
+      type: .custom,
+      allowedExtensions: const ['json'],
+    );
+    if (file == null) return null;
+    final path = file.path;
+    if (path == null) {
+      _showHookMessage(
+        context,
+        mounted,
+        const TextLocale('agent_lifecycle_hooks.file_unavailable'),
       );
+    }
 
-  Future<void> _setEnabled(bool enabled) async {
-    await _runBusy(() async {
-      await ref
-          .read(workspaceAgentHookSettingsUsecaseProvider)
-          .setEnabled(widget.workspaceId, enabled: enabled);
-      _refresh();
-    });
+    return path;
   }
 
-  Future<void> _revokeTrust() async {
-    await _runBusy(() async {
-      await ref
-          .read(workspaceAgentHookSettingsUsecaseProvider)
-          .revokeTrust(widget.workspaceId);
-      _refresh();
-    });
+  Future<void> _reviewAndTrust(String path) async {
+    final usecase = ref.read(workspaceAgentHookSettingsUsecaseProvider);
+    final review = await usecase.reviewConfig(widget.workspaceId, path);
+    if (!mounted) return;
+    await _confirmAndPersistTrust(usecase, review);
   }
+
+  Future<void> _confirmAndPersistTrust(
+    WorkspaceAgentHookSettingsUsecase usecase,
+    WorkspaceAgentHookConfigReview review,
+  ) async {
+    final shouldTrust = await _confirmHookTrust(context, review);
+    if (shouldTrust != true || !mounted) return;
+
+    await usecase.trustReviewedConfig(widget.workspaceId, review);
+    _retry();
+  }
+
+  Future<void> _runSettingsMutation(
+    Future<void> Function(WorkspaceAgentHookSettingsUsecase) action,
+  ) => _runBusy(
+    () => action(ref.read(workspaceAgentHookSettingsUsecaseProvider))
+      ..then((_) => _retry()),
+  );
+
+  Future<void> _setEnabled(bool enabled) => _runSettingsMutation(
+    (usecase) => usecase.setEnabled(widget.workspaceId, enabled: enabled),
+  );
+
+  Future<void> _revokeTrust() => _runSettingsMutation(
+    (usecase) => usecase.revokeTrust(widget.workspaceId),
+  );
 
   Future<void> _runBusy(Future<void> Function() action) async {
     if (_busy) return;
@@ -133,7 +120,9 @@ class _WorkspaceAgentLifecycleHooksSectionState
       await action();
     } on WorkspaceAgentHookSettingsException catch (error) {
       if (mounted) {
-        _showMessage(
+        _showHookMessage(
+          context,
+          mounted,
           _WorkspaceHookSettingsErrorText(
             localizationKey: error.localizationKey,
           ),
@@ -141,27 +130,71 @@ class _WorkspaceAgentLifecycleHooksSectionState
       }
     } on Object {
       if (mounted) {
-        _showMessage(const TextLocale('agent_lifecycle_hooks.error'));
+        _showHookMessage(
+          context,
+          mounted,
+          const TextLocale('agent_lifecycle_hooks.error'),
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  void _refresh() {
-    ref
-      ..invalidate(workspaceAgentHookSettingsProvider(widget.workspaceId))
-      ..invalidate(workspaceAgentHookTrustStatusProvider(widget.workspaceId));
-  }
+}
 
-  void _showMessage(Widget content) {
-    if (!mounted) return;
-    final _ = AuraSnackBars.show(
-      context: context,
-      content: content,
-      variant: .error,
-    );
-  }
+typedef _WorkspaceHookSectionContentRequest = ({
+  AsyncValue<WorkspaceAgentHookSettings> settings,
+  WorkspaceAgentHookTrustStatus? trust,
+  _WorkspaceAgentLifecycleHooksSectionState state,
+});
+
+Widget _workspaceHookSectionContent(
+  _WorkspaceHookSectionContentRequest request,
+) => switch (request.settings) {
+  AsyncData(:final value) => _workspaceHookReadyContent(
+    value,
+    request.trust,
+    request.state,
+  ),
+  AsyncLoading() => const Center(child: AuraSpinner()),
+  AsyncError() => _WorkspaceHookLoadFailure(onRetry: request.state._retry),
+};
+
+Widget _workspaceHookReadyContent(
+  WorkspaceAgentHookSettings settings,
+  WorkspaceAgentHookTrustStatus? trust,
+  _WorkspaceAgentLifecycleHooksSectionState state,
+) => _WorkspaceHookSettingsView(
+  settings: settings,
+  trustStatus: trust,
+  busy: state._busy,
+  onChoose: state._chooseConfig,
+  onReview: state._trustConfig,
+  onRevoke: state._revokeTrust,
+  onEnabled: state._setEnabled,
+);
+
+Future<bool?> _confirmHookTrust(
+  BuildContext context,
+  WorkspaceAgentHookConfigReview review,
+) => AuraDialogs.confirm(
+  context: context,
+  title: const TextLocale('agent_lifecycle_hooks.trust_title'),
+  message: _WorkspaceHookReviewBody(review: review),
+  actions: const AuraConfirmDialogActions(
+    confirmLabel: TextLocale('agent_lifecycle_hooks.trust_confirm'),
+    cancelLabel: TextLocale('settings_screen.actions.cancel'),
+  ),
+);
+
+void _showHookMessage(BuildContext context, bool mounted, Widget content) {
+  if (!mounted) return;
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: content,
+    variant: .error,
+  );
 }
 
 class const _WorkspaceHookReviewBody({
@@ -169,25 +202,41 @@ class const _WorkspaceHookReviewBody({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    children: [
+    children: _reviewChildren(),
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+
+  List<Widget> _reviewChildren() => [
+    ..._reviewSummary(),
+    ..._commandWidgets(),
+    ..._sourceFileWidgets(),
+    _digestWidget(),
+  ];
+
+  List<Widget> _reviewSummary() => [
       const TextLocale('agent_lifecycle_hooks.trust_warning'),
       AuraSelectableText(review.canonicalPath),
       const TextLocale('agent_lifecycle_hooks.commands'),
       if (review.commands.isEmpty)
         const TextLocale('agent_lifecycle_hooks.no_hooks'),
-      for (final command in review.commands)
-        _WorkspaceHookCommandDetails(command: command),
-      if (review.sourceFiles.isNotEmpty) ...[
+  ];
+
+  List<Widget> _commandWidgets() => [
+    for (final command in review.commands)
+      _WorkspaceHookCommandDetails(command: command),
+  ];
+
+  List<Widget> _sourceFileWidgets() => review.sourceFiles.isEmpty
+      ? const []
+      : [
         const TextLocale('agent_lifecycle_hooks.source_files'),
         for (final sourceFile in review.sourceFiles)
           AuraSelectableText(sourceFile),
-      ],
-      AuraSelectableText(
-        'agent_lifecycle_hooks.digest_value'.tr(args: [review.digest]),
-      ),
-    ],
-    spacing: .sm,
-    crossAxisAlignment: .start,
+      ];
+
+  Widget _digestWidget() => AuraSelectableText(
+    'agent_lifecycle_hooks.digest_value'.tr(args: [review.digest]),
   );
 }
 
@@ -238,28 +287,49 @@ class const _WorkspaceHookSettingsView({
   @override
   Widget build(BuildContext context) {
     final status = trustStatus ?? WorkspaceAgentHookTrustStatus.trustRequired;
-    final isSupported =
-        status != WorkspaceAgentHookTrustStatus.unsupportedPlatform &&
-        status != WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
+    final isSupported = _isSupportedStatus(status);
 
     return AuraCard(
       child: AuraColumn(
-        children: [
-          const _WorkspaceHookTitle(),
-          const _WorkspaceHookDescription(),
-          _WorkspaceHookToggle(view: this, status: status),
-          _WorkspaceHookStatus(status: status),
-          if (!isSupported) const _WorkspaceHookRecovery(),
-          if (settings.configPath case final String path) ...[
-            AuraSelectableText(path),
-            _WorkspaceHookTrustedDigest(digest: settings.trustedDigest),
-          ],
-          _WorkspaceHookActions(view: this, isSupported: isSupported),
-        ],
+        children: _settingsChildren(status, isSupported),
         spacing: .md,
         crossAxisAlignment: .stretch,
       ),
     );
+  }
+
+  bool _isSupportedStatus(WorkspaceAgentHookTrustStatus status) =>
+      status != WorkspaceAgentHookTrustStatus.unsupportedPlatform &&
+      status != WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
+
+  List<Widget> _settingsChildren(
+    WorkspaceAgentHookTrustStatus status,
+    bool isSupported,
+  ) => [
+    ..._primarySettingsChildren(status, isSupported),
+    ..._configuredPathChildren(),
+    _WorkspaceHookActions(view: this, isSupported: isSupported),
+  ];
+
+  List<Widget> _primarySettingsChildren(
+    WorkspaceAgentHookTrustStatus status,
+    bool isSupported,
+  ) => [
+    const _WorkspaceHookTitle(),
+    const _WorkspaceHookDescription(),
+    _WorkspaceHookToggle(view: this, status: status),
+    _WorkspaceHookStatus(status: status),
+    if (!isSupported) const _WorkspaceHookRecovery(),
+  ];
+
+  List<Widget> _configuredPathChildren() {
+    final path = settings.configPath;
+    if (path == null) return const [];
+
+    return [
+      AuraSelectableText(path),
+      _WorkspaceHookTrustedDigest(digest: settings.trustedDigest),
+    ];
   }
 }
 
@@ -355,25 +425,27 @@ class const _WorkspaceHookActions({
     return Wrap(
       spacing: context.auraTheme.fromSpacing(.sm),
       runSpacing: context.auraTheme.fromSpacing(.sm),
-      children: [
-        _WorkspaceHookChooseAction(
-          onPressed: view.onChoose,
-          disabled: disabled,
-        ),
-        if (settings.configPath case final String path)
-          _WorkspaceHookReviewAction(
-            path: path,
-            onReview: view.onReview,
-            disabled: disabled,
-          ),
-        if (settings.isTrusted)
-          _WorkspaceHookRevokeAction(
-            onPressed: view.onRevoke,
-            disabled: view.busy,
-          ),
-      ],
+      children: _actionChildren(settings, disabled),
     );
   }
+
+  List<Widget> _actionChildren(
+    WorkspaceAgentHookSettings settings,
+    bool disabled,
+  ) => [
+    _WorkspaceHookChooseAction(onPressed: view.onChoose, disabled: disabled),
+    if (settings.configPath case final String path)
+      _WorkspaceHookReviewAction(
+        path: path,
+        onReview: view.onReview,
+        disabled: disabled,
+      ),
+    if (settings.isTrusted)
+      _WorkspaceHookRevokeAction(
+        onPressed: view.onRevoke,
+        disabled: view.busy,
+      ),
+  ];
 }
 
 class const _WorkspaceHookChooseAction({

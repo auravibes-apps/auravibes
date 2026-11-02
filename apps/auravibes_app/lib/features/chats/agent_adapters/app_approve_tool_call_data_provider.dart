@@ -259,27 +259,44 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
   ConversationRepository conversationRepository,
   _ToolCallLookupRequest request,
 ) async {
-  final message = await messageRepository.getMessageById(request.messageId);
+  final message = await _loadToolCallMessage(messageRepository, request);
   if (message == null) return null;
-  if (message.conversationId != request.conversationId) {
-    _logToolApprovalOwnershipMismatch(request, message.conversationId);
-    throw const MessageValidationException('Fork reference is read-only');
-  }
+  _requireToolCallMessageOwner(request, message);
 
   final toolCall = _findToolCall(message.metadata, request.toolCallId);
   if (toolCall == null) return null;
-  final conversation = await conversationRepository.getConversationById(
-    request.conversationId,
+  return await _approvableToolCallFor(
+    conversationRepository,
+    message.conversationId,
+    toolCall,
   );
+}
+
+Future<MessageEntity?> _loadToolCallMessage(
+  MessageRepository repository,
+  _ToolCallLookupRequest request,
+) => repository.getMessageById(request.messageId);
+
+void _requireToolCallMessageOwner(
+  _ToolCallLookupRequest request,
+  MessageEntity message,
+) {
+  if (message.conversationId == request.conversationId) return;
+  _logToolApprovalOwnershipMismatch(request, message.conversationId);
+  throw const MessageValidationException('Fork reference is read-only');
+}
+
+Future<agent.AgentApprovableToolCall> _approvableToolCallFor(
+  ConversationRepository repository,
+  String conversationId,
+  MessageToolCallEntity toolCall,
+) async {
+  final conversation = await repository.getConversationById(conversationId);
   if (conversation == null) {
     throw StateError('Tool call conversation is unavailable.');
   }
 
-  return _toApprovableToolCall(
-    message.conversationId,
-    conversation.workspaceId,
-    toolCall,
-  );
+  return _toApprovableToolCall(conversationId, conversation.workspaceId, toolCall);
 }
 
 void _logToolApprovalOwnershipMismatch(

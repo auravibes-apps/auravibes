@@ -9,22 +9,32 @@ import 'package:path/path.dart' as p;
 
 class const AgentLifecycleHookSourceInspector() {
   Future<AgentLifecycleHookSourceSnapshot> inspect(String sourcePath) async {
-    if (!p.isAbsolute(sourcePath)) {
-      throw const AgentLifecycleHookConfigException('source_not_absolute');
-    }
+    _requireAbsolutePath(sourcePath);
     final canonicalPath = await File(sourcePath).resolveSymbolicLinks();
-    final bytes = await _readBoundedFile(
-      .new(canonicalPath),
-      maxAgentLifecycleHookConfigBytes,
-      'config_too_large',
-    );
-    final config = parseAgentLifecycleHookConfig(utf8.decode(bytes));
-    final sources = _HookSourceDigests(canonicalPath, bytes, config);
+    final sources = await _configuredSourceDigests(canonicalPath);
     await sources.readCommands();
     await sources.readSourceFiles();
 
     return sources.snapshot();
   }
+}
+
+void _requireAbsolutePath(String sourcePath) {
+  if (p.isAbsolute(sourcePath)) return;
+  throw const AgentLifecycleHookConfigException('source_not_absolute');
+}
+
+Future<_HookSourceDigests> _configuredSourceDigests(
+  String canonicalPath,
+) async {
+  final bytes = await _readBoundedFile(
+    .new(canonicalPath),
+    maxAgentLifecycleHookConfigBytes,
+    'config_too_large',
+  );
+  final config = parseAgentLifecycleHookConfig(utf8.decode(bytes));
+
+  return _HookSourceDigests(canonicalPath, bytes, config);
 }
 
 class _HookSourceDigests {
@@ -112,10 +122,21 @@ Future<Uint8List> _readBoundedFile(
   int maxBytes,
   String failureCode,
 ) async {
+  _requireBoundedRegularFile(file, maxBytes, failureCode);
+  return await _readBoundedChunks(file, maxBytes, failureCode);
+}
+
+void _requireBoundedRegularFile(File file, int maxBytes, String failureCode) {
   final stat = file.statSync();
-  if (stat.type != FileSystemEntityType.file || stat.size > maxBytes) {
-    throw AgentLifecycleHookConfigException(failureCode);
-  }
+  if (stat.type == FileSystemEntityType.file && stat.size <= maxBytes) return;
+  throw AgentLifecycleHookConfigException(failureCode);
+}
+
+Future<Uint8List> _readBoundedChunks(
+  File file,
+  int maxBytes,
+  String failureCode,
+) async {
   final builder = BytesBuilder(copy: false);
   var totalBytes = 0;
   await for (final chunk in file.openRead()) {

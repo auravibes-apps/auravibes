@@ -28,10 +28,22 @@ class WorkspaceAgentHookSettingsDao(super.attachedDatabase)
   ) async {
     final existing = await getByWorkspaceId(workspaceId);
     if (existing == null) {
-      return await into(workspaceAgentHookSettings)
-          .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
+      return await _insert(workspaceId, companion);
     }
 
+    return await _update(workspaceId, companion);
+  }
+
+  Future<WorkspaceAgentHookSettingsTable> _insert(
+    String workspaceId,
+    WorkspaceAgentHookSettingsCompanion companion,
+  ) => into(workspaceAgentHookSettings)
+      .insertReturning(companion.copyWith(workspaceId: .new(workspaceId)));
+
+  Future<WorkspaceAgentHookSettingsTable> _update(
+    String workspaceId,
+    WorkspaceAgentHookSettingsCompanion companion,
+  ) async {
     final _ =
         await (update(workspaceAgentHookSettings)
               ..where((row) => row.workspaceId.equals(workspaceId)))

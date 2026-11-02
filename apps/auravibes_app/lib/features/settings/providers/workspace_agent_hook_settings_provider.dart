@@ -22,14 +22,8 @@ Future<WorkspaceAgentHookTrustStatus> workspaceAgentHookTrustStatus(
   Ref ref,
   String workspaceId,
 ) async {
-  final workspaces = ref.watch(allWorkspacesProvider).asData?.value;
-  final workspace = workspaces
-      ?.where((workspace) => workspace.id == workspaceId)
-      .firstOrNull;
-  if (workspace == null || workspace.type != WorkspaceType.local) {
-    return WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
-  }
-
+  final workspaceStatus = _workspaceSupportStatus(ref, workspaceId);
+  if (workspaceStatus != null) return workspaceStatus;
   final runtime = ref.watch(agentLifecycleHookRuntimeProvider);
   if (!runtime.isSupported) {
     return WorkspaceAgentHookTrustStatus.unsupportedPlatform;
@@ -40,4 +34,19 @@ Future<WorkspaceAgentHookTrustStatus> workspaceAgentHookTrustStatus(
   );
 
   return await WorkspaceAgentHookTrustStatusUsecase(runtime).call(settings);
+}
+
+WorkspaceAgentHookTrustStatus? _workspaceSupportStatus(
+  Ref ref,
+  String workspaceId,
+) {
+  final workspace = ref
+      .watch(allWorkspacesProvider)
+      .asData
+      ?.value
+      ?.where((workspace) => workspace.id == workspaceId)
+      .firstOrNull;
+  if (workspace != null && workspace.type == WorkspaceType.local) return null;
+
+  return WorkspaceAgentHookTrustStatus.unsupportedWorkspace;
 }

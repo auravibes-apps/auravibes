@@ -297,14 +297,14 @@ void main() {
           case 'missing':
             final _ = await File(fixture.hook.command).delete();
         }
-        final result = await runtime.invoke(
+        final result = await runtime.invoke((
           snapshot: fixture.snapshot,
           hook: fixture.hook,
           input: '{}',
           isCancellationRequested: (_) => false,
           conversationId: 'conversation-1',
           isStillTrusted: () async => true,
-        );
+        ));
         expect(
           result.outcome,
           change == 'missing'
@@ -540,14 +540,14 @@ void main() {
       final changedSource = File('${fixture.directory.path}/policy.json');
       final _ = await changedSource.writeAsString('{"version":2}');
 
-      final result = await runtime.invoke(
+      final result = await runtime.invoke((
         snapshot: fixture.snapshot,
         hook: fixture.hook,
         input: '{}',
         isCancellationRequested: (_) => false,
         conversationId: 'conversation-1',
         isStillTrusted: () async => true,
-      );
+      ));
 
       expect(result.outcome, AgentToolHookOutcome.unavailable);
     },
@@ -616,14 +616,14 @@ class _HookFixture {
     final _ = await configPath.writeAsString(source);
     final snapshot = await runtime.inspect(configPath.path);
 
-    return await runtime.invoke(
+    return await runtime.invoke((
       snapshot: snapshot,
       hook: configuredHook,
       input: '{}',
       isCancellationRequested: (_) => isCancelled?.call() ?? false,
       conversationId: 'conversation-1',
       isStillTrusted: hostTrust ?? () async => true,
-    );
+    ));
   }
 
   Future<void> dispose() => directory.delete(recursive: true);

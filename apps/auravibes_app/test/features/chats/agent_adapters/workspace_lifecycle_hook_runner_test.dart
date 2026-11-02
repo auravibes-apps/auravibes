@@ -522,16 +522,11 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
   }
 
   @override
-  Future<AgentLifecycleHookInvocationResult> invoke({
-    required AgentLifecycleHookSourceSnapshot snapshot,
-    required AgentLifecycleHookDefinition hook,
-    required String input,
-    required agent.AgentToolHookCancellationChecker isCancellationRequested,
-    required String conversationId,
-    required Future<bool> Function() isStillTrusted,
-  }) async {
+  Future<AgentLifecycleHookInvocationResult> invoke(
+    AgentLifecycleHookInvocationRequest request,
+  ) async {
     invokeCount++;
-    lastInput = input;
+    lastInput = request.input;
 
     return output;
   }

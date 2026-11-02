@@ -84,9 +84,23 @@ class const WorkspaceLifecycleHookRunner({
   ) async {
     final loaded = await _loadTrustedConfig(input.request.workspaceId);
     if (loaded == null) return null;
+    return await _invokeLoaded(input, loaded);
+  }
+
+  Future<AgentLifecycleHookInvocationResult?> _invokeLoaded(
+    _HookRequest input,
+    _LoadedHookConfig loaded,
+  ) async {
     if (loaded.failure case final failure?) return .new(outcome: failure);
     final snapshot = loaded.snapshot;
     if (snapshot == null) return const .new(outcome: .failed);
+    return await _invokeSelectedHook(input, snapshot);
+  }
+
+  Future<AgentLifecycleHookInvocationResult?> _invokeSelectedHook(
+    _HookRequest input,
+    AgentLifecycleHookSourceSnapshot snapshot,
+  ) async {
     final hook = snapshot.config.hookFor(input.event);
     if (hook == null) return null;
 
@@ -110,15 +124,20 @@ class const WorkspaceLifecycleHookRunner({
 
   Future<AgentLifecycleHookInvocationResult> _runtimeInvocation(
     _TrustedHookRequest prepared,
-  ) => runtime.invoke(
-    snapshot: prepared.snapshot,
-    hook: prepared.hook,
-    input: _hookInput(prepared.input),
-    isCancellationRequested: prepared.input.isCancellationRequested,
-    conversationId: prepared.input.request.conversationId,
-    isStillTrusted: () =>
-        _isStillTrusted(prepared.input.request.workspaceId, prepared.snapshot),
-  );
+  ) {
+    final input = _hookInput(prepared.input);
+    final hookRequest = prepared.input.request;
+
+    return runtime.invoke((
+      snapshot: prepared.snapshot,
+      hook: prepared.hook,
+      input: input,
+      isCancellationRequested: prepared.input.isCancellationRequested,
+      conversationId: hookRequest.conversationId,
+      isStillTrusted: () =>
+          _isStillTrusted(hookRequest.workspaceId, prepared.snapshot),
+    ));
+  }
 
   Future<bool> _isStillTrusted(
     String workspaceId,
@@ -264,23 +283,30 @@ Map<String, dynamic>? _decodeHookResponse(String? raw) {
   }
 }
 
-String _hookInput(_HookRequest input) => jsonEncode({
-  'version': 1,
-  'event': input.event.name,
-  'toolCallId': _truncateUtf8(
-    input.request.toolCallId,
+String _hookInput(_HookRequest input) {
+  final request = input.request;
+  final toolCallId = _truncateUtf8(
+    request.toolCallId,
     _maxHookIdentifierBytes,
-  ),
-  'tool': _truncateUtf8(
-    input.request.tool.toolIdentifier,
+  );
+  final toolIdentifier = _truncateUtf8(
+    request.tool.toolIdentifier,
     _maxHookIdentifierBytes,
-  ),
-  'argumentNames': input.request.argumentNames
+  );
+  final argumentNames = request.argumentNames
       .take(_maxHookArgumentNames)
       .map((name) => _truncateUtf8(name, _maxHookArgumentNameBytes))
-      .toList(growable: false),
-  'toolSucceeded': ?input.toolSucceeded,
-});
+      .toList(growable: false);
+
+  return jsonEncode({
+    'version': 1,
+    'event': input.event.name,
+    'toolCallId': toolCallId,
+    'tool': toolIdentifier,
+    'argumentNames': argumentNames,
+    'toolSucceeded': ?input.toolSucceeded,
+  });
+}
 
 String _redactAndTrim(String value) => LogRedaction.redact(value).trim();
 

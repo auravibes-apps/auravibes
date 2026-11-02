@@ -4,6 +4,15 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_stub.dart'
     as platform;
 import 'package:auravibes_engine/auravibes_engine.dart';
 
+typedef AgentLifecycleHookInvocationRequest = ({
+  AgentLifecycleHookSourceSnapshot snapshot,
+  AgentLifecycleHookDefinition hook,
+  String input,
+  AgentToolHookCancellationChecker isCancellationRequested,
+  String conversationId,
+  Future<bool> Function() isStillTrusted,
+});
+
 abstract interface class AgentLifecycleHookRuntime {
   bool get isSupported;
 
@@ -13,14 +22,9 @@ abstract interface class AgentLifecycleHookRuntime {
   ///
   /// The host callback reads current workspace opt-in and trust after the
   /// runtime's final asynchronous inspection. A false result prevents launch.
-  Future<AgentLifecycleHookInvocationResult> invoke({
-    required AgentLifecycleHookSourceSnapshot snapshot,
-    required AgentLifecycleHookDefinition hook,
-    required String input,
-    required AgentToolHookCancellationChecker isCancellationRequested,
-    required String conversationId,
-    required Future<bool> Function() isStillTrusted,
-  });
+  Future<AgentLifecycleHookInvocationResult> invoke(
+    AgentLifecycleHookInvocationRequest request,
+  );
 }
 
 const int maxAgentLifecycleHookInputBytes = 8 * 1024;

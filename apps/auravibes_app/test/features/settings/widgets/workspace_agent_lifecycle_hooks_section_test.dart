@@ -325,14 +325,9 @@ class _ReviewRuntime implements AgentLifecycleHookRuntime {
       );
 
   @override
-  Future<AgentLifecycleHookInvocationResult> invoke({
-    required AgentLifecycleHookSourceSnapshot snapshot,
-    required AgentLifecycleHookDefinition hook,
-    required String input,
-    required AgentToolHookCancellationChecker isCancellationRequested,
-    required String conversationId,
-    required Future<bool> Function() isStillTrusted,
-  }) async {
+  Future<AgentLifecycleHookInvocationResult> invoke(
+    AgentLifecycleHookInvocationRequest request,
+  ) async {
     invokeCount++;
     throw StateError('Settings review must not execute hooks.');
   }
