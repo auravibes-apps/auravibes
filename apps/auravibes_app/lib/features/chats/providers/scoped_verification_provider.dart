@@ -5,8 +5,8 @@ import 'package:auravibes_app/features/chats/agent_adapters/scoped_verification_
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/verify_reported_edits_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_decision_usecase.dart';
-import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod/riverpod.dart';
 
 final workspaceVerificationRepositoryProvider =
