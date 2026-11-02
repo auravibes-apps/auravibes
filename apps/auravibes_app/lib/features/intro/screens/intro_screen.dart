@@ -69,9 +69,6 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
     );
   }
 
-  Widget _frame(SetupPagePresentation page) =>
-      SetupPageFrame(page: page, key: page.key);
-
   void _changeSetupStage(WorkspaceSetupStage stage) {
     ref.read(introSessionProvider.notifier).begin();
     setState(() => _setupStage = stage);
@@ -136,9 +133,7 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       return;
     }
 
-    ref.invalidate(allWorkspacesProvider);
-    NewChatRoute(workspaceId: workspace.id).goWithDraft(context, draft);
-    ref.read(introSessionProvider.notifier).finish();
+    _finishQuickStart(ref, context, workspace, draft);
   }
 
   Future<WorkspaceEntity?> _createQuickStartWorkspace() async {
@@ -163,6 +158,17 @@ void _watchIntroState(WidgetRef ref, WorkspaceSetupResult? result) {
   if (result != null) {
     final _ = ref.watch(newChatProvider(result.workspace.id));
   }
+}
+
+void _finishQuickStart(
+  WidgetRef ref,
+  BuildContext context,
+  WorkspaceEntity workspace,
+  ChatDraft draft,
+) {
+  ref.invalidate(allWorkspacesProvider);
+  NewChatRoute(workspaceId: workspace.id).goWithDraft(context, draft);
+  ref.read(introSessionProvider.notifier).finish();
 }
 
 class const _IntroJourneyFrame({required final Widget child})
@@ -212,7 +218,7 @@ class _IntroSetup extends StatelessWidget {
            onCompleted: state._completeWorkspace,
            onReturn: state._returnToWelcome,
            showIntroRouteChooser: true,
-           pageBuilder: state._frame,
+           pageBuilder: (page) => SetupPageFrame(page: page, key: page.key),
            onStageChanged: state._changeSetupStage,
            onPendingChanged: onPendingChanged,
            key: const Key('intro_workspace_setup'),

@@ -193,13 +193,14 @@ class const _NewChatAvailable({
     final draftStatus = useState(false);
     final guard = useMemoized(DraftExitGuard.new);
     final data = _newChatBodyData(
-      _newChatBodyRequest(
-        context,
-        ref,
-        workspaceId,
-        draftStatus,
-        draftToLoad,
-        onDraftLoaded,
+      (
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        state: ref.watch(newChatProvider(workspaceId)),
+        draftStatus: draftStatus,
+        draftToLoad: draftToLoad,
+        onDraftLoaded: onDraftLoaded,
       ),
     );
     _bindNewChatGuard((
@@ -225,23 +226,6 @@ typedef _NewChatBodyRequest = ({
   ChatDraft? draftToLoad,
   VoidCallback onDraftLoaded,
 });
-
-_NewChatBodyRequest _newChatBodyRequest(
-  BuildContext context,
-  WidgetRef ref,
-  String workspaceId,
-  ValueNotifier<bool> draftStatus,
-  ChatDraft? draftToLoad,
-  VoidCallback onDraftLoaded,
-) => (
-  context: context,
-  ref: ref,
-  workspaceId: workspaceId,
-  state: ref.watch(newChatProvider(workspaceId)),
-  draftStatus: draftStatus,
-  draftToLoad: draftToLoad,
-  onDraftLoaded: onDraftLoaded,
-);
 
 typedef _NewChatGuardRequest = ({
   DraftExitGuard guard,

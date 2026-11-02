@@ -50,17 +50,31 @@ class const _EmptyConversationStarterButton({
   @override
   Widget build(BuildContext context) {
     final text = localizationKey.tr(context: context);
-    final selected = text == selectedText;
 
-    return Semantics(
-      child: AuraButton(
-        onPressed: () => onSelect(.new(text: text)),
-        child: Text(text),
-        variant: selected ? .secondary : .outlined,
-        isFullWidth: true,
-        disabled: disabled,
-      ),
-      selected: selected,
+    return _EmptyConversationStarterChoice(
+      text: text,
+      selected: text == selectedText,
+      onSelect: onSelect,
+      disabled: disabled,
     );
   }
+}
+
+class const _EmptyConversationStarterChoice({
+  required final String text,
+  required final bool selected,
+  required final ValueChanged<ChatDraft> onSelect,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: AuraButton(
+      onPressed: () => onSelect(.new(text: text)),
+      child: Text(text),
+      variant: selected ? .secondary : .outlined,
+      isFullWidth: true,
+      disabled: disabled,
+    ),
+    selected: selected,
+  );
 }

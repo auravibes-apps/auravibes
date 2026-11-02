@@ -256,28 +256,46 @@ class const _FirstChatGuideButtons({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      AuraButton(
-        onPressed: () {
-          if (!pending) onStart?.call();
-        },
-        child: const TextLocale('intro_flow.welcome.quick_start'),
-        key: const Key('intro_quick_start_button'),
-        isFullWidth: true,
-        disabled: pending || onStart == null,
+      _QuickStartButton(
+        onStart: onStart,
+        pending: pending,
       ),
-      AuraButton(
-        onPressed: () {
-          if (!pending) onAdvancedSetup();
-        },
-        child: const TextLocale('intro_flow.welcome.advanced_setup'),
-        key: const Key('intro_advanced_setup_button'),
-        variant: .outlined,
-        isFullWidth: true,
-        disabled: pending,
+      _AdvancedSetupButton(
+        onAdvancedSetup: onAdvancedSetup,
+        pending: pending,
       ),
     ],
     spacing: .md,
     crossAxisAlignment: .stretch,
+  );
+}
+
+class const _QuickStartButton({
+  required final VoidCallback? onStart,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: pending ? null : onStart,
+    child: const TextLocale('intro_flow.welcome.quick_start'),
+    key: const Key('intro_quick_start_button'),
+    isFullWidth: true,
+    disabled: pending || onStart == null,
+  );
+}
+
+class const _AdvancedSetupButton({
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: pending ? null : onAdvancedSetup,
+    child: const TextLocale('intro_flow.welcome.advanced_setup'),
+    key: const Key('intro_advanced_setup_button'),
+    variant: .outlined,
+    isFullWidth: true,
+    disabled: pending,
   );
 }
 
