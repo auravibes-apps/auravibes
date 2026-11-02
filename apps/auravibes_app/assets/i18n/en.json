@@ -79,7 +79,7 @@
       "page": "{} of {}",
       "start": "Choose setup options",
       "skip": "Set up a workspace",
-      "local_storage": "Saved on this device. Keep AuraVibes open. Sending a message may share it with the AI provider you choose.",
+      "local_storage": "The workspace is saved on this device. Keep AuraVibes open. Sending a message may share it with the AI provider you choose.",
       "workspace_name": "Personal work",
       "quick_start": "Start on this device",
       "advanced_setup": "More setup options"
@@ -88,7 +88,7 @@
       "title": "Choose how to start",
       "body": "Stored online. Requires internet and an account. Sharing, sync, and agents running while the app is closed may require a paid plan.",
       "local_title": "Create local workspace",
-      "local_body": "Saved on this device. AuraVibes needs to stay open. Sending a chat may share your message with the AI provider you choose.",
+      "local_body": "Your workspace is saved on this device. AuraVibes needs to stay open. Sending a chat may share your message with the AI provider you choose.",
       "cloud_create_title": "Create cloud workspace",
       "cloud_create_body": "Stored online. Requires internet and an account. Sharing, sync, and agents running while this app is closed may require a paid plan.",
       "cloud_connect_title": "Connect existing cloud workspace",

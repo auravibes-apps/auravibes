@@ -79,7 +79,7 @@
       "page": "{} de {}",
       "start": "Elegir opciones de configuración",
       "skip": "Configurar un espacio de trabajo",
-      "local_storage": "Se guarda en este dispositivo. Mantén AuraVibes abierta. Al enviar un mensaje, es posible que se comparta con el proveedor de IA que elijas.",
+      "local_storage": "El espacio de trabajo se guarda en este dispositivo. Mantén AuraVibes abierta. Al enviar un mensaje, es posible que se comparta con el proveedor de IA que elijas.",
       "workspace_name": "Trabajo personal",
       "quick_start": "Empezar en este dispositivo",
       "advanced_setup": "Más opciones de configuración"
@@ -88,7 +88,7 @@
       "title": "Elige cómo empezar",
       "body": "Se guarda en línea. Requiere internet y una cuenta. Compartir, sincronizar y usar agentes cuando la app está cerrada puede requerir un plan de pago.",
       "local_title": "Crear espacio local",
-      "local_body": "Se guarda en este dispositivo. AuraVibes debe permanecer abierta. Al enviar un chat, es posible que se comparta tu mensaje con el proveedor de IA que elijas.",
+      "local_body": "Tu espacio de trabajo se guarda en este dispositivo. AuraVibes debe permanecer abierta. Al enviar un chat, es posible que se comparta tu mensaje con el proveedor de IA que elijas.",
       "cloud_create_title": "Crear espacio en la nube",
       "cloud_create_body": "Se guarda en línea. Requiere internet y una cuenta. Compartir, sincronizar y usar agentes cuando la app está cerrada puede requerir un plan de pago.",
       "cloud_connect_title": "Conectar espacio en la nube existente",
