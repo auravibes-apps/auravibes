@@ -44,9 +44,20 @@ class const AgentLifecycleHookProcess() {
     final process = started.process;
     if (process == null) return const .new(outcome: .failed);
 
+    final termination = _HookProcessTermination(process);
+    final outcome = _HookProcessOutcome(termination);
+    final output = _HookProcessOutput(
+      process,
+      outcome.fail,
+      () => outcome.isSuccess,
+    );
+
     return await _HookProcessSupervisor(
       process,
       request.isCancellationRequested,
+      termination,
+      outcome,
+      output,
     ).run(request.inputBytes);
   }
 }
@@ -149,42 +160,13 @@ class _HookProcessOutcome(final _HookProcessTermination _termination) {
   }
 }
 
-class _HookProcessSupervisor {
-  factory new(
-    Process process,
-    bool Function() isCancellationRequested,
-  ) {
-    final termination = _HookProcessTermination(process);
-    final outcome = _HookProcessOutcome(termination);
-    final output = _HookProcessOutput(
-      process,
-      outcome.fail,
-      () => outcome.isSuccess,
-    );
-
-    return _HookProcessSupervisor._(
-      process,
-      isCancellationRequested,
-      termination,
-      outcome,
-      output,
-    );
-  }
-
-  new._(
-    this.process,
-    this.isCancellationRequested,
-    this._termination,
-    this._outcome,
-    this._output,
-  );
-
-  final Process process;
-  final bool Function() isCancellationRequested;
-  final _HookProcessTermination _termination;
-  final _HookProcessOutcome _outcome;
-  final _HookProcessOutput _output;
-
+class _HookProcessSupervisor(
+  final Process process,
+  final bool Function() isCancellationRequested,
+  final _HookProcessTermination _termination,
+  final _HookProcessOutcome _outcome,
+  final _HookProcessOutput _output,
+) {
   Future<AgentLifecycleHookInvocationResult> run(List<int> inputBytes) async {
     final exitCodeFuture = _termination.exitCode;
     _output.attach();
