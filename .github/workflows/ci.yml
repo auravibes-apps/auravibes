@@ -803,6 +803,53 @@ jobs:
           echo "command_completed=true" >> "$GITHUB_OUTPUT"
           exit "$status"
 
+      - name: Checkout current main for workspace File baseline
+        if: ${{ success() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 1aaa31f61128fe810ca35ef7a00205edb9233175
+          path: .ux-current-main
+          persist-credentials: false
+
+      - name: Capture current-main workspace File baseline
+        if: ${{ success() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
+        working-directory: .ux-current-main
+        shell: bash
+        env:
+          CAPTURE_DIRECTORY: ${{ runner.temp }}/workspace-capacity-evidence
+          TEST_SOURCE: ${{ github.workspace }}/apps/auravibes_app/test/features/workspaces/widgets/workspace_capacity_error_capture_test.dart
+        run: |
+          set -euo pipefail
+          mkdir -p "$CAPTURE_DIRECTORY"
+          cp "$TEST_SOURCE" apps/auravibes_app/test/features/workspaces/widgets/
+          source_revision="$(git rev-parse HEAD)"
+          flutter_pin="$(python3 -c 'import json; print(json.load(open(".fvmrc"))["flutter"])')"
+          fvm use "$flutter_pin" --skip-pub-get
+          fvm dart run melos bootstrap
+          flutter_version="$(fvm flutter --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
+          cd apps/auravibes_app
+          fvm flutter test test/features/workspaces/widgets/workspace_capacity_error_capture_test.dart \
+            --no-pub \
+            --plain-name='workspace File size-limit copy on the production route' \
+            --dart-define="UX_CAPTURE_DIR=$CAPTURE_DIRECTORY" \
+            --dart-define="UX_CAPTURE_STAGE=before" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$source_revision" \
+            --dart-define="UX_FLUTTER_VERSION=$flutter_version"
+
+      - name: Upload current-main workspace File baseline
+        if: ${{ always() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: workspace-file-capacity-baseline-${{ github.run_id }}
+          path: ${{ runner.temp }}/workspace-capacity-evidence/*
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove temporary current-main checkout
+        if: ${{ always() && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
+        shell: bash
+        run: rm -rf .ux-current-main
+
       - name: Upload Widgetbook golden failures
         id: upload-widgetbook-golden-failures
         if: ${{ failure() && matrix.package == 'widgetbook' && steps.run-tests.outcome == 'failure' }}
