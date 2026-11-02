@@ -330,6 +330,10 @@ void main() {
       reason: 'The archived destination was mounted but is not visible.',
     );
     expect(find.text('Project research'), findsOneWidget);
+    // Let the archive confirmation snackbar dismiss so the evidence captures
+    // the stable archived list rather than a transient notification.
+    await tester.pump(const Duration(seconds: 5));
+    await fixture.settle(tester);
     await _capture(
       tester,
       'conversation-archive-after',
