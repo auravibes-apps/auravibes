@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_providers.g.dart';
@@ -19,6 +20,10 @@ typedef _ConversationListOptions = ({
   String search,
   _ConversationPagination pagination,
   bool fetchAllPages,
+});
+typedef _ForkedConversationRequest = ({
+  String workspaceId,
+  String sourceConversationId,
 });
 
 const _cloudConversationPageSize = 100;
@@ -121,6 +126,87 @@ Stream<List<ConversationEntity>> childConversationsStream(
   }
 
   return _localChildConversations(ref, parentConversationId);
+}
+
+// ignore: specify_nonobvious_property_types - Riverpod family type is verbose.
+final forkedConversationsStreamProvider =
+    StreamProvider.family<List<ConversationEntity>, _ForkedConversationRequest>(
+      (ref, request) async* {
+        final repository = ref.watch(conversationRepositoryProvider);
+        final session = await ref.watch(
+          workspaceSessionForRouteProvider(request.workspaceId).future,
+        );
+        if (!ref.mounted) return;
+        if (session.cloud case final cloud?) {
+          yield* _cloudForkedConversations(
+            ref,
+            cloud,
+            request.sourceConversationId,
+          );
+
+          return;
+        }
+
+        yield* repository
+            .watchConversationsByWorkspace(request.workspaceId)
+            .map(
+              (conversations) => conversations
+                  .where(
+                    (conversation) =>
+                        conversation.forkSourceConversationId ==
+                        request.sourceConversationId,
+                  )
+                  .toList(),
+            );
+      },
+    );
+
+Stream<List<ConversationEntity>> _cloudForkedConversations(
+  Ref ref,
+  CloudWorkspaceRef cloud,
+  String sourceConversationId,
+) async* {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
+        .future,
+  );
+  if (!ref.mounted || gateway == null) return;
+
+  yield* _watchCloudForkedConversations(gateway, cloud, sourceConversationId);
+}
+
+Stream<List<ConversationEntity>> _watchCloudForkedConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String sourceConversationId,
+) {
+  Future<({List<ConversationEntity> value, int currentSequence})> read() =>
+      _readForkedCloudConversations(gateway, cloud, sourceConversationId);
+
+  return gateway.watch(const {'conversation'}, read);
+}
+
+Future<({List<ConversationEntity> value, int currentSequence})>
+_readForkedCloudConversations(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String sourceConversationId,
+) async {
+  final conversations = _mapCloudConversations(
+    await _readAllCloudConversationPages(gateway, cloud),
+    cloud.localWorkspaceId,
+  );
+  final currentSequence = await _cloudConversationSequence(gateway);
+
+  return (
+    value: conversations
+        .where(
+          (conversation) =>
+              conversation.forkSourceConversationId == sourceConversationId,
+        )
+        .toList(),
+    currentSequence: currentSequence,
+  );
 }
 
 Duration? _childConversationRetry(int retryCount, Object error) {
