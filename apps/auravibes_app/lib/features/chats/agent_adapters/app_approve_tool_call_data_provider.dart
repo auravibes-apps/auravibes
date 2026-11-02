@@ -265,6 +265,7 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
 
   final toolCall = _findToolCall(message.metadata, request.toolCallId);
   if (toolCall == null) return null;
+
   return await _approvableToolCallFor(
     conversationRepository,
     message.conversationId,

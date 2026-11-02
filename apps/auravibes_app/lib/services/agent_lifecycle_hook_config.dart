@@ -56,7 +56,7 @@ Map<String, dynamic> _decodeConfig(String source) {
     throw const AgentLifecycleHookConfigException('invalid_config');
   }
 
-  return decoded as Map<String, dynamic>;
+  return decoded! as Map<String, dynamic>;
 }
 
 void _validateConfigSize(String source) {
@@ -142,7 +142,7 @@ String _parseCommand(Object? raw) {
     throw const AgentLifecycleHookConfigException('invalid_hook');
   }
 
-  return raw as String;
+  return raw! as String;
 }
 
 List<String> _parseArguments(Object? raw) {

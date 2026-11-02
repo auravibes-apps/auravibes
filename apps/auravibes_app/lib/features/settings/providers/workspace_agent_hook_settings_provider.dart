@@ -44,7 +44,7 @@ WorkspaceAgentHookTrustStatus? _workspaceSupportStatus(
       .watch(allWorkspacesProvider)
       .asData
       ?.value
-      ?.where((workspace) => workspace.id == workspaceId)
+      .where((workspace) => workspace.id == workspaceId)
       .firstOrNull;
   if (workspace != null && workspace.type == WorkspaceType.local) return null;
 

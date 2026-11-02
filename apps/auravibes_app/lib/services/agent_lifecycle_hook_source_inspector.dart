@@ -72,6 +72,14 @@ class _HookSourceDigests {
     }
   }
 
+  AgentLifecycleHookSourceSnapshot snapshot() => .new(
+    canonicalPath: canonicalPath,
+    digest: _fingerprint(),
+    config: config,
+    commandPaths: _commandPaths,
+    sourceFilePaths: _sourceFilePaths,
+  );
+
   Future<String> _resolve(String path) =>
       File(p.isAbsolute(path) ? path : p.join(p.dirname(canonicalPath), path))
           .resolveSymbolicLinks();
@@ -89,14 +97,6 @@ class _HookSourceDigests {
 
     return sha256.convert(bytes).toString();
   }
-
-  AgentLifecycleHookSourceSnapshot snapshot() => .new(
-    canonicalPath: canonicalPath,
-    digest: _fingerprint(),
-    config: config,
-    commandPaths: _commandPaths,
-    sourceFilePaths: _sourceFilePaths,
-  );
 
   String _fingerprint() => sha256
       .convert(
@@ -123,6 +123,7 @@ Future<Uint8List> _readBoundedFile(
   String failureCode,
 ) async {
   _requireBoundedRegularFile(file, maxBytes, failureCode);
+
   return await _readBoundedChunks(file, maxBytes, failureCode);
 }
 

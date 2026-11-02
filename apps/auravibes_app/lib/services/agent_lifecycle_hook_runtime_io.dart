@@ -41,6 +41,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   ) async {
     final failure = _inputFailure(request);
     if (failure != null) return .new(outcome: failure);
+
     return await _invokeReinspected(request);
   }
 
@@ -48,6 +49,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     _Invocation request,
   ) async {
     final checked = await _reinspect(request);
+
     return await _completeInvocation(request, checked);
   }
 
@@ -76,8 +78,9 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
 
   AgentToolHookOutcome? _inputFailure(_Invocation request) {
     if (!isSupported) return .unavailable;
-    if (request.isCancellationRequested(request.conversationId))
+    if (request.isCancellationRequested(request.conversationId)) {
       return .cancelled;
+    }
     if (_inputExceedsLimit(request.input)) return .outputLimitExceeded;
 
     return null;
@@ -86,7 +89,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   Future<_Reinspection> _reinspect(_Invocation request) async {
     final AgentLifecycleHookSourceSnapshot current;
     try {
-      // Dispatch through the overridable entrypoint, including the second check.
+      // Use the overridable entrypoint for the second trust inspection.
       current = await inspect(request.snapshot.canonicalPath);
     } on Object {
       return (snapshot: null, failure: AgentToolHookOutcome.failed);

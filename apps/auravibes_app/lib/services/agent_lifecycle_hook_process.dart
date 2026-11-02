@@ -77,15 +77,13 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
   }
 }
 
-class _HookProcessOutput {
-  _HookProcessOutput(this.process, this.onFailure, this.isAccepting);
-
+class _HookProcessOutput(this.process, this.onFailure, this.isAccepting) {
   final Process process;
   final void Function(AgentToolHookOutcome) onFailure;
   final bool Function() isAccepting;
-  final _output = BytesBuilder(copy: false);
   final outputDone = Completer<void>();
   final errorDone = Completer<void>();
+  final _output = BytesBuilder(copy: false);
   StreamSubscription<List<int>>? _stdoutSubscription;
   StreamSubscription<List<int>>? _stderrSubscription;
   int _outputBytes = 0;
@@ -102,6 +100,13 @@ class _HookProcessOutput {
       done: errorDone,
     );
   }
+
+  Future<void> cancel() async {
+    await _stdoutSubscription?.cancel();
+    await _stderrSubscription?.cancel();
+  }
+
+  List<int> takeBytes() => _output.takeBytes();
 
   StreamSubscription<List<int>> _listen(
     Stream<List<int>> stream, {
@@ -124,28 +129,61 @@ class _HookProcessOutput {
     }
     if (capture) _output.add(chunk);
   }
+}
 
-  Future<void> cancel() async {
-    await _stdoutSubscription?.cancel();
-    await _stderrSubscription?.cancel();
+class _HookProcessOutcome(this._termination) {
+  bool get isSuccess => _outcome == .success;
+  AgentToolHookOutcome get value => _outcome;
+
+  void fail(AgentToolHookOutcome failure) {
+    if (!isSuccess) return;
+    _outcome = failure;
+    unawaited(_termination.stop());
   }
 
-  List<int> takeBytes() => _output.takeBytes();
+  void setIfSuccess(AgentToolHookOutcome outcome) {
+    if (isSuccess) _outcome = outcome;
+  }
+
+  final _HookProcessTermination _termination;
+  AgentToolHookOutcome _outcome = .success;
 }
 
 class _HookProcessSupervisor {
-  new(this.process, this.isCancellationRequested)
-    : _termination = _HookProcessTermination(process);
+  factory _HookProcessSupervisor(
+    Process process,
+    bool Function() isCancellationRequested,
+  ) {
+    final termination = _HookProcessTermination(process);
+    final outcome = _HookProcessOutcome(termination);
+    final output = _HookProcessOutput(
+      process,
+      outcome.fail,
+      () => outcome.isSuccess,
+    );
+
+    return _HookProcessSupervisor._(
+      process,
+      isCancellationRequested,
+      termination,
+      outcome,
+      output,
+    );
+  }
+
+  _HookProcessSupervisor._(
+    this.process,
+    this.isCancellationRequested,
+    this._termination,
+    this._outcome,
+    this._output,
+  );
 
   final Process process;
   final bool Function() isCancellationRequested;
   final _HookProcessTermination _termination;
-  late final _HookProcessOutput _output = _HookProcessOutput(
-    process,
-    _fail,
-    () => _outcome == AgentToolHookOutcome.success,
-  );
-  AgentToolHookOutcome _outcome = .success;
+  final _HookProcessOutcome _outcome;
+  final _HookProcessOutput _output;
 
   Future<AgentLifecycleHookInvocationResult> run(List<int> inputBytes) async {
     final exitCodeFuture = _termination.exitCode;
@@ -159,7 +197,10 @@ class _HookProcessSupervisor {
   }
 
   Future<int> _waitWithTimers(Future<int> exitCode) async {
-    final timeout = Timer(agentLifecycleHookTimeout, () => _fail(.timedOut));
+    final timeout = Timer(
+      agentLifecycleHookTimeout,
+      () => _outcome.fail(.timedOut),
+    );
     final cancellation = Timer.periodic(
       _cancellationInterval,
       _pollCancellation,
@@ -172,15 +213,9 @@ class _HookProcessSupervisor {
     }
   }
 
-  void _fail(AgentToolHookOutcome failure) {
-    if (_outcome != AgentToolHookOutcome.success) return;
-    _outcome = failure;
-    unawaited(_termination.stop());
-  }
-
   void _pollCancellation(Timer _) {
-    if (_outcome == AgentToolHookOutcome.success && isCancellationRequested()) {
-      _fail(.cancelled);
+    if (_outcome.isSuccess && isCancellationRequested()) {
+      _outcome.fail(.cancelled);
     }
   }
 
@@ -191,7 +226,7 @@ class _HookProcessSupervisor {
         onTimeout: _onExitTimeout,
       );
     } on Object {
-      _fail(.failed);
+      _outcome.fail(.failed);
       await _termination.stop();
 
       return -1;
@@ -199,7 +234,7 @@ class _HookProcessSupervisor {
   }
 
   Future<int> _onExitTimeout() async {
-    if (_outcome == AgentToolHookOutcome.success) _outcome = .timedOut;
+    _outcome.setIfSuccess(.timedOut);
     await _termination.stop();
 
     return -1;
@@ -212,23 +247,24 @@ class _HookProcessSupervisor {
         _output.errorDone.future,
       ]).timeout(_streamDrainTimeout);
     } on Object {
-      _fail(.failed);
+      _outcome.fail(.failed);
       await _output.cancel();
     }
   }
 
   void _recordExitOutcome(int exitCode) {
-    if (_outcome == AgentToolHookOutcome.success && exitCode != 0) {
-      _outcome = .failed;
+    if (_outcome.isSuccess && exitCode != 0) {
+      _outcome.setIfSuccess(.failed);
     }
-    if (_outcome == AgentToolHookOutcome.success && isCancellationRequested()) {
-      _outcome = .cancelled;
+    if (_outcome.isSuccess && isCancellationRequested()) {
+      _outcome.setIfSuccess(.cancelled);
     }
   }
 
   AgentLifecycleHookInvocationResult _result() {
-    if (_outcome != AgentToolHookOutcome.success)
-      return .new(outcome: _outcome);
+    if (!_outcome.isSuccess) {
+      return .new(outcome: _outcome.value);
+    }
     try {
       return .new(outcome: .success, stdout: utf8.decode(_output.takeBytes()));
     } on FormatException {
@@ -247,14 +283,14 @@ class _HookProcessTermination {
 
   Future<int> get exitCode => _exitCode ??= _trackExit();
 
+  Future<void> stop() => _stopping ??= _stop();
+
   Future<int> _trackExit() async {
     final code = await process.exitCode;
     _exited = true;
 
     return code;
   }
-
-  Future<void> stop() => _stopping ??= _stop();
 
   Future<void> _stop() async {
     if (_exited) return;

@@ -66,6 +66,7 @@ class _WorkspaceAgentLifecycleHooksSectionState
       type: .custom,
       allowedExtensions: const ['json'],
     );
+    if (!mounted) return null;
     if (file == null) return null;
     final path = file.path;
     if (path == null) {
@@ -190,9 +191,10 @@ Future<void> _runHookSettingsMutation(
   _WorkspaceAgentLifecycleHooksSectionState state,
   Future<void> Function(WorkspaceAgentHookSettingsUsecase) action,
 ) => state._runBusy(
-  () =>
-      action(state.ref.read(workspaceAgentHookSettingsUsecaseProvider))
-        ..then((_) => state._retry()),
+  () async {
+    await action(state.ref.read(workspaceAgentHookSettingsUsecaseProvider));
+    if (state.mounted) state._retry();
+  },
 );
 
 Future<bool?> _confirmHookTrust(
@@ -482,12 +484,10 @@ class const _WorkspaceHookActions({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final settings = view.settings;
     final disabled = view.busy || !isSupported;
 
     return _WorkspaceHookActionsLayout(
       view: view,
-      settings: settings,
       disabled: disabled,
       spacing: context.auraTheme.fromSpacing(.sm),
     );
@@ -496,53 +496,61 @@ class const _WorkspaceHookActions({
 
 class const _WorkspaceHookActionsLayout({
   required final _WorkspaceHookSettingsView view,
-  required final WorkspaceAgentHookSettings settings,
   required final bool disabled,
   required final double spacing,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = <Widget>[];
-    _appendChildren(children, view, settings, disabled);
+    _appendChildren(children, view, disabled);
 
-    return Wrap(
-      spacing: spacing,
-      runSpacing: spacing,
-      children: children,
-    );
+    return Wrap(spacing: spacing, runSpacing: spacing, children: children);
   }
 
   static void _appendChildren(
     List<Widget> children,
     _WorkspaceHookSettingsView view,
-    WorkspaceAgentHookSettings settings,
     bool disabled,
   ) {
-    final path = settings.configPath;
-
     children.add(
       _WorkspaceHookChooseAction(
         onPressed: view.callbacks.choose,
         disabled: disabled,
       ),
     );
-    if (path != null) {
-      children.add(
-        _WorkspaceHookReviewAction(
-          path: path,
-          onReview: view.callbacks.review,
-          disabled: disabled,
-        ),
-      );
-    }
-    if (settings.isTrusted) {
-      children.add(
-        _WorkspaceHookRevokeAction(
-          onPressed: view.callbacks.revoke,
-          disabled: view.busy,
-        ),
-      );
-    }
+    _appendReviewAction(children, view, disabled);
+    _appendRevokeAction(children, view);
+  }
+
+  static void _appendReviewAction(
+    List<Widget> children,
+    _WorkspaceHookSettingsView view,
+    bool disabled,
+  ) {
+    final path = view.settings.configPath;
+    if (path == null) return;
+
+    children.add(
+      _WorkspaceHookReviewAction(
+        path: path,
+        onReview: view.callbacks.review,
+        disabled: disabled,
+      ),
+    );
+  }
+
+  static void _appendRevokeAction(
+    List<Widget> children,
+    _WorkspaceHookSettingsView view,
+  ) {
+    if (!view.settings.isTrusted) return;
+
+    children.add(
+      _WorkspaceHookRevokeAction(
+        onPressed: view.callbacks.revoke,
+        disabled: view.busy,
+      ),
+    );
   }
 }
 

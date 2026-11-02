@@ -84,6 +84,7 @@ class const WorkspaceLifecycleHookRunner({
   ) async {
     final loaded = await _loadTrustedConfig(input.request.workspaceId);
     if (loaded == null) return null;
+
     return await _invokeLoaded(input, loaded);
   }
 
@@ -94,6 +95,7 @@ class const WorkspaceLifecycleHookRunner({
     if (loaded.failure case final failure?) return .new(outcome: failure);
     final snapshot = loaded.snapshot;
     if (snapshot == null) return const .new(outcome: .failed);
+
     return await _invokeSelectedHook(input, snapshot);
   }
 
@@ -167,8 +169,9 @@ class const WorkspaceLifecycleHookRunner({
       if (!settings.trustsSource(
         canonicalPath: snapshot.canonicalPath,
         digest: snapshot.digest,
-      ))
+      )) {
         return _unavailableConfig;
+      }
 
       return (failure: null, snapshot: snapshot);
     } on Object {
