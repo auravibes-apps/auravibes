@@ -191,7 +191,7 @@ class AppAgentContinuationAdapter({
       ...skillContextMessages,
       if (taskBrief case final brief? when brief.trim().isNotEmpty)
         ChatMessage(
-          role: ChatMessageRole.user,
+          role: .user,
           content: 'User-authored conversation brief:\n\n$brief',
           metadata: const {'kind': _conversationTaskBriefMetadataKind},
         ),
@@ -226,8 +226,10 @@ ChatMessage _tagCompactionSummary(
   ChatMessage message,
   Set<String> summaryMessageIds,
 ) {
+  final transcriptMessageId = message.metadata['transcriptMessageId'];
   if (message.role != ChatMessageRole.model ||
-      !summaryMessageIds.contains(message.metadata['transcriptMessageId'])) {
+      transcriptMessageId is! String ||
+      !summaryMessageIds.contains(transcriptMessageId)) {
     return message;
   }
 

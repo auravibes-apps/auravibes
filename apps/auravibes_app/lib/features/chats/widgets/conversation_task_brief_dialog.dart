@@ -28,7 +28,6 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
     final canSave = useState((taskBrief ?? '').trim().isNotEmpty);
 
     return AlertDialog(
-      scrollable: true,
       title: const TextLocale(
         LocaleKeys.chats_screens_chat_conversation_task_brief_title,
       ),
@@ -44,11 +43,7 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              minLines: 5,
-              maxLines: 10,
-              autofocus: true,
-              textCapitalization: .sentences,
-              decoration: InputDecoration(
+              decoration: .new(
                 labelText: LocaleKeys
                     .chats_screens_chat_conversation_task_brief_field_label
                     .tr(context: context),
@@ -57,6 +52,10 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
                     .tr(context: context),
                 alignLabelWithHint: true,
               ),
+              textCapitalization: .sentences,
+              autofocus: true,
+              maxLines: 10,
+              minLines: 5,
               onChanged: (value) => canSave.value = value.trim().isNotEmpty,
             ),
           ],
@@ -65,7 +64,7 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
       actions: [
         TextButton(
           onPressed: () => _cancel(context),
-          child: TextLocale(LocaleKeys.common_cancel),
+          child: const TextLocale(LocaleKeys.common_cancel),
         ),
         if (taskBrief != null)
           TextButton(
@@ -81,6 +80,7 @@ class const _ConversationTaskBriefDialog({required final String? taskBrief})
           child: const TextLocale(LocaleKeys.common_save),
         ),
       ],
+      scrollable: true,
     );
   }
 }

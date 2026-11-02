@@ -10,7 +10,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -18,13 +17,15 @@ import '../../../helpers/test_app.dart';
 const _workspaceId = 'brief-workspace';
 final _conversation = ConversationEntity(
   id: 'brief-source',
-  workspaceId: _workspaceId,
   title: 'Conversation',
+  workspaceId: _workspaceId,
   isPinned: false,
-  createdAt: DateTime(2026),
-  updatedAt: DateTime(2026),
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
 );
-final _button = find.byKey(const ValueKey('conversation-task-brief-button'));
+final Finder _button = find.byKey(
+  const ValueKey('conversation-task-brief-button'),
+);
 
 class _BriefRepository extends Fake implements ConversationRepository {
   new(this.save);
@@ -45,13 +46,16 @@ class const _Subject({required final String conversationId})
     final result = ref.watch(
       conversationChatProvider(_workspaceId, conversationId),
     );
+
     return Scaffold(
       body: switch (result.value) {
         ConversationFound(:final conversation) => ConversationTaskBriefButton(
           workspaceId: _workspaceId,
           conversation: conversation,
         ),
-        _ => const SizedBox.shrink(),
+        null ||
+        ConversationNotFound() ||
+        ConversationWorkspaceMismatch() => const SizedBox.shrink(),
       },
     );
   }
@@ -65,7 +69,7 @@ Future<void> _pumpSubject(
   await tester.runAsync(
     () => tester.pumpWidget(
       TestableApp(
-        workspaceId: _workspaceId,
+        child: _Subject(conversationId: conversation.id),
         overrides: [
           conversationByIdStreamProvider(
             _workspaceId,
@@ -76,7 +80,7 @@ Future<void> _pumpSubject(
             _BriefRepository(save),
           ),
         ],
-        child: _Subject(conversationId: conversation.id),
+        workspaceId: _workspaceId,
       ),
     ),
   );
@@ -100,6 +104,7 @@ void main() {
         conversation: conversation,
         save: (target, patch) async {
           writes.add((id: target, patch: patch));
+
           return conversation.copyWith(taskBrief: patch.taskBrief);
         },
       );
@@ -109,7 +114,7 @@ void main() {
       );
       await tester.tap(_button);
       final _ = await tester.pumpAndSettle();
-      const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+      const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
       await tester.enterText(find.byType(TextField), brief);
       await tester.pump();
       expect(
@@ -142,6 +147,7 @@ void main() {
       conversation: conversation,
       save: (_, patch) async {
         writes.add(patch);
+
         return conversation.copyWith(taskBrief: null);
       },
     );
@@ -164,6 +170,7 @@ void main() {
       conversation: _conversation,
       save: (_, patch) async {
         writes.add(patch);
+
         return _conversation;
       },
     );

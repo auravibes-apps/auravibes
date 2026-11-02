@@ -30,8 +30,10 @@ void main() {
     isPinned: false,
     createdAt: now,
     updatedAt: now,
+    taskBrief:
+        '  User-edited objective after the checkpoint.\n'
+        'Keep this exact text.  ',
     activeCompactionCheckpointId: 'summary-2',
-    taskBrief: '  User-edited objective after the checkpoint.\nKeep this exact text.  ',
   );
   final checkpoint = MessageEntity(
     id: checkpointId,
@@ -126,7 +128,7 @@ void main() {
       expect(patch.activeCompactionCheckpointId, checkpointId);
       expect(patch.taskBrief, isNull);
       expect(patch.clearTaskBrief, isFalse);
-      verifyNever(() => messages.patchMessage(any(), any()));
+      final _ = verifyNever(() => messages.patchMessage(any(), any()));
     },
   );
 

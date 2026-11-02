@@ -128,7 +128,8 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
     );
     assert(
       _startsWithUserMessage(chatHistory),
-      'First conversation message after context and compaction summaries must be user.',
+      'First conversation message after context and compaction summaries '
+      'must be user.',
     );
 
     return PreparedContinueAgentInput(

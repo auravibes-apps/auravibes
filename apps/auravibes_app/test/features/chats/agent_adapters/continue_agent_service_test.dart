@@ -243,7 +243,7 @@ void main() {
     test(
       'next request uses the current brief and omits it after clear',
       () async {
-        const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+        const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
         var currentConversation = _conversation.copyWith(taskBrief: brief);
         when(() => conversationRepository.getConversationById('conversation-1'))
             .thenAnswer((_) async => currentConversation);
@@ -260,6 +260,7 @@ void main() {
               invocation.positionalArguments[1] as List<ChatMessage>,
             ),
           );
+
           return Stream.value(
             ChatResult<ChatMessage>(output: ChatMessage.model('Done')),
           );
@@ -338,6 +339,7 @@ void main() {
           dispatched = List<ChatMessage>.of(
             invocation.positionalArguments[1] as List<ChatMessage>,
           );
+
           return Stream.value(
             ChatResult<ChatMessage>(output: ChatMessage.model('Continued')),
           );
@@ -346,11 +348,13 @@ void main() {
         final _ = await usecase.call(conversationId: 'conversation-1');
 
         expect(dispatched, isNotNull);
-        expect(dispatched!.first.role, ChatMessageRole.model);
-        expect(dispatched!.first.content, summary.content);
-        expect(dispatched!.last.content, _userMessage.content);
+        final sent =
+            dispatched ?? (throw StateError('Provider was not called'));
+        expect(sent.firstOrNull?.role, ChatMessageRole.model);
+        expect(sent.firstOrNull?.content, summary.content);
+        expect(sent.last.content, _userMessage.content);
         expect(
-          dispatched!.any(
+          sent.any(
             (message) => message.metadata['kind'] == 'conversation_task_brief',
           ),
           isFalse,

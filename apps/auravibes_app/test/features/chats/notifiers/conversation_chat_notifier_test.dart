@@ -353,7 +353,7 @@ void main() {
         expect(patched.single.clearTaskBrief, isFalse);
         final saved = container
             .read(conversationChatProvider('ws-1', 'conv-1'))
-            .value;
+            .requireValue;
         expect((saved as ConversationFound).conversation.taskBrief, brief);
 
         await notifier.setTaskBrief(null);
@@ -362,124 +362,123 @@ void main() {
         expect(patched.last.clearTaskBrief, isTrue);
         final cleared = container
             .read(conversationChatProvider('ws-1', 'conv-1'))
-            .value;
+            .requireValue;
         expect((cleared as ConversationFound).conversation.taskBrief, isNull);
         sub.close();
       },
     );
 
     for (final isCloud in [false, true]) {
-      test(
-        'blank edits preserve the brief and only explicit clear removes it for cloud=$isCloud',
-        () async {
-          final patches = <ConversationPatch>[];
-          final requests = <UpdateConversationRequest>[];
-          final gateway = _CloudChatGateway();
-          var current = conversation.copyWith(
-            taskBrief: 'Original brief',
-            revision: 4,
-          );
-          when(() => gateway.updateConversation(any()))
-              .thenAnswer((invocation) async {
-                final request =
-                    invocation.positionalArguments.single
-                        as UpdateConversationRequest;
-                requests.add(request);
-                current = current.copyWith(
-                  taskBrief: request.clearTaskBrief ? null : request.taskBrief,
-                  revision: current.revision + 1,
-                );
-                return ConversationSummary(
-                  id: current.id,
-                  title: current.title,
-                  isPinned: current.isPinned,
-                  taskBrief: current.taskBrief,
-                  revision: current.revision,
-                  createdAt: current.createdAt,
-                  updatedAt: current.updatedAt,
-                );
-              });
-          final initial = current;
-          final container = ProviderContainer(
-            overrides: [
-              conversationByIdStreamProvider(
-                'ws-1',
-                conversationId: 'conv-1',
-              ).overrideWith((_) => Stream.value(initial)),
-              cloudConversationUsecaseProvider.overrideWithValue(
-                isCloud ? .new(gateway) : null,
-              ),
-              conversationRepositoryProvider.overrideWithValue(
-                _FakeConversationRepository(
-                  onPatch: (id, patch) {
-                    expect(id, 'conv-1');
-                    patches.add(patch);
-                    current = current.copyWith(
-                      taskBrief: patch.clearTaskBrief ? null : patch.taskBrief,
-                    );
-                    return current;
-                  },
-                ),
-              ),
-            ],
-          );
-          addTearDown(container.dispose);
-          final provider = conversationChatProvider('ws-1', 'conv-1');
-          final subscription = container.listen(
-            provider,
-            (_, next) => next.toString(),
-          );
-          addTearDown(subscription.close);
-          final _ = await container.read(provider.future);
-          final before = container.read(provider);
-          final notifier = container.read(provider.notifier);
+      test('blank edits preserve the brief and explicit clear removes it '
+          'for cloud=$isCloud', () async {
+        final patches = <ConversationPatch>[];
+        final requests = <UpdateConversationRequest>[];
+        final gateway = _CloudChatGateway();
+        var current = conversation.copyWith(
+          taskBrief: 'Original brief',
+          revision: 4,
+        );
+        when(() => gateway.updateConversation(any()))
+            .thenAnswer((invocation) async {
+              final request =
+                  invocation.positionalArguments.single
+                      as UpdateConversationRequest;
+              requests.add(request);
+              current = current.copyWith(
+                taskBrief: request.clearTaskBrief ? null : request.taskBrief,
+                revision: current.revision + 1,
+              );
 
-          await notifier.setTaskBrief(' \n\t ');
+              return ConversationSummary(
+                id: current.id,
+                title: current.title,
+                isPinned: current.isPinned,
+                taskBrief: current.taskBrief,
+                revision: current.revision,
+                createdAt: current.createdAt,
+                updatedAt: current.updatedAt,
+              );
+            });
+        final initial = current;
+        final container = ProviderContainer(
+          overrides: [
+            conversationByIdStreamProvider(
+              'ws-1',
+              conversationId: 'conv-1',
+            ).overrideWith((_) => Stream.value(initial)),
+            cloudConversationUsecaseProvider.overrideWithValue(
+              isCloud ? .new(gateway) : null,
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  expect(id, 'conv-1');
+                  patches.add(patch);
 
+                  return current = current.copyWith(
+                    taskBrief: patch.clearTaskBrief ? null : patch.taskBrief,
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+        final provider = conversationChatProvider('ws-1', 'conv-1');
+        final subscription = container.listen(
+          provider,
+          (_, next) => next.toString(),
+        );
+        addTearDown(subscription.close);
+        final _ = await container.read(provider.future);
+        final before = container.read(provider);
+        final notifier = container.read(provider.notifier);
+
+        await notifier.setTaskBrief(' \n\t ');
+
+        expect(patches, isEmpty);
+        expect(requests, isEmpty);
+        expect(container.read(provider), same(before));
+        expect(
+          (container.read(provider).requireValue as ConversationFound)
+              .conversation
+              .taskBrief,
+          'Original brief',
+        );
+        const saved = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
+        await notifier.setTaskBrief(saved);
+        expect(
+          (container.read(provider).requireValue as ConversationFound)
+              .conversation
+              .taskBrief,
+          saved,
+        );
+        await notifier.setTaskBrief(null);
+        expect(
+          (container.read(provider).requireValue as ConversationFound)
+              .conversation
+              .taskBrief,
+          isNull,
+        );
+        if (isCloud) {
           expect(patches, isEmpty);
+          expect(requests.map((request) => request.conversationId), [
+            'conv-1',
+            'conv-1',
+          ]);
+          expect(requests.map((request) => request.expectedRevision), [4, 5]);
+          expect(requests.firstOrNull?.taskBrief, saved);
+          expect(requests.firstOrNull?.clearTaskBrief, isFalse);
+          expect(requests.last.taskBrief, isNull);
+          expect(requests.last.clearTaskBrief, isTrue);
+        } else {
           expect(requests, isEmpty);
-          expect(container.read(provider), same(before));
-          expect(
-            (container.read(provider).requireValue as ConversationFound)
-                .conversation
-                .taskBrief,
-            'Original brief',
-          );
-          const saved = '  Objetivo 🎯\nKeep the deadline.  ';
-          await notifier.setTaskBrief(saved);
-          expect(
-            (container.read(provider).requireValue as ConversationFound)
-                .conversation
-                .taskBrief,
-            saved,
-          );
-          await notifier.setTaskBrief(null);
-          expect(
-            (container.read(provider).requireValue as ConversationFound)
-                .conversation
-                .taskBrief,
-            isNull,
-          );
-          if (isCloud) {
-            expect(patches, isEmpty);
-            expect(requests.map((request) => request.conversationId), [
-              'conv-1',
-              'conv-1',
-            ]);
-            expect(requests.map((request) => request.expectedRevision), [4, 5]);
-            expect(requests.first.taskBrief, saved);
-            expect(requests.first.clearTaskBrief, isFalse);
-            expect(requests.last.taskBrief, isNull);
-            expect(requests.last.clearTaskBrief, isTrue);
-          } else {
-            expect(requests, isEmpty);
-            expect(patches.first.taskBrief, saved);
-            expect(patches.first.clearTaskBrief, isFalse);
-            expect(patches.last.taskBrief, isNull);
-            expect(patches.last.clearTaskBrief, isTrue);
-          }
-        },
-      );
+          expect(patches.firstOrNull?.taskBrief, saved);
+          expect(patches.firstOrNull?.clearTaskBrief, isFalse);
+          expect(patches.last.taskBrief, isNull);
+          expect(patches.last.clearTaskBrief, isTrue);
+        }
+      });
     }
 
     test('null reasoning configuration persists a clear patch', () async {

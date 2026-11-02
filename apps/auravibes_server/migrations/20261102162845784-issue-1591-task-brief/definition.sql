@@ -2065,6 +2065,24 @@ ALTER TABLE ONLY "serverpod_auth_idp_passkey_account"
     ON UPDATE NO ACTION;
 
 
+-- Custom object gateway tables must also exist in a fresh database.
+CREATE SCHEMA IF NOT EXISTS object_gateway;
+
+CREATE TABLE object_gateway.keys (
+  key_hash bytea PRIMARY KEY,
+  registration_hash bytea NOT NULL,
+  closed boolean NOT NULL DEFAULT false
+);
+
+CREATE TABLE object_gateway.uploads (
+  nonce_hash bytea PRIMARY KEY,
+  key_hash bytea NOT NULL REFERENCES object_gateway.keys(key_hash),
+  pending boolean NOT NULL DEFAULT true
+);
+
+CREATE INDEX object_gateway_pending_uploads
+  ON object_gateway.uploads(key_hash) WHERE pending;
+
 --
 -- MIGRATION VERSION FOR auravibes
 --

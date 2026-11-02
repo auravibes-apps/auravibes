@@ -179,21 +179,21 @@ void main() {
         }) async => const {},
         loadConversationToolSpecsUsecase: _LoadTools(),
       );
-      final skillContext = ChatMessage(
-        role: ChatMessageRole.system,
+      const skillContext = ChatMessage(
+        role: .system,
         content: 'Skill context',
-        metadata: const {'kind': skillContextMetadataKind},
+        metadata: {'kind': skillContextMetadataKind},
       );
 
       final compactedTranscript = MessageEntity(
         id: 'checkpoint',
         conversationId: 'conversation',
         content: 'Summary of earlier messages.',
-        messageType: MessageType.system,
+        messageType: .system,
         isUser: false,
-        status: MessageStatus.sent,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
         metadata: const MessageMetadataEntity(isCompactionSummary: true),
       );
       final history = await adapter.buildChatHistory(
@@ -204,7 +204,7 @@ void main() {
       );
 
       expect(history, hasLength(3));
-      expect(history.first, skillContext);
+      expect(history.firstOrNull, skillContext);
       expect(history[1].role, ChatMessageRole.user);
       expect(
         history[1].content,
@@ -216,9 +216,7 @@ void main() {
       expect(adapter.isCompactionSummaryMessage(history.last), isTrue);
       expect(adapter.isCompactionSummaryMessage(history[1]), isFalse);
       expect(
-        adapter.isCompactionSummaryMessage(
-          ChatMessage.model('Ordinary response'),
-        ),
+        adapter.isCompactionSummaryMessage(.model('Ordinary response')),
         isFalse,
       );
       expect(history.last.content, 'Summary of earlier messages.');

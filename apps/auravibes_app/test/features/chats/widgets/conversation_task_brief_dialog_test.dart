@@ -97,7 +97,7 @@ void main() {
           .onPressed,
       isNull,
     );
-    const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+    const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
     await tester.enterText(find.byType(TextField), brief);
     await tester.pump();
     expect(

@@ -123,7 +123,11 @@ Future<_Fixture> _prepareConversationFixture(
   );
 }
 
-Future<void> _configureRegressionProvider(_Fixture fixture) async {
+Future<void> _configureRegressionProvider(
+  _Fixture fixture, {
+  int limitContext = 1,
+  int limitOutput = 1,
+}) async {
   fixture.database.passwords['workspaceSecretKey'] =
       'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
   final now = DateTime.now().toUtc();
@@ -147,8 +151,8 @@ Future<void> _configureRegressionProvider(_Fixture fixture) async {
       providerId: 'openai',
       modelId: 'model-1',
       name: 'Model',
-      limitContext: 1,
-      limitOutput: 1,
+      limitContext: limitContext,
+      limitOutput: limitOutput,
       modalitiesInput: const ['text'],
       modalitiesOutput: const ['text'],
       costInput: 0,
@@ -2618,7 +2622,13 @@ void main() {
         'task brief survives real worker compaction, edits, restore, and clear',
         () async {
           final fixture = await prepare();
-          await _configureRegressionProvider(fixture);
+          // The shared fixture's one-token context cannot retain the tail
+          // required for a real compaction range.
+          await _configureRegressionProvider(
+            fixture,
+            limitContext: 4096,
+            limitOutput: 512,
+          );
           const brief = '  Objetivo 🎯\nKeep the deadline.  ';
           final initial = (await Conversation.db.findById(
             fixture.database,
@@ -2797,6 +2807,17 @@ void main() {
                 ),
               );
           await runJobs();
+          final compactionJob = await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.requestId.equals('real-task-brief-compaction'),
+          );
+          expect(
+            compactionJob?.status,
+            ConversationJobStatuses.completed,
+            reason: 'Compaction worker error: ${compactionJob?.lastErrorCode}',
+          );
           final compacted = await conversation();
           expect(compacted.taskBrief, brief);
           final checkpoint = compacted.activeCompactionCheckpointId;

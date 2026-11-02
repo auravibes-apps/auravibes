@@ -130,9 +130,6 @@ void main() {
       tester,
       '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
       size: size,
-      locale: 'en',
-      scale: 1,
-      dark: false,
       useProductionRouter: true,
       realSessions: true,
       emptyModels: false,
@@ -159,14 +156,13 @@ void main() {
         find.byKey(const ValueKey('ux-capture')),
       );
       final rendered = await boundary.toImage();
-      final pixels = await rendered.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      );
+      final pixels = await rendered.toByteData();
       rendered.dispose();
       expect(pixels, isNotNull);
+      final data = pixels ?? (throw StateError('Missing rendered pixels'));
       final colors = <int>{};
-      for (var offset = 0; offset < pixels!.lengthInBytes; offset += 4) {
-        colors.add(pixels.getUint32(offset));
+      for (var offset = 0; offset < data.lengthInBytes; offset += 4) {
+        final _ = colors.add(data.getUint32(offset));
         if (colors.length > 2) break;
       }
       expect(
@@ -190,6 +186,7 @@ void main() {
     );
     if (baseline) {
       await fixture.close(tester);
+
       return;
     }
     await tester.tap(button);

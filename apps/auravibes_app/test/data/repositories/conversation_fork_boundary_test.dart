@@ -62,9 +62,10 @@ void main() {
     ),
   );
 
-  test('task briefs persist, copy to forks, isolate edits, and clear without changing messages', () async {
+  test('task briefs persist, copy to forks, isolate edits, '
+      'and clear without changing messages', () async {
     await insertSource(taskBrief: 'Keep the user objective in view.');
-    await insertMessage(
+    final _ = await insertMessage(
       id: 'user-1',
       createdAt: .utc(2026),
       isUser: true,
@@ -76,7 +77,7 @@ void main() {
     final fork = await repository.forkConversation('source');
     expect(fork.taskBrief, 'Keep the user objective in view.');
 
-    await insertMessage(
+    final _ = await insertMessage(
       id: 'checkpoint',
       createdAt: .utc(2026, 1, 1, 0, 0, 1),
       isUser: false,

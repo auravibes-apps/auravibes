@@ -245,7 +245,7 @@ void main() {
     test(
       '$trigger compaction never writes the user-owned task brief',
       () async {
-        const brief = '  Objetivo 🎯\nKeep the deadline.  ';
+        const brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
         final transcript = [
           _makeMessage(),
           _makeMessage(id: 'msg-2', isUser: false),
@@ -267,6 +267,7 @@ void main() {
               summaryRequest = List<ChatMessage>.of(
                 invocation.positionalArguments[1] as List<ChatMessage>,
               );
+
               return Stream.value(
                 ChatResult<ChatMessage>(
                   output: ChatMessage.model(
@@ -295,7 +296,7 @@ void main() {
         expect(patches.single.clearTaskBrief, isFalse);
         expect(summaryRequest, isNotEmpty);
         expect(
-          summaryRequest!.every((message) => !message.content.contains(brief)),
+          summaryRequest?.every((message) => !message.content.contains(brief)),
           isTrue,
         );
         final writes = verify(

@@ -12,6 +12,7 @@ import 'package:material_ui/material_ui.dart';
 class const ConversationTaskBriefButton({
   required final String workspaceId,
   required final ConversationEntity conversation,
+  super.key,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,10 +28,10 @@ class const ConversationTaskBriefButton({
       icon: conversation.taskBrief == null
           ? Icons.edit_note_outlined
           : Icons.edit_note,
-      tooltip: label,
-      semanticLabel: label,
-      identifier: 'conversation-task-brief-button',
       onPressed: () => unawaited(_edit(context, ref)),
+      identifier: 'conversation-task-brief-button',
+      semanticLabel: label,
+      tooltip: label,
     );
   }
 
@@ -48,8 +49,8 @@ class const ConversationTaskBriefButton({
       await notifier.setTaskBrief(result.clear ? null : result.value);
     } on Object {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      final _ = ScaffoldMessenger.of(context).showSnackBar(
+        .new(
           content: Text(
             LocaleKeys.chats_screens_chat_conversation_task_brief_save_error.tr(
               context: context,

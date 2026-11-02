@@ -7,7 +7,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _brief = '  Objetivo 🎯\nKeep the deadline.  ';
+const _brief = '  Objetivo \u{1F3AF}\nKeep the deadline.  ';
 
 void main() {
   test('task brief reloads exactly after create and edit', () async {
@@ -18,7 +18,8 @@ void main() {
 
     await fixture.reopen();
     expect((await fixture.read(created.id))?.taskBrief, _brief);
-    const edited = '  Decisiones: keep Unicode 🎯.\nOpen tasks: review.  ';
+    const edited =
+        '  Decisiones: keep Unicode \u{1F3AF}.\nOpen tasks: review.  ';
     final _ = await fixture.repository.patchConversation(
       created.id,
       const ConversationPatch(taskBrief: edited),
@@ -104,21 +105,21 @@ void main() {
 }
 
 final class _TaskBriefDatabase {
-  _TaskBriefDatabase(this.directory)
+  new(this.directory)
     : database = AppDatabase(
         connection: NativeDatabase(
-          File('${directory.path}/conversation.sqlite'),
+          .new('${directory.path}/conversation.sqlite'),
         ),
       );
 
   final Directory directory;
   AppDatabase database;
 
+  ConversationRepository get repository => ConversationRepository(database);
+
   static Future<_TaskBriefDatabase> open() async => _TaskBriefDatabase(
     await Directory.systemTemp.createTemp('conversation-task-brief-'),
   );
-
-  ConversationRepository get repository => ConversationRepository(database);
 
   Future<ConversationEntity?> read(String id) =>
       repository.getConversationById(id);
@@ -128,7 +129,7 @@ final class _TaskBriefDatabase {
       .insert(name: 'Task brief workspace', type: .local),
     );
     final conversation = await repository.createConversation(
-      ConversationToCreate(
+      .new(
         title: 'Task brief conversation',
         workspaceId: workspace.id,
         taskBrief: taskBrief,
@@ -143,6 +144,7 @@ final class _TaskBriefDatabase {
         status: MessageTableStatus.sent,
       ),
     );
+
     return conversation;
   }
 
@@ -156,8 +158,8 @@ final class _TaskBriefDatabase {
 
   Future<void> reopen() async {
     await database.close();
-    database = AppDatabase(
-      connection: NativeDatabase(File('${directory.path}/conversation.sqlite')),
+    database = .new(
+      connection: NativeDatabase(.new('${directory.path}/conversation.sqlite')),
     );
   }
 
