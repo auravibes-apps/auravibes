@@ -174,55 +174,110 @@ class const _FirstChatGuide({
     primary: false,
     child: AuraColumn(
       children: [
-        Semantics(
-          child: const AuraText(
-            child: TextLocale('intro_flow.welcome.title'),
-            style: .heading4,
-          ),
-          header: true,
-        ),
-        const AuraText(child: TextLocale('intro_flow.welcome.body')),
-        const AuraCard(
-          child: AuraText(
-            child: TextLocale('intro_flow.welcome.local_storage'),
-            style: .bodySmall,
-          ),
-          style: .border,
-        ),
-        EmptyConversationStarterChoices(
-          onSelect: onSelect,
-          disabled: pending,
+        const _FirstChatGuideIntroduction(),
+        _FirstChatGuideActions(
           selectedText: selectedText,
-          keyPrefix: 'intro_starter',
-        ),
-        if (showError)
-          Semantics(
-            child: const TextLocale('workspace_management.unexpected_error'),
-            liveRegion: true,
-          ),
-        AuraButton(
-          onPressed: () {
-            if (!pending) onStart?.call();
-          },
-          child: const TextLocale('intro_flow.welcome.quick_start'),
-          key: const Key('intro_quick_start_button'),
-          isFullWidth: true,
-          disabled: pending || onStart == null,
-        ),
-        AuraButton(
-          onPressed: () {
-            if (!pending) onAdvancedSetup();
-          },
-          child: const TextLocale('intro_flow.welcome.advanced_setup'),
-          key: const Key('intro_advanced_setup_button'),
-          variant: .outlined,
-          isFullWidth: true,
-          disabled: pending,
+          onSelect: onSelect,
+          onStart: onStart,
+          onAdvancedSetup: onAdvancedSetup,
+          pending: pending,
+          showError: showError,
         ),
       ],
       spacing: .md,
       crossAxisAlignment: .stretch,
     ),
+  );
+}
+
+class const _FirstChatGuideIntroduction() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      Semantics(
+        child: const AuraText(
+          child: TextLocale('intro_flow.welcome.title'),
+          style: .heading4,
+        ),
+        header: true,
+      ),
+      const AuraText(child: TextLocale('intro_flow.welcome.body')),
+      const AuraCard(
+        child: AuraText(
+          child: TextLocale('intro_flow.welcome.local_storage'),
+          style: .bodySmall,
+        ),
+        style: .border,
+      ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
+  );
+}
+
+class const _FirstChatGuideActions({
+  required final String? selectedText,
+  required final ValueChanged<ChatDraft> onSelect,
+  required final VoidCallback? onStart,
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+  required final bool showError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      EmptyConversationStarterChoices(
+        onSelect: onSelect,
+        disabled: pending,
+        selectedText: selectedText,
+        keyPrefix: 'intro_starter',
+      ),
+      if (showError)
+        Semantics(
+          child: const TextLocale('workspace_management.unexpected_error'),
+          liveRegion: true,
+        ),
+      _FirstChatGuideButtons(
+        onStart: onStart,
+        onAdvancedSetup: onAdvancedSetup,
+        pending: pending,
+      ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
+  );
+}
+
+class const _FirstChatGuideButtons({
+  required final VoidCallback? onStart,
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      AuraButton(
+        onPressed: () {
+          if (!pending) onStart?.call();
+        },
+        child: const TextLocale('intro_flow.welcome.quick_start'),
+        key: const Key('intro_quick_start_button'),
+        isFullWidth: true,
+        disabled: pending || onStart == null,
+      ),
+      AuraButton(
+        onPressed: () {
+          if (!pending) onAdvancedSetup();
+        },
+        child: const TextLocale('intro_flow.welcome.advanced_setup'),
+        key: const Key('intro_advanced_setup_button'),
+        variant: .outlined,
+        isFullWidth: true,
+        disabled: pending,
+      ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
   );
 }
 
