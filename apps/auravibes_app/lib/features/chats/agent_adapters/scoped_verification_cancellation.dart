@@ -42,7 +42,10 @@ class ScopedVerificationCancellation {
     return _replaceLease(conversationId, current);
   }
 
-  _ScopeLease? _reusableLease(_ScopeLease? existing, AgentCancellationScope? current) {
+  _ScopeLease? _reusableLease(
+    _ScopeLease? existing,
+    AgentCancellationScope? current,
+  ) {
     if (existing == null || !identical(existing.scope, current)) return null;
     existing.users++;
 
@@ -95,12 +98,7 @@ final class _ScopedVerificationRun {
 
       return result;
     } finally {
-      _finish(
-        state.child,
-        state.globalStop,
-        state.completion,
-        state.handle,
-      );
+      _finish(state.child, state.globalStop, state.completion, state.handle);
     }
   }
 

@@ -62,15 +62,13 @@ void main() {
     int maxRepairAttempts = 1,
     String workspaceId = 'workspace',
     String turnId = 'turn',
-  }) => state.repository.reserve(
-    (
-      workspaceId: workspaceId,
-      turnId: turnId,
-      toolCallId: toolCallId,
-      configRevision: revision,
-      maxRepairAttempts: maxRepairAttempts,
-    ),
-  );
+  }) => state.repository.reserve((
+    workspaceId: workspaceId,
+    turnId: turnId,
+    toolCallId: toolCallId,
+    configRevision: revision,
+    maxRepairAttempts: maxRepairAttempts,
+  ));
 
   test(
     'absent and malformed settings are disabled within their workspace',
@@ -279,15 +277,13 @@ void main() {
       await state.repository.saveSettings('workspace', _settings());
       final initial = await reserve('edit');
       final restarted = WorkspaceVerificationRepository(state.database);
-      final replay = await restarted.reserve(
-        (
-          workspaceId: 'workspace',
-          turnId: 'turn',
-          toolCallId: 'edit',
-          configRevision: 1,
-          maxRepairAttempts: 1,
-        ),
-      );
+      final replay = await restarted.reserve((
+        workspaceId: 'workspace',
+        turnId: 'turn',
+        toolCallId: 'edit',
+        configRevision: 1,
+        maxRepairAttempts: 1,
+      ));
       expect(replay.result?.outcome, ScopedVerificationOutcome.incomplete);
       expect(replay.result?.reason, 'interrupted');
       final late = await state.repository.complete(

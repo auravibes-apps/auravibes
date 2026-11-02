@@ -299,9 +299,8 @@ void main() {
           workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => catalog);
-      when(
-        () => resolvedToolService.call(any()),
-      ).thenAnswer((_) async => 'done');
+      when(() => resolvedToolService.call(any()))
+          .thenAnswer((_) async => 'done');
       when(
         () => resolvedToolService.takeMcpAppResultData(
           conversationId: 'child',

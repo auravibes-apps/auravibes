@@ -175,22 +175,18 @@ typedef _ToolMatchRequest = ({
 });
 
 Future<bool> _toolsMatch(_ToolMatchRequest request) async {
-  final runner = await _resolveTool(
-    (
-      database: request.database,
-      id: request.target.tableId,
-      settings: request.settings,
-      workspaceId: request.workspaceId,
-    ),
-  );
-  final edit = await _resolveTool(
-    (
-      database: request.database,
-      id: request.input.invocation.tool.tableId,
-      settings: request.settings,
-      workspaceId: request.workspaceId,
-    ),
-  );
+  final runner = await _resolveTool((
+    database: request.database,
+    id: request.target.tableId,
+    settings: request.settings,
+    workspaceId: request.workspaceId,
+  ));
+  final edit = await _resolveTool((
+    database: request.database,
+    id: request.input.invocation.tool.tableId,
+    settings: request.settings,
+    workspaceId: request.workspaceId,
+  ));
 
   return runner?.toolIdentifier == request.target.toolIdentifier &&
       edit?.toolIdentifier == request.input.invocation.tool.toolIdentifier;
@@ -261,14 +257,12 @@ Future<ResolvedTool?> _resolveToolGroup(
 ) async {
   final groupId = row.workspaceToolsGroupId;
   if (groupId == null) return null;
-  final group = await _enabledToolGroup(
-    (
-      database: request.database,
-      id: groupId,
-      workspaceId: row.workspaceId,
-      serverId: request.settings.mcpServerId,
-    ),
-  );
+  final group = await _enabledToolGroup((
+    database: request.database,
+    id: groupId,
+    workspaceId: row.workspaceId,
+    serverId: request.settings.mcpServerId,
+  ));
   if (group == null) return null;
   final server = await _enabledMcpServer(
     request.database,

@@ -612,7 +612,10 @@ Future<McpVerificationSession> _openMcpVerificationSession(
   _McpVerificationSessionRequest request,
 ) async {
   final connection = _connectedVerificationServer(notifier, request);
-  final authentication = await _verificationAuthentication(notifier, connection);
+  final authentication = await _verificationAuthentication(
+    notifier,
+    connection,
+  );
   _requireActiveVerificationConnection(notifier, connection, request);
   final session = await _connectVerificationSession(
     notifier,
@@ -621,7 +624,12 @@ Future<McpVerificationSession> _openMcpVerificationSession(
     authentication,
   );
 
-  return _retainActiveVerificationSession(notifier, connection, request, session);
+  return _retainActiveVerificationSession(
+    notifier,
+    connection,
+    request,
+    session,
+  );
 }
 
 McpConnectionState _connectedVerificationServer(
@@ -651,12 +659,12 @@ Future<McpVerificationSession> _connectVerificationSession(
   McpConnectionState connection,
   McpAuthenticationType authentication,
 ) => notifier._requiredMcpManager.openVerificationSession((
-    server: connection.server.copyWith(authenticationType: authentication),
-    serverId: request.mcpServerId,
-    toolIdentifier: request.toolIdentifier,
-    deadline: request.deadline,
-    cancellation: request.cancellation,
-  ));
+  server: connection.server.copyWith(authenticationType: authentication),
+  serverId: request.mcpServerId,
+  toolIdentifier: request.toolIdentifier,
+  deadline: request.deadline,
+  cancellation: request.cancellation,
+));
 
 McpVerificationSession _retainActiveVerificationSession(
   McpConnectionNotifier notifier,

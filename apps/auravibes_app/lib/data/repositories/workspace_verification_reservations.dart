@@ -124,7 +124,8 @@ class const WorkspaceVerificationReservations(
       int limit,
       bool repair,
       int used,
-    }) entry,
+    })
+    entry,
     String id,
   ) async {
     final request = entry.request;
@@ -149,7 +150,8 @@ class const WorkspaceVerificationReservations(
       int limit,
       bool repair,
       int used,
-    }) entry,
+    })
+    entry,
     String id,
   ) => (
     operationId: id,
@@ -264,12 +266,8 @@ _reservationPlan(
 }
 
 ({int limit, bool repair, int used, ScopedVerificationReservation? result})
-_blockedReservationPlan(ScopedVerificationReservation result) => (
-  limit: 0,
-  repair: false,
-  used: 0,
-  result: result,
-);
+_blockedReservationPlan(ScopedVerificationReservation result) =>
+    (limit: 0, repair: false, used: 0, result: result);
 
 ({int limit, bool repair, int used, ScopedVerificationReservation? result})
 _availableReservationPlan(

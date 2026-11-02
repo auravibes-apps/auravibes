@@ -134,7 +134,8 @@ class const VerifyReportedEditsUsecase({
     Duration remaining,
     Future<ScopedVerificationRunner?> Function(
       ScopedVerificationRunnerInput input,
-    ) create,
+    )
+    create,
   ) async {
     final interrupted = Completer<ScopedVerificationRunner?>();
     final timer = Timer(remaining, () => _endRunnerCreation(interrupted));
@@ -237,9 +238,7 @@ Future<_VerificationContext?> _verificationContext(
   return (identity: identity, settings: settings);
 }
 
-Future<Object> _verifyEligibleEdit(
-  _EligibleVerification eligible,
-) async {
+Future<Object> _verifyEligibleEdit(_EligibleVerification eligible) async {
   final invalid = _editServerMismatch(eligible);
   if (invalid != null) return invalid;
 
@@ -254,9 +253,7 @@ Object? _editServerMismatch(_EligibleVerification eligible) {
   return _feedback(request.result, .incomplete, 'server_mismatch');
 }
 
-Future<Object> _selectAndRunVerification(
-  _EligibleVerification eligible,
-) async {
+Future<Object> _selectAndRunVerification(_EligibleVerification eligible) async {
   final request = eligible.request;
   final context = eligible.context;
   final selection = _verificationSelection(

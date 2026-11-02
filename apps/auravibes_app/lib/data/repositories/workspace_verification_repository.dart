@@ -50,8 +50,11 @@ class WorkspaceVerificationRepository {
   Future<ScopedVerificationReservation> reserve(
     VerificationReservationRequest request,
   ) => database.transaction(
-    () => WorkspaceVerificationReservations(database, _sessionId, getSettings)
-        .reserve(request),
+    () => WorkspaceVerificationReservations(
+      database,
+      _sessionId,
+      getSettings,
+    ).reserve(request),
   );
 
   /// Returns the persisted winner so late replies cannot restore a pass.
@@ -104,9 +107,7 @@ Future<void> _saveWorkspaceSettingsInTransaction(
   await _persistNextSettings(request, current);
 }
 
-Future<void> _requireLocalSettingsOwner(
-  _SaveWorkspaceSettings request,
-) async {
+Future<void> _requireLocalSettingsOwner(_SaveWorkspaceSettings request) async {
   final database = request.database;
   final workspaceId = request.workspaceId;
   if (!await isLocalVerificationWorkspace(database, workspaceId)) {

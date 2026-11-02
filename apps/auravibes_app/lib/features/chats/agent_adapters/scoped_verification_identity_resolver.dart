@@ -65,8 +65,10 @@ _SequencedMessage? _uniqueToolCall(
   List<_SequencedMessage> messages,
   String toolCallId,
 ) {
-  final calls = messages.where((message) => _callsTool(message, toolCallId))
-      .take(2).toList();
+  final calls = messages
+      .where((message) => _callsTool(message, toolCallId))
+      .take(2)
+      .toList();
   if (calls.length != 1) return null;
 
   return calls.single;

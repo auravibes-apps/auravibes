@@ -166,12 +166,11 @@ class ResolvedToolService {
     return await _callDelegatedTool(delegate, request);
   }
 
-  Future<Object?> _callWorkspaceTool(
-    _ResolvedToolCallRequest request,
-  ) => _workspaceCommand(request.conversationId, request.arguments, (
-    name: request.tool.toolIdentifier,
-    id: request.toolCallId,
-  ));
+  Future<Object?> _callWorkspaceTool(_ResolvedToolCallRequest request) =>
+      _workspaceCommand(request.conversationId, request.arguments, (
+        name: request.tool.toolIdentifier,
+        id: request.toolCallId,
+      ));
 
   Future<Object?> _callDelegatedTool(
     agent.ResolvedToolRunner<ResolvedTool> delegate,
