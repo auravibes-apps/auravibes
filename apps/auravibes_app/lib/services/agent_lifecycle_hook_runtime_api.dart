@@ -23,11 +23,16 @@ abstract interface class AgentLifecycleHookRuntime {
 
   Future<AgentLifecycleHookSourceSnapshot> inspect(String sourcePath);
 
+  /// Rechecks source fingerprints and optional host trust before launching.
+  ///
+  /// The host callback reads current workspace opt-in and trust after the
+  /// runtime's final asynchronous inspection. A false result prevents launch.
   Future<AgentLifecycleHookInvocationResult> invoke({
     required AgentLifecycleHookSourceSnapshot snapshot,
     required AgentLifecycleHookDefinition hook,
     required String input,
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
+    Future<bool> Function()? isStillTrusted,
   });
 }

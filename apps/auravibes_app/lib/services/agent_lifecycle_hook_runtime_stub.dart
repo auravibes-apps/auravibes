@@ -22,5 +22,6 @@ class const UnsupportedAgentLifecycleHookRuntime()
     required String input,
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
+    Future<bool> Function()? isStillTrusted,
   }) async => const AgentLifecycleHookInvocationResult(outcome: .unavailable);
 }

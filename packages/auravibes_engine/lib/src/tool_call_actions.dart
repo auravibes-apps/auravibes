@@ -214,7 +214,10 @@ class const ApproveToolCallService<TTool extends Object>({
       fullOutputForContext: executionResult.fullOutputForContext,
     ));
 
-    if (provider.isCancellationRequested(toolCall.conversationId)) return;
+    if (executionResult.resultStatus == AgentToolResultStatus.stoppedByUser ||
+        provider.isCancellationRequested(toolCall.conversationId)) {
+      return;
+    }
 
     await provider.resumeConversationIfReady(
       messageId: messageId,

@@ -3,7 +3,9 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/providers/agent_lifecycle_hook_runtime_provider.dart';
 import 'package:auravibes_app/providers/workspace_agent_hook_settings_repository_provider.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'workspace_agent_hook_settings_provider.g.dart';
 
 enum WorkspaceAgentHookTrustStatus {
   notConfigured,
@@ -15,18 +17,17 @@ enum WorkspaceAgentHookTrustStatus {
   unsupportedWorkspace,
 }
 
-final workspaceAgentHookSettingsProvider =
-    StreamProvider.family<WorkspaceAgentHookSettings, String>(
-      (ref, workspaceId) => ref
-          .watch(workspaceAgentHookSettingsRepositoryProvider)
-          .watch(workspaceId),
-    );
+@Riverpod(keepAlive: true)
+Stream<WorkspaceAgentHookSettings> workspaceAgentHookSettings(
+  Ref ref,
+  String workspaceId,
+) => ref.watch(workspaceAgentHookSettingsRepositoryProvider).watch(workspaceId);
 
-final workspaceAgentHookTrustStatusProvider =
-    FutureProvider.family<WorkspaceAgentHookTrustStatus, String>((
-      ref,
-      workspaceId,
-    ) async {
+@Riverpod(keepAlive: true)
+Future<WorkspaceAgentHookTrustStatus> workspaceAgentHookTrustStatus(
+  Ref ref,
+  String workspaceId,
+) async {
       final workspaces = ref.watch(allWorkspacesProvider).asData?.value;
       final workspace = workspaces
           ?.where((workspace) => workspace.id == workspaceId)
@@ -60,4 +61,4 @@ final workspaceAgentHookTrustStatusProvider =
       } on Object {
         return WorkspaceAgentHookTrustStatus.invalid;
       }
-    });
+}

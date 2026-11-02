@@ -16,7 +16,11 @@ void main() {
   group('ApproveToolCallService', () {
     test('marks unresolved tool as not found and resumes', () async {
       final provider = _FakeApproveToolCallProvider(resolvedTool: null);
-      final usecase = ApproveToolCallService<String>(provider: provider);
+      final hooks = _BlockingPreToolHookRunner(provider.calls);
+      final usecase = ApproveToolCallService<String>(
+        provider: provider,
+        lifecycleHookRunner: hooks,
+      );
 
       await usecase.call(
         messageId: 'message-1',
@@ -32,6 +36,8 @@ void main() {
 
       expect(provider.updates, [AgentToolResultStatus.toolNotFound]);
       expect(provider.didResume, isTrue);
+      expect(provider.calls.where((call) => call.startsWith('pre:')), isEmpty);
+      expect(hooks.afterToolCalled, isFalse);
     });
 
     test('marks unresolved shared Connector command as not found', () async {
@@ -143,12 +149,42 @@ void main() {
       expect(provider.didResume, isFalse);
     });
 
+    test('hook cancellation prevents dispatch and resume', () async {
+      final provider = _FakeApproveToolCallProvider(resolvedTool: 'calculator');
+      final hooks = _BlockingPreToolHookRunner(
+        provider.calls,
+        outcome: AgentToolHookOutcome.cancelled,
+      );
+      await ApproveToolCallService<String>(
+        provider: provider,
+        lifecycleHookRunner: hooks,
+      ).call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
+        level: .once,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
+      );
+
+      expect(provider.updates, [AgentToolResultStatus.stoppedByUser]);
+      expect(provider.calls.where((call) => call.startsWith('run:')), isEmpty);
+      expect(provider.didResume, isFalse);
+      expect(hooks.afterToolCalled, isFalse);
+    });
+
     test('rejects an approval when the displayed call changed', () async {
       final provider = _FakeApproveToolCallProvider(
         resolvedTool: 'calculator',
         runResult: '2',
       );
-      final usecase = ApproveToolCallService<String>(provider: provider);
+      final usecase = ApproveToolCallService<String>(
+        provider: provider,
+        lifecycleHookRunner: _BlockingPreToolHookRunner(provider.calls),
+      );
 
       await expectLater(
         usecase.call(
@@ -328,7 +364,10 @@ class _FakeApproveToolCallProvider({
   void logToolExecutionError(AgentToolExecutionErrorRequest<String> request) {}
 }
 
-class _BlockingPreToolHookRunner(List<String> calls)
+class _BlockingPreToolHookRunner(
+  List<String> calls, {
+  AgentToolHookOutcome outcome = AgentToolHookOutcome.block,
+})
     implements AgentToolLifecycleHookRunner<String> {
   bool afterToolCalled = false;
 
@@ -342,8 +381,8 @@ class _BlockingPreToolHookRunner(List<String> calls)
       '${request.argumentNames.join(',')}',
     );
 
-    return const AgentPreToolHookResult(
-      outcome: AgentToolHookOutcome.block,
+    return AgentPreToolHookResult(
+      outcome: outcome,
       reason: 'Policy blocked this tool call.',
     );
   }

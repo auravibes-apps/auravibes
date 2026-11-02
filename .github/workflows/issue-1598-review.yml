@@ -1,0 +1,85 @@
+name: Trusted lifecycle hook review
+
+on:
+  push:
+    branches: [codex/issue-1598-trusted-lifecycle-hooks]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-1598-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: production settings baseline at 1aaa31f6
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      BASELINE_SHA: 1aaa31f61128fe810ca35ef7a00205edb9233175
+      XDG_DATA_HOME: ${{ runner.temp }}/issue1598-baseline-data
+      XDG_CONFIG_HOME: ${{ runner.temp }}/issue1598-baseline-config
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Preserve the revision-independent production route capture
+        run: cp .github/fixtures/issue_1598_settings_capture.dart.fixture "$RUNNER_TEMP/issue1598_capture_test.dart"
+      - name: Checkout the exact main baseline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.BASELINE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-workspace
+      - name: Generate baseline code
+        run: python3 tool/validation_lease.py --label hooks-baseline-generate -- dart run melos run generate
+      - name: Render actual production workspace settings route
+        working-directory: apps/auravibes_app
+        run: |
+          cp "$RUNNER_TEMP/issue1598_capture_test.dart" test/widgets/issue1598_capture_test.dart
+          python3 ../../tool/validation_lease.py --label hooks-baseline-capture -- flutter test test/widgets/issue1598_capture_test.dart --no-pub --dart-define=HOOK_CAPTURE_DIR="$RUNNER_TEMP/issue1598-before" --dart-define=HOOK_CAPTURE_SHA="$BASELINE_SHA" --dart-define=HOOK_CAPTURE_LABEL=before
+      - name: Upload genuine baseline image and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1598-before-1aaa31f6
+          path: ${{ runner.temp }}/issue1598-before/
+          if-no-files-found: error
+          retention-days: 14
+
+  focused-validation:
+    name: focused hook validation
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-workspace
+      - name: Generate feature code
+        run: python3 tool/validation_lease.py --label hooks-feature-generate -- dart run melos run generate
+      - name: Export formatting corrections for review
+        run: |
+          python3 tool/validation_lease.py --label hooks-feature-format -- dart format apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_engine/lib packages/auravibes_engine/test
+          git diff > "$RUNNER_TEMP/issue1598-format.patch"
+      - name: Engine hook suites
+        if: success() || failure()
+        working-directory: packages/auravibes_engine
+        run: python3 ../../tool/validation_lease.py --label hooks-engine -- dart test test/agent_tool_execution_service_test.dart test/tool_call_actions_test.dart
+      - name: Runtime and trust suites
+        if: success() || failure()
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label hooks-runtime -- flutter test test/services/agent_lifecycle_hook_config_test.dart test/services/agent_lifecycle_hook_runtime_io_test.dart test/features/chats/agent_adapters/workspace_lifecycle_hook_runner_test.dart --no-pub
+      - name: Approval and persistence suites
+        if: success() || failure()
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label hooks-approval -- flutter test test/features/chats/agent_adapters/approve_tool_call_service_test.dart test/features/chats/usecases/batch_tool_approval_usecase_test.dart test/domain/entities/messages_test.dart test/features/chats/widgets/tool_call_response_preview_test.dart test/data/database/drift/app_database_test.dart test/data/repositories/local_workspace_configuration_repository_test.dart test/features/settings/usecases/workspace_agent_hook_settings_usecase_test.dart test/providers/app_providers_test.dart --no-pub
+      - name: Export formatting patch
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1598-format-${{ github.sha }}
+          path: ${{ runner.temp }}/issue1598-format.patch
+          if-no-files-found: warn
+          retention-days: 14

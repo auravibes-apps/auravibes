@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
+import 'package:auravibes_app/data/repositories/workspace_agent_hook_settings_repository.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -43,7 +44,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 47);
+      expect(fixture.database.schemaVersion, 49);
     });
 
     test(
@@ -92,6 +93,61 @@ void main() {
         expect(row.data['task_brief'], isNull);
       },
     );
+
+    test(
+      'schema46 migration preserves workspaces and adds disabled hook trust',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 46
+          ..execute(
+            'CREATE TABLE workspaces '
+            '(id TEXT PRIMARY KEY, name TEXT NOT NULL)',
+          )
+          ..execute('INSERT INTO workspaces VALUES (?, ?)', [
+            'existing',
+            'Retained workspace',
+          ]);
+        _createHistorySources(sqliteDb);
+        final database = _MigrationAppDatabase<_MigrationCaseHookSettings>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+        final repository = WorkspaceAgentHookSettingsRepository(
+          database.workspaceAgentHookSettingsDao,
+        );
+        final settings = await repository.get('existing');
+        expect(settings.enabled, isFalse);
+        expect(settings.isTrusted, isFalse);
+        expect(settings.configPath, isNull);
+        final retained = await database.customSelect(
+          'SELECT name FROM workspaces WHERE id = ?',
+          variables: [const Variable<String>('existing')],
+        ).getSingle();
+        expect(retained.read<String>('name'), 'Retained workspace');
+        await repository.selectConfig(
+          'existing',
+          canonicalPath: '/tmp/hooks.json',
+        );
+        final row = await database.workspaceAgentHookSettingsDao
+            .getByWorkspaceId('existing');
+        expect(row?.enabled, isFalse);
+        expect(row?.trustedDigest, isNull);
+        expect(database.schemaVersion, 49);
+      },
+    );
+
+    test('deleting a workspace cascades to its local hook trust', () async {
+      final database = fixture.database;
+      final _ = await database.into(database.workspaces).insert(
+        WorkspacesCompanion.insert(id: const Value('hooks-owner'), name: 'Hooks', type: WorkspaceType.local),
+      );
+      final repository = WorkspaceAgentHookSettingsRepository(database.workspaceAgentHookSettingsDao);
+      await repository.selectConfig('hooks-owner', canonicalPath: '/tmp/hooks.json');
+      await repository.trustConfig('hooks-owner', canonicalPath: '/tmp/hooks.json', digest: 'trusted-digest');
+      await repository.setEnabled('hooks-owner', enabled: true);
+      final _ = await (database.delete(database.workspaces)..where((row) => row.id.equals('hooks-owner'))).go();
+      expect(await database.workspaceAgentHookSettingsDao.getByWorkspaceId('hooks-owner'), isNull);
+    });
 
     test('schema41 assets survive context and reporting migrations', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
@@ -1584,6 +1640,8 @@ final class _MigrationCaseTrash;
 final class _MigrationCaseRecordBatch;
 
 final class _MigrationCaseHistory;
+
+final class _MigrationCaseHookSettings;
 
 void _createHistorySources(sqlite.Database database) {
   database

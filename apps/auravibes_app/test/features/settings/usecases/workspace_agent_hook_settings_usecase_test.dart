@@ -28,6 +28,39 @@ void main() {
 
   tearDown(() async => database.close());
 
+  test('trust is separate from opt-in and revocation clears both', () async {
+    final workspace = await _createLocalWorkspace(workspaceRepository);
+    final usecase = _usecase(settingsRepository, workspaceRepository, _FakeHookRuntime());
+    await usecase.selectConfig(workspace.id, '/tmp/hooks.json');
+    final review = await usecase.reviewConfig(workspace.id, '/tmp/hooks.json');
+    await usecase.trustReviewedConfig(workspace.id, review);
+    final trusted = await settingsRepository.get(workspace.id);
+    expect(trusted.isTrusted, isTrue);
+    expect(trusted.enabled, isFalse);
+    await usecase.setEnabled(workspace.id, enabled: true);
+    expect((await settingsRepository.get(workspace.id)).enabled, isTrue);
+    await usecase.revokeTrust(workspace.id);
+    final revoked = await settingsRepository.get(workspace.id);
+    expect(revoked.enabled, isFalse);
+    expect(revoked.isTrusted, isFalse);
+    expect(revoked.trustedDigest, isNull);
+    expect(revoked.trustedSourcePath, isNull);
+  });
+
+  test('selecting another configuration clears prior trust and enablement', () async {
+    final workspace = await _createLocalWorkspace(workspaceRepository);
+    final usecase = _usecase(settingsRepository, workspaceRepository, _FakeHookRuntime());
+    await usecase.selectConfig(workspace.id, '/tmp/hooks.json');
+    await usecase.trustReviewedConfig(workspace.id, await usecase.reviewConfig(workspace.id, '/tmp/hooks.json'));
+    await usecase.setEnabled(workspace.id, enabled: true);
+    await usecase.selectConfig(workspace.id, '/tmp/replacement.json');
+    final replacement = await settingsRepository.get(workspace.id);
+    expect(replacement.enabled, isFalse);
+    expect(replacement.isTrusted, isFalse);
+    expect(replacement.configPath, '/tmp/replacement.json');
+    expect(replacement.trustedDigest, isNull);
+  });
+
   test('selecting a config stores it disabled and untrusted', () async {
     final workspace = await _createLocalWorkspace(workspaceRepository);
     final runtime = _FakeHookRuntime();
@@ -194,6 +227,7 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
     required String input,
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
+    Future<bool> Function()? isStillTrusted,
   }) async => const AgentLifecycleHookInvocationResult(
     outcome: AgentToolHookOutcome.unavailable,
   );

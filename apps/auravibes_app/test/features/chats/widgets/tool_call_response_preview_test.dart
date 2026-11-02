@@ -1,6 +1,9 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'dart:convert';
+
 import 'package:auravibes_app/features/chats/widgets/connector_write_approval_preview.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -66,6 +69,18 @@ void main() {
   }
 
   group('ToolCallResponsePreview', () {
+    testWidgets('shows a hook block and its redacted policy reason', (tester) async {
+      final content = jsonEncode({
+        'outcome': 'blocked',
+        'code': 'hook_blocked',
+        'reason': LogRedaction.redact('Policy denied this call. token=private-secret'),
+      });
+      await pumpAndInit(tester, buildSubject(content: content));
+
+      expect(find.textContaining('hook_blocked'), findsOneWidget);
+      expect(find.textContaining('Policy denied this call. token=[REDACTED]'), findsOneWidget);
+      expect(find.textContaining('private-secret'), findsNothing);
+    });
     testWidgets(
       'uncertain writes show localized review state without an undo action',
       (tester) async {

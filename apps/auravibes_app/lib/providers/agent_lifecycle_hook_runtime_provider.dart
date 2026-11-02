@@ -1,6 +1,8 @@
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final agentLifecycleHookRuntimeProvider = Provider<AgentLifecycleHookRuntime>(
-  (_) => createAgentLifecycleHookRuntime(),
-);
+part 'agent_lifecycle_hook_runtime_provider.g.dart';
+
+@Riverpod(keepAlive: true)
+AgentLifecycleHookRuntime agentLifecycleHookRuntime(Ref ref) =>
+    createAgentLifecycleHookRuntime();

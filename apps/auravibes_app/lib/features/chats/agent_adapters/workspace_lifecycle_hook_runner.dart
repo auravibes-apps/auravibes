@@ -40,6 +40,9 @@ class WorkspaceLifecycleHookRunner
     final hook = snapshot.config.hookFor(AgentLifecycleHookEvent.beforeTool);
     if (hook == null)
       return const agent.AgentPreToolHookResult(outcome: .allow);
+    if (!await _isStillTrusted(request.workspaceId, snapshot)) {
+      return _preFailure(agent.AgentToolHookOutcome.unavailable);
+    }
     if (isCancellationRequested(request.conversationId)) {
       return const agent.AgentPreToolHookResult(outcome: .cancelled);
     }
@@ -50,6 +53,7 @@ class WorkspaceLifecycleHookRunner
       input: _hookInput(request, event: 'beforeTool'),
       isCancellationRequested: isCancellationRequested,
       conversationId: request.conversationId,
+      isStillTrusted: () => _isStillTrusted(request.workspaceId, snapshot),
     );
     if (invocation.outcome != agent.AgentToolHookOutcome.success) {
       return _preFailure(invocation.outcome);
@@ -104,6 +108,9 @@ class WorkspaceLifecycleHookRunner
     if (hook == null) {
       return const agent.AgentPostToolHookResult(outcome: .success);
     }
+    if (!await _isStillTrusted(request.workspaceId, snapshot)) {
+      return const agent.AgentPostToolHookResult(outcome: .unavailable);
+    }
     if (isCancellationRequested(request.conversationId)) {
       return const agent.AgentPostToolHookResult(outcome: .cancelled);
     }
@@ -118,6 +125,7 @@ class WorkspaceLifecycleHookRunner
       ),
       isCancellationRequested: isCancellationRequested,
       conversationId: request.conversationId,
+      isStillTrusted: () => _isStillTrusted(request.workspaceId, snapshot),
     );
     if (invocation.outcome != agent.AgentToolHookOutcome.success) {
       return agent.AgentPostToolHookResult(outcome: invocation.outcome);
@@ -134,6 +142,21 @@ class WorkspaceLifecycleHookRunner
       outcome: .success,
       context: _redactAndTrim(response['context']! as String),
     );
+  }
+
+  Future<bool> _isStillTrusted(
+    String workspaceId,
+    AgentLifecycleHookSourceSnapshot snapshot,
+  ) async {
+    final workspace = await _workspaceRepository.getWorkspaceById(workspaceId);
+    if (workspace == null || !workspace.isLocal) return false;
+    final settings = await _settingsRepository.get(workspaceId);
+
+    return settings.enabled &&
+        settings.isTrusted &&
+        settings.configPath == snapshot.canonicalPath &&
+        settings.trustedSourcePath == snapshot.canonicalPath &&
+        settings.trustedDigest == snapshot.digest;
   }
 
   Future<

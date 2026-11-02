@@ -110,6 +110,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
     required String input,
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
+    Future<bool> Function()? isStillTrusted,
   }) async {
     if (!isSupported) {
       return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
@@ -129,7 +130,12 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
       );
     }
 
-    final current = await inspect(snapshot.canonicalPath);
+    AgentLifecycleHookSourceSnapshot current;
+    try {
+      current = await inspect(snapshot.canonicalPath);
+    } on Object {
+      return const AgentLifecycleHookInvocationResult(outcome: .failed);
+    }
     if (current.digest != snapshot.digest) {
       return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
     }
@@ -140,6 +146,13 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
         currentHook.command != hook.command ||
         !_sameArguments(currentHook.args, hook.args)) {
       return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
+    }
+    try {
+      if (isStillTrusted != null && !await isStillTrusted()) {
+        return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
+      }
+    } on Object {
+      return const AgentLifecycleHookInvocationResult(outcome: .failed);
     }
     if (isCancellationRequested(conversationId)) {
       return const AgentLifecycleHookInvocationResult(outcome: .cancelled);
@@ -198,11 +211,17 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
       }
     }();
 
+    void fail(AgentToolHookOutcome failure) {
+      if (outcome != AgentToolHookOutcome.success) return;
+      outcome = failure;
+      unawaited(terminateProcess());
+    }
+
     void consume(List<int> chunk, {required bool capture}) {
+      if (outcome != AgentToolHookOutcome.success) return;
       outputBytes += chunk.length;
       if (outputBytes > maxAgentLifecycleHookOutputBytes) {
-        outcome = AgentToolHookOutcome.outputLimitExceeded;
-        unawaited(terminateProcess());
+        fail(AgentToolHookOutcome.outputLimitExceeded);
 
         return;
       }
@@ -211,22 +230,20 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
 
     final stdoutSubscription = process.stdout.listen(
       (chunk) => consume(chunk, capture: true),
-      onError: (Object _) => outcome = AgentToolHookOutcome.failed,
+      onError: (Object _) => fail(AgentToolHookOutcome.failed),
       onDone: outputDone.complete,
       cancelOnError: false,
     );
     final stderrSubscription = process.stderr.listen(
       (chunk) => consume(chunk, capture: false),
-      onError: (Object _) => outcome = AgentToolHookOutcome.failed,
+      onError: (Object _) => fail(AgentToolHookOutcome.failed),
       onDone: errorDone.complete,
       cancelOnError: false,
     );
     unawaited(_writeInput(process, inputBytes));
 
     final timeoutTimer = Timer(agentLifecycleHookTimeout, () {
-      if (outcome != AgentToolHookOutcome.success) return;
-      outcome = AgentToolHookOutcome.timedOut;
-      unawaited(terminateProcess());
+      fail(AgentToolHookOutcome.timedOut);
     });
     final cancellationTimer = Timer.periodic(const Duration(milliseconds: 25), (
       _,
@@ -235,8 +252,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
           !isCancellationRequested(conversationId)) {
         return;
       }
-      outcome = AgentToolHookOutcome.cancelled;
-      unawaited(terminateProcess());
+      fail(AgentToolHookOutcome.cancelled);
     });
 
     int exitCode;
@@ -253,7 +269,7 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
         },
       );
     } on Object {
-      outcome = AgentToolHookOutcome.failed;
+      fail(AgentToolHookOutcome.failed);
       await terminateProcess();
       exitCode = -1;
     } finally {
@@ -265,11 +281,16 @@ class const IoAgentLifecycleHookRuntime() implements AgentLifecycleHookRuntime {
       await Future.wait([outputDone.future, errorDone.future])
           .timeout(const Duration(milliseconds: 100));
     } on Object {
+      fail(AgentToolHookOutcome.failed);
       final _ = await stdoutSubscription.cancel();
       final _ = await stderrSubscription.cancel();
     }
     if (outcome == AgentToolHookOutcome.success && exitCode != 0) {
       outcome = AgentToolHookOutcome.failed;
+    }
+    if (outcome == AgentToolHookOutcome.success &&
+        isCancellationRequested(conversationId)) {
+      outcome = AgentToolHookOutcome.cancelled;
     }
     if (outcome != AgentToolHookOutcome.success) {
       return AgentLifecycleHookInvocationResult(outcome: outcome);

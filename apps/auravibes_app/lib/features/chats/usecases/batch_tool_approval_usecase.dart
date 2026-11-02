@@ -212,9 +212,9 @@ extension on BatchToolApprovalUsecase {
   ) async {
     final messageByConversation = _sourceMessagesByConversation(claims);
     final _ = await Future.wait(
-      messageByConversation.values.map(
-        (messageId) => agentToolResumeService.call(messageId: messageId),
-      ),
+      messageByConversation.entries
+          .where((source) => !cancellationRuntime.isCancellationRequested(source.key))
+          .map((source) => agentToolResumeService.call(messageId: source.value)),
     );
   }
 

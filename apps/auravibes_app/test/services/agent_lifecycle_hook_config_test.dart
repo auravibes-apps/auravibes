@@ -1,7 +1,48 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('configuration accepts its exact byte limit and rejects one more', () {
+    const minimal = '{"version":1,"hooks":[]}';
+    final bounded = minimal + ' ' * (maxAgentLifecycleHookConfigBytes - minimal.length);
+    expect(parseAgentLifecycleHookConfig(bounded).hooks, isEmpty);
+    expect(() => parseAgentLifecycleHookConfig('$bounded '), _configError('config_too_large'));
+  });
+
+  test('configuration and arguments use UTF-8 byte limits', () {
+    final oversizedConfig = jsonEncode({
+      'version': 1,
+      'hooks': [],
+      'sourceFiles': ['é' * 16384],
+    });
+    expect(oversizedConfig.length, lessThan(maxAgentLifecycleHookConfigBytes));
+    expect(() => parseAgentLifecycleHookConfig(oversizedConfig), _configError('config_too_large'));
+    final valid = _configWithHook(args: ['😀' * 512]);
+    expect(parseAgentLifecycleHookConfig(valid).hooks.single.args.single, '😀' * 512);
+    expect(() => parseAgentLifecycleHookConfig(_configWithHook(args: ['😀' * 513])), _configError('invalid_hook_argument'));
+  });
+
+  final invalidConfigs = <String, String>{
+    '{': 'invalid_json',
+    '{"version":2,"hooks":[]}': 'invalid_config',
+    '{"version":1,"hooks":[],"shell":true}': 'invalid_config',
+    '{"version":1,"hooks":[{},{},{}]}': 'too_many_hooks',
+    '{"version":1,"hooks":[],"sourceFiles":[null]}': 'invalid_source_files',
+    jsonEncode({'version':1, 'hooks':[], 'sourceFiles':List.filled(9, 'file')}): 'invalid_source_files',
+    _configWithHook(event: 'beforeTurn'): 'unsupported_event',
+    _configWithHook(command: 'a\u0000b'): 'invalid_hook',
+    _configWithHook(args: ['a\u0000b']): 'invalid_hook_argument',
+    _configWithHook(args: List.filled(17, 'arg')): 'invalid_hook',
+    _configWithHook(extra: {'result': 'replacement'}): 'invalid_hook',
+  };
+  for (final entry in invalidConfigs.entries) {
+    test('rejects invalid configuration with ${entry.value}: ${entry.key}', () {
+      expect(() => parseAgentLifecycleHookConfig(entry.key), _configError(entry.value));
+    });
+  }
+
   test('parses one hook for each supported lifecycle event', () {
     final config = parseAgentLifecycleHookConfig('''
       {
@@ -63,3 +104,17 @@ void main() {
     );
   });
 }
+
+Matcher _configError(String code) => throwsA(
+  isA<AgentLifecycleHookConfigException>().having((error) => error.code, 'code', code),
+);
+
+String _configWithHook({
+  String event = 'beforeTool',
+  String command = './hook',
+  List<String> args = const [],
+  Map<String, Object?> extra = const {},
+}) => jsonEncode({
+  'version': 1,
+  'hooks': [{'event': event, 'command': command, 'args': args, ...extra}],
+});

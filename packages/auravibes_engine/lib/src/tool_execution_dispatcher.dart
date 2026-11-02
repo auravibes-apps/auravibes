@@ -369,6 +369,7 @@ Future<AgentToolExecutionResult> _runPostToolHook<TTool extends Object>(
     resultStatus: executionResult.resultStatus,
     responseRaw: executionResult.responseRaw,
     responseContextRaw: context,
+    outputDigest: executionResult.outputDigest,
     media: executionResult.media,
     outputTruncated: executionResult.outputTruncated,
     originalResponseBytes: executionResult.originalResponseBytes,
