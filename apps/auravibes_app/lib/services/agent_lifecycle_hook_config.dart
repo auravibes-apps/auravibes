@@ -91,15 +91,15 @@ List<String> _parseSourceFiles(Object? raw) {
       sources.length > maxAgentLifecycleHookSourceFiles) {
     throw const AgentLifecycleHookConfigException('invalid_source_files');
   }
-  if (!sources.every(_isSourcePath)) {
+  if (!sources.every((value) => value is String && _isSourcePath(value))) {
     throw const AgentLifecycleHookConfigException('invalid_source_files');
   }
 
   return sources.cast<String>();
 }
 
-bool _isSourcePath(Object? value) =>
-    value is String && value.trim().isNotEmpty && !value.contains('\u0000');
+bool _isSourcePath(String value) =>
+    value.trim().isNotEmpty && !value.contains('\u0000');
 
 List<AgentLifecycleHookDefinition> _parseHooks(List<Object?> rawHooks) {
   final hooks = <AgentLifecycleHookDefinition>[];
