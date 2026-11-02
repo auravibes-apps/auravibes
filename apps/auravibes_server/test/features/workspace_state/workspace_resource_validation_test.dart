@@ -1,8 +1,59 @@
+import 'dart:convert';
+
 import 'package:auravibes_server/src/features/workspace_state/domain/workspace_resource_validation.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('accepts 100 table columns and rejects column 101', () {
+    String tablePayload(int columnCount) => jsonEncode({
+      'name': 'Bounded table',
+      'parentId': null,
+      'labelColumnId': 'column-0',
+      'schemaRevision': 1,
+      'columns': [
+        for (var index = 0; index < columnCount; index++)
+          {'id': 'column-$index', 'name': 'Column $index', 'type': 'text'},
+      ],
+    });
+
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.table,
+        resourceId: 'bounded-table',
+        workspaceId: 1,
+        data: tablePayload(100),
+      ),
+      returnsNormally,
+    );
+    expect(
+      () => WorkspaceResourceValidation.decode(
+        kind: WorkspaceResourceKind.table,
+        resourceId: 'bounded-table',
+        workspaceId: 1,
+        data: tablePayload(101),
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('enforces the resource payload limit in UTF-8 bytes', () {
+    final multibyteText = List.filled(32767, 'é').join();
+    final atLimit = '"$multibyteText"';
+    final overLimit = '"${multibyteText}a"';
+
+    expect(utf8.encode(atLimit), hasLength(65536));
+    expect(
+      () => WorkspaceResourceValidation.validateDataSize(atLimit),
+      returnsNormally,
+    );
+    expect(utf8.encode(overLimit), hasLength(65537));
+    expect(
+      () => WorkspaceResourceValidation.validateDataSize(overLimit),
+      throwsA(isA<WorkspaceResourceSizeLimitException>()),
+    );
+  });
+
   test(
     'rejects invalid payloads, foreign workspace identity, and dual truth',
     () {

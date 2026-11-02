@@ -19,7 +19,10 @@ abstract final class WorkspaceColumnValidation {
       });
 
   static void columns(List<WorkspaceColumn> columns, String labelColumnId) {
-    _require(columns.isNotEmpty && columns.length <= _maximumColumns);
+    if (columns.length > _maximumColumns) {
+      throw const WorkspaceTableException(limitKind: .columns);
+    }
+    _require(columns.isNotEmpty);
     _require(_uniqueIds(columns));
     _require(_validLabel(columns, labelColumnId));
     columns.forEach(_column);

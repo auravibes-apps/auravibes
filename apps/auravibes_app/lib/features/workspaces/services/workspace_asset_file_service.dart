@@ -10,7 +10,7 @@ class const WorkspaceAssetFileService() {
     final length = await file.length();
     if (length != null &&
         length > ChatAttachmentModality.maxChatAttachmentBytes) {
-      throw const WorkspaceAssetException(.invalid);
+      throw const WorkspaceAssetException(.sizeLimitExceeded);
     }
     final bytes = await file.readAsBytes();
 

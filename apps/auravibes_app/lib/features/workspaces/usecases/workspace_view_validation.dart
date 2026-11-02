@@ -33,6 +33,8 @@ abstract final class WorkspaceViewValidation {
 
   static void _checkOwned(WorkspaceView view, WorkspaceTable table) {
     if (!table.canManage) throw const WorkspaceTableException(denied: true);
+    _checkSummary(view);
+    _checkPage(view.query);
     if (!_validConfiguration(view, table)) _invalid();
     _checkQuery(view, table);
     if (view.connected case final connected?) {
@@ -80,7 +82,6 @@ Never _invalid() => throw const WorkspaceTableException();
 bool _validConfiguration(WorkspaceView view, WorkspaceTable table) =>
     _validName(view.name) &&
     _validBindings(view.bindings) &&
-    _validSummary(view) &&
     !WorkspaceViewValidation.needsRepair(view, table) &&
     _validCount(view);
 bool _validCount(WorkspaceView view) =>
@@ -93,9 +94,11 @@ void _checkQuery(WorkspaceView view, WorkspaceTable table) {
 }
 
 void _checkPage(WorkspaceRecordQuery query) {
+  if (query.limit > _maximumPageSize) {
+    throw const WorkspaceTableException(limitKind: .queryPageSize);
+  }
   if (query.offset != 0 ||
       query.limit < 1 ||
-      query.limit > _maximumPageSize ||
       query.search.length > _maximumSearchLength) {
     _invalid();
   }
@@ -131,9 +134,14 @@ Set<String> _dependencies(WorkspaceView view) => {
   ?view.query.sortColumnId,
 };
 
-bool _validSummary(WorkspaceView view) =>
-    view.summaryColumnIds.length <= _maximumBindings &&
-    view.summaryColumnIds.length == view.summaryColumnIds.toSet().length;
+void _checkSummary(WorkspaceView view) {
+  if (view.summaryColumnIds.length > _maximumBindings) {
+    throw const WorkspaceTableException(limitKind: .summaryColumns);
+  }
+  if (view.summaryColumnIds.length != view.summaryColumnIds.toSet().length) {
+    _invalid();
+  }
+}
 
 bool _queryCompatible(WorkspaceView view, WorkspaceTable table) {
   try {

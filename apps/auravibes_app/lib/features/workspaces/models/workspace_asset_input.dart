@@ -12,8 +12,11 @@ abstract final class WorkspaceAssetInput {
   static const _mediaPrefixes = ['image/', 'audio/', 'video/'];
 
   static String validate(String name, Uint8List bytes) {
-    if (!_name(name) || !_size(bytes)) {
+    if (!_name(name) || bytes.isEmpty) {
       throw const WorkspaceAssetException(.invalid);
+    }
+    if (bytes.length > ChatAttachmentModality.maxChatAttachmentBytes) {
+      throw const WorkspaceAssetException(.sizeLimitExceeded);
     }
     final mime = _mime(name, bytes);
     _text(bytes, mime);
@@ -28,9 +31,6 @@ abstract final class WorkspaceAssetInput {
       !name.contains(r'\') &&
       !name.codeUnits.any(_control);
   static bool _control(int unit) => unit < _firstPrintableCodeUnit;
-  static bool _size(Uint8List bytes) =>
-      bytes.isNotEmpty &&
-      bytes.length <= ChatAttachmentModality.maxChatAttachmentBytes;
 
   static String _mime(String name, Uint8List bytes) {
     final mime = lookupMimeType(

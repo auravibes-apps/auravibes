@@ -2,3 +2,5 @@ exception: CloudWorkspaceException
 fields:
   code: CloudWorkspaceErrorCode
   blockingResourcesJson: String?
+  # Keep the wire code at validationFailed for older clients; they ignore this additive field.
+  resourceLimitKind: String?

@@ -18,19 +18,28 @@ class const ManageWorkspaceAssetsUsecase(
 
   Future<WorkspaceAssetPreview> preview(String id) async {
     final asset = await repository.asset(id);
-    if (asset.sizeBytes <= 0 ||
-        asset.sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
-      throw const WorkspaceAssetException(.invalid);
-    }
+    _validatePreviewableSize(asset);
     final bytes = await repository.bytes(id);
     _validate(asset, bytes);
 
-    return WorkspaceAssetPreview(
-      asset: asset,
-      bytes: bytes,
-      kind: _kind(asset.mimeType),
-    );
+    return _preview(asset, bytes);
   }
+
+  void _validatePreviewableSize(WorkspaceAsset asset) {
+    if (asset.sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
+      throw const WorkspaceAssetException(.sizeLimitExceeded);
+    }
+    if (asset.sizeBytes <= 0) {
+      throw const WorkspaceAssetException(.invalid);
+    }
+  }
+
+  WorkspaceAssetPreview _preview(WorkspaceAsset asset, Uint8List bytes) =>
+      WorkspaceAssetPreview(
+        asset: asset,
+        bytes: bytes,
+        kind: _kind(asset.mimeType),
+      );
 
   void _validate(WorkspaceAsset asset, Uint8List bytes) {
     if (bytes.length != asset.sizeBytes ||

@@ -4,6 +4,10 @@ import '../../../generated/protocol.dart';
 import 'workspace_history_retention_validation.dart';
 import 'workspace_table_validation.dart';
 
+final class WorkspaceResourceSizeLimitException implements Exception {
+  const WorkspaceResourceSizeLimitException();
+}
+
 class const WorkspaceResourceReference(
   final WorkspaceResourceKind kind,
   final String id,
@@ -171,7 +175,7 @@ class WorkspaceResourceValidation {
 
   static void validateDataSize(String data) {
     if (utf8.encode(data).length > _maxDataBytes) {
-      throw const FormatException();
+      throw const WorkspaceResourceSizeLimitException();
     }
   }
 
