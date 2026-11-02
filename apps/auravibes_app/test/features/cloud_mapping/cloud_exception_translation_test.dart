@@ -16,7 +16,7 @@ void main() {
 
   test('keeps the resource size failure generic until copy is approved', () {
     final error = _translate(
-      const CloudWorkspaceException(code: .resourceSizeLimitExceeded),
+      CloudWorkspaceException(code: .resourceSizeLimitExceeded),
       .workspace,
     );
 

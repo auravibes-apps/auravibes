@@ -89,7 +89,7 @@ void main() {
       for (var i = 0; i < WorkspaceRecordChange.maxOperations + 1; i++)
         WorkspaceRecordChange(
           table: table,
-          record: WorkspaceRecord(
+          record: .new(
             id: 'record-$i',
             tableId: table.id,
             values: const {},
