@@ -32,8 +32,12 @@ void main() {
   tearDown(() => database.close());
 
   Future<ScopedVerificationReservation> reserve(
-    String toolCallId, {int revision = 1, int maxRepairAttempts = 1, String workspaceId = 'workspace', String turnId = 'turn'},
-  ) => repository.reserve(
+    String toolCallId, {
+    int revision = 1,
+    int maxRepairAttempts = 1,
+    String workspaceId = 'workspace',
+    String turnId = 'turn',
+  }) => repository.reserve(
     workspaceId: workspaceId, turnId: turnId, toolCallId: toolCallId,
     configRevision: revision, maxRepairAttempts: maxRepairAttempts,
   );

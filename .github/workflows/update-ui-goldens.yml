@@ -76,7 +76,9 @@ jobs:
           ln -s "$FLUTTER_ROOT" "$RUNNER_TEMP/scoped-verification-baseline/.fvm/flutter_sdk"
           cmp .fvmrc "$RUNNER_TEMP/scoped-verification-baseline/.fvmrc"
           cd "$RUNNER_TEMP/scoped-verification-baseline"
-          dart run melos bootstrap
+          # Use the already activated CLI, as setup-workspace does. `dart run`
+          # resolves the unbootstrapped clone before Melos can prepare it.
+          melos bootstrap
           git diff --exit-code
 
       - name: Capture real main workspace settings baseline
