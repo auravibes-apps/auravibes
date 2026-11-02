@@ -105,11 +105,19 @@ class const WorkspaceRecord({
   final List<String> restrictedReferenceColumns = const [],
 });
 
+enum WorkspaceTableLimit {
+  columns,
+  queryPageSize,
+  summaryColumns,
+  recordBatch,
+}
+
 class const WorkspaceTableException({
   final bool conflict = false,
   final bool incompatibleRelationship = false,
   final bool denied = false,
   final bool unsupportedCopy = false,
+  final WorkspaceTableLimit? limitKind,
 }) implements Exception {
   String get localizationKey {
     if (denied) return LocaleKeys.cloud_errors_permission_denied;

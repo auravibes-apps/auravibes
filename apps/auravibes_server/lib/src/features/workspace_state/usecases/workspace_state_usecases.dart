@@ -160,6 +160,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         final data = operation.data;
         if (data != null) WorkspaceResourceValidation.validateDataSize(data);
       }
+    } on WorkspaceResourceSizeLimitException {
+      _resourceSizeLimitExceeded();
     } on FormatException {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.validationFailed,
@@ -709,6 +711,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       if (operation.data != null) {
         WorkspaceResourceValidation.validateDataSize(operation.data!);
       }
+    } on WorkspaceResourceSizeLimitException {
+      _resourceSizeLimitExceeded();
     } on FormatException {
       _validationFailed();
     }
@@ -1344,6 +1348,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         workspaceId: resource.workspaceId,
         data: resource.data,
       );
+    } on WorkspaceResourceSizeLimitException {
+      _validationFailed();
     } on FormatException {
       _validationFailed();
     }
@@ -1526,6 +1532,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
             transaction,
           );
         }
+      } on WorkspaceResourceSizeLimitException {
+        _resourceSizeLimitExceeded();
       } on FormatException {
         throw CloudWorkspaceException(
           code: CloudWorkspaceErrorCode.validationFailed,
@@ -1816,6 +1824,10 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
 
   Never _validationFailed() => throw CloudWorkspaceException(
     code: CloudWorkspaceErrorCode.validationFailed,
+  );
+
+  Never _resourceSizeLimitExceeded() => throw CloudWorkspaceException(
+    code: CloudWorkspaceErrorCode.resourceSizeLimitExceeded,
   );
 
   Never _staleRevision() => throw CloudWorkspaceException(

@@ -5,6 +5,9 @@ class const QueryWorkspaceRecordsUsecase(
   final WorkspaceRecordQueryRepository repository,
 ) {
   Future<WorkspaceRecordPage> call(String tableId, WorkspaceRecordQuery query) {
+    if (query.limit > _maxPageSize) {
+      throw const WorkspaceTableException(limitKind: .queryPageSize);
+    }
     if (!_validPage(query) ||
         query.search.length > _maxTextLength ||
         (query.filterValue?.length ?? 0) > _maxFilterLength) {

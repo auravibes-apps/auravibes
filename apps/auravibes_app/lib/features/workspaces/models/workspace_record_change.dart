@@ -19,9 +19,10 @@ class WorkspaceRecordChange {
   };
 
   static void validate(List<WorkspaceRecordChange> changes) {
-    if (changes.isEmpty ||
-        changes.length > maxOperations ||
-        !_distinct(changes)) {
+    if (changes.length > maxOperations) {
+      throw const WorkspaceTableException(limitKind: .recordBatch);
+    }
+    if (changes.isEmpty || !_distinct(changes)) {
       throw const WorkspaceTableException();
     }
     for (final change in changes) {

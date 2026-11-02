@@ -14,6 +14,16 @@ void main() {
     }
   });
 
+  test('keeps the resource size failure generic until copy is approved', () {
+    final error = _translate(
+      const CloudWorkspaceException(code: .resourceSizeLimitExceeded),
+      .workspace,
+    );
+
+    expect(error.code, 'resourceSizeLimitExceeded');
+    expect(error.localizationKey, LocaleKeys.cloud_errors_validation);
+  });
+
   test('translates every conversation error code', () {
     for (final code in ConversationErrorCode.values) {
       final error = _translate(

@@ -18,8 +18,10 @@ class const ManageWorkspaceAssetsUsecase(
 
   Future<WorkspaceAssetPreview> preview(String id) async {
     final asset = await repository.asset(id);
-    if (asset.sizeBytes <= 0 ||
-        asset.sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
+    if (asset.sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
+      throw const WorkspaceAssetException(.sizeLimitExceeded);
+    }
+    if (asset.sizeBytes <= 0) {
       throw const WorkspaceAssetException(.invalid);
     }
     final bytes = await repository.bytes(id);

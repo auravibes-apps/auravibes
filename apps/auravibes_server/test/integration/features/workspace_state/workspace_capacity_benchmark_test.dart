@@ -177,5 +177,181 @@ void main() {
           ? 'Opt in to the synthetic capacity benchmark'
           : false,
     );
+
+    test(
+      'accepts and rejects exact cloud workspace capacity boundaries',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final authenticated = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final session = authenticated.build();
+        await AuthUser.db.insertRow(
+          session,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          session,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              session,
+              name: 'Capacity boundaries',
+              ownerUserId: userId,
+              now: DateTime.now().toUtc(),
+            );
+
+        Future<PatchWorkspaceStateResponse> patch(
+          List<WorkspacePatchOperation> operations,
+        ) => endpoints.workspaceState.patch(
+          authenticated,
+          PatchWorkspaceStateRequest(
+            workspaceId: workspace.id!,
+            requestId: const Uuid().v4().toString(),
+            operations: operations,
+          ),
+        );
+        Map<String, Object?> tableData(int columnCount) => {
+          'name': 'Boundary table',
+          'labelColumnId': 'column-0',
+          'schemaRevision': 1,
+          'columns': [
+            for (var index = 0; index < columnCount; index++)
+              {
+                'id': 'column-$index',
+                'name': 'Column $index',
+                'type': 'text',
+              },
+          ],
+        };
+        final validationError = isA<CloudWorkspaceException>().having(
+          (error) => error.code,
+          'code',
+          CloudWorkspaceErrorCode.validationFailed,
+        );
+        await patch([
+          WorkspacePatchOperation(
+            operation: .create,
+            resourceKind: .table,
+            resourceId: 'boundary-table',
+            fieldMask: const [],
+            data: jsonEncode(tableData(100)),
+          ),
+        ]);
+        await expectLater(
+          patch([
+            WorkspacePatchOperation(
+              operation: .update,
+              resourceKind: .table,
+              resourceId: 'boundary-table',
+              expectedRevision: 1,
+              fieldMask: const [],
+              data: jsonEncode(tableData(101)),
+            ),
+          ]),
+          throwsA(validationError),
+        );
+        for (var batch = 0; batch < 2; batch++) {
+          await patch([
+            for (var index = 0; index < 50; index++)
+              WorkspacePatchOperation(
+                operation: .create,
+                resourceKind: .tableRecord,
+                resourceId: 'record-${batch * 50 + index}',
+                fieldMask: const [],
+                data: jsonEncode({
+                  'tableId': 'boundary-table',
+                  'schemaRevision': 1,
+                  'values': {'column-0': 'Record ${batch * 50 + index}'},
+                }),
+              ),
+          ]);
+        }
+        expect(
+          await endpoints.workspaceState.queryRecords(
+            authenticated,
+            workspace.id!,
+            'boundary-table',
+            jsonEncode({'limit': 100}),
+          ),
+          hasLength(100),
+        );
+        await expectLater(
+          endpoints.workspaceState.queryRecords(
+            authenticated,
+            workspace.id!,
+            'boundary-table',
+            jsonEncode({'limit': 101}),
+          ),
+          throwsA(validationError),
+        );
+        await expectLater(
+          patch([
+            for (var index = 0; index < 51; index++)
+              WorkspacePatchOperation(
+                operation: .create,
+                resourceKind: .tableRecord,
+                resourceId: 'over-limit-$index',
+                fieldMask: const [],
+                data: jsonEncode({
+                  'tableId': 'boundary-table',
+                  'schemaRevision': 1,
+                  'values': <String, Object?>{},
+                }),
+              ),
+          ]),
+          throwsA(validationError),
+        );
+
+        final oversizedResourceData = jsonEncode({
+          'tableId': 'boundary-table',
+          'schemaRevision': 1,
+          'values': {'column-0': List.filled(32768, 'é').join()},
+        });
+        expect(utf8.encode(oversizedResourceData).length, greaterThan(65536));
+        await expectLater(
+          patch([
+            WorkspacePatchOperation(
+              operation: .create,
+              resourceKind: .tableRecord,
+              resourceId: 'oversized-record',
+              fieldMask: const [],
+              data: oversizedResourceData,
+            ),
+          ]),
+          throwsA(
+            isA<CloudWorkspaceException>().having(
+              (error) => error.code,
+              'code',
+              CloudWorkspaceErrorCode.resourceSizeLimitExceeded,
+            ),
+          ),
+        );
+
+        Future<String> summarize(int columnCount) =>
+            endpoints.workspaceState.summarizeRecords(
+              authenticated,
+              .new(
+                workspaceId: workspace.id!,
+                tableId: 'boundary-table',
+                queryJson: jsonEncode({'limit': 100}),
+                columnIds: [
+                  for (var index = 0; index < columnCount; index++)
+                    'column-$index',
+                ],
+              ),
+            );
+        expect(jsonDecode(await summarize(50)), containsPair('count', 100));
+        await expectLater(summarize(51), throwsA(validationError));
+      },
+    );
   });
 }

@@ -12,7 +12,13 @@ void main() {
       final repository = _OversizedAsset();
       await expectLater(
         ManageWorkspaceAssetsUsecase(repository).preview('asset'),
-        throwsA(isA<WorkspaceAssetException>()),
+        throwsA(
+          isA<WorkspaceAssetException>().having(
+            (error) => error.failure,
+            'failure',
+            WorkspaceAssetFailure.sizeLimitExceeded,
+          ),
+        ),
       );
       expect(repository.downloads, 0);
     },

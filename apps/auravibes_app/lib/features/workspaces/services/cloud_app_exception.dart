@@ -105,6 +105,7 @@ const _workspaceLocalizationKeys = <CloudWorkspaceErrorCode, String>{
   .invalidRole: LocaleKeys.cloud_errors_validation,
   .confirmationNameMismatch: LocaleKeys.cloud_errors_validation,
   .invalidCursor: LocaleKeys.cloud_errors_validation,
+  .resourceSizeLimitExceeded: LocaleKeys.cloud_errors_validation,
   .ownerCannotLeave: LocaleKeys.cloud_errors_conflict,
   .ownerCannotBeRemoved: LocaleKeys.cloud_errors_conflict,
   .ownershipTransferRequired: LocaleKeys.cloud_errors_conflict,
