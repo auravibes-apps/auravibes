@@ -18,8 +18,6 @@ jobs:
     timeout-minutes: 30
     env:
       BASELINE_SHA: 1aaa31f61128fe810ca35ef7a00205edb9233175
-      XDG_DATA_HOME: ${{ runner.temp }}/issue1598-baseline-data
-      XDG_CONFIG_HOME: ${{ runner.temp }}/issue1598-baseline-config
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -36,6 +34,9 @@ jobs:
         run: python3 tool/validation_lease.py --label hooks-baseline-generate -- dart run melos run generate
       - name: Render actual production workspace settings route
         working-directory: apps/auravibes_app
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/issue1598-baseline-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/issue1598-baseline-config
         run: |
           cp "$RUNNER_TEMP/issue1598_capture_test.dart" test/widgets/issue1598_capture_test.dart
           python3 ../../tool/validation_lease.py --label hooks-baseline-capture -- flutter test test/widgets/issue1598_capture_test.dart --no-pub --dart-define=HOOK_CAPTURE_DIR="$RUNNER_TEMP/issue1598-before" --dart-define=HOOK_CAPTURE_SHA="$BASELINE_SHA" --dart-define=HOOK_CAPTURE_LABEL=before
