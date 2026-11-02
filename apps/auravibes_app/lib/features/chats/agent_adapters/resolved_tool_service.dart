@@ -154,7 +154,18 @@ class ResolvedToolService {
   bool supportsCancellation(ResolvedTool tool) =>
       _delegate?.supportsCancellation(tool) ?? false;
 
-  Future<Object?> call(_ResolvedToolCallRequest request) async {
+  Future<Object?> call({
+    required String conversationId,
+    String toolCallId = '',
+    required ResolvedTool tool,
+    required Map<String, dynamic> arguments,
+  }) async {
+    final request = (
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      arguments: arguments,
+    );
     final delegate = _delegate;
     if (delegate == null) {
       throw StateError('Cloud tools execute on the server.');

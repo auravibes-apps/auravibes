@@ -611,12 +611,12 @@ agent.AgentResolvedToolRunner<ResolvedTool> _resolvedToolBatchRunner(
       required toolCallId,
       required tool,
       required arguments,
-    }) => runResolvedTool.call((
+    }) => runResolvedTool.call(
       conversationId: conversationId,
       toolCallId: toolCallId,
       tool: tool,
       arguments: arguments,
-    ));
+    );
 
 void _logToolExecutionError(
   agent.AgentToolExecutionErrorRequest<ResolvedTool> request,
