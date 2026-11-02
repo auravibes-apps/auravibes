@@ -387,6 +387,68 @@ void main() {
     });
   });
 
+  group('forkedConversationsStreamProvider', () {
+    final fixture = _ConversationProviderFixture();
+
+    setUp(fixture.reset);
+
+    tearDown(fixture.dispose);
+
+    test(
+      'returns only direct visible forks of the requested conversation',
+      () async {
+        final source = ConversationEntity(
+          id: 'source',
+          title: 'Source',
+          workspaceId: 'ws1',
+          isPinned: false,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+        );
+        final firstBranch = source.copyWith(
+          id: 'branch-1',
+          title: 'Branch 1',
+          forkSourceConversationId: source.id,
+        );
+        final siblingBranch = source.copyWith(
+          id: 'branch-2',
+          title: 'Branch 2',
+          forkSourceConversationId: source.id,
+        );
+        final nestedBranch = source.copyWith(
+          id: 'nested-branch',
+          title: 'Nested branch',
+          forkSourceConversationId: firstBranch.id,
+        );
+        final subAgent = source.copyWith(
+          id: 'sub-agent',
+          title: 'Sub-agent',
+          parentConversationId: source.id,
+        );
+        fixture.repository.conversationsByWorkspace = [
+          firstBranch,
+          siblingBranch,
+          nestedBranch,
+          subAgent,
+        ];
+
+        final provider = forkedConversationsStreamProvider((
+          workspaceId: 'ws1',
+          sourceConversationId: source.id,
+        ));
+        var providerChanged = false;
+        final subscription = fixture.container.listen(provider, (_, _) {
+          providerChanged = true;
+        });
+        final branches = await fixture.container.read(provider.future);
+        expect(providerChanged, isTrue);
+        subscription.close();
+
+        expect(branches, equals([firstBranch, siblingBranch]));
+      },
+    );
+  });
+
   test(
     'reports whether a workspace can accept another pinned conversation',
     () {

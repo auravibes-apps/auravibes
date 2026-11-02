@@ -587,9 +587,7 @@ class _ReplayLoopTools(
       results[call.id] = resultEvent.value;
     }
 
-    return const AgentLoopToolResult(
-      decision: AgentIterationDecision.continueIteration,
-    );
+    return const AgentLoopToolResult(decision: .continueIteration);
   }
 }
 

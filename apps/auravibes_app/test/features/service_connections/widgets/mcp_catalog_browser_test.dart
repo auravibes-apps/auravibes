@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,6 +21,18 @@ void main() {
   testWidgets('searches catalog and obscures selected secret fields', (
     tester,
   ) async {
+    final launchedUrls = <String>[];
+    const urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(urlLauncherChannel, (call) async {
+            launchedUrls.add((call.arguments as Map)['url'] as String);
+
+            return true;
+          });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(urlLauncherChannel, null),
+    );
     final listing = McpCatalogListing(
       id: 'catalog-1',
       name: 'Search',
@@ -36,6 +49,7 @@ void main() {
               key: 'X-API-Key',
               isSecret: true,
               isRequired: true,
+              helpUrl: 'https://example.com/help',
             ),
             McpCatalogCredentialField(
               key: 'X-Region',
@@ -105,6 +119,15 @@ void main() {
     );
     expect(secret.obscureText, isTrue);
     expect(region.obscureText, isFalse);
+
+    await tester.tap(find.text('Field help'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Open external link?'), findsOneWidget);
+    expect(launchedUrls, isEmpty);
+
+    await tester.tap(find.text('Open link'));
+    final _ = await tester.pumpAndSettle();
+    expect(launchedUrls, ['https://example.com/help']);
   });
 
   testWidgets('allows cloud SSE OAuth catalog choice', (tester) async {
