@@ -11,10 +11,8 @@ void _registerIntroJourneyCaptures() {
           locale,
           mobile: mobile,
         );
-        for (var page = 1; page <= 3; page++) {
-          await journey.capture('Welcome$page');
-          await journey.tapKey('intro_welcome_next_button');
-        }
+        await journey.capture('FirstChatGuide');
+        await journey.tapKey('intro_advanced_setup_button');
         await journey.capture('Chooser');
         await journey.tapKey('intro_route_local_button');
         await journey.capture('LocalName');
