@@ -216,6 +216,23 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Show affected Dart formatter output (temporary)
+        run: |
+          for path in \
+            apps/auravibes_app/lib/data/repositories/workspace_verification_repository.dart \
+            apps/auravibes_app/lib/data/repositories/workspace_verification_reservations.dart \
+            apps/auravibes_app/lib/features/chats/agent_adapters/create_mcp_scoped_verification_runner.dart \
+            apps/auravibes_app/lib/features/chats/agent_adapters/scoped_verification_cancellation.dart \
+            apps/auravibes_app/lib/features/chats/agent_adapters/scoped_verification_identity_resolver.dart \
+            apps/auravibes_app/lib/features/chats/usecases/scoped_verification_feedback.dart \
+            apps/auravibes_app/lib/features/chats/usecases/verify_reported_edits_usecase.dart \
+            apps/auravibes_app/lib/notifiers/mcp_connection_status.dart \
+            apps/auravibes_app/lib/services/mcp_service/mcp_verification_session.dart; do
+            echo "FORMAT_BEGIN:$path"
+            dart format --line-length 80 --output=show "$path"
+            echo "FORMAT_END:$path"
+          done
+
       - name: Check formatting
         id: check-format
         run: melos run format:check
