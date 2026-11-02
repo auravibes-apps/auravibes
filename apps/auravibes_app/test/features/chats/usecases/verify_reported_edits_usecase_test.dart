@@ -455,19 +455,17 @@ final class _Fixture {
           permissionResult: permitted ? .granted : .disabledInWorkspace,
         ),
       );
-  VerifyReportedEditsUsecase get usecase =>
-      _usecase ??= .new(
-        repository: repository,
-        resolveIdentity: (_) async =>
-            (workspaceId: 'workspace', turnId: 'turn'),
-        createRunner: (input) async {
-          final runner = await runnerFactory(input);
-          if (runner != null) runners.add(runner);
+  VerifyReportedEditsUsecase get usecase => _usecase ??= .new(
+    repository: repository,
+    resolveIdentity: (_) async => (workspaceId: 'workspace', turnId: 'turn'),
+    createRunner: (input) async {
+      final runner = await runnerFactory(input);
+      if (runner != null) runners.add(runner);
 
-          return runner;
-        },
-        cancellation: cancellation,
-      );
+      return runner;
+    },
+    cancellation: cancellation,
+  );
 
   Future<Object> call(
     String id, {

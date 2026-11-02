@@ -73,122 +73,114 @@ void main() {
     },
   );
 
-  test(
-    'dedicated manager rejects server elicitation while '
-    'ordinary handler stays active',
-    () async {
-      final ordinarySeen = Completer<void>();
-      final releaseOrdinary = Completer<void>();
-      final server = await _LocalMcpHttpServer.start(
-        elicitVerification: true,
-        toolHandler: (message) async {
-          if (_objectMap(message['params'])['name'] == 'ordinary') {
-            ordinarySeen.complete();
-            await releaseOrdinary.future;
-          }
+  test('dedicated elicitation cannot affect an ordinary handler', () async {
+    final ordinarySeen = Completer<void>();
+    final releaseOrdinary = Completer<void>();
+    final server = await _LocalMcpHttpServer.start(
+      elicitVerification: true,
+      toolHandler: (message) async {
+        if (_objectMap(message['params'])['name'] == 'ordinary') {
+          ordinarySeen.complete();
+          await releaseOrdinary.future;
+        }
 
-          return {
-            'content': [
-              {'type': 'text', 'text': 'ordinary completed'},
-            ],
-          };
+        return {
+          'content': [
+            {'type': 'text', 'text': 'ordinary completed'},
+          ],
+        };
+      },
+    );
+    final manager = McpManagerService();
+    final ordinary = await manager.connectMcpWithAutoTransport(
+      _connectionRequest(server.endpoint),
+    );
+    var prompts = 0;
+    final ordinaryCall = manager.callToolString(
+      ordinary,
+      toolIdentifier: 'ordinary',
+      arguments: const {},
+      elicitation: (
+        serverName: 'Ordinary',
+        onElicitation: (_) async {
+          prompts++;
+
+          return const McpElicitationResponse(action: .cancel);
+        },
+      ),
+    );
+    await ordinarySeen.future.timeout(const Duration(seconds: 2));
+    final scope = AgentCancellationScope();
+    final session = await manager.openVerificationSession(
+      _verificationConnection(server.endpoint, scope),
+    );
+    addTearDown(() async {
+      if (!releaseOrdinary.isCompleted) releaseOrdinary.complete();
+      session.close();
+      final _ = await ordinaryCall;
+      await manager.disconnect(ordinary);
+      await server.close();
+    });
+    final start = session.call(
+      mcpServerId: 'server',
+      toolIdentifier: 'verify',
+      arguments: _verificationArguments('start'),
+    );
+    await expectLater(
+      start.timeout(const Duration(seconds: 2)),
+      throwsFormatException,
+    );
+    final response = await server.elicitationReply.future.timeout(
+      const Duration(seconds: 2),
+    );
+    expect(
+      response.containsKey('error') ||
+          _objectMap(response['result'])['action'] == 'cancel',
+      isTrue,
+    );
+    expect(prompts, 0);
+    releaseOrdinary.complete();
+    expect(await ordinaryCall, 'ordinary completed');
+  });
+  for (final failed in [false, true]) {
+    test('preserves raw metadata with isError=$failed', () async {
+      final structured = {
+        'auravibesChangedPaths': {
+          'version': 1,
+          'workspaceRoot': 'root',
+          'paths': ['lib/main.dart'],
+        },
+      };
+      final server = await _LocalMcpHttpServer.start(
+        toolResult: {
+          'content': [
+            {'type': 'text', 'text': 'edit result'},
+          ],
+          'structuredContent': structured,
+          'isError': failed,
         },
       );
       final manager = McpManagerService();
-      final ordinary = await manager.connectMcpWithAutoTransport(
-        _connectionRequest(server.endpoint),
-      );
-      var prompts = 0;
-      final ordinaryCall = manager.callToolString(
-        ordinary,
-        toolIdentifier: 'ordinary',
-        arguments: const {},
-        elicitation: (
-          serverName: 'Ordinary',
-          onElicitation: (_) async {
-            prompts++;
-
-            return const McpElicitationResponse(action: .cancel);
-          },
-        ),
-      );
-      await ordinarySeen.future.timeout(const Duration(seconds: 2));
-      final scope = AgentCancellationScope();
-      final session = await manager.openVerificationSession(
-        _verificationConnection(server.endpoint, scope),
-      );
+      McpManagerClient? client;
       addTearDown(() async {
-        if (!releaseOrdinary.isCompleted) releaseOrdinary.complete();
-        session.close();
-        final _ = await ordinaryCall;
-        await manager.disconnect(ordinary);
+        await manager.disconnect(client);
         await server.close();
       });
-      final start = session.call(
-        mcpServerId: 'server',
-        toolIdentifier: 'verify',
-        arguments: _verificationArguments('start'),
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
       );
-      await expectLater(
-        start.timeout(const Duration(seconds: 2)),
-        throwsFormatException,
-      );
-      final response = await server.elicitationReply.future.timeout(
-        const Duration(seconds: 2),
-      );
-      expect(
-        response.containsKey('error') ||
-            _objectMap(response['result'])['action'] == 'cancel',
-        isTrue,
-      );
-      expect(prompts, 0);
-      releaseOrdinary.complete();
-      expect(await ordinaryCall, 'ordinary completed');
-    },
-  );
-  for (final failed in [false, true]) {
-    test(
-      'preserves structured edit metadata and error flag $failed '
-      'without app data',
-      () async {
-        final structured = {
-          'auravibesChangedPaths': {
-            'version': 1,
-            'workspaceRoot': 'root',
-            'paths': ['lib/main.dart'],
-          },
-        };
-        final server = await _LocalMcpHttpServer.start(
-          toolResult: {
-            'content': [
-              {'type': 'text', 'text': 'edit result'},
-            ],
-            'structuredContent': structured,
-            'isError': failed,
-          },
-        );
-        final manager = McpManagerService();
-        McpManagerClient? client;
-        addTearDown(() async {
-          await manager.disconnect(client);
-          await server.close();
-        });
-        client = await manager.connectMcpWithAutoTransport(
-          _connectionRequest(server.endpoint),
-        );
-        final output = await manager.callToolOutput((
-          client: client,
-          toolIdentifier: 'edit_file',
-          arguments: const {},
-          includeAppData: false,
-          elicitation: (serverName: 'Code', onElicitation: null),
-        ));
-        expect(output.structuredContent, structured);
-        expect(output.isError, failed);
-        expect(output.appData, isEmpty);
-        expect(output.modelText, contains('edit result'));
-      },
-    );
+      final output = await manager.callToolOutput((
+        client: client,
+        toolIdentifier: 'edit_file',
+        arguments: const {},
+        includeAppData: false,
+        elicitation: (serverName: 'Code', onElicitation: null),
+      ));
+      expect(output.structuredContent, structured);
+      expect(output.isError, failed);
+      expect(output.appData, isEmpty);
+      expect(output.modelText, contains('edit result'));
+    });
   }
   group('McpManagerService.connectMcpWithAutoTransport', () {
     test('uses Streamable HTTP when initialize succeeds', () async {
