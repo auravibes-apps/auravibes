@@ -60,12 +60,20 @@ void main() {
       expect(find.byKey(_shoppingStarterKey), findsOneWidget);
       expect(find.byKey(_messageStarterKey), findsOneWidget);
       expect(find.byKey(_advancedSetupKey), findsOneWidget);
+      expect(
+        tester.widget<AuraButton>(find.byKey(_quickStartKey)).disabled,
+        isTrue,
+      );
 
       await _tapVisible(tester, find.byKey(_shoppingStarterKey));
       final selected = find.byKey(_shoppingStarterKey);
       expect(
         tester.getSemantics(selected).flagsCollection.isSelected,
         ui.Tristate.isTrue,
+      );
+      expect(
+        tester.widget<AuraButton>(find.byKey(_quickStartKey)).disabled,
+        isFalse,
       );
       await _tapVisible(tester, find.byKey(_quickStartKey));
       await _pumpUntilFound(tester, find.textContaining('new chat:'));
@@ -88,6 +96,38 @@ void main() {
             .first,
         isEmpty,
       );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('keyboard can select a task and reach advanced setup', (
+    tester,
+  ) async {
+    final fixture = _IntroFixture();
+    addTearDown(fixture.dispose);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+
+      await tester.sendKeyEvent(.tab);
+      await tester.pump();
+      await tester.sendKeyEvent(.enter);
+      await tester.pump();
+      final selectedSemantics = tester.getSemantics(
+        find.byKey(_dayStarterKey),
+      );
+      expect(selectedSemantics.flagsCollection.isSelected, ui.Tristate.isTrue);
+
+      for (var index = 0; index < 4; index++) {
+        await tester.sendKeyEvent(.tab);
+        await tester.pump();
+      }
+      await tester.sendKeyEvent(.enter);
+      await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+      expect(find.byKey(_cloudRouteKey), findsOneWidget);
+      expect(tester.takeException(), isNull);
     } finally {
       semantics.dispose();
     }
