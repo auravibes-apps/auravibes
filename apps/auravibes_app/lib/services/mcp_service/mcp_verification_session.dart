@@ -9,13 +9,11 @@ import 'package:mcp_client/mcp_client.dart' as mcp;
 
 /// An owned verification-only client. No ordinary call's handler is touched.
 class McpVerificationSession {
-  factory McpVerificationSession({
+  new({
     required mcp.Client client,
-    required String serverId,
-    required String toolIdentifier,
-  }) => McpVerificationSession._(client, serverId, toolIdentifier);
-
-  McpVerificationSession._(this._client, this.serverId, this.toolIdentifier) {
+    required this.serverId,
+    required this.toolIdentifier,
+  }) : _client = client {
     _client.onElicitationRequestTyped(_rejectElicitation);
   }
 
