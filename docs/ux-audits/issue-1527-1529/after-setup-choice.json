@@ -2,7 +2,7 @@
   "name": "Intro-Chooser-en-mobile",
   "route": "/intro",
   "fixture": "Empty in-memory database; no workspace or account; first-run intro guide and advanced setup before workspace creation",
-  "sourceFingerprint": "f3cb16c4bc6cd3b5c817ec58c8bc23d223310925",
+  "sourceFingerprint": "b856f7468dace8763550caa76d5c643fb04c5267",
   "renderer": "Flutter widget-test Skia, linux",
   "viewport": [
     360.0,

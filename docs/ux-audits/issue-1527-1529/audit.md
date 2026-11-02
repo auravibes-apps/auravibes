@@ -6,10 +6,10 @@ acceptance scopes explicit while reusing one English/Spanish prompt catalog.
 
 ## Capture provenance
 
-The six real-font captures were produced by [hosted workflow run 41511423153](https://github.com/auravibes-apps/auravibes/actions/runs/41511423153)
-on feature SHA `f3cb16c4bc6cd3b5c817ec58c8bc23d223310925`, compared with pinned
-main SHA `1aaa31f61128fe810ca35ef7a00205edb9233175`. The artifact is
-`first-chat-ui-evidence-41511423153-1`. Each image has a sidecar with its route,
+The six real-font captures were produced by [hosted workflow run 41521490399](https://github.com/auravibes-apps/auravibes/actions/runs/41521490399)
+on feature SHA `b856f7468dace8763550caa76d5c643fb04c5267`, compared with pinned
+main SHA `0f46f924e00680d857f8dcddc5d3c9a5df75c481`. The artifact is
+`first-chat-ui-evidence-41521490399-1`. Each image has a sidecar with its route,
 fixture, source fingerprint, renderer, viewport, locale, scale, theme, and font
 metadata; `capture-manifest.json` maps all six images to those sidecars.
 

@@ -2,7 +2,7 @@
   "name": "IntroRoute-duo_closed-light",
   "route": "/intro",
   "fixture": "Empty in-memory database; no workspace or account; first-run intro guide and advanced setup before workspace creation",
-  "sourceFingerprint": "1aaa31f61128fe810ca35ef7a00205edb9233175",
+  "sourceFingerprint": "0f46f924e00680d857f8dcddc5d3c9a5df75c481",
   "renderer": "Flutter widget-test Skia, linux",
   "viewport": [
     466.0,

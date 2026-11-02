@@ -1,8 +1,8 @@
 {
   "name": "ConversationRoute-duo_closed-light",
-  "route": "/workspaces/01a19dc5-7120-7011-898a-8f632ee18852/chats/01a19dc5-719d-72c7-bac1-d0e61c4550ce",
+  "route": "/workspaces/01a19e01-ca80-724e-80ab-5621ef304d32/chats/01a19e01-cae6-7d47-ac9f-7656df9255ed",
   "fixture": "Persisted local workspace with one empty conversation, no messages, and an empty composer; no models or cloud accounts",
-  "sourceFingerprint": "f3cb16c4bc6cd3b5c817ec58c8bc23d223310925",
+  "sourceFingerprint": "b856f7468dace8763550caa76d5c643fb04c5267",
   "renderer": "Flutter widget-test Skia, linux",
   "viewport": [
     466.0,
