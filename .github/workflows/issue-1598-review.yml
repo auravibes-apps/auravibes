@@ -78,6 +78,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Require committed generated and formatted output
+        run: git diff --exit-code
       - name: Engine hook suites
         if: success() || failure()
         working-directory: packages/auravibes_engine
@@ -97,14 +99,7 @@ jobs:
       - name: Render supplementary settings goldens
         if: success() || failure()
         working-directory: apps/auravibes_app
-        run: python3 ../../tool/validation_lease.py --label hooks-settings-goldens -- flutter test test/features/settings/screens/workspace_settings_lifecycle_hooks_test.dart --no-pub --update-goldens
-      - name: Analyze app and engine
-        if: success() || failure()
-        run: python3 tool/validation_lease.py --label hooks-analysis -- dart analyze apps/auravibes_app packages/auravibes_engine --fatal-infos --fatal-warnings
-      - name: Audit localization
-        if: success() || failure()
-        working-directory: apps/auravibes_app
-        run: python3 ../../tool/validation_lease.py --label hooks-localization -- dart run tool/localization_audit.dart
+        run: python3 ../../tool/validation_lease.py --label hooks-settings-goldens -- flutter test test/features/settings/screens/workspace_settings_lifecycle_hooks_test.dart --no-pub
       - name: Upload supplementary settings goldens
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -113,6 +108,14 @@ jobs:
           path: apps/auravibes_app/test/features/settings/screens/goldens/workspace_settings_hooks_*.png
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Analyze app and engine
+        if: success() || failure()
+        run: python3 tool/validation_lease.py --label hooks-analysis -- dart analyze apps/auravibes_app packages/auravibes_engine --fatal-infos --fatal-warnings
+      - name: Audit localization
+        if: success() || failure()
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label hooks-localization -- dart run tool/localization_audit.dart
 
   feature-capture:
     name: production settings after at feature head

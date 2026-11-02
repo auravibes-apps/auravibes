@@ -257,7 +257,7 @@ void main() {
           input: '{}',
           isCancellationRequested: (_) => false,
           conversationId: 'conversation-1',
-        isStillTrusted: () async => true,
+          isStillTrusted: () async => true,
         );
         expect(
           result.outcome,

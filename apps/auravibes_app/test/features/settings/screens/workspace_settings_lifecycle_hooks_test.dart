@@ -2,7 +2,6 @@
 library;
 
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -89,12 +88,14 @@ void main() {
       expect(find.byType(WorkspaceAgentLifecycleHooksSection), findsOneWidget);
       expect(find.text('No hook configuration selected.'), findsOneWidget);
       expect(
-        tester.widget<AuraSwitch>(
-          find.descendant(
-            of: find.byType(WorkspaceAgentLifecycleHooksSection),
-            matching: find.byType(AuraSwitch),
-          ),
-        ).onChanged,
+        tester
+            .widget<AuraSwitch>(
+              find.descendant(
+                of: find.byType(WorkspaceAgentLifecycleHooksSection),
+                matching: find.byType(AuraSwitch),
+              ),
+            )
+            .onChanged,
         isNull,
       );
       await expectLater(
