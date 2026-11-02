@@ -8,7 +8,7 @@ Research workspace has no connections, credentials, or hook opt-in.
 | Capture | Source commit | Hosted run | Artifact |
 | --- | --- | --- | --- |
 | Before | `1aaa31f61128fe810ca35ef7a00205edb9233175` | [41483461541](https://github.com/auravibes-apps/auravibes/actions/runs/41483461541) | `13160334654` |
-| After | `51fbb99ca164c0cfed7759ce27b7e997ea410d8d` | [41490375192](https://github.com/auravibes-apps/auravibes/actions/runs/41490375192) | `13163583962` |
+| After | `d43dcfbf93be9568bdb7cc0b51dad86938d78dcf` | [41493086266](https://github.com/auravibes-apps/auravibes/actions/runs/41493086266) | `13165192551` |
 
 The matched provenance JSON differs only in `sourceSha`. Both views use the same
 1280 by 1200 viewport, English locale, light theme, font files, device and text

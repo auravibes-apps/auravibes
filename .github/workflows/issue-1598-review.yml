@@ -69,6 +69,15 @@ jobs:
           python3 tool/validation_lease.py --label hooks-feature-format -- dart format apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_engine/lib packages/auravibes_engine/test
           git ls-files -z --others --exclude-standard -- '*.g.dart' '*.freezed.dart' | xargs -0 -r git add --intent-to-add
           git diff > "$RUNNER_TEMP/issue1598-format.patch"
+      - name: Export formatting patch
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1598-format-${{ github.sha }}
+          path: ${{ runner.temp }}/issue1598-format.patch
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Engine hook suites
         if: success() || failure()
         working-directory: packages/auravibes_engine
@@ -102,14 +111,6 @@ jobs:
         with:
           name: issue1598-settings-goldens-${{ github.sha }}
           path: apps/auravibes_app/test/features/settings/screens/goldens/workspace_settings_hooks_*.png
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Export formatting patch
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        with:
-          name: issue1598-format-${{ github.sha }}
-          path: ${{ runner.temp }}/issue1598-format.patch
           if-no-files-found: warn
           retention-days: 14
 

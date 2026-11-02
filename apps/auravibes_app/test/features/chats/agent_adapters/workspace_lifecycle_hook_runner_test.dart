@@ -528,7 +528,7 @@ class _FakeHookRuntime implements AgentLifecycleHookRuntime {
     required String input,
     required agent.AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
-    Future<bool> Function()? isStillTrusted,
+    required Future<bool> Function() isStillTrusted,
   }) async {
     invokeCount++;
     lastInput = input;

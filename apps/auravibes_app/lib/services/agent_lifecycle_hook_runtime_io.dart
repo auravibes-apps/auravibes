@@ -110,7 +110,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     required String input,
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
-    Future<bool> Function()? isStillTrusted,
+    required Future<bool> Function() isStillTrusted,
   }) async {
     if (!isSupported) {
       return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
@@ -148,7 +148,7 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
       return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
     }
     try {
-      if (isStillTrusted != null && !await isStillTrusted()) {
+      if (!await isStillTrusted()) {
         return const AgentLifecycleHookInvocationResult(outcome: .unavailable);
       }
     } on Object {

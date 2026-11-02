@@ -12,7 +12,7 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -25,52 +25,52 @@ void main() {
     (tester) async {
       final fixture = await _HookSettingsFixture.create(tester);
       try {
-      await fixture.pump(tester);
-      expect(
-        tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
-        isNull,
-      );
-      await tester.tap(find.text('Review and trust'));
-      final _ = await tester.pumpAndSettle();
-      expect(find.byType(AuraConfirmDialog), findsOneWidget);
-      for (final value in [
-        '/tmp/hooks.json',
-        '/tmp/check-hook',
-        '/tmp/policy.json',
-        fixture.runtime.digest,
-        jsonEncode(['--literal', r'$(not-a-shell)']),
-      ]) {
+        await fixture.pump(tester);
         expect(
-          find.descendant(
-            of: find.byType(AuraConfirmDialog),
-            matching: find.byWidgetPredicate(
-              (widget) =>
-                  widget is AuraSelectableText && widget.data.contains(value),
-            ),
-          ),
-          findsOneWidget,
-          reason: value,
+          tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
+          isNull,
         );
-      }
-      await tester.tap(find.text('Cancel'));
-      final _ = await tester.pumpAndSettle();
-      expect((await fixture.read(tester)).isTrusted, isFalse);
-      await tester.tap(find.text('Review and trust'));
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.text('Trust configuration'));
-      final _ = await tester.pumpAndSettle();
-      final trusted = await fixture.read(tester);
-      expect(trusted.isTrusted, isTrue);
-      expect(trusted.enabled, isFalse);
-      await tester.tap(find.byType(AuraSwitch));
-      final _ = await tester.pumpAndSettle();
-      expect((await fixture.read(tester)).enabled, isTrue);
-      await tester.tap(find.text('Revoke trust'));
-      final _ = await tester.pumpAndSettle();
-      final revoked = await fixture.read(tester);
-      expect(revoked.enabled, isFalse);
-      expect(revoked.isTrusted, isFalse);
-      expect(fixture.runtime.invokeCount, 0);
+        await tester.tap(find.text('Review and trust'));
+        final _ = await tester.pumpAndSettle();
+        expect(find.byType(AuraConfirmDialog), findsOneWidget);
+        for (final value in [
+          '/tmp/hooks.json',
+          '/tmp/check-hook',
+          '/tmp/policy.json',
+          fixture.runtime.digest,
+          jsonEncode(['--literal', r'$(not-a-shell)']),
+        ]) {
+          expect(
+            find.descendant(
+              of: find.byType(AuraConfirmDialog),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is AuraSelectableText && widget.data.contains(value),
+              ),
+            ),
+            findsOneWidget,
+            reason: value,
+          );
+        }
+        await tester.tap(find.text('Cancel'));
+        final _ = await tester.pumpAndSettle();
+        expect((await fixture.read(tester)).isTrusted, isFalse);
+        await tester.tap(find.text('Review and trust'));
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(find.text('Trust configuration'));
+        final _ = await tester.pumpAndSettle();
+        final trusted = await fixture.read(tester);
+        expect(trusted.isTrusted, isTrue);
+        expect(trusted.enabled, isFalse);
+        await tester.tap(find.byType(AuraSwitch));
+        final _ = await tester.pumpAndSettle();
+        expect((await fixture.read(tester)).enabled, isTrue);
+        await tester.tap(find.text('Revoke trust'));
+        final _ = await tester.pumpAndSettle();
+        final revoked = await fixture.read(tester);
+        expect(revoked.enabled, isFalse);
+        expect(revoked.isTrusted, isFalse);
+        expect(fixture.runtime.invokeCount, 0);
       } finally {
         await fixture.close(tester);
       }
@@ -78,7 +78,9 @@ void main() {
   );
 
   for (final platformUnavailable in [false, true]) {
-    testWidgets('unsupported platform=$platformUnavailable shows recovery', (tester) async {
+    testWidgets('unsupported platform=$platformUnavailable shows recovery', (
+      tester,
+    ) async {
       final fixture = await _HookSettingsFixture.create(
         tester,
         remote: !platformUnavailable,
@@ -86,70 +88,82 @@ void main() {
         enabled: true,
       );
       try {
-      fixture.runtime.supported = !platformUnavailable;
-      await fixture.pump(tester);
-      expect(
-        find.text(
-          platformUnavailable
-              ? 'Hooks are unavailable on this platform.'
-              : 'Hooks are available only for local workspaces.',
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.text('To use hooks, open a local workspace in the desktop app.'),
-        findsOneWidget,
-      );
-      expect(tester.widget<AuraButton>(_button('Choose configuration')).disabled, isTrue);
-      expect(tester.widget<AuraButton>(_button('Review and trust')).disabled, isTrue);
-      expect(tester.widget<AuraButton>(_button('Revoke trust')).disabled, isFalse);
-      await tester.tap(find.byType(AuraSwitch));
-      final _ = await tester.pumpAndSettle();
-      expect((await fixture.read(tester)).enabled, isFalse);
-      expect(
-        tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
-        isNull,
-      );
-      await tester.tap(find.text('Revoke trust'));
-      final _ = await tester.pumpAndSettle();
-      expect((await fixture.read(tester)).isTrusted, isFalse);
-      expect(fixture.runtime.invokeCount, 0);
+        fixture.runtime.supported = !platformUnavailable;
+        await fixture.pump(tester);
+        expect(
+          find.text(
+            platformUnavailable
+                ? 'Hooks are unavailable on this platform.'
+                : 'Hooks are available only for local workspaces.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text('To use hooks, open a local workspace in the desktop app.'),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<AuraButton>(_button('Choose configuration')).disabled,
+          isTrue,
+        );
+        expect(
+          tester.widget<AuraButton>(_button('Review and trust')).disabled,
+          isTrue,
+        );
+        expect(
+          tester.widget<AuraButton>(_button('Revoke trust')).disabled,
+          isFalse,
+        );
+        await tester.tap(find.byType(AuraSwitch));
+        final _ = await tester.pumpAndSettle();
+        expect((await fixture.read(tester)).enabled, isFalse);
+        expect(
+          tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
+          isNull,
+        );
+        await tester.tap(find.text('Revoke trust'));
+        final _ = await tester.pumpAndSettle();
+        expect((await fixture.read(tester)).isTrusted, isFalse);
+        expect(fixture.runtime.invokeCount, 0);
       } finally {
         await fixture.close(tester);
       }
-    },);
+    });
   }
 
   testWidgets('changed sources block enable until reviewed and trusted again', (
     tester,
   ) async {
     final fixture = await _HookSettingsFixture.create(tester, trusted: true);
-      try {
-    fixture.runtime.digest = 'b' * 64;
-    await fixture.pump(tester);
-    expect(
-      find.text(
-        'Configuration or command source changed. '
-        'Hooks are blocked until you trust it again.',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
-      isNull,
-    );
-    await tester.tap(find.text('Review and trust'));
-    final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('Trust configuration'));
-    final _ = await tester.pumpAndSettle();
-    expect((await fixture.read(tester)).trustedDigest, fixture.runtime.digest);
-    expect(
-      tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
-      isNotNull,
-    );
+    try {
+      fixture.runtime.digest = 'b' * 64;
+      await fixture.pump(tester);
+      expect(
+        find.text(
+          'Configuration or command source changed. '
+          'Hooks are blocked until you trust it again.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
+        isNull,
+      );
+      await tester.tap(find.text('Review and trust'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Trust configuration'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        (await fixture.read(tester)).trustedDigest,
+        fixture.runtime.digest,
+      );
+      expect(
+        tester.widget<AuraSwitch>(find.byType(AuraSwitch)).onChanged,
+        isNotNull,
+      );
     } finally {
-        await fixture.close(tester);
-      }
+      await fixture.close(tester);
+    }
   });
 
   testWidgets('compact actions wrap and a long trust review scrolls', (
@@ -160,21 +174,21 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final fixture = await _HookSettingsFixture.create(tester, trusted: true);
-      try {
-    fixture.runtime.commandPath = '/tmp/${'long-path-' * 50}policy.py';
-    await fixture.pump(tester);
-    await tester.ensureVisible(find.text('Review and trust'));
-    await tester.tap(find.text('Review and trust'));
-    final _ = await tester.pumpAndSettle();
-    expect(find.byType(AuraConfirmDialog), findsOneWidget);
-    expect(find.text('Trust configuration'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    final _ = await tester.tap(find.text('Cancel'));
-    final _ = await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
+    try {
+      fixture.runtime.commandPath = '/tmp/${'long-path-' * 50}policy.py';
+      await fixture.pump(tester);
+      await tester.ensureVisible(find.text('Review and trust'));
+      await tester.tap(find.text('Review and trust'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(AuraConfirmDialog), findsOneWidget);
+      expect(find.text('Trust configuration'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final _ = await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     } finally {
-        await fixture.close(tester);
-      }
+      await fixture.close(tester);
+    }
   });
 }
 
@@ -255,7 +269,9 @@ class _HookSettingsFixture {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: WorkspaceAgentLifecycleHooksSection(workspaceId: workspace.id),
+            child: WorkspaceAgentLifecycleHooksSection(
+              workspaceId: workspace.id,
+            ),
           ),
         ),
         overrides: [
@@ -315,7 +331,7 @@ class _ReviewRuntime implements AgentLifecycleHookRuntime {
     required String input,
     required AgentToolHookCancellationChecker isCancellationRequested,
     required String conversationId,
-    Future<bool> Function()? isStillTrusted,
+    required Future<bool> Function() isStillTrusted,
   }) async {
     invokeCount++;
     throw StateError('Settings review must not execute hooks.');

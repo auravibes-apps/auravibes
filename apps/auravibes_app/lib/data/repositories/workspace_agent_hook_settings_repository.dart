@@ -22,7 +22,7 @@ class WorkspaceAgentHookSettingsRepository(
 
   Future<WorkspaceAgentHookSettings> selectConfig(
     String workspaceId, {
-    required String? canonicalPath,
+    required String canonicalPath,
   }) async {
     final row = await _dao.save(
       workspaceId,
@@ -48,10 +48,7 @@ class WorkspaceAgentHookSettingsRepository(
     }
     final row = await _dao.save(
       workspaceId,
-      .new(
-        trustedSourcePath: .new(canonicalPath),
-        trustedDigest: .new(digest),
-      ),
+      .new(trustedSourcePath: .new(canonicalPath), trustedDigest: .new(digest)),
     );
 
     return _mapRow(row);
@@ -65,10 +62,7 @@ class WorkspaceAgentHookSettingsRepository(
     if (enabled && !current.isTrusted) {
       throw StateError('Lifecycle hook configuration is not trusted');
     }
-    final row = await _dao.save(
-      workspaceId,
-      .new(enabled: .new(enabled)),
-    );
+    final row = await _dao.save(workspaceId, .new(enabled: .new(enabled)));
 
     return _mapRow(row);
   }

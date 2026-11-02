@@ -420,8 +420,8 @@ void main() {
           _pending(toolCallId: 'first', sourceConversationId: 'child-a'),
           _pending(
             toolCallId: 'second',
-            sourceConversationId: 'child-b',
             messageId: 'child-message',
+            sourceConversationId: 'child-b',
           ),
         ];
         final cancellation = AgentCancellationRuntime();
@@ -494,8 +494,9 @@ void main() {
         for (final update in updates) {
           if (outcome == agent.AgentToolHookOutcome.block) {
             expect(update.resultStatus, ToolCallResultStatus.executionError);
-            final payload =
-                jsonDecode(update.responseRaw ?? (throw StateError('Missing hook failure.'))) as Map<String, dynamic>;
+            final payload = jsonDecode(
+              update.responseRaw ?? (throw StateError('Missing hook failure.')),
+            ) as Map<String, dynamic>;
             expect(payload['code'], 'hook_blocked');
             expect(payload['reason'], 'Policy blocked this tool call.');
           } else {

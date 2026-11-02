@@ -12,5 +12,4 @@ class const WorkspaceAgentHookSettings({
       configPath != null &&
       trustedSourcePath == configPath &&
       trustedDigest != null;
-
 }

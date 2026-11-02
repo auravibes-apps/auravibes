@@ -6,16 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MessageToolCallEntity', () {
-    test(
-      'hook context survives serialization while arguments and output '
-      'remain intact',
-      () {
+    test('hook context survives tool-call serialization', () {
       const call = MessageToolCallEntity(
         id: 'hook-call',
         name: 'tool',
         argumentsRaw: '{"query":"original"}',
         responseRaw: 'original tool result',
-        responseContextRaw: 'Post-tool hook context:\ncontext\n\n'
+        responseContextRaw:
+            'Post-tool hook context:\ncontext\n\n'
             'Tool output:\noriginal tool result',
         fullOutputForContext: true,
         resultStatus: .success,
@@ -192,7 +190,8 @@ void main() {
         name: 'test_tool',
         argumentsRaw: '{}',
         responseRaw: 'tool result',
-        responseContextRaw: 'Post-tool hook context:\nadditional context\n\n'
+        responseContextRaw:
+            'Post-tool hook context:\nadditional context\n\n'
             'Tool output:\ntool result',
         fullOutputForContext: true,
         resultStatus: .success,

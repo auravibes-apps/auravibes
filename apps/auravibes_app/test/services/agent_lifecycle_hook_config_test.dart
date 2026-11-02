@@ -34,9 +34,7 @@ void main() {
       emoji * 512,
     );
     expect(
-      () => parseAgentLifecycleHookConfig(
-        _configWithHook(args: [emoji * 513]),
-      ),
+      () => parseAgentLifecycleHookConfig(_configWithHook(args: [emoji * 513])),
       _configError('invalid_hook_argument'),
     );
   });
