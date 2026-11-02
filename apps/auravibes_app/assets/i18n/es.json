@@ -492,6 +492,12 @@
       "bulk_pin_failures": "No se pudo cambiar la fijación de: {}",
       "bulk_delete_failures": "No se pudo eliminar: {}"
     },
+    "archived_conversations": {
+      "title": "Conversaciones archivadas",
+      "empty": "Aún no hay conversaciones archivadas",
+      "cloud_notice_title": "Archivadas en este dispositivo",
+      "cloud_notice": "En los espacios en la nube, el archivo se guarda solo en esta app y en este dispositivo. Los demás miembros y tus otros dispositivos aún pueden ver esta conversación compartida."
+    },
     "conversation_search": {
       "title": "Buscar conversaciones",
       "entry": "Buscar mensajes",
@@ -519,7 +525,12 @@
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
       "model_effort_selector": "Modelo y esfuerzo",
-      "archive_export": "Exportar archivo",
+      "archive": "Archivar",
+      "restore": "Restaurar",
+      "archived": "Conversación archivada.",
+      "restored": "Conversación restaurada.",
+      "archive_state_error": "No se pudo actualizar el estado del archivo. Inténtalo de nuevo.",
+      "archive_export": "Exportar copia de seguridad",
       "archive_exported": "Archivo de conversación guardado.",
       "archive_export_review_title": "Revisa el archivo de conversación",
       "archive_export_review_description": "Antes de crear el archivo, revisa qué contiene y dónde puedes guardarlo.",

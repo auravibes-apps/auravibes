@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_archive_states.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -6,7 +7,7 @@ import 'package:drift/drift.dart';
 
 part 'conversation_dao.g.dart';
 
-@DriftAccessor(tables: [Conversations])
+@DriftAccessor(tables: [Conversations, ConversationArchiveStates])
 class ConversationDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
     with
@@ -46,15 +47,18 @@ mixin _ConversationDaoReadApi {
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
     String search = '',
+    bool archivedOnly = false,
     int? limit,
     int offset = 0,
-  }) => ConversationDaoReadOperations(this as ConversationDao)
-      .watchConversationsByWorkspace(
-        workspaceId,
-        search: search,
-        limit: limit,
-        offset: offset,
-      );
+  }) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .watchConversationsByWorkspace(
+            workspaceId,
+            search: search,
+            archivedOnly: archivedOnly,
+            limit: limit,
+            offset: offset,
+          );
 
   Stream<List<ConversationsTable>> watchChildConversations(
     String parentConversationId,
@@ -194,10 +198,15 @@ extension ConversationDaoReadOperations on ConversationDao {
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
     String search = '',
+    bool archivedOnly = false,
     int? limit,
     int offset = 0,
   }) {
-    final query = _buildWorkspaceQuery(workspaceId, search: search);
+    final query = _buildWorkspaceQuery(
+      workspaceId,
+      search: search,
+      archivedOnly: archivedOnly,
+    );
     if (limit != null) query.limit(limit, offset: offset);
 
     return query.watch();
@@ -216,11 +225,22 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
-  _buildWorkspaceQuery(String workspaceId, {String search = ''}) {
+  _buildWorkspaceQuery(
+    String workspaceId, {
+    String search = '',
+    bool archivedOnly = false,
+  }) {
+    final archivedIds = selectOnly(conversationArchiveStates)
+      ..addColumns([conversationArchiveStates.conversationId])
+      ..where(conversationArchiveStates.workspaceId.equals(workspaceId));
+
     return _orderedConversations(
       (tbl) =>
           tbl.workspaceId.equals(workspaceId) &
           tbl.parentConversationId.isNull() &
+          (archivedOnly
+              ? tbl.id.isInQuery(archivedIds)
+              : tbl.id.isNotInQuery(archivedIds)) &
           _conversationSearchPredicate(tbl, search),
     );
   }

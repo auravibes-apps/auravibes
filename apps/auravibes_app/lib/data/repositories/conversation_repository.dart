@@ -96,6 +96,7 @@ class ConversationRepository(
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     String search = '',
+    bool archivedOnly = false,
     int? limit,
     int offset = 0,
   }) {
@@ -103,6 +104,7 @@ class ConversationRepository(
         .watchConversationsByWorkspace(
           workspaceId,
           search: search,
+          archivedOnly: archivedOnly,
           limit: limit,
           offset: offset,
         )
@@ -399,9 +401,18 @@ extension on ConversationRepository {
   }
 
   Future<bool> _deleteSource(String id) async {
+    final source = await _database.conversationDao.getConversationById(id);
+    if (source == null) return false;
+
     final sourceMessageIds = await _sourceMessageIds(id);
     final deleted = await _database.conversationDao.deleteConversation(id);
-    if (deleted) await _deleteSourceAttachments(sourceMessageIds);
+    if (deleted) {
+      await _database.conversationArchiveStateDao.clearConversationArchive(
+        workspaceId: source.workspaceId,
+        conversationId: id,
+      );
+      await _deleteSourceAttachments(sourceMessageIds);
+    }
 
     return deleted;
   }
@@ -578,12 +589,19 @@ extension on ConversationRepository {
     return _nextForkTitle(title, titles);
   }
 
-  Future<Set<String>> _existingTitles(String workspaceId) async =>
-      (await _database.conversationDao
-              .watchConversationsByWorkspace(workspaceId)
-              .first)
-          .map((conversation) => conversation.title)
-          .toSet();
+  Future<Set<String>> _existingTitles(String workspaceId) async {
+    final active = await _database.conversationDao
+        .watchConversationsByWorkspace(workspaceId)
+        .first;
+    final archived = await _database.conversationDao
+        .watchConversationsByWorkspace(workspaceId, archivedOnly: true)
+        .first;
+
+    return {
+      ...active,
+      ...archived,
+    }.map((conversation) => conversation.title).toSet();
+  }
 
   String _nextForkTitle(String title, Set<String> titles) {
     for (var suffix = 1; ; suffix++) {

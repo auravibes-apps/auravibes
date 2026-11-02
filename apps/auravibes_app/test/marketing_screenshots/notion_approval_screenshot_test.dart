@@ -1336,6 +1336,7 @@ class _ScreenshotConversationRepository(
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     String? search,
+    bool archivedOnly = false,
     int? limit,
     int offset = 0,
   }) => Stream.value([conversation, ...others]);

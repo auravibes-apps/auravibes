@@ -1,6 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -20,6 +22,8 @@ typedef _ConversationListOptions = ({
   String search,
   _ConversationPagination pagination,
   bool fetchAllPages,
+  ConversationListScope scope,
+  Set<String> archivedIds,
 });
 typedef _ForkedConversationRequest = ({
   String workspaceId,
@@ -79,16 +83,36 @@ Stream<List<ConversationEntity>> conversationsStream(
   required String workspaceId,
   String search = '',
   _ConversationPagination pagination = _defaultConversationPagination,
+  ConversationListScope scope = ConversationListScope.active,
 }) async* {
-  final session = await ref.watch(
-    workspaceSessionForRouteProvider(workspaceId).future,
-  );
-  if (!ref.mounted) return;
+  final sessionState = ref.watch(workspaceSessionForRouteProvider(workspaceId));
+  if (sessionState.hasError) {
+    Error.throwWithStackTrace(sessionState.error!, sessionState.stackTrace!);
+  }
+  final session = sessionState.valueOrNull;
+  if (session == null) return;
+
+  final archivedIds = session.cloud == null
+      ? const <String>{}
+      : _archivedConversationIds(ref, workspaceId);
+  if (archivedIds == null) return;
+
   yield* _conversationsForSession(ref, session, workspaceId, (
     search: search,
     pagination: pagination,
     fetchAllPages: false,
+    scope: scope,
+    archivedIds: archivedIds,
   ));
+}
+
+Set<String>? _archivedConversationIds(Ref ref, String workspaceId) {
+  final state = ref.watch(conversationArchiveStateIdsProvider(workspaceId));
+  if (state.hasError) {
+    Error.throwWithStackTrace(state.error!, state.stackTrace!);
+  }
+
+  return state.valueOrNull;
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(
@@ -106,6 +130,7 @@ Stream<List<ConversationEntity>> _conversationsForSession(
       .watchConversationsByWorkspace(
         workspaceId,
         search: options.search,
+        archivedOnly: options.scope == ConversationListScope.archived,
         limit: options.pagination.limit,
         offset: options.pagination.offset,
       );
@@ -224,6 +249,8 @@ Stream<List<ConversationEntity>> _cloudChildConversations(
       search: '',
       pagination: _defaultConversationPagination,
       fetchAllPages: true,
+      scope: .active,
+      archivedIds: const {},
     )).map(
       (conversations) => conversations
           .where(
@@ -254,6 +281,8 @@ Stream<List<ConversationEntity>> _cloudConversations(
     search: '',
     pagination: _defaultConversationPagination,
     fetchAllPages: false,
+    scope: .active,
+    archivedIds: const {},
   ),
 ]) async* {
   final gateway = await ref.watch(
@@ -285,7 +314,7 @@ _readCloudConversations(
 ) async {
   final conversations = options.fetchAllPages
       ? await _readAllCloudConversationPages(gateway, cloud)
-      : await _readCloudConversationPage(gateway, cloud, options);
+      : await _readFilteredCloudConversationPage(gateway, cloud, options);
   final currentSequence = await _cloudConversationSequence(gateway);
 
   return _cloudConversationSnapshot(
@@ -305,21 +334,53 @@ _cloudConversationSnapshot(
   currentSequence: currentSequence,
 );
 
-Future<List<ConversationSummary>> _readCloudConversationPage(
+Future<List<ConversationSummary>> _readFilteredCloudConversationPage(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
 ) async {
-  final page = await gateway.client.conversation.listPage(
-    .new(
-      workspaceId: cloud.cloudWorkspaceId,
-      limit: options.pagination.limit ?? _cloudConversationPageSize,
-      search: options.search.isEmpty ? null : options.search,
-      offset: options.pagination.offset,
-    ),
-  );
+  if (options.scope == .archived && options.archivedIds.isEmpty) return [];
+  if (options.pagination.limit == 0) return [];
 
-  return page.conversations;
+  final conversations = <ConversationSummary>[];
+  final seenCursors = <String>{};
+  final stopAfterFirstPage =
+      options.pagination.limit == null && options.pagination.offset == 0;
+  var skipped = 0;
+  String? cursor;
+
+  while (true) {
+    var reachedLimit = false;
+    final page = await _readCloudConversationPageAtCursor(
+      gateway,
+      cloud,
+      cursor,
+      search: options.search,
+    );
+    for (final conversation in page.conversations) {
+      final isArchived = options.archivedIds.contains(conversation.id);
+      if (isArchived != (options.scope == .archived)) continue;
+      if (skipped < options.pagination.offset) {
+        skipped++;
+        continue;
+      }
+      conversations.add(conversation);
+      final limit = options.pagination.limit;
+      if (limit != null && conversations.length >= limit) {
+        reachedLimit = true;
+        break;
+      }
+    }
+
+    final nextCursor = _nextCloudConversationCursor(
+      page.nextCursor,
+      seenCursors,
+    );
+    if (reachedLimit || stopAfterFirstPage || nextCursor == null) {
+      return conversations;
+    }
+    cursor = nextCursor;
+  }
 }
 
 Future<List<ConversationSummary>> _readAllCloudConversationPages(
@@ -346,12 +407,14 @@ Future<List<ConversationSummary>> _readAllCloudConversationPages(
 Future<ConversationPage> _readCloudConversationPageAtCursor(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
-  String? cursor,
-) => gateway.client.conversation.listPage(
+  String? cursor, {
+  String search = '',
+}) => gateway.client.conversation.listPage(
   .new(
     workspaceId: cloud.cloudWorkspaceId,
     limit: _cloudConversationPageSize,
     cursor: cursor,
+    search: search.isEmpty ? null : search,
   ),
 );
 

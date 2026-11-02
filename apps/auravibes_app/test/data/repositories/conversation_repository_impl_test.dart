@@ -85,6 +85,7 @@ void main() {
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
             search: any(named: 'search'),
+            archivedOnly: false,
             limit: any(named: 'limit'),
             offset: any(named: 'offset'),
           ),
@@ -108,6 +109,7 @@ void main() {
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
             search: any(named: 'search'),
+            archivedOnly: false,
             limit: 5,
             offset: any(named: 'offset'),
           ),
@@ -122,6 +124,7 @@ void main() {
             () => mockDao.watchConversationsByWorkspace(
               'ws-1',
               search: any(named: 'search'),
+              archivedOnly: false,
               limit: 5,
               offset: any(named: 'offset'),
             ),
@@ -467,6 +470,28 @@ void main() {
 
         expect(result, true);
         verify(() => mockDao.deleteConversation('conv-1')).called(1);
+      });
+
+      test('clears device archive state after permanent deletion', () async {
+        await database.conversationArchiveStateDao.setArchived(
+          workspaceId: 'ws-1',
+          conversationId: 'conv-1',
+          isArchived: true,
+        );
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.deleteConversation('conv-1'))
+            .thenAnswer((_) async => true);
+
+        final result = await repository.deleteConversation('conv-1');
+
+        expect(result, isTrue);
+        expect(
+          await database.conversationArchiveStateDao.getArchivedConversationIds(
+            'ws-1',
+          ),
+          isEmpty,
+        );
       });
 
       test('deletes persisted attachment files', () async {

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -408,6 +409,211 @@ void main() {
       expect(page, hasLength(1));
       expect(page.single.id, allMatches[1].id);
     });
+
+    test(
+      'archive filtering stays workspace-local and supports search',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          .insert(name: 'Archive workspace', type: WorkspaceType.local),
+        );
+        final otherWorkspace = await fixture.database.workspaceDao
+            .insertWorkspace(
+              .insert(name: 'Other workspace', type: WorkspaceType.local),
+            );
+        final archivedMatch = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                id: const Value('archived-match'),
+                workspaceId: workspace.id,
+                title: 'Project plan',
+                updatedAt: Value(DateTime.utc(2026)),
+              ),
+            );
+        final archivedOther = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                id: const Value('archived-other'),
+                workspaceId: workspace.id,
+                title: 'Design outline',
+                updatedAt: Value(DateTime.utc(2026)),
+              ),
+            );
+        final active = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                id: const Value('active'),
+                workspaceId: workspace.id,
+                title: 'Project active',
+                updatedAt: Value(DateTime.utc(2026)),
+              ),
+            );
+        final archivedElsewhere = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                id: const Value('archived-elsewhere'),
+                workspaceId: otherWorkspace.id,
+                title: 'Project elsewhere',
+                updatedAt: Value(DateTime.utc(2026)),
+              ),
+            );
+
+        for (final conversation in [
+          archivedMatch,
+          archivedOther,
+          archivedElsewhere,
+        ]) {
+          await fixture.database.conversationArchiveStateDao.setArchived(
+            workspaceId: conversation.workspaceId,
+            conversationId: conversation.id,
+            isArchived: true,
+          );
+        }
+
+        final activeConversations = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(workspace.id)
+            .first;
+        final archivedConversations = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(workspace.id, archivedOnly: true)
+            .first;
+        final searchedArchive = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(
+              workspace.id,
+              search: 'project',
+              archivedOnly: true,
+            )
+            .first;
+        final archivePage = await fixture.database.conversationDao
+            .watchConversationsByWorkspace(
+              workspace.id,
+              archivedOnly: true,
+              limit: 1,
+              offset: 1,
+            )
+            .first;
+
+        expect(activeConversations.map((conversation) => conversation.id), [
+          active.id,
+        ]);
+        expect(
+          archivedConversations.map((conversation) => conversation.id).toSet(),
+          {archivedMatch.id, archivedOther.id},
+        );
+        expect(searchedArchive.map((conversation) => conversation.id), [
+          archivedMatch.id,
+        ]);
+        expect(archivePage.map((conversation) => conversation.id), [
+          archivedMatch.id,
+        ]);
+      },
+    );
+
+    test('archive state can be restored idempotently', () async {
+      final workspace = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive state workspace', type: WorkspaceType.local),
+      );
+      final conversation = await fixture.database.conversationDao
+          .insertConversation(
+            .insert(workspaceId: workspace.id, title: 'Restore me'),
+          );
+
+      await fixture.database.conversationArchiveStateDao.setArchived(
+        workspaceId: workspace.id,
+        conversationId: conversation.id,
+        isArchived: true,
+      );
+      await fixture.database.conversationArchiveStateDao.setArchived(
+        workspaceId: workspace.id,
+        conversationId: conversation.id,
+        isArchived: true,
+      );
+      expect(
+        await fixture.database.conversationArchiveStateDao
+            .getArchivedConversationIds(workspace.id),
+        {conversation.id},
+      );
+
+      await fixture.database.conversationArchiveStateDao.setArchived(
+        workspaceId: workspace.id,
+        conversationId: conversation.id,
+        isArchived: false,
+      );
+      expect(
+        await fixture.database.conversationArchiveStateDao
+            .getArchivedConversationIds(workspace.id),
+        isEmpty,
+      );
+    });
+
+    test(
+      'archive round trip preserves transcript, attachment, and fork link',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          .insert(
+            name: 'Archive preservation workspace',
+            type: WorkspaceType.local,
+          ),
+        );
+        final conversation = await fixture.database.conversationDao
+            .insertConversation(
+              .insert(
+                workspaceId: workspace.id,
+                title: 'Pinned parent',
+                isPinned: const Value(true),
+              ),
+            );
+        final child = await fixture.database.conversationDao.insertConversation(
+          .insert(
+            workspaceId: workspace.id,
+            title: 'Child conversation',
+            parentConversationId: Value(conversation.id),
+          ),
+        );
+        final message = await fixture.database.messageDao.insertMessage(
+          MessagesCompanion.insert(
+            conversationId: conversation.id,
+            content: 'Transcript remains available',
+            messageType: .text,
+            isUser: true,
+            status: .sent,
+          ),
+        );
+        await fixture.database
+            .into(fixture.database.messageAttachments)
+            .insert(
+              MessageAttachmentsCompanion.insert(
+                messageId: message.id,
+                localPath: '/archive/attachment.png',
+                fileName: 'attachment.png',
+                mimeType: 'image/png',
+                modality: 'image',
+                sizeBytes: 128,
+              ),
+            );
+
+        for (final isArchived in [true, false]) {
+          await fixture.database.conversationArchiveStateDao.setArchived(
+            workspaceId: workspace.id,
+            conversationId: conversation.id,
+            isArchived: isArchived,
+          );
+        }
+
+        final restored = await fixture.database.conversationDao
+            .getConversationById(conversation.id);
+        final messages = await fixture.database.messageDao
+            .getMessagesByConversation(conversation.id);
+        final attachments = await fixture.database
+            .select(fixture.database.messageAttachments)
+            .get();
+        final children = await fixture.database.conversationDao
+            .getChildConversations(conversation.id);
+
+        expect(restored?.isPinned, isTrue);
+        expect(messages.single.content, 'Transcript remains available');
+        expect(attachments.single.localPath, '/archive/attachment.png');
+        expect(children.map((conversation) => conversation.id), [child.id]);
+      },
+    );
   });
 }
 

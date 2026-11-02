@@ -492,6 +492,12 @@
       "bulk_pin_failures": "Could not update pin for: {}",
       "bulk_delete_failures": "Could not delete: {}"
     },
+    "archived_conversations": {
+      "title": "Archived conversations",
+      "empty": "No archived conversations yet",
+      "cloud_notice_title": "Archived on this device",
+      "cloud_notice": "In cloud workspaces, archiving is saved only in this app on this device. Other members and your other devices can still see this shared conversation."
+    },
     "conversation_search": {
       "title": "Search conversations",
       "entry": "Search messages",
@@ -519,7 +525,12 @@
     "chat_conversation": {
       "select_model_selctor": "Select Model",
       "model_effort_selector": "Model & effort",
-      "archive_export": "Export archive",
+      "archive": "Archive",
+      "restore": "Restore",
+      "archived": "Conversation archived.",
+      "restored": "Conversation restored.",
+      "archive_state_error": "Could not update the conversation archive state. Try again.",
+      "archive_export": "Export backup",
       "archive_exported": "Conversation archive saved.",
       "archive_export_review_title": "Review your conversation archive",
       "archive_export_review_description": "Before creating the archive, review what it contains and where you can save it.",

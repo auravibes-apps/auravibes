@@ -6,8 +6,10 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -24,6 +26,7 @@ import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usec
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -624,6 +627,153 @@ void main() {
       );
 
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    });
+
+    testWidgets('archives, searches, and restores a conversation', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive UI test', type: WorkspaceType.local),
+      );
+      final conversation = await ConversationRepository(database)
+          .createConversation(
+            .new(title: 'Project research', workspaceId: workspace.id),
+          );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: workspace.id,
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Project research'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Export backup'), findsOneWidget);
+      await tester.tap(find.text('Archive'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        await database.conversationArchiveStateDao.getArchivedConversationIds(
+          workspace.id,
+        ),
+        {conversation.id},
+      );
+      expect(find.text('Project research'), findsNothing);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: workspace.id,
+          content: ChatListWidget(
+            workspaceId: workspace.id,
+            scope: ConversationListScope.archived,
+          ),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Project research'), findsOneWidget);
+      expect(
+        find.byKey(ValueKey('conversation-selection-${conversation.id}')),
+        findsNothing,
+      );
+      expect(find.text('Delete selected'), findsNothing);
+      await tester.enterText(find.byType(EditableText), 'missing');
+      await tester.pump(const Duration(milliseconds: 301));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Project research'), findsNothing);
+
+      await tester.enterText(find.byType(EditableText), 'Project');
+      await tester.pump(const Duration(milliseconds: 301));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Project research'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Restore'), findsOneWidget);
+      expect(find.text('Archive'), findsNothing);
+      await tester.tap(find.text('Restore'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        await database.conversationArchiveStateDao.getArchivedConversationIds(
+          workspace.id,
+        ),
+        isEmpty,
+      );
+      expect(find.text('Project research'), findsNothing);
+    });
+
+    testWidgets('archives cloud conversations only in the device database', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Cloud archive UI test', type: WorkspaceType.remote),
+      );
+      final conversation = _createConversation(title: 'Shared research')
+          .copyWith(workspaceId: workspace.id);
+      final cloudWorkspace = CloudWorkspaceRef(
+        localWorkspaceId: workspace.id,
+        serverUrl: 'https://example.com',
+        accountId: 'account',
+        cloudWorkspaceId: 7,
+      );
+      final session = WorkspaceSession(cloudWorkspace);
+
+      await tester.pumpWidget(
+        TestableApp(
+          workspaceId: workspace.id,
+          workspaceSession: session,
+          child: ChatListWidget(workspaceId: workspace.id),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            conversationsStreamProvider(workspaceId: workspace.id)
+                .overrideWith((ref) => Stream.value([conversation])),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Export backup'), findsNothing);
+      await tester.tap(find.text('Archive'));
+      await tester.pumpAndSettle();
+
+      expect(
+        await database.conversationArchiveStateDao.getArchivedConversationIds(
+          workspace.id,
+        ),
+        {conversation.id},
+      );
     });
 
     testWidgets('pins a conversation from its options menu', (tester) async {
@@ -1752,6 +1902,7 @@ class _StubConversationRepository({
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     String? search,
+    bool archivedOnly = false,
     int? limit,
     int offset = 0,
   }) {

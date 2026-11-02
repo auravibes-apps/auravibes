@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
@@ -20,5 +21,8 @@ final bulkConversationActionsUsecaseProvider =
         clearConversationDraft: ref
             .watch(conversationDraftCleanupUsecaseProvider)
             .clearConversation,
+        clearConversationArchive: ref
+            .watch(conversationArchiveStateRepositoryProvider)
+            .clearConversationArchive,
       );
     });
