@@ -26,7 +26,10 @@ typedef _TrustedHookRequest = ({
   AgentLifecycleHookDefinition hook,
 });
 
-const _LoadedHookConfig _unavailableConfig = (failure: .unavailable, snapshot: null);
+const _LoadedHookConfig _unavailableConfig = (
+  failure: .unavailable,
+  snapshot: null,
+);
 const _LoadedHookConfig _failedConfig = (failure: .failed, snapshot: null);
 const _maxHookIdentifierBytes = 128;
 const _maxHookArgumentNames = 24;
@@ -43,8 +46,10 @@ class const WorkspaceLifecycleHookRunner({
     required agent.AgentToolHookCancellationChecker isCancellationRequested,
   }) async {
     final invocation = await _invokeFor((
-      request: request, isCancellationRequested: isCancellationRequested,
-      event: .beforeTool, toolSucceeded: null,
+      request: request,
+      isCancellationRequested: isCancellationRequested,
+      event: .beforeTool,
+      toolSucceeded: null,
     ));
     if (invocation == null) return const .new(outcome: .allow);
     if (invocation.outcome != agent.AgentToolHookOutcome.success) {
@@ -61,8 +66,10 @@ class const WorkspaceLifecycleHookRunner({
     required agent.AgentToolHookCancellationChecker isCancellationRequested,
   }) async {
     final invocation = await _invokeFor((
-      request: request, isCancellationRequested: isCancellationRequested,
-      event: .afterTool, toolSucceeded: toolSucceeded,
+      request: request,
+      isCancellationRequested: isCancellationRequested,
+      event: .afterTool,
+      toolSucceeded: toolSucceeded,
     ));
     if (invocation == null) return const .new(outcome: .success);
     if (invocation.outcome != agent.AgentToolHookOutcome.success) {
@@ -72,7 +79,9 @@ class const WorkspaceLifecycleHookRunner({
     return _postResponse(invocation.stdout);
   }
 
-  Future<AgentLifecycleHookInvocationResult?> _invokeFor(_HookRequest input) async {
+  Future<AgentLifecycleHookInvocationResult?> _invokeFor(
+    _HookRequest input,
+  ) async {
     final loaded = await _loadTrustedConfig(input.request.workspaceId);
     if (loaded == null) return null;
     if (loaded.failure case final failure?) return .new(outcome: failure);
@@ -107,9 +116,8 @@ class const WorkspaceLifecycleHookRunner({
     input: _hookInput(prepared.input),
     isCancellationRequested: prepared.input.isCancellationRequested,
     conversationId: prepared.input.request.conversationId,
-    isStillTrusted: () => _isStillTrusted(
-      prepared.input.request.workspaceId, prepared.snapshot,
-    ),
+    isStillTrusted: () =>
+        _isStillTrusted(prepared.input.request.workspaceId, prepared.snapshot),
   );
 
   Future<bool> _isStillTrusted(
@@ -120,9 +128,11 @@ class const WorkspaceLifecycleHookRunner({
     if (workspace == null || !workspace.type.isLocal) return false;
     final settings = await settingsRepository.get(workspaceId);
 
-    return settings.enabled && settings.trustsSource(
-      canonicalPath: snapshot.canonicalPath, digest: snapshot.digest,
-    );
+    return settings.enabled &&
+        settings.trustsSource(
+          canonicalPath: snapshot.canonicalPath,
+          digest: snapshot.digest,
+        );
   }
 
   Future<_LoadedHookConfig?> _loadTrustedConfig(String workspaceId) async {
@@ -138,9 +148,12 @@ class const WorkspaceLifecycleHookRunner({
   }
 
   String? _trustedConfigPath(
-    WorkspaceAgentHookSettings settings, WorkspaceEntity workspace,
+    WorkspaceAgentHookSettings settings,
+    WorkspaceEntity workspace,
   ) {
-    if (!runtime.isSupported || !workspace.type.isLocal || !settings.isTrusted) {
+    if (!runtime.isSupported ||
+        !workspace.type.isLocal ||
+        !settings.isTrusted) {
       return null;
     }
 
@@ -148,13 +161,16 @@ class const WorkspaceLifecycleHookRunner({
   }
 
   Future<_LoadedHookConfig> _inspectTrustedConfig(
-    String path, WorkspaceAgentHookSettings settings,
+    String path,
+    WorkspaceAgentHookSettings settings,
   ) async {
     try {
       final snapshot = await runtime.inspect(path);
       if (!settings.trustsSource(
-        canonicalPath: snapshot.canonicalPath, digest: snapshot.digest,
-      )) return _unavailableConfig;
+        canonicalPath: snapshot.canonicalPath,
+        digest: snapshot.digest,
+      ))
+        return _unavailableConfig;
 
       return (failure: null, snapshot: snapshot);
     } on Object {
@@ -167,7 +183,8 @@ agent.AgentPreToolHookResult _preResponse(String? raw) {
   final response = _decodeHookResponse(raw);
   if (response == null) {
     return const .new(
-      outcome: .failed, reason: 'The pre-tool hook returned an invalid response.',
+      outcome: .failed,
+      reason: 'The pre-tool hook returned an invalid response.',
     );
   }
 
@@ -180,7 +197,8 @@ agent.AgentPreToolHookResult _preResponse(String? raw) {
 
 agent.AgentPreToolHookResult _allowDecision(Map<String, dynamic> response) =>
     _hasOnlyResponseFields(response, const {'decision'})
-        ? const .new(outcome: .allow) : _invalidDecision();
+    ? const .new(outcome: .allow)
+    : _invalidDecision();
 
 agent.AgentPreToolHookResult _blockDecision(Map<String, dynamic> response) {
   if (!_hasOnlyResponseFields(response, const {'decision', 'reason'})) {
@@ -192,18 +210,21 @@ agent.AgentPreToolHookResult _blockDecision(Map<String, dynamic> response) {
   return .new(
     outcome: .block,
     reason: reason?.isNotEmpty == true
-        ? reason : 'Blocked by a trusted lifecycle hook.',
+        ? reason
+        : 'Blocked by a trusted lifecycle hook.',
   );
 }
 
 agent.AgentPreToolHookResult _invalidDecision() => const .new(
-  outcome: .failed, reason: 'The pre-tool hook returned an invalid decision.',
+  outcome: .failed,
+  reason: 'The pre-tool hook returned an invalid decision.',
 );
 
 agent.AgentPostToolHookResult _postResponse(String? raw) {
   final response = _decodeHookResponse(raw);
   final context = response?['context'];
-  if (response == null || context is! String ||
+  if (response == null ||
+      context is! String ||
       !_hasOnlyResponseFields(response, const {'context'})) {
     return const .new(outcome: .failed);
   }
@@ -246,8 +267,14 @@ Map<String, dynamic>? _decodeHookResponse(String? raw) {
 String _hookInput(_HookRequest input) => jsonEncode({
   'version': 1,
   'event': input.event.name,
-  'toolCallId': _truncateUtf8(input.request.toolCallId, _maxHookIdentifierBytes),
-  'tool': _truncateUtf8(input.request.tool.toolIdentifier, _maxHookIdentifierBytes),
+  'toolCallId': _truncateUtf8(
+    input.request.toolCallId,
+    _maxHookIdentifierBytes,
+  ),
+  'tool': _truncateUtf8(
+    input.request.tool.toolIdentifier,
+    _maxHookIdentifierBytes,
+  ),
   'argumentNames': input.request.argumentNames
       .take(_maxHookArgumentNames)
       .map((name) => _truncateUtf8(name, _maxHookArgumentNameBytes))

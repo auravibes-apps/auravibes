@@ -148,7 +148,7 @@ final class WorkspaceAgentHookTrustStatusProvider
 }
 
 String _$workspaceAgentHookTrustStatusHash() =>
-    r'1e56bab17cce58c6e668174c2f2250781df63d97';
+    r'40ecfbf936c016a1432e31f9ed8c5498b1074cc4';
 
 final class WorkspaceAgentHookTrustStatusFamily extends $Family
     with

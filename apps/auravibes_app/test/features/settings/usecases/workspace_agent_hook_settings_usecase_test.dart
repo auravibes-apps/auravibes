@@ -12,10 +12,15 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../data/database/drift/database_test_utils.dart';
 
 void main() {
-  test('typed settings failure diagnostics contain only the localization key', () {
-    const error = WorkspaceAgentHookSettingsException('agent_lifecycle_hooks.trust_required');
-    expect(error.toString(), error.localizationKey);
-  });
+  test(
+    'typed settings failure diagnostics contain only the localization key',
+    () {
+      const error = WorkspaceAgentHookSettingsException(
+        'agent_lifecycle_hooks.trust_required',
+      );
+      expect(error.toString(), error.localizationKey);
+    },
+  );
   final database = AppDatabase(connection: NativeDatabase.memory());
   final workspaceRepository = WorkspaceRepository(database);
   final settingsRepository = WorkspaceAgentHookSettingsRepository(

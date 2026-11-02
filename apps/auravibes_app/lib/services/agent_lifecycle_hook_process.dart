@@ -31,22 +31,24 @@ class const AgentLifecycleHookProcess() {
     final process = started.process;
     if (process == null) return const .new(outcome: .failed);
 
-    return await _HookProcessSupervisor(process, request.isCancellationRequested)
-        .run(request.inputBytes);
+    return await _HookProcessSupervisor(
+      process,
+      request.isCancellationRequested,
+    ).run(request.inputBytes);
   }
 }
 
 Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
   try {
     if (!await request.isStillTrusted()) {
-      return (process: null, failure: .unavailable);
+      return (process: null, failure: AgentToolHookOutcome.unavailable);
     }
   } on Object {
-    return (process: null, failure: .failed);
+    return (process: null, failure: AgentToolHookOutcome.failed);
   }
   // Keep this synchronous check adjacent to launch after the final trust await.
   if (request.isCancellationRequested()) {
-    return (process: null, failure: .cancelled);
+    return (process: null, failure: AgentToolHookOutcome.cancelled);
   }
   try {
     final process = await Process.start(
@@ -59,13 +61,13 @@ Future<_LaunchResult> _launch(AgentLifecycleHookProcessRequest request) async {
 
     return (process: process, failure: null);
   } on Object {
-    return (process: null, failure: .failed);
+    return (process: null, failure: AgentToolHookOutcome.failed);
   }
 }
 
 class _HookProcessSupervisor {
   new(this.process, this.isCancellationRequested)
-      : _termination = _HookProcessTermination(process);
+    : _termination = _HookProcessTermination(process);
 
   final Process process;
   final bool Function() isCancellationRequested;
@@ -90,13 +92,24 @@ class _HookProcessSupervisor {
   }
 
   void _attachStreams() {
-    _stdoutSubscription = _listen(process.stdout, capture: true, done: _outputDone);
-    _stderrSubscription = _listen(process.stderr, capture: false, done: _errorDone);
+    _stdoutSubscription = _listen(
+      process.stdout,
+      capture: true,
+      done: _outputDone,
+    );
+    _stderrSubscription = _listen(
+      process.stderr,
+      capture: false,
+      done: _errorDone,
+    );
   }
 
   Future<int> _waitWithTimers(Future<int> exitCode) async {
     final timeout = Timer(agentLifecycleHookTimeout, () => _fail(.timedOut));
-    final cancellation = Timer.periodic(_cancellationInterval, _pollCancellation);
+    final cancellation = Timer.periodic(
+      _cancellationInterval,
+      _pollCancellation,
+    );
     try {
       return await _waitForExit(exitCode);
     } finally {
@@ -181,7 +194,8 @@ class _HookProcessSupervisor {
   }
 
   AgentLifecycleHookInvocationResult _result() {
-    if (_outcome != AgentToolHookOutcome.success) return .new(outcome: _outcome);
+    if (_outcome != AgentToolHookOutcome.success)
+      return .new(outcome: _outcome);
     try {
       return .new(outcome: .success, stdout: utf8.decode(_output.takeBytes()));
     } on FormatException {

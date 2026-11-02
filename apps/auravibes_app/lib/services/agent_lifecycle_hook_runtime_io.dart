@@ -26,7 +26,8 @@ AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
 
 class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   @override
-  bool get isSupported => Platform.isLinux || Platform.isMacOS || Platform.isWindows;
+  bool get isSupported =>
+      Platform.isLinux || Platform.isMacOS || Platform.isWindows;
 
   @override
   Future<AgentLifecycleHookSourceSnapshot> inspect(String sourcePath) async {
@@ -46,12 +47,17 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
     required String conversationId,
     required Future<bool> Function() isStillTrusted,
   }) => _invoke((
-    snapshot: snapshot, hook: hook, input: input,
+    snapshot: snapshot,
+    hook: hook,
+    input: input,
     isCancellationRequested: isCancellationRequested,
-    conversationId: conversationId, isStillTrusted: isStillTrusted,
+    conversationId: conversationId,
+    isStillTrusted: isStillTrusted,
   ));
 
-  Future<AgentLifecycleHookInvocationResult> _invoke(_Invocation request) async {
+  Future<AgentLifecycleHookInvocationResult> _invoke(
+    _Invocation request,
+  ) async {
     final failure = _inputFailure(request);
     if (failure != null) return .new(outcome: failure);
     final checked = await _reinspect(request);
@@ -68,7 +74,8 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
 
   AgentToolHookOutcome? _inputFailure(_Invocation request) {
     if (!isSupported) return .unavailable;
-    if (request.isCancellationRequested(request.conversationId)) return .cancelled;
+    if (request.isCancellationRequested(request.conversationId))
+      return .cancelled;
     if (_inputExceedsLimit(request.input)) return .outputLimitExceeded;
 
     return null;
@@ -80,35 +87,42 @@ class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
       // Dispatch through the overridable entrypoint, including the second check.
       current = await inspect(request.snapshot.canonicalPath);
     } on Object {
-      return (snapshot: null, failure: .failed);
+      return (snapshot: null, failure: AgentToolHookOutcome.failed);
     }
     if (!_matchesInvocation(current, request)) {
-      return (snapshot: null, failure: .unavailable);
+      return (snapshot: null, failure: AgentToolHookOutcome.unavailable);
     }
 
     return (snapshot: current, failure: null);
   }
-
 }
 
 AgentLifecycleHookProcessRequest _processRequest(
-  AgentLifecycleHookSourceSnapshot current, _Invocation request, String commandPath,
+  AgentLifecycleHookSourceSnapshot current,
+  _Invocation request,
+  String commandPath,
 ) => (
   commandPath: commandPath,
   arguments: request.hook.args,
   workingDirectory: p.dirname(current.canonicalPath),
   inputBytes: utf8.encode(request.input),
-  isCancellationRequested: () => request.isCancellationRequested(request.conversationId),
+  isCancellationRequested: () =>
+      request.isCancellationRequested(request.conversationId),
   isStillTrusted: request.isStillTrusted,
 );
 
-bool _inputExceedsLimit(String input) => input.length > maxAgentLifecycleHookInputBytes ||
+bool _inputExceedsLimit(String input) =>
+    input.length > maxAgentLifecycleHookInputBytes ||
     utf8.encode(input).length > maxAgentLifecycleHookInputBytes;
 
-bool _matchesInvocation(AgentLifecycleHookSourceSnapshot current, _Invocation request) {
+bool _matchesInvocation(
+  AgentLifecycleHookSourceSnapshot current,
+  _Invocation request,
+) {
   if (current.digest != request.snapshot.digest) return false;
   final hook = current.config.hookFor(request.hook.event);
-  if (hook == null || current.commandPaths[request.hook.event] == null) return false;
+  if (hook == null || current.commandPaths[request.hook.event] == null)
+    return false;
 
   return hook.command == request.hook.command &&
       _sameArguments(hook.args, request.hook.args);

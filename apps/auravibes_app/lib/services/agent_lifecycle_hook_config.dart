@@ -77,9 +77,11 @@ Object? _decodeJson(String source) {
   }
 }
 
-bool _isConfigShape(Object? value) => value is Map<String, dynamic> &&
+bool _isConfigShape(Object? value) =>
+    value is Map<String, dynamic> &&
     _hasOnlyKeys(value, const {'version', 'hooks', 'sourceFiles'}) &&
-    value['version'] == 1 && value['hooks'] is List<Object?>;
+    value['version'] == 1 &&
+    value['hooks'] is List<Object?>;
 
 bool _hasOnlyKeys(Map<String, dynamic> value, Set<String> keys) =>
     value.keys.toSet().difference(keys).isEmpty;
@@ -97,8 +99,8 @@ List<String> _parseSourceFiles(Object? raw) {
   return sources.cast<String>();
 }
 
-bool _isSourcePath(Object? value) => value is String &&
-    value.trim().isNotEmpty && !value.contains('\u0000');
+bool _isSourcePath(Object? value) =>
+    value is String && value.trim().isNotEmpty && !value.contains('\u0000');
 
 List<AgentLifecycleHookDefinition> _parseHooks(List<Object?> rawHooks) {
   final hooks = <AgentLifecycleHookDefinition>[];
@@ -122,7 +124,11 @@ AgentLifecycleHookDefinition _parseHook(Object? raw) {
   final event = _parseEvent(raw['event']);
   final command = _parseCommand(raw['command']);
 
-  return .new(event: event, command: command, args: _parseArguments(raw['args']));
+  return .new(
+    event: event,
+    command: command,
+    args: _parseArguments(raw['args']),
+  );
 }
 
 AgentLifecycleHookEvent _parseEvent(Object? raw) => switch (raw) {

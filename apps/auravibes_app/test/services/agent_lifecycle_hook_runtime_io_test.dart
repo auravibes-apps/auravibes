@@ -18,27 +18,42 @@ void main() {
     'fingerprint encoding remains compatible with stored trust',
     () async {
       const sources = ['z-policy.json', 'a-policy.json'];
-      final fixture = await _HookFixture.create('/usr/bin/printf', sourceFiles: sources);
+      final fixture = await _HookFixture.create(
+        '/usr/bin/printf',
+        sourceFiles: sources,
+      );
       addTearDown(fixture.dispose);
-      final configBytes = await File(fixture.snapshot.canonicalPath).readAsBytes();
+      final configBytes = await File(fixture.snapshot.canonicalPath)
+          .readAsBytes();
       final command = await File('/usr/bin/printf').resolveSymbolicLinks();
       final commandBytes = await File(command).readAsBytes();
       final sourcePaths = <String>[];
       for (final source in sources) {
-        sourcePaths.add(await File('${fixture.directory.path}/$source').resolveSymbolicLinks());
+        sourcePaths.add(
+          await File('${fixture.directory.path}/$source')
+              .resolveSymbolicLinks(),
+        );
       }
       expect(fixture.snapshot.sourceFilePaths, sourcePaths);
       sourcePaths.sort();
       final expected = jsonEncode({
         'sourcePath': fixture.snapshot.canonicalPath,
         'configDigest': sha256.convert(configBytes).toString(),
-        'commands': [{'path': command, 'digest': sha256.convert(commandBytes).toString()}],
+        'commands': [
+          {'path': command, 'digest': sha256.convert(commandBytes).toString()},
+        ],
         'sourceFiles': [
           for (final path in sourcePaths)
-            {'path': path, 'digest': sha256.convert(utf8.encode('trusted')).toString()},
+            {
+              'path': path,
+              'digest': sha256.convert(utf8.encode('trusted')).toString(),
+            },
         ],
       });
-      expect(fixture.snapshot.digest, sha256.convert(utf8.encode(expected)).toString());
+      expect(
+        fixture.snapshot.digest,
+        sha256.convert(utf8.encode(expected)).toString(),
+      );
     },
     timeout: const Timeout(.new(seconds: 10)),
     skip: !supported || !File('/usr/bin/printf').existsSync(),

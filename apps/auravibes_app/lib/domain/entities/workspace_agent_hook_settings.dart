@@ -14,6 +14,8 @@ class const WorkspaceAgentHookSettings({
       trustedDigest != null;
 
   bool trustsSource({required String canonicalPath, required String digest}) =>
-      isTrusted && configPath == canonicalPath &&
-      trustedSourcePath == canonicalPath && trustedDigest == digest;
+      isTrusted &&
+      configPath == canonicalPath &&
+      trustedSourcePath == canonicalPath &&
+      trustedDigest == digest;
 }

@@ -14,7 +14,9 @@ class const AgentLifecycleHookSourceInspector() {
     }
     final canonicalPath = await File(sourcePath).resolveSymbolicLinks();
     final bytes = await _readBoundedFile(
-      .new(canonicalPath), maxAgentLifecycleHookConfigBytes, 'config_too_large',
+      .new(canonicalPath),
+      maxAgentLifecycleHookConfigBytes,
+      'config_too_large',
     );
     final config = parseAgentLifecycleHookConfig(utf8.decode(bytes));
     final sources = _HookSourceDigests(canonicalPath, bytes, config);
@@ -27,7 +29,7 @@ class const AgentLifecycleHookSourceInspector() {
 
 class _HookSourceDigests {
   new(this.canonicalPath, this.configBytes, this.config)
-      : _trustedSourceBytes = configBytes.length;
+    : _trustedSourceBytes = configBytes.length;
 
   final String canonicalPath;
   final Uint8List configBytes;
@@ -60,13 +62,15 @@ class _HookSourceDigests {
     }
   }
 
-  Future<String> _resolve(String path) => File(
-    p.isAbsolute(path) ? path : p.join(p.dirname(canonicalPath), path),
-  ).resolveSymbolicLinks();
+  Future<String> _resolve(String path) =>
+      File(p.isAbsolute(path) ? path : p.join(p.dirname(canonicalPath), path))
+          .resolveSymbolicLinks();
 
   Future<String> _readDigest(File file, String failureCode) async {
     final bytes = await _readBoundedFile(
-      file, maxAgentLifecycleHookExecutableBytes, failureCode,
+      file,
+      maxAgentLifecycleHookExecutableBytes,
+      failureCode,
     );
     _trustedSourceBytes += bytes.length;
     if (_trustedSourceBytes > maxAgentLifecycleHookTrustedSourceBytes) {
@@ -84,12 +88,18 @@ class _HookSourceDigests {
     sourceFilePaths: _sourceFilePaths,
   );
 
-  String _fingerprint() => sha256.convert(utf8.encode(jsonEncode({
-    'sourcePath': canonicalPath,
-    'configDigest': sha256.convert(configBytes).toString(),
-    'commands': _digestEntries(_commandDigests),
-    'sourceFiles': _digestEntries(_sourceDigests),
-  }))).toString();
+  String _fingerprint() => sha256
+      .convert(
+        utf8.encode(
+          jsonEncode({
+            'sourcePath': canonicalPath,
+            'configDigest': sha256.convert(configBytes).toString(),
+            'commands': _digestEntries(_commandDigests),
+            'sourceFiles': _digestEntries(_sourceDigests),
+          }),
+        ),
+      )
+      .toString();
 }
 
 List<Map<String, String?>> _digestEntries(Map<String, String> digests) => [
@@ -97,7 +107,11 @@ List<Map<String, String?>> _digestEntries(Map<String, String> digests) => [
     {'path': path, 'digest': digests[path]},
 ];
 
-Future<Uint8List> _readBoundedFile(File file, int maxBytes, String failureCode) async {
+Future<Uint8List> _readBoundedFile(
+  File file,
+  int maxBytes,
+  String failureCode,
+) async {
   final stat = file.statSync();
   if (stat.type != FileSystemEntityType.file || stat.size > maxBytes) {
     throw AgentLifecycleHookConfigException(failureCode);

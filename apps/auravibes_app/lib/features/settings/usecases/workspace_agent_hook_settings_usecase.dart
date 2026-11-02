@@ -78,7 +78,8 @@ class const WorkspaceAgentHookSettingsUsecase({
 
       final snapshot = await _inspect(configPath);
       if (!settings.trustsSource(
-        canonicalPath: snapshot.canonicalPath, digest: snapshot.digest,
+        canonicalPath: snapshot.canonicalPath,
+        digest: snapshot.digest,
       )) {
         throw const WorkspaceAgentHookSettingsException(
           'agent_lifecycle_hooks.configuration_changed',

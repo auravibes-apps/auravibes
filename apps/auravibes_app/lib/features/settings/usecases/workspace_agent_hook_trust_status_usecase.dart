@@ -5,7 +5,9 @@ import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 class const WorkspaceAgentHookTrustStatusUsecase(
   final AgentLifecycleHookRuntime runtime,
 ) {
-  Future<WorkspaceAgentHookTrustStatus> call(WorkspaceAgentHookSettings settings) async {
+  Future<WorkspaceAgentHookTrustStatus> call(
+    WorkspaceAgentHookSettings settings,
+  ) async {
     final path = settings.configPath;
     if (path == null) return .notConfigured;
     if (!settings.isTrusted) return .trustRequired;
@@ -14,9 +16,11 @@ class const WorkspaceAgentHookTrustStatusUsecase(
       final snapshot = await runtime.inspect(path);
 
       return settings.trustsSource(
-        canonicalPath: snapshot.canonicalPath,
-        digest: snapshot.digest,
-      ) ? .trusted : .changed;
+            canonicalPath: snapshot.canonicalPath,
+            digest: snapshot.digest,
+          )
+          ? .trusted
+          : .changed;
     } on Object {
       return .invalid;
     }
