@@ -119,10 +119,12 @@ void main() {
         expect(settings.enabled, isFalse);
         expect(settings.isTrusted, isFalse);
         expect(settings.configPath, isNull);
-        final retained = await database.customSelect(
-          'SELECT name FROM workspaces WHERE id = ?',
-          variables: [const Variable<String>('existing')],
-        ).getSingle();
+        final retained = await database
+            .customSelect(
+              'SELECT name FROM workspaces WHERE id = ?',
+              variables: [const Variable<String>('existing')],
+            )
+            .getSingle();
         expect(retained.read<String>('name'), 'Retained workspace');
         final _ = await repository.selectConfig(
           'existing',
