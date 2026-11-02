@@ -96,8 +96,7 @@ List<String> _parseSourceFiles(Object? raw) {
 
 List<Object?> _sourceFileList(Object? raw) {
   if (raw == null) return const [];
-  if (raw is! List<Object?> ||
-      raw.length > maxAgentLifecycleHookSourceFiles) {
+  if (raw is! List<Object?> || raw.length > maxAgentLifecycleHookSourceFiles) {
     throw const AgentLifecycleHookConfigException('invalid_source_files');
   }
 
