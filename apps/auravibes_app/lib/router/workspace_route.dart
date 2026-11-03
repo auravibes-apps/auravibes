@@ -33,6 +33,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_items_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_setup_preflight_screen.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_access_gate.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_sign_in_recovery.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -191,6 +192,7 @@ abstract class const _AppGoRouteData() extends GoRouteData {
           routes: [
             TypedGoRoute<SettingsRoute>(path: 'settings'),
             TypedGoRoute<WorkspaceSettingsRoute>(path: 'workspace-settings'),
+            TypedGoRoute<WorkspaceSetupPreflightRoute>(path: 'setup-preflight'),
           ],
         ),
       ],
@@ -1050,6 +1052,17 @@ class WorkspaceSettingsRoute({required final String workspaceId})
       WorkspaceSettingsScreen(
         workspaceId: workspaceId,
         guard: _exitGuard,
+        key: ValueKey(workspaceId),
+      );
+}
+
+class WorkspaceSetupPreflightRoute({required final String workspaceId})
+    extends _AppGoRouteData
+    with $WorkspaceSetupPreflightRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      WorkspaceSetupPreflightScreen(
+        workspaceId: workspaceId,
         key: ValueKey(workspaceId),
       );
 }

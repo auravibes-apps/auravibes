@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/settings/models/workspace_settings_draft_guards.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
@@ -7,9 +9,11 @@ import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycl
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -103,6 +107,7 @@ class const _WorkspaceSettingsView({
       padding: const EdgeInsets.all(16),
       children: [
         _WorkspaceSettingsHeading(workspaceName: workspaceName),
+        _WorkspaceSetupPreflightEntry(workspaceId: workspaceId),
         _WorkspaceSettingsContent(
           workspaceId: workspaceId,
           guards: guards,
@@ -125,6 +130,35 @@ class const _WorkspaceSettingsHeading({required final String workspaceName})
       AuraText(child: Text(workspaceName), style: .heading6),
       const TextLocale(LocaleKeys.navigation_workspace_settings_scope),
     ],
+  );
+}
+
+class const _WorkspaceSetupPreflightEntry({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    style: .border,
+    child: AuraColumn(
+      crossAxisAlignment: .start,
+      children: [
+        AuraText(
+          child: const TextLocale('workspace_setup_preflight.entry_title'),
+          style: .heading6,
+        ),
+        const TextLocale('workspace_setup_preflight.entry_description'),
+        AuraButton(
+          onPressed: () => unawaited(
+            FeatureDestinations.push<void>(
+              context,
+              WorkspaceSetupPreflightRoute(workspaceId: workspaceId).location,
+            ),
+          ),
+          child: const TextLocale('workspace_setup_preflight.open'),
+          variant: .ghost,
+          key: const ValueKey('workspace_settings_setup_preflight'),
+        ),
+      ],
+    ),
   );
 }
 
