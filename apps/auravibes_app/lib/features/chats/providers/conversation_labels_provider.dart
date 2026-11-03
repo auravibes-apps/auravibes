@@ -35,9 +35,7 @@ Stream<List<ConversationLabelEntity>> conversationLabelsStream(
       );
     }
 
-    yield* gateway.watch(const {'conversation'}, read).map((snapshot) {
-      return snapshot.value;
-    });
+    yield* gateway.watch(const {'conversation'}, read);
     return;
   }
 
