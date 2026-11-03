@@ -81,20 +81,35 @@ Stream<List<ConversationEntity>> conversationsStream(
   Ref ref,
   ConversationStreamRequest request,
 ) async* {
-  final workspaceId = request.workspaceId;
+  final streamContext = await _conversationStreamContext(
+    ref,
+    request.workspaceId,
+  );
+  if (streamContext == null) return;
+
+  yield* _conversationsForSession(
+    ref,
+    streamContext.session,
+    request.workspaceId,
+    (
+      search: request.search,
+      pagination: request.pagination,
+      fetchAllPages: false,
+      scope: request.scope,
+      archivedIds: streamContext.archivedIds,
+    ),
+  );
+}
+
+Future<({WorkspaceSession session, Set<String> archivedIds})?>
+_conversationStreamContext(Ref ref, String workspaceId) async {
   final session = await _workspaceSession(ref, workspaceId);
-  if (!ref.mounted) return;
+  if (!ref.mounted) return null;
 
   final archivedIds = await _archiveIdsForSession(ref, workspaceId, session);
-  if (!ref.mounted) return;
+  if (!ref.mounted) return null;
 
-  yield* _conversationsForSession(ref, session, workspaceId, (
-    search: request.search,
-    pagination: request.pagination,
-    fetchAllPages: false,
-    scope: request.scope,
-    archivedIds: archivedIds,
-  ));
+  return (session: session, archivedIds: archivedIds);
 }
 
 Future<WorkspaceSession> _workspaceSession(Ref ref, String workspaceId) =>

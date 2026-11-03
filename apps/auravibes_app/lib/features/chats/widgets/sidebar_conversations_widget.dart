@@ -49,22 +49,55 @@ class const SidebarConversationsWidget({
       return const SizedBox.shrink();
     }
 
-    final currentChatId = _sidebarCurrentChatIdFromContext(context);
-    final chatListAsync = ref.watch(
-      conversationsStreamProvider((
-        workspaceId: workspaceId,
-        search: '',
-        scope: .active,
-        pagination: (limit: limit, offset: 0),
-      )),
-    );
-
-    return _SidebarConversationsContent(
-      chatListAsync: chatListAsync,
+    return _SidebarConversationsWorkspace(
       workspaceId: workspaceId,
-      currentChatId: currentChatId,
+      limit: limit,
     );
   }
+}
+
+class _SidebarConversationsWorkspace extends StatelessWidget {
+  const _SidebarConversationsWorkspace({
+    required this.workspaceId,
+    required this.limit,
+  });
+
+  final String workspaceId;
+  final int limit;
+
+  @override
+  Widget build(BuildContext context) => _SidebarConversationsData(
+    workspaceId: workspaceId,
+    currentChatId: _sidebarCurrentChatIdFromContext(context),
+    limit: limit,
+  );
+}
+
+class _SidebarConversationsData extends ConsumerWidget {
+  const _SidebarConversationsData({
+    required this.workspaceId,
+    required this.currentChatId,
+    required this.limit,
+  });
+
+  final String workspaceId;
+  final String? currentChatId;
+  final int limit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _SidebarConversationsContent(
+        chatListAsync: ref.watch(
+          conversationsStreamProvider((
+            workspaceId: workspaceId,
+            search: '',
+            scope: .active,
+            pagination: (limit: limit, offset: 0),
+          )),
+        ),
+        workspaceId: workspaceId,
+        currentChatId: currentChatId,
+      );
 }
 
 String? _sidebarCurrentChatIdFromContext(BuildContext context) =>
