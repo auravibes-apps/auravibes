@@ -934,7 +934,8 @@ class _FakeConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) => throw UnimplementedError();
 
   @override

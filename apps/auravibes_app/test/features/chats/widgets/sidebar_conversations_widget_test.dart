@@ -731,7 +731,8 @@ class _SeededConversationRepository(
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) {
     workspaceWatchCalls.add(
       _WorkspaceWatchCall(workspaceId: workspaceId, limit: options.limit),
@@ -927,7 +928,8 @@ class _RecordingConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) {
     workspaceWatchCalls.add(
       _WorkspaceWatchCall(workspaceId: workspaceId, limit: options.limit),

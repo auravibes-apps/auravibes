@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
@@ -157,12 +158,16 @@ void main() {
               cloudAccountUseCasesProvider.overrideWithValue(usecases),
               cloudEmailDeliveryProvider.overrideWithValue(.email),
               conversationsStreamProvider(
-                workspaceId: workspace,
-                pagination: (limit: 10, offset: 0),
+                ConversationStreamRequest(
+                  workspaceId: workspace,
+                  pagination: (limit: 10, offset: 0),
+                ),
               ).overrideWith((_) => Stream.value([])),
               conversationsStreamProvider(
-                workspaceId: workspace,
-                pagination: (limit: 21, offset: 0),
+                ConversationStreamRequest(
+                  workspaceId: workspace,
+                  pagination: (limit: 21, offset: 0),
+                ),
               ).overrideWith((_) => Stream.value([])),
               cloudAccountsProvider.overrideWith((_) async => []),
               workspaceSessionForRouteProvider(workspace)
@@ -303,8 +308,10 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
           conversationsStreamProvider(
-            workspaceId: workspace,
-            pagination: (limit: 10, offset: 0),
+            ConversationStreamRequest(
+              workspaceId: workspace,
+              pagination: (limit: 10, offset: 0),
+            ),
           ).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith((_) async => []),
           workspaceSessionForRouteProvider(workspace)
@@ -340,8 +347,10 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
           conversationsStreamProvider(
-            workspaceId: workspace,
-            pagination: (limit: 10, offset: 0),
+            ConversationStreamRequest(
+              workspaceId: workspace,
+              pagination: (limit: 10, offset: 0),
+            ),
           ).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith(
             (_) async => [
@@ -523,8 +532,10 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
           conversationsStreamProvider(
-            workspaceId: workspace,
-            pagination: (limit: 10, offset: 0),
+            ConversationStreamRequest(
+              workspaceId: workspace,
+              pagination: (limit: 10, offset: 0),
+            ),
           ).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith(
             (_) async => [
@@ -577,8 +588,10 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
           conversationsStreamProvider(
-            workspaceId: workspace,
-            pagination: (limit: 10, offset: 0),
+            ConversationStreamRequest(
+              workspaceId: workspace,
+              pagination: (limit: 10, offset: 0),
+            ),
           ).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith((_) async => []),
           workspaceSessionForRouteProvider(

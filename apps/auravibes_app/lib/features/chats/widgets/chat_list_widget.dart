@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -246,12 +247,14 @@ Future<List<ConversationEntity>> _readNextConversationPage(
 ConversationsStreamProvider _nextConversationPageProvider(
   _ChatListPaginationState state,
 ) => conversationsStreamProvider(
-  workspaceId: state.workspaceId,
-  search: state.search,
-  scope: state.scope,
-  pagination: (
-    limit: _conversationPageSize + 1,
-    offset: state.loadedChats.value.length,
+  ConversationStreamRequest(
+    workspaceId: state.workspaceId,
+    search: state.search,
+    scope: state.scope,
+    pagination: (
+      limit: _conversationPageSize + 1,
+      offset: state.loadedChats.value.length,
+    ),
   ),
 );
 
@@ -311,14 +314,20 @@ _ChatListHookState _useChatListHookState(
     scope: scope,
   ));
 
-  return (
-    input: input,
-    results: results,
-    normalizedSearch: query.normalizedSearch,
-    debouncedSearch: query.debouncedSearch,
-    chatListAsync: query.chatListAsync,
-  );
+  return _createChatListHookState(input, results, query);
 }
+
+_ChatListHookState _createChatListHookState(
+  _ChatListInputState input,
+  _ChatListResultsState results,
+  _ChatListQueryState query,
+) => (
+  input: input,
+  results: results,
+  normalizedSearch: query.normalizedSearch,
+  debouncedSearch: query.debouncedSearch,
+  chatListAsync: query.chatListAsync,
+);
 
 _ChatListInputState _useChatListInputState() => (
   searchController: useTextEditingController(),
@@ -391,10 +400,12 @@ _ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
 ConversationsStreamProvider _chatListPageProvider(
   _ChatListPageRequest request,
 ) => conversationsStreamProvider(
-  workspaceId: request.workspaceId,
-  search: request.search,
-  scope: request.scope,
-  pagination: (limit: _conversationPageSize + 1, offset: 0),
+  ConversationStreamRequest(
+    workspaceId: request.workspaceId,
+    search: request.search,
+    scope: request.scope,
+    pagination: (limit: _conversationPageSize + 1, offset: 0),
+  ),
 );
 
 _ChatListDataState _chatListDataState(_ChatListHookState hooks) {
@@ -600,32 +611,43 @@ class const _ChatListEmptyState({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (scope) {
-    .active => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
-      ),
-    ),
-    .archived => const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            AuraIcon(Icons.archive_outlined, size: .extraLarge),
-            SizedBox(height: 16),
-            AuraText(
-              child: TextLocale(
-                LocaleKeys.chats_screens_archived_conversations_empty,
-              ),
-              style: .heading3,
-              textAlign: .center,
-            ),
-          ],
-        ),
-      ),
-    ),
+    .active => _ChatListActiveEmptyState(workspaceId: workspaceId),
+    .archived => const _ChatListArchivedEmptyState(),
   };
+}
+
+class const _ChatListActiveEmptyState({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
+    ),
+  );
+}
+
+class const _ChatListArchivedEmptyState() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          AuraIcon(Icons.archive_outlined, size: .extraLarge),
+          SizedBox(height: 16),
+          AuraText(
+            child: TextLocale(
+              LocaleKeys.chats_screens_archived_conversations_empty,
+            ),
+            style: .heading3,
+            textAlign: .center,
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class const _ChatListEmptyStateColumn({required final String workspaceId})
@@ -855,8 +877,11 @@ extension on _ChatTileState {
     }
   }
 
-  void _invalidateConversations(String workspaceId) =>
-      ref.invalidate(conversationsStreamProvider(workspaceId: workspaceId));
+  void _invalidateConversations(String workspaceId) => ref.invalidate(
+    conversationsStreamProvider(
+      ConversationStreamRequest(workspaceId: workspaceId),
+    ),
+  );
 
   void _openConversation(BuildContext context) {
     ConversationRoute(
@@ -1012,20 +1037,20 @@ class const _ChatListLoaded({required final _ChatListViewState state})
 class const _ChatListLoadedBody({required final _ChatListViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Column(
-    children: [
-      if (state.scope == ConversationListScope.active)
-        _ChatListBulkActions(
-          workspaceId: state.workspaceId,
-          selectedChats: state.selectedChats,
-          isBulkActionRunning: state.isBulkActionRunning,
-        ),
-      _ChatListSearchInput(state: state),
-      Expanded(child: _ChatListResults(state: state)),
-      if (state.hasMore && !state.isRefreshing && !state.hasError)
-        _ChatListLoadMore(state: state),
-    ],
-  );
+  Widget build(BuildContext _) => Column(children: _children());
+
+  List<Widget> _children() => [
+    if (state.scope == ConversationListScope.active)
+      _ChatListBulkActions(
+        workspaceId: state.workspaceId,
+        selectedChats: state.selectedChats,
+        isBulkActionRunning: state.isBulkActionRunning,
+      ),
+    _ChatListSearchInput(state: state),
+    Expanded(child: _ChatListResults(state: state)),
+    if (state.hasMore && !state.isRefreshing && !state.hasError)
+      _ChatListLoadMore(state: state),
+  ];
 }
 
 class const _ChatListBulkActions({
@@ -1199,7 +1224,9 @@ extension on _ChatListBulkActionsState {
       );
     }
     ref.invalidate(
-      conversationsStreamProvider(workspaceId: widget.workspaceId),
+      conversationsStreamProvider(
+        ConversationStreamRequest(workspaceId: widget.workspaceId),
+      ),
     );
     _showConversationFailures(context, key, failures);
   }

@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/quick_switcher/providers/quick_switcher_entries_provider.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
@@ -40,8 +41,10 @@ void main() {
           (_) async => const WorkspaceAuthenticationRequired(lockedSession),
         ),
         conversationsStreamProvider(
-          workspaceId: 'available',
-          pagination: (limit: 10, offset: 0),
+          ConversationStreamRequest(
+            workspaceId: 'available',
+            pagination: (limit: 10, offset: 0),
+          ),
         ).overrideWith(
           (_) => Stream.value([
             ConversationEntity(

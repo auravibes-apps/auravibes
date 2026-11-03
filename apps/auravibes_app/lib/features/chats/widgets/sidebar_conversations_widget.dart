@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -52,8 +53,10 @@ class const SidebarConversationsWidget({
     final currentChatId = _sidebarCurrentChatIdFromContext(context);
     final chatListAsync = ref.watch(
       conversationsStreamProvider(
-        workspaceId: workspaceId,
-        pagination: (limit: limit, offset: 0),
+        ConversationStreamRequest(
+          workspaceId: workspaceId,
+          pagination: (limit: limit, offset: 0),
+        ),
       ),
     );
 
@@ -769,7 +772,9 @@ void _showSidebarDeleteSnack(BuildContext context, Object error) {
 
 void _invalidateDeletedConversation(WidgetRef ref, ConversationEntity chat) {
   final _ = ref.invalidate(
-    conversationsStreamProvider(workspaceId: chat.workspaceId),
+    conversationsStreamProvider(
+      ConversationStreamRequest(workspaceId: chat.workspaceId),
+    ),
   );
   final _ = ref.invalidate(
     conversationByIdStreamProvider(chat.workspaceId, conversationId: chat.id),
@@ -802,7 +807,9 @@ void _navigateToSidebarFork(
   String forkId,
 ) {
   final _ = ref.invalidate(
-    conversationsStreamProvider(workspaceId: chat.workspaceId),
+    conversationsStreamProvider(
+      ConversationStreamRequest(workspaceId: chat.workspaceId),
+    ),
   );
   if (!context.mounted) return;
   ConversationRoute(workspaceId: chat.workspaceId, chatId: forkId).go(context);
@@ -851,7 +858,9 @@ Future<bool> _hasSidebarPinnedCapacity(
   String workspaceId,
 ) async {
   final conversations = await ref.read(
-    conversationsStreamProvider(workspaceId: workspaceId).future,
+    conversationsStreamProvider(
+      ConversationStreamRequest(workspaceId: workspaceId),
+    ).future,
   );
 
   return ConversationLimits.hasPinnedCapacity(conversations);
@@ -869,7 +878,11 @@ Future<bool> _toggleSidebarCloudPin(
 
   await _updateSidebarCloudPin(cloud, chat);
   if (context.mounted) {
-    ref.invalidate(conversationsStreamProvider(workspaceId: chat.workspaceId));
+    ref.invalidate(
+      conversationsStreamProvider(
+        ConversationStreamRequest(workspaceId: chat.workspaceId),
+      ),
+    );
   }
 
   return true;

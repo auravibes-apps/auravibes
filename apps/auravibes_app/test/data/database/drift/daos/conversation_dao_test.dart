@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -295,13 +296,23 @@ void main() {
         final firstPage = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              options: (search: '', archivedOnly: false, limit: 1, offset: 0),
+              options: ConversationListQueryOptions(
+                search: '',
+                archivedOnly: false,
+                limit: 1,
+                offset: 0,
+              ),
             )
             .first;
         final secondPage = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              options: (search: '', archivedOnly: false, limit: 1, offset: 1),
+              options: ConversationListQueryOptions(
+                search: '',
+                archivedOnly: false,
+                limit: 1,
+                offset: 1,
+              ),
             )
             .first;
 
@@ -381,7 +392,12 @@ void main() {
       final emitted = await fixture.database.conversationDao
           .watchConversationsByWorkspace(
             ws.id,
-            options: (search: '', archivedOnly: false, limit: 1, offset: 0),
+            options: ConversationListQueryOptions(
+              search: '',
+              archivedOnly: false,
+              limit: 1,
+              offset: 0,
+            ),
           )
           .first;
       expect(emitted.length, equals(1));
@@ -404,7 +420,7 @@ void main() {
       final allMatches = await fixture.database.conversationDao
           .watchConversationsByWorkspace(
             ws.id,
-            options: (
+            options: ConversationListQueryOptions(
               search: 'release',
               archivedOnly: false,
               limit: null,
@@ -415,7 +431,7 @@ void main() {
       final page = await fixture.database.conversationDao
           .watchConversationsByWorkspace(
             ws.id,
-            options: (
+            options: ConversationListQueryOptions(
               search: 'release',
               archivedOnly: false,
               limit: 1,
@@ -494,13 +510,18 @@ void main() {
         final archivedConversations = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              options: (search: '', archivedOnly: true, limit: null, offset: 0),
+              options: ConversationListQueryOptions(
+                search: '',
+                archivedOnly: true,
+                limit: null,
+                offset: 0,
+              ),
             )
             .first;
         final searchedArchive = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              options: (
+              options: ConversationListQueryOptions(
                 search: 'project',
                 archivedOnly: true,
                 limit: null,
@@ -511,7 +532,12 @@ void main() {
         final archivePage = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              options: (search: '', archivedOnly: true, limit: 1, offset: 1),
+              options: ConversationListQueryOptions(
+                search: '',
+                archivedOnly: true,
+                limit: 1,
+                offset: 1,
+              ),
             )
             .first;
 

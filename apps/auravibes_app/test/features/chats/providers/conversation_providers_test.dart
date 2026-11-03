@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -34,7 +35,8 @@ class _FakeConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) => Stream.value(conversationsByWorkspace);
 
   @override
@@ -151,7 +153,9 @@ void main() {
         addTearDown(container.dispose);
 
         final subscription = container.listen(
-          conversationsStreamProvider(workspaceId: 'ws1'),
+          conversationsStreamProvider(
+            ConversationStreamRequest(workspaceId: 'ws1'),
+          ),
           (_, _) => fail('Unexpected emission before listener disposal'),
         );
         await sessionProviderStarted.future;
@@ -179,7 +183,9 @@ void main() {
       ];
 
       fixture.repository.conversationsByWorkspace = conversations;
-      final provider = conversationsStreamProvider(workspaceId: 'ws1');
+      final provider = conversationsStreamProvider(
+        ConversationStreamRequest(workspaceId: 'ws1'),
+      );
       final result = Completer<List<ConversationEntity>>();
       void completeConversations(
         AsyncValue<List<ConversationEntity>>? _,
@@ -238,7 +244,9 @@ void main() {
       }
 
       final subscription = fixture.container.listen(
-        conversationsStreamProvider(workspaceId: 'ws1'),
+        conversationsStreamProvider(
+          ConversationStreamRequest(workspaceId: 'ws1'),
+        ),
         completeConversations,
         fireImmediately: true,
       );
@@ -263,7 +271,9 @@ void main() {
       ]);
       final container = _cloudContainer(endpoint);
       addTearDown(container.dispose);
-      final provider = conversationsStreamProvider(workspaceId: 'cloud');
+      final provider = conversationsStreamProvider(
+        ConversationStreamRequest(workspaceId: 'cloud'),
+      );
       final subscription = container.listen(
         provider,
         (_, next) => next.toString(),
@@ -298,14 +308,18 @@ void main() {
             ),
           ]);
           final container = _cloudContainer(endpoint);
-          final provider = conversationsStreamProvider(workspaceId: 'cloud');
+          final provider = conversationsStreamProvider(
+            ConversationStreamRequest(workspaceId: 'cloud'),
+          );
           final subscription = container.listen(
             provider,
             (_, next) => next.toString(),
           );
           try {
             final conversations = await container.read(
-              conversationsStreamProvider(workspaceId: 'cloud').future,
+              conversationsStreamProvider(
+                ConversationStreamRequest(workspaceId: 'cloud'),
+              ).future,
             );
             expect(conversations.single.taskBrief, savedValue);
             expect(endpoint.requests, hasLength(1));
@@ -331,12 +345,16 @@ void main() {
       final container = _cloudContainer(endpoint);
       addTearDown(container.dispose);
       final subscription = container.listen(
-        conversationsStreamProvider(workspaceId: 'cloud'),
+        conversationsStreamProvider(
+          ConversationStreamRequest(workspaceId: 'cloud'),
+        ),
         (_, next) => next.toString(),
       );
       addTearDown(subscription.close);
       final conversations = await container.read(
-        conversationsStreamProvider(workspaceId: 'cloud').future,
+        conversationsStreamProvider(
+          ConversationStreamRequest(workspaceId: 'cloud'),
+        ).future,
       );
 
       expect(conversations.single.taskBrief, 'Cloud user-authored objective.');
@@ -370,10 +388,12 @@ void main() {
         );
         addTearDown(container.dispose);
         final provider = conversationsStreamProvider(
-          workspaceId: 'cloud',
-          search: 'Needle',
-          scope: ConversationListScope.archived,
-          pagination: (limit: 1, offset: 1),
+          ConversationStreamRequest(
+            workspaceId: 'cloud',
+            search: 'Needle',
+            scope: ConversationListScope.archived,
+            pagination: (limit: 1, offset: 1),
+          ),
         );
         final subscription = container.listen(
           provider,
@@ -424,7 +444,7 @@ void main() {
         final container = _cloudContainer(endpoint, database: database);
         addTearDown(container.dispose);
         final activeProvider = conversationsStreamProvider(
-          workspaceId: 'cloud',
+          ConversationStreamRequest(workspaceId: 'cloud'),
         );
         final activeChanged = Completer<List<String>>();
         final activeSubscription = container.listen(activeProvider, (_, next) {
@@ -452,8 +472,10 @@ void main() {
         expect(await activeChanged.future, ['active']);
 
         final archivedProvider = conversationsStreamProvider(
-          workspaceId: 'cloud',
-          scope: ConversationListScope.archived,
+          ConversationStreamRequest(
+            workspaceId: 'cloud',
+            scope: ConversationListScope.archived,
+          ),
         );
         final archivedRestored = Completer<List<String>>();
         final archivedSubscription = container.listen(archivedProvider, (
@@ -717,13 +739,19 @@ void main() {
       addTearDown(container.dispose);
 
       final subscription = container.listen(
-        conversationsStreamProvider(workspaceId: 'ws1'),
+        conversationsStreamProvider(
+          ConversationStreamRequest(workspaceId: 'ws1'),
+        ),
         (_, next) => next.toString(),
       );
       addTearDown(subscription.close);
 
       await expectLater(
-        container.read(conversationsStreamProvider(workspaceId: 'ws1').future),
+        container.read(
+          conversationsStreamProvider(
+            ConversationStreamRequest(workspaceId: 'ws1'),
+          ).future,
+        ),
         completes,
       );
     },

@@ -1336,7 +1336,8 @@ class _ScreenshotConversationRepository(
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) => Stream.value([conversation, ...others]);
 
   @override

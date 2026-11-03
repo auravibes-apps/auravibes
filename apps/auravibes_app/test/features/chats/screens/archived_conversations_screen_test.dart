@@ -2,6 +2,7 @@ import 'dart:ui' show Locale, Size;
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -27,9 +28,11 @@ void main() {
         ),
         overrides: [
           conversationsStreamProvider(
-            workspaceId: cloudWorkspace.localWorkspaceId,
-            scope: ConversationListScope.archived,
-            pagination: (limit: 21, offset: 0),
+            ConversationStreamRequest(
+              workspaceId: cloudWorkspace.localWorkspaceId,
+              scope: ConversationListScope.archived,
+              pagination: (limit: 21, offset: 0),
+            ),
           ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
           listWorkspaceModelSelectionsProvider.overrideWith(
             (ref, workspaceId) => Stream.value([]),
@@ -76,9 +79,11 @@ void main() {
         ),
         overrides: [
           conversationsStreamProvider(
-            workspaceId: cloudWorkspace.localWorkspaceId,
-            scope: ConversationListScope.archived,
-            pagination: (limit: 21, offset: 0),
+            ConversationStreamRequest(
+              workspaceId: cloudWorkspace.localWorkspaceId,
+              scope: ConversationListScope.archived,
+              pagination: (limit: 21, offset: 0),
+            ),
           ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
           listWorkspaceModelSelectionsProvider.overrideWith(
             (ref, workspaceId) => Stream.value([]),

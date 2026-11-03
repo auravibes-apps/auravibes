@@ -1,6 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -75,17 +77,12 @@ Stream<ConversationEntity?> _localConversationById(
     .watch(conversationRepositoryProvider)
     .watchConversationById(conversationId);
 
-/// Riverpod generates a family call from these named inputs; keeping this
-/// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters - Keep Riverpod's generated family signature.
 @riverpod
 Stream<List<ConversationEntity>> conversationsStream(
-  Ref ref, {
-  required String workspaceId,
-  String search = '',
-  _ConversationPagination pagination = _defaultConversationPagination,
-  ConversationListScope scope = ConversationListScope.active,
-}) async* {
+  Ref ref,
+  ConversationStreamRequest request,
+) async* {
+  final workspaceId = request.workspaceId;
   final session = await _workspaceSession(ref, workspaceId);
   if (!ref.mounted) return;
 
@@ -93,10 +90,10 @@ Stream<List<ConversationEntity>> conversationsStream(
   if (!ref.mounted) return;
 
   yield* _conversationsForSession(ref, session, workspaceId, (
-    search: search,
-    pagination: pagination,
+    search: request.search,
+    pagination: request.pagination,
     fetchAllPages: false,
-    scope: scope,
+    scope: request.scope,
     archivedIds: archivedIds,
   ));
 }
@@ -126,7 +123,7 @@ Stream<List<ConversationEntity>> _conversationsForSession(
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(
         workspaceId,
-        options: (
+        options: ConversationListQueryOptions(
           search: options.search,
           archivedOnly: options.scope == ConversationListScope.archived,
           limit: options.pagination.limit,

@@ -47,7 +47,8 @@ mixin _ConversationDaoReadApi {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) =>
       ConversationDaoReadOperations(this as ConversationDao)
           .watchConversationsByWorkspace(workspaceId, options: options);
@@ -189,7 +190,8 @@ extension ConversationDaoReadOperations on ConversationDao {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) {
     final query = _buildWorkspaceQuery(workspaceId, options);
     final limit = options.limit;

@@ -16,6 +16,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/browser/models/sidebar_tool_result_tab.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/models/resolved_chat_message.dart';
 import 'package:auravibes_app/features/chats/notifiers/activity_run_expansion_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -1724,7 +1725,11 @@ Future<void> _forkMessage(
                   .call(conversation, throughMessageId: message.id))
               .id;
     }
-    ref.invalidate(conversationsStreamProvider(workspaceId: workspaceId));
+    ref.invalidate(
+      conversationsStreamProvider(
+        ConversationStreamRequest(workspaceId: workspaceId),
+      ),
+    );
     if (context.mounted) {
       ConversationRoute(workspaceId: workspaceId, chatId: forkId).go(context);
     }

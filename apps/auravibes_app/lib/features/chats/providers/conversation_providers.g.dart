@@ -101,16 +101,8 @@ final class ConversationByIdStreamFamily extends $Family
   String toString() => r'conversationByIdStreamProvider';
 }
 
-/// Riverpod generates a family call from these named inputs; keeping this
-/// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters - Keep Riverpod's generated family signature.
-
 @ProviderFor(conversationsStream)
 final conversationsStreamProvider = ConversationsStreamFamily._();
-
-/// Riverpod generates a family call from these named inputs; keeping this
-/// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters - Keep Riverpod's generated family signature.
 
 final class ConversationsStreamProvider
     extends
@@ -122,18 +114,9 @@ final class ConversationsStreamProvider
     with
         $FutureModifier<List<ConversationEntity>>,
         $StreamProvider<List<ConversationEntity>> {
-  /// Riverpod generates a family call from these named inputs; keeping this
-  /// signature preserves the provider API used by its consumers.
-  // ignore: number-of-parameters - Keep Riverpod's generated family signature.
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
-    required ({
-      String workspaceId,
-      String search,
-      _ConversationPagination pagination,
-      ConversationListScope scope,
-    })
-    super.argument,
+    required ConversationStreamRequest super.argument,
   }) : super(
          retry: null,
          name: r'conversationsStreamProvider',
@@ -149,7 +132,7 @@ final class ConversationsStreamProvider
   String toString() {
     return r'conversationsStreamProvider'
         ''
-        '$argument';
+        '($argument)';
   }
 
   @$internal
@@ -160,21 +143,8 @@ final class ConversationsStreamProvider
 
   @override
   Stream<List<ConversationEntity>> create(Ref ref) {
-    final argument =
-        this.argument
-            as ({
-              String workspaceId,
-              String search,
-              _ConversationPagination pagination,
-              ConversationListScope scope,
-            });
-    return conversationsStream(
-      ref,
-      workspaceId: argument.workspaceId,
-      search: argument.search,
-      pagination: argument.pagination,
-      scope: argument.scope,
-    );
+    final argument = this.argument as ConversationStreamRequest;
+    return conversationsStream(ref, argument);
   }
 
   @override
@@ -189,22 +159,13 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'43056d57b5bdff7aee87cac1010811a4fec4b7f2';
-
-/// Riverpod generates a family call from these named inputs; keeping this
-/// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters - Keep Riverpod's generated family signature.
+    r'39cccadcf5ab2d88807c25bbfd027a775866a8ab';
 
 final class ConversationsStreamFamily extends $Family
     with
         $FunctionalFamilyOverride<
           Stream<List<ConversationEntity>>,
-          ({
-            String workspaceId,
-            String search,
-            _ConversationPagination pagination,
-            ConversationListScope scope,
-          })
+          ConversationStreamRequest
         > {
   ConversationsStreamFamily._()
     : super(
@@ -215,24 +176,8 @@ final class ConversationsStreamFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Riverpod generates a family call from these named inputs; keeping this
-  /// signature preserves the provider API used by its consumers.
-  // ignore: number-of-parameters - Keep Riverpod's generated family signature.
-
-  ConversationsStreamProvider call({
-    required String workspaceId,
-    String search = '',
-    _ConversationPagination pagination = _defaultConversationPagination,
-    ConversationListScope scope = ConversationListScope.active,
-  }) => ConversationsStreamProvider._(
-    argument: (
-      workspaceId: workspaceId,
-      search: search,
-      pagination: pagination,
-      scope: scope,
-    ),
-    from: this,
-  );
+  ConversationsStreamProvider call(ConversationStreamRequest request) =>
+      ConversationsStreamProvider._(argument: request, from: this);
 
   @override
   String toString() => r'conversationsStreamProvider';

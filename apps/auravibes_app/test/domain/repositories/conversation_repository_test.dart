@@ -16,7 +16,8 @@ class _StubConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options = defaultConversationListQueryOptions,
+    ConversationListQueryOptions options =
+        ConversationListQueryOptions.defaults,
   }) {
     return Stream.value(conversationsByWorkspace);
   }
@@ -131,7 +132,12 @@ void main() {
       final result = await repo
           .watchConversationsByWorkspace(
             'ws-1',
-            options: (search: '', archivedOnly: false, limit: 5, offset: 0),
+            options: ConversationListQueryOptions(
+              search: '',
+              archivedOnly: false,
+              limit: 5,
+              offset: 0,
+            ),
           )
           .first;
 
