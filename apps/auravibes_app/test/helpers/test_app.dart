@@ -61,10 +61,7 @@ class _TestableAppState extends State<TestableApp> {
     _container = .new(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
-        workspaceSessionForRouteProvider.overrideWith((
-          _,
-          localWorkspaceId,
-        ) {
+        workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
           if (localWorkspaceId == sessionWorkspaceId) return session;
 
           return WorkspaceSession(
