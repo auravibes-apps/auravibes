@@ -54,16 +54,11 @@ void main() {
           find.byType(UncontrolledProviderScope),
         )
         .container;
-    expect(
-      container
-          .read(
-            workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId),
-          )
-          .value
-          ?.cloud
-          ?.cloudWorkspaceId,
-      7,
+    final routeSession = container.read(
+      workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId),
     );
+    expect(routeSession, isA<AsyncData<WorkspaceSession>>());
+    expect(routeSession.value?.cloud?.cloudWorkspaceId, 7);
 
     expect(find.text('Archived on this device'), findsOneWidget);
     expect(
