@@ -710,7 +710,26 @@ void main() {
         ),
       );
 
-      expect(find.text('Project research'), findsOneWidget);
+      final archivedContainer = tester
+          .widget<UncontrolledProviderScope>(
+            find.byType(UncontrolledProviderScope),
+          )
+          .container;
+      final archivedState = archivedContainer.read(
+        conversationsStreamProvider((
+          workspaceId: workspace.id,
+          search: '',
+          scope: ConversationListScope.archived,
+          pagination: (limit: 21, offset: 0),
+        )),
+      );
+      expect(
+        find.text('Project research'),
+        findsOneWidget,
+        reason:
+            'Archived stream state: $archivedState; '
+            'container replaced: ${!identical(container, archivedContainer)}',
+      );
       expect(
         find.byKey(ValueKey('conversation-selection-${conversation.id}')),
         findsNothing,
