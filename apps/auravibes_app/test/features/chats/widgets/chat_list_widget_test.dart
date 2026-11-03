@@ -644,11 +644,20 @@ void main() {
           .createConversation(
             .new(title: 'Project research', workspaceId: workspace.id),
           );
+      var scope = ConversationListScope.active;
+      late StateSetter updateScope;
 
       await pumpAndInit(
         tester,
         buildSubject(
           workspaceId: workspace.id,
+          content: StatefulBuilder(
+            builder: (_, setState) {
+              updateScope = setState;
+
+              return ChatListWidget(workspaceId: workspace.id, scope: scope);
+            },
+          ),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
             conversationRepositoryProvider.overrideWithValue(.new(database)),
@@ -693,28 +702,9 @@ void main() {
         {conversation.id},
       );
       expect(find.text('Project research'), findsNothing);
+      updateScope(() => scope = ConversationListScope.archived);
+      await tester.pump();
 
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          workspaceId: workspace.id,
-          content: ChatListWidget(workspaceId: workspace.id, scope: .archived),
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            conversationRepositoryProvider.overrideWithValue(.new(database)),
-            streamingTitleProvider.overrideWith((ref, id) => null),
-            listWorkspaceModelSelectionsProvider.overrideWith(
-              (ref, workspaceId) => Stream.value([]),
-            ),
-          ],
-        ),
-      );
-
-      final archivedContainer = tester
-          .widget<UncontrolledProviderScope>(
-            find.byType(UncontrolledProviderScope),
-          )
-          .container;
       final archivedProvider = conversationsStreamProvider((
         workspaceId: workspace.id,
         search: '',
@@ -722,7 +712,7 @@ void main() {
         pagination: (limit: 21, offset: 0),
       ));
       final archivedConversations = await tester.runAsync(
-        () => archivedContainer
+        () => container
             .read(archivedProvider.future)
             .timeout(const Duration(seconds: 10)),
       );
@@ -731,13 +721,11 @@ void main() {
         contains(conversation.id),
       );
       await tester.pump();
-      final archivedState = archivedContainer.read(archivedProvider);
+      final archivedState = container.read(archivedProvider);
       expect(
         find.text('Project research'),
         findsOneWidget,
-        reason:
-            'Archived stream state: $archivedState; '
-            'container replaced: ${!identical(container, archivedContainer)}',
+        reason: 'Archived stream state: $archivedState',
       );
       expect(
         find.byKey(ValueKey('conversation-selection-${conversation.id}')),
