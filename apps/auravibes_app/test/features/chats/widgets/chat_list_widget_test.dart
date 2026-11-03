@@ -10,7 +10,6 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
-import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -754,12 +753,12 @@ void main() {
           child: ChatListWidget(workspaceId: workspace.id),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
-            conversationsStreamProvider(
-              ConversationStreamRequest(
-                workspaceId: workspace.id,
-                pagination: (limit: 21, offset: 0),
-              ),
-            ).overrideWith((ref) => Stream.value([conversation])),
+            conversationsStreamProvider((
+              workspaceId: workspace.id,
+              search: '',
+              scope: .active,
+              pagination: (limit: 21, offset: 0),
+            )).overrideWith((ref) => Stream.value([conversation])),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
@@ -1957,8 +1956,12 @@ class _StubConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options =
-        ConversationListQueryOptions.defaults,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     queries.add((
       search: options.search,

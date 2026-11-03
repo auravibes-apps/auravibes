@@ -102,24 +102,14 @@ void main() {
         when(
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
-            options: ConversationListQueryOptions(
-              search: '',
-              archivedOnly: false,
-              limit: 5,
-              offset: 0,
-            ),
+            options: (search: '', archivedOnly: false, limit: 5, offset: 0),
           ),
         ).thenAnswer((_) => controller.stream);
 
         final _ = await repository
             .watchConversationsByWorkspace(
               'ws-1',
-              options: ConversationListQueryOptions(
-                search: '',
-                archivedOnly: false,
-                limit: 5,
-                offset: 0,
-              ),
+              options: (search: '', archivedOnly: false, limit: 5, offset: 0),
             )
             .first;
 
@@ -127,12 +117,7 @@ void main() {
           () => verify(
             () => mockDao.watchConversationsByWorkspace(
               'ws-1',
-              options: ConversationListQueryOptions(
-                search: '',
-                archivedOnly: false,
-                limit: 5,
-                offset: 0,
-              ),
+              options: (search: '', archivedOnly: false, limit: 5, offset: 0),
             ),
           ).called(1),
           returnsNormally,

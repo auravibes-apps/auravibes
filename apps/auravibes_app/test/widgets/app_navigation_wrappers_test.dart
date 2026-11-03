@@ -1017,8 +1017,12 @@ class _FakeConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options =
-        ConversationListQueryOptions.defaults,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     _processPendingRemovals();
 

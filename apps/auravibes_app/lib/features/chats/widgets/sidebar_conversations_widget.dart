@@ -9,7 +9,6 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/browser/providers/browser_session_notifier.dart';
-import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -52,12 +51,12 @@ class const SidebarConversationsWidget({
 
     final currentChatId = _sidebarCurrentChatIdFromContext(context);
     final chatListAsync = ref.watch(
-      conversationsStreamProvider(
-        ConversationStreamRequest(
-          workspaceId: workspaceId,
-          pagination: (limit: limit, offset: 0),
-        ),
-      ),
+      conversationsStreamProvider((
+        workspaceId: workspaceId,
+        search: '',
+        scope: .active,
+        pagination: (limit: limit, offset: 0),
+      )),
     );
 
     return _SidebarConversationsContent(
@@ -772,9 +771,12 @@ void _showSidebarDeleteSnack(BuildContext context, Object error) {
 
 void _invalidateDeletedConversation(WidgetRef ref, ConversationEntity chat) {
   final _ = ref.invalidate(
-    conversationsStreamProvider(
-      ConversationStreamRequest(workspaceId: chat.workspaceId),
-    ),
+    conversationsStreamProvider((
+      workspaceId: chat.workspaceId,
+      search: '',
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )),
   );
   final _ = ref.invalidate(
     conversationByIdStreamProvider(chat.workspaceId, conversationId: chat.id),
@@ -807,9 +809,12 @@ void _navigateToSidebarFork(
   String forkId,
 ) {
   final _ = ref.invalidate(
-    conversationsStreamProvider(
-      ConversationStreamRequest(workspaceId: chat.workspaceId),
-    ),
+    conversationsStreamProvider((
+      workspaceId: chat.workspaceId,
+      search: '',
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )),
   );
   if (!context.mounted) return;
   ConversationRoute(workspaceId: chat.workspaceId, chatId: forkId).go(context);
@@ -858,9 +863,12 @@ Future<bool> _hasSidebarPinnedCapacity(
   String workspaceId,
 ) async {
   final conversations = await ref.read(
-    conversationsStreamProvider(
-      ConversationStreamRequest(workspaceId: workspaceId),
-    ).future,
+    conversationsStreamProvider((
+      workspaceId: workspaceId,
+      search: '',
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )).future,
   );
 
   return ConversationLimits.hasPinnedCapacity(conversations);
@@ -879,9 +887,12 @@ Future<bool> _toggleSidebarCloudPin(
   await _updateSidebarCloudPin(cloud, chat);
   if (context.mounted) {
     ref.invalidate(
-      conversationsStreamProvider(
-        ConversationStreamRequest(workspaceId: chat.workspaceId),
-      ),
+      conversationsStreamProvider((
+        workspaceId: chat.workspaceId,
+        search: '',
+        scope: .active,
+        pagination: (limit: null, offset: 0),
+      )),
     );
   }
 

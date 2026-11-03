@@ -5,7 +5,6 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
-import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -246,17 +245,15 @@ Future<List<ConversationEntity>> _readNextConversationPage(
 
 ConversationsStreamProvider _nextConversationPageProvider(
   _ChatListPaginationState state,
-) => conversationsStreamProvider(
-  ConversationStreamRequest(
-    workspaceId: state.workspaceId,
-    search: state.search,
-    scope: state.scope,
-    pagination: (
-      limit: _conversationPageSize + 1,
-      offset: state.loadedChats.value.length,
-    ),
+) => conversationsStreamProvider((
+  workspaceId: state.workspaceId,
+  search: state.search,
+  scope: state.scope,
+  pagination: (
+    limit: _conversationPageSize + 1,
+    offset: state.loadedChats.value.length,
   ),
-);
+));
 
 void _stopLoadingMore(BuildContext context, ValueNotifier<bool> isLoadingMore) {
   if (context.mounted) isLoadingMore.value = false;
@@ -399,14 +396,12 @@ _ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
 
 ConversationsStreamProvider _chatListPageProvider(
   _ChatListPageRequest request,
-) => conversationsStreamProvider(
-  ConversationStreamRequest(
-    workspaceId: request.workspaceId,
-    search: request.search,
-    scope: request.scope,
-    pagination: (limit: _conversationPageSize + 1, offset: 0),
-  ),
-);
+) => conversationsStreamProvider((
+  workspaceId: request.workspaceId,
+  search: request.search,
+  scope: request.scope,
+  pagination: (limit: _conversationPageSize + 1, offset: 0),
+));
 
 _ChatListDataState _chatListDataState(_ChatListHookState hooks) {
   final chatListAsync = hooks.chatListAsync;
@@ -878,9 +873,12 @@ extension on _ChatTileState {
   }
 
   void _invalidateConversations(String workspaceId) => ref.invalidate(
-    conversationsStreamProvider(
-      ConversationStreamRequest(workspaceId: workspaceId),
-    ),
+    conversationsStreamProvider((
+      workspaceId: workspaceId,
+      search: '',
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )),
   );
 
   void _openConversation(BuildContext context) {
@@ -1037,20 +1035,39 @@ class const _ChatListLoaded({required final _ChatListViewState state})
 class const _ChatListLoadedBody({required final _ChatListViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Column(children: _children());
+  Widget build(BuildContext _) => Column(
+    children: [
+      _ChatListLoadedHeader(state: state),
+      Expanded(child: _ChatListResults(state: state)),
+      _ChatListLoadMoreArea(state: state),
+    ],
+  );
+}
 
-  List<Widget> _children() => [
-    if (state.scope == ConversationListScope.active)
-      _ChatListBulkActions(
-        workspaceId: state.workspaceId,
-        selectedChats: state.selectedChats,
-        isBulkActionRunning: state.isBulkActionRunning,
-      ),
-    _ChatListSearchInput(state: state),
-    Expanded(child: _ChatListResults(state: state)),
-    if (state.hasMore && !state.isRefreshing && !state.hasError)
-      _ChatListLoadMore(state: state),
-  ];
+class const _ChatListLoadedHeader({required final _ChatListViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    mainAxisSize: .min,
+    children: [
+      if (state.scope == ConversationListScope.active)
+        _ChatListBulkActions(
+          workspaceId: state.workspaceId,
+          selectedChats: state.selectedChats,
+          isBulkActionRunning: state.isBulkActionRunning,
+        ),
+      _ChatListSearchInput(state: state),
+    ],
+  );
+}
+
+class const _ChatListLoadMoreArea({required final _ChatListViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      state.hasMore && !state.isRefreshing && !state.hasError
+      ? _ChatListLoadMore(state: state)
+      : const SizedBox.shrink();
 }
 
 class const _ChatListBulkActions({
@@ -1224,9 +1241,12 @@ extension on _ChatListBulkActionsState {
       );
     }
     ref.invalidate(
-      conversationsStreamProvider(
-        ConversationStreamRequest(workspaceId: widget.workspaceId),
-      ),
+      conversationsStreamProvider((
+        workspaceId: widget.workspaceId,
+        search: '',
+        scope: .active,
+        pagination: (limit: null, offset: 0),
+      )),
     );
     _showConversationFailures(context, key, failures);
   }

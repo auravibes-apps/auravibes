@@ -2,7 +2,6 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
-import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/quick_switcher/models/quick_switcher_entry.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
@@ -136,12 +135,12 @@ Future<_Captured<List<ConversationEntity>>> _loadConversations(
   Ref ref,
   WorkspaceEntity workspace,
 ) {
-  final provider = conversationsStreamProvider(
-    ConversationStreamRequest(
-      workspaceId: workspace.id,
-      pagination: (limit: _recentConversationLimit, offset: 0),
-    ),
-  );
+  final provider = conversationsStreamProvider((
+    workspaceId: workspace.id,
+    search: '',
+    scope: .active,
+    pagination: (limit: _recentConversationLimit, offset: 0),
+  ));
 
   return _capture(ref.watch(provider.future));
 }

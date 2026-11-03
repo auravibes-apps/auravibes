@@ -2569,8 +2569,12 @@ class _StubConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options =
-        ConversationListQueryOptions.defaults,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     throw UnimplementedError();
   }

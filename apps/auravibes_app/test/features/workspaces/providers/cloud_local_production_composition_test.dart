@@ -9,7 +9,6 @@ import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_reposit
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_repository.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
-import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
@@ -212,9 +211,12 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final conversations = conversationsStreamProvider(
-      ConversationStreamRequest(workspaceId: 'mirror-a'),
-    );
+    final conversations = conversationsStreamProvider((
+      workspaceId: 'mirror-a',
+      search: '',
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    ));
     final messages = chatMessagesByConversationProvider(
       'mirror-a',
       'conversation-a',
@@ -321,9 +323,12 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final conversations = conversationsStreamProvider(
-      ConversationStreamRequest(workspaceId: 'local-a'),
-    );
+    final conversations = conversationsStreamProvider((
+      workspaceId: 'local-a',
+      search: '',
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    ));
     final messages = chatMessagesByConversationProvider(
       'local-a',
       'conversation-a',

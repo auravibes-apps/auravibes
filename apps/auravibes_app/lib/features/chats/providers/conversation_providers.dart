@@ -123,7 +123,7 @@ Stream<List<ConversationEntity>> _conversationsForSession(
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(
         workspaceId,
-        options: ConversationListQueryOptions(
+        options: (
           search: options.search,
           archivedOnly: options.scope == ConversationListScope.archived,
           limit: options.pagination.limit,

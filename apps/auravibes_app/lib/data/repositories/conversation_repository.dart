@@ -96,8 +96,12 @@ class ConversationRepository(
 }) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    ConversationListQueryOptions options =
-        ConversationListQueryOptions.defaults,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     return _database.conversationDao
         .watchConversationsByWorkspace(workspaceId, options: options)
@@ -589,12 +593,7 @@ extension on ConversationRepository {
     final archived = await _database.conversationDao
         .watchConversationsByWorkspace(
           workspaceId,
-          options: ConversationListQueryOptions(
-            search: '',
-            archivedOnly: true,
-            limit: null,
-            offset: 0,
-          ),
+          options: (search: '', archivedOnly: true, limit: null, offset: 0),
         )
         .first;
 
