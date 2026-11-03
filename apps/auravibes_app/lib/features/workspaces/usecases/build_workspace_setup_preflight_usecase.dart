@@ -115,19 +115,18 @@ WorkspaceSetupPreflightCheck _modelMetadataUnavailable() =>
 WorkspaceSetupPreflightCheck _modelReady(
   WorkspaceSetupModelSnapshot model,
   String modelName,
-) =>
-    WorkspaceSetupPreflightCheck(
-      id: .selectedModel,
-      status: .pass,
-      messageKey: 'workspace_setup_preflight.model_metadata_available',
-      modelCapabilities: .new(
-        modelName: modelName,
-        inputModalities: model.inputModalities,
-        outputModalities: model.outputModalities,
-        supportsReasoning: model.supportsReasoning,
-        supportsToolCalls: model.supportsToolCalls,
-      ),
-    );
+) => WorkspaceSetupPreflightCheck(
+  id: .selectedModel,
+  status: .pass,
+  messageKey: 'workspace_setup_preflight.model_metadata_available',
+  modelCapabilities: .new(
+    modelName: modelName,
+    inputModalities: model.inputModalities,
+    outputModalities: model.outputModalities,
+    supportsReasoning: model.supportsReasoning,
+    supportsToolCalls: model.supportsToolCalls,
+  ),
+);
 
 WorkspaceSetupPreflightCheck _providerCheck(
   WorkspaceSetupPreflightSnapshot snapshot,
@@ -154,8 +153,9 @@ WorkspaceSetupPreflightCheck _optionalProviderCheck(
   List<WorkspaceSetupProviderSnapshot> providers,
 ) {
   if (providers.isEmpty) return _providerNotConfigured();
-  if (providers.any((provider) => provider.hasCredential))
+  if (providers.any((provider) => provider.hasCredential)) {
     return _providerSaved();
+  }
 
   return _optionalCredentialMissing();
 }

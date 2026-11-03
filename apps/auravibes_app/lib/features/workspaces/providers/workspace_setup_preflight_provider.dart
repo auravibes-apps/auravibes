@@ -219,7 +219,8 @@ Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
 bool _matchesWorkspace(
   WorkspaceModelSelectionWithConnectionEntity model,
   String workspaceId,
-) => model.modelConnection.workspaceId == workspaceId &&
+) =>
+    model.modelConnection.workspaceId == workspaceId &&
     model.workspaceModelSelection.modelConnectionId == model.modelConnection.id;
 
 Future<WorkspaceSetupModelSnapshot> _readModelMetadata(
