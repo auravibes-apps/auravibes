@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -660,7 +661,24 @@ void main() {
       );
       final _ = await tester.pumpAndSettle();
 
-      expect(find.text('Project research'), findsOneWidget);
+      final container = tester
+          .widget<UncontrolledProviderScope>(
+            find.byType(UncontrolledProviderScope),
+          )
+          .container;
+      final conversationState = container.read(
+        conversationsStreamProvider((
+          workspaceId: workspace.id,
+          search: '',
+          scope: ConversationListScope.active,
+          pagination: (limit: 21, offset: 0),
+        )),
+      );
+      expect(
+        find.text('Project research'),
+        findsOneWidget,
+        reason: 'Conversation stream state: $conversationState',
+      );
       await tester.tap(find.byIcon(Icons.more_vert));
       final _ = await tester.pumpAndSettle();
       expect(find.text('Archive'), findsOneWidget);
@@ -762,6 +780,24 @@ void main() {
       );
       final _ = await tester.pumpAndSettle();
 
+      final container = tester
+          .widget<UncontrolledProviderScope>(
+            find.byType(UncontrolledProviderScope),
+          )
+          .container;
+      final conversationState = container.read(
+        conversationsStreamProvider((
+          workspaceId: workspace.id,
+          search: '',
+          scope: ConversationListScope.active,
+          pagination: (limit: 21, offset: 0),
+        )),
+      );
+      expect(
+        find.byIcon(Icons.more_vert),
+        findsOneWidget,
+        reason: 'Cloud conversation stream state: $conversationState',
+      );
       await tester.tap(find.byIcon(Icons.more_vert));
       final _ = await tester.pumpAndSettle();
       expect(find.text('Archive'), findsOneWidget);

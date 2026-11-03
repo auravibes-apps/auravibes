@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/screens/archived_conversations_scre
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -60,6 +61,12 @@ void main() {
     expect(routeSession, isA<AsyncData<WorkspaceSession>>());
     expect(routeSession.value?.cloud?.cloudWorkspaceId, 7);
 
+    final archiveCallout = find.byType(AuraCallout);
+    expect(
+      archiveCallout,
+      findsOneWidget,
+      reason: 'Cloud route session is $routeSession',
+    );
     expect(find.text('Archived on this device'), findsOneWidget);
     expect(
       find.text(
