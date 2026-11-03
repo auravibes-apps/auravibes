@@ -200,7 +200,6 @@ class CriticalConversationAttachmentService
     implements LocalChatAttachmentService {
   int copyCount = 0;
 
-  @override
   String get storageNamespace => 'issue-954-fixture';
 
   @override

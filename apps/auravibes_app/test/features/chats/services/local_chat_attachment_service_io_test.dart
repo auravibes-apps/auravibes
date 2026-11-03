@@ -104,14 +104,14 @@ void main() {
     () async {
       final service = LocalChatAttachmentServiceIo(
         attachmentWriter: (file, bytes) async {
-          await file.writeAsBytes(bytes.take(2).toList());
-          throw FileSystemException('simulated write failure');
+          final _ = await file.writeAsBytes(bytes.take(2).toList());
+          throw const FileSystemException('simulated write failure');
         },
       );
 
       await expectLater(
         service.copyBytesIntoAppStorage(
-          Uint8List.fromList([1, 2, 3, 4]),
+          .fromList([1, 2, 3, 4]),
           fileName: 'report.pdf',
           displayName: 'report.pdf',
         ),

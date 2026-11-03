@@ -133,7 +133,7 @@ void main() {
         debugDefaultTargetPlatformOverride;
     final previousDebugDoublePrecision = debugDoublePrecision;
     final previousDebugBrightnessOverride = debugBrightnessOverride;
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    debugDefaultTargetPlatformOverride = .macOS;
 
     const size = Size(1280, 800);
     UxValidationFixture? fixture;
@@ -141,7 +141,10 @@ void main() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockStreamHandler(
             const .new('flutter_file_drop/events'),
-            .inline(onListen: (_, _) {}, onCancel: (_) {}),
+            .inline(
+              onListen: (_, _) => Future<void>.value(),
+              onCancel: (_) => Future<void>.value(),
+            ),
           );
       final currentFixture = await UxValidationFixture.create();
       fixture = currentFixture;
@@ -170,7 +173,7 @@ void main() {
           .widget<DropTarget>(find.byType(DropTarget))
           .onMove
           ?.call(
-            DropPreview(
+            .new(
               globalPosition: .zero,
               localPosition: .zero,
               items: const [.new(kind: .file)],

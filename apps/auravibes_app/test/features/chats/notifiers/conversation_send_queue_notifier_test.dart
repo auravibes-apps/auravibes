@@ -280,7 +280,6 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   final deletedPaths = <String>[];
 
   @override
-  @override
   Future<void> deleteAttachment(String localPath) {
     deletedPaths.add(localPath);
 
@@ -307,7 +306,6 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   Future<MessageAttachmentToCreate?> stopVoiceRecording() =>
       throw UnimplementedError();
 
-  @override
   @override
   Future<MessageAttachmentToCreate> createArchiveAttachment(
     ConversationArchiveAttachment _,

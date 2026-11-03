@@ -154,7 +154,6 @@ class _MediaDraftAttachmentService(
 ) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
 
-  @override
   bool recordingActive = false;
   int recordingCancels = 0;
 

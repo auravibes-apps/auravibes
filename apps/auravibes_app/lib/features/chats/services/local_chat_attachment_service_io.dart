@@ -40,7 +40,6 @@ class LocalChatAttachmentServiceIo({
   final String storageNamespace = 'auravibes_app',
   @visibleForTesting LocalChatAttachmentWriter? attachmentWriter,
 }) {
-  @visibleForTesting
   final LocalChatAttachmentWriter? _attachmentWriter = attachmentWriter;
 
   // Defer platform-channel setup until voice recording is requested.

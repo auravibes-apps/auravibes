@@ -98,6 +98,15 @@ void main() {
       LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
     ),
   }) {
+    Key? chatInputKey(String? conversationId) {
+      if (reuseChatInputForContextChanges) {
+        return const ValueKey<String>('reused_chat_input');
+      }
+      if (conversationId == null) return null;
+
+      return ValueKey<String>(conversationId);
+    }
+
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
@@ -174,11 +183,7 @@ void main() {
               onCompact: onCompact,
               canCompact: canCompact,
               isCompacting: isCompacting,
-              key: reuseChatInputForContextChanges
-                  ? const ValueKey<String>('reused_chat_input')
-                  : conversationId == null
-                  ? null
-                  : ValueKey(conversationId),
+              key: chatInputKey(conversationId),
             );
 
             Widget workspaceInput(String workspaceId) {
@@ -910,7 +915,7 @@ void main() {
       position: tester.getCenter(find.byType(AuraInput)),
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
-      bytes: Uint8List.fromList('report!!'.codeUnits),
+      bytes: .fromList('report!!'.codeUnits),
     );
     final _ = await tester.pumpAndSettle();
 
@@ -958,7 +963,7 @@ void main() {
       position: tester.getCenter(find.byType(AuraInput)),
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
-      bytes: Uint8List.fromList('report!!'.codeUnits),
+      bytes: .fromList('report!!'.codeUnits),
       readError: PlatformException(code: 'cancelled'),
     );
     final _ = await tester.pumpAndSettle();
@@ -987,7 +992,7 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(
       attachment,
-      copyError: Exception('simulated storage failure'),
+      copyError: .new('simulated storage failure'),
     );
     final sentDrafts = <ChatDraft>[];
     final dropChannel = await pumpAndInit(
@@ -1004,7 +1009,7 @@ void main() {
       position: tester.getCenter(find.byType(AuraInput)),
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
-      bytes: Uint8List.fromList('report!!'.codeUnits),
+      bytes: .fromList('report!!'.codeUnits),
     );
     final _ = await tester.pumpAndSettle();
 
@@ -1055,7 +1060,7 @@ void main() {
       position: tester.getCenter(find.byType(AuraInput)),
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
-      bytes: Uint8List.fromList('report!!'.codeUnits),
+      bytes: .fromList('report!!'.codeUnits),
     );
     await tester.runAsync(() => copyStarted.future);
     activeConversation.value = 'conversation-2';
@@ -1109,7 +1114,7 @@ void main() {
       position: tester.getCenter(find.byType(AuraInput)),
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
-      bytes: Uint8List.fromList('report!!'.codeUnits),
+      bytes: .fromList('report!!'.codeUnits),
     );
     await tester.runAsync(() => copyStarted.future);
     activeWorkspace.value = 'ws-2';
@@ -2682,7 +2687,8 @@ class _TestFlutterFileDropChannel {
   }
 
   final StandardMessageCodec _codec = const .new();
-  final _files = <String, ({Uint8List bytes, int size, Object? readError})>{};
+  final _files =
+      <String, ({Uint8List bytes, int size, Exception? readError})>{};
   MockStreamHandlerEventSink? _eventSink;
   var _nextHandle = 0;
 
@@ -2692,7 +2698,7 @@ class _TestFlutterFileDropChannel {
     required String mimeType,
     required Uint8List bytes,
     int? fileSize,
-    Object? readError,
+    Exception? readError,
   }) {
     final handle = 'file-${_nextHandle++}';
     final size = fileSize ?? bytes.length;
@@ -2763,7 +2769,6 @@ class _FakeLocalChatAttachmentService(
   final String storageNamespace = 'test';
   final deletedPaths = <String>[];
 
-  @override
   Uint8List? copiedBytes;
   String? copiedFileName;
   int startCount = 0;
@@ -2793,7 +2798,10 @@ class _FakeLocalChatAttachmentService(
     copiedFileName = fileName;
     final started = bytesCopyStarted;
     if (started != null && !started.isCompleted) started.complete();
-    if (bytesCopyCompleter case final completer?) return completer.future;
+    if (bytesCopyCompleter case final completer?) {
+      final completed = await completer.future;
+      return completed;
+    }
 
     return attachment.copyWith(displayName: displayName);
   }
@@ -2827,7 +2835,6 @@ class _FakeLocalChatAttachmentService(
     required String toolCallId,
   }) => throw UnimplementedError();
 
-  @override
   @override
   Future<MessageAttachmentToCreate> createArchiveAttachment(
     ConversationArchiveAttachment _,
