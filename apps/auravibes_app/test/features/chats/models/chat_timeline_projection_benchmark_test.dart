@@ -32,10 +32,7 @@ void main() {
   }
 }
 
-void _measureProjection(
-  int messageCount,
-  _TimelineBenchmarkScenario scenario,
-) {
+void _measureProjection(int messageCount, _TimelineBenchmarkScenario scenario) {
   final stableMessages = _buildMessages(messageCount);
   final updateSnapshots = scenario == .streamingTail
       ? _buildStreamingTailSnapshots(stableMessages)
@@ -85,7 +82,8 @@ void _measureProjection(
     'phase':
         Platform.environment['AURAVIBES_CHAT_TIMELINE_BENCHMARK_PHASE'] ??
         'unrecorded',
-    'run': Platform.environment['AURAVIBES_CHAT_TIMELINE_BENCHMARK_RUN'] ??
+    'run':
+        Platform.environment['AURAVIBES_CHAT_TIMELINE_BENCHMARK_RUN'] ??
         'unrecorded',
     'scenario': scenario.name,
     'messageCount': messageCount,
@@ -127,8 +125,7 @@ ResolvedChatMessage _resolvedMessage(int index) {
   final isCompaction = index % 47 == 0;
   final isToolActivity = !isCompaction && index % 11 == 0;
   final hasA2ui = !isCompaction && !isToolActivity && index % 17 == 0;
-  final isUser =
-      !isCompaction && !isToolActivity && !hasA2ui && index % 4 == 0;
+  final isUser = !isCompaction && !isToolActivity && !hasA2ui && index % 4 == 0;
   final hasAttachment = !isCompaction && index % 29 == 0;
   final createdAt = DateTime.utc(2026, 1, 1).add(Duration(seconds: index));
   final id = 'message-$index';
@@ -166,7 +163,9 @@ ResolvedChatMessage _resolvedMessage(int index) {
   final message = MessageEntity(
     id: id,
     conversationId: 'benchmark-conversation',
-    content: isToolActivity ? '' : 'Fixture message $index with stable content.',
+    content: isToolActivity
+        ? ''
+        : 'Fixture message $index with stable content.',
     messageType: isCompaction ? .system : MessageType.text,
     isUser: isUser,
     status: index % 31 == 0 && !isCompaction ? .error : .sent,
