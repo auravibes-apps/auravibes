@@ -3,7 +3,6 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -68,6 +67,12 @@ class _TestableAppState extends State<TestableApp> {
     }
   }
 
+  @override
+  void dispose() {
+    _container?.dispose();
+    super.dispose();
+  }
+
   ProviderContainer _createContainer(TestableApp app) {
     final session =
         app.workspaceSession ??
@@ -81,6 +86,7 @@ class _TestableAppState extends State<TestableApp> {
     final hasRouteSessionOverride = app.overrides
         .whereType<riverpod_misc.Override>()
         .any((override) => override.origin == routeSessionProvider);
+
     return .new(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
@@ -96,12 +102,6 @@ class _TestableAppState extends State<TestableApp> {
           routeSessionProvider.overrideWithValue(AsyncData(session)),
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    _container?.dispose();
-    super.dispose();
   }
 
   @override
