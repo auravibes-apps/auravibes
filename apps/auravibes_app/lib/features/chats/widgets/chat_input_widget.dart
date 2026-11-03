@@ -1335,6 +1335,7 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
         fileName,
         _draft.attachments.value.map((attachment) => attachment.displayName),
       );
+
       return await _attachmentUsecase.copyBytesIntoAppStorage(
         bytes,
         fileName: fileName,
