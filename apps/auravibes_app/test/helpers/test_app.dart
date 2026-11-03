@@ -54,6 +54,8 @@ class _TestableAppState extends State<TestableApp> {
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
+        workspaceSessionForRouteProvider(widget.workspaceId)
+            .overrideWithValue(AsyncData(session)),
         ...widget.overrides.cast(),
       ],
     );
