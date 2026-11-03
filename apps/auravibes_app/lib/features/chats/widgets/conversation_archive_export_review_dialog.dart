@@ -134,9 +134,7 @@ class const _ConversationArchiveExportReviewContent({
     return SizedBox(
       width: 480,
       child: ConstrainedBox(
-        constraints: .new(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-        ),
+        constraints: .new(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
         child: Column(
           mainAxisSize: .min,
           crossAxisAlignment: .start,

@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 // Copying caller lists prevents later mutation of the review snapshot.
 // ignore: prefer_const_constructors_in_immutables
 final class ConversationArchiveExportPreview({
-  required List<ConversationArchivePreviewConversation>
-  sourceConversations,
+  required List<ConversationArchivePreviewConversation> sourceConversations,
 }) {
   final List<ConversationArchivePreviewConversation> conversations =
       .unmodifiable(sourceConversations);
@@ -23,8 +22,9 @@ final class ConversationArchivePreviewConversation({
   required final String title,
   required List<ConversationArchivePreviewAttachment> sourceAttachments,
 }) {
-  final List<ConversationArchivePreviewAttachment> attachments =
-      .unmodifiable(sourceAttachments);
+  final List<ConversationArchivePreviewAttachment> attachments = .unmodifiable(
+    sourceAttachments,
+  );
 }
 
 @immutable

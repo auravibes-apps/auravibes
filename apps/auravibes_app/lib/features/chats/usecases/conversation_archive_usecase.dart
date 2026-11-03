@@ -318,16 +318,13 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
         .getTranscriptMessagesByConversation(conversation.id);
     final agentContext = await _archiveAgentContext(conversation, transcript);
 
-    return await ConversationArchiveCodec.createConversationArchive(
-      (
-        conversation: conversation,
-        messages: _archiveVisibleMessages(transcript),
-        modelLabel: modelLabel,
-        agentContext: agentContext,
-        readAttachmentBytes: attachmentService.readAttachmentBytes,
-      ),
-      includeAttachments: includeAttachments,
-    );
+    return await ConversationArchiveCodec.createConversationArchive((
+      conversation: conversation,
+      messages: _archiveVisibleMessages(transcript),
+      modelLabel: modelLabel,
+      agentContext: agentContext,
+      readAttachmentBytes: attachmentService.readAttachmentBytes,
+    ), includeAttachments: includeAttachments);
   }
 
   Future<ConversationArchiveAgentContext> _archiveAgentContext(
