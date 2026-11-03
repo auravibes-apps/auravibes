@@ -1,3 +1,5 @@
+import 'package:auravibes_app/i18n/locale_keys.dart';
+
 /// A reviewed finite translation family and the source sites that may use it.
 class LocalizationDynamicRegistry {
   const new({required this.family, required this.sites, this.keys = const {}});
@@ -854,10 +856,15 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'cloud_errors.conflict',
       'cloud_errors.permission_denied',
       'workspace_assets.invalid',
+      LocaleKeys.workspace_assets_size_limit_exceeded,
       'workspace_assets.referenced',
       'workspace_assets.unavailable',
       'workspace_items.invalid_folder',
       'workspace_items.invalid_table',
+      LocaleKeys.workspace_items_limit_columns,
+      LocaleKeys.workspace_items_limit_query_page,
+      LocaleKeys.workspace_items_limit_record_batch,
+      LocaleKeys.workspace_items_limit_summary_columns,
       'workspace_items.duplicate_unsupported',
       'workspace_items.reference_incompatible',
       'workspace_csv.invalid_file',
