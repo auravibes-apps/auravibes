@@ -32,7 +32,14 @@ class const BuildSkillContextMessagesService(
       workspaceId,
       languageCode,
     );
-    final agentMessages = _builder.compose(
+    final agentMessages = _buildAgentMessages(context);
+
+    return _toChatMessages(agentMessages);
+  }
+}
+
+List<agent.AgentChatMessage> _buildAgentMessages(_SkillContextData context) =>
+    BuildSkillContextMessagesService._builder.compose(
       agentContent: context.selectedAgent?.content,
       agentContentProvenance:
           agent.AgentContextProvenance.userAgentConfiguration,
@@ -44,10 +51,6 @@ class const BuildSkillContextMessagesService(
         context.languageCode,
       ),
     );
-
-    return _toChatMessages(agentMessages);
-  }
-}
 
 typedef _SkillContextData = ({
   String? languageCode,
@@ -233,16 +236,22 @@ List<agent.AgentSkill> _toAgentSkills(
   String? languageCode,
 ) => [
   for (final skill in skills)
-    agent.AgentSkill(
-      title: skill.title,
-      content: skill.slug == agent.agentsSkillSlug
-          ? AgentGuidance.agentsSkillContentForLanguageCode(languageCode)
-          : skill.content,
-      identity: '${skill.source.name}:${skill.id}',
-      manifest: manifestsBySlug[skill.slug],
-      provenance: _skillProvenance(skill),
-    ),
+    _toAgentSkill(skill, manifestsBySlug, languageCode),
 ];
+
+agent.AgentSkill _toAgentSkill(
+  AvailableSkill skill,
+  Map<String, SkillManifest> manifestsBySlug,
+  String? languageCode,
+) => agent.AgentSkill(
+  title: skill.title,
+  content: skill.slug == agent.agentsSkillSlug
+      ? AgentGuidance.agentsSkillContentForLanguageCode(languageCode)
+      : skill.content,
+  identity: '${skill.source.name}:${skill.id}',
+  manifest: manifestsBySlug[skill.slug],
+  provenance: _skillProvenance(skill),
+);
 
 agent.AgentContextProvenance _skillProvenance(AvailableSkill skill) =>
     skill.source == .app

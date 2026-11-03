@@ -80,14 +80,18 @@ class const AnthropicRequestEncoder({
     return wire;
   }
 
-  void _appendWireMessage(Message message, _WireMessages wire) {
-    final safeMessage = _systemRoleIsAllowed(message)
-        ? message
-        : Message(
-            role: .user,
-            content: message.content,
-            metadata: message.metadata,
-          );
+  void _appendWireMessage(Message message, _WireMessages wire) =>
+      _appendSafeWireMessage(_safeMessage(message), wire);
+
+  Message _safeMessage(Message message) => _systemRoleIsAllowed(message)
+      ? message
+      : Message(
+          role: .user,
+          content: message.content,
+          metadata: message.metadata,
+        );
+
+  void _appendSafeWireMessage(Message safeMessage, _WireMessages wire) {
     if (safeMessage.role != Role.system) {
       wire.messages.add(AnthropicMessageCodec.encode(safeMessage));
     } else if (_isLeading(safeMessage, wire.messages)) {
@@ -199,14 +203,32 @@ extension on AnthropicRequestEncoder {
     final applied = <AgentTranscriptContextEntry>{};
     for (var index = 0; index < history.length; index++) {
       messages.add(history[index]);
-      for (final entry in _entriesAfterMessage(history, index)) {
-        for (final update in _updateMessages(entry.update, seen)) {
-          _appendUpdate(messages, update);
-        }
-        final _ = applied.add(entry);
-      }
+      _appendUpdatesAfterMessage(history, index, messages, seen, applied);
     }
     _checkPositionCount(applied.length);
+  }
+
+  void _appendUpdatesAfterMessage(
+    List<Message> history,
+    int index,
+    List<Message> messages,
+    Map<String, ToolSpec> seen,
+    Set<AgentTranscriptContextEntry> applied,
+  ) {
+    for (final entry in _entriesAfterMessage(history, index)) {
+      _appendEntryUpdates(entry, messages, seen);
+      final _ = applied.add(entry);
+    }
+  }
+
+  void _appendEntryUpdates(
+    AgentTranscriptContextEntry entry,
+    List<Message> messages,
+    Map<String, ToolSpec> seen,
+  ) {
+    for (final update in _updateMessages(entry.update, seen)) {
+      _appendUpdate(messages, update);
+    }
   }
 
   void _checkPositionCount(int applied) {
@@ -266,28 +288,35 @@ extension on AnthropicRequestEncoder {
   ) {
     final knownNames = seen.keys.toSet();
     _checkDefinitions(update.toolsAdded, seen);
-    final messages = <Message>[
-      if (supportsMidConversationSystemMessages)
-        for (final context
-            in update.contextMessages ?? const <AgentContextMessage>[])
-          _contextMessage(context),
-    ];
-    final changes = supportsToolDeltas
-        ? _toolChanges(update, knownNames)
-        : const <Map<String, dynamic>>[];
-    if (changes.isNotEmpty) {
-      messages.add(
-        Message(
-          role: .system,
-          content: const [],
-          metadata: AgentContextProvenance.applicationPrompt.withMetadata({
-            'anthropicToolChanges': changes,
-          }),
-        ),
-      );
-    }
+    final messages = _contextMessages(update);
+    final toolDeltaMessage = _toolDeltaMessage(update, knownNames);
+    if (toolDeltaMessage != null) messages.add(toolDeltaMessage);
 
     return messages;
+  }
+
+  List<Message> _contextMessages(AgentTranscriptContextUpdate update) =>
+      supportsMidConversationSystemMessages
+      ? (update.contextMessages ?? const <AgentContextMessage>[])
+            .map(_contextMessage)
+            .toList()
+      : [];
+
+  Message? _toolDeltaMessage(
+    AgentTranscriptContextUpdate update,
+    Set<String> knownNames,
+  ) {
+    if (!supportsToolDeltas) return null;
+    final changes = _toolChanges(update, knownNames);
+    if (changes.isEmpty) return null;
+
+    return Message(
+      role: .system,
+      content: const [],
+      metadata: AgentContextProvenance.applicationPrompt.withMetadata({
+        'anthropicToolChanges': changes,
+      }),
+    );
   }
 
   bool _sameProvenance(Message left, Message right) =>

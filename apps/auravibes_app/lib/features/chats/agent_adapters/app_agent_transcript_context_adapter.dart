@@ -128,14 +128,20 @@ AgentContextMessage _contextMessage(ChatMessage message) {
   );
 
   return AgentContextMessage(
-    role: message.role == ChatMessageRole.system && provenance.mayUseSystemRole
-        ? .system
-        : .skill,
+    role: _contextRole(message, provenance),
     content: message.content,
     kind: kind is String ? kind : null,
     provenance: provenance,
   );
 }
+
+AgentContextMessageRole _contextRole(
+  ChatMessage message,
+  AgentContextProvenance provenance,
+) =>
+    message.role == ChatMessageRole.system && provenance.mayUseSystemRole
+    ? .system
+    : .skill;
 
 bool _hasSupportedContextRole(ChatMessage message) =>
     message.role == ChatMessageRole.system ||
@@ -144,17 +150,22 @@ bool _hasSupportedContextRole(ChatMessage message) =>
             message.metadata['kind'] == skillCatalogMetadataKind));
 
 ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
-  role:
-      message.role == AgentContextMessageRole.system &&
-          message.provenance.mayUseSystemRole
-      ? .system
-      : .user,
+  role: _chatMessageRole(message),
   content: message.content,
-  metadata: message.provenance.withMetadata({
-    'transcriptContext': true,
-    'kind': ?message.kind,
-  }),
+  metadata: _chatMessageMetadata(message),
 );
+
+ChatMessageRole _chatMessageRole(AgentContextMessage message) =>
+    message.role == AgentContextMessageRole.system &&
+        message.provenance.mayUseSystemRole
+    ? .system
+    : .user;
+
+Map<String, Object?> _chatMessageMetadata(AgentContextMessage message) =>
+    message.provenance.withMetadata({
+      'transcriptContext': true,
+      'kind': ?message.kind,
+    });
 
 MessageToCreate _contextUpdateMessage(
   String conversationId,

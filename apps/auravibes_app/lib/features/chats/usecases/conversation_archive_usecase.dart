@@ -1120,20 +1120,28 @@ List<ConversationArchiveAgentContextEntry> _completeContextEntries(
 AgentTranscriptContextUpdate _archiveContextUpdateForImport(
   AgentTranscriptContextUpdate update,
 ) => AgentTranscriptContextUpdate(
-  contextMessages: update.contextMessages
-      ?.map(
-        (message) => AgentContextMessage(
-          role: message.role,
-          content: message.content,
-          kind: message.kind,
-        ),
-      )
-      .toList(growable: false),
+  contextMessages: _archiveContextMessagesForImport(update.contextMessages),
   toolsAdded: update.toolsAdded,
   toolsRemoved: update.toolsRemoved,
   toolOrder: update.toolOrder,
   approvalStates: update.approvalStates,
 );
+
+List<AgentContextMessage>? _archiveContextMessagesForImport(
+  List<AgentContextMessage>? messages,
+) =>
+    messages
+        ?.map(_archiveContextMessageForImport)
+        .toList(growable: false);
+
+AgentContextMessage _archiveContextMessageForImport(
+  AgentContextMessage message,
+) =>
+    AgentContextMessage(
+      role: message.role,
+      content: message.content,
+      kind: message.kind,
+    );
 
 typedef _SelectionRestore = ({
   ConversationArchiveToolSelection selection,

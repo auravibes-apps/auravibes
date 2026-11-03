@@ -503,16 +503,18 @@ extension on ChatbotService {
   );
 
   Role _genkitRole(ChatMessage message) => switch (message.role) {
-    .system =>
-      AgentContextProvenance.fromMetadata(
-            Map<String, Object?>.of(message.metadata),
-          ).mayUseSystemRole
-          ? Role.system
-          : Role.user,
+    .system => _trustedGenkitRole(message),
     .user => Role.user,
     .model => Role.model,
     .tool => Role.tool,
   };
+
+  Role _trustedGenkitRole(ChatMessage message) =>
+      AgentContextProvenance.fromMetadata(
+            Map<String, Object?>.of(message.metadata),
+          ).mayUseSystemRole
+      ? Role.system
+      : Role.user;
 
   List<Part> _genkitContent(ChatMessage message) => message.parts.isEmpty
       ? [TextPart(text: message.content)]
