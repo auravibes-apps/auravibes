@@ -101,9 +101,8 @@ class const AnthropicRequestEncoder({
 
   bool _systemRoleIsAllowed(Message message) =>
       message.role != Role.system ||
-      AgentContextProvenance.fromMetadata(
-        _messageMetadata(message),
-      ).mayUseSystemRole;
+      AgentContextProvenance.fromMetadata(_messageMetadata(message))
+          .mayUseSystemRole;
 
   Map<String, Object?>? _messageMetadata(Message message) {
     final metadata = message.metadata;
@@ -251,10 +250,8 @@ extension on AnthropicRequestEncoder {
         ].where((text) => text.isNotEmpty).join('\n'),
       ),
     ],
-    metadata:
-        AgentContextProvenance.fromMetadata(
-          _messageMetadata(previous),
-        ).withMetadata({
+    metadata: AgentContextProvenance.fromMetadata(_messageMetadata(previous))
+        .withMetadata({
           'anthropicToolChanges': [
             ..._changes(previous),
             ..._changes(update),
@@ -293,12 +290,8 @@ extension on AnthropicRequestEncoder {
   }
 
   bool _sameProvenance(Message left, Message right) =>
-      AgentContextProvenance.fromMetadata(
-        _messageMetadata(left),
-      ) ==
-      AgentContextProvenance.fromMetadata(
-        _messageMetadata(right),
-      );
+      AgentContextProvenance.fromMetadata(_messageMetadata(left)) ==
+      AgentContextProvenance.fromMetadata(_messageMetadata(right));
 }
 
 _Projection _fallback(ModelRequest request) => (

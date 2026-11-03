@@ -406,10 +406,7 @@ void main() {
         expect(messages.firstOrNull?.role, ChatMessageRole.system);
         expect(
           messages.firstOrNull?.metadata[agentContextProvenanceMetadataKey],
-          {
-            'origin': 'userAgentConfiguration',
-            'trust': 'userAuthorized',
-          },
+          {'origin': 'userAgentConfiguration', 'trust': 'userAuthorized'},
         );
         expect(messages[1].role, ChatMessageRole.system);
         expect(messages[1].metadata['kind'], skillCatalogMetadataKind);

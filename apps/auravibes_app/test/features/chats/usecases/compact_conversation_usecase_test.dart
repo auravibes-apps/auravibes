@@ -903,10 +903,7 @@ void main() {
         expect(captured[toolResultIndex].role, ChatMessageRole.tool);
         expect(
           captured.firstOrNull?.metadata[agentContextProvenanceMetadataKey],
-          {
-            'origin': 'applicationPrompt',
-            'trust': 'appControlled',
-          },
+          {'origin': 'applicationPrompt', 'trust': 'appControlled'},
         );
         expect(
           captured[toolResultIndex].metadata[agentContextProvenanceMetadataKey],
