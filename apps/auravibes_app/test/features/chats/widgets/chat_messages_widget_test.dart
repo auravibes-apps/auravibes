@@ -5484,16 +5484,16 @@ void main() {
           await tester.pumpAndSettle();
         }
 
+        ScrollableState currentScrollable() => tester.state<ScrollableState>(
+          find.byType(Scrollable),
+        );
+
         Future<void> scrollToOldestMessage() async {
           currentScrollable().position.jumpTo(
             currentScrollable().position.maxScrollExtent,
           );
           await tester.pumpAndSettle();
         }
-
-        ScrollableState currentScrollable() => tester.state<ScrollableState>(
-          find.byType(Scrollable),
-        );
 
         void expectMessageVisible(String conversationId, int index) {
           final content = find.text(messageText(conversationId, index));
