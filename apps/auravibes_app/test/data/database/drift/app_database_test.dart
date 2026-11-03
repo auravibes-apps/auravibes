@@ -87,8 +87,7 @@ void main() {
       },
     );
 
-    test('schema49 migration adds archive state after verification '
-        'tables', () async {
+    test('schema49 migration adds archive table', () async {
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 49
         ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
