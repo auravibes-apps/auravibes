@@ -709,21 +709,29 @@ void main() {
           ],
         ),
       );
-      await _pumpUntilText(tester, 'Project research');
 
       final archivedContainer = tester
           .widget<UncontrolledProviderScope>(
             find.byType(UncontrolledProviderScope),
           )
           .container;
-      final archivedState = archivedContainer.read(
-        conversationsStreamProvider((
-          workspaceId: workspace.id,
-          search: '',
-          scope: ConversationListScope.archived,
-          pagination: (limit: 21, offset: 0),
-        )),
+      final archivedProvider = conversationsStreamProvider((
+        workspaceId: workspace.id,
+        search: '',
+        scope: ConversationListScope.archived,
+        pagination: (limit: 21, offset: 0),
+      ));
+      final archivedConversations = await tester.runAsync(
+        () => archivedContainer
+            .read(archivedProvider.future)
+            .timeout(const Duration(seconds: 10)),
       );
+      expect(
+        archivedConversations.map((item) => item.id),
+        contains(conversation.id),
+      );
+      await tester.pump();
+      final archivedState = archivedContainer.read(archivedProvider);
       expect(
         find.text('Project research'),
         findsOneWidget,
@@ -1989,14 +1997,6 @@ class _RecordingLocalChatAttachmentUsecase
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-Future<void> _pumpUntilText(WidgetTester tester, String text) async {
-  final finder = find.text(text);
-  for (var attempt = 0; attempt < 30; attempt++) {
-    if (finder.evaluate().isNotEmpty) return;
-    await tester.pump(const Duration(milliseconds: 100));
-  }
 }
 
 class _StubConversationRepository({
