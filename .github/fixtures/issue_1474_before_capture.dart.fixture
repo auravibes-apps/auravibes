@@ -168,6 +168,7 @@ Future<void> _pumpCapture(
     () => tester.pumpWidget(
       EasyLocalization(
         child: ProviderScope(
+          key: ValueKey('issue1474-provider-scope-$name'),
           overrides: overrides.cast(),
           child: Builder(
             builder: (context) => MaterialApp(
