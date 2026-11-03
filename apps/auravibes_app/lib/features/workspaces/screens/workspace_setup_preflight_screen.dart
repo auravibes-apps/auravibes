@@ -59,21 +59,28 @@ class const _PreflightContent({
 
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: [
-        _PreflightSummaryCard(
-          workspaceId: workspaceId,
-          result: result,
-          isCloud: isCloud,
-        ),
-        for (final id in WorkspaceSetupPreflightCheckId.values)
-          _PreflightCheckCard(
-            workspaceId: workspaceId,
-            check: result.check(id),
-          ),
-      ],
+      children: _preflightContentChildren(
+        workspaceId: workspaceId,
+        result: result,
+        isCloud: isCloud,
+      ),
     );
   }
 }
+
+List<Widget> _preflightContentChildren({
+  required String workspaceId,
+  required WorkspaceSetupPreflight result,
+  required bool isCloud,
+}) => [
+  _PreflightSummaryCard(
+    workspaceId: workspaceId,
+    result: result,
+    isCloud: isCloud,
+  ),
+  for (final id in WorkspaceSetupPreflightCheckId.values)
+    _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
+];
 
 class const _PreflightSummaryCard({
   required final String workspaceId,
@@ -320,13 +327,24 @@ String _statusKey(WorkspaceSetupPreflightStatus status) => switch (status) {
 String _localizedCheckMessage(
   BuildContext context,
   String key,
-) => (switch (key) {
+) => (_localizedStorageMessage(key) ??
+        _localizedProviderMessage(key) ??
+        _localizedModelMessage(key) ??
+        _localizedMcpMessage(key) ??
+        LocaleKeys.workspace_setup_preflight_unavailable)
+    .tr(context: context);
+
+String? _localizedStorageMessage(String key) => switch (key) {
   'workspace_setup_preflight.storage_available' =>
     LocaleKeys.workspace_setup_preflight_storage_available,
   'workspace_setup_preflight.storage_unavailable' =>
     LocaleKeys.workspace_setup_preflight_storage_unavailable,
   'workspace_setup_preflight.storage_unverified' =>
     LocaleKeys.workspace_setup_preflight_storage_unverified,
+  _ => null,
+};
+
+String? _localizedProviderMessage(String key) => switch (key) {
   'workspace_setup_preflight.provider_unverified' =>
     LocaleKeys.workspace_setup_preflight_provider_unverified,
   'workspace_setup_preflight.provider_not_configured' =>
@@ -339,6 +357,10 @@ String _localizedCheckMessage(
     LocaleKeys.workspace_setup_preflight_provider_for_model_missing,
   'workspace_setup_preflight.provider_saved' =>
     LocaleKeys.workspace_setup_preflight_provider_saved,
+  _ => null,
+};
+
+String? _localizedModelMessage(String key) => switch (key) {
   'workspace_setup_preflight.model_not_selected' =>
     LocaleKeys.workspace_setup_preflight_model_not_selected,
   'workspace_setup_preflight.model_unverified' =>
@@ -349,6 +371,10 @@ String _localizedCheckMessage(
     LocaleKeys.workspace_setup_preflight_model_metadata_unavailable,
   'workspace_setup_preflight.model_metadata_available' =>
     LocaleKeys.workspace_setup_preflight_model_metadata_available,
+  _ => null,
+};
+
+String? _localizedMcpMessage(String key) => switch (key) {
   'workspace_setup_preflight.mcp_unverified' =>
     LocaleKeys.workspace_setup_preflight_mcp_unverified,
   'workspace_setup_preflight.mcp_not_configured' =>
@@ -361,8 +387,8 @@ String _localizedCheckMessage(
     LocaleKeys.workspace_setup_preflight_mcp_attention,
   'workspace_setup_preflight.mcp_last_test_passed' =>
     LocaleKeys.workspace_setup_preflight_mcp_last_test_passed,
-  _ => LocaleKeys.workspace_setup_preflight_unavailable,
-}).tr(context: context);
+  _ => null,
+};
 
 String _outcomeKey(WorkspaceSetupPreflightOutcome outcome) => switch (outcome) {
   .ready => 'workspace_setup_preflight.outcome.ready',

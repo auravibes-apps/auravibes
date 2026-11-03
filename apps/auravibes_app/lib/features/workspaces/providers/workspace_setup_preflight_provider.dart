@@ -62,16 +62,24 @@ WorkspaceSetupPreflightSnapshot _preflightSnapshot(
   _WorkspaceScope scope,
   _SourceReads sources,
   String? selectedModelId,
-) => .new(
-  storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
-  selectedModelId: selectedModelId,
-  selectedModelSourceAvailable: sources.modelRead.available,
-  providerSourceAvailable: sources.providerRead.available,
-  mcpSourceAvailable: sources.mcpRead.available,
-  providers: _providerSnapshots(sources.providerRead.value, scope.workspaceId),
-  selectedModel: sources.modelRead.value,
-  mcpConnections: sources.mcpRead.value,
-);
+) {
+  final availability = _readAvailability(sources);
+  final providers = _providerSnapshots(
+    sources.providerRead.value,
+    scope.workspaceId,
+  );
+
+  return .new(
+    storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
+    selectedModelId: selectedModelId,
+    selectedModelSourceAvailable: availability.model,
+    providerSourceAvailable: availability.provider,
+    mcpSourceAvailable: availability.mcp,
+    providers: providers,
+    selectedModel: sources.modelRead.value,
+    mcpConnections: sources.mcpRead.value,
+  );
+}
 
 typedef _ReadResult<T> = ({bool available, T? value});
 
@@ -93,6 +101,22 @@ typedef _SourceReads = ({
   _ReadResult<List<WorkspaceSetupMcpSnapshot>> mcpRead,
 });
 
+typedef _ReadAvailability = ({bool model, bool provider, bool mcp});
+
+_ReadAvailability _readAvailability(_SourceReads sources) => (
+  model: sources.modelRead.available,
+  provider: sources.providerRead.available,
+  mcp: sources.mcpRead.available,
+);
+
+typedef _WorkspaceScopeInput = ({
+  String workspaceId,
+  bool refreshRequested,
+  _ReadResult<WorkspaceEntity?> workspaceRead,
+  WorkspaceEntity? workspace,
+  _ReadResult<WorkspaceSession> sessionRead,
+});
+
 Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
   final refreshRequested = ref.watch(
     workspaceSetupPreflightRefreshProvider(workspaceId),
@@ -101,13 +125,13 @@ Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
   final workspace = workspaceRead.value;
   final sessionRead = await _readSession(ref, workspaceId, workspace);
 
-  return _workspaceScope(
-    workspaceId,
-    refreshRequested,
-    workspaceRead,
-    workspace,
-    sessionRead,
-  );
+  return _workspaceScope((
+    workspaceId: workspaceId,
+    refreshRequested: refreshRequested,
+    workspaceRead: workspaceRead,
+    workspace: workspace,
+    sessionRead: sessionRead,
+  ));
 }
 
 Future<_ReadResult<WorkspaceEntity?>> _readWorkspace(
@@ -132,27 +156,23 @@ Future<_ReadResult<WorkspaceSession>> _readSession(
 }
 
 _WorkspaceScope _workspaceScope(
-  String workspaceId,
-  bool refreshRequested,
-  _ReadResult<WorkspaceEntity?> workspaceRead,
-  WorkspaceEntity? workspace,
-  _ReadResult<WorkspaceSession> sessionRead,
+  _WorkspaceScopeInput input,
 ) {
-  final isRemote = workspace?.type == WorkspaceType.remote;
+  final isRemote = input.workspace?.type == WorkspaceType.remote;
 
   return (
-    workspaceId: workspaceId,
-    refreshRequested: refreshRequested,
-    workspaceRead: workspaceRead,
-    workspace: workspace,
-    sessionRead: sessionRead,
-    session: sessionRead.value,
+    workspaceId: input.workspaceId,
+    refreshRequested: input.refreshRequested,
+    workspaceRead: input.workspaceRead,
+    workspace: input.workspace,
+    sessionRead: input.sessionRead,
+    session: input.sessionRead.value,
     isRemote: isRemote,
     sourceAllowed: _canReadSources(
-      workspace,
-      sessionRead,
+      input.workspace,
+      input.sessionRead,
       isRemote,
-      refreshRequested,
+      input.refreshRequested,
     ),
   );
 }
@@ -287,14 +307,22 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModelSnapshot(
   Ref ref,
   String selectedModelId,
   String workspaceId,
-) => _capture<WorkspaceSetupModelSnapshot?>(() async {
+) => _capture<WorkspaceSetupModelSnapshot?>(
+  () => _selectedModelSnapshot(ref, selectedModelId, workspaceId),
+);
+
+Future<WorkspaceSetupModelSnapshot?> _selectedModelSnapshot(
+  Ref ref,
+  String selectedModelId,
+  String workspaceId,
+) async {
   final selections = await ref.watch(
     modelSelectionStoreProvider(workspaceId).future,
   );
   final model = await selections.getById(selectedModelId);
 
-  return await _modelSnapshot(ref, model, workspaceId);
-});
+  return _modelSnapshot(ref, model, workspaceId);
+}
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   Ref ref,
@@ -349,15 +377,35 @@ WorkspaceSetupModelSnapshot _modelSnapshotFromCatalog(
   WorkspaceModelSelectionWithConnectionEntity model,
   WorkspaceModelSelectionEntity selection,
   ApiModelEntity? catalogModel,
-) => WorkspaceSetupModelSnapshot(
-  selectionId: selection.id,
-  providerConnectionId: model.modelConnection.id,
-  modelName: catalogModel?.name ?? selection.modelName,
-  capabilityMetadataAvailable: catalogModel != null,
-  inputModalities: catalogModel?.modalitiesInput ?? const [],
-  outputModalities: catalogModel?.modalitiesOutput ?? const [],
-  supportsReasoning: catalogModel?.supportsReasoning ?? false,
-  supportsToolCalls: catalogModel?.supportsToolCalls ?? false,
+) {
+  final capabilities = _catalogCapabilities(catalogModel);
+
+  return WorkspaceSetupModelSnapshot(
+    selectionId: selection.id,
+    providerConnectionId: model.modelConnection.id,
+    modelName: catalogModel?.name ?? selection.modelName,
+    capabilityMetadataAvailable: capabilities.available,
+    inputModalities: capabilities.inputModalities,
+    outputModalities: capabilities.outputModalities,
+    supportsReasoning: capabilities.supportsReasoning,
+    supportsToolCalls: capabilities.supportsToolCalls,
+  );
+}
+
+typedef _CatalogCapabilities = ({
+  bool available,
+  List<String> inputModalities,
+  List<String> outputModalities,
+  bool supportsReasoning,
+  bool supportsToolCalls,
+});
+
+_CatalogCapabilities _catalogCapabilities(ApiModelEntity? model) => (
+  available: model != null,
+  inputModalities: model?.modalitiesInput ?? const [],
+  outputModalities: model?.modalitiesOutput ?? const [],
+  supportsReasoning: model?.supportsReasoning ?? false,
+  supportsToolCalls: model?.supportsToolCalls ?? false,
 );
 
 bool? _storageAvailable(_WorkspaceScope scope, bool? cloudStorageAvailable) {

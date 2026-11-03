@@ -399,6 +399,7 @@ jobs:
             git status --short --untracked-files=all
             git diff --name-only
             git diff --stat
+            git diff -- apps/auravibes_app/lib/features/workspaces/providers/workspace_setup_preflight_provider.g.dart
             exit 1
           fi
 
