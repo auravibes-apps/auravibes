@@ -5,7 +5,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -40,6 +42,20 @@ void main() {
       ),
     );
     final _ = await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ArchivedConversationsScreen)),
+      listen: false,
+    );
+    expect(
+      container
+          .read(
+            workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId),
+          )
+          .value
+          ?.cloud
+          ?.cloudWorkspaceId,
+      7,
+    );
 
     expect(find.text('Archived on this device'), findsOneWidget);
     expect(
