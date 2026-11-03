@@ -109,7 +109,7 @@ void main() {
     await tester.tap(
       find.text(
         spanish
-            ? 'Configurar verificaci' + String.fromCharCode(243) + 'n'
+            ? 'Configurar verificaci${.fromCharCode(243)}n'
             : 'Configure verification',
       ),
     );
