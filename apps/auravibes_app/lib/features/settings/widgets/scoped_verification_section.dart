@@ -266,16 +266,15 @@ Future<ScopedVerificationSettings> _savePendingSettings(
   WidgetRef ref,
   String workspaceId,
   ScopedVerificationSettings settings,
-) {
+) async {
   final saveSettings = ref.read(
     saveScopedVerificationSettingsUsecaseProvider(workspaceId),
   );
   final repository = ref.read(workspaceVerificationRepositoryProvider);
 
-  return saveSettings(
-    workspaceId: workspaceId,
-    settings: settings,
-  ).then((_) => repository.getSettings(workspaceId));
+  await saveSettings(workspaceId: workspaceId, settings: settings);
+
+  return await repository.getSettings(workspaceId);
 }
 
 class const _VerificationCard({
