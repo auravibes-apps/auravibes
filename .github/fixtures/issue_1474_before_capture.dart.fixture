@@ -54,8 +54,9 @@ void main() {
       height: 180,
       overrides: _workspaceAccessOverride(),
     );
-    expect(find.byType(ToolItemRow), findsOneWidget);
+    debugDumpApp();
     await _capture(tester, 'management');
+    expect(find.byType(ToolItemRow), findsOneWidget);
 
     final pendingCall = PendingToolCall(
       toolCall: const MessageToolCallEntity(

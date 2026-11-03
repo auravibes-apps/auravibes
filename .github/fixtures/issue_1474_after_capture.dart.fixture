@@ -61,9 +61,10 @@ void main() {
       height: 180,
       overrides: _workspaceAccessOverride(),
     );
+    debugDumpApp();
+    await _capture(tester, 'management');
     expect(find.text('Remove record'), findsOneWidget);
     expect(find.text('Service hint: may modify information'), findsOneWidget);
-    await _capture(tester, 'management');
 
     final pendingCall = PendingToolCall(
       toolCall: const MessageToolCallEntity(
