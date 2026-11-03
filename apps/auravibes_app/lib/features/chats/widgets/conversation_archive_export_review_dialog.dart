@@ -145,9 +145,7 @@ class const _ConversationArchiveExportReviewContent({
               onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
             ),
             SizedBox(height: theme.fromSpacing(.sm)),
-            _ConversationArchiveExportConversationList(
-              preview: preview,
-            ),
+            _ConversationArchiveExportConversationList(preview: preview),
             SizedBox(height: theme.fromSpacing(.md)),
             _ConversationArchiveExportReviewDisclosure(
               fileName: fileName,
