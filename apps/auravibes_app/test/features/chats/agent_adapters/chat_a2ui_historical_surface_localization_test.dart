@@ -64,6 +64,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final localizationContext = tester.element(
+      find.byType(ChatA2uiSurfaceHost),
+    );
+    debugPrint('LOCALE=${EasyLocalization.of(localizationContext)?.locale}');
+    debugPrint(
+      'TEXTS=${tester.widgetList<Text>(find.byType(Text)).map((widget) => widget.data).toList()}',
+    );
     expect(find.text('Saved response'), findsOneWidget);
     expect(find.text('Solo lectura'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
