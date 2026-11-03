@@ -307,7 +307,7 @@ void main() {
         messages: messages,
         modelLabel: null,
         agentContext: null,
-        readAttachmentBytes: (path) {
+        readAttachmentBytes: (String path) {
           readCount++;
           fail('Excluded attachments must not read bytes from $path.');
         },
