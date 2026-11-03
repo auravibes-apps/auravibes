@@ -256,7 +256,8 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAgentHookSettingsSchemaVersion + 1;
   static const int _conversationArchiveStateSchemaVersion =
       _workspaceVerificationSchemaVersion + 1;
-  static const int _currentSchemaVersion = _conversationArchiveStateSchemaVersion;
+  static const int _currentSchemaVersion =
+      _conversationArchiveStateSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
