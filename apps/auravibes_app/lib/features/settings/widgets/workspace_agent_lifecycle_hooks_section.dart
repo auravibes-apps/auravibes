@@ -423,8 +423,8 @@ class const _WorkspaceHookToggle({
         const Expanded(child: TextLocale('agent_lifecycle_hooks.enable')),
         AuraSwitch(
           value: view.settings.enabled,
-          semanticLabel: _hooksEnabledLabel(context),
           onChanged: _hooksEnabledChanged(view, status),
+          semanticLabel: _hooksEnabledLabel(context),
         ),
       ],
     );

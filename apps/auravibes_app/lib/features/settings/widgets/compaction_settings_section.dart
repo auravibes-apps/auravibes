@@ -713,11 +713,11 @@ class const _CompactionAutoCompactionRow({
       const Expanded(child: _compactionAutoCompactionDescription),
       AuraSwitch(
         value: state._autoEnabled,
+        onChanged: (value) =>
+            state._updateState(() => state._autoEnabled = value),
         semanticLabel: LocaleKeys.compaction_settings_auto_enabled.tr(
           context: context,
         ),
-        onChanged: (value) =>
-            state._updateState(() => state._autoEnabled = value),
       ),
     ],
   );

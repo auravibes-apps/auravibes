@@ -63,6 +63,7 @@ extension WorkspaceToolEntityWidgets on WorkspaceToolEntity {
         .url => LocaleKeys.tools_names_url_name.tr(context: context),
       };
     }
+
     return ToolNameFormatter.formatSkillDisplayName(toolId) ?? toolId;
   }
 
