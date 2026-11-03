@@ -50,6 +50,12 @@ class _TestableAppState extends State<TestableApp> {
   }
 
   @override
+  void dispose() {
+    _container?.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant TestableApp oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.workspaceId == widget.workspaceId &&
@@ -61,47 +67,10 @@ class _TestableAppState extends State<TestableApp> {
     final oldContainer = _container;
     _container = _createContainer(widget);
     if (oldContainer != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        oldContainer.dispose();
-      });
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => oldContainer.dispose(),
+      );
     }
-  }
-
-  @override
-  void dispose() {
-    _container?.dispose();
-    super.dispose();
-  }
-
-  ProviderContainer _createContainer(TestableApp app) {
-    final session =
-        app.workspaceSession ??
-        WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: app.workspaceId),
-        );
-    final sessionWorkspaceId = session.workspace.localWorkspaceId;
-    final routeSessionProvider = workspaceSessionForRouteProvider(
-      sessionWorkspaceId,
-    );
-    final hasRouteSessionOverride = app.overrides
-        .whereType<riverpod_misc.Override>()
-        .any((override) => override.origin == routeSessionProvider);
-
-    return .new(
-      overrides: [
-        workspaceSessionProvider(session).overrideWithValue(session),
-        workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
-          if (localWorkspaceId == sessionWorkspaceId) return session;
-
-          return WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
-          );
-        }),
-        ...app.overrides.cast(),
-        if (!hasRouteSessionOverride)
-          routeSessionProvider.overrideWithValue(AsyncData(session)),
-      ],
-    );
   }
 
   @override
@@ -141,6 +110,37 @@ class _TestableAppState extends State<TestableApp> {
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),
+    );
+  }
+
+  ProviderContainer _createContainer(TestableApp app) {
+    final session =
+        app.workspaceSession ??
+        WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: app.workspaceId),
+        );
+    final sessionWorkspaceId = session.workspace.localWorkspaceId;
+    final routeSessionProvider = workspaceSessionForRouteProvider(
+      sessionWorkspaceId,
+    );
+    final hasRouteSessionOverride = app.overrides
+        .whereType<riverpod_misc.Override>()
+        .any((override) => override.origin == routeSessionProvider);
+
+    return .new(
+      overrides: [
+        workspaceSessionProvider(session).overrideWithValue(session),
+        workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
+          if (localWorkspaceId == sessionWorkspaceId) return session;
+
+          return WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
+          );
+        }),
+        ...app.overrides.cast(),
+        if (!hasRouteSessionOverride)
+          routeSessionProvider.overrideWithValue(AsyncData(session)),
+      ],
     );
   }
 }
