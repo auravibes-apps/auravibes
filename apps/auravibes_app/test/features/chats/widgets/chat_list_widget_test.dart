@@ -162,7 +162,7 @@ void main() {
       );
       final semantics = tester.getSemantics(checkbox);
       expect(semantics.label, contains('Incluir archivos adjuntos'));
-      expect(semantics.flagsCollection.isChecked, .isTrue);
+      expect(semantics.flagsCollection.isChecked, true);
 
       await tester.tap(find.text('Continuar para guardar'));
       final _ = await tester.pumpAndSettle();
