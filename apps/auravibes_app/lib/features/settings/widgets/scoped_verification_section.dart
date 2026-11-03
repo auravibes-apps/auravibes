@@ -386,7 +386,7 @@ class const _VerificationForm({
           if (state._error case final String error)
             Semantics(
               key: state._errorAnchor,
-              child: _VerificationErrorText(key: error),
+              child: _VerificationErrorText(localeKey: error),
               liveRegion: true,
             ),
           AuraWrap(
@@ -571,10 +571,10 @@ class const _VerificationInput({
   );
 }
 
-class const _VerificationErrorText({required final String key})
+class const _VerificationErrorText({required final String localeKey})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => switch (key) {
+  Widget build(BuildContext context) => switch (localeKey) {
     LocaleKeys.verification_cloud_unavailable => const TextLocale(
       LocaleKeys.verification_cloud_unavailable,
     ),
