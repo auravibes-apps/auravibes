@@ -1,11 +1,6 @@
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_api.dart';
 
-abstract final class AgentLifecycleHookRuntimeFactory {
-  static AgentLifecycleHookRuntime create() =>
-      const AgentLifecycleHookRuntimeStub();
-}
-
 class const AgentLifecycleHookRuntimeStub()
     implements AgentLifecycleHookRuntime {
   @override
@@ -20,4 +15,9 @@ class const AgentLifecycleHookRuntimeStub()
   Future<AgentLifecycleHookInvocationResult> invoke(
     AgentLifecycleHookInvocationRequest request,
   ) async => const AgentLifecycleHookInvocationResult(outcome: .unavailable);
+}
+
+abstract final class AgentLifecycleHookRuntimeFactory {
+  static AgentLifecycleHookRuntime create() =>
+      const AgentLifecycleHookRuntimeStub();
 }

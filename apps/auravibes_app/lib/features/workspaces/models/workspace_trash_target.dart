@@ -6,6 +6,13 @@ class const WorkspaceTrashTarget({
   required final int revision,
   final String? tableId,
 }) {
+  factory fromJson(Map<String, dynamic> data) => .new(
+    kind: WorkspaceTrashKind.values.byName(data['kind'] as String),
+    id: data['id'] as String,
+    revision: data['revision'] as int,
+    tableId: data['tableId'] as String?,
+  );
+
   static void validate(WorkspaceTrashTarget target) {
     if (target.id.isEmpty ||
         target.revision < 1 ||
@@ -13,13 +20,6 @@ class const WorkspaceTrashTarget({
       throw const WorkspaceTableException();
     }
   }
-
-  factory fromJson(Map<String, dynamic> data) => .new(
-    kind: WorkspaceTrashKind.values.byName(data['kind'] as String),
-    id: data['id'] as String,
-    revision: data['revision'] as int,
-    tableId: data['tableId'] as String?,
-  );
 
   Map<String, Object?> toJson() => {
     'kind': kind.name,

@@ -10,7 +10,7 @@ import 'package:auravibes_app/features/tools/usecases/resolve_tool_approval_deci
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_app_message_bridge.dart';
-import 'package:auravibes_app/services/mcp_service/mcp_app_resource.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_app_resource_codec.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_app_tool_metadata.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';

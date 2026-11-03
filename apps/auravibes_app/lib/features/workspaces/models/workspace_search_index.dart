@@ -8,10 +8,6 @@ class WorkspaceSearchIndex<T>(
   required String Function(T) nameOf,
   required String Function(T) idOf,
 }) {
-  /// Folds accents and compatibility characters for workspace name matching.
-  static String normalize(String value) =>
-      nfkd(value).replaceAll(_combiningMarks, '').toLowerCase();
-
   final String Function(T) _nameOf = nameOf;
   final String Function(T) _idOf = idOf;
   final List<WorkspaceSearchEntry<T>> _entries = .unmodifiable(
@@ -20,6 +16,10 @@ class WorkspaceSearchIndex<T>(
         .new(item: item, name: nameOf(item), stableId: idOf(item)),
     ],
   );
+
+  /// Folds accents and compatibility characters for workspace name matching.
+  static String normalize(String value) =>
+      nfkd(value).replaceAll(_combiningMarks, '').toLowerCase();
 
   /// Returns whether [items] still match the exact snapshot indexed here.
   ///

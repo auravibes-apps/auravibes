@@ -10,7 +10,7 @@ import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.d
 import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool_result_sanitizer.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';

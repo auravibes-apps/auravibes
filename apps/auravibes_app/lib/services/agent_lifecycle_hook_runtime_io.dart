@@ -14,11 +14,6 @@ typedef _Reinspection = ({
   AgentToolHookOutcome? failure,
 });
 
-abstract final class AgentLifecycleHookRuntimeFactory {
-  static AgentLifecycleHookRuntime create() =>
-      const AgentLifecycleHookRuntimeIo();
-}
-
 class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   @override
   bool get isSupported =>
@@ -168,4 +163,9 @@ bool _sameArguments(List<String> left, List<String> right) {
   }
 
   return true;
+}
+
+abstract final class AgentLifecycleHookRuntimeFactory {
+  static AgentLifecycleHookRuntime create() =>
+      const AgentLifecycleHookRuntimeIo();
 }

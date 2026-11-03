@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/services/mcp_service/mcp_app_resource.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_app_resource_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
