@@ -744,7 +744,10 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
-      final _ = await tester.pumpAndSettle();
+      for (var attempt = 0; attempt < 5; attempt++) {
+        if (find.text('Restore').evaluate().isNotEmpty) break;
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.text('Restore'), findsOneWidget);
       expect(find.text('Archive'), findsNothing);
       await tester.tap(find.text('Restore'));
