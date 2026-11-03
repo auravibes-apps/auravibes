@@ -125,78 +125,89 @@ class const _ConversationArchiveExportReviewContent({
       width: 480,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.55,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.65,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: .min,
-            crossAxisAlignment: .start,
-            children: [
-              const TextLocale(_reviewDescriptionKey),
-              SizedBox(height: theme.fromSpacing(.md)),
-              TextLocale(switch (preview.attachmentCount) {
-                0 => _reviewIncludedNoAttachmentsKey,
-                _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
-                _ => _reviewIncludedWithoutAttachmentsKey,
-              }),
-              if (preview.attachmentCount > 0) ...[
-                SizedBox(height: theme.fromSpacing(.sm)),
-                CheckboxListTile(
-                  key: const ValueKey('archive-export-include-attachments'),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: includeAttachments,
-                  onChanged: (value) {
-                    if (value != null) onIncludeAttachmentsChanged(value);
-                  },
-                  title: const TextLocale(_reviewIncludeAttachmentsKey),
-                  subtitle: const TextLocale(
-                    _reviewIncludeAttachmentsDescriptionKey,
-                  ),
+        child: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
+          children: [
+            const TextLocale(_reviewDescriptionKey),
+            SizedBox(height: theme.fromSpacing(.md)),
+            TextLocale(switch (preview.attachmentCount) {
+              0 => _reviewIncludedNoAttachmentsKey,
+              _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
+              _ => _reviewIncludedWithoutAttachmentsKey,
+            }),
+            if (preview.attachmentCount > 0) ...[
+              SizedBox(height: theme.fromSpacing(.sm)),
+              CheckboxListTile(
+                key: const ValueKey('archive-export-include-attachments'),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: includeAttachments,
+                onChanged: (value) {
+                  if (value != null) onIncludeAttachmentsChanged(value);
+                },
+                title: const TextLocale(_reviewIncludeAttachmentsKey),
+                subtitle: const TextLocale(
+                  _reviewIncludeAttachmentsDescriptionKey,
                 ),
-                SizedBox(height: theme.fromSpacing(.sm)),
-                TextLocale(
-                  _reviewAttachmentSectionKey,
-                  args: [preview.attachmentCount.toString()],
-                ),
-              ],
-              SizedBox(height: theme.fromSpacing(.md)),
-              TextLocale(
-                _reviewConversationSectionKey,
-                args: [preview.conversations.length.toString()],
               ),
-              for (final conversation in preview.conversations)
-                Padding(
-                  padding: EdgeInsets.only(top: theme.fromSpacing(.sm)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        conversation.title,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      if (conversation.attachments.isEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: theme.fromSpacing(.xs)),
-                          child: const TextLocale(_reviewNoAttachmentsKey),
-                        ),
-                      for (final attachment in conversation.attachments)
-                        _ConversationArchiveExportAttachmentRow(
-                          attachment: attachment,
-                        ),
-                    ],
-                  ),
-                ),
-              SizedBox(height: theme.fromSpacing(.md)),
-              TextLocale(switch (preview.attachmentCount) {
-                0 => _reviewPrivacyNoAttachmentsKey,
-                _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
-                _ => _reviewPrivacyWithoutAttachmentsKey,
-              }),
-              SizedBox(height: theme.fromSpacing(.md)),
-              TextLocale(_reviewDestinationKey, args: [fileName]),
             ],
-          ),
+            SizedBox(height: theme.fromSpacing(.sm)),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
+                  children: [
+                    if (preview.attachmentCount > 0)
+                      TextLocale(
+                        _reviewAttachmentSectionKey,
+                        args: [preview.attachmentCount.toString()],
+                      ),
+                    SizedBox(height: theme.fromSpacing(.md)),
+                    TextLocale(
+                      _reviewConversationSectionKey,
+                      args: [preview.conversations.length.toString()],
+                    ),
+                    for (final conversation in preview.conversations)
+                      Padding(
+                        padding: EdgeInsets.only(top: theme.fromSpacing(.sm)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              conversation.title,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            if (conversation.attachments.isEmpty)
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: theme.fromSpacing(.xs),
+                                ),
+                                child: const TextLocale(_reviewNoAttachmentsKey),
+                              ),
+                            for (final attachment in conversation.attachments)
+                              _ConversationArchiveExportAttachmentRow(
+                                attachment: attachment,
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: theme.fromSpacing(.md)),
+            TextLocale(switch (preview.attachmentCount) {
+              0 => _reviewPrivacyNoAttachmentsKey,
+              _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
+              _ => _reviewPrivacyWithoutAttachmentsKey,
+            }),
+            SizedBox(height: theme.fromSpacing(.sm)),
+            TextLocale(_reviewDestinationKey, args: [fileName]),
+          ],
         ),
       ),
     );
