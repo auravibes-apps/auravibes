@@ -330,17 +330,47 @@ Future<Object> _selectAndRunVerification(_EligibleVerification eligible) async {
 Future<Object> _runSelectionOrExplainFailure(
   _EligibleVerification eligible,
   _VerificationSelection selection,
-) async {
+) async => switch (_resolveVerificationSelection(eligible, selection)) {
+  _RejectedVerificationSelection(:final response) => response,
+  _ReadyVerificationSelection(:final request) => await _runSelectedVerification(
+    request,
+  ),
+};
+
+sealed class _VerificationSelectionResolution {
+  const new();
+}
+
+class _RejectedVerificationSelection extends _VerificationSelectionResolution {
+  const new(this.response);
+
+  final Object response;
+}
+
+class _ReadyVerificationSelection extends _VerificationSelectionResolution {
+  const new(this.request);
+
+  final _SelectedVerification request;
+}
+
+_VerificationSelectionResolution _resolveVerificationSelection(
+  _EligibleVerification eligible,
+  _VerificationSelection selection,
+) {
   if (selection.result case final ScopedVerificationResult result) {
-    return _feedback(eligible.request.result, result.outcome, result.reason);
+    return _RejectedVerificationSelection(
+      _feedback(eligible.request.result, result.outcome, result.reason),
+    );
   }
   final selections = selection.selections;
   if (selections == null || eligible.context.identity.turnId == null) {
-    return _feedback(eligible.request.result, .incomplete, 'invalid_turn');
+    return _RejectedVerificationSelection(
+      _feedback(eligible.request.result, .incomplete, 'invalid_turn'),
+    );
   }
   final request = eligible.request;
 
-  return await _runSelectedVerification((
+  return _ReadyVerificationSelection((
     usecase: eligible.usecase,
     invocation: eligible.invocation,
     original: request.result,

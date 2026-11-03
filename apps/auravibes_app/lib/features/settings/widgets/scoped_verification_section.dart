@@ -130,10 +130,20 @@ _ScopedVerificationSectionSnapshot _watchScopedVerificationSection(
   return (
     settings: settings,
     cloud: cloud,
-    hasError: session.hasError || settings.hasError || tools.hasError,
-    tools: tools.asData?.value ?? const [],
+    hasError: _verificationSectionHasError(session, settings, tools),
+    tools: _verificationSectionTools(tools),
   );
 }
+
+bool _verificationSectionHasError(
+  AsyncValue<WorkspaceSession> session,
+  AsyncValue<ScopedVerificationSettings> settings,
+  AsyncValue<List<ScopedVerificationToolOption>> tools,
+) => session.hasError || settings.hasError || tools.hasError;
+
+List<ScopedVerificationToolOption> _verificationSectionTools(
+  AsyncValue<List<ScopedVerificationToolOption>> tools,
+) => tools.asData?.value ?? const [];
 
 AsyncValue<WorkspaceSession> _watchWorkspaceSession(
   WidgetRef ref,
@@ -662,17 +672,21 @@ List<ScopedVerificationToolOption> _unattendedVerificationTools(
   List<ScopedVerificationToolOption> tools,
 ) => tools.where((tool) => tool.canRunUnattended).toList();
 
-class const _VerificationRunnerDropdown({
-  required final _ScopedVerificationSectionState state,
-  required final List<ScopedVerificationToolOption> runners,
-  required final String selectedId,
-}) extends StatelessWidget {
+class _VerificationRunnerDropdown extends StatelessWidget {
+  new({required this.state, required this.runners, required this.selectedId})
+    : options = [
+        for (final tool in runners)
+          AuraDropdownOption(value: tool.id, child: Text(tool.label)),
+      ];
+
+  final _ScopedVerificationSectionState state;
+  final List<ScopedVerificationToolOption> runners;
+  final String selectedId;
+  final List<AuraDropdownOption<String>> options;
+
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [
-      for (final tool in runners)
-        AuraDropdownOption(value: tool.id, child: Text(tool.label)),
-    ],
+    options: options,
     value: _selectedVerificationRunner(runners, selectedId),
     onChanged: (id) => state._selectRunner(id, runners),
     label: const TextLocale(LocaleKeys.verification_runner),
@@ -814,26 +828,50 @@ class const _VerificationEditTools({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final draft = state._draft;
-    final edits = _availableEditTools(tools, draft);
-    final eligible = edits.map((tool) => tool.id).toSet();
-    final hasMissing = _hasMissingEditSelection(draft, eligible);
+    final data = _verificationEditToolData(state, tools);
 
     return AuraColumn(
       children: [
         const _VerificationEditToolsHeader(),
-        if (hasMissing)
+        if (data.hasMissing)
           _MissingVerificationEditTools(
             state: state,
-            draft: draft,
-            eligibleIds: eligible,
+            draft: data.draft,
+            eligibleIds: data.eligibleIds,
           ),
-        if (edits.isNotEmpty)
-          _VerificationEditToolList(state: state, draft: draft, tools: edits),
+        if (data.edits.isNotEmpty)
+          _VerificationEditToolList(
+            state: state,
+            draft: data.draft,
+            tools: data.edits,
+          ),
       ],
       crossAxisAlignment: .stretch,
     );
   }
+}
+
+typedef _VerificationEditToolData = ({
+  ScopedVerificationFormDraft draft,
+  List<ScopedVerificationToolOption> edits,
+  Set<String> eligibleIds,
+  bool hasMissing,
+});
+
+_VerificationEditToolData _verificationEditToolData(
+  _ScopedVerificationSectionState state,
+  List<ScopedVerificationToolOption> tools,
+) {
+  final draft = state._draft;
+  final edits = _availableEditTools(tools, draft);
+  final eligibleIds = edits.map((tool) => tool.id).toSet();
+
+  return (
+    draft: draft,
+    edits: edits,
+    eligibleIds: eligibleIds,
+    hasMissing: _hasMissingEditSelection(draft, eligibleIds),
+  );
 }
 
 class const _VerificationEditToolsHeader() extends StatelessWidget {

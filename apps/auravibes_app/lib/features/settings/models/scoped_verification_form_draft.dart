@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/widgets.dart';
 
+const _wholeSecondsPartCount = 1;
+const _millisecondsFractionDigits = 3;
+
 /// Raw owner input remains editable when validation or a network probe fails.
 class ScopedVerificationFormDraft {
   new(this.saved)
@@ -186,4 +189,6 @@ int _wholeSeconds(List<String> parts) {
 }
 
 int _fractionalMilliseconds(List<String> parts) =>
-    parts.length == 1 ? 0 : _integer(parts.last.padRight(3, '0'));
+    parts.length == _wholeSecondsPartCount
+    ? 0
+    : _integer(parts.last.padRight(_millisecondsFractionDigits, '0'));
