@@ -153,7 +153,7 @@ void main() {
     final _ = await fixture.database
         .into(fixture.database.messageAttachments)
         .insert(
-          .insert(
+          MessageAttachmentsCompanion.insert(
             messageId: message.id,
             localPath: '/private/export-review/research-notes.txt',
             fileName: '/private/export-review/research-notes.txt',

@@ -93,7 +93,7 @@ void main() {
     final _ = await database
         .into(database.messageAttachments)
         .insert(
-          .insert(
+          MessageAttachmentsCompanion.insert(
             messageId: message.id,
             localPath: '/private/account/report.pdf',
             fileName: '/private/account/report.pdf',
