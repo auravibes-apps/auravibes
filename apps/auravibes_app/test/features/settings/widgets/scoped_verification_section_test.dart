@@ -269,6 +269,9 @@ void _dumpVerificationState(
   final enabled = tester.widget<Widget>(
     find.byKey(const ValueKey('verification-enable')),
   );
+  final save = tester.widget<Widget>(
+    find.byKey(const ValueKey('verification-save')),
+  );
   final texts = tester.allWidgets
       .whereType<Text>()
       .map((widget) => widget.data)
@@ -277,11 +280,13 @@ void _dumpVerificationState(
         (text) =>
             text.contains('Check every field') ||
             text.contains('Could not check the runner') ||
+            text.contains('Could not save verification settings') ||
             text.contains('Verification settings saved.'),
       )
       .toList();
   debugPrint(
-    'DIAG $scenario control=$enabled dirty=${guard.isDirty} '
-    'probes=$probes texts=$texts',
+    'DIAG $scenario control=${enabled.toDiagnosticsNode().toStringDeep()} '
+    'save=${save.toDiagnosticsNode().toStringDeep()} '
+    'dirty=${guard.isDirty} probes=$probes texts=$texts',
   );
 }
