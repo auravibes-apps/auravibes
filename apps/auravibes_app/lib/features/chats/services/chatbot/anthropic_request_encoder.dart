@@ -81,14 +81,27 @@ class const AnthropicRequestEncoder({
   }
 
   void _appendWireMessage(Message message, _WireMessages wire) {
-    if (message.role != Role.system) {
-      wire.messages.add(AnthropicMessageCodec.encode(message));
-    } else if (_isLeading(message, wire.messages)) {
-      wire.leading.add(_text(message));
+    final safeMessage = _systemRoleIsAllowed(message)
+        ? message
+        : Message(role: .user, content: message.content, metadata: message.metadata);
+    if (safeMessage.role != Role.system) {
+      wire.messages.add(AnthropicMessageCodec.encode(safeMessage));
+    } else if (_isLeading(safeMessage, wire.messages)) {
+      wire.leading.add(_text(safeMessage));
     } else {
-      wire.messages.add(sdk.InputMessage.systemBlocks(_systemBlocks(message)));
+      wire.messages.add(
+        sdk.InputMessage.systemBlocks(_systemBlocks(safeMessage)),
+      );
     }
   }
+
+  bool _systemRoleIsAllowed(Message message) =>
+      message.role != Role.system ||
+      AgentContextProvenance.fromMetadata(
+        message.metadata == null
+            ? null
+            : Map<String, Object?>.of(message.metadata!),
+      ).mayUseSystemRole;
 
   bool _isLeading(Message message, List<sdk.InputMessage> messages) =>
       messages.isEmpty ||
@@ -180,7 +193,9 @@ extension on AnthropicRequestEncoder {
     for (var index = 0; index < history.length; index++) {
       messages.add(history[index]);
       for (final entry in _entriesAfterMessage(history, index)) {
-        _appendUpdate(messages, _updateMessage(entry.update, seen));
+        for (final update in _updateMessages(entry.update, seen)) {
+          _appendUpdate(messages, update);
+        }
         final _ = applied.add(entry);
       }
     }
@@ -209,7 +224,8 @@ extension on AnthropicRequestEncoder {
 
   void _appendUpdate(List<Message> messages, Message update) {
     if (_text(update).isEmpty && _changes(update).isEmpty) return;
-    if (messages.last.role != Role.system) {
+    if (messages.last.role != Role.system ||
+        !_sameProvenance(messages.last, update)) {
       messages.add(update);
 
       return;
@@ -228,37 +244,56 @@ extension on AnthropicRequestEncoder {
         ].where((text) => text.isNotEmpty).join('\n'),
       ),
     ],
-    metadata: {
+    metadata: AgentContextProvenance.fromMetadata(
+      previous.metadata == null
+          ? null
+          : Map<String, Object?>.of(previous.metadata!),
+    ).withMetadata({
       'anthropicToolChanges': [
         ..._changes(previous),
         ..._changes(update),
       ].map((block) => block.toJson()).toList(),
-    },
+    }),
   );
 
-  Message _updateMessage(
+  List<Message> _updateMessages(
     AgentTranscriptContextUpdate update,
     Map<String, ToolSpec> seen,
   ) {
     final knownNames = seen.keys.toSet();
     _checkDefinitions(update.toolsAdded, seen);
+    final messages = <Message>[
+      if (supportsMidConversationSystemMessages)
+        for (final context in update.contextMessages ?? const [])
+          _contextMessage(context),
+    ];
+    final changes = supportsToolDeltas
+        ? _toolChanges(update, knownNames)
+        : const <Map<String, dynamic>>[];
+    if (changes.isNotEmpty) {
+      messages.add(
+        Message(
+          role: .system,
+          content: const [],
+          metadata: AgentContextProvenance.applicationPrompt.withMetadata({
+            'anthropicToolChanges': changes,
+          }),
+        ),
+      );
+    }
 
-    return Message(
-      role: .system,
-      content: [TextPart(text: _contextText(update))],
-      metadata: {
-        'anthropicToolChanges': supportsToolDeltas
-            ? _toolChanges(update, knownNames)
-            : <Map<String, dynamic>>[],
-      },
-    );
+    return messages;
   }
 
-  String _contextText(AgentTranscriptContextUpdate update) =>
-      supportsMidConversationSystemMessages
-      ? update.contextMessages?.map((message) => message.content).join('\n') ??
-            ''
-      : '';
+  bool _sameProvenance(Message left, Message right) =>
+      AgentContextProvenance.fromMetadata(
+        left.metadata == null ? null : Map<String, Object?>.of(left.metadata!),
+      ) ==
+      AgentContextProvenance.fromMetadata(
+        right.metadata == null
+            ? null
+            : Map<String, Object?>.of(right.metadata!),
+      );
 }
 
 _Projection _fallback(ModelRequest request) => (
@@ -270,8 +305,11 @@ _Projection _fallback(ModelRequest request) => (
 );
 
 Message _contextMessage(AgentContextMessage message) => Message(
-  role: message.role == .system ? Role.system : Role.user,
+  role: message.role == .system && message.provenance.mayUseSystemRole
+      ? Role.system
+      : Role.user,
   content: [TextPart(text: message.content)],
+  metadata: message.provenance.withMetadata(const {}),
 );
 
 bool _hasToolChanges(AgentTranscriptContextEntry entry) =>

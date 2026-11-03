@@ -4,7 +4,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_con
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 abstract final class AgentTranscriptContextCodec {
-  static const int version = 1;
+  static const int version = 2;
 
   static String encodeUpdate(AgentTranscriptContextUpdate update) =>
       jsonEncode(_updateToJson(update));
@@ -34,7 +34,8 @@ abstract final class AgentTranscriptContextCodec {
   ) {
     final schemaVersion = decoded['version'];
     if (schemaVersion is int) {
-      if (schemaVersion == version) return _decodeVersion1(decoded);
+      if (schemaVersion == 1) return _decodeVersion1(decoded);
+      if (schemaVersion == version) return _decodeVersion2(decoded);
       throw UnsupportedTranscriptVersionException(schemaVersion);
     }
 
@@ -45,7 +46,20 @@ abstract final class AgentTranscriptContextCodec {
     Map<String, Object?> data,
   ) {
     try {
-      return _decodeUpdate(data);
+      return _decodeUpdate(data, includeProvenance: false);
+    } on Object catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const MalformedTranscriptContextException(),
+        stackTrace,
+      );
+    }
+  }
+
+  static AgentTranscriptContextUpdate _decodeVersion2(
+    Map<String, Object?> data,
+  ) {
+    try {
+      return _decodeUpdate(data, includeProvenance: true);
     } on Object catch (_, stackTrace) {
       Error.throwWithStackTrace(
         const MalformedTranscriptContextException(),
@@ -85,11 +99,18 @@ Map<String, Object?> _encodeMessage(AgentContextMessage message) => {
   'role': message.role.name,
   'content': message.content,
   'kind': ?message.kind,
+  'provenance': message.provenance.toJson(),
 };
 
-AgentTranscriptContextUpdate _decodeUpdate(Map<String, Object?> data) =>
+AgentTranscriptContextUpdate _decodeUpdate(
+  Map<String, Object?> data, {
+  required bool includeProvenance,
+}) =>
     AgentTranscriptContextUpdate(
-      contextMessages: _decodeMessages(data['contextMessages']),
+      contextMessages: _decodeMessages(
+        data['contextMessages'],
+        includeProvenance: includeProvenance,
+      ),
       toolsAdded: _decodeTools(data['toolsAdded']),
       toolsRemoved: _decodeRemovedTools(data['toolsRemoved']),
       toolOrder: _decodeToolOrder(data['toolOrder']),
@@ -109,9 +130,15 @@ List<Object?> _requiredObjectList(Object? value) {
   return value;
 }
 
-List<AgentContextMessage>? _decodeMessages(Object? value) => value == null
+List<AgentContextMessage>? _decodeMessages(
+  Object? value, {
+  required bool includeProvenance,
+}) => value == null
     ? null
-    : [for (final item in _asObjectList(value)) _decodeMessage(item)];
+    : [
+        for (final item in _asObjectList(value))
+          _decodeMessage(item, includeProvenance: includeProvenance),
+      ];
 
 List<String>? _decodeToolOrder(Object? value) =>
     value == null ? null : List<String>.from(_asObjectList(value));
@@ -119,13 +146,19 @@ List<String>? _decodeToolOrder(Object? value) =>
 Map<String, String>? _decodeApprovalStates(Object? value) =>
     value == null ? null : Map<String, String>.from(_asObjectMap(value));
 
-AgentContextMessage _decodeMessage(Object? value) {
+AgentContextMessage _decodeMessage(
+  Object? value, {
+  required bool includeProvenance,
+}) {
   final data = _asObjectMap(value);
 
   return AgentContextMessage(
     role: AgentContextMessageRole.values.byName(_requiredString(data, 'role')),
     content: _requiredString(data, 'content'),
     kind: _optionalString(data, 'kind'),
+    provenance: includeProvenance
+        ? AgentContextProvenance.fromJson(data['provenance'])
+        : AgentContextProvenance.unknown,
   );
 }
 

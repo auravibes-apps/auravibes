@@ -34,6 +34,7 @@ class const BuildSkillContextMessagesService(
     );
     final agentMessages = _builder.compose(
       agentContent: context.selectedAgent?.content,
+      agentContentProvenance: agent.AgentContextProvenance.userAgentConfiguration,
       conversationSkills: const [],
       skillCatalog: _catalogEntries(context),
       agentSkills: _toAgentSkills(
@@ -207,13 +208,14 @@ SkillCatalogEntry? _catalogEntry(
     description: skill.description,
     revision: manifest.revision,
     active: activeSlugs.contains(skill.slug),
+    provenance: _skillProvenance(skill),
   );
 }
 
 ChatMessage _toChatMessage(agent.AgentChatMessage message) => ChatMessage(
   role: _chatMessageRole(message.role),
   content: message.content,
-  metadata: Map<String, Object?>.of(message.metadata),
+  metadata: message.metadataWithProvenance,
 );
 
 ChatMessageRole _chatMessageRole(agent.AgentChatMessageRole role) =>
@@ -237,8 +239,14 @@ List<agent.AgentSkill> _toAgentSkills(
           : skill.content,
       identity: '${skill.source.name}:${skill.id}',
       manifest: manifestsBySlug[skill.slug],
+      provenance: _skillProvenance(skill),
     ),
 ];
+
+agent.AgentContextProvenance _skillProvenance(AvailableSkill skill) =>
+    skill.source == .app
+    ? agent.AgentContextProvenance.applicationSkill
+    : agent.AgentContextProvenance.importedSkill;
 
 final buildSkillContextMessagesServiceProvider =
     Provider<BuildSkillContextMessagesService>((ref) {

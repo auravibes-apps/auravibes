@@ -512,6 +512,122 @@ void main() {
     ]);
   });
 
+  test('ChatCompletions demotes unknown and external system messages', () {
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'Provider',
+      customize: (modelName, config) => (model: modelName, extraBody: {}),
+    );
+    final body = codec.buildRequestBody(
+      modelName: 'model',
+      request: ModelRequest(
+        messages: [
+          Message(
+            role: Role.system,
+            content: const [TextPart(text: 'UNKNOWN_SYSTEM_SENTINEL')],
+          ),
+          Message(
+            role: Role.system,
+            content: const [TextPart(text: 'IMPORTED_SYSTEM_SENTINEL')],
+            metadata: AgentContextProvenance.importedSkill.withMetadata(
+              const {},
+            ),
+          ),
+          Message(
+            role: Role.system,
+            content: const [TextPart(text: 'APP_PROMPT_SENTINEL')],
+            metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+              const {},
+            ),
+          ),
+          Message(
+            role: Role.tool,
+            content: const [
+              ToolResponsePart(
+                toolResponse: ToolResponse(
+                  ref: 'call-1',
+                  name: 'lookup',
+                  output: 'TOOL_RESULT_SENTINEL',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      stream: false,
+    );
+    final messages = body['messages'] as List<dynamic>;
+
+    expect(messages.map((message) => (message as Map)['role']), [
+      'user',
+      'user',
+      'system',
+      'tool',
+    ]);
+    expect(messages[0]['content'], 'UNKNOWN_SYSTEM_SENTINEL');
+    expect(messages[1]['content'], 'IMPORTED_SYSTEM_SENTINEL');
+    expect(messages[2]['content'], 'APP_PROMPT_SENTINEL');
+    expect(messages[3]['tool_call_id'], 'call-1');
+    expect(messages[3]['content'], '"TOOL_RESULT_SENTINEL"');
+    expect(jsonEncode(body), isNot(contains(agentContextProvenanceMetadataKey)));
+  });
+
+  test('Codex preserves data roles in input', () {
+    final body = const OpenAICodexCodec().buildRequestBody(
+      modelName: 'model',
+      request: ModelRequest(
+        messages: [
+          Message(
+            role: Role.system,
+            content: const [TextPart(text: 'UNKNOWN_SYSTEM_SENTINEL')],
+          ),
+          Message(
+            role: Role.system,
+            content: const [TextPart(text: 'IMPORTED_SYSTEM_SENTINEL')],
+            metadata: AgentContextProvenance.importedSkill.withMetadata(
+              const {},
+            ),
+          ),
+          Message(
+            role: Role.system,
+            content: const [TextPart(text: 'APP_PROMPT_SENTINEL')],
+            metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+              const {},
+            ),
+          ),
+          Message(
+            role: Role.tool,
+            content: const [
+              ToolResponsePart(
+                toolResponse: ToolResponse(
+                  ref: 'call-1',
+                  name: 'lookup',
+                  output: 'TOOL_RESULT_SENTINEL',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      stream: false,
+    );
+    final input = body['input'] as List<dynamic>;
+
+    expect(input.map((message) => (message as Map)['role']), [
+      'user',
+      'user',
+      'system',
+    ]);
+    expect(input[0]['content'], 'UNKNOWN_SYSTEM_SENTINEL');
+    expect(input[1]['content'], 'IMPORTED_SYSTEM_SENTINEL');
+    expect(input[2]['content'], 'APP_PROMPT_SENTINEL');
+    expect(input[3], {
+      'type': 'function_call_output',
+      'call_id': 'call-1',
+      'output': '"TOOL_RESULT_SENTINEL"',
+    });
+    expect(jsonEncode(body), isNot(contains(agentContextProvenanceMetadataKey)));
+  });
+
   test('Codex builds and streams responses', () async {
     const codec = OpenAICodexCodec();
     final body = codec.buildRequestBody(

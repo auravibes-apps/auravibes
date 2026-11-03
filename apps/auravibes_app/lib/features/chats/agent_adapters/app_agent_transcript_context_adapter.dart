@@ -119,27 +119,41 @@ AgentTranscriptContextState _foldStoredContext(
 }
 
 AgentContextMessage _contextMessage(ChatMessage message) {
-  if (message.parts.isNotEmpty || !_hasTrustedContextRole(message)) {
+  if (message.parts.isNotEmpty || !_hasSupportedContextRole(message)) {
     throw const AgentTranscriptContextException('unsupported context message');
   }
   final kind = message.metadata['kind'];
+  final provenance = AgentContextProvenance.fromMetadata(
+    Map<String, Object?>.of(message.metadata),
+  );
 
   return AgentContextMessage(
-    role: message.role == ChatMessageRole.system ? .system : .skill,
+    role: message.role == ChatMessageRole.system &&
+            provenance.mayUseSystemRole
+        ? .system
+        : .skill,
     content: message.content,
     kind: kind is String ? kind : null,
+    provenance: provenance,
   );
 }
 
-bool _hasTrustedContextRole(ChatMessage message) =>
+bool _hasSupportedContextRole(ChatMessage message) =>
     message.role == ChatMessageRole.system ||
     (message.role == ChatMessageRole.user &&
-        message.metadata['kind'] == skillContextMetadataKind);
+        (message.metadata['kind'] == skillContextMetadataKind ||
+            message.metadata['kind'] == skillCatalogMetadataKind));
 
 ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
-  role: message.role == AgentContextMessageRole.system ? .system : .user,
+  role: message.role == AgentContextMessageRole.system &&
+          message.provenance.mayUseSystemRole
+      ? .system
+      : .user,
   content: message.content,
-  metadata: {'transcriptContext': true, 'kind': ?message.kind},
+  metadata: message.provenance.withMetadata({
+    'transcriptContext': true,
+    'kind': ?message.kind,
+  }),
 );
 
 MessageToCreate _contextUpdateMessage(

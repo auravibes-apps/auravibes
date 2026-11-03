@@ -5,6 +5,7 @@
 
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/context_provenance.dart';
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
 import 'package:auravibes_engine/src/model_capabilities.dart';
 import 'package:auravibes_engine/src/provider_error_sanitizer.dart'
@@ -388,11 +389,24 @@ List<Map<String, dynamic>> _messageToJson(Message message) {
 
   return [
     {
-      'role': _roleToJson(message.role),
+      'role': _messageRoleToJson(message),
       'content': _contentToJson(message.content),
       'tool_calls': ?_toolCallsToJson(message.content),
     },
   ];
+}
+
+String _messageRoleToJson(Message message) {
+  if (message.role == Role.system &&
+      !AgentContextProvenance.fromMetadata(
+        message.metadata == null
+            ? null
+            : Map<String, Object?>.of(message.metadata!),
+      ).mayUseSystemRole) {
+    return 'user';
+  }
+
+  return _roleToJson(message.role);
 }
 
 String _roleToJson(Role role) {

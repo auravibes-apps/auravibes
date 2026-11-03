@@ -41,6 +41,67 @@ void main() {
     expect(diffAgentTranscriptContext(first, first), isNull);
   });
 
+  test('diff and snapshot preserve provenance', () {
+    final state = AgentTranscriptContextState(
+      contextMessages: [
+        const AgentContextMessage(
+          role: .system,
+          content: 'App context',
+          provenance: AgentContextProvenance.applicationPrompt,
+        ),
+        const AgentContextMessage(
+          role: .skill,
+          content: 'Imported context',
+          provenance: AgentContextProvenance.importedSkill,
+        ),
+      ],
+    );
+    final initial = diffAgentTranscriptContext(
+      AgentTranscriptContextState(),
+      state,
+    )!;
+    final folded = foldAgentTranscriptContext([initial]);
+    final snapshot = snapshotAgentTranscriptContext(folded);
+    final replayed = foldAgentTranscriptContext([snapshot]);
+
+    expect(
+      replayed.contextMessages.map((message) => message.provenance),
+      [
+        AgentContextProvenance.applicationPrompt,
+        AgentContextProvenance.importedSkill,
+      ],
+    );
+  });
+
+  test('provenance-only change produces a context update', () {
+    final before = AgentTranscriptContextState(
+      contextMessages: [
+        const AgentContextMessage(role: .skill, content: 'Same text'),
+      ],
+    );
+    final after = AgentTranscriptContextState(
+      contextMessages: [
+        const AgentContextMessage(
+          role: .skill,
+          content: 'Same text',
+          provenance: AgentContextProvenance.importedSkill,
+        ),
+      ],
+    );
+
+    final update = diffAgentTranscriptContext(before, after);
+
+    expect(update, isNotNull);
+    expect(
+      update!.contextMessages?.single.provenance,
+      AgentContextProvenance.importedSkill,
+    );
+    expect(
+      foldAgentTranscriptContext([update]).contextMessages.single.provenance,
+      AgentContextProvenance.importedSkill,
+    );
+  });
+
   test('reorders unchanged tool declarations without redefining them', () {
     final alpha = _tool('alpha');
     final beta = _tool('beta');

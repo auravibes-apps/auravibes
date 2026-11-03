@@ -17,7 +17,11 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_con
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentTranscriptContextUpdate, foldAgentTranscriptContext;
+    show
+        AgentContextMessage,
+        AgentContextProvenance,
+        AgentTranscriptContextUpdate,
+        foldAgentTranscriptContext;
 import 'package:uuid/v7.dart';
 
 typedef _ArchivedContextUpdates = ({
@@ -1006,7 +1010,9 @@ class const _ConversationArchiveTranscriptImporter(
     final _ = await messageRepository.createMessage(
       _contextMessage(
         conversationId: conversationId,
-        content: AgentTranscriptContextCodec.encodeUpdate(update),
+        content: AgentTranscriptContextCodec.encodeUpdate(
+          _archiveContextUpdateForImport(update),
+        ),
         createdAt: entry.createdAt,
       ),
     );
@@ -1111,6 +1117,25 @@ List<ConversationArchiveAgentContextEntry> _completeContextEntries(
   final value? when value.isComplete => value.entries,
   _ => const <ConversationArchiveAgentContextEntry>[],
 };
+
+AgentTranscriptContextUpdate _archiveContextUpdateForImport(
+  AgentTranscriptContextUpdate update,
+) => AgentTranscriptContextUpdate(
+  contextMessages: update.contextMessages
+      ?.map(
+        (message) => AgentContextMessage(
+          role: message.role,
+          content: message.content,
+          kind: message.kind,
+          provenance: AgentContextProvenance.unknown,
+        ),
+      )
+      .toList(growable: false),
+  toolsAdded: update.toolsAdded,
+  toolsRemoved: update.toolsRemoved,
+  toolOrder: update.toolOrder,
+  approvalStates: update.approvalStates,
+);
 
 typedef _SelectionRestore = ({
   ConversationArchiveToolSelection selection,

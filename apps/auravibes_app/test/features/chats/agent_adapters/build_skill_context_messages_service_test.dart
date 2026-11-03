@@ -114,79 +114,97 @@ void main() {
       });
     });
 
-    test('builds catalog metadata without conversation skill bodies', () async {
-      final listUseCase = _MockListAvailableSkillsUsecase();
-      final listAgentSkills = _MockListConversationAgentSkillsUsecase();
-      final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
-      final usecase = BuildSkillContextMessagesService(
-        listUseCase.call,
-        listAgentSkills,
-        buildManifests,
-      );
-      const skill = AvailableSkill(
-        id: 'skill-1',
-        slug: 'research',
-        title: 'Research',
-        description: '',
-        content: 'Use primary sources.',
-        source: .user,
-        kind: .template,
-      );
-      when(
-        () => listUseCase.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          filter: .catalog,
-        ),
-      ).thenAnswer((_) async => const [skill]);
-      when(
-        () => listUseCase.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          filter: .loaded,
-        ),
-      ).thenAnswer((_) async => const [skill]);
-      when(
-        () => listAgentSkills.loadSelectedAgent(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-        ),
-      ).thenAnswer((_) async => null);
-      when(
-        () => listAgentSkills.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-        ),
-      ).thenAnswer((_) async => const []);
-      when(
-        () => buildManifests.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          extraSkills: any(named: 'extraSkills'),
-          languageCode: any(named: 'languageCode'),
-        ),
-      ).thenAnswer(
-        (_) async => [
-          SkillManifest(
-            slug: 'research',
-            title: 'Research',
-            description: 'Use primary sources.',
-            revision: 'r1',
+    test(
+      'marks imported skill body and catalog external while keeping user-role',
+      () async {
+        final listUseCase = _MockListAvailableSkillsUsecase();
+        final listAgentSkills = _MockListConversationAgentSkillsUsecase();
+        final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
+        final usecase = BuildSkillContextMessagesService(
+          listUseCase.call,
+          listAgentSkills,
+          buildManifests,
+        );
+        const skill = AvailableSkill(
+          id: 'skill-1',
+          slug: 'research',
+          title: 'Research',
+          description: '',
+          content: 'Use primary sources.',
+          source: .user,
+          kind: .template,
+        );
+        when(
+          () => listUseCase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            filter: .catalog,
           ),
-        ],
-      );
+        ).thenAnswer((_) async => const [skill]);
+        when(
+          () => listUseCase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            filter: .loaded,
+          ),
+        ).thenAnswer((_) async => const [skill]);
+        when(
+          () => listAgentSkills.loadSelectedAgent(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => null);
+        when(
+          () => listAgentSkills.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const [skill]);
+        when(
+          () => buildManifests.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            extraSkills: any(named: 'extraSkills'),
+            languageCode: any(named: 'languageCode'),
+          ),
+        ).thenAnswer(
+          (_) async => [
+            SkillManifest(
+              slug: 'research',
+              title: 'Research',
+              description: 'Use primary sources.',
+              revision: 'r1',
+            ),
+          ],
+        );
 
-      final messages = await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      );
+        final messages = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        );
 
-      expect(messages, hasLength(1));
-      expect(messages.single.metadata['kind'], skillCatalogMetadataKind);
-      expect(messages.single.content, contains('<skill_catalog'));
-      expect(messages.single.content, contains('"revision":"r1"'));
-      expect(messages.single.content, isNot(contains('Use primary sources.')));
-    });
+        expect(messages, hasLength(2));
+        expect(messages.map((message) => message.role), [
+          ChatMessageRole.user,
+          ChatMessageRole.user,
+        ]);
+        expect(
+          messages.map(
+            (message) =>
+                message.metadata[agentContextProvenanceMetadataKey],
+          ),
+          [
+            {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
+            {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
+          ],
+        );
+        expect(messages.first.metadata['kind'], skillCatalogMetadataKind);
+        expect(messages.first.content, contains('<skill_catalog'));
+        expect(messages.first.content, contains('"revision":"r1"'));
+        expect(messages.first.content, isNot(contains('Use primary sources.')));
+        expect(messages.last.content, contains('Use primary sources.'));
+      },
+    );
 
     test('escapes XML special characters in skill title and content', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
@@ -274,7 +292,7 @@ void main() {
     });
 
     test(
-      'keeps agent skills inline without conversation skill bodies',
+      'marks app catalog and selected agent instruction explicitly',
       () async {
         final listUseCase = _MockListAvailableSkillsUsecase();
         final listAgentSkills = _MockListConversationAgentSkillsUsecase();
@@ -319,14 +337,14 @@ void main() {
             workspaceId: any(named: 'workspaceId'),
             filter: .catalog,
           ),
-        ).thenAnswer((_) async => [loadedSkill]);
+        ).thenAnswer((_) async => [loadedSkill, appAgentSkill]);
         when(
           () => listUseCase.call(
             conversationId: any(named: 'conversationId'),
             workspaceId: any(named: 'workspaceId'),
             filter: .loaded,
           ),
-        ).thenAnswer((_) async => [loadedSkill]);
+        ).thenAnswer((_) async => [loadedSkill, appAgentSkill]);
         when(
           () => listAgentSkills.loadSelectedAgent(
             conversationId: 'conversation-1',
@@ -378,12 +396,46 @@ void main() {
           workspaceId: 'workspace-1',
         );
 
-        expect(messages, hasLength(4));
+        expect(messages, hasLength(5));
         expect(messages.firstOrNull?.content, 'Agent prompt');
+        expect(messages.first.role, ChatMessageRole.system);
+        expect(
+          messages.first.metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'userAgentConfiguration', 'trust': 'userAuthorized'},
+        );
+        expect(messages[1].role, ChatMessageRole.system);
         expect(messages[1].metadata['kind'], skillCatalogMetadataKind);
-        expect(messages[1].content, isNot(contains('Loaded content')));
-        expect(messages[2].content, contains('Agent duplicate content'));
-        expect(messages[3].content, contains('App content'));
+        expect(
+          messages[1].metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'applicationSkill', 'trust': 'appControlled'},
+        );
+        expect(messages[1].content, contains('"slug":"app_skill"'));
+        expect(
+          messages[1].metadata[skillCatalogSelectedRevisionsMetadataKey],
+          {'app_skill': 'r2', 'skill_one': 'r1'},
+        );
+        expect(messages[2].role, ChatMessageRole.user);
+        expect(
+          messages[2].metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
+        );
+        expect(messages[2].content, contains('"slug":"skill_one"'));
+        expect(
+          messages[2].metadata[skillCatalogSelectedRevisionsMetadataKey],
+          {'app_skill': 'r2', 'skill_one': 'r1'},
+        );
+        expect(messages[2].content, isNot(contains('Loaded content')));
+        expect(messages[3].content, contains('Agent duplicate content'));
+        expect(
+          messages[3].metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
+        );
+        expect(messages[4].role, ChatMessageRole.user);
+        expect(
+          messages[4].metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'applicationSkill', 'trust': 'appControlled'},
+        );
+        expect(messages[4].content, contains('App content'));
       },
     );
 

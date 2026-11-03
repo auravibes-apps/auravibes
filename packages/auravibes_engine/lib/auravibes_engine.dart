@@ -55,6 +55,7 @@ export 'src/connectors/models/url_request_method.dart';
 export 'src/connectors/models/url_response.dart';
 export 'src/connectors/models/url_response_format.dart';
 export 'src/context_window.dart';
+export 'src/context_provenance.dart';
 export 'src/continue_agent_result.dart';
 export 'src/conversation_compaction.dart';
 export 'src/conversation_title.dart';

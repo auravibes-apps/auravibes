@@ -34,6 +34,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
+        AgentContextProvenance,
         ChatMessage,
         ChatResult,
         activateSkillToolName,
@@ -509,9 +510,15 @@ extension on CompactConversationUsecase {
 Future<List<ChatMessage>> _buildCompactionPrompt(
   List<MessageEntity> messages,
 ) async => [
-  ChatMessage.system(conversationCompactionSystemPrompt),
+  ChatMessage.system(
+    conversationCompactionSystemPrompt,
+    metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
+  ),
   ...await CompactConversationUsecase._buildPromptChatMessages.call(messages),
-  ChatMessage.user(conversationCompactionRequestPrompt),
+  ChatMessage.user(
+    conversationCompactionRequestPrompt,
+    metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
+  ),
 ];
 
 Future<void> _persistGeneratedSummary(

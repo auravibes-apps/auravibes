@@ -294,5 +294,85 @@ void main() {
       );
       expect(entity.content, isEmpty);
     });
+
+    test('maps tool responses and compaction summaries with typed provenance', () async {
+      final now = DateTime(2025);
+      final user = MessageEntity(
+        id: 'user-1',
+        conversationId: 'conversation-1',
+        content: 'USER_SENTINEL',
+        messageType: MessageType.text,
+        isUser: true,
+        status: MessageStatus.sent,
+        createdAt: now,
+        updatedAt: now,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {
+            engine.agentContextProvenanceMetadataKey: {
+              'origin': 'applicationPrompt',
+              'trust': 'appControlled',
+            },
+          },
+        ),
+      );
+      final tool = MessageEntity(
+        id: 'assistant-1',
+        conversationId: 'conversation-1',
+        content: '',
+        messageType: MessageType.text,
+        isUser: false,
+        status: MessageStatus.sent,
+        createdAt: now,
+        updatedAt: now,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'external_lookup',
+              argumentsRaw: '{}',
+              responseRaw: '{"private":"TOOL_OUTPUT_SECRET"}',
+              resultStatus: ToolCallResultStatus.success,
+            ),
+          ],
+        ),
+      );
+      final summary = MessageEntity(
+        id: 'summary-1',
+        conversationId: 'conversation-1',
+        content: 'SUMMARY_SENTINEL',
+        messageType: MessageType.system,
+        isUser: false,
+        status: MessageStatus.sent,
+        createdAt: now,
+        updatedAt: now,
+        metadata: const MessageMetadataEntity(isCompactionSummary: true),
+      );
+
+      final messages = await usecase.call([user, tool, summary]);
+      final userMessage = messages.first;
+      final toolMessage = messages.singleWhere((message) => message.role.name == 'tool');
+      final summaryMessage = messages.last;
+
+      expect(
+        userMessage.metadata[engine.agentContextProvenanceMetadataKey],
+        {'origin': 'userConversation', 'trust': 'userProvided'},
+      );
+      expect(toolMessage.role.name, 'tool');
+      expect(
+        toolMessage.metadata[engine.agentContextProvenanceMetadataKey],
+        {'origin': 'toolResult', 'trust': 'externalUntrusted'},
+      );
+      expect(
+        toolMessage.metadata[engine.agentContextProvenanceMetadataKey]
+            .toString(),
+        isNot(contains('TOOL_OUTPUT_SECRET')),
+      );
+      expect(summaryMessage.role, engine.ChatMessageRole.model);
+      expect(
+        summaryMessage.metadata[engine.agentContextProvenanceMetadataKey],
+        {'origin': 'compactionSummary', 'trust': 'externalUntrusted'},
+      );
+      expect(summaryMessage.content, 'SUMMARY_SENTINEL');
+    });
   });
 }
