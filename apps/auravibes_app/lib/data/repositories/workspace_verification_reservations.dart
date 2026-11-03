@@ -38,7 +38,7 @@ typedef _ReservationWriteRequest = ({
 /// Used only inside the repository's SQLite transaction.
 class WorkspaceVerificationReservations {
   new(this.database, this.sessionId, this.getSettings)
-    : _recovery = _WorkspaceVerificationReservationRecovery.new(
+    : _recovery = _WorkspaceVerificationReservationRecovery(
         database,
         sessionId,
       );

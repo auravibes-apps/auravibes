@@ -167,6 +167,11 @@ class _ScopedVerificationRunnerCreationRace {
     required this.registration,
   });
 
+  final ScopedVerificationRunnerInput input;
+  final Completer<ScopedVerificationRunner?> interrupted;
+  final Timer timer;
+  final AgentCancellationCleanupRegistration registration;
+
   static _ScopedVerificationRunnerCreationRace start(
     ScopedVerificationRunnerInput input,
     Duration remaining,
@@ -183,11 +188,6 @@ class _ScopedVerificationRunnerCreationRace {
       registration: input.cancellation.registerCleanup(interrupt),
     );
   }
-
-  final ScopedVerificationRunnerInput input;
-  final Completer<ScopedVerificationRunner?> interrupted;
-  final Timer timer;
-  final AgentCancellationCleanupRegistration registration;
 
   Future<ScopedVerificationRunner?> run(
     Future<ScopedVerificationRunner?> Function(

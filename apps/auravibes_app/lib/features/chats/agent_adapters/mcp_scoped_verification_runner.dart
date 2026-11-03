@@ -23,7 +23,7 @@ class McpScopedVerificationRunner
     required this.caller,
     required this.isAllowed,
     required this.onClose,
-  }) : _authorization = _ScopedVerificationRunnerAuthorization.new(
+  }) : _authorization = _ScopedVerificationRunnerAuthorization(
          mcpServerId: mcpServerId,
          editMcpServerId: editMcpServerId,
          runnerToolIdentifier: runnerToolIdentifier,
