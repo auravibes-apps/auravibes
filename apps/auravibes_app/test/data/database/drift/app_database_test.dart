@@ -44,7 +44,7 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 48);
+      expect(fixture.database.schemaVersion, 49);
     });
 
     test(
@@ -83,7 +83,7 @@ void main() {
             .getSingle();
         expect(settings.read<int>('count'), 0);
         expect(runs.read<int>('count'), 0);
-        expect(sqliteDb.userVersion, 48);
+        expect(sqliteDb.userVersion, 49);
       },
     );
 
@@ -174,7 +174,7 @@ void main() {
             .getByWorkspaceId('existing');
         expect(row?.enabled, isFalse);
         expect(row?.trustedDigest, isNull);
-        expect(database.schemaVersion, 48);
+        expect(database.schemaVersion, 49);
       },
     );
 
@@ -290,7 +290,7 @@ void main() {
           .getSingle();
       expect(retained.read<String>('name'), 'Retained');
       expect(retained.read<String>('asset_id'), 'asset');
-      expect(sqliteDb.userVersion, 48);
+      expect(sqliteDb.userVersion, 49);
       expect(
         await database.select(database.workspaceAgentHookSettings).get(),
         isEmpty,
