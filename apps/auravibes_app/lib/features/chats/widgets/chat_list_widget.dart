@@ -631,8 +631,9 @@ class const _ChatListArchivedEmptyState() extends StatelessWidget {
   );
 }
 
-class const _ChatListArchivedEmptyStateScrollView({required final double minHeight})
-    extends StatelessWidget {
+class const _ChatListArchivedEmptyStateScrollView({
+  required final double minHeight,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     child: ConstrainedBox(
