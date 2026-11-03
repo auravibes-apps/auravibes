@@ -96,10 +96,10 @@ void main() {
       ({bool includeAttachments})? decision;
       final preview = ConversationArchiveExportPreview(
         conversations: [
-          ConversationArchiveExportConversationPreview(
-            title: 'Investigación',
+          ConversationArchiveExportPreviewConversation(
+            title: 'Investigation',
             attachments: const [
-              ConversationArchiveExportAttachmentPreview(
+              ConversationArchiveExportPreviewAttachment(
                 fileName: 'informe.pdf',
                 mimeType: 'application/pdf',
                 sizeBytes: 2048,
@@ -110,7 +110,7 @@ void main() {
       );
       final emptyPreview = ConversationArchiveExportPreview(
         conversations: [
-          ConversationArchiveExportConversationPreview(
+          ConversationArchiveExportPreviewConversation(
             title: 'Notas',
             attachments: const [],
           ),
@@ -153,8 +153,8 @@ void main() {
       );
 
       await tester.tap(find.text('Open review'));
-      await tester.pumpAndSettle();
-      expect(find.text('Revisa el archivo de conversación'), findsOneWidget);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Revisa el archivo de conversaci\u00f3n'), findsOneWidget);
       expect(find.text('informe.pdf'), findsOneWidget);
       expect(find.text('Tipo: application/pdf'), findsOneWidget);
       final checkbox = find.byKey(
@@ -162,23 +162,23 @@ void main() {
       );
       final semantics = tester.getSemantics(checkbox);
       expect(semantics.label, contains('Incluir archivos adjuntos'));
-      expect(semantics.hasCheckedState, isTrue);
-      expect(semantics.isChecked, isTrue);
+      expect(semantics.hasFlag(.hasCheckedState), isTrue);
+      expect(semantics.hasFlag(.isChecked), isTrue);
 
       await tester.tap(find.text('Continuar para guardar'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(decision, (includeAttachments: true));
 
       decision = null;
       await tester.tap(find.text('Open empty review'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(find.text('Sin archivos adjuntos'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('archive-export-include-attachments')),
         findsNothing,
       );
       await tester.tap(find.text('Cancelar'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(decision, isNull);
     });
 
@@ -1178,17 +1178,17 @@ void main() {
         ),
         preview: ConversationArchiveExportPreview(
           conversations: [
-            ConversationArchiveExportConversationPreview(
+            ConversationArchiveExportPreviewConversation(
               title: 'Chat One',
-              attachments: [
-                const ConversationArchiveExportAttachmentPreview(
+              attachments: const [
+                ConversationArchiveExportPreviewAttachment(
                   fileName: 'research-notes.txt',
                   mimeType: 'text/plain',
                   sizeBytes: 4,
                 ),
               ],
             ),
-            ConversationArchiveExportConversationPreview(
+            ConversationArchiveExportPreviewConversation(
               title: 'Chat Two',
               attachments: const [],
             ),
@@ -1288,7 +1288,7 @@ void main() {
 
       fileService.saveResult = true;
       await tester.tap(find.text('Export selected'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(
         tester
             .widget<CheckboxListTile>(
@@ -1298,7 +1298,7 @@ void main() {
         isTrue,
       );
       await tester.tap(find.text('Continue to save'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       final decoded = ConversationArchiveCodec.decodeMany(
         fileService.savedJson ?? fail('Archive was not saved'),
       );

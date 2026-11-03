@@ -68,6 +68,28 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
+      - name: Prepare hosted formatter patch for review
+        working-directory: apps/auravibes_app
+        run: |
+          dart format --line-length 80 \
+            lib/features/chats/models/conversation_archive_export_preview.dart \
+            lib/features/chats/usecases/conversation_archive_usecase.dart \
+            lib/features/chats/widgets/conversation_archive_export_review_dialog.dart \
+            test/features/chats/models/conversation_archive_test.dart \
+            test/features/chats/usecases/conversation_archive_usecase_test.dart \
+            test/features/chats/widgets/chat_list_widget_test.dart \
+            test/widgets/ux_validation_layout_test.dart
+          git -C ../.. diff --binary > "$RUNNER_TEMP/export-review-format.patch"
+
+      - name: Upload hosted formatter patch for review
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: conversation-export-review-format-${{ github.sha }}
+          path: ${{ runner.temp }}/export-review-format.patch
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Capture the production archive review after change
         working-directory: apps/auravibes_app
         env:

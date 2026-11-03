@@ -248,7 +248,7 @@ void main() {
           status: .sent,
           createdAt: createdAt,
           updatedAt: createdAt,
-          metadata: .new(
+          metadata: const .new(
             toolCalls: const [
               MessageToolCallEntity(
                 id: 'tool-call-id',
@@ -307,7 +307,7 @@ void main() {
         messages: messages,
         modelLabel: null,
         agentContext: null,
-        readAttachmentBytes: (path) async {
+        readAttachmentBytes: (path) {
           readCount++;
           fail('Excluded attachments must not read bytes from $path.');
         },
@@ -332,7 +332,7 @@ void main() {
         archivedMessages
             .map((message) => (message as Map<String, dynamic>)['attachments'])
             .toList(),
-        [[], [], []],
+        <List<dynamic>>[<dynamic>[], <dynamic>[], <dynamic>[]],
       );
 
       final second = archivedMessages[1] as Map<String, dynamic>;
@@ -346,7 +346,7 @@ void main() {
       ]);
       expect(
         ConversationArchiveCodec.decode(encoded).messages[1].attachments,
-        [],
+        isEmpty,
       );
       expect(
         ConversationArchiveCodec.decode(encoded).messages[2].content,

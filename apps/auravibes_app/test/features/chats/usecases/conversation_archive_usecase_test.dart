@@ -90,14 +90,14 @@ void main() {
         status: .sent,
       ),
     );
-    await database
+    final _ = await database
         .into(database.messageAttachments)
         .insert(
-          MessageAttachmentsCompanion.insert(
+          .insert(
             messageId: message.id,
             localPath: '/private/account/report.pdf',
             fileName: '/private/account/report.pdf',
-            displayName: .new('report.pdf'),
+            displayName: const .new('report.pdf'),
             mimeType: 'application/pdf',
             modality: 'file',
             sizeBytes: 2048,

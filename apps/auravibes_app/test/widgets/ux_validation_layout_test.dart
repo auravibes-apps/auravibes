@@ -141,7 +141,7 @@ void main() {
           ),
         );
     final message = await fixture.database.messageDao.insertMessage(
-      MessagesCompanion.insert(
+      .insert(
         conversationId: conversation.id,
         content: 'See the attached research notes.',
         messageType: .text,
@@ -150,14 +150,14 @@ void main() {
         createdAt: .new(createdAt),
       ),
     );
-    await fixture.database
+    final _ = await fixture.database
         .into(fixture.database.messageAttachments)
         .insert(
-          MessageAttachmentsCompanion.insert(
+          .insert(
             messageId: message.id,
             localPath: '/private/export-review/research-notes.txt',
             fileName: '/private/export-review/research-notes.txt',
-            displayName: .new('research-notes.txt'),
+            displayName: const .new('research-notes.txt'),
             mimeType: 'text/plain',
             modality: 'file',
             sizeBytes: 2048,

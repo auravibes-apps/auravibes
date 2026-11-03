@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 @immutable
-final class ConversationArchiveExportPreview {
-  ConversationArchiveExportPreview({
-    required List<ConversationArchiveExportConversationPreview> conversations,
-  }) : conversations = List.unmodifiable(conversations);
-
-  final List<ConversationArchiveExportConversationPreview> conversations;
+final class ConversationArchiveExportPreview({
+  required List<ConversationArchiveExportPreviewConversation> conversations,
+}) : conversations = List.unmodifiable(conversations) {
+  final List<ConversationArchiveExportPreviewConversation> conversations;
 
   int get attachmentCount => conversations.fold(
     0,
@@ -15,24 +13,20 @@ final class ConversationArchiveExportPreview {
 }
 
 @immutable
-final class ConversationArchiveExportConversationPreview {
-  ConversationArchiveExportConversationPreview({
-    required this.title,
-    required List<ConversationArchiveExportAttachmentPreview> attachments,
-  }) : attachments = List.unmodifiable(attachments);
-
+final class ConversationArchiveExportPreviewConversation({
+  required this.title,
+  required List<ConversationArchiveExportPreviewAttachment> attachments,
+}) : attachments = List.unmodifiable(attachments) {
   final String title;
-  final List<ConversationArchiveExportAttachmentPreview> attachments;
+  final List<ConversationArchiveExportPreviewAttachment> attachments;
 }
 
 @immutable
-final class ConversationArchiveExportAttachmentPreview {
-  const ConversationArchiveExportAttachmentPreview({
-    required this.fileName,
-    required this.mimeType,
-    required this.sizeBytes,
-  });
-
+final class const ConversationArchiveExportPreviewAttachment({
+  required this.fileName,
+  required this.mimeType,
+  required this.sizeBytes,
+) {
   final String fileName;
   final String mimeType;
   final int sizeBytes;
