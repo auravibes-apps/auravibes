@@ -255,9 +255,7 @@ _NewChatBodyData _newChatBodyData(_NewChatBodyRequest request) =>
       ),
     );
 
-_NewChatBodyData _watchNewChatBodyData(
-  _NewChatAvailabilityRequest request,
-) =>
+_NewChatBodyData _watchNewChatBodyData(_NewChatAvailabilityRequest request) =>
     _newChatBodyData((
       context: request.context,
       ref: request.ref,
