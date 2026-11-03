@@ -62,9 +62,9 @@ class _TestableAppState extends State<TestableApp> {
     final oldContainer = _container;
     _container = _createContainer(widget);
     if (oldContainer != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        oldContainer.dispose();
-      });
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => oldContainer.dispose(),
+      );
     }
   }
 

@@ -34,7 +34,9 @@ void main() {
               search: '',
               scope: .archived,
               pagination: (limit: 21, offset: 0),
-            )).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+            )).overrideWith(
+              (ref) => Stream.value(const <ConversationEntity>[]),
+            ),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
             ),
@@ -111,7 +113,9 @@ void main() {
               search: '',
               scope: .archived,
               pagination: (limit: 21, offset: 0),
-            )).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+            )).overrideWith(
+              (ref) => Stream.value(const <ConversationEntity>[]),
+            ),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
             ),
