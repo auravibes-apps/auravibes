@@ -241,6 +241,27 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Capture queued notifier formatter output
+        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 1791 && steps.check-format.outcome == 'failure' }}
+        shell: bash
+        env:
+          FORMAT_OUTPUT_DIRECTORY: ${{ runner.temp }}/queued-notifier-format-output
+        run: |
+          set -euo pipefail
+          target=apps/auravibes_app/lib/features/chats/notifiers/conversation_queued_draft.dart
+          mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
+          dart format --line-length 80 "$target"
+          cp "$target" "$FORMAT_OUTPUT_DIRECTORY/conversation_queued_draft.dart"
+
+      - name: Upload queued notifier formatter output
+        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 1791 && steps.check-format.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: queued-notifier-format-output-${{ github.run_id }}
+          path: ${{ runner.temp }}/queued-notifier-format-output/conversation_queued_draft.dart
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Check import sorting
         run: dart run tool/check_workspace_import_sorting.dart
       - name: Check workspace benchmark imports
