@@ -69,6 +69,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart'
+    show PageStorage, PageStorageBucket, PageStorageKey;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -77,6 +79,7 @@ import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
+final _chatTranscriptScrollStorage = PageStorageBucket();
 
 String? _searchTargetMessageId(BuildContext context) {
   final arguments = ModalRoute.of(context)?.settings.arguments;
@@ -142,7 +145,10 @@ class const ChatPrimaryScrollController({
     final controller = useMemoized(_DisclosureScrollController.new);
     useEffect(() => controller.dispose, [controller]);
 
-    return PrimaryScrollController(controller: controller, child: child);
+    return PageStorage(
+      bucket: _chatTranscriptScrollStorage,
+      child: PrimaryScrollController(controller: controller, child: child),
+    );
   }
 }
 
@@ -514,6 +520,9 @@ class const ChatMessagesWidget({
     return Stack(
       children: [
         ListView.separated(
+          key: PageStorageKey<String>(
+            'chat_messages_${workspaceId}_$parentConversationId',
+          ),
           reverse: true,
           controller: controller,
           padding: const EdgeInsets.symmetric(horizontal: 16),
