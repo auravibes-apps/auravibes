@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_ui/ui.dart' show AuraButton, AuraCheckboxListTile;
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -266,10 +267,10 @@ void _dumpVerificationState(
   DraftExitGuard guard,
   int probes,
 ) {
-  final enabled = tester.widget<Widget>(
+  final enabled = tester.widget<AuraCheckboxListTile>(
     find.byKey(const ValueKey('verification-enable')),
   );
-  final save = tester.widget<Widget>(
+  final save = tester.widget<AuraButton>(
     find.byKey(const ValueKey('verification-save')),
   );
   final texts = tester.allWidgets
@@ -285,8 +286,8 @@ void _dumpVerificationState(
       )
       .toList();
   debugPrint(
-    'DIAG $scenario control=${enabled.toDiagnosticsNode().toStringDeep()} '
-    'save=${save.toDiagnosticsNode().toStringDeep()} '
-    'dirty=${guard.isDirty} probes=$probes texts=$texts',
+    'DIAG $scenario enabled=${enabled.value} saveDisabled=${save.disabled} '
+    'saveLoading=${save.isLoading} dirty=${guard.isDirty} '
+    'probes=$probes texts=$texts',
   );
 }
