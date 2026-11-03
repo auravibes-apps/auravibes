@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show ValueKey;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -134,6 +135,6 @@ void main() {
       });
       await fixture.close(tester);
     },
-    skip: _captureDirectory.isEmpty ? 'Only runs in screenshot evidence CI.' : null,
+    skip: _captureDirectory.isEmpty,
   );
 }
