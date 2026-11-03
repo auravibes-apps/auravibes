@@ -19,8 +19,8 @@ import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
-import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
