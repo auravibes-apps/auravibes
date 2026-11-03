@@ -709,20 +709,21 @@ void main() {
         scope: ConversationListScope.archived,
         pagination: (limit: 21, offset: 0),
       ));
-      final archivedConversations = await tester.runAsync(
-        () => container
-            .read(archivedProvider.future)
-            .timeout(const Duration(seconds: 10)),
-      );
-      if (archivedConversations == null) {
-        throw StateError('Archived conversation stream returned no value.');
+      for (var attempt = 0; attempt < 30; attempt++) {
+        if (container.read(archivedProvider).hasValue) break;
+        await tester.pump(const Duration(milliseconds: 100));
       }
+      final archivedState = container.read(archivedProvider);
       expect(
-        archivedConversations.map((item) => item.id),
+        archivedState.hasValue,
+        isTrue,
+        reason: 'Archived stream state: $archivedState',
+      );
+      expect(
+        archivedState.requireValue.map((item) => item.id),
         contains(conversation.id),
       );
       await tester.pump();
-      final archivedState = container.read(archivedProvider);
       expect(
         find.text('Project research'),
         findsOneWidget,
