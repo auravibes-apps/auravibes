@@ -66,15 +66,19 @@ WorkspaceSetupPreflightCheck _modelCheck(
   if (model == null || model.selectionId != snapshot.selectedModelId) {
     return _modelMissing();
   }
-  if (!_hasModelMetadata(model)) return _modelMetadataUnavailable();
+  final modelName = _compatibleModelName(model);
+  if (modelName == null) return _modelMetadataUnavailable();
 
-  return _modelReady(model);
+  return _modelReady(model, modelName);
 }
 
-bool _hasModelMetadata(WorkspaceSetupModelSnapshot model) =>
-    model.capabilityMetadataAvailable &&
-    model.modelName != null &&
-    model.modelName!.trim().isNotEmpty;
+String? _compatibleModelName(WorkspaceSetupModelSnapshot model) {
+  final modelName = model.modelName;
+  if (!model.capabilityMetadataAvailable || modelName == null) return null;
+  if (modelName.trim().isEmpty) return null;
+
+  return modelName;
+}
 
 WorkspaceSetupPreflightCheck _modelNotSelected() =>
     const WorkspaceSetupPreflightCheck(
@@ -108,13 +112,16 @@ WorkspaceSetupPreflightCheck _modelMetadataUnavailable() =>
       recovery: .chooseModel,
     );
 
-WorkspaceSetupPreflightCheck _modelReady(WorkspaceSetupModelSnapshot model) =>
+WorkspaceSetupPreflightCheck _modelReady(
+  WorkspaceSetupModelSnapshot model,
+  String modelName,
+) =>
     WorkspaceSetupPreflightCheck(
       id: .selectedModel,
       status: .pass,
       messageKey: 'workspace_setup_preflight.model_metadata_available',
       modelCapabilities: .new(
-        modelName: model.modelName!,
+        modelName: modelName,
         inputModalities: model.inputModalities,
         outputModalities: model.outputModalities,
         supportsReasoning: model.supportsReasoning,
@@ -139,6 +146,7 @@ WorkspaceSetupPreflightCheck _providerCheck(
   if (model == null || model.selectionId != snapshot.selectedModelId) {
     return _providerForModelMissing();
   }
+
   return _selectedProviderCheck(providers, model);
 }
 
@@ -146,7 +154,8 @@ WorkspaceSetupPreflightCheck _optionalProviderCheck(
   List<WorkspaceSetupProviderSnapshot> providers,
 ) {
   if (providers.isEmpty) return _providerNotConfigured();
-  if (providers.any((provider) => provider.hasCredential)) return _providerSaved();
+  if (providers.any((provider) => provider.hasCredential))
+    return _providerSaved();
 
   return _optionalCredentialMissing();
 }
@@ -306,8 +315,7 @@ bool _hasNonPassingRequiredCheck(List<WorkspaceSetupPreflightCheck> checks) =>
 
 Iterable<WorkspaceSetupPreflightCheck> _requiredChecks(
   List<WorkspaceSetupPreflightCheck> checks,
-) =>
-    checks.where((check) => check.id != .mcpConnections);
+) => checks.where((check) => check.id != .mcpConnections);
 
 String _checkSummary(
   WorkspaceSetupPreflightCheck check,

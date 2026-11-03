@@ -109,7 +109,9 @@ Future<_WorkspaceScope> _readWorkspaceScope(
     session: sessionRead.value,
     isRemote: isRemote,
     sourceAllowed:
-        workspace != null && sessionRead.available && (!isRemote || refreshRequested),
+        workspace != null &&
+        sessionRead.available &&
+        (!isRemote || refreshRequested),
   );
 }
 
@@ -171,19 +173,18 @@ Future<_ReadResult<List<WorkspaceSetupMcpSnapshot>>> _readMcpConnections(
   ]);
 }
 
-WorkspaceSetupMcpSnapshot _mcpSnapshot(
-  ServiceConnectionListItem connection,
-) => WorkspaceSetupMcpSnapshot(
-  isEnabled: connection.isEnabled,
-  lastTestStatus: connection.lastTestSummary?.status,
-  connectionNeedsAttention: switch (connection.displayStatus) {
-    ServiceConnectionDisplayStatus.needsReauth ||
-    ServiceConnectionDisplayStatus.expired ||
-    ServiceConnectionDisplayStatus.expiringSoon ||
-    ServiceConnectionDisplayStatus.failed => true,
-    _ => false,
-  },
-);
+WorkspaceSetupMcpSnapshot _mcpSnapshot(ServiceConnectionListItem connection) =>
+    WorkspaceSetupMcpSnapshot(
+      isEnabled: connection.isEnabled,
+      lastTestStatus: connection.lastTestSummary?.status,
+      connectionNeedsAttention: switch (connection.displayStatus) {
+        ServiceConnectionDisplayStatus.needsReauth ||
+        ServiceConnectionDisplayStatus.expired ||
+        ServiceConnectionDisplayStatus.expiringSoon ||
+        ServiceConnectionDisplayStatus.failed => true,
+        _ => false,
+      },
+    );
 
 Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel(
   Ref ref,
@@ -210,17 +211,15 @@ Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   WorkspaceModelSelectionWithConnectionEntity? model,
   String workspaceId,
 ) async {
-  if (!_matchesWorkspace(model, workspaceId)) return null;
+  if (model == null || !_matchesWorkspace(model, workspaceId)) return null;
 
-  return await _readModelMetadata(ref, model!);
+  return await _readModelMetadata(ref, model);
 }
 
 bool _matchesWorkspace(
-  WorkspaceModelSelectionWithConnectionEntity? model,
+  WorkspaceModelSelectionWithConnectionEntity model,
   String workspaceId,
-) =>
-    model != null &&
-    model.modelConnection.workspaceId == workspaceId &&
+) => model.modelConnection.workspaceId == workspaceId &&
     model.workspaceModelSelection.modelConnectionId == model.modelConnection.id;
 
 Future<WorkspaceSetupModelSnapshot> _readModelMetadata(
@@ -228,9 +227,8 @@ Future<WorkspaceSetupModelSnapshot> _readModelMetadata(
   WorkspaceModelSelectionWithConnectionEntity model,
 ) async {
   final selection = model.workspaceModelSelection;
-  final providerId = ModelProviderOAuthProfiles.isCodexProvider(
-    model.modelConnection.modelId,
-  )
+  final providerId =
+      ModelProviderOAuthProfiles.isCodexProvider(model.modelConnection.modelId)
       ? 'openai'
       : model.modelsProvider.id;
   final catalogModel = await ref.watch(
@@ -264,11 +262,10 @@ bool? _storageAvailable(_WorkspaceScope scope, bool? cloudStorageAvailable) {
 List<WorkspaceSetupProviderSnapshot>? _providerSnapshots(
   List<ModelConnectionEntity>? connections,
   String workspaceId,
-) =>
-    connections
-        ?.where((connection) => connection.workspaceId == workspaceId)
-        .map(_providerSnapshot)
-        .toList();
+) => connections
+    ?.where((connection) => connection.workspaceId == workspaceId)
+    .map(_providerSnapshot)
+    .toList();
 
 WorkspaceSetupProviderSnapshot _providerSnapshot(
   ModelConnectionEntity connection,
