@@ -1,0 +1,220 @@
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  late AppDatabase database;
+  late ConversationRepository repository;
+  late String workspaceId;
+  late String otherWorkspaceId;
+
+  setUp(() async {
+    database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    repository = ConversationRepository(database);
+    workspaceId = (await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Workspace A', type: WorkspaceType.local),
+    )).id;
+    otherWorkspaceId = (await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Workspace B', type: WorkspaceType.local),
+    )).id;
+  });
+
+  tearDown(() => database.close());
+
+  test(
+    'labels are unique within a workspace and support rename and delete',
+    () async {
+      final label = await repository.createLabel(
+        workspaceId: workspaceId,
+        name: ' Follow up ',
+      );
+      final sameNameInOtherWorkspace = await repository.createLabel(
+        workspaceId: otherWorkspaceId,
+        name: 'follow up',
+      );
+
+      expect(label.name, 'Follow up');
+      expect(sameNameInOtherWorkspace.workspaceId, otherWorkspaceId);
+      await expectLater(
+        repository.createLabel(workspaceId: workspaceId, name: 'follow up'),
+        throwsA(isA<ConversationLabelAlreadyExistsException>()),
+      );
+
+      final renamed = await repository.renameLabel(
+        workspaceId: workspaceId,
+        labelId: label.id,
+        name: 'In progress',
+      );
+      expect(renamed.name, 'In progress');
+      expect(
+        (await repository.watchLabelsByWorkspace(workspaceId).first)
+            .map((item) => item.name),
+        ['In progress'],
+      );
+
+      await repository.deleteLabel(
+        workspaceId: workspaceId,
+        labelId: label.id,
+      );
+      expect(
+        await repository.watchLabelsByWorkspace(workspaceId).first,
+        isEmpty,
+      );
+      expect(
+        (await repository.watchLabelsByWorkspace(otherWorkspaceId).first)
+            .single
+            .name,
+        'follow up',
+      );
+    },
+  );
+
+  test('assignments are workspace-scoped and filter before offset paging', () async {
+    final urgent = await repository.createLabel(
+      workspaceId: workspaceId,
+      name: 'Urgent',
+    );
+    final ideas = await repository.createLabel(
+      workspaceId: workspaceId,
+      name: 'Ideas',
+    );
+    final otherWorkspaceLabel = await repository.createLabel(
+      workspaceId: otherWorkspaceId,
+      name: 'Urgent',
+    );
+    final older = await database.conversationDao.insertConversation(
+      .insert(
+        workspaceId: workspaceId,
+        title: 'Older match',
+        updatedAt: Value(DateTime.utc(2026, 11, 1)),
+      ),
+    );
+    final unlabelled = await database.conversationDao.insertConversation(
+      .insert(
+        workspaceId: workspaceId,
+        title: 'Unlabelled',
+        updatedAt: Value(DateTime.utc(2026, 11, 2)),
+      ),
+    );
+    final newer = await database.conversationDao.insertConversation(
+      .insert(
+        workspaceId: workspaceId,
+        title: 'Newer match',
+        updatedAt: Value(DateTime.utc(2026, 11, 3)),
+      ),
+    );
+    final foreignConversation = await database.conversationDao
+        .insertConversation(
+          .insert(
+            workspaceId: otherWorkspaceId,
+            title: 'Foreign conversation',
+          ),
+        );
+
+    await repository.setConversationLabels(
+      workspaceId: workspaceId,
+      conversationId: older.id,
+      labelIds: {urgent.id},
+    );
+    await repository.setConversationLabels(
+      workspaceId: workspaceId,
+      conversationId: newer.id,
+      labelIds: {ideas.id},
+    );
+    await expectLater(
+      repository.setConversationLabels(
+        workspaceId: otherWorkspaceId,
+        conversationId: foreignConversation.id,
+        labelIds: {urgent.id},
+      ),
+      throwsA(isA<ConversationLabelWorkspaceMismatchException>()),
+    );
+
+    final page = await repository
+        .watchConversationsByWorkspace(
+          workspaceId,
+          labelIds: {urgent.id, ideas.id},
+          limit: 1,
+          offset: 1,
+        )
+        .first;
+    expect(page.map((conversation) => conversation.title), ['Older match']);
+    expect(page.single.labels.map((label) => label.name), ['Urgent']);
+    expect(
+      await repository
+          .watchConversationsByWorkspace(
+            otherWorkspaceId,
+            labelIds: {urgent.id},
+          )
+          .first,
+      isEmpty,
+    );
+    expect(
+      (await repository.watchConversationsByWorkspace(otherWorkspaceId).first)
+          .single
+          .title,
+      'Foreign conversation',
+    );
+    expect(unlabelled.id, isNotEmpty);
+    expect(otherWorkspaceLabel.id, isNotEmpty);
+  });
+
+  test('deleting labels and conversations clears assignments, not conversations', () async {
+    final label = await repository.createLabel(
+      workspaceId: workspaceId,
+      name: 'Keep the chat',
+    );
+    final conversation = await database.conversationDao.insertConversation(
+      .insert(workspaceId: workspaceId, title: 'Keep me'),
+    );
+    await repository.setConversationLabels(
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+      labelIds: {label.id},
+    );
+
+    await repository.deleteLabel(workspaceId: workspaceId, labelId: label.id);
+    expect(await repository.getConversationById(conversation.id), isNotNull);
+    expect(
+      await repository
+          .watchConversationsByWorkspace(
+            workspaceId,
+            labelIds: {label.id},
+          )
+          .first,
+      isEmpty,
+    );
+
+    final secondLabel = await repository.createLabel(
+      workspaceId: workspaceId,
+      name: 'Remove when chat is deleted',
+    );
+    await repository.setConversationLabels(
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+      labelIds: {secondLabel.id},
+    );
+    await repository.deleteConversation(conversation.id);
+    expect(await repository.getConversationById(conversation.id), isNull);
+    expect(
+      (await repository.watchLabelsByWorkspace(workspaceId).first)
+          .single
+          .id,
+      secondLabel.id,
+    );
+    expect(
+      await repository
+          .watchConversationsByWorkspace(
+            workspaceId,
+            labelIds: {secondLabel.id},
+          )
+          .first,
+      isEmpty,
+    );
+  });
+}
