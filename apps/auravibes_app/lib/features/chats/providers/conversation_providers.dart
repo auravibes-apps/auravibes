@@ -1,6 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -18,6 +20,7 @@ typedef _ConversationPagination = ({int? limit, int offset});
 
 typedef _ConversationListOptions = ({
   String search,
+  Set<String> labelIds,
   _ConversationPagination pagination,
   bool fetchAllPages,
 });
@@ -78,6 +81,7 @@ Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,
   String search = '',
+  Set<String> labelIds = const {},
   _ConversationPagination pagination = _defaultConversationPagination,
 }) async* {
   final session = await ref.watch(
@@ -86,6 +90,7 @@ Stream<List<ConversationEntity>> conversationsStream(
   if (!ref.mounted) return;
   yield* _conversationsForSession(ref, session, workspaceId, (
     search: search,
+    labelIds: labelIds,
     pagination: pagination,
     fetchAllPages: false,
   ));
@@ -101,7 +106,18 @@ Stream<List<ConversationEntity>> _conversationsForSession(
     return _cloudConversations(ref, cloud, options);
   }
 
-  return ref
+  final labelsRepository = ref.watch(conversationLabelsRepositoryProvider);
+  if (options.labelIds.isNotEmpty) {
+    return labelsRepository.watchConversationsByWorkspace(
+      workspaceId,
+      search: options.search,
+      limit: options.pagination.limit,
+      offset: options.pagination.offset,
+      labelIds: options.labelIds,
+    );
+  }
+
+  final conversations = ref
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(
         workspaceId,
@@ -109,6 +125,10 @@ Stream<List<ConversationEntity>> _conversationsForSession(
         limit: options.pagination.limit,
         offset: options.pagination.offset,
       );
+  return labelsRepository.withLabels(
+    workspaceId: workspaceId,
+    conversations: conversations,
+  );
 }
 
 @Riverpod(retry: _childConversationRetry)
@@ -222,6 +242,7 @@ Stream<List<ConversationEntity>> _cloudChildConversations(
 ) =>
     _cloudConversations(ref, cloud, (
       search: '',
+      labelIds: const {},
       pagination: _defaultConversationPagination,
       fetchAllPages: true,
     )).map(
@@ -252,6 +273,7 @@ Stream<List<ConversationEntity>> _cloudConversations(
   CloudWorkspaceRef cloud, [
   _ConversationListOptions options = (
     search: '',
+    labelIds: const {},
     pagination: _defaultConversationPagination,
     fetchAllPages: false,
   ),
@@ -284,7 +306,11 @@ _readCloudConversations(
   _ConversationListOptions options,
 ) async {
   final conversations = options.fetchAllPages
-      ? await _readAllCloudConversationPages(gateway, cloud)
+      ? await _readAllCloudConversationPages(
+          gateway,
+          cloud,
+          labelIds: options.labelIds,
+        )
       : await _readCloudConversationPage(gateway, cloud, options);
   final currentSequence = await _cloudConversationSequence(gateway);
 
@@ -316,6 +342,7 @@ Future<List<ConversationSummary>> _readCloudConversationPage(
       limit: options.pagination.limit ?? _cloudConversationPageSize,
       search: options.search.isEmpty ? null : options.search,
       offset: options.pagination.offset,
+      labelIds: options.labelIds.toList(),
     ),
   );
 
@@ -325,6 +352,7 @@ Future<List<ConversationSummary>> _readCloudConversationPage(
 Future<List<ConversationSummary>> _readAllCloudConversationPages(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
+  {Set<String> labelIds = const {}},
 ) async {
   final conversations = <ConversationSummary>[];
   final seenCursors = <String>{};
@@ -335,6 +363,7 @@ Future<List<ConversationSummary>> _readAllCloudConversationPages(
       gateway,
       cloud,
       cursor,
+      labelIds: labelIds,
     );
     conversations.addAll(page.conversations);
 
@@ -347,11 +376,13 @@ Future<ConversationPage> _readCloudConversationPageAtCursor(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   String? cursor,
+  {Set<String> labelIds = const {}},
 ) => gateway.client.conversation.listPage(
   .new(
     workspaceId: cloud.cloudWorkspaceId,
     limit: _cloudConversationPageSize,
     cursor: cursor,
+    labelIds: labelIds.toList(),
   ),
 );
 
@@ -425,6 +456,18 @@ ConversationEntity _cloudConversationFields(
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
     revision: conversation.revision,
+    labels: conversation.labels
+            ?.map(
+              (label) => ConversationLabelEntity(
+                id: label.id,
+                workspaceId: localWorkspaceId,
+                name: label.name,
+                createdAt: label.createdAt,
+                updatedAt: label.updatedAt,
+              ),
+            )
+            .toList() ??
+        const [],
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),

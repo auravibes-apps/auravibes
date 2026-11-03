@@ -34,7 +34,12 @@ jobs:
       - name: Generate app and Serverpod code
         run: |
           python3 tool/validation_lease.py --label issue-1446-generate-app -- dart run melos run generate
+          python3 tool/validation_lease.py --label issue-1446-generate-localization -- dart run melos run generate:localization
           python3 tool/validation_lease.py --label issue-1446-generate-serverpod -- dart run melos run generate:serverpod
+          changed_dart_files="$({ git diff --name-only --diff-filter=ACMRT; git ls-files --others --exclude-standard; } | sort -u | grep '\.dart$' || true)"
+          if [[ -n "$changed_dart_files" ]]; then
+            printf '%s\n' "$changed_dart_files" | xargs dart format --line-length 80
+          fi
 
       - name: Export generated output patch
         if: always()
@@ -58,7 +63,7 @@ jobs:
         id: local-tests
         continue-on-error: true
         working-directory: apps/auravibes_app
-        run: python3 ../../tool/validation_lease.py --label issue-1446-local-labels -- flutter test test/data/repositories/conversation_labels_test.dart --no-pub
+        run: python3 ../../tool/validation_lease.py --label issue-1446-local-labels -- flutter test test/data/repositories/conversation_labels_test.dart test/features/chats/widgets/conversation_labels_widgets_test.dart --no-pub
 
       - name: Configure disposable test database credentials
         working-directory: apps/auravibes_server

@@ -28,6 +28,8 @@ import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
 import 'package:auravibes_app/data/database/drift/tables/connector_writes.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_label_assignments.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_labels.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -101,6 +103,8 @@ part 'app_database.g.dart';
     ApiModelProviders,
     ApiModels,
     Conversations,
+    ConversationLabels,
+    ConversationLabelAssignments,
     Agents,
     AgentSkills,
     AgentTools,
@@ -250,7 +254,9 @@ class AppDatabase extends _$AppDatabase {
       _conversationTaskBriefSchemaVersion + 1;
   static const int _workspaceVerificationSchemaVersion =
       _workspaceAgentHookSettingsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceVerificationSchemaVersion;
+  static const int _conversationLabelsSchemaVersion =
+      _workspaceVerificationSchemaVersion + 1;
+  static const int _currentSchemaVersion = _conversationLabelsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -309,6 +315,13 @@ extension on AppDatabase {
     await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
     await _upgradeWorkspaceAgentHookSettingsSchema(m, from);
     await _upgradeWorkspaceVerificationSchema(m, from);
+    await _upgradeConversationLabelsSchema(m, from);
+  }
+
+  Future<void> _upgradeConversationLabelsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._conversationLabelsSchemaVersion) return;
+    await m.createTable(conversationLabels);
+    await m.createTable(conversationLabelAssignments);
   }
 
   Future<void> _upgradeWorkspaceAgentHookSettingsSchema(

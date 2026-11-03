@@ -1,0 +1,16 @@
+class: ConversationLabel
+table: conversation_label
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  stableId: String
+  name: String
+  normalizedName: String
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  conversation_label_workspace_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
+  conversation_label_workspace_name_idx:
+    fields: workspaceId, normalizedName
+    unique: true

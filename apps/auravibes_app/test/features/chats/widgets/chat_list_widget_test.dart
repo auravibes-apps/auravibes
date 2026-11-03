@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -12,6 +13,8 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -47,7 +50,13 @@ void main() {
     required List<Object> overrides,
     Widget? content,
     Locale startLocale = const Locale('en'),
-  }) => TestableApp(
+  }) {
+    final labelDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    addTearDown(labelDatabase.close);
+
+    return TestableApp(
     child: Theme(
       data: .new(),
       child: Portal(
@@ -56,10 +65,19 @@ void main() {
         ),
       ),
     ),
-    overrides: overrides,
+    overrides: [
+      ...overrides,
+      conversationLabelsRepositoryProvider.overrideWithValue(
+        ConversationLabelsRepository(labelDatabase),
+      ),
+      conversationLabelsStreamProvider.overrideWith(
+        (ref, workspaceId) => Stream.value(const []),
+      ),
+    ],
     workspaceId: workspaceId,
     startLocale: startLocale,
-  );
+    );
+  }
 
   ConversationEntity _createConversation({
     String id = 'conv-1',

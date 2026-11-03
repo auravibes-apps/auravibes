@@ -191,7 +191,10 @@ void main() {
         ),
       );
       expect(page.conversations.map((conversation) => conversation.id), [olderMatch.id]);
-      expect(page.conversations.single.labels.map((label) => label.name), ['Urgent']);
+      expect(
+        page.conversations.single.labels?.map((label) => label.name),
+        ['Urgent'],
+      );
       final foreignFilter = await endpoints.conversation.listPage(
         session,
         ListConversationsRequest(
@@ -320,6 +323,84 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('active workspace members share label management', () async {
+      final ownerId = const Uuid().v4().toString();
+      final memberId = const Uuid().v4().toString();
+      final ownerSession = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          ownerId,
+          const {},
+        ),
+      );
+      final database = ownerSession.build();
+      final now = DateTime.utc(2026, 11, 3);
+      for (final userId in [ownerId, memberId]) {
+        await AuthUser.db.insertRow(
+          database,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: '$userId@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+      }
+      final workspace = await workspace_repo.CloudWorkspaceRepository()
+          .createWorkspace(
+            database,
+            name: 'Shared labels',
+            ownerUserId: ownerId,
+            now: now,
+          );
+      await WorkspaceMember.db.insertRow(
+        database,
+        WorkspaceMember(
+          workspaceId: workspace.id!,
+          userId: memberId,
+          role: 'member',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final memberSession = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          memberId,
+          const {},
+        ),
+      );
+
+      final created = await endpoints.conversation.createLabel(
+        ownerSession,
+        CreateConversationLabelRequest(
+          workspaceId: workspace.id!,
+          requestId: 'owner-create-shared-label',
+          labelId: 'shared-label',
+          name: 'Shared',
+        ),
+      );
+      expect(
+        (await endpoints.conversation.listLabels(
+          memberSession,
+          ListConversationLabelsRequest(workspaceId: workspace.id!),
+        )).single.id,
+        created.id,
+      );
+      final renamed = await endpoints.conversation.renameLabel(
+        memberSession,
+        RenameConversationLabelRequest(
+          workspaceId: workspace.id!,
+          requestId: 'member-rename-shared-label',
+          labelId: created.id,
+          name: 'Shared and renamed',
+        ),
+      );
+      expect(renamed.name, 'Shared and renamed');
     });
   });
 }

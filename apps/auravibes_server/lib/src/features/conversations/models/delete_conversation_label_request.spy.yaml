@@ -1,0 +1,5 @@
+class: DeleteConversationLabelRequest
+fields:
+  workspaceId: int
+  requestId: String
+  labelId: String

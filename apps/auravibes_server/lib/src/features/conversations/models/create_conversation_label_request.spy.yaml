@@ -1,0 +1,6 @@
+class: CreateConversationLabelRequest
+fields:
+  workspaceId: int
+  requestId: String
+  labelId: String
+  name: String

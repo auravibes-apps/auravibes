@@ -3,6 +3,8 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'conversation_label_entity.dart';
+
 part 'conversation_entity.freezed.dart';
 
 /// Entity representing a conversation in the Aura application.
@@ -24,6 +26,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
 
     /// Whether this conversation is pinned.
     required bool isPinned,
+
+    /// Workspace labels currently assigned to the conversation.
+    @Default([]) List<ConversationLabelEntity> labels,
 
     /// Timestamp when the conversation was created.
     required DateTime createdAt,
