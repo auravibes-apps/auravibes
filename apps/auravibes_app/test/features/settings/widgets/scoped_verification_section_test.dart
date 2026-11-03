@@ -121,6 +121,7 @@ void main() {
   Future<void> save(WidgetTester tester) async {
     final button = find.byKey(const ValueKey('verification-save'));
     await tester.ensureVisible(button);
+    await tester.pump();
     await tester.tap(button);
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -156,10 +157,6 @@ void main() {
     await open(tester);
     await tester.tap(find.byKey(const ValueKey('verification-enable')));
     await save(tester);
-    _dumpVerificationState(tester, 'disable saved policy', guard, probes);
-    debugPrint(
-      'DIAG persisted=${(await repository.getSettings('local')).enabled}',
-    );
     expect(probes, 0);
     expect((await repository.getSettings('local')).enabled, isFalse);
   });
@@ -172,7 +169,6 @@ void main() {
     await open(tester);
     await tester.tap(find.byKey(const ValueKey('verification-enable')));
     await save(tester);
-    _dumpVerificationState(tester, 'invalid enabled config', guard, probes);
     expect(probes, 0);
     expect(find.textContaining('Check every field'), findsOneWidget);
     expect(guard.isDirty, isTrue);
@@ -186,7 +182,6 @@ void main() {
     await open(tester);
     await tester.tap(find.byKey(const ValueKey('verification-enable')));
     await save(tester);
-    _dumpVerificationState(tester, 'failed probe', guard, probes);
     expect(find.textContaining('Could not check the runner'), findsOneWidget);
     expect(guard.isDirty, isTrue);
     failProbe = false;
@@ -260,34 +255,3 @@ const _tools = [
     canRunUnattended: false,
   ),
 ];
-
-void _dumpVerificationState(
-  WidgetTester tester,
-  String scenario,
-  DraftExitGuard guard,
-  int probes,
-) {
-  final enabled = tester.widget<AuraCheckboxListTile>(
-    find.byKey(const ValueKey('verification-enable')),
-  );
-  final save = tester.widget<AuraButton>(
-    find.byKey(const ValueKey('verification-save')),
-  );
-  final texts = tester.allWidgets
-      .whereType<Text>()
-      .map((widget) => widget.data)
-      .whereType<String>()
-      .where(
-        (text) =>
-            text.contains('Check every field') ||
-            text.contains('Could not check the runner') ||
-            text.contains('Could not save verification settings') ||
-            text.contains('Verification settings saved.'),
-      )
-      .toList();
-  debugPrint(
-    'DIAG $scenario enabled=${enabled.value} saveDisabled=${save.disabled} '
-    'saveLoading=${save.isLoading} dirty=${guard.isDirty} '
-    'probes=$probes texts=$texts',
-  );
-}

@@ -240,23 +240,15 @@ extension _ScopedVerificationSectionStateActions
   }
 
   Future<void> _save() async {
-    debugPrint(
-      'TRACE verification save gate saving=$_saving loaded=$_loaded '
-      'dirty=${_draft.isDirty}',
-    );
     if (_saving || !_loaded || !_draft.isDirty) return;
     final pending = _readPendingSettings(this);
-    debugPrint('TRACE verification pendingNull=${pending == null}');
     if (pending == null) return;
-    debugPrint('TRACE verification pending enabled=${pending.enabled}');
     _beginSaving();
     try {
       await _persistDraft(pending);
     } on ScopedVerificationSettingsException catch (error) {
-      debugPrint('TRACE verification typed save failure=${error.localeKey}');
       _showSaveFailure(this, error.localeKey);
-    } on Object catch (error) {
-      debugPrint('TRACE verification untyped save failure=$error');
+    } on Object {
       _showSaveFailure(this, LocaleKeys.verification_errors_save_failed);
     } finally {
       _finishSaving();
@@ -335,8 +327,7 @@ ScopedVerificationSettings? _readPendingSettings(
 ) {
   try {
     return state._draft.read();
-  } on FormatException catch (error) {
-    debugPrint('TRACE verification settings parse failure=$error');
+  } on FormatException {
     state
       .._advanced = true
       .._showError(LocaleKeys.verification_errors_invalid);
