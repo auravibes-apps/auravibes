@@ -624,22 +624,31 @@ class const _ChatListActiveEmptyState({required final String workspaceId})
 
 class const _ChatListArchivedEmptyState() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: .min,
-        children: [
-          AuraIcon(Icons.archive_outlined, size: .extraLarge),
-          SizedBox(height: 16),
-          AuraText(
-            child: TextLocale(
-              LocaleKeys.chats_screens_archived_conversations_empty,
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
+        ),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: .min,
+              children: [
+                AuraIcon(Icons.archive_outlined, size: .extraLarge),
+                SizedBox(height: 16),
+                AuraText(
+                  child: TextLocale(
+                    LocaleKeys.chats_screens_archived_conversations_empty,
+                  ),
+                  style: .heading3,
+                  textAlign: .center,
+                ),
+              ],
             ),
-            style: .heading3,
-            textAlign: .center,
           ),
-        ],
+        ),
       ),
     ),
   );

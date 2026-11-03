@@ -709,7 +709,7 @@ void main() {
           ],
         ),
       );
-      final _ = await tester.pumpAndSettle();
+      await _pumpUntilText(tester, 'Project research');
 
       final archivedContainer = tester
           .widget<UncontrolledProviderScope>(
@@ -1989,6 +1989,14 @@ class _RecordingLocalChatAttachmentUsecase
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+Future<void> _pumpUntilText(WidgetTester tester, String text) async {
+  final finder = find.text(text);
+  for (var attempt = 0; attempt < 30; attempt++) {
+    if (finder.evaluate().isNotEmpty) return;
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 class _StubConversationRepository({
