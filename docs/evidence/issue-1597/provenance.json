@@ -1,0 +1,23 @@
+{
+  "workflow_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41553127425/attempts/1",
+  "workflow_run_id": 41553127425,
+  "workflow_conclusion": "success",
+  "artifact_id": 13193442830,
+  "artifact_sha256": "sha256:246cc043d3c3ecfd9b650c0170e7d830a75243d12833978758129cf7a7d1729c",
+  "baseline_sha": "6137bbf607ca3839a7722295d7fcc6a90a2e210e",
+  "feature_sha": "797a3ca27ab9cfd9c2f58dabce1b291755a497d8",
+  "generated_patch_required": false,
+  "generated_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "capture_harness": [
+    "apps/auravibes_app/test/widgets/ux_validation_layout_test.dart",
+    "apps/auravibes_app/test/helpers/ux_validation_fixture.dart"
+  ],
+  "identical_before_after_harness_verified": true,
+  "scope": "Production workspace settings route rendered with the repository UX widget-test fixture, in-memory persisted workspace, and real workspace settings screen.",
+  "viewport": [900, 1200],
+  "locale": "en",
+  "theme": "light",
+  "text_scale": 1.0,
+  "renderer": "Flutter widget-test Skia on Linux",
+  "validation": "Hosted evidence workflow succeeded. Focused engine verification and app verification/transport tests passed on this exact feature revision. Required PR checks continue through hosted CI."
+}
