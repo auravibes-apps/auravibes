@@ -31,7 +31,6 @@ jobs:
     env:
       BASELINE_SHA: ${{ inputs.baseline || 'f00fc7b9159cc35713db498ad319200a5ed4052e' }}
       CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      EVIDENCE: ${{ runner.temp }}/voice-recording-memory
     steps:
       - name: Checkout immutable candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -41,6 +40,8 @@ jobs:
 
       - name: Initialize partial evidence
         run: |
+          export EVIDENCE="$RUNNER_TEMP/voice-recording-memory"
+          echo "EVIDENCE=$EVIDENCE" >> "$GITHUB_ENV"
           mkdir -p "$EVIDENCE"
           python3 - <<'PY'
           import json, os, platform
@@ -127,6 +128,6 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: voice-recording-memory-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.EVIDENCE }}
+          path: ${{ runner.temp }}/voice-recording-memory
           if-no-files-found: error
           retention-days: 30
