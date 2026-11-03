@@ -657,9 +657,7 @@ void main() {
           workspaceId: workspace.id,
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
-            conversationRepositoryProvider.overrideWithValue(
-              ConversationRepository(database),
-            ),
+            conversationRepositoryProvider.overrideWithValue(.new(database)),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
@@ -692,9 +690,7 @@ void main() {
           content: ChatListWidget(workspaceId: workspace.id, scope: .archived),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
-            conversationRepositoryProvider.overrideWithValue(
-              ConversationRepository(database),
-            ),
+            conversationRepositoryProvider.overrideWithValue(.new(database)),
             streamingTitleProvider.overrideWith((ref, id) => null),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),

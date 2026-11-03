@@ -56,15 +56,10 @@ class const SidebarConversationsWidget({
   }
 }
 
-class _SidebarConversationsWorkspace extends StatelessWidget {
-  const _SidebarConversationsWorkspace({
-    required this.workspaceId,
-    required this.limit,
-  });
-
-  final String workspaceId;
-  final int limit;
-
+class const _SidebarConversationsWorkspace({
+  required final String workspaceId,
+  required final int limit,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SidebarConversationsData(
     workspaceId: workspaceId,
@@ -73,17 +68,11 @@ class _SidebarConversationsWorkspace extends StatelessWidget {
   );
 }
 
-class _SidebarConversationsData extends ConsumerWidget {
-  const _SidebarConversationsData({
-    required this.workspaceId,
-    required this.currentChatId,
-    required this.limit,
-  });
-
-  final String workspaceId;
-  final String? currentChatId;
-  final int limit;
-
+class const _SidebarConversationsData({
+  required final String workspaceId,
+  required final String? currentChatId,
+  required final int limit,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       _SidebarConversationsContent(
