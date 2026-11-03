@@ -863,56 +863,6 @@ void main() {
     expect(find.text('100,0'), findsOneWidget);
   });
 
-  testWidgets('read-only status is localized for Spanish', (tester) async {
-    final payloads = [
-      jsonEncode({
-        'version': 'v0.9',
-        'createSurface': {
-          'surfaceId': 'localized-status',
-          'catalogId': auraChatCatalogId,
-        },
-      }),
-      jsonEncode({
-        'version': 'v0.9',
-        'updateComponents': {
-          'surfaceId': 'localized-status',
-          'components': [
-            {'id': 'root', 'component': 'Text', 'text': 'Saved response'},
-          ],
-        },
-      }),
-    ];
-
-    await EasyLocalization.ensureInitialized();
-    await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('es')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('es'),
-        startLocale: const Locale('es'),
-        useOnlyLangCode: true,
-        child: AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            builder: _legacyMaterialBuilder,
-            theme: ThemeData(),
-            locale: const Locale('es'),
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            supportedLocales: const [Locale('es')],
-            home: ChatA2uiSurfaceHost.historical(
-              messageId: 'localized-status',
-              payloads: payloads,
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Solo lectura'), findsOneWidget);
-    expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
-  });
-
   for (final (locale, date) in [
     (const Locale('en'), 'May 12, 2024'),
     (const Locale('es'), '12 may 2024'),

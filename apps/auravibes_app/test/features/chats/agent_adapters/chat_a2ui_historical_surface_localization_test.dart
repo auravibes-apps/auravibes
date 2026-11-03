@@ -1,0 +1,74 @@
+import 'dart:convert';
+
+import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+void main() {
+  setUpAll(() async {
+    await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('historical read-only status is localized for Spanish', (
+    tester,
+  ) async {
+    final payloads = [
+      jsonEncode({
+        'version': 'v0.9',
+        'createSurface': {
+          'surfaceId': 'localized-status',
+          'catalogId': auraChatCatalogId,
+        },
+      }),
+      jsonEncode({
+        'version': 'v0.9',
+        'updateComponents': {
+          'surfaceId': 'localized-status',
+          'components': [
+            {'id': 'root', 'component': 'Text', 'text': 'Saved response'},
+          ],
+        },
+      }),
+    ];
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('es')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('es'),
+        startLocale: const Locale('es'),
+        useOnlyLangCode: true,
+        child: Builder(
+          builder: (context) => AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              builder: (context, child) => AuraLegacyMaterialBridge(
+                child: child ?? const SizedBox.shrink(),
+              ),
+              locale: context.locale,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                ...context.localizationDelegates,
+              ],
+              supportedLocales: context.supportedLocales,
+              theme: ThemeData(),
+              home: ChatA2uiSurfaceHost.historical(
+                messageId: 'localized-status',
+                payloads: payloads,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved response'), findsOneWidget);
+    expect(find.text('Solo lectura'), findsOneWidget);
+    expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
+  });
+}
