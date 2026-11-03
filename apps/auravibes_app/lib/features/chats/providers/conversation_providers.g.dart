@@ -101,8 +101,16 @@ final class ConversationByIdStreamFamily extends $Family
   String toString() => r'conversationByIdStreamProvider';
 }
 
+/// Riverpod generates a family call from these named inputs; keeping this
+/// signature preserves the provider API used by its consumers.
+// ignore: number-of-parameters
+
 @ProviderFor(conversationsStream)
 final conversationsStreamProvider = ConversationsStreamFamily._();
+
+/// Riverpod generates a family call from these named inputs; keeping this
+/// signature preserves the provider API used by its consumers.
+// ignore: number-of-parameters
 
 final class ConversationsStreamProvider
     extends
@@ -114,6 +122,9 @@ final class ConversationsStreamProvider
     with
         $FutureModifier<List<ConversationEntity>>,
         $StreamProvider<List<ConversationEntity>> {
+  /// Riverpod generates a family call from these named inputs; keeping this
+  /// signature preserves the provider API used by its consumers.
+  // ignore: number-of-parameters
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
     required ({
@@ -178,7 +189,11 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'892ac6bf1804eac1b1fc7bee77506c8be878498f';
+    r'43056d57b5bdff7aee87cac1010811a4fec4b7f2';
+
+/// Riverpod generates a family call from these named inputs; keeping this
+/// signature preserves the provider API used by its consumers.
+// ignore: number-of-parameters
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -199,6 +214,10 @@ final class ConversationsStreamFamily extends $Family
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
+
+  /// Riverpod generates a family call from these named inputs; keeping this
+  /// signature preserves the provider API used by its consumers.
+  // ignore: number-of-parameters
 
   ConversationsStreamProvider call({
     required String workspaceId,
