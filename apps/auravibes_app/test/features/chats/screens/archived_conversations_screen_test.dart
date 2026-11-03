@@ -42,10 +42,11 @@ void main() {
       ),
     );
     final _ = await tester.pumpAndSettle();
-    final container = ProviderScope.containerOf(
-      tester.element(find.byType(ArchivedConversationsScreen)),
-      listen: false,
-    );
+    final container = tester
+        .widget<UncontrolledProviderScope>(
+          find.byType(UncontrolledProviderScope),
+        )
+        .container;
     expect(
       container
           .read(
