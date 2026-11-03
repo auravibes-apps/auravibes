@@ -653,10 +653,8 @@ void main() {
           workspaceId: workspace.id,
           content: ValueListenableBuilder<ConversationListScope>(
             valueListenable: scope,
-            builder: (_, currentScope, _) => ChatListWidget(
-              workspaceId: workspace.id,
-              scope: currentScope,
-            ),
+            builder: (_, currentScope, _) =>
+                ChatListWidget(workspaceId: workspace.id, scope: currentScope),
           ),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
