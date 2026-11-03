@@ -63,6 +63,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final localizationContext = tester.element(
+      find.byType(AuraBadge),
+    );
+    expect(
+      LocaleKeys.chats_screens_chat_conversation_a2ui_read_only.tr(
+        context: localizationContext,
+      ),
+      'Solo lectura',
+    );
     expect(find.text('Solo lectura'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
   });
