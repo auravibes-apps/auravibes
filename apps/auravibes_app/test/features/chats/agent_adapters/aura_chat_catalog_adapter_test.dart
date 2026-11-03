@@ -847,17 +847,22 @@ void main() {
         useFallbackTranslations: true,
         child: AuraThemeScope(
           theme: .light,
-          child: MaterialApp(
-            builder: _legacyMaterialBuilder,
-            theme: ThemeData(),
-            locale: const Locale('es'),
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            supportedLocales: const [Locale('en'), Locale('es')],
-            home: SizedBox(
-              width: 320,
-              child: ChatA2uiSurfaceHost.historical(
-                messageId: 'literal-slider',
-                payloads: payloads,
+          child: Builder(
+            builder: (context) => MaterialApp(
+              builder: _legacyMaterialBuilder,
+              theme: ThemeData(),
+              locale: context.locale,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                ...context.localizationDelegates,
+              ],
+              supportedLocales: context.supportedLocales,
+              home: SizedBox(
+                width: 320,
+                child: ChatA2uiSurfaceHost.historical(
+                  messageId: 'literal-slider',
+                  payloads: payloads,
+                ),
               ),
             ),
           ),
