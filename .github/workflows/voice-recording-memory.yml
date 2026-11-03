@@ -120,8 +120,15 @@ jobs:
 
       - name: Measure fresh workers and preserve per-case evidence
         run: |
-          python3 tool/voice_recording_memory.py \
-            --baseline baseline --candidate . --output "$EVIDENCE"
+          if ! python3 tool/voice_recording_memory.py \
+            --baseline baseline --candidate . --output "$EVIDENCE"; then
+            for worker_log in "$EVIDENCE"/*.log; do
+              test -f "$worker_log" || continue
+              basename "$worker_log"
+              tail -n 200 "$worker_log"
+            done
+            exit 1
+          fi
 
       - name: Upload complete or partial evidence
         if: always()
