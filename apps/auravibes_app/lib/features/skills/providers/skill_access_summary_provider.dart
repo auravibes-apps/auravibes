@@ -12,8 +12,8 @@ AssessSkillAccessUsecase assessSkillAccessUsecase(
   Ref ref,
   String workspaceId,
 ) => AssessSkillAccessUsecase(
-  connectorReferencesReady: (toolIds) async =>
-      await ConnectorToolReferenceReadiness.areReady(
+  connectorReferenceStatuses: (toolIds) async =>
+      await ConnectorToolReferenceReadiness.readinessForTools(
         connectorToolIds: toolIds,
         workspaceId: workspaceId,
         credentialCandidates: ref.watch(

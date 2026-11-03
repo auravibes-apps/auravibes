@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/usecases/list_connector_connection_candidates_usecase.dart';
-import 'package:auravibes_app/features/skills/models/skill_detail.dart';
-import 'package:auravibes_app/features/skills/usecases/assess_skill_access_usecase.dart';
+import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/usecases/connector_tool_reference_readiness.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/foundation.dart';
@@ -16,7 +15,7 @@ const _distinctDependencyCounts = [1, 4, 8, 16];
 
 void main() {
   test(
-    'measures synthetic serial readiness for shared and distinct credentials',
+    'compares synthetic serial and batched credential readiness',
     () async {
       final sharedCredentialToolIds = _sharedCredentialToolIds();
       expect(sharedCredentialToolIds, hasLength(greaterThan(1)));
@@ -36,32 +35,50 @@ void main() {
       ];
 
       for (final workload in workloads) {
-        final samples = <int>[];
+        final serialSamples = <int>[];
+        final batchedSamples = <int>[];
+        var maxConcurrentBatchedReads = 0;
         for (
           var sample = 0;
           sample < _warmupSamples + _measuredSamples;
           sample++
         ) {
-          final measurement = await _measureSerial(workload.ids);
-          expect(measurement.candidateReads, workload.ids.length);
-          expect(measurement.maxConcurrentReads, 1);
+          final serial = await _measureSerial(workload.ids);
+          final batched = await _measureBatched(workload.ids);
+          expect(serial.candidateReads, workload.ids.length);
+          expect(serial.maxConcurrentReads, 1);
+          expect(batched.candidateReads, workload.dependencyCount);
+          if (batched.maxConcurrentReads > maxConcurrentBatchedReads) {
+            maxConcurrentBatchedReads = batched.maxConcurrentReads;
+          }
           if (sample >= _warmupSamples) {
-            samples.add(measurement.elapsedMicroseconds);
+            serialSamples.add(serial.elapsedMicroseconds);
+            batchedSamples.add(batched.elapsedMicroseconds);
           }
         }
-        samples.sort();
+        serialSamples.sort();
+        batchedSamples.sort();
         debugPrint(
           jsonEncode({
-            'workload': 'skill_credential_readiness_serial_baseline',
+            'workload': 'skill_credential_readiness',
+            'source': 'synthetic-in-memory',
+            'networkCalls': 0,
+            'modelCalls': 0,
             'kind': workload.kind,
             'dependencyCount': workload.dependencyCount,
             'toolCount': workload.ids.length,
             'candidateReadDelayMs': _candidateReadDelay.inMilliseconds,
-            'candidateReadCount': workload.ids.length,
+            'serialCandidateReadCount': workload.ids.length,
+            'batchedCandidateReadCount': workload.dependencyCount,
+            'maxConcurrentBatchedReads': maxConcurrentBatchedReads,
             'warmupSamples': _warmupSamples,
             'sampleCount': _measuredSamples,
-            'medianElapsedUs': samples[samples.length ~/ 2],
-            'samples': samples,
+            'serialMedianElapsedUs':
+                serialSamples[serialSamples.length ~/ 2],
+            'batchedMedianElapsedUs':
+                batchedSamples[batchedSamples.length ~/ 2],
+            'serialSamples': serialSamples,
+            'batchedSamples': batchedSamples,
           }),
         );
       }
@@ -70,10 +87,50 @@ void main() {
   );
 }
 
-Future<({int candidateReads, int maxConcurrentReads, int elapsedMicroseconds})>
-_measureSerial(List<String> connectorToolIds) async {
+Future<_ReadinessSample> _measureSerial(List<String> connectorToolIds) async {
+  final fixture = _candidateFixture();
+  final stopwatch = Stopwatch()..start();
+  for (final connectorToolId in connectorToolIds) {
+    final ready = await ConnectorToolReferenceReadiness.areReady(
+      connectorToolIds: [connectorToolId],
+      workspaceId: 'synthetic-workspace',
+      credentialCandidates: fixture.usecase,
+    );
+    expect(ready, isTrue);
+  }
+  stopwatch.stop();
+
+  return (
+    candidateReads: fixture.metrics.candidateReads,
+    maxConcurrentReads: fixture.metrics.maxConcurrentReads,
+    elapsedMicroseconds: stopwatch.elapsedMicroseconds,
+  );
+}
+
+Future<_ReadinessSample> _measureBatched(List<String> connectorToolIds) async {
+  final fixture = _candidateFixture();
+  final stopwatch = Stopwatch()..start();
+  final statuses = await ConnectorToolReferenceReadiness.readinessForTools(
+    connectorToolIds: connectorToolIds,
+    workspaceId: 'synthetic-workspace',
+    credentialCandidates: fixture.usecase,
+  );
+  stopwatch.stop();
+  expect(
+    statuses,
+    everyElement(SkillToolAccessStatus.available),
+  );
+
+  return (
+    candidateReads: fixture.metrics.candidateReads,
+    maxConcurrentReads: fixture.metrics.maxConcurrentReads,
+    elapsedMicroseconds: stopwatch.elapsedMicroseconds,
+  );
+}
+
+_CandidateFixture _candidateFixture() {
   final metrics = _CandidateReadMetrics();
-  final candidates = ListConnectorConnectionCandidatesUsecase(
+  final usecase = ListConnectorConnectionCandidatesUsecase(
     () => throw StateError('Synthetic benchmark must not access local storage.'),
     cloudServiceConnectionsReader: (_) async {
       metrics.activeReads++;
@@ -98,29 +155,8 @@ _measureSerial(List<String> connectorToolIds) async {
       ];
     },
   );
-  final assess = AssessSkillAccessUsecase(
-    connectorReferencesReady: (toolIds) => ConnectorToolReferenceReadiness
-        .areReady(
-          connectorToolIds: toolIds,
-          workspaceId: 'synthetic-workspace',
-          credentialCandidates: candidates,
-        ),
-  );
-  final stopwatch = Stopwatch()..start();
-  final summary = await assess.call(skill: _skill(connectorToolIds));
-  stopwatch.stop();
 
-  expect(summary.tools.map((tool) => tool.id), connectorToolIds);
-  expect(
-    summary.tools.map((tool) => tool.status),
-    everyElement(SkillToolAccessStatus.available),
-  );
-
-  return (
-    candidateReads: metrics.candidateReads,
-    maxConcurrentReads: metrics.maxConcurrentReads,
-    elapsedMicroseconds: stopwatch.elapsedMicroseconds,
-  );
+  return (metrics: metrics, usecase: usecase);
 }
 
 List<String> _sharedCredentialToolIds() {
@@ -158,18 +194,16 @@ List<String> _distinctConnectorToolIds() {
   return ids;
 }
 
-SkillDetail _skill(List<String> connectorToolIds) => SkillDetail(
-  id: 'synthetic-skill',
-  workspaceId: 'synthetic-workspace',
-  source: .user,
-  kind: .template,
-  title: 'Synthetic skill',
-  slug: 'synthetic-skill',
-  description: '',
-  content: 'Synthetic readiness benchmark.',
-  isEnabled: true,
-  connectorToolIds: connectorToolIds,
-);
+typedef _CandidateFixture = ({
+  _CandidateReadMetrics metrics,
+  ListConnectorConnectionCandidatesUsecase usecase,
+});
+
+typedef _ReadinessSample = ({
+  int candidateReads,
+  int maxConcurrentReads,
+  int elapsedMicroseconds,
+});
 
 class _CandidateReadMetrics {
   int activeReads = 0;

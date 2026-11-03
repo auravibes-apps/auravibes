@@ -2,26 +2,48 @@ import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 
 class const AssessSkillAccessUsecase({
-  required final Future<bool> Function(List<String> toolIds)
-  connectorReferencesReady,
+  required final Future<List<SkillToolAccessStatus>> Function(
+    List<String> toolIds,
+  )
+  connectorReferenceStatuses,
 }) {
   Future<SkillAccessSummary> call({required SkillDetail skill}) async {
-    final tools = <SkillToolAccess>[];
-    for (final id in skill.connectorToolIds) {
-      final status = await _readAccess(id);
-      tools.add(SkillToolAccess(id: id, title: id, status: status));
+    final connectorToolIds = skill.connectorToolIds.toList(growable: false);
+    if (connectorToolIds.isEmpty) {
+      return const SkillAccessSummary(
+        status: .notRequired,
+        instructionsAvailable: true,
+      );
     }
+
+    final statuses = await _readStatuses(connectorToolIds);
+    final tools = [
+      for (var index = 0; index < connectorToolIds.length; index++)
+        SkillToolAccess(
+          id: connectorToolIds[index],
+          title: connectorToolIds[index],
+          status: statuses[index],
+        ),
+    ];
 
     return _summary(tools);
   }
 
-  Future<SkillToolAccessStatus> _readAccess(String toolId) async {
+  Future<List<SkillToolAccessStatus>> _readStatuses(
+    List<String> connectorToolIds,
+  ) async {
     try {
-      return await connectorReferencesReady([toolId])
-          ? SkillToolAccessStatus.available
-          : SkillToolAccessStatus.missing;
+      final statuses = await connectorReferenceStatuses(connectorToolIds);
+      if (statuses.length != connectorToolIds.length) {
+        throw StateError('Readiness must return one status per connector tool.');
+      }
+
+      return statuses;
     } on Object {
-      return SkillToolAccessStatus.unknown;
+      return List.filled(
+        connectorToolIds.length,
+        SkillToolAccessStatus.unknown,
+      );
     }
   }
 

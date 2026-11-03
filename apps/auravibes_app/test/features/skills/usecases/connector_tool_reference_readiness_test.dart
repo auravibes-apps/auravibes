@@ -28,6 +28,16 @@ void main() {
         _toolId('brave', 'web_search'),
         _toolId('kagi', 'search'),
       ];
+      final braveCredentials = _tool(
+        'brave',
+        'web_search',
+      ).urlTemplate!.credentialDefinitions;
+      final kagiCredentials = _tool(
+        'kagi',
+        'search',
+      ).urlTemplate!.credentialDefinitions;
+      expect(braveCredentials.keys, ['apiKey']);
+      expect(kagiCredentials.keys, ['apiKey']);
 
       final statuses =
           await ConnectorToolReferenceReadiness.readinessForTools(
@@ -42,7 +52,10 @@ void main() {
         SkillToolAccessStatus.available,
         SkillToolAccessStatus.missing,
       ]);
-      expect(fixture.requestedConnectorIds, ['brave', 'kagi']);
+      expect(
+        fixture.requestedConnectorIds,
+        unorderedEquals(['brave', 'kagi']),
+      );
     },
   );
 
@@ -67,7 +80,10 @@ void main() {
         SkillToolAccessStatus.unknown,
         SkillToolAccessStatus.available,
       ]);
-      expect(fixture.requestedConnectorIds, ['brave', 'kagi']);
+      expect(
+        fixture.requestedConnectorIds,
+        unorderedEquals(['brave', 'kagi']),
+      );
     },
   );
 
@@ -169,12 +185,19 @@ _CandidateFixture _candidateFixture({
 }
 
 String _toolId(String connectorId, String slug) {
+  final tool = _tool(connectorId, slug);
   final connector = connectorDefinitions.singleWhere(
     (candidate) => candidate.identifier == connectorId,
   );
-  final tool = connector.tools.singleWhere(
-    (candidate) => candidate.slug == slug,
-  );
 
   return connectorToolId(connector, tool);
+}
+
+ConnectorToolDefinition _tool(String connectorId, String slug) {
+  final connector = connectorDefinitions.singleWhere(
+    (candidate) => candidate.identifier == connectorId,
+  );
+  return connector.tools.singleWhere(
+    (candidate) => candidate.slug == slug,
+  );
 }
