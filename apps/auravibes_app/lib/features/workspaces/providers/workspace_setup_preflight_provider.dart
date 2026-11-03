@@ -19,6 +19,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'workspace_setup_preflight_provider.g.dart';
 
 @riverpod
+// The refresh notifier is colocated with the provider it invalidates.
 // ignore: prefer-match-file-name
 class WorkspaceSetupPreflightRefresh extends _$WorkspaceSetupPreflightRefresh {
   @override
@@ -72,21 +73,12 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
         )
       : const _ReadResult<List<ModelConnectionEntity>>.unavailable();
   final selectedModelId = ref.watch(newChatProvider(workspaceId)).modelId;
-  late final _ReadResult<WorkspaceSetupModelSnapshot?> modelRead;
-  if (selectedModelId == null) {
-    modelRead = const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null);
-  } else if (sourceAllowed) {
-    modelRead = await _capture(() async {
-      final selections = await ref.watch(
-        modelSelectionStoreProvider(workspaceId).future,
-      );
-      final model = await selections.getById(selectedModelId);
-
-      return await _modelSnapshot(ref, model, workspaceId);
-    });
-  } else {
-    modelRead = const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
-  }
+  final modelRead = await _readSelectedModel(
+    ref: ref,
+    selectedModelId: selectedModelId,
+    sourceAllowed: sourceAllowed,
+    workspaceId: workspaceId,
+  );
   final mcpRead = sourceAllowed
       ? await _capture(() async {
           final connections = await ref.watch(
@@ -158,6 +150,29 @@ WorkspaceSetupProviderSnapshot _providerSnapshot(
   connectionId: connection.id,
   hasCredential: connection.hasKey,
 );
+
+Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel({
+  required Ref ref,
+  required String? selectedModelId,
+  required bool sourceAllowed,
+  required String workspaceId,
+}) async {
+  if (selectedModelId == null) {
+    return const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null);
+  }
+  if (!sourceAllowed) {
+    return const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
+  }
+
+  return _capture(() async {
+    final selections = await ref.watch(
+      modelSelectionStoreProvider(workspaceId).future,
+    );
+    final model = await selections.getById(selectedModelId);
+
+    return _modelSnapshot(ref, model, workspaceId);
+  });
+}
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   Ref ref,

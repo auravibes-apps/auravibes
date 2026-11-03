@@ -1,6 +1,9 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_setup_preflight.dart';
 import 'package:collection/collection.dart';
 
+const _optionalCredentialMissingMessageKey =
+    'workspace_setup_preflight.provider_credential_missing_optional';
+
 class const BuildWorkspaceSetupPreflightUsecase() {
   WorkspaceSetupPreflight call(WorkspaceSetupPreflightSnapshot snapshot) {
     final storage = _storageCheck(snapshot.storageAvailable);
@@ -143,7 +146,7 @@ class const BuildWorkspaceSetupPreflightUsecase() {
           : const WorkspaceSetupPreflightCheck(
               id: .providerCredentials,
               status: .warning,
-              messageKey: 'workspace_setup_preflight.provider_credential_missing_optional',
+              messageKey: _optionalCredentialMissingMessageKey,
               recovery: .reviewProvider,
             );
     }
