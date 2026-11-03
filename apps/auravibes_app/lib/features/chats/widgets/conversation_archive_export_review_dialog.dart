@@ -139,89 +139,153 @@ class const _ConversationArchiveExportReviewContent({
           mainAxisSize: .min,
           crossAxisAlignment: .start,
           children: [
-            const TextLocale(_reviewDescriptionKey),
-            SizedBox(height: theme.fromSpacing(.md)),
-            TextLocale(switch (preview.attachmentCount) {
-              0 => _reviewIncludedNoAttachmentsKey,
-              _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
-              _ => _reviewIncludedWithoutAttachmentsKey,
-            }),
-            if (preview.attachmentCount > 0) ...[
-              SizedBox(height: theme.fromSpacing(.sm)),
-              CheckboxListTile(
-                key: const ValueKey('archive-export-include-attachments'),
-                value: includeAttachments,
-                onChanged: (value) {
-                  if (value != null) onIncludeAttachmentsChanged(value);
-                },
-                title: const TextLocale(_reviewIncludeAttachmentsKey),
-                subtitle: const TextLocale(
-                  _reviewIncludeAttachmentsDescriptionKey,
-                ),
-                controlAffinity: .leading,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ],
-            if (preview.attachmentCount > 0) ...[
-              SizedBox(height: theme.fromSpacing(.sm)),
-              TextLocale(
-                _reviewAttachmentSectionKey,
-                args: [preview.attachmentCount.toString()],
-              ),
-            ],
+            _ConversationArchiveExportReviewSummary(
+              preview: preview,
+              includeAttachments: includeAttachments,
+              onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
+            ),
             SizedBox(height: theme.fromSpacing(.sm)),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: [
-                    SizedBox(height: theme.fromSpacing(.md)),
-                    TextLocale(
-                      _reviewConversationSectionKey,
-                      args: [preview.conversations.length.toString()],
-                    ),
-                    for (final conversation in preview.conversations)
-                      Padding(
-                        padding: EdgeInsets.only(top: theme.fromSpacing(.sm)),
-                        child: Column(
-                          crossAxisAlignment: .start,
-                          children: [
-                            Text(
-                              conversation.title,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            if (conversation.attachments.isEmpty)
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  top: theme.fromSpacing(.xs),
-                                ),
-                                child: const TextLocale(
-                                  _reviewNoAttachmentsKey,
-                                ),
-                              ),
-                            for (final attachment in conversation.attachments)
-                              _ConversationArchiveExportAttachmentRow(
-                                attachment: attachment,
-                              ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+            _ConversationArchiveExportConversationList(
+              preview: preview,
             ),
             SizedBox(height: theme.fromSpacing(.md)),
-            TextLocale(switch (preview.attachmentCount) {
-              0 => _reviewPrivacyNoAttachmentsKey,
-              _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
-              _ => _reviewPrivacyWithoutAttachmentsKey,
-            }),
-            SizedBox(height: theme.fromSpacing(.sm)),
-            TextLocale(_reviewDestinationKey, args: [fileName]),
+            _ConversationArchiveExportReviewDisclosure(
+              fileName: fileName,
+              preview: preview,
+              includeAttachments: includeAttachments,
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class const _ConversationArchiveExportReviewSummary({
+  required final ConversationArchiveExportPreview preview,
+  required final bool includeAttachments,
+  required final ValueChanged<bool> onIncludeAttachmentsChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.auraTheme;
+
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        const TextLocale(_reviewDescriptionKey),
+        SizedBox(height: theme.fromSpacing(.md)),
+        TextLocale(switch (preview.attachmentCount) {
+          0 => _reviewIncludedNoAttachmentsKey,
+          _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
+          _ => _reviewIncludedWithoutAttachmentsKey,
+        }),
+        if (preview.attachmentCount > 0) ...[
+          SizedBox(height: theme.fromSpacing(.sm)),
+          CheckboxListTile(
+            key: const ValueKey('archive-export-include-attachments'),
+            value: includeAttachments,
+            onChanged: (value) {
+              if (value != null) onIncludeAttachmentsChanged(value);
+            },
+            title: const TextLocale(_reviewIncludeAttachmentsKey),
+            subtitle: const TextLocale(
+              _reviewIncludeAttachmentsDescriptionKey,
+            ),
+            controlAffinity: .leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+          SizedBox(height: theme.fromSpacing(.sm)),
+          TextLocale(
+            _reviewAttachmentSectionKey,
+            args: [preview.attachmentCount.toString()],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class const _ConversationArchiveExportConversationList({
+  required final ConversationArchiveExportPreview preview,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.auraTheme;
+
+    return Flexible(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
+          children: [
+            SizedBox(height: theme.fromSpacing(.md)),
+            TextLocale(
+              _reviewConversationSectionKey,
+              args: [preview.conversations.length.toString()],
+            ),
+            for (final conversation in preview.conversations)
+              _ConversationArchiveExportConversationRow(
+                conversation: conversation,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class const _ConversationArchiveExportConversationRow({
+  required final ConversationArchivePreviewConversation conversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.auraTheme;
+
+    return Padding(
+      padding: EdgeInsets.only(top: theme.fromSpacing(.sm)),
+      child: Column(
+        crossAxisAlignment: .start,
+        children: [
+          Text(
+            conversation.title,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          if (conversation.attachments.isEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: theme.fromSpacing(.xs)),
+              child: const TextLocale(_reviewNoAttachmentsKey),
+            ),
+          for (final attachment in conversation.attachments)
+            _ConversationArchiveExportAttachmentRow(attachment: attachment),
+        ],
+      ),
+    );
+  }
+}
+
+class const _ConversationArchiveExportReviewDisclosure({
+  required final String fileName,
+  required final ConversationArchiveExportPreview preview,
+  required final bool includeAttachments,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.auraTheme;
+
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        TextLocale(switch (preview.attachmentCount) {
+          0 => _reviewPrivacyNoAttachmentsKey,
+          _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
+          _ => _reviewPrivacyWithoutAttachmentsKey,
+        }),
+        SizedBox(height: theme.fromSpacing(.sm)),
+        TextLocale(_reviewDestinationKey, args: [fileName]),
+      ],
     );
   }
 }
@@ -239,33 +303,10 @@ class const _ConversationArchiveExportAttachmentRow({
         child: Row(
           crossAxisAlignment: .start,
           children: [
-            Padding(
-              padding: EdgeInsets.only(
-                top: theme.fromSpacing(.xs),
-                right: theme.fromSpacing(.sm),
-              ),
-              child: const Icon(Icons.attach_file, size: 18),
-            ),
+            _buildIcon(context),
             Expanded(
-              child: Column(
-                crossAxisAlignment: .start,
-                children: [
-                  if (attachment.fileName.isEmpty)
-                    const TextLocale(_reviewUnnamedAttachmentKey)
-                  else
-                    Text(attachment.fileName, softWrap: true),
-                  TextLocale(
-                    _reviewAttachmentMimeKey,
-                    args: [attachment.mimeType],
-                  ),
-                  TextLocale(
-                    _reviewAttachmentSizeKey,
-                    args: [
-                      MaterialLocalizations.of(context)
-                          .formatDecimal(attachment.sizeBytes),
-                    ],
-                  ),
-                ],
+              child: _ConversationArchiveExportAttachmentDetails(
+                attachment: attachment,
               ),
             ),
           ],
@@ -274,4 +315,40 @@ class const _ConversationArchiveExportAttachmentRow({
       container: true,
     );
   }
+
+  Widget _buildIcon(BuildContext context) {
+    final theme = context.auraTheme;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        top: theme.fromSpacing(.xs),
+        right: theme.fromSpacing(.sm),
+      ),
+      child: const Icon(Icons.attach_file, size: 18),
+    );
+  }
+}
+
+class const _ConversationArchiveExportAttachmentDetails({
+  required final ConversationArchivePreviewAttachment attachment,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      if (attachment.fileName.isEmpty)
+        const TextLocale(_reviewUnnamedAttachmentKey)
+      else
+        Text(attachment.fileName, softWrap: true),
+      TextLocale(_reviewAttachmentMimeKey, args: [attachment.mimeType]),
+      TextLocale(
+        _reviewAttachmentSizeKey,
+        args: [
+          MaterialLocalizations.of(context).formatDecimal(
+            attachment.sizeBytes,
+          ),
+        ],
+      ),
+    ],
+  );
 }

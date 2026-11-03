@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 // Copying caller lists prevents later mutation of the review snapshot.
+// This immutable review snapshot intentionally exposes data through getters.
+// ignore: weight-of-class
 // ignore: prefer_const_constructors_in_immutables
 final class ConversationArchiveExportPreview({
   required List<ConversationArchivePreviewConversation> sourceConversations,
