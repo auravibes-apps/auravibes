@@ -381,6 +381,10 @@ jobs:
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: melos run generate --no-select
 
+      - name: Show generated provider diff (temporary)
+        if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
+        run: git diff -- apps/auravibes_app/lib/providers/agent_lifecycle_hook_runtime_provider.g.dart
+
       - name: Install matching Serverpod CLI
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: |
