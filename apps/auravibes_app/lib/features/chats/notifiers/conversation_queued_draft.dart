@@ -62,6 +62,14 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     return drafts?.firstOrNull;
   }
 
+  void moveUp({required String conversationId, required String draftId}) {
+    _moveDraft(conversationId: conversationId, draftId: draftId, offset: -1);
+  }
+
+  void moveDown({required String conversationId, required String draftId}) {
+    _moveDraft(conversationId: conversationId, draftId: draftId, offset: 1);
+  }
+
   ConversationQueuedDraft? dequeue(String conversationId) {
     final drafts = state[conversationId];
     if (drafts == null || drafts.isEmpty) {
@@ -135,6 +143,25 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     ..._withoutConversation(state, conversationId),
     if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
   };
+
+  void _moveDraft({
+    required String conversationId,
+    required String draftId,
+    required int offset,
+  }) {
+    final drafts = state[conversationId];
+    if (drafts == null || drafts.length < 2) return;
+
+    final index = drafts.indexWhere((draft) => draft.id == draftId);
+    final targetIndex = index + offset;
+    if (index < 0 || targetIndex < 0 || targetIndex >= drafts.length) return;
+
+    final reorderedDrafts = [...drafts];
+    final movedDraft = reorderedDrafts.removeAt(index);
+    reorderedDrafts.insert(targetIndex, movedDraft);
+
+    _setState({...state, conversationId: reorderedDrafts});
+  }
 
   void _setState(Map<String, List<ConversationQueuedDraft>> nextState) {
     _queuedDrafts = nextState;
