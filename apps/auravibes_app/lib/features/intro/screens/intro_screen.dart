@@ -371,14 +371,27 @@ class const _IntroProviderForm({
   @override
   Widget build(BuildContext context) => DraftExitScope(
     guard: state._providerExitGuard,
-    child: AddModelProviderWidget(
+    child: _IntroProviderFormContent(
+      state: state,
       workspaceId: workspaceId,
-      routeExitGuard: state._providerExitGuard,
-      onCreated: () => state._leaveProvider(workspaceId),
-      onCancel: saving ? null : () => state._leaveProvider(workspaceId),
-      pageBuilder: (page) => SetupPageFrame(page: page, key: page.key),
-      showHeader: false,
+      saving: saving,
     ),
+  );
+}
+
+class const _IntroProviderFormContent({
+  required final _IntroScreenState state,
+  required final String workspaceId,
+  required final bool saving,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AddModelProviderWidget(
+    workspaceId: workspaceId,
+    routeExitGuard: state._providerExitGuard,
+    onCreated: () => state._leaveProvider(workspaceId),
+    onCancel: saving ? null : () => state._leaveProvider(workspaceId),
+    pageBuilder: (page) => SetupPageFrame(page: page, key: page.key),
+    showHeader: false,
   );
 }
 
