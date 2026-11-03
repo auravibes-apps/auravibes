@@ -62,12 +62,18 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     return drafts?.firstOrNull;
   }
 
-  void moveUp({required String conversationId, required String draftId}) {
-    _moveDraft(conversationId: conversationId, draftId: draftId, offset: -1);
-  }
+  void move({
+    required String conversationId,
+    required String draftId,
+    required int offset,
+  }) {
+    final drafts = state[conversationId];
+    if (drafts == null) return;
 
-  void moveDown({required String conversationId, required String draftId}) {
-    _moveDraft(conversationId: conversationId, draftId: draftId, offset: 1);
+    final reorderedDrafts = _reorderedDrafts(drafts, draftId, offset);
+    if (reorderedDrafts == null) return;
+
+    _setState({...state, conversationId: reorderedDrafts});
   }
 
   ConversationQueuedDraft? dequeue(String conversationId) {
@@ -104,7 +110,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     final remainingDrafts = _withoutDraft(drafts, draftId);
     if (remainingDrafts.length == drafts.length) return;
 
-    _setState(_withRemainingDrafts(conversationId, remainingDrafts));
+    _setState(_withRemainingDrafts(state, conversationId, remainingDrafts));
     _deleteAttachments(
       drafts.where((draft) => draft.id == draftId),
       ref.read(localChatAttachmentUsecaseProvider),
@@ -122,7 +128,11 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     if (draft == null) return null;
 
     _setState(
-      _withRemainingDrafts(conversationId, _withoutDraft(drafts, draftId)),
+      _withRemainingDrafts(
+        state,
+        conversationId,
+        _withoutDraft(drafts, draftId),
+      ),
     );
 
     return draft;
@@ -136,37 +146,52 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     _deleteAttachments(drafts, ref.read(localChatAttachmentUsecaseProvider));
   }
 
-  Map<String, List<ConversationQueuedDraft>> _withRemainingDrafts(
-    String conversationId,
-    List<ConversationQueuedDraft> remainingDrafts,
-  ) => {
-    ..._withoutConversation(state, conversationId),
-    if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
-  };
-
-  void _moveDraft({
-    required String conversationId,
-    required String draftId,
-    required int offset,
-  }) {
-    final drafts = state[conversationId];
-    if (drafts == null || drafts.length < 2) return;
-
-    final index = drafts.indexWhere((draft) => draft.id == draftId);
-    final targetIndex = index + offset;
-    if (index < 0 || targetIndex < 0 || targetIndex >= drafts.length) return;
-
-    final reorderedDrafts = [...drafts];
-    final movedDraft = reorderedDrafts.removeAt(index);
-    reorderedDrafts.insert(targetIndex, movedDraft);
-
-    _setState({...state, conversationId: reorderedDrafts});
-  }
-
   void _setState(Map<String, List<ConversationQueuedDraft>> nextState) {
     _queuedDrafts = nextState;
     state = nextState;
   }
+}
+
+Map<String, List<ConversationQueuedDraft>> _withRemainingDrafts(
+  Map<String, List<ConversationQueuedDraft>> state,
+  String conversationId,
+  List<ConversationQueuedDraft> remainingDrafts,
+) => {
+  ..._withoutConversation(state, conversationId),
+  if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
+};
+
+List<ConversationQueuedDraft>? _reorderedDrafts(
+  List<ConversationQueuedDraft> drafts,
+  String draftId,
+  int offset,
+) {
+  final indices = _draftMoveIndices(drafts, draftId, offset);
+  if (indices == null) return null;
+
+  final reorderedDrafts = [...drafts];
+  reorderedDrafts.insert(
+    indices.$2,
+    reorderedDrafts.removeAt(indices.$1),
+  );
+
+  return reorderedDrafts;
+}
+
+(int, int)? _draftMoveIndices(
+  List<ConversationQueuedDraft> drafts,
+  String draftId,
+  int offset,
+) {
+  if (drafts.length < 2) return null;
+
+  final index = drafts.indexWhere((draft) => draft.id == draftId);
+  final targetIndex = index + offset;
+  if (index < 0 || targetIndex < 0 || targetIndex >= drafts.length) {
+    return null;
+  }
+
+  return (index, targetIndex);
 }
 
 List<ConversationQueuedDraft> _withoutDraft(

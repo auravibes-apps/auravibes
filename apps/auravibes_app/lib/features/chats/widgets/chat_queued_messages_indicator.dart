@@ -7,6 +7,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+typedef _MoveQueuedDraft = void Function(String draftId, int offset);
+
 class const ChatQueuedMessagesIndicator({
   required final String conversationId,
   required final List<ConversationQueuedDraft> queuedDrafts,
@@ -36,13 +38,9 @@ class const _QueuedMessagesContent({
 
     return _QueuedMessagesLayout(
       queuedDrafts: queuedDrafts,
-      onClear: () => notifier.clear(conversationId),
-      onRemove: (draftId) =>
-          notifier.remove(conversationId: conversationId, draftId: draftId),
-      onMoveUp: (draftId) =>
-          notifier.moveUp(conversationId: conversationId, draftId: draftId),
-      onMoveDown: (draftId) =>
-          notifier.moveDown(conversationId: conversationId, draftId: draftId),
+      onClear: _createClearCallback(notifier, conversationId),
+      onRemove: _createRemoveCallback(notifier, conversationId),
+      onMove: _createMoveCallback(notifier, conversationId),
       onEditDraft: _createEditDraftCallback(
         onEditDraft,
         notifier,
@@ -51,6 +49,31 @@ class const _QueuedMessagesContent({
     );
   }
 }
+
+VoidCallback _createClearCallback(
+  ConversationSendQueue notifier,
+  String conversationId,
+) =>
+    () => notifier.clear(conversationId);
+
+void Function(String draftId) _createRemoveCallback(
+  ConversationSendQueue notifier,
+  String conversationId,
+) =>
+    (draftId) => notifier.remove(
+      conversationId: conversationId,
+      draftId: draftId,
+    );
+
+_MoveQueuedDraft _createMoveCallback(
+  ConversationSendQueue notifier,
+  String conversationId,
+) =>
+    (draftId, offset) => notifier.move(
+      conversationId: conversationId,
+      draftId: draftId,
+      offset: offset,
+    );
 
 ValueChanged<ConversationQueuedDraft>? _createEditDraftCallback(
   ValueChanged<ChatDraft>? onEditDraft,
@@ -69,8 +92,7 @@ class const _QueuedMessagesLayout({
   required final List<ConversationQueuedDraft> queuedDrafts,
   required final VoidCallback onClear,
   required final void Function(String draftId) onRemove,
-  required final void Function(String draftId) onMoveUp,
-  required final void Function(String draftId) onMoveDown,
+  required final _MoveQueuedDraft onMove,
   required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
@@ -87,8 +109,7 @@ class const _QueuedMessagesLayout({
         _QueuedDraftList(
           queuedDrafts: queuedDrafts,
           onRemove: onRemove,
-          onMoveUp: onMoveUp,
-          onMoveDown: onMoveDown,
+          onMove: onMove,
           onEditDraft: onEditDraft,
         ),
       ],
@@ -134,8 +155,7 @@ class const _QueuedClearButton({required final VoidCallback onClear})
 class const _QueuedDraftList({
   required final List<ConversationQueuedDraft> queuedDrafts,
   required final void Function(String draftId) onRemove,
-  required final void Function(String draftId) onMoveUp,
-  required final void Function(String draftId) onMoveDown,
+  required final _MoveQueuedDraft onMove,
   required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
@@ -150,8 +170,7 @@ class const _QueuedDraftList({
           canMoveUp: index > 0,
           canMoveDown: index < queuedDrafts.length - 1,
           onRemove: onRemove,
-          onMoveUp: onMoveUp,
-          onMoveDown: onMoveDown,
+          onMove: onMove,
           onEditDraft: onEditDraft,
         ),
     ],
@@ -164,8 +183,7 @@ class const _QueuedDraftRow({
   required final bool canMoveUp,
   required final bool canMoveDown,
   required final void Function(String draftId) onRemove,
-  required final void Function(String draftId) onMoveUp,
-  required final void Function(String draftId) onMoveDown,
+  required final _MoveQueuedDraft onMove,
   required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
@@ -178,8 +196,7 @@ class const _QueuedDraftRow({
         canMoveUp: canMoveUp,
         canMoveDown: canMoveDown,
         onRemove: onRemove,
-        onMoveUp: onMoveUp,
-        onMoveDown: onMoveDown,
+        onMove: onMove,
         onEditDraft: onEditDraft,
       ),
       if (showDivider) const AuraDivider(),
@@ -192,8 +209,7 @@ class const _QueuedDraftContent({
   required final bool canMoveUp,
   required final bool canMoveDown,
   required final void Function(String draftId) onRemove,
-  required final void Function(String draftId) onMoveUp,
-  required final void Function(String draftId) onMoveDown,
+  required final _MoveQueuedDraft onMove,
   required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
@@ -204,8 +220,7 @@ class const _QueuedDraftContent({
       canMoveUp: canMoveUp,
       canMoveDown: canMoveDown,
       onRemove: onRemove,
-      onMoveUp: onMoveUp,
-      onMoveDown: onMoveDown,
+      onMove: onMove,
       onEditDraft: onEditDraft,
     ),
   );
@@ -216,8 +231,7 @@ class const _QueuedDraftTextRow({
   required final bool canMoveUp,
   required final bool canMoveDown,
   required final void Function(String draftId) onRemove,
-  required final void Function(String draftId) onMoveUp,
-  required final void Function(String draftId) onMoveDown,
+  required final _MoveQueuedDraft onMove,
   required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
@@ -236,8 +250,7 @@ class const _QueuedDraftTextRow({
           draftId: draft.id,
           canMoveUp: canMoveUp,
           canMoveDown: canMoveDown,
-          onMoveUp: onMoveUp,
-          onMoveDown: onMoveDown,
+          onMove: onMove,
         ),
         const AuraSizedBox(width: .xs),
         _QueuedDraftRemoveButton(draftId: draft.id, onRemove: onRemove),
@@ -255,29 +268,73 @@ class const _QueuedDraftActionsMenu({
   required final String draftId,
   required final bool canMoveUp,
   required final bool canMoveDown,
-  required final void Function(String draftId) onMoveUp,
-  required final void Function(String draftId) onMoveDown,
+  required final _MoveQueuedDraft onMove,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPopupMenuButton(
-    items: [
-      AuraPopupMenuItem(
-        title: Text(_queuedMoveUpKey.tr()),
-        onTap: canMoveUp ? () => onMoveUp(draftId) : null,
-        leading: const AuraIcon(Icons.arrow_upward, size: .small),
-        identifier: 'queued-prompt-$draftId-move-up',
-      ),
-      AuraPopupMenuItem(
-        title: Text(_queuedMoveDownKey.tr()),
-        onTap: canMoveDown ? () => onMoveDown(draftId) : null,
-        leading: const AuraIcon(Icons.arrow_downward, size: .small),
-        identifier: 'queued-prompt-$draftId-move-down',
-      ),
-    ],
+    items: _queuedDraftMoveItems(draftId, canMoveUp, canMoveDown, onMove),
     identifier: 'queued-prompt-$draftId-actions',
     tooltip: _queuedItemActionsKey.tr(),
   );
 }
+
+List<AuraPopupMenuItem> _queuedDraftMoveItems(
+  String draftId,
+  bool canMoveUp,
+  bool canMoveDown,
+  _MoveQueuedDraft onMove,
+) => [
+  _queuedDraftMoveItem(_queuedDraftMoveUpItem(draftId, canMoveUp, onMove)),
+  _queuedDraftMoveItem(_queuedDraftMoveDownItem(draftId, canMoveDown, onMove)),
+];
+
+typedef _QueuedDraftMoveMenuItem = ({
+  String draftId,
+  String direction,
+  String titleKey,
+  IconData icon,
+  bool canMove,
+  int offset,
+  _MoveQueuedDraft onMove,
+});
+
+_QueuedDraftMoveMenuItem _queuedDraftMoveUpItem(
+  String draftId,
+  bool canMove,
+  _MoveQueuedDraft onMove,
+) => (
+  draftId: draftId,
+  direction: 'up',
+  titleKey: _queuedMoveUpKey,
+  icon: Icons.arrow_upward,
+  canMove: canMove,
+  offset: -1,
+  onMove: onMove,
+);
+
+_QueuedDraftMoveMenuItem _queuedDraftMoveDownItem(
+  String draftId,
+  bool canMove,
+  _MoveQueuedDraft onMove,
+) => (
+  draftId: draftId,
+  direction: 'down',
+  titleKey: _queuedMoveDownKey,
+  icon: Icons.arrow_downward,
+  canMove: canMove,
+  offset: 1,
+  onMove: onMove,
+);
+
+AuraPopupMenuItem _queuedDraftMoveItem(_QueuedDraftMoveMenuItem item) =>
+    AuraPopupMenuItem(
+      title: Text(item.titleKey.tr()),
+      onTap: item.canMove
+          ? () => item.onMove(item.draftId, item.offset)
+          : null,
+      leading: AuraIcon(item.icon, size: .small),
+      identifier: 'queued-prompt-${item.draftId}-move-${item.direction}',
+    );
 
 class const _QueuedDraftEditButton({
   required final ConversationQueuedDraft draft,

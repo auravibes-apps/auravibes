@@ -79,7 +79,7 @@ void main() {
         draft: const ChatDraft(text: 'Other conversation'),
       );
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: middle.id);
+      notifier.move(conversationId: 'conv-1', draftId: middle.id, offset: -1);
 
       expect(container.read(conversationSendQueueProvider)['conv-1'], [
         middle,
@@ -88,7 +88,7 @@ void main() {
       ]);
       expect(container.read(conversationSendQueueProvider)['conv-2'], [other]);
 
-      notifier.moveDown(conversationId: 'conv-1', draftId: middle.id);
+      notifier.move(conversationId: 'conv-1', draftId: middle.id, offset: 1);
 
       expect(container.read(conversationSendQueueProvider)['conv-1'], [
         first,
@@ -97,28 +97,28 @@ void main() {
       ]);
       expect(container.read(conversationSendQueueProvider)['conv-2'], [other]);
 
-      notifier.moveDown(conversationId: 'conv-1', draftId: first.id);
+      notifier.move(conversationId: 'conv-1', draftId: first.id, offset: 1);
       expect(container.read(conversationSendQueueProvider)['conv-1'], [
         middle,
         first,
         last,
       ]);
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: first.id);
+      notifier.move(conversationId: 'conv-1', draftId: first.id, offset: -1);
       expect(container.read(conversationSendQueueProvider)['conv-1'], [
         first,
         middle,
         last,
       ]);
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: last.id);
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: -1);
       expect(container.read(conversationSendQueueProvider)['conv-1'], [
         first,
         last,
         middle,
       ]);
 
-      notifier.moveDown(conversationId: 'conv-1', draftId: last.id);
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: 1);
       expect(container.read(conversationSendQueueProvider)['conv-1'], [
         first,
         middle,
@@ -142,7 +142,7 @@ void main() {
         draft: const ChatDraft(text: 'Last'),
       );
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: last.id);
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: -1);
 
       expect(notifier.peek('conv-1'), same(first));
       expect(notifier.dequeue('conv-1'), same(first));
@@ -166,7 +166,7 @@ void main() {
         draft: const ChatDraft(text: 'Last'),
       );
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: last.id);
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: -1);
 
       expect(notifier.dequeueAll('conv-1'), [first, last, middle]);
       expect(container.read(conversationSendQueueProvider), isEmpty);
@@ -184,16 +184,16 @@ void main() {
       );
       final state = container.read(conversationSendQueueProvider);
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: first.id);
+      notifier.move(conversationId: 'conv-1', draftId: first.id, offset: -1);
       expect(container.read(conversationSendQueueProvider), same(state));
 
-      notifier.moveDown(conversationId: 'conv-1', draftId: last.id);
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: 1);
       expect(container.read(conversationSendQueueProvider), same(state));
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: 'unknown');
+      notifier.move(conversationId: 'conv-1', draftId: 'unknown', offset: -1);
       expect(container.read(conversationSendQueueProvider), same(state));
 
-      notifier.moveDown(conversationId: 'missing', draftId: first.id);
+      notifier.move(conversationId: 'missing', draftId: first.id, offset: 1);
       expect(container.read(conversationSendQueueProvider), same(state));
     });
 
@@ -212,7 +212,7 @@ void main() {
         draft: const ChatDraft(text: 'Next'),
       );
 
-      notifier.moveDown(conversationId: 'conv-1', draftId: attached.id);
+      notifier.move(conversationId: 'conv-1', draftId: attached.id, offset: 1);
 
       final reordered = container.read(conversationSendQueueProvider)['conv-1'];
       expect(reordered, [next, attached]);
@@ -230,10 +230,10 @@ void main() {
       );
       final state = container.read(conversationSendQueueProvider);
 
-      notifier.moveUp(conversationId: 'conv-1', draftId: only.id);
+      notifier.move(conversationId: 'conv-1', draftId: only.id, offset: -1);
       expect(container.read(conversationSendQueueProvider), same(state));
 
-      notifier.moveDown(conversationId: 'conv-1', draftId: only.id);
+      notifier.move(conversationId: 'conv-1', draftId: only.id, offset: 1);
       expect(container.read(conversationSendQueueProvider), same(state));
     });
 
