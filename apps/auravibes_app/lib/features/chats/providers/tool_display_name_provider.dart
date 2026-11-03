@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.d
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_display_name_provider.g.dart';

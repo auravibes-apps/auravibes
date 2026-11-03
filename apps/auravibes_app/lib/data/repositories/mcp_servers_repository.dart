@@ -16,6 +16,7 @@ import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
 export 'mcp_servers_repository_contract.dart';
