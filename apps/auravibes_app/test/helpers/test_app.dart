@@ -62,7 +62,9 @@ class _TestableAppState extends State<TestableApp> {
         workspaceSessionProvider(session).overrideWithValue(session),
         if (!hasRouteSessionOverride)
           workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
-            if (localWorkspaceId == widget.workspaceId) return session;
+            if (localWorkspaceId == session.workspace.localWorkspaceId) {
+              return session;
+            }
 
             return WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),

@@ -26,7 +26,6 @@ import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usec
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -749,8 +748,6 @@ void main() {
           child: ChatListWidget(workspaceId: workspace.id),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
-            workspaceSessionForRouteProvider(workspace.id)
-                .overrideWithValue(AsyncData(session)),
             conversationsStreamProvider.overrideWith(
               (ref, _) => Stream.value([conversation]),
             ),
