@@ -1,0 +1,115 @@
+name: Issue 1446 conversation label validation
+
+on:
+  push:
+    branches: [codex/issue-1446-conversation-labels]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-1446-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-validation:
+    name: local and cloud label behavior
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    env:
+      POSTGRES_PASSWORD: issue-1446-ci-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Generate app and Serverpod code
+        run: |
+          python3 tool/validation_lease.py --label issue-1446-generate-app -- dart run melos run generate
+          python3 tool/validation_lease.py --label issue-1446-generate-serverpod -- dart run melos run generate:serverpod
+
+      - name: Export generated output patch
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/issue-1446-generated"
+          git ls-files -z --others --exclude-standard | xargs -0 -r git add -N --
+          git diff --binary > "$RUNNER_TEMP/issue-1446-generated/generated.patch"
+          git status --short --untracked-files=all > "$RUNNER_TEMP/issue-1446-generated/status.txt"
+
+      - name: Upload generated output patch
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1446-generated-${{ github.sha }}
+          path: ${{ runner.temp }}/issue-1446-generated/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Run local label persistence tests
+        id: local-tests
+        continue-on-error: true
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label issue-1446-local-labels -- flutter test test/data/repositories/conversation_labels_test.dart --no-pub
+
+      - name: Configure disposable test database credentials
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk -v database_password="$POSTGRES_PASSWORD" '
+            /^test:$/ { in_test = 1; print; next }
+            /^[^[:space:]]/ { in_test = 0 }
+            in_test && /^  database:/ {
+              printf "  database: \"%s\"\n", database_password
+              replaced = 1
+              next
+            }
+            { print }
+            END { if (!replaced) exit 1 }
+          ' config/passwords.example.yaml > config/passwords.yaml
+
+      - name: Start PostgreSQL test service
+        working-directory: apps/auravibes_server
+        run: docker compose up -d --remove-orphans postgres_test
+
+      - name: Wait for PostgreSQL
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in {1..60}; do
+            if docker compose exec -T postgres_test pg_isready \
+              -U postgres -d auravibes_server_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose logs postgres_test
+          exit 1
+
+      - name: Run cloud label endpoint tests
+        id: cloud-tests
+        continue-on-error: true
+        working-directory: apps/auravibes_server
+        run: python3 ../../tool/validation_lease.py --label issue-1446-cloud-labels -- dart test test/integration/features/conversations/conversation_labels_endpoint_test.dart --reporter=compact
+
+      - name: Stop PostgreSQL test service
+        if: always()
+        working-directory: apps/auravibes_server
+        run: docker compose down -v --remove-orphans
+
+      - name: Require both focused suites to pass
+        if: always()
+        env:
+          LOCAL_TEST_OUTCOME: ${{ steps.local-tests.outcome }}
+          CLOUD_TEST_OUTCOME: ${{ steps.cloud-tests.outcome }}
+        run: |
+          if [[ "$LOCAL_TEST_OUTCOME" != success || "$CLOUD_TEST_OUTCOME" != success ]]; then
+            echo "Local label tests: $LOCAL_TEST_OUTCOME"
+            echo "Cloud label tests: $CLOUD_TEST_OUTCOME"
+            exit 1
+          fi
