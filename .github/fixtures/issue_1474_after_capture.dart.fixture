@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/widgets/background_work_list_view.d
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/features/tools/models/mcp_tool_display_metadata.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import '../helpers/test_app.dart';
@@ -59,9 +60,13 @@ void main() {
         isMcp: true,
       ),
       height: 180,
-      overrides: _workspaceAccessOverride(),
+      overrides: [
+        ..._workspaceAccessOverride(),
+        workspaceToolsProvider(_workspaceId).overrideWith(
+          () => _CaptureWorkspaceToolsNotifier(),
+        ),
+      ],
     );
-    debugDumpApp();
     await _capture(tester, 'management');
     expect(find.text('Remove record'), findsOneWidget);
     expect(find.text('Service hint: may modify information'), findsOneWidget);
@@ -195,7 +200,14 @@ Future<void> _pumpCapture(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump();
+}
+
+class _CaptureWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => const [];
 }
 
 Future<void> _capture(WidgetTester tester, String surface) async {
