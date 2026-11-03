@@ -752,8 +752,6 @@ void main() {
       expect(find.text('Archive'), findsNothing);
       await tester.tap(find.text('Restore'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pump();
 
       expect(
         await database.conversationArchiveStateDao.getArchivedConversationIds(
@@ -761,7 +759,34 @@ void main() {
         ),
         isEmpty,
       );
-      expect(find.text('Project research'), findsNothing);
+      for (var attempt = 0; attempt < 30; attempt++) {
+        final restoredState = container.read(archivedProvider);
+        if (restoredState.hasValue &&
+            restoredState.requireValue.every(
+              (item) => item.id != conversation.id,
+            )) {
+          break;
+        }
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      final restoredState = container.read(archivedProvider);
+      expect(
+        restoredState.hasValue,
+        isTrue,
+        reason: 'Restored stream did not produce a value: $restoredState',
+      );
+      expect(
+        restoredState.requireValue.map((item) => item.id),
+        isNot(contains(conversation.id)),
+        reason:
+            'Restored stream still contains the conversation: $restoredState',
+      );
+      await tester.pump();
+      expect(
+        find.text('Project research'),
+        findsNothing,
+        reason: 'Restored stream state: $restoredState',
+      );
     });
 
     testWidgets('archives cloud conversations only in the device database', (
