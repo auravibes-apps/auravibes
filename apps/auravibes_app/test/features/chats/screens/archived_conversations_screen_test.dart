@@ -22,26 +22,30 @@ void main() {
     );
     const session = WorkspaceSession(cloudWorkspace);
 
-    await tester.pumpWidget(
-      TestableApp(
-        child: ArchivedConversationsScreen(
-          workspaceId: cloudWorkspace.localWorkspaceId,
-        ),
-        overrides: [
-          conversationsStreamProvider((
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: ArchivedConversationsScreen(
             workspaceId: cloudWorkspace.localWorkspaceId,
-            search: '',
-            scope: .archived,
-            pagination: (limit: 21, offset: 0),
-          )).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
-          listWorkspaceModelSelectionsProvider.overrideWith(
-            (ref, workspaceId) => Stream.value([]),
           ),
-        ],
-        workspaceId: cloudWorkspace.localWorkspaceId,
-        workspaceSession: session,
-      ),
-    );
+          overrides: [
+            conversationsStreamProvider((
+              workspaceId: cloudWorkspace.localWorkspaceId,
+              search: '',
+              scope: .archived,
+              pagination: (limit: 21, offset: 0),
+            )).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+          workspaceId: cloudWorkspace.localWorkspaceId,
+          workspaceSession: session,
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
     final _ = await tester.pumpAndSettle();
     final appException = tester.takeException();
     expect(
@@ -95,27 +99,31 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
-    await tester.pumpWidget(
-      TestableApp(
-        child: ArchivedConversationsScreen(
-          workspaceId: cloudWorkspace.localWorkspaceId,
-        ),
-        overrides: [
-          conversationsStreamProvider((
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: ArchivedConversationsScreen(
             workspaceId: cloudWorkspace.localWorkspaceId,
-            search: '',
-            scope: .archived,
-            pagination: (limit: 21, offset: 0),
-          )).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
-          listWorkspaceModelSelectionsProvider.overrideWith(
-            (ref, workspaceId) => Stream.value([]),
           ),
-        ],
-        workspaceId: cloudWorkspace.localWorkspaceId,
-        workspaceSession: const WorkspaceSession(cloudWorkspace),
-        startLocale: const Locale('es'),
-      ),
-    );
+          overrides: [
+            conversationsStreamProvider((
+              workspaceId: cloudWorkspace.localWorkspaceId,
+              search: '',
+              scope: .archived,
+              pagination: (limit: 21, offset: 0),
+            )).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+          workspaceId: cloudWorkspace.localWorkspaceId,
+          workspaceSession: const WorkspaceSession(cloudWorkspace),
+          startLocale: const Locale('es'),
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Archivadas en este dispositivo'), findsOneWidget);

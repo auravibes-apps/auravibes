@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -46,19 +47,41 @@ class _TestableAppState extends State<TestableApp> {
   @override
   void initState() {
     super.initState();
+    _container = _createContainer(widget);
+  }
+
+  @override
+  void didUpdateWidget(covariant TestableApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId == widget.workspaceId &&
+        oldWidget.workspaceSession == widget.workspaceSession &&
+        identical(oldWidget.overrides, widget.overrides)) {
+      return;
+    }
+
+    final oldContainer = _container;
+    _container = _createContainer(widget);
+    if (oldContainer != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        oldContainer.dispose();
+      });
+    }
+  }
+
+  ProviderContainer _createContainer(TestableApp app) {
     final session =
-        widget.workspaceSession ??
+        app.workspaceSession ??
         WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
+          LocalWorkspaceRef(localWorkspaceId: app.workspaceId),
         );
     final sessionWorkspaceId = session.workspace.localWorkspaceId;
     final routeSessionProvider = workspaceSessionForRouteProvider(
       sessionWorkspaceId,
     );
-    final hasRouteSessionOverride = widget.overrides
+    final hasRouteSessionOverride = app.overrides
         .whereType<riverpod_misc.Override>()
         .any((override) => override.origin == routeSessionProvider);
-    _container = .new(
+    return .new(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
         workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
@@ -68,7 +91,7 @@ class _TestableAppState extends State<TestableApp> {
             LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
           );
         }),
-        ...widget.overrides.cast(),
+        ...app.overrides.cast(),
         if (!hasRouteSessionOverride)
           routeSessionProvider.overrideWithValue(AsyncData(session)),
       ],

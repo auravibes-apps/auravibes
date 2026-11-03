@@ -761,7 +761,8 @@ void main() {
       );
       final session = WorkspaceSession(cloudWorkspace);
 
-      await tester.pumpWidget(
+      await pumpAndInit(
+        tester,
         TestableApp(
           child: ChatListWidget(workspaceId: workspace.id),
           overrides: [
