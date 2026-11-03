@@ -176,18 +176,20 @@ Future<void> _pumpCapture(
   required double height,
   List<Object> overrides = const [],
 }) async {
-  await tester.pumpWidget(
-    TestableApp(
-      workspaceId: _workspaceId,
-      overrides: overrides,
-      child: RepaintBoundary(
-        key: ValueKey('issue1474-$name'),
-        child: SizedBox(
-          width: 560,
-          height: height,
-          child: ColoredBox(
-            color: const Color(0xFFFFFFFF),
-            child: Material(child: Center(child: child)),
+  final _ = await tester.runAsync(
+    () => tester.pumpWidget(
+      TestableApp(
+        workspaceId: _workspaceId,
+        overrides: overrides,
+        child: RepaintBoundary(
+          key: ValueKey('issue1474-$name'),
+          child: SizedBox(
+            width: 560,
+            height: height,
+            child: ColoredBox(
+              color: const Color(0xFFFFFFFF),
+              child: Material(child: Center(child: child)),
+            ),
           ),
         ),
       ),
