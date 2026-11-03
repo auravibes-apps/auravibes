@@ -50,21 +50,35 @@ _WorkspaceSettingsSnapshot _useWorkspaceSettingsSnapshot(
   String workspaceId,
   DraftExitGuard guard,
 ) {
-  final guards = useMemoized(() => WorkspaceSettingsDraftGuards(guard), [
-    guard,
-    workspaceId,
-  ]);
-  useEffect(() => guards.dispose, [guards]);
+  final guards = _useWorkspaceSettingsDraftGuards(guard, workspaceId);
   final settings = ref.watch(compactionSettingsProvider(workspaceId));
-  final loaded = useRef(false);
-  if (settings is AsyncData) loaded.value = true;
 
   return (
     guards: guards,
     workspaceName: _workspaceSettingsName(ref, workspaceId),
     settings: settings,
-    loaded: loaded.value,
+    loaded: _useWorkspaceSettingsLoaded(settings),
   );
+}
+
+WorkspaceSettingsDraftGuards _useWorkspaceSettingsDraftGuards(
+  DraftExitGuard guard,
+  String workspaceId,
+) {
+  final guards = useMemoized(() => WorkspaceSettingsDraftGuards(guard), [
+    guard,
+    workspaceId,
+  ]);
+  useEffect(() => guards.dispose, [guards]);
+
+  return guards;
+}
+
+bool _useWorkspaceSettingsLoaded(AsyncValue<CompactionSettings> settings) {
+  final loaded = useRef(false);
+  if (settings is AsyncData) loaded.value = true;
+
+  return loaded.value;
 }
 
 String _workspaceSettingsName(WidgetRef ref, String workspaceId) {

@@ -16,7 +16,10 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
     String workspaceId,
     ScopedVerificationSettings settings,
   ) async {
-    if (!await isLocalVerificationWorkspace(database, workspaceId)) {
+    if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+      database,
+      workspaceId,
+    )) {
       return false;
     }
     final available = await tools(workspaceId);
@@ -28,11 +31,10 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
     final tools = database.tools;
     final groups = database.toolsGroups;
     final servers = database.mcpServers;
+    final query = _joinVerificationTools(database, tools, groups, servers);
 
-    return database.select(tools).join([
-      innerJoin(groups, groups.id.equalsExp(tools.workspaceToolsGroupId)),
-      innerJoin(servers, servers.id.equalsExp(groups.mcpServerId)),
-    ])..where(_eligibleToolsWhere(workspaceId, tools, groups, servers));
+    return query
+      ..where(_eligibleToolsWhere(workspaceId, tools, groups, servers));
   }
 
   List<ScopedVerificationToolOption> _options(List<TypedResult> rows) =>
@@ -58,6 +60,16 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
         tool.permissions == .granted && group.permissions == .granted,
   );
 }
+
+JoinedSelectStatement<HasResultSet, dynamic> _joinVerificationTools(
+  AppDatabase database,
+  $ToolsTable tools,
+  $ToolsGroupsTable groups,
+  $McpServersTable servers,
+) => database.select(tools).join([
+  innerJoin(groups, groups.id.equalsExp(tools.workspaceToolsGroupId)),
+  innerJoin(servers, servers.id.equalsExp(groups.mcpServerId)),
+]);
 
 bool _hasValidRunnerAndEdits(
   List<ScopedVerificationToolOption> available,

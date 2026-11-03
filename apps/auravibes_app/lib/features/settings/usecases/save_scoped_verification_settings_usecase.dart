@@ -60,10 +60,11 @@ class const SaveScopedVerificationSettingsUsecase({
   }
 
   Future<void> _ensureLocalWorkspace(String workspaceId) async {
-    final isLocal = await isLocalVerificationWorkspace(
-      repository.database,
-      workspaceId,
-    );
+    final isLocal =
+        await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+          repository.database,
+          workspaceId,
+        );
     if (!isLocal) {
       throw const ScopedVerificationSettingsException(
         LocaleKeys.verification_cloud_unavailable,

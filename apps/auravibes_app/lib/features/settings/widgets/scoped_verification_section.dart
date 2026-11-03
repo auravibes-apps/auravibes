@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/chats/providers/scoped_verification_provi
 import 'package:auravibes_app/features/settings/models/scoped_verification_form_draft.dart';
 import 'package:auravibes_app/features/settings/providers/scoped_verification_settings_provider.dart';
 import 'package:auravibes_app/features/settings/services/scoped_verification_configuration.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
@@ -40,19 +41,14 @@ class _ScopedVerificationSectionState
   @override
   void initState() {
     super.initState();
-    final initial = ref
-        .read(scopedVerificationSettingsProvider(widget.workspaceId))
-        .asData
-        ?.value;
+    final initial = _initialVerificationSettings(ref, widget.workspaceId);
     if (initial != null) {
       _replace(initial);
     } else {
       _lastFingerprint = _draft.fingerprint;
       _draft.listen(_edited);
     }
-    widget.guard.bind(
-      readers: (isDirty: () => _draft.isDirty, isSaving: () => _saving),
-    );
+    _bindVerificationDraftGuard(this, widget.guard);
   }
 
   @override
@@ -64,20 +60,14 @@ class _ScopedVerificationSectionState
 
   @override
   Widget build(BuildContext context) {
-    final session = ref.watch(
-      workspaceSessionForRouteProvider(widget.workspaceId),
-    );
-    final settings = ref.watch(
-      scopedVerificationSettingsProvider(widget.workspaceId),
-    );
-    final cloud = session.asData?.value.cloud != null;
-    final tools = _watchVerificationTools(ref, widget.workspaceId, cloud);
+    final snapshot = _watchScopedVerificationSection(ref, widget.workspaceId);
+    _syncInitialVerificationSettings(this, snapshot.settings);
 
     return _VerificationCard(
       state: this,
-      cloud: cloud,
-      loadError: session.hasError || settings.hasError || tools.hasError,
-      tools: tools.asData?.value ?? const [],
+      cloud: snapshot.cloud,
+      loadError: snapshot.hasError,
+      tools: snapshot.tools,
     );
   }
 
@@ -121,6 +111,40 @@ class _ScopedVerificationSectionState
   void _update(VoidCallback callback) => setState(callback);
 }
 
+typedef _ScopedVerificationSectionSnapshot = ({
+  AsyncValue<ScopedVerificationSettings> settings,
+  bool cloud,
+  bool hasError,
+  List<ScopedVerificationToolOption> tools,
+});
+
+_ScopedVerificationSectionSnapshot _watchScopedVerificationSection(
+  WidgetRef ref,
+  String workspaceId,
+) {
+  final session = _watchWorkspaceSession(ref, workspaceId);
+  final settings = _watchWorkspaceVerificationSettings(ref, workspaceId);
+  final cloud = session.asData?.value.cloud != null;
+  final tools = _watchVerificationTools(ref, workspaceId, cloud);
+
+  return (
+    settings: settings,
+    cloud: cloud,
+    hasError: session.hasError || settings.hasError || tools.hasError,
+    tools: tools.asData?.value ?? const [],
+  );
+}
+
+AsyncValue<WorkspaceSession> _watchWorkspaceSession(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.watch(workspaceSessionForRouteProvider(workspaceId));
+
+AsyncValue<ScopedVerificationSettings> _watchWorkspaceVerificationSettings(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.watch(scopedVerificationSettingsProvider(workspaceId));
+
 AsyncValue<List<ScopedVerificationToolOption>> _watchVerificationTools(
   WidgetRef ref,
   String workspaceId,
@@ -128,6 +152,29 @@ AsyncValue<List<ScopedVerificationToolOption>> _watchVerificationTools(
 ) => cloud
     ? const AsyncData<List<ScopedVerificationToolOption>>([])
     : ref.watch(scopedVerificationToolsProvider(workspaceId));
+
+ScopedVerificationSettings? _initialVerificationSettings(
+  WidgetRef ref,
+  String workspaceId,
+) => ref.read(scopedVerificationSettingsProvider(workspaceId)).asData?.value;
+
+void _bindVerificationDraftGuard(
+  _ScopedVerificationSectionState state,
+  DraftExitGuard guard,
+) => guard.bind(
+  readers: (isDirty: () => state._draft.isDirty, isSaving: () => state._saving),
+);
+
+void _syncInitialVerificationSettings(
+  _ScopedVerificationSectionState state,
+  AsyncValue<ScopedVerificationSettings> settings,
+) {
+  final initial = settings.asData?.value;
+  if (initial == null || state._loaded) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (state.mounted && !state._loaded) state._receiveSettings(initial);
+  });
+}
 
 void _listenForVerificationSettings(
   WidgetRef ref,
@@ -144,12 +191,7 @@ extension _ScopedVerificationSectionStateActions
     on _ScopedVerificationSectionState {
   void _addCheck() {
     if (_draft.checks.length >= ScopedVerificationLimits.maxChecks) return;
-    var number = _draft.checks.length + 1;
-    while (_draft.checks.any((check) => check.id.text == 'check-$number')) {
-      number++;
-    }
-    final check = ScopedVerificationCheckDraft.blank('check-$number')
-      ..listen(_edited);
+    final check = _nextVerificationCheckDraft(_draft.checks)..listen(_edited);
     _change(() => _draft.checks.add(check));
   }
 
@@ -228,6 +270,17 @@ extension _ScopedVerificationSectionStateActions
   }
 }
 
+ScopedVerificationCheckDraft _nextVerificationCheckDraft(
+  List<ScopedVerificationCheckDraft> checks,
+) {
+  var number = checks.length + 1;
+  while (checks.any((check) => check.id.text == 'check-$number')) {
+    number++;
+  }
+
+  return ScopedVerificationCheckDraft.blank('check-$number');
+}
+
 void _showSaveFailure(_ScopedVerificationSectionState state, String localeKey) {
   if (state.mounted) {
     state._showError(localeKey);
@@ -237,13 +290,24 @@ void _showSaveFailure(_ScopedVerificationSectionState state, String localeKey) {
 void _applyRunnerSelection(
   _ScopedVerificationSectionState state,
   ScopedVerificationToolOption? tool,
+) => state._draft.applyRunnerSelection(tool);
+
+extension on ScopedVerificationFormDraft {
+  void applyRunnerSelection(ScopedVerificationToolOption? tool) {
+    final runnerToolId = tool?.id ?? '';
+    final mcpServerId = tool?.serverId ?? '';
+    _applyRunnerSelectionValues(this, runnerToolId, mcpServerId);
+  }
+}
+
+void _applyRunnerSelectionValues(
+  ScopedVerificationFormDraft draft,
+  String runnerToolId,
+  String mcpServerId,
 ) {
-  final draft = state._draft;
-  final runnerToolId = tool?.id ?? '';
-  final mcpServerId = tool?.serverId ?? '';
   final serverChanged = draft.mcpServerId != mcpServerId;
+  draft.editToolIds.removeWhere((id) => serverChanged || id == runnerToolId);
   draft
-    ..editToolIds.removeWhere((id) => serverChanged || id == runnerToolId)
     ..runnerToolId = runnerToolId
     ..mcpServerId = mcpServerId;
 }
@@ -288,30 +352,48 @@ class const _VerificationCard({
     _listenForVerificationSettings(ref, state, state.widget.workspaceId);
 
     return AuraCard(
-      child: AuraColumn(
-        children: [
-          _VerificationCardHeader(
-            state: state,
-            cloud: cloud,
-            loadError: loadError,
-          ),
-          const AuraText(
-            child: TextLocale(LocaleKeys.verification_subtitle),
-            style: .bodySmall,
-          ),
-          if (cloud)
-            const TextLocale(LocaleKeys.verification_cloud_unavailable)
-          else if (loadError || state._loaded)
-            _VerificationCardContent(
-              state: state,
-              loadError: loadError,
-              tools: tools,
-            ),
-        ],
-        crossAxisAlignment: .stretch,
+      child: _VerificationCardBody(
+        state: state,
+        cloud: cloud,
+        loadError: loadError,
+        tools: tools,
       ),
     );
   }
+}
+
+class const _VerificationCardBody({
+  required final _ScopedVerificationSectionState state,
+  required final bool cloud,
+  required final bool loadError,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: _verificationCardChildren(state, cloud, loadError, tools),
+    crossAxisAlignment: .stretch,
+  );
+}
+
+List<Widget> _verificationCardChildren(
+  _ScopedVerificationSectionState state,
+  bool cloud,
+  bool loadError,
+  List<ScopedVerificationToolOption> tools,
+) => [
+  _VerificationCardHeader(state: state, cloud: cloud, loadError: loadError),
+  const _VerificationSubtitle(),
+  if (cloud) const TextLocale(LocaleKeys.verification_cloud_unavailable),
+  if (!cloud && (loadError || state._loaded))
+    _VerificationCardContent(state: state, loadError: loadError, tools: tools),
+];
+
+class const _VerificationSubtitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_subtitle),
+    style: .bodySmall,
+  );
 }
 
 class const _VerificationCardHeader({
@@ -464,24 +546,47 @@ class const _VerificationForm({
   Widget build(BuildContext context) => FocusTraversalGroup(
     child: AuraColumn(
       children: [
-        _VerificationRunnerFields(state: state, tools: tools),
-        _VerificationEditTools(state: state, tools: tools),
-        _VerificationCheckList(state: state),
-        _VerificationAdvancedFields(state: state),
-        if (state._error case final String error)
-          Semantics(
-            key: state._errorAnchor,
-            child: _VerificationErrorText(localeKey: error),
-            liveRegion: true,
-          ),
-        if (state._notice != null)
-          Semantics(
-            child: const TextLocale(LocaleKeys.verification_saved),
-            liveRegion: true,
-          ),
+        _VerificationFormFields(state: state, tools: tools),
+        _VerificationFormFeedback(state: state),
         _VerificationFormActions(state: state),
       ],
     ),
+  );
+}
+
+class const _VerificationFormFields({
+  required final _ScopedVerificationSectionState state,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _VerificationRunnerFields(state: state, tools: tools),
+      _VerificationEditTools(state: state, tools: tools),
+      _VerificationCheckList(state: state),
+      _VerificationAdvancedFields(state: state),
+    ],
+  );
+}
+
+class const _VerificationFormFeedback({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (state._error case final String error)
+        Semantics(
+          key: state._errorAnchor,
+          child: _VerificationErrorText(localeKey: error),
+          liveRegion: true,
+        ),
+      if (state._notice != null)
+        Semantics(
+          child: const TextLocale(LocaleKeys.verification_saved),
+          liveRegion: true,
+        ),
+    ],
   );
 }
 
@@ -503,16 +608,25 @@ class const _VerificationRunnerFields({
 class const _VerificationEnableTile({
   required final _ScopedVerificationSectionState state,
 }) extends StatelessWidget {
+  // This is a direct mapping from one draft field to one declarative control.
+  // ignore: halstead-volume
   @override
-  Widget build(BuildContext context) => AuraCheckboxListTile(
-    value: state._draft.enabled,
-    onChanged: (value) => state._change(() => state._draft.enabled = value),
-    title: const TextLocale(LocaleKeys.verification_enable),
-    key: const ValueKey('verification-enable'),
-    subtitle: const TextLocale(LocaleKeys.verification_enable_hint),
-    semanticLabel: LocaleKeys.verification_enable.tr(),
-  );
+  Widget build(BuildContext context) {
+    return AuraCheckboxListTile(
+      value: state._draft.enabled,
+      onChanged: (value) => _setVerificationEnabled(state, value),
+      title: const TextLocale(LocaleKeys.verification_enable),
+      key: const ValueKey('verification-enable'),
+      subtitle: const TextLocale(LocaleKeys.verification_enable_hint),
+      semanticLabel: LocaleKeys.verification_enable.tr(),
+    );
+  }
 }
+
+void _setVerificationEnabled(
+  _ScopedVerificationSectionState state,
+  bool value,
+) => state._change(() => state._draft.enabled = value);
 
 class const _VerificationRunnerSelector({
   required final _ScopedVerificationSectionState state,
@@ -558,10 +672,7 @@ class const _VerificationRunnerDropdown({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [
-      for (final tool in runners)
-        AuraDropdownOption(value: tool.id, child: Text(tool.label)),
-    ],
+    options: _verificationRunnerOptions(runners),
     value: _selectedVerificationRunner(runners, selectedId),
     onChanged: (id) => state._selectRunner(id, runners),
     label: const TextLocale(LocaleKeys.verification_runner),
@@ -569,6 +680,13 @@ class const _VerificationRunnerDropdown({
     semanticLabel: LocaleKeys.verification_runner.tr(),
   );
 }
+
+List<AuraDropdownOption<String>> _verificationRunnerOptions(
+  List<ScopedVerificationToolOption> runners,
+) => [
+  for (final tool in runners)
+    AuraDropdownOption(value: tool.id, child: Text(tool.label)),
+];
 
 String? _selectedVerificationRunner(
   List<ScopedVerificationToolOption> runners,
@@ -597,25 +715,41 @@ class const _VerificationCheckList({
 
     return AuraColumn(
       children: [
-        const AuraText(
-          child: TextLocale(LocaleKeys.verification_checks),
-          style: .heading6,
-        ),
+        const _VerificationCheckListHeading(),
         for (final check in draft.checks)
           _VerificationCheckFields(
             state: state,
             check: check,
             key: ValueKey(check),
           ),
-        AuraButton(
-          onPressed: state._addCheck,
-          child: const TextLocale(LocaleKeys.verification_add_check),
-          variant: .ghost,
+        _AddVerificationCheckButton(
+          state: state,
           disabled: draft.checks.length >= ScopedVerificationLimits.maxChecks,
         ),
       ],
     );
   }
+}
+
+class const _VerificationCheckListHeading() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_checks),
+    style: .heading6,
+  );
+}
+
+class const _AddVerificationCheckButton({
+  required final _ScopedVerificationSectionState state,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: state._addCheck,
+    child: const TextLocale(LocaleKeys.verification_add_check),
+    variant: .ghost,
+    disabled: disabled,
+  );
 }
 
 class const _VerificationAdvancedFields({
@@ -690,29 +824,73 @@ class const _VerificationEditTools({
     final draft = state._draft;
     final edits = _availableEditTools(tools, draft);
     final eligible = edits.map((tool) => tool.id).toSet();
+    final hasMissing = _hasMissingEditSelection(draft, eligible);
 
     return AuraColumn(
       children: [
-        const AuraText(
-          child: TextLocale(LocaleKeys.verification_edit_tools),
-          style: .heading6,
-        ),
-        const TextLocale(LocaleKeys.verification_edit_tools_hint),
-        if (draft.editToolIds.any((id) => !eligible.contains(id))) ...[
-          const TextLocale(LocaleKeys.verification_missing_selections),
-          AuraButton(
-            onPressed: () =>
-                _clearMissingEditSelections(state, draft, eligible),
-            child: const TextLocale(LocaleKeys.verification_clear_missing),
-            variant: .ghost,
+        const _VerificationEditToolsHeader(),
+        if (hasMissing)
+          _MissingVerificationEditTools(
+            state: state,
+            draft: draft,
+            eligibleIds: eligible,
           ),
-        ],
-        for (final tool in edits)
-          _VerificationEditToolToggle(state: state, draft: draft, tool: tool),
+        if (edits.isNotEmpty)
+          _VerificationEditToolList(state: state, draft: draft, tools: edits),
       ],
       crossAxisAlignment: .stretch,
     );
   }
+}
+
+class const _VerificationEditToolsHeader() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.verification_edit_tools),
+        style: .heading6,
+      ),
+      const TextLocale(LocaleKeys.verification_edit_tools_hint),
+    ],
+  );
+}
+
+class const _MissingVerificationEditTools({
+  required final _ScopedVerificationSectionState state,
+  required final ScopedVerificationFormDraft draft,
+  required final Set<String> eligibleIds,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const TextLocale(LocaleKeys.verification_missing_selections),
+      AuraButton(
+        onPressed: () => _clearMissingEditSelections(state, draft, eligibleIds),
+        child: const TextLocale(LocaleKeys.verification_clear_missing),
+        variant: .ghost,
+      ),
+    ],
+  );
+}
+
+bool _hasMissingEditSelection(
+  ScopedVerificationFormDraft draft,
+  Set<String> eligibleIds,
+) => draft.editToolIds.any((id) => !eligibleIds.contains(id));
+
+class const _VerificationEditToolList({
+  required final _ScopedVerificationSectionState state,
+  required final ScopedVerificationFormDraft draft,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      for (final tool in tools)
+        _VerificationEditToolToggle(state: state, draft: draft, tool: tool),
+    ],
+  );
 }
 
 List<ScopedVerificationToolOption> _availableEditTools(
@@ -770,28 +948,48 @@ class const _VerificationCheckFields({
 
     return AuraColumn(
       children: [
-        _VerificationCheckIdInput(check: check, checkIdentity: checkIdentity),
-        _VerificationCheckExecutableInput(
-          check: check,
-          checkIdentity: checkIdentity,
-        ),
-        _VerificationCheckArgumentsInput(
-          check: check,
-          checkIdentity: checkIdentity,
-        ),
-        _VerificationCheckSuffixesInput(
-          check: check,
-          checkIdentity: checkIdentity,
-        ),
-        AuraButton(
-          onPressed: () => state._removeCheck(check),
-          child: const TextLocale(LocaleKeys.verification_remove_check),
-          variant: .ghost,
-        ),
+        _VerificationCheckInputs(check: check, checkIdentity: checkIdentity),
+        _RemoveVerificationCheckButton(state: state, check: check),
       ],
       crossAxisAlignment: .stretch,
     );
   }
+}
+
+class const _VerificationCheckInputs({
+  required final ScopedVerificationCheckDraft check,
+  required final int checkIdentity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _VerificationCheckIdInput(check: check, checkIdentity: checkIdentity),
+      _VerificationCheckExecutableInput(
+        check: check,
+        checkIdentity: checkIdentity,
+      ),
+      _VerificationCheckArgumentsInput(
+        check: check,
+        checkIdentity: checkIdentity,
+      ),
+      _VerificationCheckSuffixesInput(
+        check: check,
+        checkIdentity: checkIdentity,
+      ),
+    ],
+  );
+}
+
+class const _RemoveVerificationCheckButton({
+  required final _ScopedVerificationSectionState state,
+  required final ScopedVerificationCheckDraft check,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => state._removeCheck(check),
+    child: const TextLocale(LocaleKeys.verification_remove_check),
+    variant: .ghost,
+  );
 }
 
 class const _VerificationCheckIdInput({

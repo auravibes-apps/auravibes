@@ -6,25 +6,27 @@ const int _feedbackValueCount = 2;
 
 /// Keeps state and repair authority inside the engine's ordinary context cap.
 /// Full normalized paths and check output remain in the durable result record.
-Map<String, Object?> buildScopedVerificationFeedback(
-  String toolResult,
-  ScopedVerificationResult result,
-) {
-  final verification = _verificationFeedback(result);
-  final feedback = _emptyFeedback(verification);
-  final budget = _perValueByteBudget(feedback);
-  final output = _jsonPrefix(result.output, budget);
-  final original = _jsonPrefix(toolResult, budget);
-  _writeFeedbackText((
-    feedback: feedback,
-    verification: verification,
-    result: result,
-    toolResult: toolResult,
-    output: output,
-    original: original,
-  ));
+abstract final class ScopedVerificationFeedback {
+  static Map<String, Object?> build(
+    String toolResult,
+    ScopedVerificationResult result,
+  ) {
+    final verification = _verificationFeedback(result);
+    final feedback = _emptyFeedback(verification);
+    final budget = _perValueByteBudget(feedback);
+    final output = _jsonPrefix(result.output, budget);
+    final original = _jsonPrefix(toolResult, budget);
+    _writeFeedbackText((
+      feedback: feedback,
+      verification: verification,
+      result: result,
+      toolResult: toolResult,
+      output: output,
+      original: original,
+    ));
 
-  return feedback;
+    return feedback;
+  }
 }
 
 Map<String, Object?> _verificationFeedback(ScopedVerificationResult result) {

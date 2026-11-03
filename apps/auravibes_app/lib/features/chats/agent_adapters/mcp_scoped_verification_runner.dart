@@ -23,7 +23,12 @@ class McpScopedVerificationRunner
     required this.caller,
     required this.isAllowed,
     required this.onClose,
-  });
+  }) : _authorization = _ScopedVerificationRunnerAuthorization(
+         mcpServerId: mcpServerId,
+         editMcpServerId: editMcpServerId,
+         runnerToolIdentifier: runnerToolIdentifier,
+         isAllowed: isAllowed,
+       );
 
   final String mcpServerId;
   final String editMcpServerId;
@@ -31,10 +36,11 @@ class McpScopedVerificationRunner
   final McpToolCaller caller;
   final Future<bool> Function() isAllowed;
   final void Function() onClose;
-  _VerificationStartIntent? _bound;
-  bool _cancelRequested = false;
+  final _ScopedVerificationRunnerAuthorization _authorization;
+
   @override
   void close() => onClose();
+
   @override
   Future<ScopedVerificationCapabilities> capabilities() async =>
       ScopedVerificationCapabilities.fromJson(
@@ -64,19 +70,38 @@ class McpScopedVerificationRunner
     String operation,
     Map<String, Object?> arguments,
   ) async {
-    _requireServerBinding();
-    final payload = await _authorizedPayload(operation, arguments);
-    _requireStartNotCancelled(operation);
+    _authorization.requireServerBinding();
+    final payload = await _authorization.authorizedPayload(
+      operation,
+      arguments,
+    );
+    _authorization.requireStartNotCancelled(operation);
     final response = await caller(
       mcpServerId: mcpServerId,
       toolIdentifier: runnerToolIdentifier,
-      arguments: _protocolArguments(payload, operation),
+      arguments: _authorization.protocolArguments(payload, operation),
     );
 
     return _structuredMcpResult(response);
   }
+}
 
-  void _requireServerBinding() {
+class _ScopedVerificationRunnerAuthorization {
+  _ScopedVerificationRunnerAuthorization({
+    required this.mcpServerId,
+    required this.editMcpServerId,
+    required this.runnerToolIdentifier,
+    required this.isAllowed,
+  });
+
+  final String mcpServerId;
+  final String editMcpServerId;
+  final String runnerToolIdentifier;
+  final Future<bool> Function() isAllowed;
+  _VerificationStartIntent? _bound;
+  bool _cancelRequested = false;
+
+  void requireServerBinding() {
     if (mcpServerId.isEmpty ||
         mcpServerId != editMcpServerId ||
         runnerToolIdentifier.isEmpty) {
@@ -86,13 +111,13 @@ class McpScopedVerificationRunner
     }
   }
 
-  void _requireStartNotCancelled(String operation) {
+  void requireStartNotCancelled(String operation) {
     if (operation == 'start' && _cancelRequested) {
       throw StateError('Cancelled verification cannot dispatch start.');
     }
   }
 
-  Map<String, Object?> _protocolArguments(
+  Map<String, Object?> protocolArguments(
     Map<String, Object?> payload,
     String operation,
   ) => {
@@ -101,7 +126,7 @@ class McpScopedVerificationRunner
     'operation': operation,
   };
 
-  Future<Map<String, Object?>> _authorizedPayload(
+  Future<Map<String, Object?>> authorizedPayload(
     String operation,
     Map<String, Object?> arguments,
   ) async {

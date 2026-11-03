@@ -209,7 +209,7 @@ void main() {
         maxOutputBytes: 65536,
         repairAttemptsRemaining: 1,
       );
-      final feedback = buildScopedVerificationFeedback('"' * 60000, result);
+      final feedback = ScopedVerificationFeedback.build('"' * 60000, result);
       expect(
         utf8.encode(jsonEncode(feedback)).length,
         lessThanOrEqualTo(16384),

@@ -18,7 +18,10 @@ class WorkspaceVerificationRepository {
   final String _sessionId;
 
   Future<ScopedVerificationSettings> getSettings(String workspaceId) async {
-    if (!await isLocalVerificationWorkspace(database, workspaceId)) {
+    if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+      database,
+      workspaceId,
+    )) {
       return ScopedVerificationSettings();
     }
     final row = await (database.select(
@@ -29,7 +32,10 @@ class WorkspaceVerificationRepository {
   }
 
   Stream<ScopedVerificationSettings> watchSettings(String workspaceId) async* {
-    if (!await isLocalVerificationWorkspace(database, workspaceId)) {
+    if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+      database,
+      workspaceId,
+    )) {
       yield ScopedVerificationSettings();
 
       return;
@@ -110,7 +116,10 @@ Future<void> _saveWorkspaceSettingsInTransaction(
 Future<void> _requireLocalSettingsOwner(_SaveWorkspaceSettings request) async {
   final database = request.database;
   final workspaceId = request.workspaceId;
-  if (!await isLocalVerificationWorkspace(database, workspaceId)) {
+  if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+    database,
+    workspaceId,
+  )) {
     throw const WorkspaceTableException(denied: true);
   }
 }
@@ -147,7 +156,11 @@ Future<ScopedVerificationResult> _completeWorkspaceVerification(
   _CompleteWorkspaceVerification request,
 ) async {
   final row = await _verificationRun(request);
-  if (row == null) return verificationUnavailable('workspace_unavailable');
+  if (row == null) {
+    return WorkspaceVerificationReservationHelpers.verificationUnavailable(
+      'workspace_unavailable',
+    );
+  }
 
   return await _completeRunForCurrentSession(request, row);
 }
@@ -169,7 +182,9 @@ Future<ScopedVerificationResult> _completeRunForCurrentSession(
   final saved = _completedResult(row);
   if (saved != null) return saved;
   if (row.sessionId != request.sessionId) {
-    return verificationUnavailable('interrupted');
+    return WorkspaceVerificationReservationHelpers.verificationUnavailable(
+      'interrupted',
+    );
   }
   final result = await _resultWithCurrentAuthority(request, row);
   await _saveCompletedResult(request.database, request.operationId, result);
@@ -179,7 +194,9 @@ Future<ScopedVerificationResult> _completeRunForCurrentSession(
 
 ScopedVerificationResult? _completedResult(WorkspaceVerificationRunRow row) {
   if (row.resultJson case final String saved) {
-    return decodeVerificationResult(saved);
+    return WorkspaceVerificationReservationHelpers.decodeVerificationResult(
+      saved,
+    );
   }
 
   return null;
@@ -192,7 +209,10 @@ Future<ScopedVerificationResult> _resultWithCurrentAuthority(
   final settings = await request.getSettings(row.workspaceId);
   final safe = _resultAuthorizedBySettings(request, row, settings);
   final rows = await _runsForTurn(request.database, row);
-  final remaining = verificationRepairsRemaining(rows);
+  final remaining =
+      WorkspaceVerificationReservationHelpers.verificationRepairsRemaining(
+        rows,
+      );
 
   return _resultWithRepairAuthority(safe, remaining);
 }
@@ -203,7 +223,9 @@ ScopedVerificationResult _resultAuthorizedBySettings(
   ScopedVerificationSettings settings,
 ) => settings.enabled && settings.revision == row.configRevision
     ? request.result
-    : verificationUnavailable('configuration_changed');
+    : WorkspaceVerificationReservationHelpers.verificationUnavailable(
+        'configuration_changed',
+      );
 
 Future<List<WorkspaceVerificationRunRow>> _runsForTurn(
   AppDatabase database,

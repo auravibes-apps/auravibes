@@ -55,6 +55,9 @@ class ScopedVerificationFormDraft {
     ],
   });
 
+  // This is a linear mapping from editable controls to the validated model.
+  // Keep it explicit so the persisted settings fields remain easy to audit.
+  // ignore: halstead-volume
   ScopedVerificationSettings read() => ScopedVerificationSettings(
     enabled: enabled,
     revision: saved.revision,
@@ -157,19 +160,30 @@ String _seconds(Duration duration) {
 
 Duration _parseSeconds(String source) {
   final value = source.trim();
-  if (!RegExp(r'^\d+(?:\.\d{1,3})?$').hasMatch(value)) {
-    throw const FormatException('Invalid verification timeout.');
-  }
+  if (!_isSecondsValue(value)) _throwInvalidSeconds();
   final parts = value.split('.');
-  final seconds = _integer(parts.firstOrNull ?? '');
-  if (seconds > ScopedVerificationLimits.maxTimeout.inSeconds) {
-    throw const FormatException('Verification timeout exceeded.');
-  }
-  final fraction = parts.length == 1
-      ? 0
-      : _integer(parts.last.padRight(3, '0'));
+  final seconds = _wholeSeconds(parts);
+  final fraction = _fractionalMilliseconds(parts);
 
   return Duration(
     milliseconds: seconds * Duration.millisecondsPerSecond + fraction,
   );
 }
+
+bool _isSecondsValue(String value) =>
+    RegExp(r'^\d+(?:\.\d{1,3})?$').hasMatch(value);
+
+Never _throwInvalidSeconds() =>
+    throw const FormatException('Invalid verification timeout.');
+
+int _wholeSeconds(List<String> parts) {
+  final seconds = _integer(parts.firstOrNull ?? '');
+  if (seconds > ScopedVerificationLimits.maxTimeout.inSeconds) {
+    throw const FormatException('Verification timeout exceeded.');
+  }
+
+  return seconds;
+}
+
+int _fractionalMilliseconds(List<String> parts) =>
+    parts.length == 1 ? 0 : _integer(parts.last.padRight(3, '0'));

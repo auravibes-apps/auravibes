@@ -200,6 +200,15 @@ class ResolvedToolService {
       request.toolCallId,
       _mcpAppResultData,
     );
+
+    return await _resultWithScopedVerification(result, request, modelResult);
+  }
+
+  Future<Object?> _resultWithScopedVerification(
+    Object? result,
+    _ResolvedToolCallRequest request,
+    Object? modelResult,
+  ) async {
     final verification = scopedVerification;
     if (result is McpToolCallerResult && verification != null) {
       return await verification.call(

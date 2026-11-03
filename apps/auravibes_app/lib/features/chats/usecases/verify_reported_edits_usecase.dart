@@ -8,7 +8,7 @@ import 'package:auravibes_app/services/agent_harness/mcp_tool_caller_result.dart
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-export 'scoped_verification_feedback.dart' show buildScopedVerificationFeedback;
+export 'scoped_verification_feedback.dart' show ScopedVerificationFeedback;
 
 class const VerifyReportedEditsUsecase({
   required final WorkspaceVerificationRepository repository,
@@ -96,28 +96,11 @@ class const VerifyReportedEditsUsecase({
     _VerificationInput input,
     String operationId,
     DateTime deadline,
-  ) async {
-    final invocation = input.invocation;
-    final settings = input.settings;
-    final cancellation = input.cancellation;
-    final request = ScopedVerificationRequest(
-      operationId: operationId,
-      workspaceRoot: settings.workspaceRoot,
-      deadline: deadline,
-      selections: input.selections,
-      maxOutputBytes: settings.maxOutputBytes,
-    );
-    final runner = await _createBounded((
-      invocation: invocation,
-      settings: settings,
-      request: request,
-      cancellation: cancellation,
-    ));
-    if (runner == null) return _unavailableRunnerResult(input, request);
-
-    return await ScopedVerificationService(runner: runner)
-        .call(request, cancellation: cancellation);
-  }
+  ) => _executeBoundedVerification(
+    this,
+    input,
+    _verificationRequest(input, operationId, deadline),
+  );
 
   Future<ScopedVerificationRunner?> _createBounded(
     ScopedVerificationRunnerInput input,
@@ -138,21 +121,84 @@ class const VerifyReportedEditsUsecase({
     )
     create,
   ) async {
-    final interrupted = Completer<ScopedVerificationRunner?>();
-    final timer = Timer(remaining, () => _endRunnerCreation(interrupted));
-    final registration = input.cancellation.registerCleanup(
-      () => _endRunnerCreation(interrupted),
-    );
+    final race = _ScopedVerificationRunnerCreationRace.start(input, remaining);
     try {
-      return await Future.any([create(input), interrupted.future]);
+      return await race.run(create);
     } finally {
-      timer.cancel();
-      final _ = registration.remove();
+      race.close();
     }
   }
+}
 
-  void _endRunnerCreation(Completer<ScopedVerificationRunner?> interrupted) {
-    if (!interrupted.isCompleted) interrupted.complete();
+ScopedVerificationRequest _verificationRequest(
+  _VerificationInput input,
+  String operationId,
+  DateTime deadline,
+) => ScopedVerificationRequest(
+  operationId: operationId,
+  workspaceRoot: input.settings.workspaceRoot,
+  deadline: deadline,
+  selections: input.selections,
+  maxOutputBytes: input.settings.maxOutputBytes,
+);
+
+Future<ScopedVerificationResult> _executeBoundedVerification(
+  VerifyReportedEditsUsecase usecase,
+  _VerificationInput input,
+  ScopedVerificationRequest request,
+) async {
+  final runner = await usecase._createBounded((
+    invocation: input.invocation,
+    settings: input.settings,
+    request: request,
+    cancellation: input.cancellation,
+  ));
+  if (runner == null) return _unavailableRunnerResult(input, request);
+
+  return await ScopedVerificationService(runner: runner)
+      .call(request, cancellation: input.cancellation);
+}
+
+class _ScopedVerificationRunnerCreationRace {
+  _ScopedVerificationRunnerCreationRace._({
+    required this.input,
+    required this.interrupted,
+    required this.timer,
+    required this.registration,
+  });
+
+  factory _ScopedVerificationRunnerCreationRace.start(
+    ScopedVerificationRunnerInput input,
+    Duration remaining,
+  ) {
+    final interrupted = Completer<ScopedVerificationRunner?>();
+    void interrupt() {
+      if (!interrupted.isCompleted) interrupted.complete();
+    }
+
+    return _ScopedVerificationRunnerCreationRace._(
+      input: input,
+      interrupted: interrupted,
+      timer: Timer(remaining, interrupt),
+      registration: input.cancellation.registerCleanup(interrupt),
+    );
+  }
+
+  final ScopedVerificationRunnerInput input;
+  final Completer<ScopedVerificationRunner?> interrupted;
+  final Timer timer;
+  final AgentCancellationCleanupRegistration registration;
+
+  Future<ScopedVerificationRunner?> run(
+    Future<ScopedVerificationRunner?> Function(
+      ScopedVerificationRunnerInput input,
+    )
+    create,
+  ) => Future.any([create(input), interrupted.future]);
+
+  void close() {
+    timer.cancel();
+    final _ = registration.remove();
   }
 }
 
@@ -230,15 +276,30 @@ Future<_VerificationContext?> _verificationContext(
 ) async {
   final identity = await usecase.resolveIdentity(invocation);
   if (identity == null) return null;
-  final settings = await usecase.repository.getSettings(identity.workspaceId);
-  if (!settings.enabled ||
-      !settings.editToolIds.contains(tool.tableId) ||
-      tool.tableId == settings.runnerToolId) {
-    return null;
-  }
+  final settings = await _eligibleVerificationSettings(usecase, identity, tool);
+  if (settings == null) return null;
 
   return (identity: identity, settings: settings);
 }
+
+Future<ScopedVerificationSettings?> _eligibleVerificationSettings(
+  VerifyReportedEditsUsecase usecase,
+  ScopedVerificationIdentity identity,
+  ResolvedTool tool,
+) async {
+  final settings = await usecase.repository.getSettings(identity.workspaceId);
+  if (!_settingsIncludeEditTool(settings, tool)) return null;
+
+  return settings;
+}
+
+bool _settingsIncludeEditTool(
+  ScopedVerificationSettings settings,
+  ResolvedTool tool,
+) =>
+    settings.enabled &&
+    settings.editToolIds.contains(tool.tableId) &&
+    tool.tableId != settings.runnerToolId;
 
 Future<Object> _verifyEligibleEdit(_EligibleVerification eligible) async {
   final invalid = _editServerMismatch(eligible);
@@ -262,21 +323,41 @@ Future<Object> _selectAndRunVerification(_EligibleVerification eligible) async {
     context.settings,
     request.result.structuredContent,
   );
-  if (selection.result case final ScopedVerificationResult result) {
-    return _feedback(request.result, result.outcome, result.reason);
-  }
-  final selections = selection.selections;
-  if (selections == null || context.identity.turnId == null) {
-    return _feedback(request.result, .incomplete, 'invalid_turn');
-  }
+
+  return await _runSelectionOrExplainFailure(eligible, selection);
+}
+
+Future<Object> _runSelectionOrExplainFailure(
+  _EligibleVerification eligible,
+  _VerificationSelection selection,
+) async {
+  final failure = _selectionFailure(eligible, selection);
+  if (failure != null) return failure;
+  final request = eligible.request;
+  final context = eligible.context;
 
   return await _runSelectedVerification((
     usecase: eligible.usecase,
     invocation: eligible.invocation,
     original: request.result,
     context: context,
-    selections: selections,
+    selections: selection.selections!,
   ));
+}
+
+Object? _selectionFailure(
+  _EligibleVerification eligible,
+  _VerificationSelection selection,
+) {
+  if (selection.result case final ScopedVerificationResult result) {
+    return _feedback(eligible.request.result, result.outcome, result.reason);
+  }
+  if (selection.selections == null ||
+      eligible.context.identity.turnId == null) {
+    return _feedback(eligible.request.result, .incomplete, 'invalid_turn');
+  }
+
+  return null;
 }
 
 ScopedVerificationResult _unavailableRunnerResult(
@@ -348,23 +429,29 @@ _VerificationSelection _verificationSelection(
 }
 
 Future<Object> _runSelectedVerification(_SelectedVerification request) async {
-  final usecase = request.usecase;
-  final invocation = request.invocation;
-  final context = request.context;
-  final selections = request.selections;
-  final verified = await usecase.cancellation.run(
-    invocation,
-    (scope) => usecase._verify((
-      identity: context.identity,
-      invocation: invocation,
-      settings: context.settings,
-      selections: selections,
-      cancellation: scope,
-    )),
-  );
+  final verified = await _verifySelectedInScope(request);
 
-  return buildScopedVerificationFeedback(request.original.modelText, verified);
+  return ScopedVerificationFeedback.build(request.original.modelText, verified);
 }
+
+Future<ScopedVerificationResult> _verifySelectedInScope(
+  _SelectedVerification request,
+) => request.usecase.cancellation.run(
+  request.invocation,
+  (scope) =>
+      request.usecase._verify(_selectedVerificationInput(request, scope)),
+);
+
+_VerificationInput _selectedVerificationInput(
+  _SelectedVerification request,
+  AgentCancellationScope scope,
+) => (
+  identity: request.context.identity,
+  invocation: request.invocation,
+  settings: request.context.settings,
+  selections: request.selections,
+  cancellation: scope,
+);
 
 String _failureReason({required bool stopped, required bool expired}) {
   if (stopped) {
@@ -389,7 +476,7 @@ Map<String, Object?> _feedback(
   McpToolCallerResult original,
   ScopedVerificationOutcome outcome,
   String reason,
-) => buildScopedVerificationFeedback(
+) => ScopedVerificationFeedback.build(
   original.modelText,
   .new(outcome: outcome, reason: reason),
 );
