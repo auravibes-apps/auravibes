@@ -211,14 +211,15 @@ abstract final class _ChatInputHooksFactory {
   );
 
   static _ChatInputHooks hooks(ChatDraft? initialDraft, ChatInputWidget input) {
-    final dropContext = useRef<_ChatInputContext>((
-      workspaceId: input.workspaceId,
-      conversationId: input.conversationId,
-    ));
-    dropContext.value = (
-      workspaceId: input.workspaceId,
-      conversationId: input.conversationId,
-    );
+    final dropContext =
+        useRef<_ChatInputContext>((
+            workspaceId: input.workspaceId,
+            conversationId: input.conversationId,
+          ))
+          ..value = (
+            workspaceId: input.workspaceId,
+            conversationId: input.conversationId,
+          );
 
     return _ChatInputHooks(
       draft: draft(initialDraft),
