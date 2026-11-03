@@ -145,9 +145,9 @@ class const _ConversationArchiveExportReviewContent({
               onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
             ),
             SizedBox(height: theme.fromSpacing(.sm)),
-            _ConversationArchiveExportConversationList(preview: preview),
+            _ArchiveExportConversationList(preview: preview),
             SizedBox(height: theme.fromSpacing(.md)),
-            _ConversationArchiveExportReviewDisclosure(
+            _ArchiveExportReviewDisclosure(
               fileName: fileName,
               preview: preview,
               includeAttachments: includeAttachments,
@@ -188,9 +188,7 @@ class const _ConversationArchiveExportReviewSummary({
               if (value != null) onIncludeAttachmentsChanged(value);
             },
             title: const TextLocale(_reviewIncludeAttachmentsKey),
-            subtitle: const TextLocale(
-              _reviewIncludeAttachmentsDescriptionKey,
-            ),
+            subtitle: const TextLocale(_reviewIncludeAttachmentsDescriptionKey),
             controlAffinity: .leading,
             contentPadding: EdgeInsets.zero,
           ),
@@ -205,7 +203,7 @@ class const _ConversationArchiveExportReviewSummary({
   }
 }
 
-class const _ConversationArchiveExportConversationList({
+class const _ArchiveExportConversationList({
   required final ConversationArchiveExportPreview preview,
 }) extends StatelessWidget {
   @override
@@ -263,7 +261,7 @@ class const _ConversationArchiveExportConversationRow({
   }
 }
 
-class const _ConversationArchiveExportReviewDisclosure({
+class const _ArchiveExportReviewDisclosure({
   required final String fileName,
   required final ConversationArchiveExportPreview preview,
   required final bool includeAttachments,
@@ -301,9 +299,15 @@ class const _ConversationArchiveExportAttachmentRow({
         child: Row(
           crossAxisAlignment: .start,
           children: [
-            _buildIcon(context),
+            Padding(
+              padding: EdgeInsets.only(
+                top: theme.fromSpacing(.xs),
+                right: theme.fromSpacing(.sm),
+              ),
+              child: const Icon(Icons.attach_file, size: 18),
+            ),
             Expanded(
-              child: _ConversationArchiveExportAttachmentDetails(
+              child: _ArchiveExportAttachmentDetails(
                 attachment: attachment,
               ),
             ),
@@ -313,21 +317,9 @@ class const _ConversationArchiveExportAttachmentRow({
       container: true,
     );
   }
-
-  Widget _buildIcon(BuildContext context) {
-    final theme = context.auraTheme;
-
-    return Padding(
-      padding: EdgeInsets.only(
-        top: theme.fromSpacing(.xs),
-        right: theme.fromSpacing(.sm),
-      ),
-      child: const Icon(Icons.attach_file, size: 18),
-    );
-  }
 }
 
-class const _ConversationArchiveExportAttachmentDetails({
+class const _ArchiveExportAttachmentDetails({
   required final ConversationArchivePreviewAttachment attachment,
 }) extends StatelessWidget {
   @override
@@ -342,8 +334,7 @@ class const _ConversationArchiveExportAttachmentDetails({
       TextLocale(
         _reviewAttachmentSizeKey,
         args: [
-          MaterialLocalizations.of(context)
-              .formatDecimal(attachment.sizeBytes),
+          MaterialLocalizations.of(context).formatDecimal(attachment.sizeBytes),
         ],
       ),
     ],
