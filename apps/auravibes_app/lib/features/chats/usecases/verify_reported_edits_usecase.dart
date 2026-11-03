@@ -192,13 +192,14 @@ Future<Object> _verifyReportedEdit(
   VerifyReportedEditsUsecase usecase,
   _VerifyReportedEditRequest request,
 ) async {
-  if (!request.tool.isMcp || request.result.isError == true) {
-    return request.result.modelText;
+  final result = request.result;
+  if (!request.tool.isMcp || result.isError == true) {
+    return result.modelText;
   }
   try {
     return await _verifyCandidateEdit(usecase, request);
   } on Object {
-    return _feedback(request.result, .incomplete, 'verification_error');
+    return _feedback(result, .incomplete, 'verification_error');
   }
 }
 

@@ -70,22 +70,8 @@ class _ScopedVerificationSectionState
     final settings = ref.watch(
       scopedVerificationSettingsProvider(widget.workspaceId),
     );
-    ref.listen(scopedVerificationSettingsProvider(widget.workspaceId), (
-      _,
-      next,
-    ) {
-      final value = next.asData?.value;
-      if (value == null) return;
-      _latest = value;
-      if (!_draft.isDirty && !_saving) {
-        setState(() => _replace(value));
-        _publishGuard();
-      }
-    });
     final cloud = session.asData?.value.cloud != null;
-    final tools = cloud
-        ? const AsyncData<List<ScopedVerificationToolOption>>([])
-        : ref.watch(scopedVerificationToolsProvider(widget.workspaceId));
+    final tools = _watchVerificationTools(ref, widget.workspaceId, cloud);
 
     return _VerificationCard(
       state: this,
@@ -124,6 +110,36 @@ class _ScopedVerificationSectionState
     widget.guard.update(isDirty: _draft.isDirty, isSaving: _saving);
   }
 
+  void _receiveSettings(ScopedVerificationSettings settings) {
+    _latest = settings;
+    if (!_draft.isDirty && !_saving) {
+      setState(() => _replace(settings));
+      _publishGuard();
+    }
+  }
+}
+
+AsyncValue<List<ScopedVerificationToolOption>> _watchVerificationTools(
+  WidgetRef ref,
+  String workspaceId,
+  bool cloud,
+) => cloud
+    ? const AsyncData<List<ScopedVerificationToolOption>>([])
+    : ref.watch(scopedVerificationToolsProvider(workspaceId));
+
+void _listenForVerificationSettings(
+  WidgetRef ref,
+  _ScopedVerificationSectionState state,
+  String workspaceId,
+) {
+  ref.listen(scopedVerificationSettingsProvider(workspaceId), (_, next) {
+    final value = next.asData?.value;
+    if (value != null) state._receiveSettings(value);
+  });
+}
+
+extension _ScopedVerificationSectionStateActions
+    on _ScopedVerificationSectionState {
   void _addCheck() {
     if (_draft.checks.length >= ScopedVerificationLimits.maxChecks) return;
     var number = _draft.checks.length + 1;
@@ -141,12 +157,7 @@ class _ScopedVerificationSectionState
 
   void _selectRunner(String? id, List<ScopedVerificationToolOption> tools) {
     final tool = tools.where((option) => option.id == id).firstOrNull;
-    _change(() {
-      if (_draft.mcpServerId != tool?.serverId) _draft.editToolIds.clear();
-      _draft.runnerToolId = tool?.id ?? '';
-      _draft.mcpServerId = tool?.serverId ?? '';
-      final _ = _draft.editToolIds.remove(_draft.runnerToolId);
-    });
+    _change(() => _applyRunnerSelection(this, tool));
   }
 
   void _showError(String key) {
@@ -176,44 +187,88 @@ class _ScopedVerificationSectionState
 
   Future<void> _save() async {
     if (_saving || !_loaded || !_draft.isDirty) return;
-    final ScopedVerificationSettings pending;
+    final pending = _readPendingSettings(this);
+    if (pending == null) return;
+    _beginSaving();
     try {
-      pending = _draft.read();
-    } on FormatException {
-      _advanced = true;
-      _showError(LocaleKeys.verification_errors_invalid);
-
-      return;
+      await _persistDraft(pending);
+    } on ScopedVerificationSettingsException catch (error) {
+      _showSaveFailure(this, error.localeKey);
+    } on Object {
+      _showSaveFailure(this, LocaleKeys.verification_errors_save_failed);
+    } finally {
+      _finishSaving();
     }
+  }
+
+  void _beginSaving() {
     setState(() {
       _saving = true;
       _error = null;
       _notice = null;
     });
     _publishGuard();
-    try {
-      await ref.read(
-        saveScopedVerificationSettingsUsecaseProvider(widget.workspaceId),
-      )(workspaceId: widget.workspaceId, settings: pending);
-      final saved = await ref
-          .read(workspaceVerificationRepositoryProvider)
-          .getSettings(widget.workspaceId);
-      if (!mounted) return;
-      setState(() {
-        _replace(saved);
-        _notice = LocaleKeys.verification_saved;
-      });
-    } on ScopedVerificationSettingsException catch (error) {
-      if (mounted) _showError(error.localeKey);
-    } on Object {
-      if (mounted) _showError(LocaleKeys.verification_errors_save_failed);
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-        _publishGuard();
-      }
-    }
   }
+
+  Future<void> _persistDraft(ScopedVerificationSettings pending) async {
+    final saved = await _savePendingSettings(ref, widget.workspaceId, pending);
+    if (!mounted) return;
+    setState(() {
+      _replace(saved);
+      _notice = LocaleKeys.verification_saved;
+    });
+  }
+
+  void _finishSaving() {
+    if (!mounted) return;
+    setState(() => _saving = false);
+    _publishGuard();
+  }
+}
+
+void _showSaveFailure(_ScopedVerificationSectionState state, String localeKey) {
+  if (state.mounted) {
+    state._showError(localeKey);
+  }
+}
+
+void _applyRunnerSelection(
+  _ScopedVerificationSectionState state,
+  ScopedVerificationToolOption? tool,
+) {
+  final draft = state._draft;
+  if (draft.mcpServerId != tool?.serverId) draft.editToolIds.clear();
+  draft.runnerToolId = tool?.id ?? '';
+  draft.mcpServerId = tool?.serverId ?? '';
+  final _ = draft.editToolIds.remove(draft.runnerToolId);
+}
+
+ScopedVerificationSettings? _readPendingSettings(
+  _ScopedVerificationSectionState state,
+) {
+  try {
+    return state._draft.read();
+  } on FormatException {
+    state._advanced = true;
+    state._showError(LocaleKeys.verification_errors_invalid);
+
+    return null;
+  }
+}
+
+Future<ScopedVerificationSettings> _savePendingSettings(
+  WidgetRef ref,
+  String workspaceId,
+  ScopedVerificationSettings settings,
+) async {
+  await ref.read(saveScopedVerificationSettingsUsecaseProvider(workspaceId))(
+    workspaceId: workspaceId,
+    settings: settings,
+  );
+
+  return ref
+      .read(workspaceVerificationRepositoryProvider)
+      .getSettings(workspaceId);
 }
 
 class const _VerificationCard({
@@ -221,73 +276,159 @@ class const _VerificationCard({
   required final bool cloud,
   required final bool loadError,
   required final List<ScopedVerificationToolOption> tools,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    _listenForVerificationSettings(ref, state, state.widget.workspaceId);
+
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          _VerificationCardHeader(
+            state: state,
+            cloud: cloud,
+            loadError: loadError,
+          ),
+          const AuraText(
+            child: TextLocale(LocaleKeys.verification_subtitle),
+            style: .bodySmall,
+          ),
+          _VerificationCardContent(
+            state: state,
+            cloud: cloud,
+            loadError: loadError,
+            tools: tools,
+          ),
+        ],
+        crossAxisAlignment: .stretch,
+      ),
+    );
+  }
+}
+
+class const _VerificationCardHeader({
+  required final _ScopedVerificationSectionState state,
+  required final bool cloud,
+  required final bool loadError,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraCard(
-    child: AuraColumn(
+  Widget build(BuildContext context) => AuraWrap(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.verification_title),
+        style: .heading6,
+      ),
+      _VerificationStatus(state: state, cloud: cloud, loadError: loadError),
+      if (state._draft.isDirty)
+        const TextLocale(LocaleKeys.verification_unsaved),
+    ],
+  );
+}
+
+class const _VerificationStatus({
+  required final _ScopedVerificationSectionState state,
+  required final bool cloud,
+  required final bool loadError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (cloud || loadError && !state._loaded) {
+      return const _VerificationUnavailableStatus();
+    }
+    if (state._saving) {
+      return const _VerificationSavingStatus();
+    }
+    if (!state._loaded) {
+      return const _VerificationLoadingStatus();
+    }
+    if (state._draft.enabled) {
+      return const _VerificationEnabledStatus();
+    }
+
+    return const _VerificationDisabledStatus();
+  }
+}
+
+class const _VerificationUnavailableStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_unavailable),
+    style: .bodySmall,
+  );
+}
+
+class const _VerificationSavingStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_saving),
+    style: .bodySmall,
+  );
+}
+
+class const _VerificationLoadingStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_loading),
+    style: .bodySmall,
+  );
+}
+
+class const _VerificationEnabledStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_enabled),
+    style: .bodySmall,
+  );
+}
+
+class const _VerificationDisabledStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.verification_disabled),
+    style: .bodySmall,
+  );
+}
+
+class const _VerificationCardContent({
+  required final _ScopedVerificationSectionState state,
+  required final bool cloud,
+  required final bool loadError,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (cloud) {
+      return const TextLocale(LocaleKeys.verification_cloud_unavailable);
+    }
+
+    return AuraColumn(
       children: [
-        AuraWrap(
-          children: [
-            const AuraText(
-              child: TextLocale(LocaleKeys.verification_title),
-              style: .heading6,
-            ),
-            if (cloud || loadError && !state._loaded)
-              const AuraText(
-                child: TextLocale(LocaleKeys.verification_unavailable),
-                style: .bodySmall,
-              )
-            else if (state._saving)
-              const AuraText(
-                child: TextLocale(LocaleKeys.verification_saving),
-                style: .bodySmall,
-              )
-            else if (!state._loaded)
-              const AuraText(
-                child: TextLocale(LocaleKeys.verification_loading),
-                style: .bodySmall,
-              )
-            else if (state._draft.enabled)
-              const AuraText(
-                child: TextLocale(LocaleKeys.verification_enabled),
-                style: .bodySmall,
-              )
-            else
-              const AuraText(
-                child: TextLocale(LocaleKeys.verification_disabled),
-                style: .bodySmall,
-              ),
-            if (state._draft.isDirty)
-              const TextLocale(LocaleKeys.verification_unsaved),
-          ],
-        ),
-        const AuraText(
-          child: TextLocale(LocaleKeys.verification_subtitle),
-          style: .bodySmall,
-        ),
-        if (cloud)
-          const TextLocale(LocaleKeys.verification_cloud_unavailable)
-        else ...[
-          if (loadError)
-            _VerificationLoadError(workspaceId: state.widget.workspaceId),
-          if (state._loaded)
-            ExcludeFocus(
-              excluding: state._saving,
-              child: IgnorePointer(
-                ignoring: state._saving,
-                child: AuraAccordion(
-                  items: [
-                    AuraAccordionItem(
-                      title: LocaleKeys.verification_configure.tr(),
-                      child: _VerificationForm(state: state, tools: tools),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
+        if (loadError)
+          _VerificationLoadError(workspaceId: state.widget.workspaceId),
+        if (state._loaded) _VerificationAccordion(state: state, tools: tools),
       ],
       crossAxisAlignment: .stretch,
+    );
+  }
+}
+
+class const _VerificationAccordion({
+  required final _ScopedVerificationSectionState state,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ExcludeFocus(
+    excluding: state._saving,
+    child: IgnorePointer(
+      ignoring: state._saving,
+      child: AuraAccordion(
+        items: [
+          AuraAccordionItem(
+            title: LocaleKeys.verification_configure.tr(),
+            child: _VerificationForm(state: state, tools: tools),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -319,103 +460,239 @@ class const _VerificationForm({
   required final List<ScopedVerificationToolOption> tools,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final draft = state._draft;
-    final runners = tools.where((tool) => tool.canRunUnattended).toList();
+  Widget build(BuildContext context) => FocusTraversalGroup(
+    child: AuraColumn(
+      children: [
+        _VerificationRunnerFields(state: state, tools: tools),
+        _VerificationEditTools(state: state, tools: tools),
+        _VerificationCheckList(state: state),
+        _VerificationAdvancedFields(state: state),
+        _VerificationFormFeedback(state: state),
+        _VerificationFormActions(state: state),
+      ],
+    ),
+  );
+}
 
-    return FocusTraversalGroup(
-      child: AuraColumn(
-        children: [
-          const TextLocale(LocaleKeys.verification_runner_requirement),
-          AuraCheckboxListTile(
-            value: draft.enabled,
-            onChanged: (value) => state._change(() => draft.enabled = value),
-            title: const TextLocale(LocaleKeys.verification_enable),
-            key: const ValueKey('verification-enable'),
-            subtitle: const TextLocale(LocaleKeys.verification_enable_hint),
-            semanticLabel: LocaleKeys.verification_enable.tr(),
-          ),
-          if (runners.isEmpty)
-            const TextLocale(LocaleKeys.verification_no_runner),
-          AuraDropdownSelector<String>(
-            options: [
-              for (final tool in runners)
-                AuraDropdownOption(value: tool.id, child: Text(tool.label)),
-            ],
-            value: runners.any((tool) => tool.id == draft.runnerToolId)
-                ? draft.runnerToolId
-                : null,
-            onChanged: (id) => state._selectRunner(id, runners),
-            label: const TextLocale(LocaleKeys.verification_runner),
-            hint: const TextLocale(LocaleKeys.verification_runner_hint),
-            semanticLabel: LocaleKeys.verification_runner.tr(),
-          ),
-          _VerificationInput(
-            controller: draft.root,
-            label: const TextLocale(LocaleKeys.verification_root),
-            semanticLabel: LocaleKeys.verification_root.tr(),
-            identifier: 'verification-root',
-            hint: const TextLocale(LocaleKeys.verification_root_hint),
-          ),
-          _VerificationEditTools(state: state, tools: tools),
-          const AuraText(
-            child: TextLocale(LocaleKeys.verification_checks),
-            style: .heading6,
-          ),
-          for (final check in draft.checks)
-            _VerificationCheckFields(
-              state: state,
-              check: check,
-              key: ValueKey(check),
-            ),
-          AuraButton(
-            onPressed: state._addCheck,
-            child: const TextLocale(LocaleKeys.verification_add_check),
-            variant: .ghost,
-            disabled: draft.checks.length >= ScopedVerificationLimits.maxChecks,
-          ),
-          Semantics(
-            child: AuraButton(
-              onPressed: state._toggleAdvanced,
-              child: const TextLocale(LocaleKeys.verification_advanced),
-              variant: .ghost,
-            ),
-            expanded: state._advanced,
-          ),
-          if (state._advanced) _VerificationLimits(draft: draft),
-          if (state._error case final String error)
-            Semantics(
-              key: state._errorAnchor,
-              child: _VerificationErrorText(localeKey: error),
-              liveRegion: true,
-            ),
-          AuraWrap(
-            children: [
-              AuraButton(
-                onPressed: () => unawaited(state._save()),
-                child: const TextLocale(LocaleKeys.verification_save),
-                key: const ValueKey('verification-save'),
-                isLoading: state._saving,
-                disabled: !draft.isDirty || state._saving,
-              ),
-              AuraButton(
-                onPressed: state._discard,
-                child: const TextLocale(LocaleKeys.verification_discard),
-                key: const ValueKey('verification-discard'),
-                variant: .ghost,
-                disabled: !draft.isDirty || state._saving,
-              ),
-            ],
-          ),
-          if (state._notice != null)
-            Semantics(
-              child: const TextLocale(LocaleKeys.verification_saved),
-              liveRegion: true,
-            ),
-        ],
-      ),
+class const _VerificationRunnerFields({
+  required final _ScopedVerificationSectionState state,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const TextLocale(LocaleKeys.verification_runner_requirement),
+      _VerificationEnableTile(state: state),
+      _VerificationRunnerSelector(state: state, tools: tools),
+      _VerificationWorkspaceRoot(state: state),
+    ],
+  );
+}
+
+class const _VerificationEnableTile({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: state._draft.enabled,
+    onChanged: (value) => state._change(() => state._draft.enabled = value),
+    title: const TextLocale(LocaleKeys.verification_enable),
+    key: const ValueKey('verification-enable'),
+    subtitle: const TextLocale(LocaleKeys.verification_enable_hint),
+    semanticLabel: LocaleKeys.verification_enable.tr(),
+  );
+}
+
+class const _VerificationRunnerSelector({
+  required final _ScopedVerificationSectionState state,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [_VerificationRunnerOptions(state: state, tools: tools)],
+  );
+}
+
+class const _VerificationRunnerOptions({
+  required final _ScopedVerificationSectionState state,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final runners = _unattendedVerificationTools(tools);
+    final selectedId = state._draft.runnerToolId;
+
+    return AuraColumn(
+      children: [
+        if (runners.isEmpty)
+          const TextLocale(LocaleKeys.verification_no_runner),
+        _VerificationRunnerDropdown(
+          state: state,
+          runners: runners,
+          selectedId: selectedId,
+        ),
+      ],
     );
   }
+}
+
+List<ScopedVerificationToolOption> _unattendedVerificationTools(
+  List<ScopedVerificationToolOption> tools,
+) => tools.where((tool) => tool.canRunUnattended).toList();
+
+class const _VerificationRunnerDropdown({
+  required final _ScopedVerificationSectionState state,
+  required final List<ScopedVerificationToolOption> runners,
+  required final String selectedId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraDropdownSelector<String>(
+    options: _verificationRunnerOptions(runners),
+    value: _selectedVerificationRunner(runners, selectedId),
+    onChanged: (id) => state._selectRunner(id, runners),
+    label: const TextLocale(LocaleKeys.verification_runner),
+    hint: const TextLocale(LocaleKeys.verification_runner_hint),
+    semanticLabel: LocaleKeys.verification_runner.tr(),
+  );
+}
+
+List<AuraDropdownOption<String>> _verificationRunnerOptions(
+  List<ScopedVerificationToolOption> runners,
+) => [
+  for (final tool in runners)
+    AuraDropdownOption(value: tool.id, child: Text(tool.label)),
+];
+
+String? _selectedVerificationRunner(
+  List<ScopedVerificationToolOption> runners,
+  String selectedId,
+) => runners.any((tool) => tool.id == selectedId) ? selectedId : null;
+
+class const _VerificationWorkspaceRoot({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: state._draft.root,
+    label: const TextLocale(LocaleKeys.verification_root),
+    semanticLabel: LocaleKeys.verification_root.tr(),
+    identifier: 'verification-root',
+    hint: const TextLocale(LocaleKeys.verification_root_hint),
+  );
+}
+
+class const _VerificationCheckList({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final draft = state._draft;
+
+    return AuraColumn(
+      children: [
+        const AuraText(
+          child: TextLocale(LocaleKeys.verification_checks),
+          style: .heading6,
+        ),
+        for (final check in draft.checks)
+          _VerificationCheckFields(
+            state: state,
+            check: check,
+            key: ValueKey(check),
+          ),
+        AuraButton(
+          onPressed: state._addCheck,
+          child: const TextLocale(LocaleKeys.verification_add_check),
+          variant: .ghost,
+          disabled: draft.checks.length >= ScopedVerificationLimits.maxChecks,
+        ),
+      ],
+    );
+  }
+}
+
+class const _VerificationAdvancedFields({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      Semantics(
+        child: AuraButton(
+          onPressed: state._toggleAdvanced,
+          child: const TextLocale(LocaleKeys.verification_advanced),
+          variant: .ghost,
+        ),
+        expanded: state._advanced,
+      ),
+      if (state._advanced) _VerificationLimits(draft: state._draft),
+    ],
+  );
+}
+
+class const _VerificationFormFeedback({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (state._error case final String error)
+        Semantics(
+          key: state._errorAnchor,
+          child: _VerificationErrorText(localeKey: error),
+          liveRegion: true,
+        ),
+      if (state._notice != null)
+        Semantics(
+          child: const TextLocale(LocaleKeys.verification_saved),
+          liveRegion: true,
+        ),
+    ],
+  );
+}
+
+class const _VerificationFormActions({
+  required final _ScopedVerificationSectionState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = !state._draft.isDirty || state._saving;
+
+    return AuraWrap(
+      children: [
+        _SaveVerificationButton(state: state, disabled: isDisabled),
+        _DiscardVerificationButton(state: state, disabled: isDisabled),
+      ],
+    );
+  }
+}
+
+class const _SaveVerificationButton({
+  required final _ScopedVerificationSectionState state,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(state._save()),
+    child: const TextLocale(LocaleKeys.verification_save),
+    key: const ValueKey('verification-save'),
+    isLoading: state._saving,
+    disabled: disabled,
+  );
+}
+
+class const _DiscardVerificationButton({
+  required final _ScopedVerificationSectionState state,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: state._discard,
+    child: const TextLocale(LocaleKeys.verification_discard),
+    key: const ValueKey('verification-discard'),
+    variant: .ghost,
+    disabled: disabled,
+  );
 }
 
 class const _VerificationEditTools({
@@ -425,13 +702,7 @@ class const _VerificationEditTools({
   @override
   Widget build(BuildContext context) {
     final draft = state._draft;
-    final edits = tools
-        .where(
-          (tool) =>
-              tool.serverId == draft.mcpServerId &&
-              tool.id != draft.runnerToolId,
-        )
-        .toList();
+    final edits = _availableEditTools(tools, draft);
     final eligible = edits.map((tool) => tool.id).toSet();
 
     return AuraColumn(
@@ -441,33 +712,101 @@ class const _VerificationEditTools({
           style: .heading6,
         ),
         const TextLocale(LocaleKeys.verification_edit_tools_hint),
-        if (draft.editToolIds.any((id) => !eligible.contains(id))) ...[
-          const TextLocale(LocaleKeys.verification_missing_selections),
-          AuraButton(
-            onPressed: () => state._change(
-              () =>
-                  draft.editToolIds.removeWhere((id) => !eligible.contains(id)),
-            ),
-            child: const TextLocale(LocaleKeys.verification_clear_missing),
-            variant: .ghost,
-          ),
-        ],
-        for (final tool in edits)
-          AuraCheckboxListTile(
-            value: draft.editToolIds.contains(tool.id),
-            onChanged: (value) => state._change(() {
-              final _ = value
-                  ? draft.editToolIds.add(tool.id)
-                  : draft.editToolIds.remove(tool.id);
-            }),
-            title: Text(tool.label),
-            semanticLabel: tool.label,
-          ),
+        _MissingEditSelections(
+          state: state,
+          draft: draft,
+          eligibleIds: eligible,
+        ),
+        _VerificationEditToolList(state: state, draft: draft, tools: edits),
       ],
       crossAxisAlignment: .stretch,
     );
   }
 }
+
+class const _VerificationEditToolList({
+  required final _ScopedVerificationSectionState state,
+  required final ScopedVerificationFormDraft draft,
+  required final List<ScopedVerificationToolOption> tools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      for (final tool in tools)
+        _VerificationEditToolToggle(state: state, draft: draft, tool: tool),
+    ],
+  );
+}
+
+List<ScopedVerificationToolOption> _availableEditTools(
+  List<ScopedVerificationToolOption> tools,
+  ScopedVerificationFormDraft draft,
+) => tools
+    .where(
+      (tool) =>
+          tool.serverId == draft.mcpServerId && tool.id != draft.runnerToolId,
+    )
+    .toList();
+
+class const _MissingEditSelections({
+  required final _ScopedVerificationSectionState state,
+  required final ScopedVerificationFormDraft draft,
+  required final Set<String> eligibleIds,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!draft.editToolIds.any((id) => !eligibleIds.contains(id))) {
+      return const SizedBox.shrink();
+    }
+
+    return AuraColumn(
+      children: [
+        const TextLocale(LocaleKeys.verification_missing_selections),
+        AuraButton(
+          onPressed: () =>
+              _clearMissingEditSelections(state, draft, eligibleIds),
+          child: const TextLocale(LocaleKeys.verification_clear_missing),
+          variant: .ghost,
+        ),
+      ],
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+void _clearMissingEditSelections(
+  _ScopedVerificationSectionState state,
+  ScopedVerificationFormDraft draft,
+  Set<String> eligibleIds,
+) => state._change(
+  () => draft.editToolIds.removeWhere((id) => !eligibleIds.contains(id)),
+);
+
+class const _VerificationEditToolToggle({
+  required final _ScopedVerificationSectionState state,
+  required final ScopedVerificationFormDraft draft,
+  required final ScopedVerificationToolOption tool,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: draft.editToolIds.contains(tool.id),
+    onChanged: (value) =>
+        _toggleVerificationEditTool(state, draft, tool, value),
+    title: Text(tool.label),
+    semanticLabel: tool.label,
+  );
+}
+
+void _toggleVerificationEditTool(
+  _ScopedVerificationSectionState state,
+  ScopedVerificationFormDraft draft,
+  ScopedVerificationToolOption tool,
+  bool value,
+) => state._change(() {
+  final _ = value
+      ? draft.editToolIds.add(tool.id)
+      : draft.editToolIds.remove(tool.id);
+});
 
 class const _VerificationCheckFields({
   required final _ScopedVerificationSectionState state,
@@ -475,43 +814,88 @@ class const _VerificationCheckFields({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      _VerificationInput(
-        controller: check.id,
-        label: const TextLocale(LocaleKeys.verification_check_id),
-        semanticLabel: LocaleKeys.verification_check_id.tr(),
-        identifier: 'verification-check-${identityHashCode(check)}',
-      ),
-      _VerificationInput(
-        controller: check.executable,
-        label: const TextLocale(LocaleKeys.verification_executable),
-        semanticLabel: LocaleKeys.verification_executable.tr(),
-        identifier: 'verification-executable-${identityHashCode(check)}',
-      ),
-      _VerificationInput(
-        controller: check.arguments,
-        label: const TextLocale(LocaleKeys.verification_arguments),
-        semanticLabel: LocaleKeys.verification_arguments.tr(),
-        identifier: 'verification-arguments-${identityHashCode(check)}',
-        hint: const TextLocale(LocaleKeys.verification_arguments_hint),
-        maxLines: 3,
-      ),
-      _VerificationInput(
-        controller: check.suffixes,
-        label: const TextLocale(LocaleKeys.verification_suffixes),
-        semanticLabel: LocaleKeys.verification_suffixes.tr(),
-        identifier: 'verification-suffixes-${identityHashCode(check)}',
-        hint: const TextLocale(LocaleKeys.verification_suffixes_hint),
-        maxLines: 2,
-      ),
-      AuraButton(
-        onPressed: () => state._removeCheck(check),
-        child: const TextLocale(LocaleKeys.verification_remove_check),
-        variant: .ghost,
-      ),
-    ],
-    crossAxisAlignment: .stretch,
+  Widget build(BuildContext context) {
+    final checkIdentity = identityHashCode(check);
+
+    return AuraColumn(
+      children: [
+        _VerificationCheckIdInput(check: check, checkIdentity: checkIdentity),
+        _VerificationCheckExecutableInput(
+          check: check,
+          checkIdentity: checkIdentity,
+        ),
+        _VerificationCheckArgumentsInput(
+          check: check,
+          checkIdentity: checkIdentity,
+        ),
+        _VerificationCheckSuffixesInput(
+          check: check,
+          checkIdentity: checkIdentity,
+        ),
+        AuraButton(
+          onPressed: () => state._removeCheck(check),
+          child: const TextLocale(LocaleKeys.verification_remove_check),
+          variant: .ghost,
+        ),
+      ],
+      crossAxisAlignment: .stretch,
+    );
+  }
+}
+
+class const _VerificationCheckIdInput({
+  required final ScopedVerificationCheckDraft check,
+  required final int checkIdentity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: check.id,
+    label: const TextLocale(LocaleKeys.verification_check_id),
+    semanticLabel: LocaleKeys.verification_check_id.tr(),
+    identifier: 'verification-check-$checkIdentity',
+  );
+}
+
+class const _VerificationCheckExecutableInput({
+  required final ScopedVerificationCheckDraft check,
+  required final int checkIdentity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: check.executable,
+    label: const TextLocale(LocaleKeys.verification_executable),
+    semanticLabel: LocaleKeys.verification_executable.tr(),
+    identifier: 'verification-executable-$checkIdentity',
+  );
+}
+
+class const _VerificationCheckArgumentsInput({
+  required final ScopedVerificationCheckDraft check,
+  required final int checkIdentity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: check.arguments,
+    label: const TextLocale(LocaleKeys.verification_arguments),
+    semanticLabel: LocaleKeys.verification_arguments.tr(),
+    identifier: 'verification-arguments-$checkIdentity',
+    hint: const TextLocale(LocaleKeys.verification_arguments_hint),
+    maxLines: 3,
+  );
+}
+
+class const _VerificationCheckSuffixesInput({
+  required final ScopedVerificationCheckDraft check,
+  required final int checkIdentity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: check.suffixes,
+    label: const TextLocale(LocaleKeys.verification_suffixes),
+    semanticLabel: LocaleKeys.verification_suffixes.tr(),
+    identifier: 'verification-suffixes-$checkIdentity',
+    hint: const TextLocale(LocaleKeys.verification_suffixes_hint),
+    maxLines: 2,
   );
 }
 
@@ -522,29 +906,50 @@ class const _VerificationLimits({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const TextLocale(LocaleKeys.verification_limits_hint),
-      _VerificationInput(
-        controller: draft.timeout,
-        label: const TextLocale(LocaleKeys.verification_timeout),
-        semanticLabel: LocaleKeys.verification_timeout.tr(),
-        identifier: 'verification-timeout',
-        numeric: true,
-      ),
-      _VerificationInput(
-        controller: draft.output,
-        label: const TextLocale(LocaleKeys.verification_output),
-        semanticLabel: LocaleKeys.verification_output.tr(),
-        identifier: 'verification-output',
-        numeric: true,
-      ),
-      _VerificationInput(
-        controller: draft.repairs,
-        label: const TextLocale(LocaleKeys.verification_repairs),
-        semanticLabel: LocaleKeys.verification_repairs.tr(),
-        identifier: 'verification-repairs',
-        numeric: true,
-      ),
+      _VerificationTimeoutInput(draft: draft),
+      _VerificationOutputInput(draft: draft),
+      _VerificationRepairsInput(draft: draft),
     ],
     crossAxisAlignment: .stretch,
+  );
+}
+
+class const _VerificationTimeoutInput({
+  required final ScopedVerificationFormDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: draft.timeout,
+    label: const TextLocale(LocaleKeys.verification_timeout),
+    semanticLabel: LocaleKeys.verification_timeout.tr(),
+    identifier: 'verification-timeout',
+    numeric: true,
+  );
+}
+
+class const _VerificationOutputInput({
+  required final ScopedVerificationFormDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: draft.output,
+    label: const TextLocale(LocaleKeys.verification_output),
+    semanticLabel: LocaleKeys.verification_output.tr(),
+    identifier: 'verification-output',
+    numeric: true,
+  );
+}
+
+class const _VerificationRepairsInput({
+  required final ScopedVerificationFormDraft draft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _VerificationInput(
+    controller: draft.repairs,
+    label: const TextLocale(LocaleKeys.verification_repairs),
+    semanticLabel: LocaleKeys.verification_repairs.tr(),
+    identifier: 'verification-repairs',
+    numeric: true,
   );
 }
 

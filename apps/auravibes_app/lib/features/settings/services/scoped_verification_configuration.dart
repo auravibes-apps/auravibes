@@ -20,24 +20,7 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
       return false;
     }
     final available = await tools(workspaceId);
-    final runner = available
-        .where(
-          (tool) =>
-              tool.id == settings.runnerToolId &&
-              tool.serverId == settings.mcpServerId &&
-              tool.canRunUnattended,
-        )
-        .firstOrNull;
-    if (runner == null) return false;
-
-    return settings.editToolIds.isNotEmpty &&
-        settings.editToolIds.every(
-          (id) =>
-              id != runner.id &&
-              available.any(
-                (tool) => tool.id == id && tool.serverId == runner.serverId,
-              ),
-        );
+    return _hasValidRunnerAndEdits(available, settings);
   }
 
   JoinedSelectStatement<HasResultSet, dynamic> _query(String workspaceId) {
@@ -48,16 +31,7 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
     return database.select(tools).join([
       innerJoin(groups, groups.id.equalsExp(tools.workspaceToolsGroupId)),
       innerJoin(servers, servers.id.equalsExp(groups.mcpServerId)),
-    ])..where(
-      tools.workspaceId.equals(workspaceId) &
-          groups.workspaceId.equals(workspaceId) &
-          servers.workspaceId.equals(workspaceId) &
-          tools.isEnabled &
-          groups.isEnabled &
-          servers.isEnabled &
-          tools.permissions.isNotValue(PermissionAccess.denied.name) &
-          groups.permissions.isNotValue(PermissionAccess.denied.name),
-    );
+    ])..where(_eligibleToolsWhere(workspaceId, tools, groups, servers));
   }
 
   List<ScopedVerificationToolOption> _options(List<TypedResult> rows) =>
@@ -83,6 +57,77 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
         tool.permissions == .granted && group.permissions == .granted,
   );
 }
+
+bool _hasValidRunnerAndEdits(
+  List<ScopedVerificationToolOption> available,
+  ScopedVerificationSettings settings,
+) {
+  final runner = _matchingRunner(available, settings);
+  if (runner == null) return false;
+
+  return _hasMatchingEditTools(available, settings.editToolIds, runner);
+}
+
+bool _hasMatchingEditTools(
+  List<ScopedVerificationToolOption> available,
+  Set<String> editToolIds,
+  ScopedVerificationToolOption runner,
+) =>
+    editToolIds.isNotEmpty &&
+    editToolIds.every(
+      (id) => id != runner.id && _hasBoundEditTool(available, id, runner),
+    );
+
+bool _hasBoundEditTool(
+  List<ScopedVerificationToolOption> available,
+  String id,
+  ScopedVerificationToolOption runner,
+) => available.any((tool) => tool.id == id && tool.serverId == runner.serverId);
+
+ScopedVerificationToolOption? _matchingRunner(
+  List<ScopedVerificationToolOption> available,
+  ScopedVerificationSettings settings,
+) => available
+    .where(
+      (tool) =>
+          tool.id == settings.runnerToolId &&
+          tool.serverId == settings.mcpServerId &&
+          tool.canRunUnattended,
+    )
+    .firstOrNull;
+
+Expression<bool> _eligibleToolsWhere(
+  String workspaceId,
+  ToolsTable tools,
+  ToolsGroupsTable groups,
+  McpServersTable servers,
+) =>
+    _workspaceMatch(workspaceId, tools, groups, servers) &
+    _enabledResources(tools, groups, servers) &
+    _permittedResources(tools, groups);
+
+Expression<bool> _workspaceMatch(
+  String workspaceId,
+  ToolsTable tools,
+  ToolsGroupsTable groups,
+  McpServersTable servers,
+) =>
+    tools.workspaceId.equals(workspaceId) &
+    groups.workspaceId.equals(workspaceId) &
+    servers.workspaceId.equals(workspaceId);
+
+Expression<bool> _enabledResources(
+  ToolsTable tools,
+  ToolsGroupsTable groups,
+  McpServersTable servers,
+) => tools.isEnabled & groups.isEnabled & servers.isEnabled;
+
+Expression<bool> _permittedResources(
+  ToolsTable tools,
+  ToolsGroupsTable groups,
+) =>
+    tools.permissions.isNotValue(PermissionAccess.denied.name) &
+    groups.permissions.isNotValue(PermissionAccess.denied.name);
 
 class const ScopedVerificationToolOption({
   required final String id,

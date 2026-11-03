@@ -130,28 +130,33 @@ typedef _RunnerPermissionRequest = ({
 });
 
 Future<bool> _runnerPermissionsCurrent(_RunnerPermissionRequest request) async {
+  final dependencies = request.dependencies;
+  final input = request.input;
+  final target = request.target;
+  final settings = request.settings;
+  final workspaceId = request.workspaceId;
   if (!await _toolsMatch((
-    database: request.dependencies.database,
-    input: request.input,
-    target: request.target,
-    settings: request.settings,
-    workspaceId: request.workspaceId,
+    database: dependencies.database,
+    input: input,
+    target: target,
+    settings: settings,
+    workspaceId: workspaceId,
   ))) {
     return false;
   }
   if (!await _permissionDecisionsMatch((
-    dependencies: request.dependencies,
-    input: request.input,
-    target: request.target,
-    workspaceId: request.workspaceId,
+    dependencies: dependencies,
+    input: input,
+    target: target,
+    workspaceId: workspaceId,
   ))) {
     return false;
   }
 
   return await _settingsRemainCurrent(
-    request.dependencies.repository,
-    request.input,
-    request.workspaceId,
+    dependencies.repository,
+    input,
+    workspaceId,
   );
 }
 
@@ -259,27 +264,29 @@ Future<ResolvedTool?> _resolveToolGroup(
 ) async {
   final groupId = row.workspaceToolsGroupId;
   if (groupId == null) return null;
+  final database = request.database;
+  final workspaceId = row.workspaceId;
+  final serverId = request.settings.mcpServerId;
+  final tableId = row.id;
+  final toolIdentifier = row.toolId;
+  final outputSchemaJson = row.outputSchema;
   final group = await _enabledToolGroup((
-    database: request.database,
+    database: database,
     id: groupId,
-    workspaceId: row.workspaceId,
-    serverId: request.settings.mcpServerId,
+    workspaceId: workspaceId,
+    serverId: serverId,
   ));
   if (group == null) return null;
-  final server = await _enabledMcpServer(
-    request.database,
-    request.settings.mcpServerId,
-    row.workspaceId,
-  );
+  final server = await _enabledMcpServer(database, serverId, workspaceId);
   if (server == null) return null;
 
   return ResolvedTool.mcp(
-    tableId: row.id,
-    toolIdentifier: row.toolId,
+    tableId: tableId,
+    toolIdentifier: toolIdentifier,
     mcp: (
-      mcpServerId: request.settings.mcpServerId,
-      mcpSlug: request.settings.mcpServerId,
-      outputSchemaJson: row.outputSchema,
+      mcpServerId: serverId,
+      mcpSlug: serverId,
+      outputSchemaJson: outputSchemaJson,
     ),
   );
 }

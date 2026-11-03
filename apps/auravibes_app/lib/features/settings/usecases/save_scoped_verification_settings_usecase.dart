@@ -27,43 +27,47 @@ class const SaveScopedVerificationSettingsUsecase({
     required String workspaceId,
     required ScopedVerificationSettings settings,
   }) async {
-    ScopedVerificationSettingsException? failure;
-    StackTrace? failureStackTrace;
     try {
-      if (!await isLocalVerificationWorkspace(
-        repository.database,
-        workspaceId,
-      )) {
-        throw const ScopedVerificationSettingsException(
-          LocaleKeys.verification_cloud_unavailable,
-        );
-      }
-      if (settings.enabled) {
-        final deadline = DateTime.now().toUtc().add(probeTimeout);
-        await _validateEnabled(
-          workspaceId,
-          settings,
-          deadline,
-        ).timeout(probeTimeout);
-      }
-      await repository.saveSettings(workspaceId, settings);
+      await _save(workspaceId, settings);
     } on ScopedVerificationSettingsException {
       rethrow;
     } on WorkspaceTableException catch (error, stackTrace) {
-      failure = ScopedVerificationSettingsException(
+      _throwSaveFailure(
         error.conflict
             ? LocaleKeys.verification_errors_conflict
             : LocaleKeys.verification_errors_save_failed,
+        stackTrace,
       );
-      failureStackTrace = stackTrace;
     } on Object catch (_, stackTrace) {
-      failure = const ScopedVerificationSettingsException(
-        LocaleKeys.verification_errors_save_failed,
-      );
-      failureStackTrace = stackTrace;
+      _throwSaveFailure(LocaleKeys.verification_errors_save_failed, stackTrace);
     }
-    if (failure != null && failureStackTrace != null) {
-      Error.throwWithStackTrace(failure, failureStackTrace);
+  }
+
+  Future<void> _save(
+    String workspaceId,
+    ScopedVerificationSettings settings,
+  ) async {
+    await _ensureLocalWorkspace(workspaceId);
+    if (settings.enabled) {
+      final deadline = DateTime.now().toUtc().add(probeTimeout);
+      await _validateEnabled(
+        workspaceId,
+        settings,
+        deadline,
+      ).timeout(probeTimeout);
+    }
+    await repository.saveSettings(workspaceId, settings);
+  }
+
+  Future<void> _ensureLocalWorkspace(String workspaceId) async {
+    final isLocal = await isLocalVerificationWorkspace(
+      repository.database,
+      workspaceId,
+    );
+    if (!isLocal) {
+      throw const ScopedVerificationSettingsException(
+        LocaleKeys.verification_cloud_unavailable,
+      );
     }
   }
 
@@ -72,18 +76,37 @@ class const SaveScopedVerificationSettingsUsecase({
     ScopedVerificationSettings settings,
     DateTime deadline,
   ) async {
-    if (!await validateBindings(workspaceId, settings)) {
-      throw const ScopedVerificationSettingsException(
-        LocaleKeys.verification_errors_bindings,
-      );
-    }
-    final ScopedVerificationCapabilities capabilities;
+    await _ensureBindings(workspaceId, settings);
+    final capabilities = await _probeCapabilities(
+      workspaceId,
+      settings,
+      deadline,
+    );
+    _ensureSupported(capabilities);
+    await _ensureBindings(workspaceId, settings);
+  }
+
+  Future<void> _ensureBindings(
+    String workspaceId,
+    ScopedVerificationSettings settings,
+  ) async {
+    if (await validateBindings(workspaceId, settings)) return;
+    throw const ScopedVerificationSettingsException(
+      LocaleKeys.verification_errors_bindings,
+    );
+  }
+
+  Future<ScopedVerificationCapabilities> _probeCapabilities(
+    String workspaceId,
+    ScopedVerificationSettings settings,
+    DateTime deadline,
+  ) async {
     try {
       final remaining = deadline.difference(DateTime.now().toUtc());
       if (remaining <= .zero) {
         throw TimeoutException('Verification probe expired.');
       }
-      capabilities = await probeCapabilities(
+      return await probeCapabilities(
         workspaceId,
         settings,
         deadline,
@@ -96,15 +119,19 @@ class const SaveScopedVerificationSettingsUsecase({
         stackTrace,
       );
     }
+  }
+
+  void _ensureSupported(ScopedVerificationCapabilities capabilities) {
     if (!capabilities.supported) {
       throw const ScopedVerificationSettingsException(
         LocaleKeys.verification_errors_unsupported_runner,
       );
     }
-    if (!await validateBindings(workspaceId, settings)) {
-      throw const ScopedVerificationSettingsException(
-        LocaleKeys.verification_errors_bindings,
-      );
-    }
   }
+
+  Never _throwSaveFailure(String localeKey, StackTrace stackTrace) =>
+      Error.throwWithStackTrace(
+        ScopedVerificationSettingsException(localeKey),
+        stackTrace,
+      );
 }
