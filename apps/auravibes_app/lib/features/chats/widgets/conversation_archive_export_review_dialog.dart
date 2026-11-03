@@ -181,7 +181,9 @@ class const _ConversationArchiveExportReviewContent({
                                 padding: EdgeInsets.only(
                                   top: theme.fromSpacing(.xs),
                                 ),
-                                child: const TextLocale(_reviewNoAttachmentsKey),
+                                child: const TextLocale(
+                                  _reviewNoAttachmentsKey,
+                                ),
                               ),
                             for (final attachment in conversation.attachments)
                               _ConversationArchiveExportAttachmentRow(

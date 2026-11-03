@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 final class ConversationArchiveExportPreview({
-  required List<ConversationArchiveExportPreviewConversation> sourceConversations,
+  required List<ConversationArchiveExportPreviewConversation>
+  sourceConversations,
 }) {
   final List<ConversationArchiveExportPreviewConversation> conversations =
       List.unmodifiable(sourceConversations);
