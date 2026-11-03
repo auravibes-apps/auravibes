@@ -216,6 +216,22 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Show formatter diff (temporary)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          dart format --line-length 80 \
+            apps/auravibes_app/lib/data/repositories/message_repository.dart \
+            apps/auravibes_app/lib/domain/entities/sanitize_workspace_tool_result.dart \
+            apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart \
+            apps/auravibes_app/test/services/agent_lifecycle_hook_config_test.dart \
+            apps/auravibes_app/test/services/mcp_service/mcp_app_resource_test.dart
+          git diff -- \
+            apps/auravibes_app/lib/data/repositories/message_repository.dart \
+            apps/auravibes_app/lib/domain/entities/sanitize_workspace_tool_result.dart \
+            apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart \
+            apps/auravibes_app/test/services/agent_lifecycle_hook_config_test.dart \
+            apps/auravibes_app/test/services/mcp_service/mcp_app_resource_test.dart
+
       - name: Check formatting
         id: check-format
         run: melos run format:check
