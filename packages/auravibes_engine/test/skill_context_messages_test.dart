@@ -313,7 +313,7 @@ void main() {
   });
 
   test(
-    'keeps app catalog and selected agent configuration in their explicit classes',
+    'keeps app catalog and user agent configuration distinct',
     () {
       final messages = const BuildSkillContextMessages().compose(
         agentContent: 'USER_AGENT_SENTINEL: follow these preferences',

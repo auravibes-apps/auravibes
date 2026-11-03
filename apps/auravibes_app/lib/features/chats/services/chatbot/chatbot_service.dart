@@ -247,8 +247,9 @@ _generateStreamRequest(_GenerationStreamRequest request) =>
     );
 
 List<Message> _genkitHistory(_SendMessageRequest request) => [
-  ChatMessage.system(
-    toolCallNarrationInstruction,
+  ChatMessage(
+    role: .system,
+    content: toolCallNarrationInstruction,
     metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
   ),
   ...request.history,

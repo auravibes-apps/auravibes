@@ -149,7 +149,7 @@ void main() {
       expect(capturedRequest?.messages[3].text, 'model part');
     });
 
-    test('demotes unknown and external system history before provider dispatch', () async {
+    test('demotes unknown and external history before dispatch', () async {
       genkit.ModelRequest? capturedRequest;
       final service = _createService(
         providerFactory: _FakeProviderFactory(

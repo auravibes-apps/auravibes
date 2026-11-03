@@ -34,7 +34,8 @@ class const BuildSkillContextMessagesService(
     );
     final agentMessages = _builder.compose(
       agentContent: context.selectedAgent?.content,
-      agentContentProvenance: agent.AgentContextProvenance.userAgentConfiguration,
+      agentContentProvenance:
+          agent.AgentContextProvenance.userAgentConfiguration,
       conversationSkills: const [],
       skillCatalog: _catalogEntries(context),
       agentSkills: _toAgentSkills(

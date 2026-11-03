@@ -151,7 +151,9 @@ void main() {
       ['external sentinel', 'unknown sentinel'],
     );
     expect(
-      toolMessages.every((message) => message.role != AgentChatMessageRole.system),
+      toolMessages.every(
+        (message) => message.role != AgentChatMessageRole.system,
+      ),
       isTrue,
     );
   });

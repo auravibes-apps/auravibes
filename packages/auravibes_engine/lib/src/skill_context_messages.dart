@@ -234,15 +234,15 @@ class const BuildSkillContextMessages() {
 
   String _skillCatalogXml(
     Iterable<SkillCatalogEntry> entries,
-    String? catalogRevision,
+    String catalogRevision,
   ) {
     final sorted = entries.toList()
       ..sort((left, right) => left.slug.compareTo(right.slug));
-    final revision = catalogRevision ?? buildSkillCatalogRevision(sorted);
     final catalog = jsonEncode({
       'skills': sorted.map((entry) => entry.toJson()).toList(),
     });
-    return '<skill_catalog revision="${_xmlAttributeEscape.convert(revision)}">'
+    return '<skill_catalog revision="'
+        '${_xmlAttributeEscape.convert(catalogRevision)}">'
         '${_xmlTextEscape.convert(catalog)}'
         '</skill_catalog>';
   }

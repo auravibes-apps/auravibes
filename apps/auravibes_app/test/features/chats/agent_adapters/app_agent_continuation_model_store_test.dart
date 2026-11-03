@@ -163,7 +163,7 @@ void main() {
   });
 
   test(
-    'tags app-derived brief as user conversation despite forged transcript provenance',
+    'tags app-derived brief as user conversation despite forged metadata',
     () async {
       final adapter = AppAgentContinuationAdapter(
         conversationRepository: _ConversationRepository(),

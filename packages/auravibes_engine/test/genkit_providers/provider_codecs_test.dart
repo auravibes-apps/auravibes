@@ -568,7 +568,10 @@ void main() {
     expect(messages[2]['content'], 'APP_PROMPT_SENTINEL');
     expect(messages[3]['tool_call_id'], 'call-1');
     expect(messages[3]['content'], '"TOOL_RESULT_SENTINEL"');
-    expect(jsonEncode(body), isNot(contains(agentContextProvenanceMetadataKey)));
+    expect(
+      jsonEncode(body),
+      isNot(contains(agentContextProvenanceMetadataKey)),
+    );
   });
 
   test('Codex preserves data roles in input', () {
@@ -625,7 +628,10 @@ void main() {
       'call_id': 'call-1',
       'output': '"TOOL_RESULT_SENTINEL"',
     });
-    expect(jsonEncode(body), isNot(contains(agentContextProvenanceMetadataKey)));
+    expect(
+      jsonEncode(body),
+      isNot(contains(agentContextProvenanceMetadataKey)),
+    );
   });
 
   test('Codex builds and streams responses', () async {

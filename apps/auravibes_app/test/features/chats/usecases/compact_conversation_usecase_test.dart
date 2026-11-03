@@ -820,7 +820,7 @@ void main() {
     });
 
     test(
-      'compaction request keeps tool results external and summary resumes as model',
+      'keeps tool results external and resumed summaries as model data',
       () async {
         final transcript = CompactionContextFixture();
 

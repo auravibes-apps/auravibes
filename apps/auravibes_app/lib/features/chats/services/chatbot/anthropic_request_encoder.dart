@@ -83,7 +83,11 @@ class const AnthropicRequestEncoder({
   void _appendWireMessage(Message message, _WireMessages wire) {
     final safeMessage = _systemRoleIsAllowed(message)
         ? message
-        : Message(role: .user, content: message.content, metadata: message.metadata);
+        : Message(
+            role: .user,
+            content: message.content,
+            metadata: message.metadata,
+          );
     if (safeMessage.role != Role.system) {
       wire.messages.add(AnthropicMessageCodec.encode(safeMessage));
     } else if (_isLeading(safeMessage, wire.messages)) {

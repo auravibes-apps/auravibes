@@ -86,7 +86,10 @@ void main() {
       'UNTRUSTED_WIRE_SENTINEL',
     );
     expect(jsonEncode(body), isNot(contains('"role":"system"')));
-    expect(jsonEncode(body), isNot(contains(agentContextProvenanceMetadataKey)));
+    expect(
+      jsonEncode(body),
+      isNot(contains(agentContextProvenanceMetadataKey)),
+    );
   });
 
   test('does not close an injected caller-owned client', () async {

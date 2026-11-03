@@ -111,7 +111,11 @@ void main() {
       final _ = await _message(messages, 'Visible request', isUser: true);
       final _ = await _storedContextUpdate(
         messages,
-        '''{"version":1,"toolsAdded":[],"toolsRemoved":[],"contextMessages":[{"role":"system","content":"LEGACY_SENTINEL"}]}''',
+        '''
+          {"version":1,"toolsAdded":[],"toolsRemoved":[],"contextMessages":[
+            {"role":"system","content":"LEGACY_SENTINEL"}
+          ]}
+        ''',
       );
 
       final result = await adapter.reconcile(
@@ -126,7 +130,9 @@ void main() {
       expect(result.contextMessages.single.role, ChatMessageRole.user);
       expect(result.contextMessages.single.content, 'LEGACY_SENTINEL');
       expect(
-        result.contextMessages.single.metadata[agentContextProvenanceMetadataKey],
+        result.contextMessages.single.metadata[
+          agentContextProvenanceMetadataKey
+        ],
         {'origin': 'unknown', 'trust': 'unknown'},
       );
     }),
@@ -171,7 +177,9 @@ void main() {
         AgentContextProvenance.importedSkill,
       );
       expect(
-        changed.contextMessages.single.metadata[agentContextProvenanceMetadataKey],
+        changed.contextMessages.single.metadata[
+          agentContextProvenanceMetadataKey
+        ],
         {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
       );
     }),

@@ -510,13 +510,15 @@ extension on CompactConversationUsecase {
 Future<List<ChatMessage>> _buildCompactionPrompt(
   List<MessageEntity> messages,
 ) async => [
-  ChatMessage.system(
-    conversationCompactionSystemPrompt,
+  ChatMessage(
+    role: .system,
+    content: conversationCompactionSystemPrompt,
     metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
   ),
   ...await CompactConversationUsecase._buildPromptChatMessages.call(messages),
-  ChatMessage.user(
-    conversationCompactionRequestPrompt,
+  ChatMessage(
+    role: .user,
+    content: conversationCompactionRequestPrompt,
     metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
   ),
 ];

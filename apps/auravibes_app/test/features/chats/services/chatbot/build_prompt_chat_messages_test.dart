@@ -295,7 +295,7 @@ void main() {
       expect(entity.content, isEmpty);
     });
 
-    test('maps tool responses and compaction summaries with typed provenance', () async {
+    test('maps tool and compaction provenance', () async {
       final now = DateTime(2025);
       final user = MessageEntity(
         id: 'user-1',
@@ -350,7 +350,9 @@ void main() {
 
       final messages = await usecase.call([user, tool, summary]);
       final userMessage = messages.first;
-      final toolMessage = messages.singleWhere((message) => message.role.name == 'tool');
+      final toolMessage = messages.singleWhere(
+        (message) => message.role.name == 'tool',
+      );
       final summaryMessage = messages.last;
 
       expect(

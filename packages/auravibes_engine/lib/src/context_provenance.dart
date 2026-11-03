@@ -59,9 +59,6 @@ class const AgentContextProvenance({
     trust: .externalUntrusted,
   );
 
-  final AgentContextOrigin origin;
-  final AgentContextTrust trust;
-
   bool get mayUseSystemRole =>
       (origin == AgentContextOrigin.applicationPrompt &&
           trust == AgentContextTrust.appControlled) ||

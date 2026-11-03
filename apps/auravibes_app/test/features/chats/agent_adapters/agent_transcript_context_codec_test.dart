@@ -25,55 +25,61 @@ void main() {
       expect(update.contextMessages?.single.content, 'LEGACY_SENTINEL');
     });
 
-    test('round trips v2 provenance without copying content into provenance', () {
-      final update = AgentTranscriptContextUpdate(
-        contextMessages: const [
-          AgentContextMessage(
-            role: .system,
-            content: 'SYSTEM_CONTEXT_SENTINEL',
-            provenance: AgentContextProvenance.applicationPrompt,
-          ),
-          AgentContextMessage(
-            role: .skill,
-            content: 'IMPORTED_SKILL_SENTINEL',
-            kind: 'skill_context',
-            provenance: AgentContextProvenance.importedSkill,
-          ),
-        ],
-      );
-      final encoded = jsonDecode(
-        AgentTranscriptContextCodec.encodeUpdate(update),
-      ) as Map<String, dynamic>;
-      final messages = encoded['contextMessages'] as List<dynamic>;
-      final system = messages[0] as Map<String, dynamic>;
-      final imported = messages[1] as Map<String, dynamic>;
+    test(
+      'round trips v2 provenance without copying content into provenance',
+      () {
+        final update = AgentTranscriptContextUpdate(
+          contextMessages: const [
+            AgentContextMessage(
+              role: .system,
+              content: 'SYSTEM_CONTEXT_SENTINEL',
+              provenance: AgentContextProvenance.applicationPrompt,
+            ),
+            AgentContextMessage(
+              role: .skill,
+              content: 'IMPORTED_SKILL_SENTINEL',
+              kind: 'skill_context',
+              provenance: AgentContextProvenance.importedSkill,
+            ),
+          ],
+        );
+        final encoded = jsonDecode(
+          AgentTranscriptContextCodec.encodeUpdate(update),
+        ) as Map<String, dynamic>;
+        final messages = encoded['contextMessages'] as List<dynamic>;
+        final system = messages[0] as Map<String, dynamic>;
+        final imported = messages[1] as Map<String, dynamic>;
 
-      expect(encoded, containsPair('version', 2));
-      expect(system['provenance'], {
-        'origin': 'applicationPrompt',
-        'trust': 'appControlled',
-      });
-      expect(imported['provenance'], {
-        'origin': 'importedSkill',
-        'trust': 'externalUntrusted',
-      });
-      expect(system['provenance'], isNot(contains('SYSTEM_CONTEXT_SENTINEL')));
-      expect(
-        imported['provenance'],
-        isNot(contains('IMPORTED_SKILL_SENTINEL')),
-      );
+        expect(encoded, containsPair('version', 2));
+        expect(system['provenance'], {
+          'origin': 'applicationPrompt',
+          'trust': 'appControlled',
+        });
+        expect(imported['provenance'], {
+          'origin': 'importedSkill',
+          'trust': 'externalUntrusted',
+        });
+        expect(
+          system['provenance'],
+          isNot(contains('SYSTEM_CONTEXT_SENTINEL')),
+        );
+        expect(
+          imported['provenance'],
+          isNot(contains('IMPORTED_SKILL_SENTINEL')),
+        );
 
-      final decoded = AgentTranscriptContextCodec.decodeUpdate(
-        jsonEncode(encoded),
-      );
-      expect(
-        decoded.contextMessages?.map((message) => message.provenance),
-        [
-          AgentContextProvenance.applicationPrompt,
-          AgentContextProvenance.importedSkill,
-        ],
-      );
-    });
+        final decoded = AgentTranscriptContextCodec.decodeUpdate(
+          jsonEncode(encoded),
+        );
+        expect(
+          decoded.contextMessages?.map((message) => message.provenance),
+          [
+            AgentContextProvenance.applicationPrompt,
+            AgentContextProvenance.importedSkill,
+          ],
+        );
+      },
+    );
 
     test('malformed v2 provenance decodes unknown', () {
       const stored = '''
