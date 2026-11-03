@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';

@@ -112,7 +112,7 @@ void main() {
     );
     expect(
       tester.widget<AuraBadge>(urgentBadge).variant,
-      .neutral,
+      AuraBadgeVariant.neutral,
     );
   });
 

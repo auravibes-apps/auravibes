@@ -16,12 +16,14 @@ import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifi
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -725,7 +727,10 @@ class _ConversationTestScopeState extends State<_ConversationTestScope> {
     overrides: [
       ...widget.overrides,
       conversationLabelsRepositoryProvider.overrideWithValue(
-        ConversationLabelsRepository(widget.labelsDatabase),
+        _PassthroughConversationLabelsRepository(widget.labelsDatabase),
+      ),
+      conversationLabelsStreamProvider.overrideWith(
+        (ref, workspaceId) => Stream.value(const []),
       ),
     ],
     child: widget.child,
@@ -736,6 +741,18 @@ class _ConversationTestScopeState extends State<_ConversationTestScope> {
     unawaited(widget.labelsDatabase.close());
     super.dispose();
   }
+}
+
+class _PassthroughConversationLabelsRepository
+    extends ConversationLabelsRepository {
+  _PassthroughConversationLabelsRepository(AppDatabase database)
+    : super(database);
+
+  @override
+  Stream<List<ConversationEntity>> withLabels({
+    required String workspaceId,
+    required Stream<List<ConversationEntity>> conversations,
+  }) => conversations;
 }
 
 class _SeededConversationRepository(

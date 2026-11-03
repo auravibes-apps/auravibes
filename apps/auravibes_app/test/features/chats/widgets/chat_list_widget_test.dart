@@ -68,7 +68,7 @@ void main() {
       overrides: [
         ...overrides,
         conversationLabelsRepositoryProvider.overrideWithValue(
-          ConversationLabelsRepository(labelDatabase),
+          _PassthroughConversationLabelsRepository(labelDatabase),
         ),
         conversationLabelsStreamProvider.overrideWith(
           (ref, workspaceId) => Stream.value(const []),
@@ -1678,6 +1678,18 @@ void main() {
       expect(find.text('Show more'), findsNothing);
     });
   });
+}
+
+class _PassthroughConversationLabelsRepository
+    extends ConversationLabelsRepository {
+  _PassthroughConversationLabelsRepository(AppDatabase database)
+    : super(database);
+
+  @override
+  Stream<List<ConversationEntity>> withLabels({
+    required String workspaceId,
+    required Stream<List<ConversationEntity>> conversations,
+  }) => conversations;
 }
 
 class _RecordingArchiveFileService extends ConversationArchiveFileService {

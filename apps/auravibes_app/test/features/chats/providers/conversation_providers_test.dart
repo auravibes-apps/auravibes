@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';

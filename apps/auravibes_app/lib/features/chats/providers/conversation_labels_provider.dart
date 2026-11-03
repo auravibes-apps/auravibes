@@ -2,7 +2,6 @@ import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_label_actions.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

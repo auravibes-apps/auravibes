@@ -231,6 +231,15 @@ jobs:
           mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
           dart format --line-length 80 "$target"
           cp "$target" "$FORMAT_OUTPUT_DIRECTORY/workspace_capacity_error_capture_test.dart"
+          label_targets=(
+            apps/auravibes_app/lib/data/repositories/conversation_labels_repository.dart
+            apps/auravibes_app/lib/features/chats/widgets/conversation_labels_toolbar.dart
+            apps/auravibes_app/test/data/repositories/conversation_labels_test.dart
+            apps/auravibes_app/test/features/chats/widgets/conversation_labels_capture_test.dart
+            apps/auravibes_app/test/features/chats/widgets/conversation_labels_widgets_test.dart
+          )
+          dart format --line-length 80 "${label_targets[@]}"
+          git diff -- "${label_targets[@]}"
 
       - name: Upload workspace capacity formatter output
         if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
@@ -399,6 +408,9 @@ jobs:
             git status --short --untracked-files=all
             git diff --name-only
             git diff --stat
+            git diff -- \
+              apps/auravibes_app/lib/domain/entities/conversation_entity.freezed.dart \
+              apps/auravibes_app/lib/features/chats/providers/conversation_labels_provider.g.dart
             exit 1
           fi
 
