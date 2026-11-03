@@ -4,7 +4,6 @@ import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:isolate' as isolates;
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service_io.dart';
 import 'package:crypto/crypto.dart';
