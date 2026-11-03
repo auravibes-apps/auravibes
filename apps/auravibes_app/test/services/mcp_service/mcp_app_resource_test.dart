@@ -104,10 +104,8 @@ void main() {
         ],
       };
       expect(
-        () => McpAppResourceCodec.parse(
-          result,
-          resourceUri: 'ui://weather/view',
-        ),
+        () =>
+            McpAppResourceCodec.parse(result, resourceUri: 'ui://weather/view'),
         throwsFormatException,
       );
     }

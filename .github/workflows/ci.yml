@@ -216,22 +216,6 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Show formatter diff (temporary)
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          dart format --line-length 80 \
-            apps/auravibes_app/lib/data/repositories/message_repository.dart \
-            apps/auravibes_app/lib/domain/entities/sanitize_workspace_tool_result.dart \
-            apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart \
-            apps/auravibes_app/test/services/agent_lifecycle_hook_config_test.dart \
-            apps/auravibes_app/test/services/mcp_service/mcp_app_resource_test.dart
-          git diff -- \
-            apps/auravibes_app/lib/data/repositories/message_repository.dart \
-            apps/auravibes_app/lib/domain/entities/sanitize_workspace_tool_result.dart \
-            apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart \
-            apps/auravibes_app/test/services/agent_lifecycle_hook_config_test.dart \
-            apps/auravibes_app/test/services/mcp_service/mcp_app_resource_test.dart
-
       - name: Check formatting
         id: check-format
         run: melos run format:check
@@ -396,10 +380,6 @@ jobs:
       - name: Generate code
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: melos run generate --no-select
-
-      - name: Show generated provider diff (temporary)
-        if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
-        run: git diff -- apps/auravibes_app/lib/providers/agent_lifecycle_hook_runtime_provider.g.dart
 
       - name: Install matching Serverpod CLI
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}

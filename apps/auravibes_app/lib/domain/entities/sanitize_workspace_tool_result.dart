@@ -24,10 +24,8 @@ abstract final class WorkspaceToolResultSanitizer {
   static MessageMetadataEntity sanitizeMetadata(
     MessageMetadataEntity metadata,
   ) => metadata.copyWith(
-        toolCalls: [
-          for (final call in metadata.toolCalls) sanitizeResult(call),
-        ],
-      );
+    toolCalls: [for (final call in metadata.toolCalls) sanitizeResult(call)],
+  );
 
   /// Materialized fork history cannot grant access to its source tool results.
   static MessageMetadataEntity redactInheritedMetadata(

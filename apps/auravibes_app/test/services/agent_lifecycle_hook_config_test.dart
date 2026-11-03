@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('configuration accepts its exact byte limit and rejects one more', () {
     const minimal = '{"version":1,"hooks":[]}';
-    final bounded = minimal +
+    final bounded =
+        minimal +
         ' ' *
             (AgentLifecycleHookConfig.maxAgentLifecycleHookConfigBytes -
                 minimal.length);
@@ -39,9 +40,8 @@ void main() {
       emoji * 512,
     );
     expect(
-      () => AgentLifecycleHookConfig.parse(
-        _configWithHook(args: [emoji * 513]),
-      ),
+      () =>
+          AgentLifecycleHookConfig.parse(_configWithHook(args: [emoji * 513])),
       _configError('invalid_hook_argument'),
     );
   });

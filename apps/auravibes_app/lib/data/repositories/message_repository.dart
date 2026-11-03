@@ -2073,8 +2073,8 @@ String? _sanitizeMetadataJson(String? raw) {
 
 MessageMetadataEntity? _sanitizeMetadata(MessageMetadataEntity? metadata) =>
     metadata == null
-        ? null
-        : WorkspaceToolResultSanitizer.sanitizeMetadata(metadata);
+    ? null
+    : WorkspaceToolResultSanitizer.sanitizeMetadata(metadata);
 
 DateTime? _messageUpdatedAt(MessageToCreate message) =>
     message.updatedAt ?? message.createdAt;

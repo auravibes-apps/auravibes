@@ -2156,10 +2156,10 @@ class const _AssistantActivityRun({
                       expandedToolGroupIds: current.expandedToolGroupIds,
                       expandedToolIds:
                           ActivityRunExpansionNotifier.updateExpandedIds(
-                        expandedIds: current.expandedToolIds,
-                        id: toolCallId,
-                        isExpanded: shouldExpandToolCall,
-                      ),
+                            expandedIds: current.expandedToolIds,
+                            id: toolCallId,
+                            isExpanded: shouldExpandToolCall,
+                          ),
                     ),
                   );
                 }),
@@ -2195,10 +2195,10 @@ class const _AssistantActivityRun({
                   traceExpanded: current.traceExpanded,
                   expandedToolGroupIds:
                       ActivityRunExpansionNotifier.updateExpandedIds(
-                    expandedIds: current.expandedToolGroupIds,
-                    id: groupId,
-                    isExpanded: shouldExpandToolGroup,
-                  ),
+                        expandedIds: current.expandedToolGroupIds,
+                        id: groupId,
+                        isExpanded: shouldExpandToolGroup,
+                      ),
                   expandedToolIds: current.expandedToolIds,
                 );
               });
