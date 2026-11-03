@@ -972,7 +972,6 @@ extension on _ChatListBulkActionsState {
   Future<void> _exportSelected(Iterable<ConversationEntity> selected) async {
     if (_isWorking) return;
     final selectedConversations = selected.toList(growable: false);
-    late final ({bool includeAttachments})? decision;
     try {
       final preview = await ref
           .read(conversationArchiveUsecaseProvider)
@@ -983,23 +982,22 @@ extension on _ChatListBulkActionsState {
             ],
           );
       if (!mounted) return;
-      decision = await ConversationArchiveExportReviewDialog.show(
+      final decision = await ConversationArchiveExportReviewDialog.show(
         context,
         fileName: 'conversations.auravibes.json',
         preview: preview,
       );
+      if (decision == null || !mounted) return;
+
+      await _withWorking(
+        () => _exportSelectedArchive(
+          selectedConversations,
+          includeAttachments: decision.includeAttachments,
+        ),
+      );
     } on Object catch (error, stackTrace) {
       _reportSelectedArchiveError(error, stackTrace);
-      return;
     }
-    if (decision == null || !mounted) return;
-
-    await _withWorking(
-      () => _exportSelectedArchive(
-        selectedConversations,
-        includeAttachments: decision.includeAttachments,
-      ),
-    );
   }
 
   Future<void> _exportSelectedArchive(

@@ -324,8 +324,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       modelLabel: modelLabel,
       agentContext: agentContext,
       readAttachmentBytes: attachmentService.readAttachmentBytes,
-      includeAttachments: includeAttachments,
-    ));
+    ), includeAttachments: includeAttachments);
   }
 
   Future<ConversationArchiveAgentContext> _archiveAgentContext(
