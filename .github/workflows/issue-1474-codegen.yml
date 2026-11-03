@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - codex/issue-1474-mcp-tool-metadata
+  workflow_dispatch:
 
 permissions:
   contents: read

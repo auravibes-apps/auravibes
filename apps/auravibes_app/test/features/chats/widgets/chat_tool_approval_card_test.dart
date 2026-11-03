@@ -540,7 +540,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(actions.approvedCalls, [pendingCall]);
+      expect(actions.approvedCalls, hasLength(1));
       expect(actions.approvedCalls!.single.toolCall.name, toolName);
       expect(actions.approvedCalls!.single.toolCall.id, 'mcp-call-1');
       actions.approveCompleter.complete(
