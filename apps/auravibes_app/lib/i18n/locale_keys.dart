@@ -933,6 +933,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.remove_tag';
   static const chats_screens_chat_conversation_a2ui_unavailable =
       'chats_screens.chat_conversation.a2ui_unavailable';
+  static const chats_screens_chat_conversation_a2ui_read_only =
+      'chats_screens.chat_conversation.a2ui_read_only';
   static const chats_screens_chat_conversation_copy_a2ui_diagnostic =
       'chats_screens.chat_conversation.copy_a2ui_diagnostic';
   static const chats_screens_chat_conversation_a2ui_diagnostic_copied =

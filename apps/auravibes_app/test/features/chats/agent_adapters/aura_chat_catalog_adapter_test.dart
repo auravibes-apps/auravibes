@@ -806,7 +806,7 @@ void main() {
     expect(submissions, isEmpty);
   });
 
-  testWidgets('read-only slider and status are localized for Spanish', (
+  testWidgets('read-only slider formats a literal value for Spanish', (
     tester,
   ) async {
     final payloads = [
@@ -838,6 +838,53 @@ void main() {
     ];
 
     await tester.pumpWidget(
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          locale: const Locale('es'),
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          supportedLocales: const [Locale('en'), Locale('es')],
+          home: SizedBox(
+            width: 320,
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'literal-slider',
+              payloads: payloads,
+            ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('74,5'), findsOneWidget);
+    expect(find.text('0,0'), findsOneWidget);
+    expect(find.text('100,0'), findsOneWidget);
+  });
+
+  testWidgets('read-only status is localized for Spanish', (tester) async {
+    final payloads = [
+      jsonEncode({
+        'version': 'v0.9',
+        'createSurface': {
+          'surfaceId': 'localized-status',
+          'catalogId': auraChatCatalogId,
+        },
+      }),
+      jsonEncode({
+        'version': 'v0.9',
+        'updateComponents': {
+          'surfaceId': 'localized-status',
+          'components': [
+            {'id': 'root', 'component': 'Text', 'text': 'Saved response'},
+          ],
+        },
+      }),
+    ];
+
+    await tester.pumpWidget(
       EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
@@ -852,28 +899,19 @@ void main() {
               builder: _legacyMaterialBuilder,
               theme: ThemeData(),
               locale: context.locale,
-              localizationsDelegates: [
-                ...GlobalMaterialLocalizations.delegates,
-                ...context.localizationDelegates,
-              ],
+              localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
-              home: SizedBox(
-                width: 320,
-                child: ChatA2uiSurfaceHost.historical(
-                  messageId: 'literal-slider',
-                  payloads: payloads,
-                ),
+              home: ChatA2uiSurfaceHost.historical(
+                messageId: 'localized-status',
+                payloads: payloads,
               ),
             ),
           ),
         ),
       ),
     );
-    final _ = await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
-    expect(find.text('74,5'), findsOneWidget);
-    expect(find.text('0,0'), findsOneWidget);
-    expect(find.text('100,0'), findsOneWidget);
     expect(find.text('Solo lectura'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
   });

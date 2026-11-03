@@ -202,10 +202,7 @@ class const _HistoricalA2uiReadOnlyStatus() extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           spacing: AuraSpacing.xs,
           children: [
-            const AuraIcon(
-              Icons.lock_outline,
-              size: AuraIconSize.extraSmall,
-            ),
+            const AuraIcon(Icons.lock_outline, size: AuraIconSize.extraSmall),
             Text(label),
           ],
         ),

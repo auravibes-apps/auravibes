@@ -51,39 +51,30 @@ void main() {
           'components': [
             {
               'id': 'root',
-              'component': 'Column',
-              'children': ['title', 'description', 'progress', 'report'],
-            },
-            {
-              'id': 'title',
               'component': 'Text',
-              'text': 'Quarterly progress',
+              'text': 'Quarterly progress is saved.',
             },
-            {
-              'id': 'description',
-              'component': 'Text',
-              'text': 'Review the saved target and current progress.',
-            },
-            {
-              'id': 'progress',
-              'component': 'Slider',
-              'label': 'Completion',
-              'value': {'path': '/completion'},
-              'min': 0,
-              'max': 100,
-              'step': 1,
-              'precision': 0,
-            },
-            {'id': 'report', 'component': 'Button', 'label': 'Open report'},
           ],
         },
       }),
       jsonEncode({
         'version': 'v0.9',
-        'updateDataModel': {
-          'surfaceId': 'quarterly-progress',
-          'path': '/completion',
-          'value': 68,
+        'createSurface': {
+          'surfaceId': 'upcoming-milestone',
+          'catalogId': auraChatCatalogId,
+        },
+      }),
+      jsonEncode({
+        'version': 'v0.9',
+        'updateComponents': {
+          'surfaceId': 'upcoming-milestone',
+          'components': [
+            {
+              'id': 'root',
+              'component': 'Text',
+              'text': 'Next milestone: client review on June 18.',
+            },
+          ],
         },
       }),
     ];
@@ -128,14 +119,23 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Quarterly progress'), findsOneWidget);
-    expect(find.text('Completion'), findsOneWidget);
-    expect(find.text('Open report'), findsOneWidget);
+    expect(find.text('Quarterly progress is saved.'), findsOneWidget);
+    expect(
+      find.text('Next milestone: client review on June 18.'),
+      findsOneWidget,
+    );
     if (stage == 'before') {
       expect(find.text('Read only'), findsNothing);
     } else {
-      expect(find.text('Read only'), findsOneWidget);
-      expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Read only');
+      expect(find.text('Read only'), findsNWidgets(2));
+      expect(
+        tester.getSemantics(find.byType(AuraBadge).at(0)).label,
+        'Read only',
+      );
+      expect(
+        tester.getSemantics(find.byType(AuraBadge).at(1)).label,
+        'Read only',
+      );
     }
 
     final boundary = tester.renderObject<RenderRepaintBoundary>(
@@ -155,9 +155,10 @@ void main() {
           'repository': 'auravibes-apps/auravibes',
           'sourceSha': sourceSha,
           'stage': stage,
-          'fixture': '.github/fixtures/issue_1439_historical_a2ui_capture.dart.fixture',
+          'fixture':
+              '.github/fixtures/issue_1439_historical_a2ui_capture.dart.fixture',
           'fixtureDescription':
-              'One historical progress surface with a saved slider value and disabled report button.',
+              'Two historical progress summary surfaces in the same message.',
           'workflowRunId': Platform.environment['GITHUB_RUN_ID'],
           'workflowRunAttempt': Platform.environment['GITHUB_RUN_ATTEMPT'],
           'flutterVersion': flutterVersion,
@@ -191,7 +192,9 @@ Future<List<Map<String, String>>> _loadCaptureFonts() async {
       'family': family,
       'source': path,
       'sha256': sha256
-          .convert(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes))
+          .convert(
+            data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+          )
           .toString(),
     });
   }
@@ -200,7 +203,9 @@ Future<List<Map<String, String>>> _loadCaptureFonts() async {
   final roboto = await File(
     '$flutterRoot/bin/cache/artifacts/material_fonts/Roboto-Regular.ttf',
   ).readAsBytes();
-  await (FontLoader('Roboto')..addFont(Future.value(roboto.buffer.asByteData()))).load();
+  await (FontLoader('Roboto')
+        ..addFont(Future.value(roboto.buffer.asByteData())))
+      .load();
   fonts.add({
     'family': 'Roboto',
     'source': 'Flutter SDK material fonts',
