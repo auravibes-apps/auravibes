@@ -42,135 +42,164 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   final refreshRequested = ref.watch(
     workspaceSetupPreflightRefreshProvider(workspaceId),
   );
-  final workspaceRead = await _capture(
-    () => ref.watch(workspaceByIdProvider(workspaceId).future),
-  );
-  final workspace = workspaceRead.value;
-  final workspaceSessionRead = workspace == null
-      ? const _ReadResult<WorkspaceSession>.unavailable()
-      : await _capture(
-          () => ref.watch(workspaceSessionForRouteProvider(workspaceId).future),
-        );
-
-  final workspaceIsRemote = workspace?.type == WorkspaceType.remote;
-  final remoteRefreshReady = !workspaceIsRemote || refreshRequested;
-  final session = workspaceSessionRead.value;
-  final cloudStorageRead =
-      workspaceIsRemote && refreshRequested && session != null
-      ? await _capture(() async {
-          final _ = await ref.watch(
-            cloudWorkspaceConfigurationProvider(session).future,
-          );
-
-          return true;
-        })
-      : const _ReadResult<bool>.unavailable();
-  final sourceAllowed =
-      workspace != null && workspaceSessionRead.available && remoteRefreshReady;
-  final providerRead = sourceAllowed
-      ? await _capture(
-          () => ref.watch(chatModelConnectionsProvider(workspaceId).future),
-        )
-      : const _ReadResult<List<ModelConnectionEntity>>.unavailable();
+  final scope = await _readWorkspaceScope(ref, workspaceId, refreshRequested);
   final selectedModelId = ref.watch(newChatProvider(workspaceId)).modelId;
-  final modelRead = await _readSelectedModel(
-    ref: ref,
-    selectedModelId: selectedModelId,
-    sourceAllowed: sourceAllowed,
-    workspaceId: workspaceId,
+  final sources = await _readSources(ref, scope, selectedModelId);
+  final providers = _providerSnapshots(
+    sources.providerRead.value,
+    scope.workspaceId,
   );
-  final mcpRead = sourceAllowed
-      ? await _capture(() async {
-          final connections = await ref.watch(
-            serviceConnectionsProvider(workspaceId).future,
-          );
-
-          return [
-            for (final connection in connections)
-              if (connection.workspaceId == workspaceId &&
-                  connection.kind == ServiceConnectionListItemKind.mcpServer)
-                WorkspaceSetupMcpSnapshot(
-                  isEnabled: connection.isEnabled,
-                  lastTestStatus: connection.lastTestSummary?.status,
-                  connectionNeedsAttention: switch (connection.displayStatus) {
-                    ServiceConnectionDisplayStatus.needsReauth ||
-                    ServiceConnectionDisplayStatus.expired ||
-                    ServiceConnectionDisplayStatus.expiringSoon ||
-                    ServiceConnectionDisplayStatus.failed => true,
-                    _ => false,
-                  },
-                ),
-          ];
-        })
-      : const _ReadResult<List<WorkspaceSetupMcpSnapshot>>.unavailable();
-
-  final storageAvailable = _storageAvailable(
-    workspaceRead: workspaceRead,
-    workspace: workspace,
-    sessionAvailable: workspaceSessionRead.available,
-    isRemote: workspaceIsRemote,
-    cloudStorageAvailable: cloudStorageRead.value,
-  );
-  final providerSnapshots = providerRead.value
-      ?.where((connection) => connection.workspaceId == workspaceId)
-      .map(_providerSnapshot)
-      .toList();
 
   return const BuildWorkspaceSetupPreflightUsecase().call(
     .new(
-      storageAvailable: storageAvailable,
+      storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
       selectedModelId: selectedModelId,
-      selectedModelSourceAvailable: modelRead.available,
-      providerSourceAvailable: providerRead.available,
-      mcpSourceAvailable: mcpRead.available,
-      providers: providerSnapshots,
-      selectedModel: modelRead.value,
-      mcpConnections: mcpRead.value,
+      selectedModelSourceAvailable: sources.modelRead.available,
+      providerSourceAvailable: sources.providerRead.available,
+      mcpSourceAvailable: sources.mcpRead.available,
+      providers: providers,
+      selectedModel: sources.modelRead.value,
+      mcpConnections: sources.mcpRead.value,
     ),
   );
 }
 
-bool? _storageAvailable({
-  required _ReadResult<WorkspaceEntity?> workspaceRead,
-  required WorkspaceEntity? workspace,
-  required bool sessionAvailable,
-  required bool isRemote,
-  required bool? cloudStorageAvailable,
-}) {
-  if (!workspaceRead.available) return null;
-  if (workspace == null || !sessionAvailable) return false;
-  if (!isRemote) return true;
+typedef _ReadResult<T> = ({bool available, T? value});
 
-  return cloudStorageAvailable;
+typedef _WorkspaceScope = ({
+  String workspaceId,
+  bool refreshRequested,
+  _ReadResult<WorkspaceEntity?> workspaceRead,
+  WorkspaceEntity? workspace,
+  _ReadResult<WorkspaceSession> sessionRead,
+  WorkspaceSession? session,
+  bool isRemote,
+  bool sourceAllowed,
+});
+
+typedef _SourceReads = ({
+  bool? cloudStorageAvailable,
+  _ReadResult<List<ModelConnectionEntity>> providerRead,
+  _ReadResult<WorkspaceSetupModelSnapshot?> modelRead,
+  _ReadResult<List<WorkspaceSetupMcpSnapshot>> mcpRead,
+});
+
+Future<_WorkspaceScope> _readWorkspaceScope(
+  Ref ref,
+  String workspaceId,
+  bool refreshRequested,
+) async {
+  final workspaceRead = await _capture(
+    () => ref.watch(workspaceByIdProvider(workspaceId).future),
+  );
+  final workspace = workspaceRead.value;
+  final sessionRead = workspace == null
+      ? _unavailable<WorkspaceSession>()
+      : await _capture(
+          () => ref.watch(workspaceSessionForRouteProvider(workspaceId).future),
+        );
+  final isRemote = workspace?.type == WorkspaceType.remote;
+
+  return (
+    workspaceId: workspaceId,
+    refreshRequested: refreshRequested,
+    workspaceRead: workspaceRead,
+    workspace: workspace,
+    sessionRead: sessionRead,
+    session: sessionRead.value,
+    isRemote: isRemote,
+    sourceAllowed:
+        workspace != null && sessionRead.available && (!isRemote || refreshRequested),
+  );
 }
 
-WorkspaceSetupProviderSnapshot _providerSnapshot(
-  ModelConnectionEntity connection,
-) => WorkspaceSetupProviderSnapshot(
-  connectionId: connection.id,
-  hasCredential: connection.hasKey,
+Future<_SourceReads> _readSources(
+  Ref ref,
+  _WorkspaceScope scope,
+  String? selectedModelId,
+) async => (
+  cloudStorageAvailable: await _readCloudStorage(ref, scope),
+  providerRead: await _readProviderConnections(ref, scope),
+  modelRead: await _readSelectedModel(ref, selectedModelId, scope),
+  mcpRead: await _readMcpConnections(ref, scope),
 );
 
-Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel({
-  required Ref ref,
-  required String? selectedModelId,
-  required bool sourceAllowed,
-  required String workspaceId,
-}) async {
-  if (selectedModelId == null) {
-    return const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null);
+Future<bool?> _readCloudStorage(Ref ref, _WorkspaceScope scope) async {
+  final session = scope.session;
+  if (!scope.isRemote || !scope.refreshRequested || session == null) {
+    return null;
   }
-  if (!sourceAllowed) {
-    return const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
-  }
+
+  final result = await _capture(() async {
+    final _ = await ref.watch(
+      cloudWorkspaceConfigurationProvider(session).future,
+    );
+
+    return true;
+  });
+
+  return result.value;
+}
+
+Future<_ReadResult<List<ModelConnectionEntity>>> _readProviderConnections(
+  Ref ref,
+  _WorkspaceScope scope,
+) async {
+  if (!scope.sourceAllowed) return _unavailable();
+
+  return await _capture(
+    () => ref.watch(chatModelConnectionsProvider(scope.workspaceId).future),
+  );
+}
+
+Future<_ReadResult<List<WorkspaceSetupMcpSnapshot>>> _readMcpConnections(
+  Ref ref,
+  _WorkspaceScope scope,
+) async {
+  if (!scope.sourceAllowed) return _unavailable();
+  final result = await _capture(
+    () => ref.watch(serviceConnectionsProvider(scope.workspaceId).future),
+  );
+  final connections = result.value;
+  if (connections == null) return _unavailable();
+
+  return _available([
+    for (final connection in connections)
+      if (connection.workspaceId == scope.workspaceId &&
+          connection.kind == ServiceConnectionListItemKind.mcpServer)
+        _mcpSnapshot(connection),
+  ]);
+}
+
+WorkspaceSetupMcpSnapshot _mcpSnapshot(
+  ServiceConnectionListItem connection,
+) => WorkspaceSetupMcpSnapshot(
+  isEnabled: connection.isEnabled,
+  lastTestStatus: connection.lastTestSummary?.status,
+  connectionNeedsAttention: switch (connection.displayStatus) {
+    ServiceConnectionDisplayStatus.needsReauth ||
+    ServiceConnectionDisplayStatus.expired ||
+    ServiceConnectionDisplayStatus.expiringSoon ||
+    ServiceConnectionDisplayStatus.failed => true,
+    _ => false,
+  },
+);
+
+Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel(
+  Ref ref,
+  String? selectedModelId,
+  _WorkspaceScope scope,
+) async {
+  if (selectedModelId == null) return _available(null);
+  if (!scope.sourceAllowed) return _unavailable();
 
   return await _capture(() async {
     final selections = await ref.watch(
-      modelSelectionStoreProvider(workspaceId).future,
+      modelSelectionStoreProvider(scope.workspaceId).future,
     );
     final model = await selections.getById(selectedModelId);
 
-    return await _modelSnapshot(ref, model, workspaceId);
+    return await _modelSnapshot(ref, model, scope.workspaceId);
   });
 }
 
@@ -179,21 +208,33 @@ Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   WorkspaceModelSelectionWithConnectionEntity? model,
   String workspaceId,
 ) async {
-  if (model == null ||
-      model.modelConnection.workspaceId != workspaceId ||
-      model.workspaceModelSelection.modelConnectionId !=
-          model.modelConnection.id) {
-    return null;
-  }
+  if (!_matchesWorkspace(model, workspaceId)) return null;
+
+  return await _readModelMetadata(ref, model!);
+}
+
+bool _matchesWorkspace(
+  WorkspaceModelSelectionWithConnectionEntity? model,
+  String workspaceId,
+) =>
+    model != null &&
+    model.modelConnection.workspaceId == workspaceId &&
+    model.workspaceModelSelection.modelConnectionId == model.modelConnection.id;
+
+Future<WorkspaceSetupModelSnapshot> _readModelMetadata(
+  Ref ref,
+  WorkspaceModelSelectionWithConnectionEntity model,
+) async {
   final selection = model.workspaceModelSelection;
-  final catalogProviderId =
-      ModelProviderOAuthProfiles.isCodexProvider(model.modelConnection.modelId)
+  final providerId = ModelProviderOAuthProfiles.isCodexProvider(
+    model.modelConnection.modelId,
+  )
       ? 'openai'
       : model.modelsProvider.id;
   final catalogModel = await ref.watch(
     getModelByProviderAndModelIdProvider(
-      workspaceId: workspaceId,
-      providerId: catalogProviderId,
+      workspaceId: model.modelConnection.workspaceId,
+      providerId: providerId,
       modelId: selection.modelId,
     ).future,
   );
@@ -210,16 +251,38 @@ Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   );
 }
 
+bool? _storageAvailable(_WorkspaceScope scope, bool? cloudStorageAvailable) {
+  if (!scope.workspaceRead.available) return null;
+  if (scope.workspace == null || !scope.sessionRead.available) return false;
+  if (!scope.isRemote) return true;
+
+  return cloudStorageAvailable;
+}
+
+List<WorkspaceSetupProviderSnapshot>? _providerSnapshots(
+  List<ModelConnectionEntity>? connections,
+  String workspaceId,
+) =>
+    connections
+        ?.where((connection) => connection.workspaceId == workspaceId)
+        .map(_providerSnapshot)
+        .toList();
+
+WorkspaceSetupProviderSnapshot _providerSnapshot(
+  ModelConnectionEntity connection,
+) => WorkspaceSetupProviderSnapshot(
+  connectionId: connection.id,
+  hasCredential: connection.hasKey,
+);
+
 Future<_ReadResult<T>> _capture<T>(Future<T> Function() read) async {
   try {
-    return _ReadResult<T>.available(await read());
+    return _available(await read());
   } on Object {
-    return _ReadResult<T>.unavailable();
+    return _unavailable();
   }
 }
 
-class const _ReadResult<T>({required final bool available, final T? value}) {
-  const new available(T? value) : this(available: true, value: value);
+_ReadResult<T> _available<T>(T value) => (available: true, value: value);
 
-  const new unavailable() : this(available: false);
-}
+_ReadResult<T> _unavailable<T>() => (available: false, value: null);

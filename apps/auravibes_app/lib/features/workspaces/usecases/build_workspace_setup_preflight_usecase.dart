@@ -6,11 +6,12 @@ const _optionalCredentialMissingMessageKey =
 
 class const BuildWorkspaceSetupPreflightUsecase() {
   WorkspaceSetupPreflight call(WorkspaceSetupPreflightSnapshot snapshot) {
-    final storage = _storageCheck(snapshot.storageAvailable);
-    final model = _modelCheck(snapshot);
-    final provider = _providerCheck(snapshot);
-    final mcp = _mcpCheck(snapshot);
-    final checks = [storage, provider, model, mcp];
+    final checks = [
+      _storageCheck(snapshot.storageAvailable),
+      _providerCheck(snapshot),
+      _modelCheck(snapshot),
+      _mcpCheck(snapshot),
+    ];
 
     return WorkspaceSetupPreflight(
       outcome: _outcome(snapshot, checks),
@@ -24,9 +25,9 @@ class const BuildWorkspaceSetupPreflightUsecase() {
     required String appVersion,
     required WorkspaceSetupPreflightLabels labels,
   }) {
-    final outcomeLabel = labels.outcomes[result.outcome] ?? result.outcome.name;
+    final outcome = labels.outcomes[result.outcome] ?? result.outcome.name;
     final lines = <String>[
-      '${labels.overallLabel}: $outcomeLabel',
+      '${labels.overallLabel}: $outcome',
       '${labels.generatedAt}: ${generatedAt.toUtc().toIso8601String()}',
       '${labels.appVersion}: $appVersion',
       for (final check in result.checks) _checkSummary(check, labels),
@@ -34,255 +35,279 @@ class const BuildWorkspaceSetupPreflightUsecase() {
 
     return lines.join('\n');
   }
+}
 
-  WorkspaceSetupPreflightCheck _storageCheck(bool? available) =>
-      switch (available) {
-        true => const WorkspaceSetupPreflightCheck(
-          id: .storage,
-          status: .pass,
-          messageKey: 'workspace_setup_preflight.storage_available',
-        ),
-        false => const WorkspaceSetupPreflightCheck(
-          id: .storage,
-          status: .fail,
-          messageKey: 'workspace_setup_preflight.storage_unavailable',
-        ),
-        null => const WorkspaceSetupPreflightCheck(
-          id: .storage,
-          status: .unknown,
-          messageKey: 'workspace_setup_preflight.storage_unverified',
-        ),
-      };
-
-  WorkspaceSetupPreflightCheck _modelCheck(
-    WorkspaceSetupPreflightSnapshot snapshot,
-  ) {
-    if (snapshot.selectedModelId == null) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .selectedModel,
-        status: .warning,
-        messageKey: 'workspace_setup_preflight.model_not_selected',
-        recovery: .chooseModel,
-      );
-    }
-    if (!snapshot.selectedModelSourceAvailable) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .selectedModel,
-        status: .unknown,
-        messageKey: 'workspace_setup_preflight.model_unverified',
-        recovery: .chooseModel,
-      );
-    }
-    final model = snapshot.selectedModel;
-    if (model == null || model.selectionId != snapshot.selectedModelId) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .selectedModel,
+WorkspaceSetupPreflightCheck _storageCheck(bool? available) =>
+    switch (available) {
+      true => const WorkspaceSetupPreflightCheck(
+        id: .storage,
+        status: .pass,
+        messageKey: 'workspace_setup_preflight.storage_available',
+      ),
+      false => const WorkspaceSetupPreflightCheck(
+        id: .storage,
         status: .fail,
-        messageKey: 'workspace_setup_preflight.model_missing',
-        recovery: .chooseModel,
-      );
-    }
-    final modelName = model.modelName;
-    if (!model.capabilityMetadataAvailable ||
-        modelName == null ||
-        modelName.trim().isEmpty) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .selectedModel,
+        messageKey: 'workspace_setup_preflight.storage_unavailable',
+      ),
+      null => const WorkspaceSetupPreflightCheck(
+        id: .storage,
         status: .unknown,
-        messageKey: 'workspace_setup_preflight.model_metadata_unavailable',
-        recovery: .chooseModel,
-      );
-    }
+        messageKey: 'workspace_setup_preflight.storage_unverified',
+      ),
+    };
 
-    return WorkspaceSetupPreflightCheck(
+WorkspaceSetupPreflightCheck _modelCheck(
+  WorkspaceSetupPreflightSnapshot snapshot,
+) {
+  if (snapshot.selectedModelId == null) return _modelNotSelected();
+  if (!snapshot.selectedModelSourceAvailable) return _modelUnverified();
+
+  final model = snapshot.selectedModel;
+  if (model == null || model.selectionId != snapshot.selectedModelId) {
+    return _modelMissing();
+  }
+  if (!_hasModelMetadata(model)) return _modelMetadataUnavailable();
+
+  return _modelReady(model);
+}
+
+bool _hasModelMetadata(WorkspaceSetupModelSnapshot model) =>
+    model.capabilityMetadataAvailable &&
+    model.modelName != null &&
+    model.modelName!.trim().isNotEmpty;
+
+WorkspaceSetupPreflightCheck _modelNotSelected() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .selectedModel,
+      status: .warning,
+      messageKey: 'workspace_setup_preflight.model_not_selected',
+      recovery: .chooseModel,
+    );
+
+WorkspaceSetupPreflightCheck _modelUnverified() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .selectedModel,
+      status: .unknown,
+      messageKey: 'workspace_setup_preflight.model_unverified',
+      recovery: .chooseModel,
+    );
+
+WorkspaceSetupPreflightCheck _modelMissing() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .selectedModel,
+      status: .fail,
+      messageKey: 'workspace_setup_preflight.model_missing',
+      recovery: .chooseModel,
+    );
+
+WorkspaceSetupPreflightCheck _modelMetadataUnavailable() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .selectedModel,
+      status: .unknown,
+      messageKey: 'workspace_setup_preflight.model_metadata_unavailable',
+      recovery: .chooseModel,
+    );
+
+WorkspaceSetupPreflightCheck _modelReady(WorkspaceSetupModelSnapshot model) =>
+    WorkspaceSetupPreflightCheck(
       id: .selectedModel,
       status: .pass,
       messageKey: 'workspace_setup_preflight.model_metadata_available',
       modelCapabilities: .new(
-        modelName: modelName,
+        modelName: model.modelName!,
         inputModalities: model.inputModalities,
         outputModalities: model.outputModalities,
         supportsReasoning: model.supportsReasoning,
         supportsToolCalls: model.supportsToolCalls,
       ),
     );
+
+WorkspaceSetupPreflightCheck _providerCheck(
+  WorkspaceSetupPreflightSnapshot snapshot,
+) {
+  final providers = snapshot.providers;
+  if (!snapshot.providerSourceAvailable || providers == null) {
+    return _providerUnverified();
   }
+  if (snapshot.selectedModelId == null) {
+    return _optionalProviderCheck(providers);
+  }
+  if (providers.isEmpty) return _providerForModelMissing();
+  if (!snapshot.selectedModelSourceAvailable) return _providerUnverified();
 
-  WorkspaceSetupPreflightCheck _providerCheck(
-    WorkspaceSetupPreflightSnapshot snapshot,
-  ) {
-    final providers = snapshot.providers;
-    if (!snapshot.providerSourceAvailable || providers == null) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .unknown,
-        messageKey: 'workspace_setup_preflight.provider_unverified',
-        recovery: .reviewProvider,
-      );
-    }
-    if (providers.isEmpty && snapshot.selectedModelId == null) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .warning,
-        messageKey: 'workspace_setup_preflight.provider_not_configured',
-        recovery: .addProvider,
-      );
-    }
-    if (providers.isEmpty) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .fail,
-        messageKey: 'workspace_setup_preflight.provider_for_model_missing',
-        recovery: .reviewProvider,
-      );
-    }
-    if (snapshot.selectedModelId == null) {
-      return providers.any((provider) => provider.hasCredential)
-          ? const WorkspaceSetupPreflightCheck(
-              id: .providerCredentials,
-              status: .pass,
-              messageKey: 'workspace_setup_preflight.provider_saved',
-            )
-          : const WorkspaceSetupPreflightCheck(
-              id: .providerCredentials,
-              status: .warning,
-              messageKey: _optionalCredentialMissingMessageKey,
-              recovery: .reviewProvider,
-            );
-    }
-    if (!snapshot.selectedModelSourceAvailable) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .unknown,
-        messageKey: 'workspace_setup_preflight.provider_unverified',
-        recovery: .reviewProvider,
-      );
-    }
-    final model = snapshot.selectedModel;
-    if (model == null || model.selectionId != snapshot.selectedModelId) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .fail,
-        messageKey: 'workspace_setup_preflight.provider_for_model_missing',
-        recovery: .reviewProvider,
-      );
-    }
-    final selectedProvider = providers
-        .where(
-          (provider) => provider.connectionId == model.providerConnectionId,
-        )
-        .firstOrNull;
-    if (selectedProvider == null) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .fail,
-        messageKey: 'workspace_setup_preflight.provider_for_model_missing',
-        recovery: .reviewProvider,
-      );
-    }
-    if (!selectedProvider.hasCredential) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .providerCredentials,
-        status: .fail,
-        messageKey:
-            'workspace_setup_preflight.provider_credential_missing_required',
-        recovery: .reviewProvider,
-      );
-    }
+  final model = snapshot.selectedModel;
+  if (model == null || model.selectionId != snapshot.selectedModelId) {
+    return _providerForModelMissing();
+  }
+  return _selectedProviderCheck(providers, model);
+}
 
-    return const WorkspaceSetupPreflightCheck(
+WorkspaceSetupPreflightCheck _optionalProviderCheck(
+  List<WorkspaceSetupProviderSnapshot> providers,
+) {
+  if (providers.isEmpty) return _providerNotConfigured();
+  if (providers.any((provider) => provider.hasCredential)) return _providerSaved();
+
+  return _optionalCredentialMissing();
+}
+
+WorkspaceSetupPreflightCheck _selectedProviderCheck(
+  List<WorkspaceSetupProviderSnapshot> providers,
+  WorkspaceSetupModelSnapshot model,
+) {
+  final provider = providers.firstWhereOrNull(
+    (item) => item.connectionId == model.providerConnectionId,
+  );
+  if (provider == null) return _providerForModelMissing();
+  if (!provider.hasCredential) return _requiredCredentialMissing();
+
+  return _providerSaved();
+}
+
+WorkspaceSetupPreflightCheck _providerUnverified() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .providerCredentials,
+      status: .unknown,
+      messageKey: 'workspace_setup_preflight.provider_unverified',
+      recovery: .reviewProvider,
+    );
+
+WorkspaceSetupPreflightCheck _providerNotConfigured() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .providerCredentials,
+      status: .warning,
+      messageKey: 'workspace_setup_preflight.provider_not_configured',
+      recovery: .addProvider,
+    );
+
+WorkspaceSetupPreflightCheck _providerForModelMissing() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .providerCredentials,
+      status: .fail,
+      messageKey: 'workspace_setup_preflight.provider_for_model_missing',
+      recovery: .reviewProvider,
+    );
+
+WorkspaceSetupPreflightCheck _optionalCredentialMissing() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .providerCredentials,
+      status: .warning,
+      messageKey: _optionalCredentialMissingMessageKey,
+      recovery: .reviewProvider,
+    );
+
+WorkspaceSetupPreflightCheck _requiredCredentialMissing() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .providerCredentials,
+      status: .fail,
+      messageKey:
+          'workspace_setup_preflight.provider_credential_missing_required',
+      recovery: .reviewProvider,
+    );
+
+WorkspaceSetupPreflightCheck _providerSaved() =>
+    const WorkspaceSetupPreflightCheck(
       id: .providerCredentials,
       status: .pass,
       messageKey: 'workspace_setup_preflight.provider_saved',
     );
+
+WorkspaceSetupPreflightCheck _mcpCheck(
+  WorkspaceSetupPreflightSnapshot snapshot,
+) {
+  final connections = snapshot.mcpConnections;
+  if (!snapshot.mcpSourceAvailable || connections == null) {
+    return _mcpUnverified();
+  }
+  if (connections.isEmpty) return _mcpNotConfigured();
+  if (connections.any((connection) => !connection.isEnabled)) {
+    return _mcpDisabled();
+  }
+  if (connections.any((connection) => connection.connectionNeedsAttention)) {
+    return _mcpNeedsAttention();
+  }
+  if (connections.any((connection) => connection.lastTestStatus == null)) {
+    return _mcpNotTested();
+  }
+  if (connections.any((connection) => connection.lastTestStatus != 'success')) {
+    return _mcpNeedsAttention();
   }
 
-  WorkspaceSetupPreflightCheck _mcpCheck(
-    WorkspaceSetupPreflightSnapshot snapshot,
-  ) {
-    final connections = snapshot.mcpConnections;
-    if (!snapshot.mcpSourceAvailable || connections == null) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .mcpConnections,
-        status: .unknown,
-        messageKey: 'workspace_setup_preflight.mcp_unverified',
-        recovery: .openConnections,
-      );
-    }
-    if (connections.isEmpty) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .mcpConnections,
-        status: .pass,
-        messageKey: 'workspace_setup_preflight.mcp_not_configured',
-      );
-    }
-    if (connections.any((connection) => !connection.isEnabled)) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .mcpConnections,
-        status: .warning,
-        messageKey: 'workspace_setup_preflight.mcp_disabled',
-        recovery: .openConnections,
-      );
-    }
-    if (connections.any((connection) => connection.connectionNeedsAttention)) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .mcpConnections,
-        status: .warning,
-        messageKey: 'workspace_setup_preflight.mcp_attention',
-        recovery: .openConnections,
-      );
-    }
-    if (connections.any((connection) => connection.lastTestStatus == null)) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .mcpConnections,
-        status: .unknown,
-        messageKey: 'workspace_setup_preflight.mcp_not_tested',
-        recovery: .openConnections,
-      );
-    }
-    if (connections.any(
-      (connection) => connection.lastTestStatus != 'success',
-    )) {
-      return const WorkspaceSetupPreflightCheck(
-        id: .mcpConnections,
-        status: .warning,
-        messageKey: 'workspace_setup_preflight.mcp_attention',
-        recovery: .openConnections,
-      );
-    }
+  return _mcpTestPassed();
+}
 
-    return const WorkspaceSetupPreflightCheck(
+WorkspaceSetupPreflightCheck _mcpUnverified() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .mcpConnections,
+      status: .unknown,
+      messageKey: 'workspace_setup_preflight.mcp_unverified',
+      recovery: .openConnections,
+    );
+
+WorkspaceSetupPreflightCheck _mcpNotConfigured() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .mcpConnections,
+      status: .pass,
+      messageKey: 'workspace_setup_preflight.mcp_not_configured',
+    );
+
+WorkspaceSetupPreflightCheck _mcpDisabled() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .mcpConnections,
+      status: .warning,
+      messageKey: 'workspace_setup_preflight.mcp_disabled',
+      recovery: .openConnections,
+    );
+
+WorkspaceSetupPreflightCheck _mcpNeedsAttention() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .mcpConnections,
+      status: .warning,
+      messageKey: 'workspace_setup_preflight.mcp_attention',
+      recovery: .openConnections,
+    );
+
+WorkspaceSetupPreflightCheck _mcpNotTested() =>
+    const WorkspaceSetupPreflightCheck(
+      id: .mcpConnections,
+      status: .unknown,
+      messageKey: 'workspace_setup_preflight.mcp_not_tested',
+      recovery: .openConnections,
+    );
+
+WorkspaceSetupPreflightCheck _mcpTestPassed() =>
+    const WorkspaceSetupPreflightCheck(
       id: .mcpConnections,
       status: .pass,
       messageKey: 'workspace_setup_preflight.mcp_last_test_passed',
     );
-  }
 
-  WorkspaceSetupPreflightOutcome _outcome(
-    WorkspaceSetupPreflightSnapshot snapshot,
-    List<WorkspaceSetupPreflightCheck> checks,
-  ) {
-    if (checks.any((check) => check.status == .fail)) {
-      return .blocked;
-    }
-    if (snapshot.selectedModelId == null ||
-        (snapshot.providerSourceAvailable &&
-            snapshot.providers?.isEmpty == true)) {
-      return .needsSetup;
-    }
-    final requiredChecks = checks
-        .where((check) => check.id != .mcpConnections)
-        .toList();
-    if (requiredChecks.any((check) => check.status == .unknown)) {
-      return .unverified;
-    }
-    if (requiredChecks.any((check) => check.status != .pass)) {
-      return .unverified;
-    }
+WorkspaceSetupPreflightOutcome _outcome(
+  WorkspaceSetupPreflightSnapshot snapshot,
+  List<WorkspaceSetupPreflightCheck> checks,
+) {
+  if (checks.any((check) => check.status == .fail)) return .blocked;
+  if (_needsSetup(snapshot)) return .needsSetup;
+  if (_hasUnverifiedRequiredCheck(checks)) return .unverified;
+  if (_hasNonPassingRequiredCheck(checks)) return .unverified;
 
-    return .ready;
-  }
+  return .ready;
 }
+
+bool _needsSetup(WorkspaceSetupPreflightSnapshot snapshot) =>
+    snapshot.selectedModelId == null ||
+    (snapshot.providerSourceAvailable && snapshot.providers?.isEmpty == true);
+
+bool _hasUnverifiedRequiredCheck(List<WorkspaceSetupPreflightCheck> checks) =>
+    _requiredChecks(checks).any((check) => check.status == .unknown);
+
+bool _hasNonPassingRequiredCheck(List<WorkspaceSetupPreflightCheck> checks) =>
+    _requiredChecks(checks).any((check) => check.status != .pass);
+
+Iterable<WorkspaceSetupPreflightCheck> _requiredChecks(
+  List<WorkspaceSetupPreflightCheck> checks,
+) =>
+    checks.where((check) => check.id != .mcpConnections);
 
 String _checkSummary(
   WorkspaceSetupPreflightCheck check,
