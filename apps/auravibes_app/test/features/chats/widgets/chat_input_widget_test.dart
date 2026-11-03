@@ -2799,8 +2799,7 @@ class _FakeLocalChatAttachmentService(
     final started = bytesCopyStarted;
     if (started != null && !started.isCompleted) started.complete();
     if (bytesCopyCompleter case final completer?) {
-      final completed = await completer.future;
-      return completed;
+      return await completer.future;
     }
 
     return attachment.copyWith(displayName: displayName);
