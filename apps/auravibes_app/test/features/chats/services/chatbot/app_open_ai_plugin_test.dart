@@ -63,7 +63,7 @@ void main() {
       content: [TextPart(text: 'UNTRUSTED_WIRE_SENTINEL')],
       metadata: AgentContextProvenance.importedSkill.withMetadata(const {}),
     );
-    await http.runWithClient(
+    final generated = await http.runWithClient(
       () =>
           Genkit(
             plugins: [AppOpenAIPlugin(upstream: _upstream())],
@@ -76,6 +76,7 @@ void main() {
           ),
       () => client,
     );
+    expect(generated, isNotNull);
 
     final body = client.requests.single.json;
     final messages = body['messages'] as List<dynamic>;

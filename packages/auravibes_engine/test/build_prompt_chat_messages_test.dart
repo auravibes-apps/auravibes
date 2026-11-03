@@ -178,7 +178,7 @@ void main() {
 
   test('unknown compaction provenance stays unknown after demotion', () {
     final result = const BuildPromptChatMessages().call([
-      AgentPromptMessage(
+      const AgentPromptMessage(
         content: 'unknown summary',
         isUser: false,
         type: .system,
@@ -193,7 +193,7 @@ void main() {
 
   test('explicit compaction provenance remains external', () {
     final result = const BuildPromptChatMessages().call([
-      AgentPromptMessage(
+      const AgentPromptMessage(
         content: 'summary sentinel',
         isUser: false,
         type: .system,

@@ -1,3 +1,5 @@
+import 'package:meta/meta.dart';
+
 /// The source category for context supplied to an agent.
 enum AgentContextOrigin {
   unknown,
@@ -22,6 +24,7 @@ enum AgentContextTrust {
 const agentContextProvenanceMetadataKey = 'agentContextProvenance';
 
 /// Typed, content-free provenance for prompt context.
+@immutable
 class const AgentContextProvenance({
   required final AgentContextOrigin origin,
   required final AgentContextTrust trust,

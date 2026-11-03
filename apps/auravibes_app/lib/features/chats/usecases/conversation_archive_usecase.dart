@@ -1127,7 +1127,6 @@ AgentTranscriptContextUpdate _archiveContextUpdateForImport(
           role: message.role,
           content: message.content,
           kind: message.kind,
-          provenance: AgentContextProvenance.unknown,
         ),
       )
       .toList(growable: false),

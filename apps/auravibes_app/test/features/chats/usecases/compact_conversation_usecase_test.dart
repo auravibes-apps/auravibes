@@ -901,10 +901,13 @@ void main() {
         expect(captured[toolCallIndex].role, ChatMessageRole.model);
         expect(captured[toolCallIndex].toolCalls, hasLength(1));
         expect(captured[toolResultIndex].role, ChatMessageRole.tool);
-        expect(captured[0].metadata[agentContextProvenanceMetadataKey], {
-          'origin': 'applicationPrompt',
-          'trust': 'appControlled',
-        });
+        expect(
+          captured.firstOrNull?.metadata[agentContextProvenanceMetadataKey],
+          {
+            'origin': 'applicationPrompt',
+            'trust': 'appControlled',
+          },
+        );
         expect(
           captured[toolResultIndex].metadata[agentContextProvenanceMetadataKey],
           {'origin': 'toolResult', 'trust': 'externalUntrusted'},
@@ -925,7 +928,7 @@ void main() {
           _makeMessage(
             id: 'summary',
             isUser: false,
-            messageType: MessageType.system,
+            messageType: .system,
             content: persistedSummary.content,
             metadata: summaryMetadata,
           ),

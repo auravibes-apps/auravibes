@@ -480,13 +480,15 @@ void main() {
           archiveWithUpdate(update),
         );
         final decoded = ConversationArchiveCodec.decode(encoded);
+        final decodedAgentContext =
+            decoded.agentContext ?? fail('Missing agent context');
         final envelope = jsonDecode(encoded) as Map<String, dynamic>;
         final agentContext = envelope['agentContext'] as Map<String, dynamic>;
         final restoredUpdate = jsonDecode(
-          decoded.agentContext!.entries.single.updateJson,
+          decodedAgentContext.entries.single.updateJson,
         ) as Map<String, dynamic>;
         final decodedContext = AgentTranscriptContextCodec.decodeUpdate(
-          decoded.agentContext!.entries.single.updateJson,
+          decodedAgentContext.entries.single.updateJson,
         );
 
         expect(envelope['version'], ConversationArchiveCodec.version);
@@ -499,7 +501,7 @@ void main() {
           (jsonDecode(update) as Map)['version'],
         );
         expect(
-          decodedContext.contextMessages!.single.provenance,
+          decodedContext.contextMessages?.single.provenance,
           index == 0
               ? AgentContextProvenance.unknown
               : AgentContextProvenance.applicationPrompt,

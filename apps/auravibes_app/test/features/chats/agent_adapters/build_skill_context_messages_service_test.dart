@@ -197,10 +197,16 @@ void main() {
             {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
           ],
         );
-        expect(messages.first.metadata['kind'], skillCatalogMetadataKind);
-        expect(messages.first.content, contains('<skill_catalog'));
-        expect(messages.first.content, contains('"revision":"r1"'));
-        expect(messages.first.content, isNot(contains('Use primary sources.')));
+        expect(
+          messages.firstOrNull?.metadata['kind'],
+          skillCatalogMetadataKind,
+        );
+        expect(messages.firstOrNull?.content, contains('<skill_catalog'));
+        expect(messages.firstOrNull?.content, contains('"revision":"r1"'));
+        expect(
+          messages.firstOrNull?.content,
+          isNot(contains('Use primary sources.')),
+        );
         expect(messages.last.content, contains('Use primary sources.'));
       },
     );
@@ -397,11 +403,14 @@ void main() {
 
         expect(messages, hasLength(5));
         expect(messages.firstOrNull?.content, 'Agent prompt');
-        expect(messages.first.role, ChatMessageRole.system);
-        expect(messages.first.metadata[agentContextProvenanceMetadataKey], {
-          'origin': 'userAgentConfiguration',
-          'trust': 'userAuthorized',
-        });
+        expect(messages.firstOrNull?.role, ChatMessageRole.system);
+        expect(
+          messages.firstOrNull?.metadata[agentContextProvenanceMetadataKey],
+          {
+            'origin': 'userAgentConfiguration',
+            'trust': 'userAuthorized',
+          },
+        );
         expect(messages[1].role, ChatMessageRole.system);
         expect(messages[1].metadata['kind'], skillCatalogMetadataKind);
         expect(messages[1].metadata[agentContextProvenanceMetadataKey], {

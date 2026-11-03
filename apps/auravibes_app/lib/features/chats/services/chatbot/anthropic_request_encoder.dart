@@ -102,10 +102,13 @@ class const AnthropicRequestEncoder({
   bool _systemRoleIsAllowed(Message message) =>
       message.role != Role.system ||
       AgentContextProvenance.fromMetadata(
-        message.metadata == null
-            ? null
-            : Map<String, Object?>.of(message.metadata!),
+        _messageMetadata(message),
       ).mayUseSystemRole;
+
+  Map<String, Object?>? _messageMetadata(Message message) {
+    final metadata = message.metadata;
+    return metadata == null ? null : Map<String, Object?>.of(metadata);
+  }
 
   bool _isLeading(Message message, List<sdk.InputMessage> messages) =>
       messages.isEmpty ||
@@ -250,9 +253,7 @@ extension on AnthropicRequestEncoder {
     ],
     metadata:
         AgentContextProvenance.fromMetadata(
-          previous.metadata == null
-              ? null
-              : Map<String, Object?>.of(previous.metadata!),
+          _messageMetadata(previous),
         ).withMetadata({
           'anthropicToolChanges': [
             ..._changes(previous),
@@ -293,12 +294,10 @@ extension on AnthropicRequestEncoder {
 
   bool _sameProvenance(Message left, Message right) =>
       AgentContextProvenance.fromMetadata(
-        left.metadata == null ? null : Map<String, Object?>.of(left.metadata!),
+        _messageMetadata(left),
       ) ==
       AgentContextProvenance.fromMetadata(
-        right.metadata == null
-            ? null
-            : Map<String, Object?>.of(right.metadata!),
+        _messageMetadata(right),
       );
 }
 

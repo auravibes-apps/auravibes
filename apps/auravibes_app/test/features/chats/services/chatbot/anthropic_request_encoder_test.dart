@@ -23,7 +23,7 @@ void main() {
         AgentContextMessage(
           role: .system,
           content: 'Stable prompt',
-          provenance: AgentContextProvenance.applicationPrompt,
+          provenance: .applicationPrompt,
         ),
       ],
       toolsAdded: [tool],
@@ -64,7 +64,7 @@ void main() {
           AgentContextMessage(
             role: .system,
             content: 'Later prompt',
-            provenance: AgentContextProvenance.applicationPrompt,
+            provenance: .applicationPrompt,
           ),
         ],
         toolsAdded: [other],
@@ -196,7 +196,7 @@ void main() {
           AgentContextMessage(
             role: .system,
             content: 'New prompt',
-            provenance: AgentContextProvenance.applicationPrompt,
+            provenance: .applicationPrompt,
           ),
         ],
       ),
@@ -222,12 +222,12 @@ void main() {
           AgentContextMessage(
             role: .system,
             content: 'APP_CONTEXT_SENTINEL',
-            provenance: AgentContextProvenance.applicationPrompt,
+            provenance: .applicationPrompt,
           ),
           AgentContextMessage(
             role: .system,
             content: 'IMPORTED_CONTEXT_SENTINEL',
-            provenance: AgentContextProvenance.importedSkill,
+            provenance: .importedSkill,
           ),
         ],
       ),

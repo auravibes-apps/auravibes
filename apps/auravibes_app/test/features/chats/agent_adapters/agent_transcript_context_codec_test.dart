@@ -33,13 +33,13 @@ void main() {
             AgentContextMessage(
               role: .system,
               content: 'SYSTEM_CONTEXT_SENTINEL',
-              provenance: AgentContextProvenance.applicationPrompt,
+              provenance: .applicationPrompt,
             ),
             AgentContextMessage(
               role: .skill,
               content: 'IMPORTED_SKILL_SENTINEL',
               kind: 'skill_context',
-              provenance: AgentContextProvenance.importedSkill,
+              provenance: .importedSkill,
             ),
           ],
         );
@@ -47,8 +47,7 @@ void main() {
           AgentTranscriptContextCodec.encodeUpdate(update),
         ) as Map<String, dynamic>;
         final messages = encoded['contextMessages'] as List<dynamic>;
-        final system = messages[0] as Map<String, dynamic>;
-        final imported = messages[1] as Map<String, dynamic>;
+        final [system, imported] = messages.cast<Map<String, dynamic>>();
 
         expect(encoded, containsPair('version', 2));
         expect(system['provenance'], {

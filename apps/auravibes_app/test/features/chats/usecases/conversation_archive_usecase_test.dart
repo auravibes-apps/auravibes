@@ -653,7 +653,8 @@ void main() {
           .firstWhere((message) => message.isAgentTranscriptContextUpdate)
           .content,
     );
-    final importedContext = importedUpdate.contextMessages!.single;
+    final importedContext =
+        importedUpdate.contextMessages?.single ?? fail('Missing context');
 
     expect(importedContext.role.name, 'system');
     expect(importedContext.content, content);
