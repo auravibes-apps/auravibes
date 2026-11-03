@@ -78,36 +78,32 @@ class const _ConversationArchiveExportReviewDialog({
 }) extends StatefulWidget {
   @override
   State<_ConversationArchiveExportReviewDialog> createState() =>
-      _ConversationArchiveExportReviewDialogState();
+      _ArchiveExportReviewState();
 }
 
-class _ConversationArchiveExportReviewDialogState
+class _ArchiveExportReviewState
     extends State<_ConversationArchiveExportReviewDialog> {
   var _includeAttachments = true;
 
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const TextLocale(_reviewTitleKey),
-    content: _buildContent(),
-    actions: _buildActions(),
+    content: _ConversationArchiveExportReviewContent(
+      fileName: widget.fileName,
+      preview: widget.preview,
+      includeAttachments: _includeAttachments,
+      onIncludeAttachmentsChanged: (value) {
+        setState(() => _includeAttachments = value);
+      },
+    ),
+    actions: [
+      const _ConversationArchiveExportCancelAction(),
+      _ConversationArchiveExportContinueAction(
+        includeAttachments: _includeAttachments,
+      ),
+    ],
     scrollable: true,
   );
-
-  Widget _buildContent() => _ConversationArchiveExportReviewContent(
-    fileName: widget.fileName,
-    preview: widget.preview,
-    includeAttachments: _includeAttachments,
-    onIncludeAttachmentsChanged: (value) {
-      setState(() => _includeAttachments = value);
-    },
-  );
-
-  List<Widget> _buildActions() => [
-    const _ConversationArchiveExportCancelAction(),
-    _ConversationArchiveExportContinueAction(
-      includeAttachments: _includeAttachments,
-    ),
-  ];
 }
 
 class const _ConversationArchiveExportCancelAction() extends StatelessWidget {
@@ -342,7 +338,6 @@ class const _ConversationArchiveExportAttachmentRow({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
-    container: true,
     child: Padding(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.fromSpacing(.xs),
@@ -356,8 +351,10 @@ class const _ConversationArchiveExportAttachmentRow({
             child: _ArchiveExportAttachmentDetails(attachment: attachment),
           ),
         ],
+        crossAxisAlignment: .start,
       ),
     ),
+    container: true,
   );
 }
 

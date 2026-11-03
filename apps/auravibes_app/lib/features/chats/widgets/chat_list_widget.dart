@@ -677,6 +677,7 @@ extension on _ChatTileState {
     try {
       await _previewAndExportConversationArchive(context);
     } on Object catch (error, stackTrace) {
+      if (!context.mounted) return;
       _reportArchiveExportError(context, error, stackTrace);
     }
   }
@@ -694,6 +695,7 @@ extension on _ChatTileState {
       fileName: 'conversation.auravibes.json',
       preview: preview,
     );
+    if (!context.mounted) return;
     await _saveReviewedConversationArchive(context, decision);
   }
 

@@ -1252,8 +1252,10 @@ _archiveMessageAttachmentsIfIncluded(
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
   Map<String, String> toolCallIds,
   bool includeAttachments,
-) async {
-  if (!includeAttachments) return const [];
+) {
+  if (!includeAttachments) {
+    return Future<List<ConversationArchiveAttachment>>.value(const []);
+  }
 
   return _archiveMessageAttachments(
     message.attachments,
