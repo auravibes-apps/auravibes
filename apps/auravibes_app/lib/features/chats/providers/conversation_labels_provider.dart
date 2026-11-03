@@ -25,10 +25,10 @@ Stream<List<ConversationLabelEntity>> conversationLabelsStream(
     if (gateway == null) return;
     Future<({List<ConversationLabelEntity> value, int currentSequence})>
     read() async {
+      final state = await gateway.read(pages: const [], eventLimit: 0);
       final labels = await gateway.client.conversation.listLabels(
         ListConversationLabelsRequest(workspaceId: cloud.cloudWorkspaceId),
       );
-      final state = await gateway.read(pages: const [], eventLimit: 0);
       return (
         value: labels.map((label) => _cloudLabel(label, workspaceId)).toList(),
         currentSequence: state.currentSequence,

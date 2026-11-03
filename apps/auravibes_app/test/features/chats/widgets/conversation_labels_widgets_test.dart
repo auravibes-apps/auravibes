@@ -14,10 +14,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
   late AppDatabase database;
   late ConversationLabelsRepository repository;
   late String workspaceId;
@@ -46,6 +52,19 @@ void main() {
     ],
   );
 
+  Future<void> pumpSubject(
+    WidgetTester tester, {
+    required Widget child,
+    Locale startLocale = const Locale('en'),
+  }) async {
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        buildSubject(child: child, startLocale: startLocale),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('label badges expose one localized semantic label', (
     tester,
   ) async {
@@ -53,15 +72,18 @@ void main() {
       _label('urgent', 'Urgent'),
       _label('planning', 'Planning'),
     ];
-    await tester.pumpWidget(
-      buildSubject(
-        child: conversationLabelBadges(labels),
-        startLocale: const Locale('es'),
-      ),
+    await pumpSubject(
+      tester,
+      child: conversationLabelBadges(labels),
+      startLocale: const Locale('es'),
     );
-    await tester.pumpAndSettle();
 
-    expect(find.byType(AuraBadge), findsNWidgets(2));
+    final urgentBadge = find.byKey(const ValueKey('conversation-label-urgent'));
+    final planningBadge = find.byKey(
+      const ValueKey('conversation-label-planning'),
+    );
+    expect(urgentBadge, findsOneWidget);
+    expect(planningBadge, findsOneWidget);
     expect(
       tester.getSemantics(
         find.byKey(const ValueKey('conversation-labels-semantics')),
@@ -69,7 +91,7 @@ void main() {
       'Etiquetas de conversación: Urgent, Planning',
     );
     expect(
-      tester.widget<AuraBadge>(find.byType(AuraBadge).first).variant,
+      tester.widget<AuraBadge>(urgentBadge).variant,
       AuraBadgeVariant.neutral,
     );
   });
@@ -87,16 +109,14 @@ void main() {
     );
     Set<String>? applied;
 
-    await tester.pumpWidget(
-      buildSubject(
-        child: ConversationLabelsToolbar(
-          workspaceId: workspaceId,
-          selectedLabelIds: const {},
-          onSelectedLabelIdsChanged: (value) => applied = value,
-        ),
+    await pumpSubject(
+      tester,
+      child: ConversationLabelsToolbar(
+        workspaceId: workspaceId,
+        selectedLabelIds: const {},
+        onSelectedLabelIdsChanged: (value) => applied = value,
       ),
     );
-    await tester.pumpAndSettle();
 
     await tester.tap(find.text(LocaleKeys
         .chats_screens_conversation_labels_filter
@@ -113,16 +133,14 @@ void main() {
   });
 
   testWidgets('management creates a shared workspace label', (tester) async {
-    await tester.pumpWidget(
-      buildSubject(
-        child: ConversationLabelsToolbar(
-          workspaceId: workspaceId,
-          selectedLabelIds: const {},
-          onSelectedLabelIdsChanged: (_) {},
-        ),
+    await pumpSubject(
+      tester,
+      child: ConversationLabelsToolbar(
+        workspaceId: workspaceId,
+        selectedLabelIds: const {},
+        onSelectedLabelIdsChanged: (_) {},
       ),
     );
-    await tester.pumpAndSettle();
 
     await tester.tap(
       find.text(LocaleKeys.chats_screens_conversation_labels_manage.tr()),
@@ -152,8 +170,9 @@ void main() {
       .insert(workspaceId: workspaceId, title: 'Chat'),
     );
 
-    await tester.pumpWidget(
-      buildSubject(child: _AssignmentLauncher(
+    await pumpSubject(
+      tester,
+      child: _AssignmentLauncher(
         workspaceId: workspaceId,
         conversation: ConversationEntity(
           id: row.id,
@@ -163,9 +182,8 @@ void main() {
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
         ),
-      )),
+      ),
     );
-    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Assign labels'));
     await tester.pumpAndSettle();

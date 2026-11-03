@@ -103,8 +103,6 @@ part 'app_database.g.dart';
     ApiModelProviders,
     ApiModels,
     Conversations,
-    ConversationLabels,
-    ConversationLabelAssignments,
     Agents,
     AgentSkills,
     AgentTools,
@@ -143,6 +141,8 @@ part 'app_database.g.dart';
     WorkspaceContentReports,
     WorkspaceVerificationSettings,
     WorkspaceVerificationRuns,
+    ConversationLabels,
+    ConversationLabelAssignments,
   ],
   daos: [
     WorkspaceDao,
