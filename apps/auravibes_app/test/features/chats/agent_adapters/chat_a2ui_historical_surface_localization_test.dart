@@ -47,13 +47,15 @@ void main() {
         useFallbackTranslations: true,
         useFallbackTranslationsForEmptyResources: true,
         saveLocale: false,
-        child: AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
+        child: Builder(
+          builder: (context) => MaterialApp(
             builder: _legacyMaterialBuilder,
-            locale: const Locale('es'),
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            supportedLocales: const [Locale('en'), Locale('es')],
+            locale: context.locale,
+            localizationsDelegates: [
+              ...GlobalMaterialLocalizations.delegates,
+              ...context.localizationDelegates,
+            ],
+            supportedLocales: context.supportedLocales,
             theme: ThemeData(),
             home: SingleChildScrollView(
               child: ChatA2uiSurfaceHost.historical(
@@ -74,4 +76,7 @@ void main() {
 }
 
 Widget _legacyMaterialBuilder(BuildContext _, Widget? child) =>
-    AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink());
+    AuraThemeScope(
+      theme: .light,
+      child: AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
+    );
