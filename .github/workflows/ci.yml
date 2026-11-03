@@ -381,6 +381,26 @@ jobs:
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: melos run generate --no-select
 
+      - name: Capture queued notifier generated output
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 1791 && needs.change.outputs.run_generated_checks == 'true' }}
+        shell: bash
+        env:
+          GENERATED_OUTPUT_DIRECTORY: ${{ runner.temp }}/queued-notifier-generated-output
+        run: |
+          set -euo pipefail
+          target=apps/auravibes_app/lib/features/chats/notifiers/conversation_queued_draft.g.dart
+          mkdir -p "$GENERATED_OUTPUT_DIRECTORY"
+          cp "$target" "$GENERATED_OUTPUT_DIRECTORY/conversation_queued_draft.g.dart"
+
+      - name: Upload queued notifier generated output
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 1791 && needs.change.outputs.run_generated_checks == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: queued-notifier-generated-output-${{ github.run_id }}
+          path: ${{ runner.temp }}/queued-notifier-generated-output/conversation_queued_draft.g.dart
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Install matching Serverpod CLI
         if: ${{ needs.change.outputs.run_generated_checks == 'true' }}
         run: |
