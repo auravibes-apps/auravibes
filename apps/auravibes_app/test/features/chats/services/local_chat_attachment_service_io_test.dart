@@ -99,29 +99,32 @@ void main() {
     expect(await File(attachment.localPath).readAsBytes(), bytes);
   });
 
-  test('removes a partial draft file when a dropped-file write fails', () async {
-    final service = LocalChatAttachmentServiceIo(
-      attachmentWriter: (file, bytes) async {
-        await file.writeAsBytes(bytes.take(2).toList());
-        throw FileSystemException('simulated write failure');
-      },
-    );
+  test(
+    'removes a partial draft file when a dropped-file write fails',
+    () async {
+      final service = LocalChatAttachmentServiceIo(
+        attachmentWriter: (file, bytes) async {
+          await file.writeAsBytes(bytes.take(2).toList());
+          throw FileSystemException('simulated write failure');
+        },
+      );
 
-    await expectLater(
-      service.copyBytesIntoAppStorage(
-        Uint8List.fromList([1, 2, 3, 4]),
-        fileName: 'report.pdf',
-        displayName: 'report.pdf',
-      ),
-      throwsA(isA<FileSystemException>()),
-    );
+      await expectLater(
+        service.copyBytesIntoAppStorage(
+          Uint8List.fromList([1, 2, 3, 4]),
+          fileName: 'report.pdf',
+          displayName: 'report.pdf',
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
 
-    final draftDirectory = Directory(
-      '${tempDirectory.path}/chat_attachments_draft',
-    );
-    expect(draftDirectory.existsSync(), isTrue);
-    expect(draftDirectory.listSync(), isEmpty);
-  });
+      final draftDirectory = Directory(
+        '${tempDirectory.path}/chat_attachments_draft',
+      );
+      expect(draftDirectory.existsSync(), isTrue);
+      expect(draftDirectory.listSync(), isEmpty);
+    },
+  );
 
   test(
     'createToolResultAttachment stores image with tool call association',

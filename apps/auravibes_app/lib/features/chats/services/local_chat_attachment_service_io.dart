@@ -38,8 +38,7 @@ typedef LocalChatAttachmentWriter = Future<void> Function(
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
-  @visibleForTesting
-  final LocalChatAttachmentWriter? attachmentWriter,
+  @visibleForTesting final LocalChatAttachmentWriter? attachmentWriter,
 }) {
   // Defer platform-channel setup until voice recording is requested.
   AudioRecorder? _recorder = recorder;

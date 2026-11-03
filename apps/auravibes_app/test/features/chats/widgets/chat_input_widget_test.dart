@@ -131,57 +131,55 @@ void main() {
         ],
         child: Builder(
           builder: (context) {
-            Widget chatInput(String? conversationId, String workspaceId) =>
-                ChatInputWidget(
-                  workspaceId: workspaceId,
-                  onSendMessage: onSendMessage,
-                  onToolsPress: onToolsPress,
-                  modelSheetControl: modelSheetControl,
-                  agentSheetControl: agentSheetControl,
-                  modelCompactControl: (onPressed) => AuraTile(
-                    child: modelCompactControl,
-                    onTap: onPressed,
-                    variant: .outlined,
-                    size: .small,
-                    leading: const AuraIcon(
-                      Icons.memory_outlined,
-                      size: .small,
-                    ),
-                  ),
-                  agentCompactControl: (onPressed) => AuraTile(
-                    child: agentCompactControl,
-                    onTap: onPressed,
-                    variant: .selected,
-                    size: .small,
-                    leading: const AuraIcon(Icons.smart_toy_outlined),
-                  ),
-                  onDraftStatusChanged: onDraftStatusChanged,
-                  conversationId: conversationId,
-                  toolAccessMode: toolAccessMode,
-                  onToolAccessModeChanged: onToolAccessModeChanged,
-                  reasoningSettingsControl: reasoningSettingsControl,
-                  draftToLoad: draftToLoad,
-                  modalitiesInput: modalitiesInput,
-                  onSkillsPress: onSkillsPress,
-                  onContinueAgent: onContinueAgent,
-                  continueDisabledHint: continueDisabledHint,
-                  disabledHint: disabledHint,
-                  compactDisabledHint: compactDisabledHint,
-                  disabled: disabled,
-                  acceptDroppedFilesWhenDisabled:
-                      acceptDroppedFilesWhenDisabled,
-                  isBusy: isBusy,
-                  showStopButton: showStopButton,
-                  onStop: onStop,
-                  onCompact: onCompact,
-                  canCompact: canCompact,
-                  isCompacting: isCompacting,
-                  key: reuseChatInputForContextChanges
-                      ? const ValueKey<String>('reused_chat_input')
-                      : conversationId == null
-                      ? null
-                      : ValueKey(conversationId),
-                );
+            Widget chatInput(
+              String? conversationId,
+              String workspaceId,
+            ) => ChatInputWidget(
+              workspaceId: workspaceId,
+              onSendMessage: onSendMessage,
+              onToolsPress: onToolsPress,
+              modelSheetControl: modelSheetControl,
+              agentSheetControl: agentSheetControl,
+              modelCompactControl: (onPressed) => AuraTile(
+                child: modelCompactControl,
+                onTap: onPressed,
+                variant: .outlined,
+                size: .small,
+                leading: const AuraIcon(Icons.memory_outlined, size: .small),
+              ),
+              agentCompactControl: (onPressed) => AuraTile(
+                child: agentCompactControl,
+                onTap: onPressed,
+                variant: .selected,
+                size: .small,
+                leading: const AuraIcon(Icons.smart_toy_outlined),
+              ),
+              onDraftStatusChanged: onDraftStatusChanged,
+              conversationId: conversationId,
+              toolAccessMode: toolAccessMode,
+              onToolAccessModeChanged: onToolAccessModeChanged,
+              reasoningSettingsControl: reasoningSettingsControl,
+              draftToLoad: draftToLoad,
+              modalitiesInput: modalitiesInput,
+              onSkillsPress: onSkillsPress,
+              onContinueAgent: onContinueAgent,
+              continueDisabledHint: continueDisabledHint,
+              disabledHint: disabledHint,
+              compactDisabledHint: compactDisabledHint,
+              disabled: disabled,
+              acceptDroppedFilesWhenDisabled: acceptDroppedFilesWhenDisabled,
+              isBusy: isBusy,
+              showStopButton: showStopButton,
+              onStop: onStop,
+              onCompact: onCompact,
+              canCompact: canCompact,
+              isCompacting: isCompacting,
+              key: reuseChatInputForContextChanges
+                  ? const ValueKey<String>('reused_chat_input')
+                  : conversationId == null
+                  ? null
+                  : ValueKey(conversationId),
+            );
 
             Widget workspaceInput(String workspaceId) {
               if (activeConversation == null) {
@@ -2684,10 +2682,7 @@ class _TestFlutterFileDropChannel {
   }
 
   final StandardMessageCodec _codec = const .new();
-  final _files = <
-    String,
-    ({Uint8List bytes, int size, Object? readError})
-  >{};
+  final _files = <String, ({Uint8List bytes, int size, Object? readError})>{};
   MockStreamHandlerEventSink? _eventSink;
   var _nextHandle = 0;
 

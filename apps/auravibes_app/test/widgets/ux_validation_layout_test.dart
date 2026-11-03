@@ -141,16 +141,12 @@ void main() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockStreamHandler(
             const .new('flutter_file_drop/events'),
-            .inline(
-              onListen: (_, _) {},
-              onCancel: (_) {},
-            ),
+            .inline(onListen: (_, _) {}, onCancel: (_) {}),
           );
       final currentFixture = await UxValidationFixture.create();
       fixture = currentFixture;
-      final route = NewChatRoute(
-        workspaceId: currentFixture.workspaceId,
-      ).location;
+      final route = NewChatRoute(workspaceId: currentFixture.workspaceId)
+          .location;
       final _ = await currentFixture.pump(tester, route, size: size);
 
       expect(find.byType(ChatInputWidget), findsOneWidget);
@@ -170,13 +166,16 @@ void main() {
         },
       );
 
-      tester.widget<DropTarget>(find.byType(DropTarget)).onMove?.call(
-        DropPreview(
-          globalPosition: .zero,
-          localPosition: .zero,
-          items: const [.new(kind: .file)],
-        ),
-      );
+      tester
+          .widget<DropTarget>(find.byType(DropTarget))
+          .onMove
+          ?.call(
+            DropPreview(
+              globalPosition: .zero,
+              localPosition: .zero,
+              items: const [.new(kind: .file)],
+            ),
+          );
       await tester.pump();
 
       expect(find.text('Drop files to attach'), findsOneWidget);

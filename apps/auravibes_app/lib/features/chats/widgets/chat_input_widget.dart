@@ -210,10 +210,7 @@ abstract final class _ChatInputHooksFactory {
     recordingStop: useRef<Future<MessageAttachmentToCreate?>?>(null),
   );
 
-  static _ChatInputHooks hooks(
-    ChatDraft? initialDraft,
-    ChatInputWidget input,
-  ) {
+  static _ChatInputHooks hooks(ChatDraft? initialDraft, ChatInputWidget input) {
     final dropContext = useRef<_ChatInputContext>((
       workspaceId: input.workspaceId,
       conversationId: input.conversationId,
