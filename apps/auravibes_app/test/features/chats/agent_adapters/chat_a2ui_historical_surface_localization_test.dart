@@ -22,14 +22,14 @@ void main() {
       jsonEncode({
         'version': 'v0.9',
         'createSurface': {
-          'surfaceId': 'localized-status',
+          'surfaceId': 'main',
           'catalogId': auraChatCatalogId,
         },
       }),
       jsonEncode({
         'version': 'v0.9',
         'updateComponents': {
-          'surfaceId': 'localized-status',
+          'surfaceId': 'main',
           'components': [
             {'id': 'root', 'component': 'Text', 'text': 'Saved response'},
           ],
@@ -44,25 +44,18 @@ void main() {
         fallbackLocale: const Locale('es'),
         startLocale: const Locale('es'),
         useOnlyLangCode: true,
-        child: Builder(
-          builder: (context) => AuraThemeScope(
-            theme: .light,
-            child: MaterialApp(
-              builder: (context, child) => AuraLegacyMaterialBridge(
-                child: child ?? const SizedBox.shrink(),
-              ),
-              locale: context.locale,
-              localizationsDelegates: [
-                ...GlobalMaterialLocalizations.delegates,
-                ...context.localizationDelegates,
-              ],
-              supportedLocales: context.supportedLocales,
-              theme: ThemeData(),
-              home: SingleChildScrollView(
-                child: ChatA2uiSurfaceHost.historical(
-                  messageId: 'localized-status',
-                  payloads: payloads,
-                ),
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            locale: const Locale('es'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('es')],
+            theme: ThemeData(),
+            home: SingleChildScrollView(
+              child: ChatA2uiSurfaceHost.historical(
+                messageId: 'assistant-1',
+                payloads: payloads,
               ),
             ),
           ),
@@ -76,3 +69,6 @@ void main() {
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
   });
 }
+
+Widget _legacyMaterialBuilder(BuildContext _, Widget? child) =>
+    AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink());
