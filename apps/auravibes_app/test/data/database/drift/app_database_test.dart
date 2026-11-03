@@ -87,9 +87,40 @@ void main() {
       },
     );
 
+    test('schema49 migration adds archive state after verification '
+        'tables', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 49
+        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+        ..execute(
+          'CREATE TABLE conversations (id TEXT PRIMARY KEY, workspace_id TEXT, '
+          'title TEXT NOT NULL)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?, ?, ?)', [
+          'conversation-1',
+          'existing',
+          'Existing conversation',
+        ]);
+      _createHistorySources(sqliteDb);
+      final database = AppDatabase(connection: NativeDatabase.opened(sqliteDb));
+      addTearDown(database.close);
+
+      expect(
+        await database.select(database.conversationArchiveStates).get(),
+        isEmpty,
+      );
+      final conversation = await database
+          .customSelect(
+            'SELECT title FROM conversations WHERE id = ?',
+            variables: [const Variable<String>('conversation-1')],
+          )
+          .getSingle();
+      expect(conversation.read<String>('title'), 'Existing conversation');
+      expect(sqliteDb.userVersion, 50);
+    });
+
     test(
-      'schema46 migration adds task brief and archive state without rewriting '
-      'chats',
       'schema46 migration adds task brief and archive state without rewriting '
       'chats',
       () async {
