@@ -26,6 +26,11 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
+      - name: Install matching Serverpod CLI
+        run: |
+          version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("serverpod").fetch("version")')"
+          dart pub global activate serverpod_cli "$version"
+
       - name: Generate app and Serverpod code
         run: |
           python3 tool/validation_lease.py --label issue-1446-generate-app -- dart run melos run generate
