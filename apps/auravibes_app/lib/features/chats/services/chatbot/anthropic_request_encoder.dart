@@ -391,10 +391,11 @@ Message _contextMessage(AgentContextMessage message) => Message(
 );
 
 Role _contextRole(AgentContextMessage message) {
-  if (message.role != Role.system ||
+  if (message.role != AgentContextMessageRole.system ||
       !message.provenance.mayUseSystemRole) {
     return Role.user;
   }
+
   return Role.system;
 }
 
