@@ -106,6 +106,7 @@ class const SaveScopedVerificationSettingsUsecase({
       if (remaining <= .zero) {
         throw TimeoutException('Verification probe expired.');
       }
+
       return await probeCapabilities(
         workspaceId,
         settings,

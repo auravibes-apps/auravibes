@@ -20,6 +20,7 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
       return false;
     }
     final available = await tools(workspaceId);
+
     return _hasValidRunnerAndEdits(available, settings);
   }
 

@@ -117,6 +117,8 @@ class _ScopedVerificationSectionState
       _publishGuard();
     }
   }
+
+  void _update(VoidCallback callback) => setState(callback);
 }
 
 AsyncValue<List<ScopedVerificationToolOption>> _watchVerificationTools(
@@ -161,7 +163,7 @@ extension _ScopedVerificationSectionStateActions
   }
 
   void _showError(String key) {
-    setState(() => _error = key);
+    _update(() => _error = key);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final errorContext = _errorAnchor.currentContext;
       if (mounted && errorContext != null) {
@@ -173,7 +175,7 @@ extension _ScopedVerificationSectionStateActions
   void _discard() {
     final latest = _latest;
     if (latest == null) return;
-    setState(() {
+    _update(() {
       _replace(latest);
       _error = null;
       _notice = null;
@@ -182,7 +184,7 @@ extension _ScopedVerificationSectionStateActions
   }
 
   void _toggleAdvanced() {
-    setState(() => _advanced = !_advanced);
+    _update(() => _advanced = !_advanced);
   }
 
   Future<void> _save() async {
@@ -202,7 +204,7 @@ extension _ScopedVerificationSectionStateActions
   }
 
   void _beginSaving() {
-    setState(() {
+    _update(() {
       _saving = true;
       _error = null;
       _notice = null;
@@ -213,7 +215,7 @@ extension _ScopedVerificationSectionStateActions
   Future<void> _persistDraft(ScopedVerificationSettings pending) async {
     final saved = await _savePendingSettings(ref, widget.workspaceId, pending);
     if (!mounted) return;
-    setState(() {
+    _update(() {
       _replace(saved);
       _notice = LocaleKeys.verification_saved;
     });
@@ -221,7 +223,7 @@ extension _ScopedVerificationSectionStateActions
 
   void _finishSaving() {
     if (!mounted) return;
-    setState(() => _saving = false);
+    _update(() => _saving = false);
     _publishGuard();
   }
 }
@@ -237,10 +239,13 @@ void _applyRunnerSelection(
   ScopedVerificationToolOption? tool,
 ) {
   final draft = state._draft;
-  if (draft.mcpServerId != tool?.serverId) draft.editToolIds.clear();
-  draft.runnerToolId = tool?.id ?? '';
-  draft.mcpServerId = tool?.serverId ?? '';
-  final _ = draft.editToolIds.remove(draft.runnerToolId);
+  final runnerToolId = tool?.id ?? '';
+  final mcpServerId = tool?.serverId ?? '';
+  final serverChanged = draft.mcpServerId != mcpServerId;
+  draft
+    ..editToolIds.removeWhere((id) => serverChanged || id == runnerToolId)
+    ..runnerToolId = runnerToolId
+    ..mcpServerId = mcpServerId;
 }
 
 ScopedVerificationSettings? _readPendingSettings(
@@ -249,8 +254,9 @@ ScopedVerificationSettings? _readPendingSettings(
   try {
     return state._draft.read();
   } on FormatException {
-    state._advanced = true;
-    state._showError(LocaleKeys.verification_errors_invalid);
+    state
+      .._advanced = true
+      .._showError(LocaleKeys.verification_errors_invalid);
 
     return null;
   }
@@ -260,15 +266,16 @@ Future<ScopedVerificationSettings> _savePendingSettings(
   WidgetRef ref,
   String workspaceId,
   ScopedVerificationSettings settings,
-) async {
-  await ref.read(saveScopedVerificationSettingsUsecaseProvider(workspaceId))(
+) {
+  final saveSettings = ref.read(
+    saveScopedVerificationSettingsUsecaseProvider(workspaceId),
+  );
+  final repository = ref.read(workspaceVerificationRepositoryProvider);
+
+  return saveSettings(
     workspaceId: workspaceId,
     settings: settings,
-  );
-
-  return ref
-      .read(workspaceVerificationRepositoryProvider)
-      .getSettings(workspaceId);
+  ).then((_) => repository.getSettings(workspaceId));
 }
 
 class const _VerificationCard({
@@ -462,7 +469,17 @@ class const _VerificationForm({
         _VerificationEditTools(state: state, tools: tools),
         _VerificationCheckList(state: state),
         _VerificationAdvancedFields(state: state),
-        ..._verificationFormFeedback(state),
+        if (state._error case final String error)
+          Semantics(
+            key: state._errorAnchor,
+            child: _VerificationErrorText(localeKey: error),
+            liveRegion: true,
+          ),
+        if (state._notice != null)
+          Semantics(
+            child: const TextLocale(LocaleKeys.verification_saved),
+            liveRegion: true,
+          ),
         _VerificationFormActions(state: state),
       ],
     ),
@@ -542,7 +559,10 @@ class const _VerificationRunnerDropdown({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: _verificationRunnerOptions(runners),
+    options: [
+      for (final tool in runners)
+        AuraDropdownOption(value: tool.id, child: Text(tool.label)),
+    ],
     value: _selectedVerificationRunner(runners, selectedId),
     onChanged: (id) => state._selectRunner(id, runners),
     label: const TextLocale(LocaleKeys.verification_runner),
@@ -550,13 +570,6 @@ class const _VerificationRunnerDropdown({
     semanticLabel: LocaleKeys.verification_runner.tr(),
   );
 }
-
-List<AuraDropdownOption<String>> _verificationRunnerOptions(
-  List<ScopedVerificationToolOption> runners,
-) => [
-  for (final tool in runners)
-    AuraDropdownOption(value: tool.id, child: Text(tool.label)),
-];
 
 String? _selectedVerificationRunner(
   List<ScopedVerificationToolOption> runners,
@@ -625,21 +638,6 @@ class const _VerificationAdvancedFields({
   );
 }
 
-List<Widget> _verificationFormFeedback(_ScopedVerificationSectionState state) =>
-    [
-      if (state._error case final String error)
-        Semantics(
-          key: state._errorAnchor,
-          child: _VerificationErrorText(localeKey: error),
-          liveRegion: true,
-        ),
-      if (state._notice != null)
-        Semantics(
-          child: const TextLocale(LocaleKeys.verification_saved),
-          liveRegion: true,
-        ),
-    ];
-
 class const _VerificationFormActions({
   required final _ScopedVerificationSectionState state,
 }) extends StatelessWidget {
@@ -701,7 +699,15 @@ class const _VerificationEditTools({
           style: .heading6,
         ),
         const TextLocale(LocaleKeys.verification_edit_tools_hint),
-        ..._missingEditSelections(state, draft, eligible),
+        if (draft.editToolIds.any((id) => !eligible.contains(id))) ...[
+          const TextLocale(LocaleKeys.verification_missing_selections),
+          AuraButton(
+            onPressed: () =>
+                _clearMissingEditSelections(state, draft, eligible),
+            child: const TextLocale(LocaleKeys.verification_clear_missing),
+            variant: .ghost,
+          ),
+        ],
         for (final tool in edits)
           _VerificationEditToolToggle(state: state, draft: draft, tool: tool),
       ],
@@ -719,25 +725,6 @@ List<ScopedVerificationToolOption> _availableEditTools(
           tool.serverId == draft.mcpServerId && tool.id != draft.runnerToolId,
     )
     .toList();
-
-List<Widget> _missingEditSelections(
-  _ScopedVerificationSectionState state,
-  ScopedVerificationFormDraft draft,
-  Set<String> eligibleIds,
-) {
-  if (!draft.editToolIds.any((id) => !eligibleIds.contains(id))) {
-    return const [];
-  }
-
-  return [
-    const TextLocale(LocaleKeys.verification_missing_selections),
-    AuraButton(
-      onPressed: () => _clearMissingEditSelections(state, draft, eligibleIds),
-      child: const TextLocale(LocaleKeys.verification_clear_missing),
-      variant: .ghost,
-    ),
-  ];
-}
 
 void _clearMissingEditSelections(
   _ScopedVerificationSectionState state,
