@@ -6,7 +6,9 @@ import 'package:auravibes_app/features/chats/screens/archived_conversations_scre
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -131,11 +133,14 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Archivadas en este dispositivo'), findsOneWidget);
+    final context = tester.element(
+      find.byType(ArchivedConversationsScreen),
+    );
     expect(
       find.text(
-        'En los espacios en la nube, el archivo se guarda solo en esta app y '
-        'en este dispositivo. Los dem\u00e1s miembros y tus otros dispositivos '
-        'a\u00fan pueden ver esta conversaci\u00f3n compartida.',
+        LocaleKeys.chats_screens_archived_conversations_cloud_notice.tr(
+          context: context,
+        ),
       ),
       findsOneWidget,
     );
