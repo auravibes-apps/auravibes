@@ -736,12 +736,12 @@ void main() {
       expect(find.text('Delete selected'), findsNothing);
       await tester.enterText(find.byType(EditableText), 'missing');
       await tester.pump(const Duration(milliseconds: 301));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.text('Project research'), findsNothing);
 
       await tester.enterText(find.byType(EditableText), 'Project');
       await tester.pump(const Duration(milliseconds: 301));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
       for (var attempt = 0; attempt < 5; attempt++) {
@@ -751,7 +751,9 @@ void main() {
       expect(find.text('Restore'), findsOneWidget);
       expect(find.text('Archive'), findsNothing);
       await tester.tap(find.text('Restore'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump();
 
       expect(
         await database.conversationArchiveStateDao.getArchivedConversationIds(
