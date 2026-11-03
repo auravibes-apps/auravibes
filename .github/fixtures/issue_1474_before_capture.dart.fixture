@@ -54,7 +54,7 @@ void main() {
       height: 180,
       overrides: _workspaceAccessOverride(),
     );
-    expect(find.text('Delete Record'), findsOneWidget);
+    expect(find.byType(ToolItemRow), findsOneWidget);
     await _capture(tester, 'management');
 
     final pendingCall = PendingToolCall(
