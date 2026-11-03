@@ -57,13 +57,11 @@ class const _PreflightContent({
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
     final isCloud = session.asData?.value.cloud != null;
 
-    return _preflightList(isCloud);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: _preflightCards(isCloud),
+    );
   }
-
-  Widget _preflightList(bool isCloud) => ListView(
-    padding: const EdgeInsets.all(16),
-    children: _preflightCards(isCloud),
-  );
 
   List<Widget> _preflightCards(bool isCloud) => [
     _PreflightSummaryCard(
@@ -72,10 +70,7 @@ class const _PreflightContent({
       isCloud: isCloud,
     ),
     for (final id in WorkspaceSetupPreflightCheckId.values)
-      _PreflightCheckCard(
-        workspaceId: workspaceId,
-        check: result.check(id),
-      ),
+      _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
   ];
 }
 
@@ -321,52 +316,52 @@ String _statusKey(WorkspaceSetupPreflightStatus status) => switch (status) {
   .unknown => 'workspace_setup_preflight.status.unknown',
 };
 
-String _localizedCheckMessage(BuildContext context, String key) =>
-    (switch (key) {
-      'workspace_setup_preflight.storage_available' =>
-        LocaleKeys.workspace_setup_preflight_storage_available,
-      'workspace_setup_preflight.storage_unavailable' =>
-        LocaleKeys.workspace_setup_preflight_storage_unavailable,
-      'workspace_setup_preflight.storage_unverified' =>
-        LocaleKeys.workspace_setup_preflight_storage_unverified,
-      'workspace_setup_preflight.provider_unverified' =>
-        LocaleKeys.workspace_setup_preflight_provider_unverified,
-      'workspace_setup_preflight.provider_not_configured' =>
-        LocaleKeys.workspace_setup_preflight_provider_not_configured,
-      'workspace_setup_preflight.provider_credential_missing_optional' =>
-        LocaleKeys
-            .workspace_setup_preflight_provider_credential_missing_optional,
-      'workspace_setup_preflight.provider_credential_missing_required' =>
-        LocaleKeys
-            .workspace_setup_preflight_provider_credential_missing_required,
-      'workspace_setup_preflight.provider_for_model_missing' =>
-        LocaleKeys.workspace_setup_preflight_provider_for_model_missing,
-      'workspace_setup_preflight.provider_saved' =>
-        LocaleKeys.workspace_setup_preflight_provider_saved,
-      'workspace_setup_preflight.model_not_selected' =>
-        LocaleKeys.workspace_setup_preflight_model_not_selected,
-      'workspace_setup_preflight.model_unverified' =>
-        LocaleKeys.workspace_setup_preflight_model_unverified,
-      'workspace_setup_preflight.model_missing' =>
-        LocaleKeys.workspace_setup_preflight_model_missing,
-      'workspace_setup_preflight.model_metadata_unavailable' =>
-        LocaleKeys.workspace_setup_preflight_model_metadata_unavailable,
-      'workspace_setup_preflight.model_metadata_available' =>
-        LocaleKeys.workspace_setup_preflight_model_metadata_available,
-      'workspace_setup_preflight.mcp_unverified' =>
-        LocaleKeys.workspace_setup_preflight_mcp_unverified,
-      'workspace_setup_preflight.mcp_not_configured' =>
-        LocaleKeys.workspace_setup_preflight_mcp_not_configured,
-      'workspace_setup_preflight.mcp_disabled' =>
-        LocaleKeys.workspace_setup_preflight_mcp_disabled,
-      'workspace_setup_preflight.mcp_not_tested' =>
-        LocaleKeys.workspace_setup_preflight_mcp_not_tested,
-      'workspace_setup_preflight.mcp_attention' =>
-        LocaleKeys.workspace_setup_preflight_mcp_attention,
-      'workspace_setup_preflight.mcp_last_test_passed' =>
-        LocaleKeys.workspace_setup_preflight_mcp_last_test_passed,
-      _ => LocaleKeys.workspace_setup_preflight_unavailable,
-    }).tr(context: context);
+String _localizedCheckMessage(
+  BuildContext context,
+  String key,
+) => (switch (key) {
+  'workspace_setup_preflight.storage_available' =>
+    LocaleKeys.workspace_setup_preflight_storage_available,
+  'workspace_setup_preflight.storage_unavailable' =>
+    LocaleKeys.workspace_setup_preflight_storage_unavailable,
+  'workspace_setup_preflight.storage_unverified' =>
+    LocaleKeys.workspace_setup_preflight_storage_unverified,
+  'workspace_setup_preflight.provider_unverified' =>
+    LocaleKeys.workspace_setup_preflight_provider_unverified,
+  'workspace_setup_preflight.provider_not_configured' =>
+    LocaleKeys.workspace_setup_preflight_provider_not_configured,
+  'workspace_setup_preflight.provider_credential_missing_optional' =>
+    LocaleKeys.workspace_setup_preflight_provider_credential_missing_optional,
+  'workspace_setup_preflight.provider_credential_missing_required' =>
+    LocaleKeys.workspace_setup_preflight_provider_credential_missing_required,
+  'workspace_setup_preflight.provider_for_model_missing' =>
+    LocaleKeys.workspace_setup_preflight_provider_for_model_missing,
+  'workspace_setup_preflight.provider_saved' =>
+    LocaleKeys.workspace_setup_preflight_provider_saved,
+  'workspace_setup_preflight.model_not_selected' =>
+    LocaleKeys.workspace_setup_preflight_model_not_selected,
+  'workspace_setup_preflight.model_unverified' =>
+    LocaleKeys.workspace_setup_preflight_model_unverified,
+  'workspace_setup_preflight.model_missing' =>
+    LocaleKeys.workspace_setup_preflight_model_missing,
+  'workspace_setup_preflight.model_metadata_unavailable' =>
+    LocaleKeys.workspace_setup_preflight_model_metadata_unavailable,
+  'workspace_setup_preflight.model_metadata_available' =>
+    LocaleKeys.workspace_setup_preflight_model_metadata_available,
+  'workspace_setup_preflight.mcp_unverified' =>
+    LocaleKeys.workspace_setup_preflight_mcp_unverified,
+  'workspace_setup_preflight.mcp_not_configured' =>
+    LocaleKeys.workspace_setup_preflight_mcp_not_configured,
+  'workspace_setup_preflight.mcp_disabled' =>
+    LocaleKeys.workspace_setup_preflight_mcp_disabled,
+  'workspace_setup_preflight.mcp_not_tested' =>
+    LocaleKeys.workspace_setup_preflight_mcp_not_tested,
+  'workspace_setup_preflight.mcp_attention' =>
+    LocaleKeys.workspace_setup_preflight_mcp_attention,
+  'workspace_setup_preflight.mcp_last_test_passed' =>
+    LocaleKeys.workspace_setup_preflight_mcp_last_test_passed,
+  _ => LocaleKeys.workspace_setup_preflight_unavailable,
+}).tr(context: context);
 
 String _outcomeKey(WorkspaceSetupPreflightOutcome outcome) => switch (outcome) {
   .ready => 'workspace_setup_preflight.outcome.ready',

@@ -131,11 +131,12 @@ WorkspaceSetupPreflightCheck _modelReady(
 WorkspaceSetupPreflightCheck _providerCheck(
   WorkspaceSetupPreflightSnapshot snapshot,
 ) {
-  if (!snapshot.providerSourceAvailable || snapshot.providers == null) {
+  final providers = snapshot.providers;
+  if (!snapshot.providerSourceAvailable || providers == null) {
     return _providerUnverified();
   }
 
-  return _configuredProviderCheck(snapshot, snapshot.providers!);
+  return _configuredProviderCheck(snapshot, providers);
 }
 
 WorkspaceSetupPreflightCheck _configuredProviderCheck(

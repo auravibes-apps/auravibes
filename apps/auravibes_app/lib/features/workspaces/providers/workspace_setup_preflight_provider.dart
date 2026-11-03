@@ -39,10 +39,9 @@ class WorkspaceSetupPreflightRefresh extends _$WorkspaceSetupPreflightRefresh {
 Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   Ref ref,
   String workspaceId,
-) async {
-  final scope = await _readWorkspaceScope(ref, workspaceId);
-  return _buildPreflight(ref, workspaceId, scope);
-}
+) => _readWorkspaceScope(ref, workspaceId).then<WorkspaceSetupPreflight>(
+  (scope) => _buildPreflight(ref, workspaceId, scope),
+);
 
 Future<WorkspaceSetupPreflight> _buildPreflight(
   Ref ref,
@@ -51,6 +50,7 @@ Future<WorkspaceSetupPreflight> _buildPreflight(
 ) async {
   final selectedModelId = ref.watch(newChatProvider(workspaceId)).modelId;
   final sources = await _readSources(ref, scope, selectedModelId);
+
   return const BuildWorkspaceSetupPreflightUsecase().call(
     _preflightSnapshot(scope, sources, selectedModelId),
   );
@@ -91,16 +91,14 @@ typedef _SourceReads = ({
   _ReadResult<List<WorkspaceSetupMcpSnapshot>> mcpRead,
 });
 
-Future<_WorkspaceScope> _readWorkspaceScope(
-  Ref ref,
-  String workspaceId,
-) async {
+Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
   final refreshRequested = ref.watch(
     workspaceSetupPreflightRefreshProvider(workspaceId),
   );
   final workspaceRead = await _readWorkspace(ref, workspaceId);
   final workspace = workspaceRead.value;
   final sessionRead = await _readSession(ref, workspaceId, workspace);
+
   return _workspaceScope(
     workspaceId,
     refreshRequested,
@@ -121,8 +119,10 @@ Future<_ReadResult<WorkspaceSession>> _readSession(
   Ref ref,
   String workspaceId,
   WorkspaceEntity? workspace,
-) async {
-  if (workspace == null) return _unavailable<WorkspaceSession>();
+) {
+  if (workspace == null) {
+    return Future.value(_unavailable<WorkspaceSession>());
+  }
 
   return _capture(
     () => ref.watch(workspaceSessionForRouteProvider(workspaceId).future),
@@ -176,9 +176,9 @@ Future<_SourceReads> _readSources(
   mcpRead: await _readMcpConnections(ref, scope),
 );
 
-Future<bool?> _readCloudStorage(Ref ref, _WorkspaceScope scope) async {
+Future<bool?> _readCloudStorage(Ref ref, _WorkspaceScope scope) {
   final session = _cloudStorageSession(scope);
-  if (session == null) return null;
+  if (session == null) return Future<bool?>.value(null);
 
   return _readCloudConfiguration(ref, session);
 }
@@ -198,11 +198,9 @@ Future<bool?> _readCloudConfiguration(
 Future<bool> _cloudWorkspaceConfiguration(
   Ref ref,
   WorkspaceSession session,
-) async {
-  await ref.watch(cloudWorkspaceConfigurationProvider(session).future);
-
-  return true;
-}
+) => ref
+    .watch(cloudWorkspaceConfigurationProvider(session).future)
+    .then<bool>((_) => true);
 
 Future<_ReadResult<List<ModelConnectionEntity>>> _readProviderConnections(
   Ref ref,
@@ -218,8 +216,10 @@ Future<_ReadResult<List<ModelConnectionEntity>>> _readProviderConnections(
 Future<_ReadResult<List<WorkspaceSetupMcpSnapshot>>> _readMcpConnections(
   Ref ref,
   _WorkspaceScope scope,
-) async {
-  if (!scope.sourceAllowed) return _unavailable();
+) {
+  if (!scope.sourceAllowed) {
+    return Future.value(_unavailable());
+  }
 
   return _readMcpSnapshots(ref, scope.workspaceId);
 }
@@ -263,11 +263,13 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel(
   Ref ref,
   String? selectedModelId,
   _WorkspaceScope scope,
-) async {
+) {
   if (selectedModelId == null) {
-    return _noSelectedModel();
+    return Future.value(_noSelectedModel());
   }
-  if (!scope.sourceAllowed) return _unavailable();
+  if (!scope.sourceAllowed) {
+    return Future.value(_unavailable());
+  }
 
   return _readSelectedModelSnapshot(ref, selectedModelId, scope.workspaceId);
 }
@@ -279,15 +281,14 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModelSnapshot(
   Ref ref,
   String selectedModelId,
   String workspaceId,
-) =>
-    _capture<WorkspaceSetupModelSnapshot?>(() async {
-      final selections = await ref.watch(
-        modelSelectionStoreProvider(workspaceId).future,
-      );
-      final model = await selections.getById(selectedModelId);
+) => _capture<WorkspaceSetupModelSnapshot?>(() async {
+  final selections = await ref.watch(
+    modelSelectionStoreProvider(workspaceId).future,
+  );
+  final model = await selections.getById(selectedModelId);
 
-      return await _modelSnapshot(ref, model, workspaceId);
-    });
+  return await _modelSnapshot(ref, model, workspaceId);
+});
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   Ref ref,
