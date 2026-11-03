@@ -11,7 +11,7 @@ class LocalWorkspaceTrashRestorer(final LocalWorkspaceTrashStore store) {
     final members = await _batchMembers(id);
     await _restoreBatch(members);
 
-    return _finishRestore(id, members);
+    return await _finishRestore(id, members);
   }
 
   Future<List<LocalTrashNode>> _batchMembers(String id) async {
