@@ -155,8 +155,6 @@ class _MediaDraftAttachmentService(
   final String storageNamespace = 'test';
 
   @override
-  LocalChatAttachmentWriter? get attachmentWriter => null;
-
   bool recordingActive = false;
   int recordingCancels = 0;
 

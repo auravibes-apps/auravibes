@@ -2764,8 +2764,6 @@ class _FakeLocalChatAttachmentService(
   final deletedPaths = <String>[];
 
   @override
-  LocalChatAttachmentWriter? get attachmentWriter => null;
-
   Uint8List? copiedBytes;
   String? copiedFileName;
   int startCount = 0;
