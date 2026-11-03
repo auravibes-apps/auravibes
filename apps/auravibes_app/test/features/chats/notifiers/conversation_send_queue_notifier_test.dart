@@ -280,6 +280,9 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   final deletedPaths = <String>[];
 
   @override
+  LocalChatAttachmentWriter? get attachmentWriter => null;
+
+  @override
   Future<void> deleteAttachment(String localPath) {
     deletedPaths.add(localPath);
 

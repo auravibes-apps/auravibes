@@ -29,11 +29,17 @@ typedef _ToolResultAttachmentRequest = ({
   String toolCallId,
 });
 
+@visibleForTesting
+typedef LocalChatAttachmentWriter = Future<void> Function(
+  File file,
+  Uint8List bytes,
+);
+
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
   @visibleForTesting
-  final Future<void> Function(File file, Uint8List bytes)? attachmentWriter,
+  final LocalChatAttachmentWriter? attachmentWriter,
 }) {
   // Defer platform-channel setup until voice recording is requested.
   AudioRecorder? _recorder = recorder;

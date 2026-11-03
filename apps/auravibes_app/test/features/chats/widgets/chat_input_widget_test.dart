@@ -961,7 +961,7 @@ void main() {
       fileName: 'report.pdf',
       mimeType: 'application/pdf',
       bytes: Uint8List.fromList('report!!'.codeUnits),
-      readError: const PlatformException(code: 'cancelled'),
+      readError: PlatformException(code: 'cancelled'),
     );
     final _ = await tester.pumpAndSettle();
 
@@ -2767,6 +2767,10 @@ class _FakeLocalChatAttachmentService(
 }) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
   final deletedPaths = <String>[];
+
+  @override
+  LocalChatAttachmentWriter? get attachmentWriter => null;
+
   Uint8List? copiedBytes;
   String? copiedFileName;
   int startCount = 0;
