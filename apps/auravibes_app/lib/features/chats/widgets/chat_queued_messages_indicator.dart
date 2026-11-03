@@ -291,7 +291,7 @@ List<AuraPopupMenuItem> _queuedDraftMoveItems(
 typedef _QueuedDraftMoveMenuItem = ({
   String draftId,
   String direction,
-  String titleKey,
+  String title,
   IconData icon,
   bool canMove,
   int offset,
@@ -305,7 +305,7 @@ _QueuedDraftMoveMenuItem _queuedDraftMoveUpItem(
 ) => (
   draftId: draftId,
   direction: 'up',
-  titleKey: _queuedMoveUpKey,
+  title: _queuedMoveUpKey.tr(),
   icon: Icons.arrow_upward,
   canMove: canMove,
   offset: -1,
@@ -319,7 +319,7 @@ _QueuedDraftMoveMenuItem _queuedDraftMoveDownItem(
 ) => (
   draftId: draftId,
   direction: 'down',
-  titleKey: _queuedMoveDownKey,
+  title: _queuedMoveDownKey.tr(),
   icon: Icons.arrow_downward,
   canMove: canMove,
   offset: 1,
@@ -328,7 +328,7 @@ _QueuedDraftMoveMenuItem _queuedDraftMoveDownItem(
 
 AuraPopupMenuItem _queuedDraftMoveItem(_QueuedDraftMoveMenuItem item) =>
     AuraPopupMenuItem(
-      title: Text(item.titleKey.tr()),
+      title: Text(item.title),
       onTap: item.canMove
           ? () => item.onMove(item.draftId, item.offset)
           : null,
