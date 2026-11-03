@@ -78,7 +78,7 @@ jobs:
       - name: Format hosted Dart sources and export corrections
         working-directory: apps/auravibes_app
         run: |
-          python3 ../../tool/validation_lease.py --label issue-1439-format -- dart format lib/features/chats/widgets/chat_a2ui_historical_surface.dart test/features/chats/agent_adapters/aura_chat_catalog_adapter_test.dart
+          python3 ../../tool/validation_lease.py --label issue-1439-format -- dart format lib/features/chats/widgets/chat_a2ui_historical_surface.dart test/features/chats/agent_adapters/aura_chat_catalog_adapter_test.dart test/features/chats/agent_adapters/chat_a2ui_historical_surface_localization_test.dart
           git diff -- lib/features/chats/widgets/chat_a2ui_historical_surface.dart test/features/chats/agent_adapters/aura_chat_catalog_adapter_test.dart > "$RUNNER_TEMP/issue1439-format.patch"
           mkdir -p "$RUNNER_TEMP/issue1439-after"
           cp "$RUNNER_TEMP/issue1439-format.patch" "$RUNNER_TEMP/issue1439-after/format.patch"

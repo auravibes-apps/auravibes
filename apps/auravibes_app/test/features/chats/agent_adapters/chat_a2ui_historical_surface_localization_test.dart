@@ -39,28 +39,26 @@ void main() {
 
     await tester.pumpWidget(
       EasyLocalization(
-        supportedLocales: const [Locale('es')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
-        fallbackLocale: const Locale('es'),
+        fallbackLocale: const Locale('en'),
         startLocale: const Locale('es'),
         useOnlyLangCode: true,
-        child: Builder(
-          builder: (context) => AuraThemeScope(
-            theme: .light,
-            child: MaterialApp(
-              builder: _legacyMaterialBuilder,
-              locale: context.locale,
-              localizationsDelegates: [
-                ...GlobalMaterialLocalizations.delegates,
-                ...context.localizationDelegates,
-              ],
-              supportedLocales: context.supportedLocales,
-              theme: ThemeData(),
-              home: SingleChildScrollView(
-                child: ChatA2uiSurfaceHost.historical(
-                  messageId: 'assistant-1',
-                  payloads: payloads,
-                ),
+        useFallbackTranslations: true,
+        useFallbackTranslationsForEmptyResources: true,
+        saveLocale: false,
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            locale: const Locale('es'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('en'), Locale('es')],
+            theme: ThemeData(),
+            home: SingleChildScrollView(
+              child: ChatA2uiSurfaceHost.historical(
+                messageId: 'assistant-1',
+                payloads: payloads,
               ),
             ),
           ),
