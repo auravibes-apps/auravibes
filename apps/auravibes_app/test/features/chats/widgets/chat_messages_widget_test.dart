@@ -5484,9 +5484,8 @@ void main() {
           await tester.pumpAndSettle();
         }
 
-        ScrollableState currentScrollable() => tester.state<ScrollableState>(
-          find.byType(Scrollable),
-        );
+        ScrollableState currentScrollable() =>
+            tester.state<ScrollableState>(find.byType(Scrollable));
 
         Future<void> scrollToOldestMessage() async {
           currentScrollable().position.jumpTo(
@@ -5499,9 +5498,9 @@ void main() {
           final content = find.text(messageText(conversationId, index));
           expect(content, findsOneWidget);
           expect(
-            tester.getRect(content).overlaps(
-              tester.getRect(find.byType(ListView)),
-            ),
+            tester
+                .getRect(content)
+                .overlaps(tester.getRect(find.byType(ListView))),
             isTrue,
             reason: 'Message $conversationId $index should be visible',
           );
@@ -5524,9 +5523,8 @@ void main() {
                 (ref, request) => Stream<ConversationEntity?>.value(null),
               ),
               childConversationsStreamProvider.overrideWith(
-                (ref, request) => Stream<List<ConversationEntity>>.value(
-                  const [],
-                ),
+                (ref, request) =>
+                    Stream<List<ConversationEntity>>.value(const []),
               ),
               messageConversationByIdProvider.overrideWith(
                 (ref, id) => transcripts[id.conversationId]?[id.messageId],
@@ -5544,15 +5542,12 @@ void main() {
               ),
               workspaceSessionForRouteProvider('ws-1').overrideWithValue(
                 const AsyncData(
-                  WorkspaceSession(
-                    LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-                  ),
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
                 ),
               ),
               for (final conversationId in conversationIds)
-                conversationBackgroundWorksProvider(
-                  conversationId,
-                ).overrideWith((ref) => Stream.value(const [])),
+                conversationBackgroundWorksProvider(conversationId)
+                    .overrideWith((ref) => Stream.value(const [])),
             ],
             child: EasyLocalization(
               child: Builder(
