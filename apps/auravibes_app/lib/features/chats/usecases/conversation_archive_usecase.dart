@@ -15,9 +15,11 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive_export_preview.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentTranscriptContextUpdate, foldAgentTranscriptContext;
+import 'package:path/path.dart' as p;
 import 'package:uuid/v7.dart';
 
 typedef _ArchivedContextUpdates = ({
@@ -128,14 +130,35 @@ class const ConversationArchiveUsecase({
   Future<String> exportConversation({
     required String conversationId,
     String? modelLabel,
+    bool includeAttachments = true,
   }) => _ConversationArchiveExporter(
     this,
-  ).exportConversation(conversationId: conversationId, modelLabel: modelLabel);
+  ).exportConversation(
+    conversationId: conversationId,
+    modelLabel: modelLabel,
+    includeAttachments: includeAttachments,
+  );
 
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    bool includeAttachments = true,
   }) => _ConversationArchiveExporter(this).exportConversations(
+    workspaceId: workspaceId,
+    conversationIds: conversationIds,
+    includeAttachments: includeAttachments,
+  );
+
+  Future<ConversationArchiveExportPreview> previewConversation({
+    required String conversationId,
+  }) => _ConversationArchiveExporter(
+    this,
+  ).previewConversation(conversationId: conversationId);
+
+  Future<ConversationArchiveExportPreview> previewConversations({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) => _ConversationArchiveExporter(this).previewConversations(
     workspaceId: workspaceId,
     conversationIds: conversationIds,
   );
@@ -170,6 +193,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   Future<String> exportConversation({
     required String conversationId,
     String? modelLabel,
+    bool includeAttachments = true,
   }) async {
     final conversation = await conversationRepository.getConversationById(
       conversationId,
@@ -179,26 +203,91 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     return await _exportConversation(
       conversation: conversation,
       modelLabel: modelLabel,
+      includeAttachments: includeAttachments,
     );
   }
 
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    bool includeAttachments = true,
   }) async {
     _validateConversationIds(conversationIds);
     final archives = <ConversationArchive>[];
     for (final id in conversationIds) {
-      archives.add(await _createWorkspaceArchive(id, workspaceId));
+      archives.add(
+        await _createWorkspaceArchive(
+          id,
+          workspaceId,
+          includeAttachments: includeAttachments,
+        ),
+      );
     }
 
     return ConversationArchiveCodec.encodeMany(archives);
   }
 
+  Future<ConversationArchiveExportPreview> previewConversation({
+    required String conversationId,
+  }) async {
+    final conversation = await conversationRepository.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) throw StateError('Conversation not found');
+
+    return await _previewConversations([conversation]);
+  }
+
+  Future<ConversationArchiveExportPreview> previewConversations({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) async {
+    _validateConversationIds(conversationIds);
+    final conversations = <ConversationEntity>[];
+    for (final id in conversationIds) {
+      final conversation = await conversationRepository.getConversationById(
+        id,
+      );
+      if (conversation == null || conversation.workspaceId != workspaceId) {
+        throw const MalformedConversationArchiveException();
+      }
+      conversations.add(conversation);
+    }
+
+    return await _previewConversations(conversations);
+  }
+
+  Future<ConversationArchiveExportPreview> _previewConversations(
+    List<ConversationEntity> conversations,
+  ) async {
+    final previews = <ConversationArchiveExportConversationPreview>[];
+    for (final conversation in conversations) {
+      final transcript = await messageRepository
+          .getTranscriptMessagesByConversation(conversation.id);
+      previews.add(
+        ConversationArchiveExportConversationPreview(
+          title: conversation.title,
+          attachments: [
+            for (final message in _archiveVisibleMessages(transcript))
+              for (final attachment in message.attachments)
+                ConversationArchiveExportAttachmentPreview(
+                  fileName: _previewAttachmentName(attachment),
+                  mimeType: attachment.mimeType,
+                  sizeBytes: attachment.sizeBytes,
+                ),
+          ],
+        ),
+      );
+    }
+
+    return ConversationArchiveExportPreview(conversations: previews);
+  }
+
   Future<ConversationArchive> _createWorkspaceArchive(
     String conversationId,
-    String workspaceId,
-  ) async {
+    String workspaceId, {
+    bool includeAttachments = true,
+  }) async {
     final conversation = await conversationRepository.getConversationById(
       conversationId,
     );
@@ -206,19 +295,28 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       throw const MalformedConversationArchiveException();
     }
 
-    return await _createArchive(conversation);
+    return await _createArchive(
+      conversation,
+      includeAttachments: includeAttachments,
+    );
   }
 
   Future<String> _exportConversation({
     required ConversationEntity conversation,
     String? modelLabel,
+    bool includeAttachments = true,
   }) async => ConversationArchiveCodec.encode(
-    await _createArchive(conversation, modelLabel: modelLabel),
+    await _createArchive(
+      conversation,
+      modelLabel: modelLabel,
+      includeAttachments: includeAttachments,
+    ),
   );
 
   Future<ConversationArchive> _createArchive(
     ConversationEntity conversation, {
     String? modelLabel,
+    bool includeAttachments = true,
   }) async {
     final transcript = await messageRepository
         .getTranscriptMessagesByConversation(conversation.id);
@@ -230,6 +328,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       modelLabel: modelLabel,
       agentContext: agentContext,
       readAttachmentBytes: attachmentService.readAttachmentBytes,
+      includeAttachments: includeAttachments,
     ));
   }
 
@@ -265,6 +364,13 @@ List<MessageEntity> _archiveVisibleMessages(List<MessageEntity> transcript) =>
     transcript
         .where((message) => !message.isAgentTranscriptContextUpdate)
         .toList(growable: false);
+
+String _previewAttachmentName(MessageAttachmentEntity attachment) {
+  final fileName = attachment.fileName.trim();
+  final name = fileName.isEmpty ? attachment.displayName : fileName;
+
+  return p.posix.basename(name.replaceAll(r'\', '/'));
+}
 
 _ArchivedContextUpdates _archiveTranscriptContext(
   List<MessageEntity> transcript,

@@ -73,6 +73,63 @@ void main() {
     );
   });
 
+  test('previews attachment metadata without reading bytes', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Archive preview test', type: .local),
+    );
+    final conversation = await ConversationRepository(database)
+        .createConversation(
+          .new(title: 'Research notes', workspaceId: workspace.id),
+        );
+    final message = await database.messageDao.insertMessage(
+      MessagesCompanion.insert(
+        conversationId: conversation.id,
+        content: 'See the attached report',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+      ),
+    );
+    await database
+        .into(database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/account/report.pdf',
+            fileName: '/private/account/report.pdf',
+            displayName: .new('report.pdf'),
+            mimeType: 'application/pdf',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
+
+    final usecase = _usecase(database);
+    final preview = await usecase.previewConversation(
+      conversationId: conversation.id,
+    );
+
+    expect(preview.attachmentCount, 1);
+    expect(preview.conversations.single.title, 'Research notes');
+    final attachment = preview.conversations.single.attachments.single;
+    expect(attachment.fileName, 'report.pdf');
+    expect(attachment.mimeType, 'application/pdf');
+    expect(attachment.sizeBytes, 2048);
+    expect(preview.toString(), isNot(contains('/private/account')));
+
+    final archive = await usecase.exportConversation(
+      conversationId: conversation.id,
+      includeAttachments: false,
+    );
+    final decoded = jsonDecode(archive) as Map<String, dynamic>;
+    final messages = decoded['messages'] as List<dynamic>;
+    final exportedMessage = messages.single as Map<String, dynamic>;
+    expect(decoded['version'], 2);
+    expect(exportedMessage['content'], 'See the attached report');
+    expect(exportedMessage['attachments'], isEmpty);
+    expect(archive, isNot(contains('report.pdf')));
+  });
+
   test(
     'rejects malformed input and unknown versions before creating rows',
     () async {

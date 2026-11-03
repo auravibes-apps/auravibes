@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -122,6 +123,89 @@ void main() {
       'Flutter SDK artifacts/material_fonts/Roboto-Regular.ttf',
       await _sdkRoboto(),
     );
+  });
+  testWidgets('conversation archive export review capture', (tester) async {
+    const size = Size(466, 678);
+    const baselineCapture = bool.fromEnvironment(
+      'EXPORT_REVIEW_CAPTURE_BASELINE',
+    );
+    final fixture = await UxValidationFixture.create();
+    final createdAt = DateTime.utc(2026, 11, 3);
+    final conversation = await ConversationRepository(
+      fixture.database,
+    ).createConversation(
+      .new(
+        workspaceId: fixture.workspaceId,
+        title: 'Export review sample',
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      ),
+    );
+    final message = await fixture.database.messageDao.insertMessage(
+      MessagesCompanion.insert(
+        conversationId: conversation.id,
+        content: 'See the attached research notes.',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+        createdAt: .new(createdAt),
+      ),
+    );
+    await fixture.database
+        .into(fixture.database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/export-review/research-notes.txt',
+            fileName: '/private/export-review/research-notes.txt',
+            displayName: .new('research-notes.txt'),
+            mimeType: 'text/plain',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
+
+    final router = await fixture.pump(
+      tester,
+      ChatsRoute(workspaceId: fixture.workspaceId).location,
+      size: size,
+      useProductionRouter: true,
+      realSessions: true,
+    );
+    await fixture.settle(tester);
+    expect(find.byType(ChatsListScreen), findsOneWidget);
+    final conversationTitle = find.text('Export review sample');
+    expect(conversationTitle, findsOneWidget);
+    final card = find.ancestor(
+      of: conversationTitle,
+      matching: find.byType(AuraCard),
+    );
+    await tester.tap(
+      find.descendant(of: card, matching: find.byTooltip('More options')),
+    );
+    await fixture.settle(tester);
+    await tester.tap(find.text('Export archive'));
+    await fixture.settle(tester);
+
+    expect(find.text('Review your conversation archive'), findsOneWidget);
+    if (!baselineCapture) {
+      expect(find.text('research-notes.txt'), findsOneWidget);
+      expect(find.text('Type: text/plain'), findsOneWidget);
+      expect(find.text('Size: 2,048 bytes'), findsOneWidget);
+    }
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'conversation-archive-export-review',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await tester.tap(find.text('Cancel'));
+    await fixture.settle(tester);
+    await fixture.close(tester);
   });
   testWidgets('conversation task brief capture flow', (tester) async {
     final fixture = await UxValidationFixture.create();
@@ -1581,6 +1665,9 @@ double _contrast(Color foreground, Color background) {
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  'conversation-archive-export-review' =>
+    'Local conversation with one synthetic text attachment whose path points '
+        'to no file; review dialog opened before attachment byte reads or save',
   'workspace-erasure-confirmation-disclosure' =>
     'In-memory local workspace plus synthetic owner account and deleted cloud '
         'workspace state; confirmation open with no remote access or deletion',

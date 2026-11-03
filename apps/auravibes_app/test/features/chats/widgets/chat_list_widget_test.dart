@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive_export_preview.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -22,6 +23,7 @@ import 'package:auravibes_app/features/chats/usecases/conversation_archive_useca
 import 'package:auravibes_app/features/chats/usecases/delete_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_archive_export_review_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
@@ -88,6 +90,98 @@ void main() {
   }
 
   group('ChatListWidget', () {
+    testWidgets('localizes and exposes attachment review controls', (
+      tester,
+    ) async {
+      ({bool includeAttachments})? decision;
+      final preview = ConversationArchiveExportPreview(
+        conversations: [
+          ConversationArchiveExportConversationPreview(
+            title: 'Investigación',
+            attachments: const [
+              ConversationArchiveExportAttachmentPreview(
+                fileName: 'informe.pdf',
+                mimeType: 'application/pdf',
+                sizeBytes: 2048,
+              ),
+            ],
+          ),
+        ],
+      );
+      final emptyPreview = ConversationArchiveExportPreview(
+        conversations: [
+          ConversationArchiveExportConversationPreview(
+            title: 'Notas',
+            attachments: const [],
+          ),
+        ],
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: const [],
+          startLocale: const Locale('es'),
+          content: Builder(
+            builder: (context) {
+              Future<void> openReview(
+                ConversationArchiveExportPreview value,
+              ) async {
+                decision = await ConversationArchiveExportReviewDialog.show(
+                  context,
+                  fileName: 'conversation.auravibes.json',
+                  preview: value,
+                );
+              }
+
+              return Column(
+                children: [
+                  TextButton(
+                    onPressed: () => openReview(preview),
+                    child: const Text('Open review'),
+                  ),
+                  TextButton(
+                    onPressed: () => openReview(emptyPreview),
+                    child: const Text('Open empty review'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open review'));
+      await tester.pumpAndSettle();
+      expect(find.text('Revisa el archivo de conversación'), findsOneWidget);
+      expect(find.text('informe.pdf'), findsOneWidget);
+      expect(find.text('Tipo: application/pdf'), findsOneWidget);
+      final checkbox = find.byKey(
+        const ValueKey('archive-export-include-attachments'),
+      );
+      final semantics = tester.getSemantics(checkbox);
+      expect(semantics.label, contains('Incluir archivos adjuntos'));
+      expect(semantics.hasCheckedState, isTrue);
+      expect(semantics.isChecked, isTrue);
+
+      await tester.tap(find.text('Continuar para guardar'));
+      await tester.pumpAndSettle();
+      expect(decision, (includeAttachments: true));
+
+      decision = null;
+      await tester.tap(find.text('Open empty review'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sin archivos adjuntos'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('archive-export-include-attachments')),
+        findsNothing,
+      );
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+      expect(decision, isNull);
+    });
+
     testWidgets('shows empty state when no chats', (tester) async {
       final repo = _StubConversationRepository(conversationsStream: .value([]));
 
@@ -1082,6 +1176,24 @@ void main() {
           workspaceToolsRepository: workspaceTools,
           toolsGroupsRepository: .new(database),
         ),
+        preview: ConversationArchiveExportPreview(
+          conversations: [
+            ConversationArchiveExportConversationPreview(
+              title: 'Chat One',
+              attachments: [
+                const ConversationArchiveExportAttachmentPreview(
+                  fileName: 'research-notes.txt',
+                  mimeType: 'text/plain',
+                  sizeBytes: 4,
+                ),
+              ],
+            ),
+            ConversationArchiveExportConversationPreview(
+              title: 'Chat Two',
+              attachments: const [],
+            ),
+          ],
+        ),
       );
       final fileService = _RecordingArchiveFileService();
       final listRepository = _StubConversationRepository(
@@ -1127,6 +1239,17 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Chat One'), findsOneWidget);
+      expect(find.text('Chat Two'), findsOneWidget);
+      expect(find.text('research-notes.txt'), findsOneWidget);
+      expect(find.text('Type: text/plain'), findsOneWidget);
+      expect(find.text('Size: 4 bytes'), findsOneWidget);
+      expect(
+        tester.widget<CheckboxListTile>(
+          find.byKey(const ValueKey('archive-export-include-attachments')),
+        ).value,
+        isTrue,
+      );
       expect(
         find.textContaining('Saved connection credentials'),
         findsOneWidget,
@@ -1136,16 +1259,47 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(archiveUsecase.bulkExportCalls, 0);
       expect(fileService.savedJson, isNull);
+      expect(fileService.saveCalls, 0);
 
       await tester.tap(find.text('Export selected'));
       final _ = await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('archive-export-include-attachments')),
+      );
+      await tester.pump();
+      expect(
+        tester.widget<CheckboxListTile>(
+          find.byKey(const ValueKey('archive-export-include-attachments')),
+        ).value,
+        isFalse,
+      );
+      fileService.saveResult = false;
       await tester.tap(find.text('Continue to save'));
       final _ = await tester.pumpAndSettle();
+      expect(archiveUsecase.bulkExportCalls, 1);
+      expect(archiveUsecase.includeAttachments, [false]);
+      expect(fileService.saveCalls, 1);
+      expect(fileService.offeredJson, isNotNull);
+      expect(fileService.savedJson, isNull);
+
+      fileService.saveResult = true;
+      await tester.tap(find.text('Export selected'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<CheckboxListTile>(
+          find.byKey(const ValueKey('archive-export-include-attachments')),
+        ).value,
+        isTrue,
+      );
+      await tester.tap(find.text('Continue to save'));
+      await tester.pumpAndSettle();
       final decoded = ConversationArchiveCodec.decodeMany(
         fileService.savedJson ?? fail('Archive was not saved'),
       );
 
-      expect(archiveUsecase.bulkExportCalls, 1);
+      expect(archiveUsecase.bulkExportCalls, 2);
+      expect(archiveUsecase.includeAttachments, [false, true]);
+      expect(fileService.saveCalls, 2);
       expect(fileService.savedFileName, 'conversations.auravibes.json');
       expect(decoded.map((archive) => archive.title), ['Chat One', 'Chat Two']);
     });
@@ -1666,22 +1820,31 @@ class _RecordingArchiveFileService extends ConversationArchiveFileService {
   new();
 
   String? savedJson;
+  String? offeredJson;
   String? savedFileName;
+  bool saveResult = true;
+  int saveCalls = 0;
 
   @override
   Future<bool> saveArchiveJson(
     String json, {
     String fileName = 'conversation.auravibes.json',
   }) async {
-    savedJson = json;
+    saveCalls++;
+    offeredJson = json;
     savedFileName = fileName;
+    if (!saveResult) return false;
+    savedJson = json;
 
-    return true;
+    return saveResult;
   }
 }
 
 class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
-  new(ConversationArchiveUsecase delegate)
+  new(
+    ConversationArchiveUsecase delegate, {
+    required this.preview,
+  })
     : _delegate = delegate,
       super(
         conversationRepository: delegate.conversationRepository,
@@ -1692,18 +1855,29 @@ class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
         toolsGroupsRepository: delegate.toolsGroupsRepository,
       );
   int bulkExportCalls = 0;
+  final includeAttachments = <bool>[];
+  final ConversationArchiveExportPreview preview;
   final ConversationArchiveUsecase _delegate;
+
+  @override
+  Future<ConversationArchiveExportPreview> previewConversations({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) async => preview;
 
   @override
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    bool includeAttachments = true,
   }) {
     bulkExportCalls++;
+    this.includeAttachments.add(includeAttachments);
 
     return _delegate.exportConversations(
       workspaceId: workspaceId,
       conversationIds: conversationIds,
+      includeAttachments: includeAttachments,
     );
   }
 }
