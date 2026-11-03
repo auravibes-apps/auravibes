@@ -62,7 +62,7 @@ void main() {
     overrides: [...overrides],
     workspaceId: workspaceId,
     workspaceSession: WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: workspaceId),
+      .new(localWorkspaceId: workspaceId),
     ),
     startLocale: startLocale,
   );
