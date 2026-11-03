@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -7,11 +8,17 @@ import 'package:rxdart/rxdart.dart';
 
 const _maxConversationLabelNameLength = 40;
 
-class const ConversationLabelAlreadyExistsException implements Exception;
+class ConversationLabelAlreadyExistsException implements Exception {
+  const ConversationLabelAlreadyExistsException();
+}
 
-class const ConversationLabelWorkspaceMismatchException implements Exception;
+class ConversationLabelWorkspaceMismatchException implements Exception {
+  const ConversationLabelWorkspaceMismatchException();
+}
 
-class const ConversationLabelNameInvalidException implements Exception;
+class ConversationLabelNameInvalidException implements Exception {
+  const ConversationLabelNameInvalidException();
+}
 
 class ConversationLabelsRepository {
   ConversationLabelsRepository(this._database);

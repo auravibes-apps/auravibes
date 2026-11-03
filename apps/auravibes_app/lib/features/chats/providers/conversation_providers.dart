@@ -351,9 +351,9 @@ Future<List<ConversationSummary>> _readCloudConversationPage(
 
 Future<List<ConversationSummary>> _readAllCloudConversationPages(
   CloudWorkspaceStateGateway gateway,
-  CloudWorkspaceRef cloud,
-  {Set<String> labelIds = const {}},
-) async {
+  CloudWorkspaceRef cloud, {
+  Set<String> labelIds = const {},
+}) async {
   final conversations = <ConversationSummary>[];
   final seenCursors = <String>{};
   String? cursor;
@@ -375,9 +375,9 @@ Future<List<ConversationSummary>> _readAllCloudConversationPages(
 Future<ConversationPage> _readCloudConversationPageAtCursor(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
-  String? cursor,
-  {Set<String> labelIds = const {}},
-) => gateway.client.conversation.listPage(
+  String? cursor, {
+  Set<String> labelIds = const {},
+}) => gateway.client.conversation.listPage(
   .new(
     workspaceId: cloud.cloudWorkspaceId,
     limit: _cloudConversationPageSize,

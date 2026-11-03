@@ -3,7 +3,6 @@ import 'package:auravibes_app/data/database/drift/tables/conversation_label_assi
 import 'package:auravibes_app/data/database/drift/tables/conversation_labels.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
-import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
