@@ -338,7 +338,7 @@ void main() {
 
 class _NoopLocalChatAttachmentUsecase implements LocalChatAttachmentUsecase {
   @override
-  Future<void> deleteAttachment(String localPath) async {}
+  Future<void> deleteAttachment(String localPath) => Future<void>.value();
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
