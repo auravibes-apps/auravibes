@@ -158,10 +158,7 @@ void main() {
               conversationId: 'conv-1',
               draft: const ChatDraft(text: 'First'),
             ),
-            notifier.enqueue(
-              conversationId: 'conv-1',
-              draft: middleContent,
-            ),
+            notifier.enqueue(conversationId: 'conv-1', draft: middleContent),
             notifier.enqueue(
               conversationId: 'conv-1',
               draft: const ChatDraft(text: 'Last'),

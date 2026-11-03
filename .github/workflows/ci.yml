@@ -241,27 +241,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Capture queued message test formatter output
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 1791 }}
-        shell: bash
-        env:
-          FORMAT_OUTPUT_DIRECTORY: ${{ runner.temp }}/queued-message-format-output
-        run: |
-          set -euo pipefail
-          target=apps/auravibes_app/test/features/chats/widgets/chat_queued_messages_indicator_test.dart
-          mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
-          dart format --line-length 80 --output=show "$target" \
-            > "$FORMAT_OUTPUT_DIRECTORY/chat_queued_messages_indicator_test.dart"
-
-      - name: Upload queued message test formatter output
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.number == 1791 }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        with:
-          name: queued-message-format-output-${{ github.run_id }}
-          path: ${{ runner.temp }}/queued-message-format-output/chat_queued_messages_indicator_test.dart
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Check import sorting
         run: dart run tool/check_workspace_import_sorting.dart
       - name: Check workspace benchmark imports
