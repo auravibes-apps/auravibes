@@ -644,19 +644,19 @@ void main() {
           .createConversation(
             .new(title: 'Project research', workspaceId: workspace.id),
           );
-      var scope = ConversationListScope.active;
-      late StateSetter updateScope;
+      final scope = ValueNotifier(ConversationListScope.active);
+      addTearDown(scope.dispose);
 
       await pumpAndInit(
         tester,
         buildSubject(
           workspaceId: workspace.id,
-          content: StatefulBuilder(
-            builder: (_, setState) {
-              updateScope = setState;
-
-              return ChatListWidget(workspaceId: workspace.id, scope: scope);
-            },
+          content: ValueListenableBuilder<ConversationListScope>(
+            valueListenable: scope,
+            builder: (_, currentScope, _) => ChatListWidget(
+              workspaceId: workspace.id,
+              scope: currentScope,
+            ),
           ),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
@@ -702,7 +702,7 @@ void main() {
         {conversation.id},
       );
       expect(find.text('Project research'), findsNothing);
-      updateScope(() => scope = ConversationListScope.archived);
+      scope.value = ConversationListScope.archived;
       await tester.pump();
 
       final archivedProvider = conversationsStreamProvider((
@@ -711,11 +711,13 @@ void main() {
         scope: ConversationListScope.archived,
         pagination: (limit: 21, offset: 0),
       ));
-      final archivedConversations = await tester.runAsync(
-        () => container
-            .read(archivedProvider.future)
-            .timeout(const Duration(seconds: 10)),
-      );
+      final archivedConversations =
+          await tester.runAsync(
+            () => container
+                .read(archivedProvider.future)
+                .timeout(const Duration(seconds: 10)),
+          ) ??
+          (throw StateError('Archived conversation stream returned no value.'));
       expect(
         archivedConversations.map((item) => item.id),
         contains(conversation.id),
