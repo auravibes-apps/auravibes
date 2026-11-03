@@ -706,4 +706,3 @@ class const _ConversationLabelCheckbox({
     semanticLabel: label.name,
   );
 }
-
