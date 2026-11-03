@@ -105,6 +105,7 @@ void main() {
     );
     expect(McpDiscoveryPolicy.displayTitle('first\u2028second'), isNull);
     expect(McpDiscoveryPolicy.displayTitle('safe\u202Etxt'), isNull);
+    expect(McpDiscoveryPolicy.displayTitle('safe\u061Ctxt'), isNull);
   });
 
   test('drops oversized display metadata without rejecting the tool', () {
