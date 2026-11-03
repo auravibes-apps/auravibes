@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_ui/ui.dart' show AuraButton, AuraCheckboxListTile;
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
