@@ -157,12 +157,14 @@ String _seconds(Duration duration) {
 
 Duration _parseSeconds(String source) {
   final value = source.trim();
-  if (!RegExp(r'^\d+(?:\.\d{1,3})?$').hasMatch(value))
+  if (!RegExp(r'^\d+(?:\.\d{1,3})?$').hasMatch(value)) {
     throw const FormatException('Invalid verification timeout.');
+  }
   final parts = value.split('.');
   final seconds = _integer(parts.firstOrNull ?? '');
-  if (seconds > ScopedVerificationLimits.maxTimeout.inSeconds)
+  if (seconds > ScopedVerificationLimits.maxTimeout.inSeconds) {
     throw const FormatException('Verification timeout exceeded.');
+  }
   final fraction = parts.length == 1
       ? 0
       : _integer(parts.last.padRight(3, '0'));

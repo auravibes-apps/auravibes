@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-late-keyword - async setUp needs fixtures
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -29,7 +31,7 @@ void main() {
     revokeDuringProbe = false;
     probeOverride = null;
     bindingsOverride = null;
-    await database
+    final _ = await database
         .into(database.workspaces)
         .insert(
           WorkspacesCompanion.insert(
@@ -40,11 +42,11 @@ void main() {
         );
     save = SaveScopedVerificationSettingsUsecase(
       repository: repository,
-      probeTimeout: const Duration(milliseconds: 50),
       validateBindings: (workspaceId, settings) async {
         calls.add('bindings:$workspaceId');
         final override = bindingsOverride;
         if (override != null) return await override();
+
         return allowed;
       },
       probeCapabilities: (workspaceId, settings, deadline) async {
@@ -52,6 +54,7 @@ void main() {
         if (revokeDuringProbe) allowed = false;
         final override = probeOverride;
         if (override != null) return await override();
+
         return ScopedVerificationCapabilities(
           protocol: ScopedVerificationLimits.protocol,
           features: ScopedVerificationCapabilities.requiredFeatures
@@ -59,6 +62,7 @@ void main() {
               .toSet(),
         );
       },
+      probeTimeout: const Duration(milliseconds: 50),
     );
   });
   tearDown(() => database.close());
@@ -150,7 +154,7 @@ void main() {
         throwsA(isA<ScopedVerificationSettingsException>()),
       );
       binding.complete(true);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
       expect(calls, ['bindings:local']);
       expect((await repository.getSettings('local')).revision, 0);
     },
@@ -164,9 +168,10 @@ void main() {
         save(workspaceId: 'local', settings: _settings()),
         throwsA(isA<ScopedVerificationSettingsException>()),
       );
-      await (database.update(database.workspaces)
-            ..where((row) => row.id.equals('local')))
-          .write(const WorkspacesCompanion(type: Value(.remote)));
+      final _ =
+          await (database.update(database.workspaces)
+                ..where((row) => row.id.equals('local')))
+              .write(const WorkspacesCompanion(type: .new(.remote)));
       calls.clear();
       await expectLater(
         save(workspaceId: 'local', settings: _settings(revision: 1)),
@@ -188,8 +193,8 @@ ScopedVerificationSettings _settings({bool enabled = true, int revision = 0}) =>
     ScopedVerificationSettings(
       enabled: enabled,
       revision: revision,
-      mcpServerId: 'server',
       runnerToolId: 'runner',
+      mcpServerId: 'server',
       workspaceRoot: 'checkout',
       editToolIds: const {'edit'},
       checks: [

@@ -579,12 +579,13 @@ final class _McpVerificationSessionConnector {
 }
 
 final class _McpVerificationConnectAttempt {
-  factory _McpVerificationConnectAttempt.create({
+  factory create({
     required Duration remaining,
     required AgentCancellationScope cancellation,
     required void Function(Completer<void>) abort,
   }) {
     final aborted = Completer<void>();
+
     return _McpVerificationConnectAttempt._(
       aborted: aborted,
       timer: .new(remaining, () => abort(aborted)),
@@ -592,7 +593,7 @@ final class _McpVerificationConnectAttempt {
     );
   }
 
-  _McpVerificationConnectAttempt._({
+  new _({
     required this.aborted,
     required this.timer,
     required this.registration,

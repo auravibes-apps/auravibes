@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-late-keyword - async setUp needs fixtures
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_verification_repository.dart';
 import 'package:auravibes_app/features/settings/providers/scoped_verification_settings_provider.dart';
@@ -30,7 +32,7 @@ void main() {
     initial = _settings();
     probes = 0;
     failProbe = false;
-    await database
+    final _ = await database
         .into(database.workspaces)
         .insert(
           WorkspacesCompanion.insert(
@@ -57,6 +59,7 @@ void main() {
       probeCapabilities: (_, _, _) async {
         probes++;
         if (failProbe) throw StateError('Disconnected');
+
         return ScopedVerificationCapabilities(
           protocol: ScopedVerificationLimits.protocol,
           features: ScopedVerificationCapabilities.requiredFeatures,
@@ -66,18 +69,6 @@ void main() {
     await tester.runAsync(
       () => tester.pumpWidget(
         TestableApp(
-          workspaceId: 'local',
-          workspaceSession: cloud
-              ? const WorkspaceSession(
-                  CloudWorkspaceRef(
-                    localWorkspaceId: 'local',
-                    serverUrl: 'https://cloud.example',
-                    accountId: 'account',
-                    cloudWorkspaceId: 1,
-                  ),
-                )
-              : null,
-          startLocale: Locale(spanish ? 'es' : 'en'),
           child: Scaffold(
             body: SingleChildScrollView(
               child: ScopedVerificationSection(
@@ -96,6 +87,18 @@ void main() {
             saveScopedVerificationSettingsUsecaseProvider('local')
                 .overrideWithValue(save),
           ],
+          workspaceId: 'local',
+          workspaceSession: cloud
+              ? const WorkspaceSession(
+                  CloudWorkspaceRef(
+                    localWorkspaceId: 'local',
+                    serverUrl: 'https://cloud.example',
+                    accountId: 'account',
+                    cloudWorkspaceId: 1,
+                  ),
+                )
+              : null,
+          startLocale: .new(spanish ? 'es' : 'en'),
         ),
       ),
     );
@@ -104,7 +107,9 @@ void main() {
 
   Future<void> open(WidgetTester tester, {bool spanish = false}) async {
     await tester.tap(
-      find.text(spanish ? 'Configurar verificación' : 'Configure verification'),
+      find.text(
+        spanish ? 'Configurar verificaci\u00f3n' : 'Configure verification',
+      ),
     );
     final _ = await tester.pumpAndSettle();
   }
@@ -234,14 +239,14 @@ const _tools = [
     id: 'runner',
     serverId: 'server',
     toolIdentifier: 'verify',
-    label: 'Local · verify',
+    label: 'Local: verify',
     canRunUnattended: true,
   ),
   ScopedVerificationToolOption(
     id: 'edit',
     serverId: 'server',
     toolIdentifier: 'edit_file',
-    label: 'Local · edit_file',
+    label: 'Local: edit_file',
     canRunUnattended: false,
   ),
 ];

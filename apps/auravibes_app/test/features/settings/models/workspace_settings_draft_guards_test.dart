@@ -3,7 +3,7 @@ import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   test('cleaning either section preserves the other section dirty state', () {
     final parent = DraftExitGuard();

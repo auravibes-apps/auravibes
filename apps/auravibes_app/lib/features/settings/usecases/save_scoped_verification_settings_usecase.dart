@@ -27,6 +27,8 @@ class const SaveScopedVerificationSettingsUsecase({
     required String workspaceId,
     required ScopedVerificationSettings settings,
   }) async {
+    ScopedVerificationSettingsException? failure;
+    StackTrace? failureStackTrace;
     try {
       if (!await isLocalVerificationWorkspace(
         repository.database,
@@ -47,16 +49,21 @@ class const SaveScopedVerificationSettingsUsecase({
       await repository.saveSettings(workspaceId, settings);
     } on ScopedVerificationSettingsException {
       rethrow;
-    } on WorkspaceTableException catch (error) {
-      throw ScopedVerificationSettingsException(
+    } on WorkspaceTableException catch (error, stackTrace) {
+      failure = ScopedVerificationSettingsException(
         error.conflict
             ? LocaleKeys.verification_errors_conflict
             : LocaleKeys.verification_errors_save_failed,
       );
-    } on Object {
-      throw const ScopedVerificationSettingsException(
+      failureStackTrace = stackTrace;
+    } on Object catch (_, stackTrace) {
+      failure = const ScopedVerificationSettingsException(
         LocaleKeys.verification_errors_save_failed,
       );
+      failureStackTrace = stackTrace;
+    }
+    if (failure != null && failureStackTrace != null) {
+      Error.throwWithStackTrace(failure, failureStackTrace);
     }
   }
 
@@ -73,16 +80,20 @@ class const SaveScopedVerificationSettingsUsecase({
     final ScopedVerificationCapabilities capabilities;
     try {
       final remaining = deadline.difference(DateTime.now().toUtc());
-      if (remaining <= Duration.zero)
+      if (remaining <= .zero) {
         throw TimeoutException('Verification probe expired.');
+      }
       capabilities = await probeCapabilities(
         workspaceId,
         settings,
         deadline,
       ).timeout(remaining);
-    } on Object {
-      throw const ScopedVerificationSettingsException(
-        LocaleKeys.verification_errors_runner_unavailable,
+    } on Object catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const ScopedVerificationSettingsException(
+          LocaleKeys.verification_errors_runner_unavailable,
+        ),
+        stackTrace,
       );
     }
     if (!capabilities.supported) {

@@ -13,6 +13,7 @@ final scopedVerificationConfigurationProvider =
       (ref) => ScopedVerificationConfiguration(ref.watch(appDatabaseProvider)),
     );
 
+// ignore: specify_nonobvious_property_types - Riverpod family type.
 final scopedVerificationSettingsProvider = StreamProvider.autoDispose
     .family<ScopedVerificationSettings, String>((ref, workspaceId) async* {
       final session = await ref.watch(
@@ -20,6 +21,7 @@ final scopedVerificationSettingsProvider = StreamProvider.autoDispose
       );
       if (session.cloud != null) {
         yield ScopedVerificationSettings();
+
         return;
       }
       yield* ref
@@ -27,6 +29,7 @@ final scopedVerificationSettingsProvider = StreamProvider.autoDispose
           .watchSettings(workspaceId);
     });
 
+// ignore: specify_nonobvious_property_types - Riverpod family type.
 final scopedVerificationToolsProvider = StreamProvider.autoDispose
     .family<List<ScopedVerificationToolOption>, String>((
       ref,
@@ -37,6 +40,7 @@ final scopedVerificationToolsProvider = StreamProvider.autoDispose
       );
       if (session.cloud != null) {
         yield const [];
+
         return;
       }
       yield* ref
@@ -44,6 +48,7 @@ final scopedVerificationToolsProvider = StreamProvider.autoDispose
           .watchTools(workspaceId);
     });
 
+// ignore: specify_nonobvious_property_types - Riverpod family type.
 final saveScopedVerificationSettingsUsecaseProvider = Provider.autoDispose
     .family<SaveScopedVerificationSettingsUsecase, String>((ref, workspaceId) {
       final configuration = ref.watch(scopedVerificationConfigurationProvider);
@@ -63,12 +68,14 @@ final saveScopedVerificationSettingsUsecaseProvider = Provider.autoDispose
                     tool.canRunUnattended,
               )
               .firstOrNull;
-          if (target == null || id != workspaceId)
+          if (target == null || id != workspaceId) {
             throw StateError('Verification binding unavailable.');
-          if (!deadline.isAfter(DateTime.now().toUtc()))
+          }
+          if (!deadline.isAfter(DateTime.now().toUtc())) {
             throw StateError('Verification probe expired.');
+          }
           final cancellation = AgentCancellationScope();
-          // Each save owns a separate non-interactive connection, just like each run.
+          // A separate non-interactive connection belongs to each save.
           final session = await container
               .read(mcpConnectionProvider.notifier)
               .openVerificationSession(
@@ -79,9 +86,9 @@ final saveScopedVerificationSettingsUsecaseProvider = Provider.autoDispose
               );
           try {
             final remaining = deadline.difference(DateTime.now().toUtc());
-            if (remaining <= Duration.zero ||
-                cancellation.isCancellationRequested)
+            if (remaining <= .zero || cancellation.isCancellationRequested) {
               throw StateError('Verification probe expired.');
+            }
             final runner = McpScopedVerificationRunner(
               mcpServerId: settings.mcpServerId,
               editMcpServerId: settings.mcpServerId,
@@ -92,7 +99,8 @@ final saveScopedVerificationSettingsUsecaseProvider = Provider.autoDispose
                   await configuration.validate(id, settings),
               onClose: session.close,
             );
-            // This path deliberately has no start request or configured command.
+            // This path never starts a request or configured command.
+
             return await runner.capabilities().timeout(remaining);
           } finally {
             cancellation.requestStop();

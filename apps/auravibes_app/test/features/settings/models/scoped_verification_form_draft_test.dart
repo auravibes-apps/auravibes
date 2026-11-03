@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('defaults stay disabled and incomplete enable is rejected', () {
-    final draft = ScopedVerificationFormDraft(ScopedVerificationSettings());
+    final draft = ScopedVerificationFormDraft(.new());
     addTearDown(draft.dispose);
     expect(draft.read().enabled, isFalse);
     expect(draft.isDirty, isFalse);

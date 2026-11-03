@@ -17,19 +17,19 @@ class WorkspaceSettingsDraftGuards {
   final compaction = DraftExitGuard();
   final verification = DraftExitGuard();
 
-  void _changed() {
-    parent.releaseApproval(restoreFocus: false);
-    parent.update(
-      isDirty: compaction.isDirty || verification.isDirty,
-      isSaving: compaction.isSaving || verification.isSaving,
-    );
-  }
-
   void dispose() {
     compaction.removeListener(_changed);
     verification.removeListener(_changed);
     parent.unbind();
     compaction.dispose();
     verification.dispose();
+  }
+
+  void _changed() {
+    parent.releaseApproval(restoreFocus: false);
+    parent.update(
+      isDirty: compaction.isDirty || verification.isDirty,
+      isSaving: compaction.isSaving || verification.isSaving,
+    );
   }
 }

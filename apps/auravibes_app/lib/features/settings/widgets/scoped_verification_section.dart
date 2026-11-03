@@ -1,3 +1,5 @@
+// ignore_for_file: use_late_for_private_fields_and_variables - avoid late
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/exceptions/scoped_verification_settings_exception.dart';
@@ -27,10 +29,8 @@ class const ScopedVerificationSection({
 
 class _ScopedVerificationSectionState
     extends ConsumerState<ScopedVerificationSection> {
-  final _errorAnchor = GlobalKey();
-  ScopedVerificationFormDraft _draft = ScopedVerificationFormDraft(
-    ScopedVerificationSettings(),
-  );
+  final GlobalKey _errorAnchor = GlobalKey();
+  ScopedVerificationFormDraft _draft = .new(.new());
   ScopedVerificationSettings? _latest;
   String _lastFingerprint = '';
   String? _error;
@@ -84,7 +84,7 @@ class _ScopedVerificationSectionState
         _publishGuard();
       }
     });
-    final cloud = session.asData?.value?.cloud != null;
+    final cloud = session.asData?.value.cloud != null;
     final tools = cloud
         ? const AsyncData<List<ScopedVerificationToolOption>>([])
         : ref.watch(scopedVerificationToolsProvider(widget.workspaceId));
@@ -155,9 +155,25 @@ class _ScopedVerificationSectionState
     setState(() => _error = key);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final errorContext = _errorAnchor.currentContext;
-      if (mounted && errorContext != null)
-        unawaited(Scrollable.ensureVisible(errorContext));
+      if (mounted && errorContext != null) {
+        Scrollable.ensureVisible(errorContext);
+      }
     });
+  }
+
+  void _discard() {
+    final latest = _latest;
+    if (latest == null) return;
+    setState(() {
+      _replace(latest);
+      _error = null;
+      _notice = null;
+    });
+    _publishGuard();
+  }
+
+  void _toggleAdvanced() {
+    setState(() => _advanced = !_advanced);
   }
 
   Future<void> _save() async {
@@ -168,6 +184,7 @@ class _ScopedVerificationSectionState
     } on FormatException {
       _advanced = true;
       _showError(LocaleKeys.verification_errors_invalid);
+
       return;
     }
     setState(() {
@@ -210,7 +227,6 @@ class const _VerificationCard({
   @override
   Widget build(BuildContext context) => AuraCard(
     child: AuraColumn(
-      crossAxisAlignment: .stretch,
       children: [
         AuraWrap(
           children: [
@@ -273,6 +289,7 @@ class const _VerificationCard({
             ),
         ],
       ],
+      crossAxisAlignment: .stretch,
     ),
   );
 }
@@ -281,18 +298,19 @@ class const _VerificationLoadError({required final String workspaceId})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
-    crossAxisAlignment: .start,
     children: [
       const TextLocale(LocaleKeys.verification_errors_load_failed),
       AuraButton(
         onPressed: () {
-          ref.invalidate(scopedVerificationSettingsProvider(workspaceId));
-          ref.invalidate(scopedVerificationToolsProvider(workspaceId));
+          ref
+            ..invalidate(scopedVerificationSettingsProvider(workspaceId))
+            ..invalidate(scopedVerificationToolsProvider(workspaceId));
         },
-        variant: .ghost,
         child: const TextLocale(LocaleKeys.route_state_retry),
+        variant: .ghost,
       ),
     ],
+    crossAxisAlignment: .start,
   );
 }
 
@@ -307,14 +325,13 @@ class const _VerificationForm({
 
     return FocusTraversalGroup(
       child: AuraColumn(
-        crossAxisAlignment: .stretch,
         children: [
           const TextLocale(LocaleKeys.verification_runner_requirement),
           AuraCheckboxListTile(
-            key: const ValueKey('verification-enable'),
             value: draft.enabled,
             onChanged: (value) => state._change(() => draft.enabled = value),
             title: const TextLocale(LocaleKeys.verification_enable),
+            key: const ValueKey('verification-enable'),
             subtitle: const TextLocale(LocaleKeys.verification_enable_hint),
             semanticLabel: LocaleKeys.verification_enable.tr(),
           ),
@@ -336,9 +353,9 @@ class const _VerificationForm({
           _VerificationInput(
             controller: draft.root,
             label: const TextLocale(LocaleKeys.verification_root),
-            hint: const TextLocale(LocaleKeys.verification_root_hint),
             semanticLabel: LocaleKeys.verification_root.tr(),
             identifier: 'verification-root',
+            hint: const TextLocale(LocaleKeys.verification_root_hint),
           ),
           _VerificationEditTools(state: state, tools: tools),
           const AuraText(
@@ -353,58 +370,47 @@ class const _VerificationForm({
             ),
           AuraButton(
             onPressed: state._addCheck,
-            disabled: draft.checks.length >= ScopedVerificationLimits.maxChecks,
-            variant: .ghost,
             child: const TextLocale(LocaleKeys.verification_add_check),
+            variant: .ghost,
+            disabled: draft.checks.length >= ScopedVerificationLimits.maxChecks,
           ),
           Semantics(
-            expanded: state._advanced,
             child: AuraButton(
-              onPressed: () =>
-                  state.setState(() => state._advanced = !state._advanced),
-              variant: .ghost,
+              onPressed: state._toggleAdvanced,
               child: const TextLocale(LocaleKeys.verification_advanced),
+              variant: .ghost,
             ),
+            expanded: state._advanced,
           ),
           if (state._advanced) _VerificationLimits(draft: draft),
           if (state._error case final String error)
             Semantics(
               key: state._errorAnchor,
+              child: _VerificationErrorText(key: error),
               liveRegion: true,
-              child: _verificationErrorText(error),
             ),
           AuraWrap(
             children: [
               AuraButton(
-                key: const ValueKey('verification-save'),
                 onPressed: () => unawaited(state._save()),
-                disabled: !draft.isDirty || state._saving,
-                isLoading: state._saving,
                 child: const TextLocale(LocaleKeys.verification_save),
+                key: const ValueKey('verification-save'),
+                isLoading: state._saving,
+                disabled: !draft.isDirty || state._saving,
               ),
               AuraButton(
-                key: const ValueKey('verification-discard'),
-                onPressed: () {
-                  final latest = state._latest;
-                  if (latest != null) {
-                    state.setState(() {
-                      state._replace(latest);
-                      state._error = null;
-                      state._notice = null;
-                    });
-                    state._publishGuard();
-                  }
-                },
-                disabled: !draft.isDirty || state._saving,
-                variant: .ghost,
+                onPressed: state._discard,
                 child: const TextLocale(LocaleKeys.verification_discard),
+                key: const ValueKey('verification-discard'),
+                variant: .ghost,
+                disabled: !draft.isDirty || state._saving,
               ),
             ],
           ),
           if (state._notice != null)
             Semantics(
-              liveRegion: true,
               child: const TextLocale(LocaleKeys.verification_saved),
+              liveRegion: true,
             ),
         ],
       ),
@@ -429,7 +435,6 @@ class const _VerificationEditTools({
     final eligible = edits.map((tool) => tool.id).toSet();
 
     return AuraColumn(
-      crossAxisAlignment: .stretch,
       children: [
         const AuraText(
           child: TextLocale(LocaleKeys.verification_edit_tools),
@@ -443,8 +448,8 @@ class const _VerificationEditTools({
               () =>
                   draft.editToolIds.removeWhere((id) => !eligible.contains(id)),
             ),
-            variant: .ghost,
             child: const TextLocale(LocaleKeys.verification_clear_missing),
+            variant: .ghost,
           ),
         ],
         for (final tool in edits)
@@ -459,6 +464,7 @@ class const _VerificationEditTools({
             semanticLabel: tool.label,
           ),
       ],
+      crossAxisAlignment: .stretch,
     );
   }
 }
@@ -470,7 +476,6 @@ class const _VerificationCheckFields({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    crossAxisAlignment: .stretch,
     children: [
       _VerificationInput(
         controller: check.id,
@@ -487,25 +492,26 @@ class const _VerificationCheckFields({
       _VerificationInput(
         controller: check.arguments,
         label: const TextLocale(LocaleKeys.verification_arguments),
-        hint: const TextLocale(LocaleKeys.verification_arguments_hint),
         semanticLabel: LocaleKeys.verification_arguments.tr(),
         identifier: 'verification-arguments-${identityHashCode(check)}',
+        hint: const TextLocale(LocaleKeys.verification_arguments_hint),
         maxLines: 3,
       ),
       _VerificationInput(
         controller: check.suffixes,
         label: const TextLocale(LocaleKeys.verification_suffixes),
-        hint: const TextLocale(LocaleKeys.verification_suffixes_hint),
         semanticLabel: LocaleKeys.verification_suffixes.tr(),
         identifier: 'verification-suffixes-${identityHashCode(check)}',
+        hint: const TextLocale(LocaleKeys.verification_suffixes_hint),
         maxLines: 2,
       ),
       AuraButton(
         onPressed: () => state._removeCheck(check),
-        variant: .ghost,
         child: const TextLocale(LocaleKeys.verification_remove_check),
+        variant: .ghost,
       ),
     ],
+    crossAxisAlignment: .stretch,
   );
 }
 
@@ -514,7 +520,6 @@ class const _VerificationLimits({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    crossAxisAlignment: .stretch,
     children: [
       const TextLocale(LocaleKeys.verification_limits_hint),
       _VerificationInput(
@@ -539,6 +544,7 @@ class const _VerificationLimits({
         numeric: true,
       ),
     ],
+    crossAxisAlignment: .stretch,
   );
 }
 
@@ -556,33 +562,37 @@ class const _VerificationInput({
     controller: controller,
     label: label,
     hint: hint,
-    maxLines: maxLines,
     keyboardType: numeric
         ? const TextInputType.numberWithOptions(decimal: true)
         : null,
+    maxLines: maxLines,
     identifier: identifier,
     semanticLabel: semanticLabel,
   );
 }
 
-Widget _verificationErrorText(String key) => switch (key) {
-  LocaleKeys.verification_cloud_unavailable => const TextLocale(
-    LocaleKeys.verification_cloud_unavailable,
-  ),
-  LocaleKeys.verification_errors_bindings => const TextLocale(
-    LocaleKeys.verification_errors_bindings,
-  ),
-  LocaleKeys.verification_errors_runner_unavailable => const TextLocale(
-    LocaleKeys.verification_errors_runner_unavailable,
-  ),
-  LocaleKeys.verification_errors_unsupported_runner => const TextLocale(
-    LocaleKeys.verification_errors_unsupported_runner,
-  ),
-  LocaleKeys.verification_errors_conflict => const TextLocale(
-    LocaleKeys.verification_errors_conflict,
-  ),
-  LocaleKeys.verification_errors_invalid => const TextLocale(
-    LocaleKeys.verification_errors_invalid,
-  ),
-  _ => const TextLocale(LocaleKeys.verification_errors_save_failed),
-};
+class const _VerificationErrorText({required final String key})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (key) {
+    LocaleKeys.verification_cloud_unavailable => const TextLocale(
+      LocaleKeys.verification_cloud_unavailable,
+    ),
+    LocaleKeys.verification_errors_bindings => const TextLocale(
+      LocaleKeys.verification_errors_bindings,
+    ),
+    LocaleKeys.verification_errors_runner_unavailable => const TextLocale(
+      LocaleKeys.verification_errors_runner_unavailable,
+    ),
+    LocaleKeys.verification_errors_unsupported_runner => const TextLocale(
+      LocaleKeys.verification_errors_unsupported_runner,
+    ),
+    LocaleKeys.verification_errors_conflict => const TextLocale(
+      LocaleKeys.verification_errors_conflict,
+    ),
+    LocaleKeys.verification_errors_invalid => const TextLocale(
+      LocaleKeys.verification_errors_invalid,
+    ),
+    _ => const TextLocale(LocaleKeys.verification_errors_save_failed),
+  };
+}
