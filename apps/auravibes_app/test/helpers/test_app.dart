@@ -7,7 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:riverpod/riverpod.dart' as riverpod;
+import 'package:riverpod/misc.dart' as riverpod_misc;
 
 /// Creates a testable widget wrapped with EasyLocalization and Riverpod.
 class TestableApp extends StatefulWidget {
@@ -55,7 +55,7 @@ class _TestableAppState extends State<TestableApp> {
       widget.workspaceId,
     );
     final hasRouteSessionOverride = widget.overrides
-        .whereType<riverpod.Override>()
+        .whereType<riverpod_misc.Override>()
         .any((override) => override.origin == routeSessionProvider);
     _container = .new(
       overrides: [
