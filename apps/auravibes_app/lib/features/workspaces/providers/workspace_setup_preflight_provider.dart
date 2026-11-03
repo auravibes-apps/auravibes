@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -39,30 +40,36 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   Ref ref,
   String workspaceId,
 ) async {
-  final refreshRequested = ref.watch(
-    workspaceSetupPreflightRefreshProvider(workspaceId),
-  );
-  final scope = await _readWorkspaceScope(ref, workspaceId, refreshRequested);
+  final scope = await _readWorkspaceScope(ref, workspaceId);
+  return _buildPreflight(ref, workspaceId, scope);
+}
+
+Future<WorkspaceSetupPreflight> _buildPreflight(
+  Ref ref,
+  String workspaceId,
+  _WorkspaceScope scope,
+) async {
   final selectedModelId = ref.watch(newChatProvider(workspaceId)).modelId;
   final sources = await _readSources(ref, scope, selectedModelId);
-  final providers = _providerSnapshots(
-    sources.providerRead.value,
-    scope.workspaceId,
-  );
-
   return const BuildWorkspaceSetupPreflightUsecase().call(
-    .new(
-      storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
-      selectedModelId: selectedModelId,
-      selectedModelSourceAvailable: sources.modelRead.available,
-      providerSourceAvailable: sources.providerRead.available,
-      mcpSourceAvailable: sources.mcpRead.available,
-      providers: providers,
-      selectedModel: sources.modelRead.value,
-      mcpConnections: sources.mcpRead.value,
-    ),
+    _preflightSnapshot(scope, sources, selectedModelId),
   );
 }
+
+WorkspaceSetupPreflightSnapshot _preflightSnapshot(
+  _WorkspaceScope scope,
+  _SourceReads sources,
+  String? selectedModelId,
+) => .new(
+  storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
+  selectedModelId: selectedModelId,
+  selectedModelSourceAvailable: sources.modelRead.available,
+  providerSourceAvailable: sources.providerRead.available,
+  mcpSourceAvailable: sources.mcpRead.available,
+  providers: _providerSnapshots(sources.providerRead.value, scope.workspaceId),
+  selectedModel: sources.modelRead.value,
+  mcpConnections: sources.mcpRead.value,
+);
 
 typedef _ReadResult<T> = ({bool available, T? value});
 
@@ -87,17 +94,48 @@ typedef _SourceReads = ({
 Future<_WorkspaceScope> _readWorkspaceScope(
   Ref ref,
   String workspaceId,
-  bool refreshRequested,
 ) async {
-  final workspaceRead = await _capture(
-    () => ref.watch(workspaceByIdProvider(workspaceId).future),
+  final refreshRequested = ref.watch(
+    workspaceSetupPreflightRefreshProvider(workspaceId),
   );
+  final workspaceRead = await _readWorkspace(ref, workspaceId);
   final workspace = workspaceRead.value;
-  final sessionRead = workspace == null
-      ? _unavailable<WorkspaceSession>()
-      : await _capture(
-          () => ref.watch(workspaceSessionForRouteProvider(workspaceId).future),
-        );
+  final sessionRead = await _readSession(ref, workspaceId, workspace);
+  return _workspaceScope(
+    workspaceId,
+    refreshRequested,
+    workspaceRead,
+    workspace,
+    sessionRead,
+  );
+}
+
+Future<_ReadResult<WorkspaceEntity?>> _readWorkspace(
+  Ref ref,
+  String workspaceId,
+) => _capture(
+  () => ref.watch(workspaceByIdProvider(workspaceId).future),
+);
+
+Future<_ReadResult<WorkspaceSession>> _readSession(
+  Ref ref,
+  String workspaceId,
+  WorkspaceEntity? workspace,
+) async {
+  if (workspace == null) return _unavailable<WorkspaceSession>();
+
+  return _capture(
+    () => ref.watch(workspaceSessionForRouteProvider(workspaceId).future),
+  );
+}
+
+_WorkspaceScope _workspaceScope(
+  String workspaceId,
+  bool refreshRequested,
+  _ReadResult<WorkspaceEntity?> workspaceRead,
+  WorkspaceEntity? workspace,
+  _ReadResult<WorkspaceSession> sessionRead,
+) {
   final isRemote = workspace?.type == WorkspaceType.remote;
 
   return (
@@ -108,12 +146,24 @@ Future<_WorkspaceScope> _readWorkspaceScope(
     sessionRead: sessionRead,
     session: sessionRead.value,
     isRemote: isRemote,
-    sourceAllowed:
-        workspace != null &&
-        sessionRead.available &&
-        (!isRemote || refreshRequested),
+    sourceAllowed: _canReadSources(
+      workspace,
+      sessionRead,
+      isRemote,
+      refreshRequested,
+    ),
   );
 }
+
+bool _canReadSources(
+  WorkspaceEntity? workspace,
+  _ReadResult<WorkspaceSession> sessionRead,
+  bool isRemote,
+  bool refreshRequested,
+) =>
+    workspace != null &&
+    sessionRead.available &&
+    (!isRemote || refreshRequested);
 
 Future<_SourceReads> _readSources(
   Ref ref,
@@ -127,20 +177,31 @@ Future<_SourceReads> _readSources(
 );
 
 Future<bool?> _readCloudStorage(Ref ref, _WorkspaceScope scope) async {
-  final session = scope.session;
-  if (!scope.isRemote || !scope.refreshRequested || session == null) {
-    return null;
-  }
+  final session = _cloudStorageSession(scope);
+  if (session == null) return null;
 
-  final result = await _capture(() async {
-    final _ = await ref.watch(
-      cloudWorkspaceConfigurationProvider(session).future,
-    );
+  return _readCloudConfiguration(ref, session);
+}
 
-    return true;
-  });
+WorkspaceSession? _cloudStorageSession(_WorkspaceScope scope) {
+  if (!scope.isRemote || !scope.refreshRequested) return null;
 
-  return result.value;
+  return scope.session;
+}
+
+Future<bool?> _readCloudConfiguration(
+  Ref ref,
+  WorkspaceSession session,
+) async =>
+    (await _capture(() => _cloudWorkspaceConfiguration(ref, session))).value;
+
+Future<bool> _cloudWorkspaceConfiguration(
+  Ref ref,
+  WorkspaceSession session,
+) async {
+  await ref.watch(cloudWorkspaceConfigurationProvider(session).future);
+
+  return true;
 }
 
 Future<_ReadResult<List<ModelConnectionEntity>>> _readProviderConnections(
@@ -159,19 +220,31 @@ Future<_ReadResult<List<WorkspaceSetupMcpSnapshot>>> _readMcpConnections(
   _WorkspaceScope scope,
 ) async {
   if (!scope.sourceAllowed) return _unavailable();
-  final result = await _capture(
-    () => ref.watch(serviceConnectionsProvider(scope.workspaceId).future),
-  );
-  final connections = result.value;
+
+  return _readMcpSnapshots(ref, scope.workspaceId);
+}
+
+Future<_ReadResult<List<WorkspaceSetupMcpSnapshot>>> _readMcpSnapshots(
+  Ref ref,
+  String workspaceId,
+) async {
+  final connections = (await _capture(
+    () => ref.watch(serviceConnectionsProvider(workspaceId).future),
+  )).value;
   if (connections == null) return _unavailable();
 
-  return _available([
-    for (final connection in connections)
-      if (connection.workspaceId == scope.workspaceId &&
-          connection.kind == ServiceConnectionListItemKind.mcpServer)
-        _mcpSnapshot(connection),
-  ]);
+  return _available(_mcpSnapshots(connections, workspaceId));
 }
+
+List<WorkspaceSetupMcpSnapshot> _mcpSnapshots(
+  List<ServiceConnectionListItem> connections,
+  String workspaceId,
+) => [
+  for (final connection in connections)
+    if (connection.workspaceId == workspaceId &&
+        connection.kind == ServiceConnectionListItemKind.mcpServer)
+      _mcpSnapshot(connection),
+];
 
 WorkspaceSetupMcpSnapshot _mcpSnapshot(ServiceConnectionListItem connection) =>
     WorkspaceSetupMcpSnapshot(
@@ -192,18 +265,29 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel(
   _WorkspaceScope scope,
 ) async {
   if (selectedModelId == null) {
-    return _available<WorkspaceSetupModelSnapshot?>(null);
+    return _noSelectedModel();
   }
   if (!scope.sourceAllowed) return _unavailable();
 
-  return await _capture<WorkspaceSetupModelSnapshot?>(() async {
-    final selections = await ref.watch(
-      modelSelectionStoreProvider(scope.workspaceId).future,
-    );
-    final model = await selections.getById(selectedModelId);
+  return _readSelectedModelSnapshot(ref, selectedModelId, scope.workspaceId);
+}
 
-    return await _modelSnapshot(ref, model, scope.workspaceId);
-  });
+_ReadResult<WorkspaceSetupModelSnapshot?> _noSelectedModel() =>
+    _available<WorkspaceSetupModelSnapshot?>(null);
+
+Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModelSnapshot(
+  Ref ref,
+  String selectedModelId,
+  String workspaceId,
+) =>
+    _capture(() async {
+      final selections = await ref.watch(
+        modelSelectionStoreProvider(workspaceId).future,
+      );
+      final model = await selections.getById(selectedModelId);
+
+      return _modelSnapshot(ref, model, workspaceId);
+    });
 }
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
@@ -228,29 +312,47 @@ Future<WorkspaceSetupModelSnapshot> _readModelMetadata(
   WorkspaceModelSelectionWithConnectionEntity model,
 ) async {
   final selection = model.workspaceModelSelection;
-  final providerId =
-      ModelProviderOAuthProfiles.isCodexProvider(model.modelConnection.modelId)
-      ? 'openai'
-      : model.modelsProvider.id;
-  final catalogModel = await ref.watch(
-    getModelByProviderAndModelIdProvider(
-      workspaceId: model.modelConnection.workspaceId,
-      providerId: providerId,
-      modelId: selection.modelId,
-    ).future,
-  );
+  final catalogModel = await _readCatalogModel(ref, model, selection);
 
-  return WorkspaceSetupModelSnapshot(
-    selectionId: selection.id,
-    providerConnectionId: model.modelConnection.id,
-    modelName: catalogModel?.name ?? selection.modelName,
-    capabilityMetadataAvailable: catalogModel != null,
-    inputModalities: catalogModel?.modalitiesInput ?? const [],
-    outputModalities: catalogModel?.modalitiesOutput ?? const [],
-    supportsReasoning: catalogModel?.supportsReasoning ?? false,
-    supportsToolCalls: catalogModel?.supportsToolCalls ?? false,
-  );
+  return _modelSnapshotFromCatalog(model, selection, catalogModel);
 }
+
+Future<ApiModelEntity?> _readCatalogModel(
+  Ref ref,
+  WorkspaceModelSelectionWithConnectionEntity model,
+  WorkspaceModelSelectionEntity selection,
+) => ref.watch(
+  getModelByProviderAndModelIdProvider(
+    workspaceId: model.modelConnection.workspaceId,
+    providerId: _providerId(model),
+    modelId: selection.modelId,
+  ).future,
+);
+
+String _providerId(WorkspaceModelSelectionWithConnectionEntity model) {
+  if (ModelProviderOAuthProfiles.isCodexProvider(
+    model.modelConnection.modelId,
+  )) {
+    return 'openai';
+  }
+
+  return model.modelsProvider.id;
+}
+
+WorkspaceSetupModelSnapshot _modelSnapshotFromCatalog(
+  WorkspaceModelSelectionWithConnectionEntity model,
+  WorkspaceModelSelectionEntity selection,
+  ApiModelEntity? catalogModel,
+) => WorkspaceSetupModelSnapshot(
+  selectionId: selection.id,
+  providerConnectionId: model.modelConnection.id,
+  modelName: catalogModel?.name ?? selection.modelName,
+  capabilityMetadataAvailable: catalogModel != null,
+  inputModalities: catalogModel?.modalitiesInput ?? const [],
+  outputModalities: catalogModel?.modalitiesOutput ?? const [],
+  supportsReasoning: catalogModel?.supportsReasoning ?? false,
+  supportsToolCalls: catalogModel?.supportsToolCalls ?? false,
+);
 
 bool? _storageAvailable(_WorkspaceScope scope, bool? cloudStorageAvailable) {
   if (!scope.workspaceRead.available) return null;

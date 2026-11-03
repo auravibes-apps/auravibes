@@ -56,22 +56,26 @@ class const _PreflightContent({
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
     final isCloud = session.asData?.value.cloud != null;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _PreflightSummaryCard(
-          workspaceId: workspaceId,
-          result: result,
-          isCloud: isCloud,
-        ),
-        for (final id in WorkspaceSetupPreflightCheckId.values)
-          _PreflightCheckCard(
-            workspaceId: workspaceId,
-            check: result.check(id),
-          ),
-      ],
-    );
+    return _preflightList(isCloud);
   }
+
+  Widget _preflightList(bool isCloud) => ListView(
+    padding: const EdgeInsets.all(16),
+    children: _preflightCards(isCloud),
+  );
+
+  List<Widget> _preflightCards(bool isCloud) => [
+    _PreflightSummaryCard(
+      workspaceId: workspaceId,
+      result: result,
+      isCloud: isCloud,
+    ),
+    for (final id in WorkspaceSetupPreflightCheckId.values)
+      _PreflightCheckCard(
+        workspaceId: workspaceId,
+        check: result.check(id),
+      ),
+  ];
 }
 
 class const _PreflightSummaryCard({
@@ -316,99 +320,36 @@ String _statusKey(WorkspaceSetupPreflightStatus status) => switch (status) {
   .unknown => 'workspace_setup_preflight.status.unknown',
 };
 
-String _localizedCheckMessage(BuildContext context, String key) =>
-    switch (key) {
-      'workspace_setup_preflight.storage_available' ||
-      'workspace_setup_preflight.storage_unavailable' ||
-      'workspace_setup_preflight.storage_unverified' =>
-        _localizedStorageMessage(context, key),
-      'workspace_setup_preflight.provider_unverified' ||
-      'workspace_setup_preflight.provider_not_configured' ||
-      'workspace_setup_preflight.provider_credential_missing_optional' ||
-      'workspace_setup_preflight.provider_credential_missing_required' ||
-      'workspace_setup_preflight.provider_for_model_missing' ||
-      'workspace_setup_preflight.provider_saved' => _localizedProviderMessage(
-        context,
-        key,
-      ),
-      'workspace_setup_preflight.model_not_selected' ||
-      'workspace_setup_preflight.model_unverified' ||
-      'workspace_setup_preflight.model_missing' ||
-      'workspace_setup_preflight.model_metadata_unavailable' ||
-      'workspace_setup_preflight.model_metadata_available' =>
-        _localizedModelMessage(context, key),
-      'workspace_setup_preflight.mcp_unverified' ||
-      'workspace_setup_preflight.mcp_not_configured' ||
-      'workspace_setup_preflight.mcp_disabled' ||
-      'workspace_setup_preflight.mcp_not_tested' ||
-      'workspace_setup_preflight.mcp_attention' ||
-      'workspace_setup_preflight.mcp_last_test_passed' => _localizedMcpMessage(
-        context,
-        key,
-      ),
-      _ => 'workspace_setup_preflight.unavailable'.tr(context: context),
-    };
-
-String _localizedStorageMessage(BuildContext context, String key) =>
-    switch (key) {
-      'workspace_setup_preflight.storage_available' =>
-        'workspace_setup_preflight.storage_available'.tr(context: context),
-      'workspace_setup_preflight.storage_unavailable' =>
-        'workspace_setup_preflight.storage_unavailable'.tr(context: context),
-      _ => 'workspace_setup_preflight.storage_unverified'.tr(context: context),
-    };
-
-String _localizedProviderMessage(
-  BuildContext context,
-  String key,
-) => switch (key) {
-  'workspace_setup_preflight.provider_unverified' =>
-    'workspace_setup_preflight.provider_unverified'.tr(context: context),
-  'workspace_setup_preflight.provider_not_configured' =>
-    'workspace_setup_preflight.provider_not_configured'.tr(context: context),
-  'workspace_setup_preflight.provider_credential_missing_optional' =>
-    'workspace_setup_preflight.provider_credential_missing_optional'.tr(
-      context: context,
-    ),
-  'workspace_setup_preflight.provider_credential_missing_required' =>
-    'workspace_setup_preflight.provider_credential_missing_required'.tr(
-      context: context,
-    ),
-  'workspace_setup_preflight.provider_for_model_missing' =>
-    'workspace_setup_preflight.provider_for_model_missing'.tr(context: context),
-  _ => 'workspace_setup_preflight.provider_saved'.tr(context: context),
+const _checkMessageKeys = {
+  'workspace_setup_preflight.storage_available',
+  'workspace_setup_preflight.storage_unavailable',
+  'workspace_setup_preflight.storage_unverified',
+  'workspace_setup_preflight.provider_unverified',
+  'workspace_setup_preflight.provider_not_configured',
+  'workspace_setup_preflight.provider_credential_missing_optional',
+  'workspace_setup_preflight.provider_credential_missing_required',
+  'workspace_setup_preflight.provider_for_model_missing',
+  'workspace_setup_preflight.provider_saved',
+  'workspace_setup_preflight.model_not_selected',
+  'workspace_setup_preflight.model_unverified',
+  'workspace_setup_preflight.model_missing',
+  'workspace_setup_preflight.model_metadata_unavailable',
+  'workspace_setup_preflight.model_metadata_available',
+  'workspace_setup_preflight.mcp_unverified',
+  'workspace_setup_preflight.mcp_not_configured',
+  'workspace_setup_preflight.mcp_disabled',
+  'workspace_setup_preflight.mcp_not_tested',
+  'workspace_setup_preflight.mcp_attention',
+  'workspace_setup_preflight.mcp_last_test_passed',
 };
 
-String _localizedModelMessage(BuildContext context, String key) =>
-    switch (key) {
-      'workspace_setup_preflight.model_not_selected' =>
-        'workspace_setup_preflight.model_not_selected'.tr(context: context),
-      'workspace_setup_preflight.model_unverified' =>
-        'workspace_setup_preflight.model_unverified'.tr(context: context),
-      'workspace_setup_preflight.model_missing' =>
-        'workspace_setup_preflight.model_missing'.tr(context: context),
-      'workspace_setup_preflight.model_metadata_unavailable' =>
-        'workspace_setup_preflight.model_metadata_unavailable'.tr(
-          context: context,
-        ),
-      _ => 'workspace_setup_preflight.model_metadata_available'.tr(
-        context: context,
-      ),
-    };
+String _localizedCheckMessage(BuildContext context, String key) {
+  final messageKey = _checkMessageKeys.contains(key)
+      ? key
+      : 'workspace_setup_preflight.unavailable';
 
-String _localizedMcpMessage(BuildContext context, String key) => switch (key) {
-  'workspace_setup_preflight.mcp_unverified' =>
-    'workspace_setup_preflight.mcp_unverified'.tr(context: context),
-  'workspace_setup_preflight.mcp_not_configured' =>
-    'workspace_setup_preflight.mcp_not_configured'.tr(context: context),
-  'workspace_setup_preflight.mcp_disabled' =>
-    'workspace_setup_preflight.mcp_disabled'.tr(context: context),
-  'workspace_setup_preflight.mcp_not_tested' =>
-    'workspace_setup_preflight.mcp_not_tested'.tr(context: context),
-  'workspace_setup_preflight.mcp_attention' =>
-    'workspace_setup_preflight.mcp_attention'.tr(context: context),
-  _ => 'workspace_setup_preflight.mcp_last_test_passed'.tr(context: context),
-};
+  return messageKey.tr(context: context);
+}
 
 String _outcomeKey(WorkspaceSetupPreflightOutcome outcome) => switch (outcome) {
   .ready => 'workspace_setup_preflight.outcome.ready',

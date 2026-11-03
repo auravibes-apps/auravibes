@@ -137,28 +137,45 @@ class const _WorkspaceSetupPreflightEntry({required final String workspaceId})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
-    child: AuraColumn(
-      children: [
-        const AuraText(
-          child: TextLocale('workspace_setup_preflight.entry_title'),
-          style: .heading6,
-        ),
-        const TextLocale('workspace_setup_preflight.entry_description'),
-        AuraButton(
-          onPressed: () => unawaited(
-            FeatureDestinations.push<void>(
-              context,
-              WorkspaceSetupPreflightRoute(workspaceId: workspaceId).location,
-            ),
-          ),
-          child: const TextLocale('workspace_setup_preflight.open'),
-          key: const ValueKey('workspace_settings_setup_preflight'),
-          variant: .ghost,
-        ),
-      ],
-      crossAxisAlignment: .start,
-    ),
+    child: _WorkspaceSetupPreflightEntryContent(workspaceId: workspaceId),
     style: .border,
+  );
+}
+
+class const _WorkspaceSetupPreflightEntryContent({
+  required final String workspaceId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale('workspace_setup_preflight.entry_title'),
+        style: .heading6,
+      ),
+      const TextLocale('workspace_setup_preflight.entry_description'),
+      _WorkspaceSetupPreflightButton(workspaceId: workspaceId),
+    ],
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _WorkspaceSetupPreflightButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => _openWorkspaceSetupPreflight(context, workspaceId),
+    child: const TextLocale('workspace_setup_preflight.open'),
+    key: const ValueKey('workspace_settings_setup_preflight'),
+    variant: .ghost,
+  );
+}
+
+void _openWorkspaceSetupPreflight(BuildContext context, String workspaceId) {
+  unawaited(
+    FeatureDestinations.push<void>(
+      context,
+      WorkspaceSetupPreflightRoute(workspaceId: workspaceId).location,
+    ),
   );
 }
 

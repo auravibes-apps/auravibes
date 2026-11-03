@@ -131,16 +131,30 @@ WorkspaceSetupPreflightCheck _modelReady(
 WorkspaceSetupPreflightCheck _providerCheck(
   WorkspaceSetupPreflightSnapshot snapshot,
 ) {
-  final providers = snapshot.providers;
-  if (!snapshot.providerSourceAvailable || providers == null) {
+  if (!snapshot.providerSourceAvailable || snapshot.providers == null) {
     return _providerUnverified();
   }
+
+  return _configuredProviderCheck(snapshot, snapshot.providers!);
+}
+
+WorkspaceSetupPreflightCheck _configuredProviderCheck(
+  WorkspaceSetupPreflightSnapshot snapshot,
+  List<WorkspaceSetupProviderSnapshot> providers,
+) {
   if (snapshot.selectedModelId == null) {
     return _optionalProviderCheck(providers);
   }
   if (providers.isEmpty) return _providerForModelMissing();
   if (!snapshot.selectedModelSourceAvailable) return _providerUnverified();
 
+  return _selectedModelProviderCheck(snapshot, providers);
+}
+
+WorkspaceSetupPreflightCheck _selectedModelProviderCheck(
+  WorkspaceSetupPreflightSnapshot snapshot,
+  List<WorkspaceSetupProviderSnapshot> providers,
+) {
   final model = snapshot.selectedModel;
   if (model == null || model.selectionId != snapshot.selectedModelId) {
     return _providerForModelMissing();
@@ -228,22 +242,34 @@ WorkspaceSetupPreflightCheck _mcpCheck(
   if (!snapshot.mcpSourceAvailable || connections == null) {
     return _mcpUnverified();
   }
+
+  return _configuredMcpCheck(connections);
+}
+
+WorkspaceSetupPreflightCheck _configuredMcpCheck(
+  List<WorkspaceSetupMcpSnapshot> connections,
+) {
   if (connections.isEmpty) return _mcpNotConfigured();
-  if (connections.any((connection) => !connection.isEnabled)) {
-    return _mcpDisabled();
-  }
-  if (connections.any((connection) => connection.connectionNeedsAttention)) {
-    return _mcpNeedsAttention();
-  }
-  if (connections.any((connection) => connection.lastTestStatus == null)) {
-    return _mcpNotTested();
-  }
-  if (connections.any((connection) => connection.lastTestStatus != 'success')) {
-    return _mcpNeedsAttention();
-  }
+  if (_hasDisabledConnection(connections)) return _mcpDisabled();
+  if (_hasConnectionNeedingAttention(connections)) return _mcpNeedsAttention();
+  if (_hasUntestedConnection(connections)) return _mcpNotTested();
+  if (_hasFailedConnectionTest(connections)) return _mcpNeedsAttention();
 
   return _mcpTestPassed();
 }
+
+bool _hasDisabledConnection(List<WorkspaceSetupMcpSnapshot> connections) =>
+    connections.any((connection) => !connection.isEnabled);
+
+bool _hasConnectionNeedingAttention(
+  List<WorkspaceSetupMcpSnapshot> connections,
+) => connections.any((connection) => connection.connectionNeedsAttention);
+
+bool _hasUntestedConnection(List<WorkspaceSetupMcpSnapshot> connections) =>
+    connections.any((connection) => connection.lastTestStatus == null);
+
+bool _hasFailedConnectionTest(List<WorkspaceSetupMcpSnapshot> connections) =>
+    connections.any((connection) => connection.lastTestStatus != 'success');
 
 WorkspaceSetupPreflightCheck _mcpUnverified() =>
     const WorkspaceSetupPreflightCheck(
