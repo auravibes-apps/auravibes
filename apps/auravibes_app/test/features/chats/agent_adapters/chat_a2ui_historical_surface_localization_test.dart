@@ -44,18 +44,23 @@ void main() {
         fallbackLocale: const Locale('es'),
         startLocale: const Locale('es'),
         useOnlyLangCode: true,
-        child: AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            builder: _legacyMaterialBuilder,
-            locale: const Locale('es'),
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            supportedLocales: const [Locale('es')],
-            theme: ThemeData(),
-            home: SingleChildScrollView(
-              child: ChatA2uiSurfaceHost.historical(
-                messageId: 'assistant-1',
-                payloads: payloads,
+        child: Builder(
+          builder: (context) => AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              builder: _legacyMaterialBuilder,
+              locale: context.locale,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                ...context.localizationDelegates,
+              ],
+              supportedLocales: context.supportedLocales,
+              theme: ThemeData(),
+              home: SingleChildScrollView(
+                child: ChatA2uiSurfaceHost.historical(
+                  messageId: 'assistant-1',
+                  payloads: payloads,
+                ),
               ),
             ),
           ),
@@ -64,13 +69,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final localizationContext = tester.element(
-      find.byType(ChatA2uiSurfaceHost),
-    );
-    debugPrint('LOCALE=${EasyLocalization.of(localizationContext)?.locale}');
-    debugPrint(
-      'TEXTS=${tester.widgetList<Text>(find.byType(Text)).map((widget) => widget.data).toList()}',
-    );
     expect(find.text('Saved response'), findsOneWidget);
     expect(find.text('Solo lectura'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
