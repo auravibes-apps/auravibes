@@ -104,15 +104,16 @@ class ConversationSendQueue extends _$ConversationSendQueue {
   }
 
   void remove({required String conversationId, required String draftId}) {
-    final drafts = state[conversationId];
-    if (drafts == null) return;
+    final removal = _queuedDraftRemoval(
+      state,
+      conversationId,
+      draftId,
+    );
+    if (removal == null) return;
 
-    final remainingDrafts = _withoutDraft(drafts, draftId);
-    if (remainingDrafts.length == drafts.length) return;
-
-    _setState(_withRemainingDrafts(state, conversationId, remainingDrafts));
+    _setState(removal.nextState);
     _deleteAttachments(
-      drafts.where((draft) => draft.id == draftId),
+      removal.removedDrafts,
       ref.read(localChatAttachmentUsecaseProvider),
     );
   }
@@ -152,6 +153,28 @@ class ConversationSendQueue extends _$ConversationSendQueue {
   }
 }
 
+typedef _QueuedDraftRemoval = ({
+  Map<String, List<ConversationQueuedDraft>> nextState,
+  Iterable<ConversationQueuedDraft> removedDrafts,
+});
+
+_QueuedDraftRemoval? _queuedDraftRemoval(
+  Map<String, List<ConversationQueuedDraft>> state,
+  String conversationId,
+  String draftId,
+) {
+  final drafts = state[conversationId];
+  if (drafts == null) return null;
+
+  final remainingDrafts = _withoutDraft(drafts, draftId);
+  if (remainingDrafts.length == drafts.length) return null;
+
+  return (
+    nextState: _withRemainingDrafts(state, conversationId, remainingDrafts),
+    removedDrafts: drafts.where((draft) => draft.id == draftId),
+  );
+}
+
 Map<String, List<ConversationQueuedDraft>> _withRemainingDrafts(
   Map<String, List<ConversationQueuedDraft>> state,
   String conversationId,
@@ -170,10 +193,7 @@ List<ConversationQueuedDraft>? _reorderedDrafts(
   if (indices == null) return null;
 
   final reorderedDrafts = [...drafts];
-  reorderedDrafts.insert(
-    indices.to,
-    reorderedDrafts.removeAt(indices.from),
-  );
+  reorderedDrafts.insert(indices.to, reorderedDrafts.removeAt(indices.from));
 
   return reorderedDrafts;
 }

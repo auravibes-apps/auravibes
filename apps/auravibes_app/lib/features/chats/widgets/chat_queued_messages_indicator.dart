@@ -98,20 +98,37 @@ class const _QueuedMessagesLayout({
     padding: EdgeInsets.symmetric(
       horizontal: context.auraTheme.fromSpacing(.md),
     ),
-    child: Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      children: [
-        _QueuedMessagesHeader(count: queuedDrafts.length, onClear: onClear),
-        const AuraDivider(),
-        _QueuedDraftList(
-          queuedDrafts: queuedDrafts,
-          onRemove: onRemove,
-          onMove: onMove,
-          onEditDraft: onEditDraft,
-        ),
-      ],
+    child: _QueuedMessagesColumn(
+      queuedDrafts: queuedDrafts,
+      onClear: onClear,
+      onRemove: onRemove,
+      onMove: onMove,
+      onEditDraft: onEditDraft,
     ),
+  );
+}
+
+class const _QueuedMessagesColumn({
+  required final List<ConversationQueuedDraft> queuedDrafts,
+  required final VoidCallback onClear,
+  required final void Function(String draftId) onRemove,
+  required final _MoveQueuedDraft onMove,
+  required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      _QueuedMessagesHeader(count: queuedDrafts.length, onClear: onClear),
+      const AuraDivider(),
+      _QueuedDraftList(
+        queuedDrafts: queuedDrafts,
+        onRemove: onRemove,
+        onMove: onMove,
+        onEditDraft: onEditDraft,
+      ),
+    ],
   );
 }
 
@@ -233,17 +250,41 @@ class const _QueuedDraftTextRow({
   required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      _QueuedDraftText(content: draft.content),
+      const AuraSizedBox(width: .xs),
+      _QueuedDraftActions(
+        draft: draft,
+        canMoveUp: canMoveUp,
+        canMoveDown: canMoveDown,
+        onRemove: onRemove,
+        onMove: onMove,
+        onEditDraft: onEditDraft,
+      ),
+    ],
+  );
+}
+
+class const _QueuedDraftActions({
+  required final ConversationQueuedDraft draft,
+  required final bool canMoveUp,
+  required final bool canMoveDown,
+  required final void Function(String draftId) onRemove,
+  required final _MoveQueuedDraft onMove,
+  required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
     final onEditDraft = this.onEditDraft;
 
     return Row(
+      mainAxisSize: .min,
       children: [
-        _QueuedDraftText(content: draft.content),
         if (onEditDraft != null) ...[
-          const AuraSizedBox(width: .xs),
           _QueuedDraftEditButton(draft: draft, onEdit: onEditDraft),
+          const AuraSizedBox(width: .xs),
         ],
-        const AuraSizedBox(width: .xs),
         _QueuedDraftActionsMenu(
           draftId: draft.id,
           canMoveUp: canMoveUp,
