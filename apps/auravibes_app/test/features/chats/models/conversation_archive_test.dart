@@ -302,17 +302,18 @@ void main() {
         ),
       ];
 
+      final input = (
+        conversation: conversation,
+        messages: messages,
+        modelLabel: null,
+        agentContext: null,
+        readAttachmentBytes: (path) {
+          readCount++;
+          fail('Excluded attachments must not read bytes from $path.');
+        },
+      );
       final encoded = await ConversationArchiveCodec.exportConversation(
-        (
-          conversation: conversation,
-          messages: messages,
-          modelLabel: null,
-          agentContext: null,
-          readAttachmentBytes: (path) {
-            readCount++;
-            fail('Excluded attachments must not read bytes from $path.');
-          },
-        ),
+        input,
         includeAttachments: false,
       );
       final root = jsonDecode(encoded) as Map<String, dynamic>;

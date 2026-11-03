@@ -317,15 +317,16 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     final transcript = await messageRepository
         .getTranscriptMessagesByConversation(conversation.id);
     final agentContext = await _archiveAgentContext(conversation, transcript);
+    final input = (
+      conversation: conversation,
+      messages: _archiveVisibleMessages(transcript),
+      modelLabel: modelLabel,
+      agentContext: agentContext,
+      readAttachmentBytes: attachmentService.readAttachmentBytes,
+    );
 
     return await ConversationArchiveCodec.createConversationArchive(
-      (
-        conversation: conversation,
-        messages: _archiveVisibleMessages(transcript),
-        modelLabel: modelLabel,
-        agentContext: agentContext,
-        readAttachmentBytes: attachmentService.readAttachmentBytes,
-      ),
+      input,
       includeAttachments: includeAttachments,
     );
   }
