@@ -7,7 +7,6 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';

@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
