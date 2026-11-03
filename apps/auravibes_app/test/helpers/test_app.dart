@@ -61,8 +61,6 @@ class _TestableAppState extends State<TestableApp> {
     _container = .new(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
-        if (!hasRouteSessionOverride)
-          routeSessionProvider.overrideWithValue(AsyncData(session)),
         workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
           if (localWorkspaceId == sessionWorkspaceId) return session;
 
@@ -71,6 +69,8 @@ class _TestableAppState extends State<TestableApp> {
           );
         }),
         ...widget.overrides.cast(),
+        if (!hasRouteSessionOverride)
+          routeSessionProvider.overrideWithValue(AsyncData(session)),
       ],
     );
   }
