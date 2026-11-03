@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/agent_tool_batch_executor.dart';
+import 'package:auravibes_engine/src/agent_tool_lifecycle_hooks.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:crypto/crypto.dart';
 
@@ -55,6 +57,7 @@ class const AgentApprovableToolCall({
   required final String conversationId,
   required final String name,
   required final String argumentsRaw,
+  final String workspaceId = '',
 });
 
 abstract interface class ApproveToolCallProvider<TTool extends Object> {
@@ -123,6 +126,7 @@ abstract interface class StopPendingToolCallsProvider {
 class const ApproveToolCallService<TTool extends Object>({
   required final ApproveToolCallProvider<TTool> provider,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
+  final AgentToolLifecycleHookRunner<TTool>? lifecycleHookRunner,
 }) {
   Future<void> call({
     required String toolCallId,
@@ -190,6 +194,8 @@ class const ApproveToolCallService<TTool extends Object>({
 
     final executionResult = await _executeTool(
       conversationId: toolCall.conversationId,
+      workspaceId: toolCall.workspaceId,
+      messageId: messageId,
       toolCallId: toolCallId,
       tool: tool,
       argumentsRaw: toolCall.argumentsRaw,
@@ -208,7 +214,10 @@ class const ApproveToolCallService<TTool extends Object>({
       fullOutputForContext: executionResult.fullOutputForContext,
     ));
 
-    if (provider.isCancellationRequested(toolCall.conversationId)) return;
+    if (executionResult.resultStatus == AgentToolResultStatus.stoppedByUser ||
+        provider.isCancellationRequested(toolCall.conversationId)) {
+      return;
+    }
 
     await provider.resumeConversationIfReady(
       messageId: messageId,
@@ -218,21 +227,31 @@ class const ApproveToolCallService<TTool extends Object>({
 
   Future<AgentToolExecutionResult> _executeTool({
     required String conversationId,
+    required String workspaceId,
+    required String messageId,
     required String toolCallId,
     required TTool tool,
     required String argumentsRaw,
-  }) {
-    return AgentToolExecutionDispatcher<TTool>(
-      runResolvedTool: provider.runResolvedTool,
-      isCancellationRequested: provider.isCancellationRequested,
-      logToolExecutionError: provider.logToolExecutionError,
-      outputPolicyForTool: outputPolicyForTool,
-    ).call(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      argumentsRaw: argumentsRaw,
-    );
+  }) async {
+    final results =
+        await AgentToolBatchExecutor<TTool>(
+          runResolvedTool: provider.runResolvedTool,
+          isCancellationRequested: provider.isCancellationRequested,
+          logToolExecutionError: provider.logToolExecutionError,
+          outputPolicyForTool: outputPolicyForTool,
+          lifecycleHookRunner: lifecycleHookRunner,
+          workspaceId: workspaceId,
+        ).call([
+          AgentToolBatchCall(
+            conversationId: conversationId,
+            messageId: messageId,
+            toolCallId: toolCallId,
+            tool: tool,
+            argumentsRaw: argumentsRaw,
+          ),
+        ]);
+
+    return results.single.result;
   }
 }
 

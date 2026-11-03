@@ -19,7 +19,7 @@ mixin _$MessageToolCallEntity {
  String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get userFacingDescription;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision; bool get backgroundEligible;/// Null preserves legacy pending approvals; false marks fresh model calls.
 @JsonKey(includeIfNull: false) bool? get approvalRequested;/// The raw response from tool execution, if successful.
  String? get responseRaw;/// App-only result data that is never sent to the model.
-@JsonKey(includeIfNull: false) Map<String, Object?>? get appData;/// The bounded response projection used in model context, when different.
+@JsonKey(includeIfNull: false) Map<String, Object?>? get appData;/// The response sent in model context when it differs from the raw result.
 @JsonKey(includeIfNull: false) String? get responseContextRaw;/// Whether output was truncated for model context or persistence.
  bool get outputTruncated;/// Original result size before projection or persistence bounds.
 @JsonKey(includeIfNull: false) int? get originalResponseBytes;/// Whether a justified full-output policy applies to model context.
@@ -262,7 +262,7 @@ class _MessageToolCallEntity extends MessageToolCallEntity {
   return EqualUnmodifiableMapView(value);
 }
 
-/// The bounded response projection used in model context, when different.
+/// The response sent in model context when it differs from the raw result.
 @override@JsonKey(includeIfNull: false) final  String? responseContextRaw;
 /// Whether output was truncated for model context or persistence.
 @override@JsonKey() final  bool outputTruncated;

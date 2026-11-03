@@ -25,6 +25,11 @@ export 'src/agent_tool_approval_policy.dart';
 export 'src/agent_tool_batch_executor.dart';
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
+export 'src/agent_tool_lifecycle_hooks.dart'
+    hide
+        maxAgentToolHookContextBytes,
+        maxAgentToolHookReasonBytes,
+        sanitizedAgentToolHookArgumentNames;
 export 'src/agent_transcript_context.dart';
 export 'src/attachment_modality.dart';
 export 'src/aura_agent_service.dart';

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:auravibes_engine/src/agent_tool_lifecycle_hooks.dart';
 import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/tool_content_digest.dart';
 import 'package:auravibes_engine/src/tool_output_policy.dart';
@@ -103,6 +104,8 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
   required final AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
   final bool captureOutputDigest = false,
   final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
+  final AgentToolLifecycleHookRunner<TTool>? lifecycleHookRunner,
+  final String workspaceId = '',
 }) {
   Future<AgentToolExecutionResult> call({
     required String conversationId,
@@ -161,7 +164,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         );
       }
 
-      return AgentToolExecutionResult(
+      final executionResult = AgentToolExecutionResult(
         resultStatus: .success,
         responseRaw: projection.persistedText,
         responseContextRaw: _responseContext(projection),
@@ -173,6 +176,17 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
             : null,
         fullOutputForContext: projection.fullOutputForContext,
       );
+      return await _runPostToolHook(
+        executionResult,
+        lifecycleHookRunner: lifecycleHookRunner,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        tool: tool,
+        argumentsRaw: argumentsRaw,
+        isCancellationRequested: isCancellationRequested,
+        logToolExecutionError: logToolExecutionError,
+      );
     } on FormatException catch (error, stackTrace) {
       logToolExecutionError((
         conversationId: conversationId,
@@ -183,12 +197,23 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: null,
       ));
 
-      return const AgentToolExecutionResult(
+      const executionResult = AgentToolExecutionResult(
         resultStatus: .executionError,
         responseRaw:
             '{"outcome":"failed","code":"invalid_request","error":"Tool '
             'rejected the request format.","nextAction":"Check this tool\'s '
             'schema and send a corrected request."}',
+      );
+      return await _runPostToolHook(
+        executionResult,
+        lifecycleHookRunner: lifecycleHookRunner,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        tool: tool,
+        argumentsRaw: argumentsRaw,
+        isCancellationRequested: isCancellationRequested,
+        logToolExecutionError: logToolExecutionError,
       );
     } on AgentToolExecutionFailure catch (failure) {
       logToolExecutionError((
@@ -206,7 +231,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
           policy:
               outputPolicyForTool?.call(tool) ?? const AgentToolOutputPolicy(),
         );
-        return AgentToolExecutionResult(
+        final executionResult = AgentToolExecutionResult(
           resultStatus: failure.resultStatus,
           responseRaw: projection.persistedText,
           responseContextRaw: _responseContext(projection),
@@ -218,6 +243,17 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
               ? projection.originalBytes
               : null,
           fullOutputForContext: projection.fullOutputForContext,
+        );
+        return await _runPostToolHook(
+          executionResult,
+          lifecycleHookRunner: lifecycleHookRunner,
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          toolCallId: toolCallId,
+          tool: tool,
+          argumentsRaw: argumentsRaw,
+          isCancellationRequested: isCancellationRequested,
+          logToolExecutionError: logToolExecutionError,
         );
       } on Object {
         return const AgentToolExecutionResult(
@@ -238,7 +274,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: null,
       ));
 
-      return const AgentToolExecutionResult(
+      const executionResult = AgentToolExecutionResult(
         resultStatus: .executionError,
         responseRaw:
             '{"outcome":"failed","code":"execution_error","error":"Tool '
@@ -246,8 +282,145 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
             'result and try a different approach; '
             'do not repeat the unchanged request."}',
       );
+      return await _runPostToolHook(
+        executionResult,
+        lifecycleHookRunner: lifecycleHookRunner,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        toolCallId: toolCallId,
+        tool: tool,
+        argumentsRaw: argumentsRaw,
+        isCancellationRequested: isCancellationRequested,
+        logToolExecutionError: logToolExecutionError,
+      );
     }
   }
+}
+
+Future<AgentToolExecutionResult> _runPostToolHook<TTool extends Object>(
+  AgentToolExecutionResult executionResult, {
+  required AgentToolLifecycleHookRunner<TTool>? lifecycleHookRunner,
+  required String workspaceId,
+  required String conversationId,
+  required String toolCallId,
+  required TTool tool,
+  required String argumentsRaw,
+  required AgentToolCancellationChecker isCancellationRequested,
+  required AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
+}) async {
+  if (lifecycleHookRunner == null || isCancellationRequested(conversationId)) {
+    return executionResult;
+  }
+
+  final request = AgentToolLifecycleHookRequest<TTool>(
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    toolCallId: toolCallId,
+    tool: tool,
+    argumentNames: sanitizedAgentToolHookArgumentNames(argumentsRaw),
+  );
+  AgentPostToolHookResult hookResult;
+  try {
+    hookResult = await lifecycleHookRunner.afterTool(
+      request: request,
+      toolSucceeded:
+          executionResult.resultStatus == AgentToolResultStatus.success,
+      isCancellationRequested: isCancellationRequested,
+    );
+  } on Object catch (error, stackTrace) {
+    _logPostHookFailure(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      error: error,
+      stackTrace: stackTrace,
+      logToolExecutionError: logToolExecutionError,
+      failurePhase: 'lifecycle_hook_post_failed',
+    );
+
+    return executionResult;
+  }
+
+  if (hookResult.outcome == AgentToolHookOutcome.cancelled ||
+      isCancellationRequested(conversationId)) {
+    return executionResult;
+  }
+  if (hookResult.outcome != AgentToolHookOutcome.success) {
+    final failureCode = _postHookFailureCode(hookResult.outcome);
+    _logPostHookFailure(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      error: StateError(failureCode),
+      stackTrace: StackTrace.current,
+      logToolExecutionError: logToolExecutionError,
+      failurePhase: 'lifecycle_hook_post_$failureCode',
+    );
+
+    return executionResult;
+  }
+
+  final hookContext = _boundedHookContext(hookResult.context);
+  if (hookContext == null) return executionResult;
+
+  final existingContext =
+      executionResult.responseContextRaw ?? executionResult.responseRaw;
+  final combinedContext = existingContext == null
+      ? hookContext
+      : 'Post-tool hook context:\n$hookContext\n\n'
+            'Tool output:\n$existingContext';
+  final context =
+      executionResult.fullOutputForContext || existingContext == null
+      ? combinedContext
+      : projectToolOutput(combinedContext).text;
+
+  return AgentToolExecutionResult(
+    resultStatus: executionResult.resultStatus,
+    responseRaw: executionResult.responseRaw,
+    responseContextRaw: context,
+    outputDigest: executionResult.outputDigest,
+    media: executionResult.media,
+    outputTruncated: executionResult.outputTruncated,
+    originalResponseBytes: executionResult.originalResponseBytes,
+    fullOutputForContext: executionResult.fullOutputForContext,
+  );
+}
+
+void _logPostHookFailure<TTool extends Object>({
+  required String conversationId,
+  required String toolCallId,
+  required TTool tool,
+  required Object error,
+  required StackTrace stackTrace,
+  required AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
+  required String failurePhase,
+}) {
+  try {
+    logToolExecutionError((
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      error: error,
+      stackTrace: stackTrace,
+      failurePhase: failurePhase,
+    ));
+  } on Object {
+    // A post-hook failure must not replace the completed tool result.
+  }
+}
+
+String _postHookFailureCode(AgentToolHookOutcome outcome) => switch (outcome) {
+  .timedOut => 'timeout',
+  .outputLimitExceeded => 'output_limit',
+  .unavailable => 'unavailable',
+  .failed || .block || .allow || .success => 'failed',
+  .cancelled => 'cancelled',
+};
+
+String? _boundedHookContext(String? context) {
+  if (context == null || context.isEmpty) return null;
+
+  return truncateAgentToolHookText(context, maxAgentToolHookContextBytes);
 }
 
 String? _responseContext(AgentToolOutputProjection projection) =>

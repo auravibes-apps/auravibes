@@ -4,11 +4,14 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/workspace_agent_hook_settings.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
+import 'package:auravibes_app/features/settings/providers/workspace_agent_hook_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycle_hooks_section.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -28,6 +31,10 @@ void main() {
     'loading and failed refresh preserve the named workspace draft through '
     'retry',
     (tester) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
       final stream = StreamController<CompactionSettings>.broadcast();
       addTearDown(stream.close);
       final guard = DraftExitGuard();
@@ -36,6 +43,7 @@ void main() {
           TestableApp(
             child: WorkspaceSettingsScreen(workspaceId: 'A', guard: guard),
             overrides: [
+              appDatabaseProvider.overrideWithValue(database),
               allWorkspacesProvider.overrideWith(
                 (_) => Stream.value([
                   WorkspaceEntity(
@@ -46,6 +54,11 @@ void main() {
                     updatedAt: .new(2026),
                   ),
                 ]),
+              ),
+              workspaceAgentHookSettingsProvider('A').overrideWith(
+                (_) => Stream.value(
+                  const WorkspaceAgentHookSettings.defaults('A'),
+                ),
               ),
               compactionSettingsProvider('A')
                   .overrideWith((_) => stream.stream),
@@ -153,6 +166,9 @@ void main() {
           child: Router.withConfig(config: router),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
+            workspaceAgentHookSettingsProvider(a.id).overrideWith(
+              (_) => Stream.value(WorkspaceAgentHookSettings.defaults(a.id)),
+            ),
             cloudWorkspaceStateGatewayProvider.overrideWith(
               (_, _) async => null,
             ),
@@ -167,6 +183,7 @@ void main() {
     expect(find.text('Local Alpha'), findsOneWidget);
     expect(find.byType(WorkspaceSettingsScreen), findsOneWidget);
     expect(find.byType(CompactionSettingsSection), findsOneWidget);
+    expect(find.byType(WorkspaceAgentLifecycleHooksSection), findsOneWidget);
     final field = find.byType(EditableText).first;
     await tester.enterText(field, '456');
     await tester.tap(

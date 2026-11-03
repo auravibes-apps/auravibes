@@ -6,6 +6,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MessageToolCallEntity', () {
+    test('hook context survives tool-call serialization', () {
+      const call = MessageToolCallEntity(
+        id: 'hook-call',
+        name: 'tool',
+        argumentsRaw: '{"query":"original"}',
+        responseRaw: 'original tool result',
+        responseContextRaw:
+            'Post-tool hook context:\ncontext\n\n'
+            'Tool output:\noriginal tool result',
+        fullOutputForContext: true,
+        resultStatus: .success,
+      );
+      final restored = MessageToolCallEntity.fromJson(call.toJson());
+      expect(restored.argumentsRaw, call.argumentsRaw);
+      expect(restored.responseRaw, call.responseRaw);
+      expect(restored.getResponseForAI(), call.responseContextRaw);
+      expect(restored.fullOutputForContext, isTrue);
+    });
     test('arguments parses raw JSON arguments', () {
       const toolCall = MessageToolCallEntity(
         id: 'call_1',
@@ -164,6 +182,26 @@ void main() {
         resultStatus: .success,
       );
       expect(toolCall.getResponseForAI(), 'custom response');
+    });
+
+    test('full output context includes explicit lifecycle hook context', () {
+      const toolCall = MessageToolCallEntity(
+        id: 'call_7',
+        name: 'test_tool',
+        argumentsRaw: '{}',
+        responseRaw: 'tool result',
+        responseContextRaw:
+            'Post-tool hook context:\nadditional context\n\n'
+            'Tool output:\ntool result',
+        fullOutputForContext: true,
+        resultStatus: .success,
+      );
+
+      expect(
+        toolCall.getResponseForAI(),
+        'Post-tool hook context:\nadditional context\n\n'
+        'Tool output:\ntool result',
+      );
     });
 
     test('getResponseForAI falls back to resultStatus response', () {

@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_ma
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/workspace_lifecycle_hook_runner_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
@@ -81,6 +82,7 @@ class AgentToolExecutionService({
   ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionForWorkspace,
   PersistToolCallResultsUsecase? persistToolCallResultsUsecase,
+  super.lifecycleHookRunner,
   super.outputPolicyForTool,
 }) extends agent.AgentToolExecutionRunner<ResolvedTool> {
   this
@@ -524,5 +526,6 @@ final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
         persistToolCallResultsUsecase: ref.watch(
           persistToolCallResultsUsecaseProvider,
         ),
+        lifecycleHookRunner: ref.watch(workspaceLifecycleHookRunnerProvider),
       );
     });

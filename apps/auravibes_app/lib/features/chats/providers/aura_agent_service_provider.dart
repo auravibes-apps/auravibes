@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/workspace_lifecycle_hook_runner_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/persist_tool_call_results_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -62,6 +63,7 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
         start: ref.watch(conversationRateLimitRetryRuntimeProvider).start,
         clear: ref.watch(conversationRateLimitRetryRuntimeProvider).clear,
       ),
+      lifecycleHookRunner: ref.watch(workspaceLifecycleHookRunnerProvider),
     );
   },
   dependencies: [
