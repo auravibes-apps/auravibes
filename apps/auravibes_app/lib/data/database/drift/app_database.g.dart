@@ -23900,6 +23900,953 @@ class WorkspaceContentReportsCompanion
   }
 }
 
+class $WorkspaceVerificationSettingsTable extends WorkspaceVerificationSettings
+    with
+        TableInfo<
+          $WorkspaceVerificationSettingsTable,
+          WorkspaceVerificationSettingsRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceVerificationSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _settingsJsonMeta = const VerificationMeta(
+    'settingsJson',
+  );
+  @override
+  late final GeneratedColumn<String> settingsJson = GeneratedColumn<String>(
+    'settings_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [workspaceId, settingsJson, revision];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_verification_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceVerificationSettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('settings_json')) {
+      context.handle(
+        _settingsJsonMeta,
+        settingsJson.isAcceptableOrUnknown(
+          data['settings_json']!,
+          _settingsJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_settingsJsonMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId};
+  @override
+  WorkspaceVerificationSettingsRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceVerificationSettingsRow(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      settingsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}settings_json'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceVerificationSettingsTable createAlias(String alias) {
+    return $WorkspaceVerificationSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceVerificationSettingsRow extends DataClass
+    implements Insertable<WorkspaceVerificationSettingsRow> {
+  final String workspaceId;
+  final String settingsJson;
+  final int revision;
+  const WorkspaceVerificationSettingsRow({
+    required this.workspaceId,
+    required this.settingsJson,
+    required this.revision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['settings_json'] = Variable<String>(settingsJson);
+    map['revision'] = Variable<int>(revision);
+    return map;
+  }
+
+  WorkspaceVerificationSettingsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceVerificationSettingsCompanion(
+      workspaceId: Value(workspaceId),
+      settingsJson: Value(settingsJson),
+      revision: Value(revision),
+    );
+  }
+
+  factory WorkspaceVerificationSettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceVerificationSettingsRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      settingsJson: serializer.fromJson<String>(json['settingsJson']),
+      revision: serializer.fromJson<int>(json['revision']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'settingsJson': serializer.toJson<String>(settingsJson),
+      'revision': serializer.toJson<int>(revision),
+    };
+  }
+
+  WorkspaceVerificationSettingsRow copyWith({
+    String? workspaceId,
+    String? settingsJson,
+    int? revision,
+  }) => WorkspaceVerificationSettingsRow(
+    workspaceId: workspaceId ?? this.workspaceId,
+    settingsJson: settingsJson ?? this.settingsJson,
+    revision: revision ?? this.revision,
+  );
+  WorkspaceVerificationSettingsRow copyWithCompanion(
+    WorkspaceVerificationSettingsCompanion data,
+  ) {
+    return WorkspaceVerificationSettingsRow(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      settingsJson: data.settingsJson.present
+          ? data.settingsJson.value
+          : this.settingsJson,
+      revision: data.revision.present ? data.revision.value : this.revision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceVerificationSettingsRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('settingsJson: $settingsJson, ')
+          ..write('revision: $revision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, settingsJson, revision);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceVerificationSettingsRow &&
+          other.workspaceId == this.workspaceId &&
+          other.settingsJson == this.settingsJson &&
+          other.revision == this.revision);
+}
+
+class WorkspaceVerificationSettingsCompanion
+    extends UpdateCompanion<WorkspaceVerificationSettingsRow> {
+  final Value<String> workspaceId;
+  final Value<String> settingsJson;
+  final Value<int> revision;
+  final Value<int> rowid;
+  const WorkspaceVerificationSettingsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.settingsJson = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceVerificationSettingsCompanion.insert({
+    required String workspaceId,
+    required String settingsJson,
+    required int revision,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       settingsJson = Value(settingsJson),
+       revision = Value(revision);
+  static Insertable<WorkspaceVerificationSettingsRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? settingsJson,
+    Expression<int>? revision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (settingsJson != null) 'settings_json': settingsJson,
+      if (revision != null) 'revision': revision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceVerificationSettingsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? settingsJson,
+    Value<int>? revision,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceVerificationSettingsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      settingsJson: settingsJson ?? this.settingsJson,
+      revision: revision ?? this.revision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (settingsJson.present) {
+      map['settings_json'] = Variable<String>(settingsJson.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceVerificationSettingsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('settingsJson: $settingsJson, ')
+          ..write('revision: $revision, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceVerificationRunsTable extends WorkspaceVerificationRuns
+    with
+        TableInfo<
+          $WorkspaceVerificationRunsTable,
+          WorkspaceVerificationRunRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceVerificationRunsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _turnIdMeta = const VerificationMeta('turnId');
+  @override
+  late final GeneratedColumn<String> turnId = GeneratedColumn<String>(
+    'turn_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES messages (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _toolCallIdMeta = const VerificationMeta(
+    'toolCallId',
+  );
+  @override
+  late final GeneratedColumn<String> toolCallId = GeneratedColumn<String>(
+    'tool_call_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _configRevisionMeta = const VerificationMeta(
+    'configRevision',
+  );
+  @override
+  late final GeneratedColumn<int> configRevision = GeneratedColumn<int>(
+    'config_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ordinalMeta = const VerificationMeta(
+    'ordinal',
+  );
+  @override
+  late final GeneratedColumn<int> ordinal = GeneratedColumn<int>(
+    'ordinal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _repairLimitMeta = const VerificationMeta(
+    'repairLimit',
+  );
+  @override
+  late final GeneratedColumn<int> repairLimit = GeneratedColumn<int>(
+    'repair_limit',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isRepairMeta = const VerificationMeta(
+    'isRepair',
+  );
+  @override
+  late final GeneratedColumn<bool> isRepair = GeneratedColumn<bool>(
+    'is_repair',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_repair" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _resultJsonMeta = const VerificationMeta(
+    'resultJson',
+  );
+  @override
+  late final GeneratedColumn<String> resultJson = GeneratedColumn<String>(
+    'result_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workspaceId,
+    turnId,
+    toolCallId,
+    sessionId,
+    configRevision,
+    ordinal,
+    repairLimit,
+    isRepair,
+    resultJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_verification_runs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceVerificationRunRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('turn_id')) {
+      context.handle(
+        _turnIdMeta,
+        turnId.isAcceptableOrUnknown(data['turn_id']!, _turnIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_turnIdMeta);
+    }
+    if (data.containsKey('tool_call_id')) {
+      context.handle(
+        _toolCallIdMeta,
+        toolCallId.isAcceptableOrUnknown(
+          data['tool_call_id']!,
+          _toolCallIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_toolCallIdMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('config_revision')) {
+      context.handle(
+        _configRevisionMeta,
+        configRevision.isAcceptableOrUnknown(
+          data['config_revision']!,
+          _configRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_configRevisionMeta);
+    }
+    if (data.containsKey('ordinal')) {
+      context.handle(
+        _ordinalMeta,
+        ordinal.isAcceptableOrUnknown(data['ordinal']!, _ordinalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ordinalMeta);
+    }
+    if (data.containsKey('repair_limit')) {
+      context.handle(
+        _repairLimitMeta,
+        repairLimit.isAcceptableOrUnknown(
+          data['repair_limit']!,
+          _repairLimitMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_repairLimitMeta);
+    }
+    if (data.containsKey('is_repair')) {
+      context.handle(
+        _isRepairMeta,
+        isRepair.isAcceptableOrUnknown(data['is_repair']!, _isRepairMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isRepairMeta);
+    }
+    if (data.containsKey('result_json')) {
+      context.handle(
+        _resultJsonMeta,
+        resultJson.isAcceptableOrUnknown(data['result_json']!, _resultJsonMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {workspaceId, turnId, toolCallId},
+    {workspaceId, turnId, ordinal},
+  ];
+  @override
+  WorkspaceVerificationRunRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceVerificationRunRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      turnId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}turn_id'],
+      )!,
+      toolCallId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_call_id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      configRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}config_revision'],
+      )!,
+      ordinal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordinal'],
+      )!,
+      repairLimit: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}repair_limit'],
+      )!,
+      isRepair: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_repair'],
+      )!,
+      resultJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result_json'],
+      ),
+    );
+  }
+
+  @override
+  $WorkspaceVerificationRunsTable createAlias(String alias) {
+    return $WorkspaceVerificationRunsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceVerificationRunRow extends DataClass
+    implements Insertable<WorkspaceVerificationRunRow> {
+  final String id;
+  final String workspaceId;
+  final String turnId;
+  final String toolCallId;
+  final String sessionId;
+  final int configRevision;
+  final int ordinal;
+  final int repairLimit;
+  final bool isRepair;
+  final String? resultJson;
+  const WorkspaceVerificationRunRow({
+    required this.id,
+    required this.workspaceId,
+    required this.turnId,
+    required this.toolCallId,
+    required this.sessionId,
+    required this.configRevision,
+    required this.ordinal,
+    required this.repairLimit,
+    required this.isRepair,
+    this.resultJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['turn_id'] = Variable<String>(turnId);
+    map['tool_call_id'] = Variable<String>(toolCallId);
+    map['session_id'] = Variable<String>(sessionId);
+    map['config_revision'] = Variable<int>(configRevision);
+    map['ordinal'] = Variable<int>(ordinal);
+    map['repair_limit'] = Variable<int>(repairLimit);
+    map['is_repair'] = Variable<bool>(isRepair);
+    if (!nullToAbsent || resultJson != null) {
+      map['result_json'] = Variable<String>(resultJson);
+    }
+    return map;
+  }
+
+  WorkspaceVerificationRunsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceVerificationRunsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      turnId: Value(turnId),
+      toolCallId: Value(toolCallId),
+      sessionId: Value(sessionId),
+      configRevision: Value(configRevision),
+      ordinal: Value(ordinal),
+      repairLimit: Value(repairLimit),
+      isRepair: Value(isRepair),
+      resultJson: resultJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resultJson),
+    );
+  }
+
+  factory WorkspaceVerificationRunRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceVerificationRunRow(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      turnId: serializer.fromJson<String>(json['turnId']),
+      toolCallId: serializer.fromJson<String>(json['toolCallId']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      configRevision: serializer.fromJson<int>(json['configRevision']),
+      ordinal: serializer.fromJson<int>(json['ordinal']),
+      repairLimit: serializer.fromJson<int>(json['repairLimit']),
+      isRepair: serializer.fromJson<bool>(json['isRepair']),
+      resultJson: serializer.fromJson<String?>(json['resultJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'turnId': serializer.toJson<String>(turnId),
+      'toolCallId': serializer.toJson<String>(toolCallId),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'configRevision': serializer.toJson<int>(configRevision),
+      'ordinal': serializer.toJson<int>(ordinal),
+      'repairLimit': serializer.toJson<int>(repairLimit),
+      'isRepair': serializer.toJson<bool>(isRepair),
+      'resultJson': serializer.toJson<String?>(resultJson),
+    };
+  }
+
+  WorkspaceVerificationRunRow copyWith({
+    String? id,
+    String? workspaceId,
+    String? turnId,
+    String? toolCallId,
+    String? sessionId,
+    int? configRevision,
+    int? ordinal,
+    int? repairLimit,
+    bool? isRepair,
+    Value<String?> resultJson = const Value.absent(),
+  }) => WorkspaceVerificationRunRow(
+    id: id ?? this.id,
+    workspaceId: workspaceId ?? this.workspaceId,
+    turnId: turnId ?? this.turnId,
+    toolCallId: toolCallId ?? this.toolCallId,
+    sessionId: sessionId ?? this.sessionId,
+    configRevision: configRevision ?? this.configRevision,
+    ordinal: ordinal ?? this.ordinal,
+    repairLimit: repairLimit ?? this.repairLimit,
+    isRepair: isRepair ?? this.isRepair,
+    resultJson: resultJson.present ? resultJson.value : this.resultJson,
+  );
+  WorkspaceVerificationRunRow copyWithCompanion(
+    WorkspaceVerificationRunsCompanion data,
+  ) {
+    return WorkspaceVerificationRunRow(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      turnId: data.turnId.present ? data.turnId.value : this.turnId,
+      toolCallId: data.toolCallId.present
+          ? data.toolCallId.value
+          : this.toolCallId,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      configRevision: data.configRevision.present
+          ? data.configRevision.value
+          : this.configRevision,
+      ordinal: data.ordinal.present ? data.ordinal.value : this.ordinal,
+      repairLimit: data.repairLimit.present
+          ? data.repairLimit.value
+          : this.repairLimit,
+      isRepair: data.isRepair.present ? data.isRepair.value : this.isRepair,
+      resultJson: data.resultJson.present
+          ? data.resultJson.value
+          : this.resultJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceVerificationRunRow(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('turnId: $turnId, ')
+          ..write('toolCallId: $toolCallId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('configRevision: $configRevision, ')
+          ..write('ordinal: $ordinal, ')
+          ..write('repairLimit: $repairLimit, ')
+          ..write('isRepair: $isRepair, ')
+          ..write('resultJson: $resultJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    workspaceId,
+    turnId,
+    toolCallId,
+    sessionId,
+    configRevision,
+    ordinal,
+    repairLimit,
+    isRepair,
+    resultJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceVerificationRunRow &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.turnId == this.turnId &&
+          other.toolCallId == this.toolCallId &&
+          other.sessionId == this.sessionId &&
+          other.configRevision == this.configRevision &&
+          other.ordinal == this.ordinal &&
+          other.repairLimit == this.repairLimit &&
+          other.isRepair == this.isRepair &&
+          other.resultJson == this.resultJson);
+}
+
+class WorkspaceVerificationRunsCompanion
+    extends UpdateCompanion<WorkspaceVerificationRunRow> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> turnId;
+  final Value<String> toolCallId;
+  final Value<String> sessionId;
+  final Value<int> configRevision;
+  final Value<int> ordinal;
+  final Value<int> repairLimit;
+  final Value<bool> isRepair;
+  final Value<String?> resultJson;
+  final Value<int> rowid;
+  const WorkspaceVerificationRunsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.turnId = const Value.absent(),
+    this.toolCallId = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.configRevision = const Value.absent(),
+    this.ordinal = const Value.absent(),
+    this.repairLimit = const Value.absent(),
+    this.isRepair = const Value.absent(),
+    this.resultJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceVerificationRunsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String turnId,
+    required String toolCallId,
+    required String sessionId,
+    required int configRevision,
+    required int ordinal,
+    required int repairLimit,
+    required bool isRepair,
+    this.resultJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       workspaceId = Value(workspaceId),
+       turnId = Value(turnId),
+       toolCallId = Value(toolCallId),
+       sessionId = Value(sessionId),
+       configRevision = Value(configRevision),
+       ordinal = Value(ordinal),
+       repairLimit = Value(repairLimit),
+       isRepair = Value(isRepair);
+  static Insertable<WorkspaceVerificationRunRow> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? turnId,
+    Expression<String>? toolCallId,
+    Expression<String>? sessionId,
+    Expression<int>? configRevision,
+    Expression<int>? ordinal,
+    Expression<int>? repairLimit,
+    Expression<bool>? isRepair,
+    Expression<String>? resultJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (turnId != null) 'turn_id': turnId,
+      if (toolCallId != null) 'tool_call_id': toolCallId,
+      if (sessionId != null) 'session_id': sessionId,
+      if (configRevision != null) 'config_revision': configRevision,
+      if (ordinal != null) 'ordinal': ordinal,
+      if (repairLimit != null) 'repair_limit': repairLimit,
+      if (isRepair != null) 'is_repair': isRepair,
+      if (resultJson != null) 'result_json': resultJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceVerificationRunsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? workspaceId,
+    Value<String>? turnId,
+    Value<String>? toolCallId,
+    Value<String>? sessionId,
+    Value<int>? configRevision,
+    Value<int>? ordinal,
+    Value<int>? repairLimit,
+    Value<bool>? isRepair,
+    Value<String?>? resultJson,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceVerificationRunsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      turnId: turnId ?? this.turnId,
+      toolCallId: toolCallId ?? this.toolCallId,
+      sessionId: sessionId ?? this.sessionId,
+      configRevision: configRevision ?? this.configRevision,
+      ordinal: ordinal ?? this.ordinal,
+      repairLimit: repairLimit ?? this.repairLimit,
+      isRepair: isRepair ?? this.isRepair,
+      resultJson: resultJson ?? this.resultJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (turnId.present) {
+      map['turn_id'] = Variable<String>(turnId.value);
+    }
+    if (toolCallId.present) {
+      map['tool_call_id'] = Variable<String>(toolCallId.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (configRevision.present) {
+      map['config_revision'] = Variable<int>(configRevision.value);
+    }
+    if (ordinal.present) {
+      map['ordinal'] = Variable<int>(ordinal.value);
+    }
+    if (repairLimit.present) {
+      map['repair_limit'] = Variable<int>(repairLimit.value);
+    }
+    if (isRepair.present) {
+      map['is_repair'] = Variable<bool>(isRepair.value);
+    }
+    if (resultJson.present) {
+      map['result_json'] = Variable<String>(resultJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceVerificationRunsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('turnId: $turnId, ')
+          ..write('toolCallId: $toolCallId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('configRevision: $configRevision, ')
+          ..write('ordinal: $ordinal, ')
+          ..write('repairLimit: $repairLimit, ')
+          ..write('isRepair: $isRepair, ')
+          ..write('resultJson: $resultJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -23979,6 +24926,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceAgentHookSettingsTable(this);
   late final $WorkspaceContentReportsTable workspaceContentReports =
       $WorkspaceContentReportsTable(this);
+  late final $WorkspaceVerificationSettingsTable workspaceVerificationSettings =
+      $WorkspaceVerificationSettingsTable(this);
+  late final $WorkspaceVerificationRunsTable workspaceVerificationRuns =
+      $WorkspaceVerificationRunsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -24132,6 +25083,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceCommandReceipts,
     workspaceAgentHookSettings,
     workspaceContentReports,
+    workspaceVerificationSettings,
+    workspaceVerificationRuns,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -24534,6 +25487,33 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [
         TableUpdate('workspace_agent_hook_settings', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_verification_settings', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_verification_runs', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'messages',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_verification_runs', kind: UpdateKind.delete),
       ],
     ),
   ]);
@@ -25083,6 +26063,57 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceAgentHookSettingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceVerificationSettingsTable,
+    List<WorkspaceVerificationSettingsRow>
+  >
+  _workspaceVerificationSettingsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceVerificationSettings,
+        aliasName:
+            'workspaces__id__workspace_verification_settings__workspace_id',
+      );
+
+  $$WorkspaceVerificationSettingsTableProcessedTableManager
+  get workspaceVerificationSettingsRefs {
+    final manager = $$WorkspaceVerificationSettingsTableTableManager(
+      $_db,
+      $_db.workspaceVerificationSettings,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceVerificationSettingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceVerificationRunsTable,
+    List<WorkspaceVerificationRunRow>
+  >
+  _workspaceVerificationRunsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceVerificationRuns,
+        aliasName: 'workspaces__id__workspace_verification_runs__workspace_id',
+      );
+
+  $$WorkspaceVerificationRunsTableProcessedTableManager
+  get workspaceVerificationRunsRefs {
+    final manager = $$WorkspaceVerificationRunsTableTableManager(
+      $_db,
+      $_db.workspaceVerificationRuns,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceVerificationRunsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -25751,6 +26782,62 @@ class $$WorkspacesTableFilterComposer
               }) => $$WorkspaceAgentHookSettingsTableFilterComposer(
                 $db: $db,
                 $table: $db.workspaceAgentHookSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceVerificationSettingsRefs(
+    Expression<bool> Function(
+      $$WorkspaceVerificationSettingsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$WorkspaceVerificationSettingsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceVerificationSettings,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceVerificationSettingsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceVerificationSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceVerificationRunsRefs(
+    Expression<bool> Function($$WorkspaceVerificationRunsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceVerificationRunsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceVerificationRuns,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceVerificationRunsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceVerificationRuns,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -26473,6 +27560,62 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> workspaceVerificationSettingsRefs<T extends Object>(
+    Expression<T> Function(
+      $$WorkspaceVerificationSettingsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$WorkspaceVerificationSettingsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceVerificationSettings,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceVerificationSettingsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceVerificationSettings,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> workspaceVerificationRunsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceVerificationRunsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceVerificationRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceVerificationRuns,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceVerificationRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceVerificationRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -26513,6 +27656,8 @@ class $$WorkspacesTableTableManager
             bool workspaceContextSelectionsRefs,
             bool workspaceCommandReceiptsRefs,
             bool workspaceAgentHookSettingsRefs,
+            bool workspaceVerificationSettingsRefs,
+            bool workspaceVerificationRunsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -26604,6 +27749,8 @@ class $$WorkspacesTableTableManager
                 workspaceContextSelectionsRefs = false,
                 workspaceCommandReceiptsRefs = false,
                 workspaceAgentHookSettingsRefs = false,
+                workspaceVerificationSettingsRefs = false,
+                workspaceVerificationRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -26639,6 +27786,10 @@ class $$WorkspacesTableTableManager
                       db.workspaceCommandReceipts,
                     if (workspaceAgentHookSettingsRefs)
                       db.workspaceAgentHookSettings,
+                    if (workspaceVerificationSettingsRefs)
+                      db.workspaceVerificationSettings,
+                    if (workspaceVerificationRunsRefs)
+                      db.workspaceVerificationRuns,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -27147,6 +28298,48 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceVerificationSettingsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceVerificationSettingsRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceVerificationSettingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceVerificationSettingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceVerificationRunsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          WorkspaceVerificationRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._workspaceVerificationRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceVerificationRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -27192,6 +28385,8 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceContextSelectionsRefs,
         bool workspaceCommandReceiptsRefs,
         bool workspaceAgentHookSettingsRefs,
+        bool workspaceVerificationSettingsRefs,
+        bool workspaceVerificationRunsRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -35524,6 +36719,31 @@ final class $$MessagesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $WorkspaceVerificationRunsTable,
+    List<WorkspaceVerificationRunRow>
+  >
+  _workspaceVerificationRunsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceVerificationRuns,
+        aliasName: 'messages__id__workspace_verification_runs__turn_id',
+      );
+
+  $$WorkspaceVerificationRunsTableProcessedTableManager
+  get workspaceVerificationRunsRefs {
+    final manager = $$WorkspaceVerificationRunsTableTableManager(
+      $_db,
+      $_db.workspaceVerificationRuns,
+    ).filter((f) => f.turnId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceVerificationRunsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$MessagesTableFilterComposer
@@ -35652,6 +36872,33 @@ class $$MessagesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceVerificationRunsRefs(
+    Expression<bool> Function($$WorkspaceVerificationRunsTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceVerificationRunsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceVerificationRuns,
+          getReferencedColumn: (t) => t.turnId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceVerificationRunsTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceVerificationRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -35848,6 +37095,33 @@ class $$MessagesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> workspaceVerificationRunsRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceVerificationRunsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceVerificationRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceVerificationRuns,
+          getReferencedColumn: (t) => t.turnId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceVerificationRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceVerificationRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$MessagesTableTableManager
@@ -35867,6 +37141,7 @@ class $$MessagesTableTableManager
             bool conversationId,
             bool messageAttachmentsRefs,
             bool backgroundWorksRefs,
+            bool workspaceVerificationRunsRefs,
           })
         > {
   $$MessagesTableTableManager(_$AppDatabase db, $MessagesTable table)
@@ -35945,12 +37220,15 @@ class $$MessagesTableTableManager
                 conversationId = false,
                 messageAttachmentsRefs = false,
                 backgroundWorksRefs = false,
+                workspaceVerificationRunsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (messageAttachmentsRefs) db.messageAttachments,
                     if (backgroundWorksRefs) db.backgroundWorks,
+                    if (workspaceVerificationRunsRefs)
+                      db.workspaceVerificationRuns,
                   ],
                   addJoins:
                       <
@@ -36026,6 +37304,27 @@ class $$MessagesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workspaceVerificationRunsRefs)
+                        await $_getPrefetchedData<
+                          MessagesTable,
+                          $MessagesTable,
+                          WorkspaceVerificationRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MessagesTableReferences
+                              ._workspaceVerificationRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MessagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceVerificationRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.turnId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -36050,6 +37349,7 @@ typedef $$MessagesTableProcessedTableManager =
         bool conversationId,
         bool messageAttachmentsRefs,
         bool backgroundWorksRefs,
+        bool workspaceVerificationRunsRefs,
       })
     >;
 typedef $$WorkspaceAssetsTableCreateCompanionBuilder =
@@ -47658,6 +48958,850 @@ typedef $$WorkspaceContentReportsTableProcessedTableManager =
       WorkspaceContentReportRow,
       PrefetchHooks Function()
     >;
+typedef $$WorkspaceVerificationSettingsTableCreateCompanionBuilder =
+    WorkspaceVerificationSettingsCompanion Function({
+      required String workspaceId,
+      required String settingsJson,
+      required int revision,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceVerificationSettingsTableUpdateCompanionBuilder =
+    WorkspaceVerificationSettingsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> settingsJson,
+      Value<int> revision,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceVerificationSettingsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceVerificationSettingsTable,
+          WorkspaceVerificationSettingsRow
+        > {
+  $$WorkspaceVerificationSettingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        'workspace_verification_settings__workspace_id__workspaces__id',
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceVerificationSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceVerificationSettingsTable> {
+  $$WorkspaceVerificationSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get settingsJson => $composableBuilder(
+    column: $table.settingsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceVerificationSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceVerificationSettingsTable> {
+  $$WorkspaceVerificationSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get settingsJson => $composableBuilder(
+    column: $table.settingsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceVerificationSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceVerificationSettingsTable> {
+  $$WorkspaceVerificationSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get settingsJson => $composableBuilder(
+    column: $table.settingsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceVerificationSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceVerificationSettingsTable,
+          WorkspaceVerificationSettingsRow,
+          $$WorkspaceVerificationSettingsTableFilterComposer,
+          $$WorkspaceVerificationSettingsTableOrderingComposer,
+          $$WorkspaceVerificationSettingsTableAnnotationComposer,
+          $$WorkspaceVerificationSettingsTableCreateCompanionBuilder,
+          $$WorkspaceVerificationSettingsTableUpdateCompanionBuilder,
+          (
+            WorkspaceVerificationSettingsRow,
+            $$WorkspaceVerificationSettingsTableReferences,
+          ),
+          WorkspaceVerificationSettingsRow,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$WorkspaceVerificationSettingsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceVerificationSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceVerificationSettingsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceVerificationSettingsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceVerificationSettingsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> settingsJson = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceVerificationSettingsCompanion(
+                workspaceId: workspaceId,
+                settingsJson: settingsJson,
+                revision: revision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String settingsJson,
+                required int revision,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceVerificationSettingsCompanion.insert(
+                workspaceId: workspaceId,
+                settingsJson: settingsJson,
+                revision: revision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceVerificationSettingsTable,
+                    WorkspaceVerificationSettingsRow
+                  >(table),
+                  $$WorkspaceVerificationSettingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$WorkspaceVerificationSettingsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceVerificationSettingsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceVerificationSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceVerificationSettingsTable,
+      WorkspaceVerificationSettingsRow,
+      $$WorkspaceVerificationSettingsTableFilterComposer,
+      $$WorkspaceVerificationSettingsTableOrderingComposer,
+      $$WorkspaceVerificationSettingsTableAnnotationComposer,
+      $$WorkspaceVerificationSettingsTableCreateCompanionBuilder,
+      $$WorkspaceVerificationSettingsTableUpdateCompanionBuilder,
+      (
+        WorkspaceVerificationSettingsRow,
+        $$WorkspaceVerificationSettingsTableReferences,
+      ),
+      WorkspaceVerificationSettingsRow,
+      PrefetchHooks Function({bool workspaceId})
+    >;
+typedef $$WorkspaceVerificationRunsTableCreateCompanionBuilder =
+    WorkspaceVerificationRunsCompanion Function({
+      required String id,
+      required String workspaceId,
+      required String turnId,
+      required String toolCallId,
+      required String sessionId,
+      required int configRevision,
+      required int ordinal,
+      required int repairLimit,
+      required bool isRepair,
+      Value<String?> resultJson,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceVerificationRunsTableUpdateCompanionBuilder =
+    WorkspaceVerificationRunsCompanion Function({
+      Value<String> id,
+      Value<String> workspaceId,
+      Value<String> turnId,
+      Value<String> toolCallId,
+      Value<String> sessionId,
+      Value<int> configRevision,
+      Value<int> ordinal,
+      Value<int> repairLimit,
+      Value<bool> isRepair,
+      Value<String?> resultJson,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceVerificationRunsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceVerificationRunsTable,
+          WorkspaceVerificationRunRow
+        > {
+  $$WorkspaceVerificationRunsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('workspace_verification_runs__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $MessagesTable _turnIdTable(_$AppDatabase db) => db.messages
+      .createAlias('workspace_verification_runs__turn_id__messages__id');
+
+  $$MessagesTableProcessedTableManager get turnId {
+    final $_column = $_itemColumn<String>('turn_id')!;
+
+    final manager = $$MessagesTableTableManager(
+      $_db,
+      $_db.messages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_turnIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceVerificationRunsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceVerificationRunsTable> {
+  $$WorkspaceVerificationRunsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get configRevision => $composableBuilder(
+    column: $table.configRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordinal => $composableBuilder(
+    column: $table.ordinal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get repairLimit => $composableBuilder(
+    column: $table.repairLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRepair => $composableBuilder(
+    column: $table.isRepair,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MessagesTableFilterComposer get turnId {
+    final $$MessagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.turnId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableFilterComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceVerificationRunsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceVerificationRunsTable> {
+  $$WorkspaceVerificationRunsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get configRevision => $composableBuilder(
+    column: $table.configRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordinal => $composableBuilder(
+    column: $table.ordinal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get repairLimit => $composableBuilder(
+    column: $table.repairLimit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRepair => $composableBuilder(
+    column: $table.isRepair,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MessagesTableOrderingComposer get turnId {
+    final $$MessagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.turnId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceVerificationRunsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceVerificationRunsTable> {
+  $$WorkspaceVerificationRunsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get toolCallId => $composableBuilder(
+    column: $table.toolCallId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<int> get configRevision => $composableBuilder(
+    column: $table.configRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get ordinal =>
+      $composableBuilder(column: $table.ordinal, builder: (column) => column);
+
+  GeneratedColumn<int> get repairLimit => $composableBuilder(
+    column: $table.repairLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isRepair =>
+      $composableBuilder(column: $table.isRepair, builder: (column) => column);
+
+  GeneratedColumn<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MessagesTableAnnotationComposer get turnId {
+    final $$MessagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.turnId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceVerificationRunsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceVerificationRunsTable,
+          WorkspaceVerificationRunRow,
+          $$WorkspaceVerificationRunsTableFilterComposer,
+          $$WorkspaceVerificationRunsTableOrderingComposer,
+          $$WorkspaceVerificationRunsTableAnnotationComposer,
+          $$WorkspaceVerificationRunsTableCreateCompanionBuilder,
+          $$WorkspaceVerificationRunsTableUpdateCompanionBuilder,
+          (
+            WorkspaceVerificationRunRow,
+            $$WorkspaceVerificationRunsTableReferences,
+          ),
+          WorkspaceVerificationRunRow,
+          PrefetchHooks Function({bool workspaceId, bool turnId})
+        > {
+  $$WorkspaceVerificationRunsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceVerificationRunsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceVerificationRunsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceVerificationRunsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceVerificationRunsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> turnId = const Value.absent(),
+                Value<String> toolCallId = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<int> configRevision = const Value.absent(),
+                Value<int> ordinal = const Value.absent(),
+                Value<int> repairLimit = const Value.absent(),
+                Value<bool> isRepair = const Value.absent(),
+                Value<String?> resultJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceVerificationRunsCompanion(
+                id: id,
+                workspaceId: workspaceId,
+                turnId: turnId,
+                toolCallId: toolCallId,
+                sessionId: sessionId,
+                configRevision: configRevision,
+                ordinal: ordinal,
+                repairLimit: repairLimit,
+                isRepair: isRepair,
+                resultJson: resultJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String workspaceId,
+                required String turnId,
+                required String toolCallId,
+                required String sessionId,
+                required int configRevision,
+                required int ordinal,
+                required int repairLimit,
+                required bool isRepair,
+                Value<String?> resultJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceVerificationRunsCompanion.insert(
+                id: id,
+                workspaceId: workspaceId,
+                turnId: turnId,
+                toolCallId: toolCallId,
+                sessionId: sessionId,
+                configRevision: configRevision,
+                ordinal: ordinal,
+                repairLimit: repairLimit,
+                isRepair: isRepair,
+                resultJson: resultJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $WorkspaceVerificationRunsTable,
+                    WorkspaceVerificationRunRow
+                  >(table),
+                  $$WorkspaceVerificationRunsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false, turnId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$WorkspaceVerificationRunsTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceVerificationRunsTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+                    if (turnId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.turnId,
+                        referencedTable:
+                            $$WorkspaceVerificationRunsTableReferences
+                                ._turnIdTable(db),
+                        referencedColumn:
+                            $$WorkspaceVerificationRunsTableReferences
+                                ._turnIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceVerificationRunsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceVerificationRunsTable,
+      WorkspaceVerificationRunRow,
+      $$WorkspaceVerificationRunsTableFilterComposer,
+      $$WorkspaceVerificationRunsTableOrderingComposer,
+      $$WorkspaceVerificationRunsTableAnnotationComposer,
+      $$WorkspaceVerificationRunsTableCreateCompanionBuilder,
+      $$WorkspaceVerificationRunsTableUpdateCompanionBuilder,
+      (WorkspaceVerificationRunRow, $$WorkspaceVerificationRunsTableReferences),
+      WorkspaceVerificationRunRow,
+      PrefetchHooks Function({bool workspaceId, bool turnId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -47787,5 +49931,16 @@ class $AppDatabaseManager {
       $$WorkspaceContentReportsTableTableManager(
         _db,
         _db.workspaceContentReports,
+      );
+  $$WorkspaceVerificationSettingsTableTableManager
+  get workspaceVerificationSettings =>
+      $$WorkspaceVerificationSettingsTableTableManager(
+        _db,
+        _db.workspaceVerificationSettings,
+      );
+  $$WorkspaceVerificationRunsTableTableManager get workspaceVerificationRuns =>
+      $$WorkspaceVerificationRunsTableTableManager(
+        _db,
+        _db.workspaceVerificationRuns,
       );
 }
