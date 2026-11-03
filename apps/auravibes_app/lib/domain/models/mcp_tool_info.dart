@@ -16,7 +16,9 @@ abstract class const McpToolInfo._() with _$McpToolInfo {
     required String toolName,
     required String description,
     required Map<String, dynamic> inputSchema,
+    /// Untrusted display text; [toolName] remains the invocation identity.
     String? title,
+    /// Informational server hints; never use them to authorize an action.
     Map<String, dynamic>? annotations,
     Map<String, dynamic>? outputSchema,
     bool? supportsProgress,

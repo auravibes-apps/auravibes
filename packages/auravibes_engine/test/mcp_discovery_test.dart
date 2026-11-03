@@ -92,6 +92,21 @@ void main() {
     expect(tool.annotations, isNull);
   });
 
+  test('bounds display titles and rejects layout and bidi controls', () {
+    expect(
+      McpDiscoveryPolicy.displayTitle('t' * McpDiscoveryPolicy.maxTitleLength),
+      't' * McpDiscoveryPolicy.maxTitleLength,
+    );
+    expect(
+      McpDiscoveryPolicy.displayTitle(
+        't' * (McpDiscoveryPolicy.maxTitleLength + 1),
+      ),
+      isNull,
+    );
+    expect(McpDiscoveryPolicy.displayTitle('first\u2028second'), isNull);
+    expect(McpDiscoveryPolicy.displayTitle('safe\u202Etxt'), isNull);
+  });
+
   test('drops oversized display metadata without rejecting the tool', () {
     final tool = parse({
       'tools': [

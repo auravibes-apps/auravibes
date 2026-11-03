@@ -1,0 +1,109 @@
+name: Issue 1474 before and after evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-1474-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  before:
+    name: Capture exact base revision
+    runs-on: ubuntu-26.04
+    timeout-minutes: 40
+    env:
+      BASELINE_SHA: 46065bc5983bc9dc9100696aaa3c98ba66c7c56b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Preserve the baseline capture fixture
+        run: cp .github/fixtures/issue_1474_before_capture.dart.fixture "$RUNNER_TEMP/issue1474_capture_test.dart"
+
+      - name: Checkout exact base revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.BASELINE_SHA }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Generate base artifacts
+        run: python3 tool/validation_lease.py --label issue-1474-evidence-before-generate -- dart run melos run generate --no-select
+
+      - name: Render before surfaces
+        working-directory: apps/auravibes_app
+        env:
+          ISSUE_1474_CAPTURE_DIR: ${{ runner.temp }}/issue1474-before
+          ISSUE_1474_CAPTURE_SHA: ${{ env.BASELINE_SHA }}
+          ISSUE_1474_CAPTURE_LABEL: before
+        run: |
+          set -o pipefail
+          mkdir -p "$ISSUE_1474_CAPTURE_DIR"
+          cp "$RUNNER_TEMP/issue1474_capture_test.dart" test/widgets/issue1474_capture_test.dart
+          python3 ../../tool/validation_lease.py --label issue-1474-evidence-before-capture -- flutter test test/widgets/issue1474_capture_test.dart --no-pub --timeout=2m --dart-define=ISSUE_1474_CAPTURE_DIR="$ISSUE_1474_CAPTURE_DIR" --dart-define=ISSUE_1474_CAPTURE_SHA="$ISSUE_1474_CAPTURE_SHA" --dart-define=ISSUE_1474_CAPTURE_LABEL="$ISSUE_1474_CAPTURE_LABEL" 2>&1 | tee "$ISSUE_1474_CAPTURE_DIR/capture.log"
+
+      - name: Upload baseline images and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1474-before-46065bc
+          path: ${{ runner.temp }}/issue1474-before/
+          if-no-files-found: warn
+          retention-days: 14
+
+  after:
+    name: Capture exact feature head
+    runs-on: ubuntu-26.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Preserve the feature capture fixture
+        run: cp .github/fixtures/issue_1474_after_capture.dart.fixture "$RUNNER_TEMP/issue1474_capture_test.dart"
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Generate feature app artifacts
+        run: python3 tool/validation_lease.py --label issue-1474-evidence-after-generate -- dart run melos run generate --no-select
+
+      - name: Generate feature localization keys
+        run: python3 tool/validation_lease.py --label issue-1474-evidence-after-localization -- dart run melos run generate:localization --no-select
+
+      - name: Install matching Serverpod CLI
+        run: |
+          version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("serverpod").fetch("version")')"
+          dart pub global activate serverpod_cli "$version"
+
+      - name: Generate feature Serverpod artifacts
+        run: python3 tool/validation_lease.py --label issue-1474-evidence-after-serverpod -- dart run melos run generate:serverpod
+
+      - name: Render after surfaces
+        working-directory: apps/auravibes_app
+        env:
+          ISSUE_1474_CAPTURE_DIR: ${{ runner.temp }}/issue1474-after
+          ISSUE_1474_CAPTURE_SHA: ${{ github.sha }}
+          ISSUE_1474_CAPTURE_LABEL: after
+        run: |
+          set -o pipefail
+          mkdir -p "$ISSUE_1474_CAPTURE_DIR"
+          cp "$RUNNER_TEMP/issue1474_capture_test.dart" test/widgets/issue1474_capture_test.dart
+          python3 ../../tool/validation_lease.py --label issue-1474-evidence-after-capture -- flutter test test/widgets/issue1474_capture_test.dart --no-pub --timeout=2m --dart-define=ISSUE_1474_CAPTURE_DIR="$ISSUE_1474_CAPTURE_DIR" --dart-define=ISSUE_1474_CAPTURE_SHA="$ISSUE_1474_CAPTURE_SHA" --dart-define=ISSUE_1474_CAPTURE_LABEL="$ISSUE_1474_CAPTURE_LABEL" 2>&1 | tee "$ISSUE_1474_CAPTURE_DIR/capture.log"
+
+      - name: Upload feature images and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1474-after-${{ github.sha }}
+          path: ${{ runner.temp }}/issue1474-after/
+          if-no-files-found: warn
+          retention-days: 14

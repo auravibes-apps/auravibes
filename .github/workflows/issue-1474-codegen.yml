@@ -44,6 +44,10 @@ jobs:
           git diff --binary -- apps packages > "$RUNNER_TEMP/issue-1474-generated.patch"
           git diff --name-status -- apps packages > "$RUNNER_TEMP/issue-1474-generated-files.txt"
           cat "$RUNNER_TEMP/issue-1474-generated-files.txt"
+          echo ISSUE1474_PATCH_BASE64_BEGIN
+          base64 --wrap=0 "$RUNNER_TEMP/issue-1474-generated.patch"
+          echo
+          echo ISSUE1474_PATCH_BASE64_END
 
       - name: Upload generated patch
         if: always()

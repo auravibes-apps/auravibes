@@ -77,7 +77,10 @@ abstract final class McpDiscoveryPolicy {
     final title = value.trim();
     if (title.isEmpty ||
         title.length > maxTitleLength ||
-        RegExp('[\\u0000-\\u001f\\u007f-\\u009f]').hasMatch(title)) {
+        RegExp(
+          '[\\u0000-\\u001f\\u007f-\\u009f\\u200e\\u200f'
+          '\\u2028\\u2029\\u202a-\\u202e\\u2066-\\u2069]',
+        ).hasMatch(title)) {
       return null;
     }
     return title;
@@ -187,7 +190,9 @@ final class McpDiscoveredTool {
 
   final String name;
   final String? description;
+  /// Untrusted display text; the stable [name] remains the invocation ID.
   final String? title;
+  /// Informational server hints that never grant permissions or approval.
   final Map<String, Object?>? annotations;
   final Map<String, Object?> inputSchema;
   final Map<String, Object?>? outputSchema;

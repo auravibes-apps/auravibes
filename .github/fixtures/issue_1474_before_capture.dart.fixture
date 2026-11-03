@@ -1,0 +1,209 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/widgets/background_work_list_view.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
+import '../helpers/test_app.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+const _workspaceId = 'workspace-1';
+const _toolName = 'mcp_srv1_myserver_delete_record';
+const _workToolName = 'mcp_srv1_myserver_search_records';
+
+void main() {
+  setUpAll(() async {
+    await EasyLocalization.ensureInitialized();
+    await (FontLoader('Inter')
+          ..addFont(rootBundle.load('assets/fonts/Inter.ttf')))
+        .load();
+    await (FontLoader('MaterialIcons')
+          ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
+        .load();
+  });
+
+  testWidgets('captures MCP metadata surfaces before issue 1474', (
+    tester,
+  ) async {
+    const viewport = Size(600, 430);
+    await tester.binding.setSurfaceSize(viewport);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpCapture(
+      tester,
+      'management',
+      ToolItemRow(
+        tool: _tool(),
+        workspaceId: _workspaceId,
+        isMcp: true,
+      ),
+      height: 180,
+      overrides: _workspaceAccessOverride(),
+    );
+    expect(find.text('delete_record'), findsOneWidget);
+    await _capture(tester, 'management');
+
+    final pendingCall = PendingToolCall(
+      toolCall: const MessageToolCallEntity(
+        id: 'mcp-call-1',
+        name: _toolName,
+        argumentsRaw: '{"recordId":"record-42"}',
+      ),
+      messageId: 'message-1',
+    );
+    await _pumpCapture(
+      tester,
+      'approval',
+      const ChatToolApprovalCard(
+        workspaceId: _workspaceId,
+        conversationId: 'conversation-1',
+      ),
+      height: 360,
+      overrides: [
+        ..._workspaceAccessOverride(),
+        pendingToolCallsProvider.overrideWith((ref, _) async => [pendingCall]),
+        toolDisplayNameProvider(_workspaceId, _toolName).overrideWith(
+          (ref) async => 'My Server: Delete Record',
+        ),
+      ],
+    );
+    expect(find.text('My Server: Delete Record'), findsOneWidget);
+    expect(find.text('Allow Once'), findsOneWidget);
+    await _capture(tester, 'approval');
+
+    final work = _work('mcp-work-1', _workToolName);
+    await _pumpCapture(
+      tester,
+      'background',
+      BackgroundWorkListView(
+        works: [work],
+        onStop: (_) async {},
+        onOpenResult: (_) async {},
+        now: DateTime.utc(2026, 11, 3, 12),
+      ),
+      height: 220,
+    );
+    expect(find.text(_workToolName), findsOneWidget);
+    await _capture(tester, 'background');
+
+    await _pumpCapture(
+      tester,
+      'background-result',
+      const ToolCallResponseModal(
+        toolName: _workToolName,
+        content: '3 records found',
+      ),
+      height: 350,
+    );
+    expect(find.text(_workToolName), findsOneWidget);
+    await _capture(tester, 'background-result');
+  });
+}
+
+List<Object> _workspaceAccessOverride() => [
+  workspaceAccessProvider(_workspaceId).overrideWith((ref) async => (
+    role: 'owner',
+  )),
+];
+
+WorkspaceToolEntity _tool() => WorkspaceToolEntity(
+  id: 'tool-row-1',
+  workspaceId: _workspaceId,
+  toolId: 'delete_record',
+  isEnabled: true,
+  permissionMode: ToolPermissionMode.alwaysAsk,
+  createdAt: DateTime.utc(2026),
+  updatedAt: DateTime.utc(2026),
+);
+
+AgentBackgroundWork _work(String id, String toolKind) => AgentBackgroundWork(
+  identity: AgentBackgroundWorkIdentity(
+    id: id,
+    workspaceId: _workspaceId,
+    conversationId: 'conversation-1',
+    toolCallId: 'tool-call-1',
+    toolKind: toolKind,
+    originatingMessageId: 'message-1',
+  ),
+  state: AgentBackgroundWorkState(
+    status: AgentBackgroundWorkStatus.completed,
+    createdAt: DateTime.utc(2026, 11, 3, 12),
+    updatedAt: DateTime.utc(2026, 11, 3, 12),
+    resultContent: '3 records found',
+    resultByteLength: 15,
+  ),
+);
+
+Future<void> _pumpCapture(
+  WidgetTester tester,
+  String name,
+  Widget child, {
+  required double height,
+  List<Object> overrides = const [],
+}) async {
+  await tester.pumpWidget(
+    TestableApp(
+      workspaceId: _workspaceId,
+      overrides: overrides,
+      child: RepaintBoundary(
+        key: ValueKey('issue1474-$name'),
+        child: SizedBox(
+          width: 560,
+          height: height,
+          child: ColoredBox(
+            color: const Color(0xFFFFFFFF),
+            child: Material(child: Center(child: child)),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _capture(WidgetTester tester, String surface) async {
+  const output = String.fromEnvironment('ISSUE_1474_CAPTURE_DIR');
+  const revision = String.fromEnvironment('ISSUE_1474_CAPTURE_SHA');
+  const label = String.fromEnvironment('ISSUE_1474_CAPTURE_LABEL');
+  expect(output, isNotEmpty);
+  expect(revision, isNotEmpty);
+  expect(label, isNotEmpty);
+  final boundary = tester.renderObject<RenderRepaintBoundary>(
+    find.byKey(ValueKey('issue1474-$surface')),
+  );
+  await tester.runAsync(() async {
+    final image = await boundary.toImage(pixelRatio: 2);
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    final directory = Directory(output);
+    await directory.create(recursive: true);
+    final filename = 'issue1474-$label-$surface';
+    await File('${directory.path}/$filename.png').writeAsBytes(
+      (bytes ?? (throw StateError('PNG encoding failed'))).buffer.asUint8List(),
+    );
+    await File('${directory.path}/$filename.json').writeAsString(
+      const JsonEncoder.withIndent('  ').convert({
+        'issue': 1474,
+        'surface': surface,
+        'revision': revision,
+        'capture': label,
+        'renderer': 'Flutter widget test RenderRepaintBoundary',
+        'logicalViewport': [boundary.size.width, boundary.size.height],
+        'pixelRatio': 2,
+        'locale': 'en',
+      }),
+    );
+  });
+}
