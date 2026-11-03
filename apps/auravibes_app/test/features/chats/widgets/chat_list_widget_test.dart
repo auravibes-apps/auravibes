@@ -715,8 +715,10 @@ void main() {
         () => container
             .read(archivedProvider.future)
             .timeout(const Duration(seconds: 10)),
-      ) ??
-        (throw StateError('Archived conversation stream returned no value.'));
+      );
+      if (archivedConversations == null) {
+        throw StateError('Archived conversation stream returned no value.');
+      }
       expect(
         archivedConversations.map((item) => item.id),
         contains(conversation.id),
