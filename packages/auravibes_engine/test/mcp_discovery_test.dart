@@ -47,6 +47,65 @@ void main() {
     );
   });
 
+  test('retains bounded display metadata without changing tool identity', () {
+    final tool = parse({
+      'tools': [
+        {
+          'name': 'search_records',
+          'title': '  Search records  ',
+          'annotations': {
+            'readOnlyHint': true,
+            'destructiveHint': false,
+            'openWorldHint': true,
+            'unknownHint': true,
+          },
+        },
+      ],
+    }).single;
+
+    expect(tool.name, 'search_records');
+    expect(tool.title, 'Search records');
+    expect(tool.annotations, {
+      'readOnlyHint': true,
+      'destructiveHint': false,
+      'openWorldHint': true,
+    });
+  });
+
+  test('ignores malformed display metadata and keeps the stable name', () {
+    final tool = parse({
+      'tools': [
+        {
+          'name': 'search_records',
+          'title': Object(),
+          'annotations': {
+            'readOnlyHint': Object(),
+            'destructiveHint': null,
+            'unknownHint': Object(),
+          },
+        },
+      ],
+    }).single;
+
+    expect(tool.name, 'search_records');
+    expect(tool.title, isNull);
+    expect(tool.annotations, isNull);
+  });
+
+  test('drops oversized display metadata without rejecting the tool', () {
+    final tool = parse({
+      'tools': [
+        {
+          'name': 'search_records',
+          'title': 't' * (McpDiscoveryPolicy.maxToolBytes + 1),
+        },
+      ],
+    }).single;
+
+    expect(tool.name, 'search_records');
+    expect(tool.title, isNull);
+  });
+
   test('validates tool count before materializing tools', () {
     var validatedSchemas = 0;
 

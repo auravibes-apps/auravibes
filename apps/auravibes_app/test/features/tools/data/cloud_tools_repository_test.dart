@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -177,6 +178,103 @@ void main() {
         (await repository.setToolEnabledById(id, isEnabled: false)).isEnabled,
         false,
       );
+    },
+  );
+
+  test(
+    'cloud MCP refresh persists display hints without changing tool access',
+    () async {
+      final resources = [
+        _resource('mcp-tool', {
+          'toolId': 'lookup',
+          'mcpServerId': 'mcp-1',
+          'toolGroupId': 'group-1',
+          'title': 'Old title',
+          'annotations': {'readOnlyHint': false},
+          'isEnabled': true,
+          'permissionMode': 'alwaysAsk',
+        }),
+      ];
+      final repository = CloudToolsRepository.forTesting(
+        read: ({required pages}) async => ReadWorkspaceStateResponse(
+          pages: [
+            WorkspaceResourcePage(
+              resourceKind: pages.single.resourceKind,
+              resources: resources
+                  .where(
+                    (resource) =>
+                        resource.resourceKind == pages.single.resourceKind,
+                  )
+                  .toList(),
+            ),
+          ],
+          currentSequence: 1,
+          events: const [],
+          requiresSnapshot: false,
+        ),
+        patch: ({required requestId, required operations}) async {
+          final operation = operations.single;
+          final existing = resources
+              .where((resource) => resource.resourceId == operation.resourceId)
+              .single;
+          final saved = _resource(
+            operation.resourceId,
+            Map<String, Object?>.from(
+              jsonDecode(operation.data ?? fail('Expected updated metadata'))
+                  as Map,
+            ),
+            revision: existing.revision + 1,
+          );
+          resources
+            ..removeWhere((resource) => resource.resourceId == saved.resourceId)
+            ..add(saved);
+
+          return PatchWorkspaceStateResponse(
+            resources: [saved],
+            sequence: saved.revision,
+          );
+        },
+        create: ({
+          required requestId,
+          required name,
+          required url,
+          required transport,
+          required useHttp2,
+          required description,
+          required bearerToken,
+          required verificationReceipt,
+        }) async => throw UnimplementedError(),
+        verify: ({
+          required requestId,
+          required url,
+          required transport,
+          required useHttp2,
+          required bearerToken,
+        }) async => throw UnimplementedError(),
+        delete: ({required mcpServerId}) async => throw UnimplementedError(),
+        discover: ({required mcpServerId}) async => throw UnimplementedError(),
+      );
+
+      await repository.syncMcpTools(
+        mcpServerId: 'mcp-1',
+        currentTools: [
+          const McpToolInfo(
+            toolName: 'lookup',
+            description: 'Lookup a record',
+            inputSchema: {},
+            title: 'Read-only lookup',
+            annotations: {'readOnlyHint': true},
+          ),
+        ],
+      );
+
+      final tool = (await repository.getWorkspaceTools('workspace'))
+          .singleWhere((tool) => tool.id == 'mcp-tool');
+      expect(tool.toolId, 'lookup');
+      expect(tool.title, 'Read-only lookup');
+      expect(tool.annotationsJson, '{"readOnlyHint":true}');
+      expect(tool.isEnabled, isTrue);
+      expect(tool.permissionMode.name, 'alwaysAsk');
     },
   );
 

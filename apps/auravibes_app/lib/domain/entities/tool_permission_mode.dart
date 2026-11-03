@@ -52,6 +52,12 @@ abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
     /// Optional description of the tool (from MCP or user-defined).
     String? description,
 
+    /// Optional title supplied by an MCP server for display only.
+    String? title,
+
+    /// Bounded MCP informational annotations encoded as JSON.
+    String? annotationsJson,
+
     /// JSON schema for input parameters (for MCP tools).
     String? inputSchema,
 

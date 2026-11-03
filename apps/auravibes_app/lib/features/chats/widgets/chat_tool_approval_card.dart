@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/connector_write_approval_preview.dart';
+import 'package:auravibes_app/features/tools/widgets/mcp_tool_annotation_hints.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
@@ -87,7 +88,11 @@ typedef _BatchApprovalErrorRequest = ({
   StackTrace stackTrace,
 });
 
-typedef _ApprovalToolDisplay = ({String name, String? description});
+typedef _ApprovalToolDisplay = ({
+  String name,
+  String? description,
+  Map<String, Object?>? annotations,
+});
 typedef _ApprovalDisplayContext = ({BuildContext context, WidgetRef ref});
 typedef _PendingToolCallsContext = ({
   String workspaceId,
@@ -939,6 +944,7 @@ class const _ApprovalCardDisplay({
         request: request,
         displayName: display.name,
         description: display.description,
+        annotations: display.annotations,
       ),
     );
   }
@@ -964,6 +970,17 @@ _ApprovalToolDisplay _standardApprovalToolDisplay(
     description: normalizeToolCallUserFacingDescription(
       toolCall.userFacingDescription,
     ),
+    annotations: displayContext.ref
+        .watch(
+          mcpToolDisplayMetadataProvider((
+            workspaceId: request.source.workspaceId,
+            compositeToolId: toolCall.name,
+          )),
+        )
+        .maybeWhen(
+          data: (metadata) => metadata.annotations,
+          orElse: () => null,
+        ),
   );
 }
 
@@ -1010,6 +1027,7 @@ class const _ApprovalCardBody({
   required final _ApprovalCardRequest request,
   required final String displayName,
   required final String? description,
+  required final Map<String, Object?>? annotations,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -1017,6 +1035,7 @@ class const _ApprovalCardBody({
       request: request,
       displayName: displayName,
       description: description,
+      annotations: annotations,
     ).values,
     spacing: .sm,
   );
@@ -1027,6 +1046,7 @@ class _ApprovalCardBodyChildren {
     required _ApprovalCardRequest request,
     required String displayName,
     required String? description,
+    required Map<String, Object?>? annotations,
   }) : values = [
          _NavigationHeader(
            currentIndex: request.currentIndex,
@@ -1043,6 +1063,7 @@ class _ApprovalCardBodyChildren {
          _ToolCallInfo(
            displayName: displayName,
            description: description,
+           annotations: annotations,
            argumentsRaw: request.current.toolCall.argumentsRaw,
            sourceLabel: request.current.sourceLabel,
          ),
@@ -1226,6 +1247,7 @@ class const _NavButton({
 class const _ToolCallInfo({
   required final String displayName,
   required final String? description,
+  required final Map<String, Object?>? annotations,
   required final String argumentsRaw,
   required final String? sourceLabel,
 }) extends StatelessWidget {
@@ -1238,6 +1260,7 @@ class const _ToolCallInfo({
       child: _ToolCallInfoContent(
         displayName: displayName,
         description: description,
+        annotations: annotations,
         sourceLabel: sourceLabel,
         argumentLines: argumentLines,
         copyableArgs: copyableArgs,
@@ -1282,6 +1305,7 @@ BoxDecoration _toolCallInfoDecoration(BuildContext context) {
 class const _ToolCallInfoContent({
   required final String displayName,
   required final String? description,
+  required final Map<String, Object?>? annotations,
   required final String? sourceLabel,
   required final List<_ApprovalArgumentLine>? argumentLines,
   required final String? copyableArgs,
@@ -1292,6 +1316,7 @@ class const _ToolCallInfoContent({
     children: _ToolCallInfoChildren(
       displayName: displayName,
       description: description,
+      annotations: annotations,
       sourceLabel: sourceLabel,
       argumentLines: argumentLines,
       copyableArgs: copyableArgs,
@@ -1303,6 +1328,7 @@ class _ToolCallInfoChildren {
   new({
     required String displayName,
     required String? description,
+    required Map<String, Object?>? annotations,
     required String? sourceLabel,
     required List<_ApprovalArgumentLine>? argumentLines,
     required String? copyableArgs,
@@ -1312,6 +1338,8 @@ class _ToolCallInfoChildren {
            displayName: displayName,
            description: description,
          ),
+         if (annotations?.isNotEmpty ?? false)
+           McpToolAnnotationHints(annotations: annotations),
          _ToolCallSource(sourceLabel: sourceLabel),
          if (argumentLines case final lines? when lines.isNotEmpty)
            _ToolCallArgumentsPreview(

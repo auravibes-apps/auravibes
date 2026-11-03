@@ -63,6 +63,12 @@ void main() {
             'tools': [
               {
                 'name': 'first',
+                'title': '  Find records  ',
+                'annotations': {
+                  'readOnlyHint': true,
+                  'destructiveHint': false,
+                  'unknownHint': 'discard this',
+                },
                 'inputSchema': {'type': 'object'},
                 'outputSchema': {'type': 'object'},
               },
@@ -79,6 +85,11 @@ void main() {
 
       expect(cursors, [null, 'opaque']);
       expect(tools.map((tool) => tool.name), ['first', 'last']);
+      expect(tools.first.title, 'Find records');
+      expect(
+        tools.first.annotationsJson,
+        '{"readOnlyHint":true,"destructiveHint":false}',
+      );
       expect(tools.first.inputSchemaJson, '{"type":"object"}');
       expect(tools.first.outputSchemaJson, '{"type":"object"}');
       expect(tools.last.inputSchemaJson, '{}');

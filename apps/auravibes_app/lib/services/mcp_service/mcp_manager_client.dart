@@ -915,6 +915,9 @@ mcp.OAuthToken _mcpOAuthToken(OAuthTokenEntity token) => .new(
 McpToolInfo _convertTool(Map<String, Object?> tool) => .new(
   toolName: _requiredToolName(tool['name']),
   description: _optionalString(tool['description']) ?? '',
+  title: McpDiscoveryPolicy.displayTitle(tool['title']),
+  annotations: McpDiscoveryPolicy.supportedAnnotations(tool['annotations'])
+      ?.cast<String, dynamic>(),
   inputSchema: _jsonMapOrEmpty(tool['inputSchema']),
   outputSchema: _jsonMap(tool['outputSchema']),
   supportsProgress: tool['supportsProgress'] as bool?,

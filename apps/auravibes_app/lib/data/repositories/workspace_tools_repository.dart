@@ -249,6 +249,8 @@ extension on WorkspaceToolsRepository {
     return _tableIdentity(table).copyWith(
       config: table.config,
       description: table.description,
+      title: table.title,
+      annotationsJson: table.annotationsJson,
       inputSchema: table.inputSchema,
       outputSchemaJson: table.outputSchema,
       workspaceToolsGroupId: table.workspaceToolsGroupId,

@@ -322,7 +322,19 @@ void main() {
     );
     final _ = await container.read(groupedToolsProvider('workspace-1').future);
     await grouped.setMcpGroupEnabled(groupId, isEnabled: false);
-    await grouped.reconnectMcp('server-1');
+    await grouped.reconnectMcp(groupServerId);
+    final synchronizedTool = resources
+        .where((item) => item.resourceId == 'created-tool')
+        .single;
+    final synchronizedToolData =
+        jsonDecode(synchronizedTool.data) as Map<String, dynamic>;
+    expect(synchronizedToolData['toolId'], 'sum');
+    expect(synchronizedToolData['title'], 'Add two values');
+    expect(synchronizedToolData['annotations'], {
+      'readOnlyHint': false,
+      'idempotentHint': true,
+    });
+    expect(synchronizedToolData['permissionMode'], 'alwaysAsk');
     expect(await grouped.deleteMcpGroup(groupId), isTrue);
 
     expect(discoveries, 3);
@@ -352,6 +364,8 @@ DiscoverMcpServerResult _discovery() => DiscoverMcpServerResult(
   tools: [
     DiscoveredMcpTool(
       name: 'sum',
+      title: 'Add two values',
+      annotationsJson: '{"readOnlyHint":false,"idempotentHint":true}',
       inputSchemaJson: jsonEncode({'type': 'object'}),
     ),
   ],

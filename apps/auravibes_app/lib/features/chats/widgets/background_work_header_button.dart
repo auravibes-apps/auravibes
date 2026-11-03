@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
 import 'package:auravibes_app/features/chats/providers/background_work_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_list_view.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
@@ -10,6 +11,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -435,11 +437,21 @@ class const _BackgroundWorkListContent({
         ),
       );
     }
+    final displayNames = {
+      for (final work in works)
+        work.identity.id: ref
+            .watch(toolDisplayNameProvider(workspaceId, work.identity.toolKind))
+            .maybeWhen(
+              data: (name) => name,
+              orElse: () => _backgroundWorkFallbackName(work.identity.toolKind),
+            ),
+    };
 
     return BackgroundWorkListView(
       works: _sortBackgroundWorks(works),
+      displayNames: displayNames,
       onStop: _stopBackgroundWorkHandler(ref),
-      onOpenResult: _openBackgroundWorkResultHandler(context),
+      onOpenResult: _openBackgroundWorkResultHandler(context, ref),
       onOpenChild: _openChildBackgroundWorkHandler(
         context: context,
         workspaceId: workspaceId,
@@ -455,8 +467,28 @@ Future<void> Function(AgentBackgroundWork work) _stopBackgroundWorkHandler(
     (work) => _stopBackgroundWork(ref, work);
 
 Future<void> Function(AgentBackgroundWork work)
-_openBackgroundWorkResultHandler(BuildContext context) =>
-    (work) async => _showBackgroundWorkResult(context, work);
+_openBackgroundWorkResultHandler(BuildContext context, WidgetRef ref) =>
+    (work) async {
+      var displayName = _backgroundWorkFallbackName(work.identity.toolKind);
+      try {
+        displayName = await ref.read(
+          toolDisplayNameProvider(
+            work.identity.workspaceId,
+            work.identity.toolKind,
+          ).future,
+        );
+      } on Exception {
+        // Fall back to the stable tool identifier when display lookup fails.
+      }
+      if (!context.mounted) return;
+      _showBackgroundWorkResult(context, work, toolName: displayName);
+    };
+
+String _backgroundWorkFallbackName(String toolKind) =>
+    ToolNameFormatter.formatDisplayName(
+      ToolNameFormatter.parse(toolKind),
+      rawName: toolKind,
+    );
 
 Future<void> Function(AgentBackgroundWork work)
 _openChildBackgroundWorkHandler({
@@ -484,10 +516,11 @@ class const _BackgroundWorkMessage({required final Widget message})
 
 void _showBackgroundWorkResult(
   BuildContext context,
-  AgentBackgroundWork work,
-) => ToolCallResponseModal.show(
+  AgentBackgroundWork work, {
+  required String toolName,
+}) => ToolCallResponseModal.show(
   context,
-  toolName: work.identity.toolKind,
+  toolName: toolName,
   content: work.state.resultContent ?? '',
 );
 

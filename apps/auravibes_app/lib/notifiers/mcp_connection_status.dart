@@ -2040,6 +2040,7 @@ extension _McpConnectionLifecycleOperations on McpConnectionNotifier {
   ) async {
     final repository = _repositoryFor(server.workspaceId);
     await repository.syncMcpTools(mcpServerId: server.id, currentTools: tools);
+    _notifierRef.invalidate(workspaceToolsProvider(server.workspaceId));
   }
 
   McpServersRepositoryContract _repositoryFor(String workspaceId) {
@@ -2230,6 +2231,12 @@ extension _McpConnectionCloudOperations on McpConnectionNotifier {
     try {
       final discovery = await repository.discoverMcpServer(server.id);
       if (!_ownsLoad(load)) return;
+      await repository.syncMcpTools(
+        mcpServerId: server.id,
+        currentTools: _cloudTools(discovery),
+      );
+      if (!_ownsLoad(load)) return;
+      _notifierRef.invalidate(workspaceToolsProvider(server.workspaceId));
       _setCloudDiscovery(server, discovery);
     } on Exception catch (error, stackTrace) {
       if (!_ownsLoad(load)) return;
@@ -2292,12 +2299,27 @@ extension _McpCloudDiscoveryResultOperations on McpConnectionNotifier {
 McpToolInfo _cloudToolInfo(DiscoveredMcpTool tool) => .new(
   toolName: tool.name,
   description: tool.description ?? '',
+  title: McpDiscoveryPolicy.displayTitle(tool.title),
+  annotations: _cloudToolAnnotations(tool.annotationsJson),
   inputSchema: jsonDecode(tool.inputSchemaJson) as Map<String, dynamic>,
   outputSchema: switch (tool.outputSchemaJson) {
     final String schema => jsonDecode(schema) as Map<String, dynamic>,
     _ => null,
   },
 );
+
+Map<String, dynamic>? _cloudToolAnnotations(String? encoded) {
+  if (encoded == null) return null;
+  try {
+    final annotations = McpDiscoveryPolicy.supportedAnnotations(
+      jsonDecode(encoded),
+    );
+
+    return annotations == null ? null : Map<String, dynamic>.from(annotations);
+  } on FormatException {
+    return null;
+  }
+}
 
 extension _McpConnectionCloudStateOperations on McpConnectionNotifier {
   void _upsertConnection(McpConnectionState connection) {

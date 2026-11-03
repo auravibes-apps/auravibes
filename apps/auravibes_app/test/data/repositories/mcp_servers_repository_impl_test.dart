@@ -418,6 +418,8 @@ void main() {
             workspaceId: 'ws-1',
             toolId: 'tool1',
             description: 'Old',
+            title: null,
+            annotationsJson: null,
             inputSchema: '{}',
             outputSchema: '{"type":"object"}',
             isEnabled: false,
@@ -435,6 +437,8 @@ void main() {
               description: 'New',
               inputSchema: '{"type":"object"}',
               outputSchema: const Value(null),
+              title: const Value('Search records'),
+              annotationsJson: const Value('{"readOnlyHint":true}'),
             ),
           ).thenAnswer((_) => Future<void>.value());
 
@@ -445,6 +449,8 @@ void main() {
                 toolName: 'tool1',
                 description: 'New',
                 inputSchema: {'type': 'object'},
+                title: 'Search records',
+                annotations: {'readOnlyHint': true},
               ),
             ],
           );
@@ -455,6 +461,8 @@ void main() {
               description: 'New',
               inputSchema: '{"type":"object"}',
               outputSchema: const Value(null),
+              title: const Value('Search records'),
+              annotationsJson: const Value('{"readOnlyHint":true}'),
             ),
           ).called(1);
           expect(

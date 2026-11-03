@@ -27,6 +27,7 @@ class const BackgroundWorkListView({
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
   final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
+  final Map<String, String>? displayNames,
   final DateTime? now,
   @visibleForTesting final DateTime Function()? clock,
   super.key,
@@ -42,6 +43,7 @@ class const BackgroundWorkListView({
       onStop: onStop,
       onOpenResult: onOpenResult,
       onOpenChild: onOpenChild,
+      displayNames: displayNames,
     );
   }
 }
@@ -53,6 +55,7 @@ class const _BackgroundWorkListMode({
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
   final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
+  final Map<String, String>? displayNames,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -64,6 +67,7 @@ class const _BackgroundWorkListMode({
         onStop: onStop,
         onOpenResult: onOpenResult,
         onOpenChild: onOpenChild,
+        displayNames: displayNames,
       );
     }
 
@@ -74,6 +78,7 @@ class const _BackgroundWorkListMode({
       onStop: onStop,
       onOpenResult: onOpenResult,
       onOpenChild: onOpenChild,
+      displayNames: displayNames,
     );
   }
 }
@@ -85,6 +90,7 @@ class const _BackgroundWorkElapsedList({
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
   final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
+  final Map<String, String>? displayNames,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => StreamBuilder<DateTime>(
@@ -103,6 +109,7 @@ class const _BackgroundWorkElapsedList({
         onStop: onStop,
         onOpenResult: onOpenResult,
         onOpenChild: onOpenChild,
+        displayNames: displayNames,
       );
 }
 
@@ -112,6 +119,7 @@ class const _BackgroundWorkScrollableList({
   required final Future<void> Function(AgentBackgroundWork work) onStop,
   required final Future<void> Function(AgentBackgroundWork work) onOpenResult,
   final Future<void> Function(AgentBackgroundWork work)? onOpenChild,
+  final Map<String, String>? displayNames,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView.separated(
@@ -128,6 +136,7 @@ class const _BackgroundWorkScrollableList({
     onStop: onStop,
     onOpenResult: onOpenResult,
     onOpenChild: onOpenChild,
+    displayName: displayNames?[works[index].identity.id],
   );
 
   Widget _buildSeparator(BuildContext _, int _) =>
@@ -140,6 +149,7 @@ class const _BackgroundWorkListItem({
   required final Future<void> Function(AgentBackgroundWork) onStop,
   required final Future<void> Function(AgentBackgroundWork) onOpenResult,
   final Future<void> Function(AgentBackgroundWork)? onOpenChild,
+  final String? displayName,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -147,6 +157,7 @@ class const _BackgroundWorkListItem({
 
     return _BackgroundWorkTile(
       work: work,
+      displayName: displayName,
       now: now,
       onStop: () => onStop(work),
       onOpenResult: () => onOpenResult(work),
@@ -158,6 +169,7 @@ class const _BackgroundWorkListItem({
 
 class const _BackgroundWorkTile({
   required final AgentBackgroundWork work,
+  required final String? displayName,
   required final DateTime now,
   required final Future<void> Function() onStop,
   required final Future<void> Function() onOpenResult,
@@ -166,7 +178,7 @@ class const _BackgroundWorkTile({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final data = _backgroundWorkTileData(work);
+    final data = _backgroundWorkTileData(work, displayName);
 
     return AuraContainer(
       child: _BackgroundWorkTileContent(
@@ -185,6 +197,7 @@ class const _BackgroundWorkTile({
 
 typedef _BackgroundWorkTileData = ({
   AgentBackgroundWorkIdentity identity,
+  String displayName,
   DateTime createdAt,
   DateTime updatedAt,
   AgentBackgroundWorkStatus status,
@@ -192,12 +205,16 @@ typedef _BackgroundWorkTileData = ({
   String? preview,
 });
 
-_BackgroundWorkTileData _backgroundWorkTileData(AgentBackgroundWork work) {
+_BackgroundWorkTileData _backgroundWorkTileData(
+  AgentBackgroundWork work,
+  String? displayName,
+) {
   final state = work.state;
   final result = state.resultContent;
 
   return (
     identity: work.identity,
+    displayName: displayName ?? work.identity.toolKind,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt,
     status: state.status,
@@ -262,7 +279,7 @@ class const _BackgroundWorkTileHeadingSection({
     mainAxisSize: .min,
     crossAxisAlignment: .start,
     children: [
-      _BackgroundWorkTileHeading(identity: data.identity, status: data.status),
+      _BackgroundWorkTileHeading(data: data, status: data.status),
       const AuraSizedBox(height: .xs),
     ],
   );
@@ -311,26 +328,32 @@ class const _BackgroundWorkTilePreviewSection({
 }
 
 class const _BackgroundWorkTileHeading({
-  required final AgentBackgroundWorkIdentity identity,
+  required final _BackgroundWorkTileData data,
   required final AgentBackgroundWorkStatus status,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(child: _BackgroundWorkTileTitle(identity: identity)),
+      Expanded(
+        child: _BackgroundWorkTileTitle(
+          workId: data.identity.id,
+          displayName: data.displayName,
+        ),
+      ),
       const AuraSizedBox(width: .xs),
-      _BackgroundWorkTileStatus(workId: identity.id, status: status),
+      _BackgroundWorkTileStatus(workId: data.identity.id, status: status),
     ],
   );
 }
 
 class const _BackgroundWorkTileTitle({
-  required final AgentBackgroundWorkIdentity identity,
+  required final String workId,
+  required final String displayName,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
-    identity.toolKind,
-    key: ValueKey('background_work_title_${identity.id}'),
+    displayName,
+    key: ValueKey('background_work_title_$workId'),
     style: .new(color: context.auraColors.onSurface, fontWeight: .w600),
     overflow: .ellipsis,
     maxLines: _backgroundWorkTitleLines,

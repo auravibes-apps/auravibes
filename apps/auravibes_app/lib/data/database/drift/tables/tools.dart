@@ -35,6 +35,12 @@ class Tools extends Table with TableMixin {
   /// Optional description of the tool (from MCP or user-defined).
   TextColumn get description => text().nullable()();
 
+  /// Optional untrusted MCP display title.
+  TextColumn get title => text().nullable()();
+
+  /// Bounded MCP display annotations as JSON.
+  TextColumn get annotationsJson => text().nullable()();
+
   /// Tool configuration as JSON (optional).
   TextColumn get config => text().nullable()();
 

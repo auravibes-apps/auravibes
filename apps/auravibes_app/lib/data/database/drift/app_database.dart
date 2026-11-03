@@ -250,7 +250,9 @@ class AppDatabase extends _$AppDatabase {
       _conversationTaskBriefSchemaVersion + 1;
   static const int _workspaceVerificationSchemaVersion =
       _workspaceAgentHookSettingsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceVerificationSchemaVersion;
+  static const int _mcpToolDisplayMetadataSchemaVersion =
+      _workspaceVerificationSchemaVersion + 1;
+  static const int _currentSchemaVersion = _mcpToolDisplayMetadataSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -591,6 +593,20 @@ extension on AppDatabase {
     await _upgradeMcpOutputSchema(m, from);
     await _upgradeMcpCatalogSnapshot(m);
     await _upgradeMcpTestSummary(m);
+    await _upgradeMcpToolDisplayMetadata(m, from);
+  }
+
+  Future<void> _upgradeMcpToolDisplayMetadata(Migrator m, int from) async {
+    if (from >= AppDatabase._mcpToolDisplayMetadataSchemaVersion ||
+        !await _tableExists('tools')) {
+      return;
+    }
+    if (!await _columnExists('tools', 'title')) {
+      await m.addColumn(tools, tools.title);
+    }
+    if (!await _columnExists('tools', 'annotations_json')) {
+      await m.addColumn(tools, tools.annotationsJson);
+    }
   }
 
   Future<void> _upgradeMcpOutputSchema(Migrator m, int from) async {

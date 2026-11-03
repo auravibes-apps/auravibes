@@ -2,5 +2,7 @@ class: DiscoveredMcpTool
 fields:
   name: String
   description: String?
+  title: String?
+  annotationsJson: String?
   inputSchemaJson: String
   outputSchemaJson: String?

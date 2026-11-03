@@ -17,11 +17,9 @@ typedef McpProbeHttpClientFactory = HttpClient Function(
 );
 
 class McpServerProbe {
-  new({
-    McpAddressLookup? lookup,
-    McpProbeHttpClientFactory? httpClientFactory,
-  }) : _lookup = lookup ?? InternetAddress.lookup,
-       _httpClientFactory = httpClientFactory ?? pinnedHttpClient;
+  new({McpAddressLookup? lookup, McpProbeHttpClientFactory? httpClientFactory})
+    : _lookup = lookup ?? InternetAddress.lookup,
+      _httpClientFactory = httpClientFactory ?? pinnedHttpClient;
 
   static const _timeout = Duration(seconds: 10);
   final McpAddressLookup _lookup;
@@ -167,11 +165,8 @@ class McpServerProbe {
       await session.notify('notifications/initialized', const {});
       var requestId = 2;
       final tools = await collectCloudMcpTools(
-        (cursor) => session.request(
-          requestId++,
-          'tools/list',
-          {'cursor': ?cursor},
-        ),
+        (cursor) =>
+            session.request(requestId++, 'tools/list', {'cursor': ?cursor}),
       ).timeout(const Duration(seconds: 30));
       final serverInfo = initialized['serverInfo'];
       final info = serverInfo is Map<Object?, Object?> ? serverInfo : null;
@@ -330,6 +325,10 @@ Future<List<DiscoveredMcpTool>> collectCloudMcpTools(
       DiscoveredMcpTool(
         name: tool.name,
         description: tool.description,
+        title: tool.title,
+        annotationsJson: tool.annotations == null
+            ? null
+            : jsonEncode(tool.annotations),
         inputSchemaJson: McpServerPolicy.boundedSchema(tool.inputSchema),
         outputSchemaJson: tool.outputSchema == null
             ? null

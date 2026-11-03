@@ -9,6 +9,16 @@
     "prompts": "Prompts",
     "more": "Más"
   },
+  "mcp_tool_annotations": {
+    "read_only": "Indicación del servicio: solo consulta información",
+    "not_read_only": "Indicación del servicio: podría modificar información",
+    "may_change_data": "Indicación del servicio: puede cambiar o eliminar información",
+    "no_destructive_changes_reported": "Indicación del servicio: no se informan cambios destructivos",
+    "repeat_may_be_safe": "Indicación del servicio: repetir esta acción podría ser seguro",
+    "repeat_may_have_different_effects": "Indicación del servicio: repetir esta acción podría tener otro efecto",
+    "may_access_external_services": "Indicación del servicio: podría acceder a servicios externos",
+    "external_access_not_reported": "Indicación del servicio: no se informa acceso externo"
+  },
   "navigation_drawer": {
     "toggle_tooltip": "Alternar menú de navegación",
     "resize_handle_tooltip": "Redimensionar panel de navegación",

@@ -9,6 +9,16 @@
     "prompts": "Prompts",
     "more": "More"
   },
+  "mcp_tool_annotations": {
+    "read_only": "Service hint: only reads information",
+    "not_read_only": "Service hint: may modify information",
+    "may_change_data": "Service hint: may change or remove information",
+    "no_destructive_changes_reported": "Service hint: no destructive changes reported",
+    "repeat_may_be_safe": "Service hint: repeating this action may be safe",
+    "repeat_may_have_different_effects": "Service hint: repeating this action may have a different effect",
+    "may_access_external_services": "Service hint: may access external services",
+    "external_access_not_reported": "Service hint: external access not reported"
+  },
   "navigation_drawer": {
     "toggle_tooltip": "Toggle navigation menu",
     "resize_handle_tooltip": "Resize navigation drawer",

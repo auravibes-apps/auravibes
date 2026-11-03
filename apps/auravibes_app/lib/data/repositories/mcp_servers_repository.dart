@@ -635,11 +635,20 @@ extension on McpServersRepository {
     String toolsGroupId,
     McpToolInfo tool,
   ) {
+    final title = McpDiscoveryPolicy.displayTitle(tool.title);
+    final annotations = McpDiscoveryPolicy.supportedAnnotations(
+      tool.annotations,
+    );
+
     return ToolsCompanion.insert(
       workspaceId: workspaceId,
       workspaceToolsGroupId: .new(toolsGroupId),
       toolId: tool.toolName,
       description: .new(tool.description),
+      title: .new(title),
+      annotationsJson: .new(
+        annotations == null ? null : jsonEncode(annotations),
+      ),
       inputSchema: .new(jsonEncode(tool.inputSchema)),
       outputSchema: .new(
         tool.outputSchema == null ? null : jsonEncode(tool.outputSchema),
@@ -686,26 +695,36 @@ extension on McpServersRepository {
       description: current.description,
       inputSchema: schemas.inputSchema,
       outputSchema: .new(schemas.outputSchema),
+      title: .new(McpDiscoveryPolicy.displayTitle(current.title)),
+      annotationsJson: .new(schemas.annotationsJson),
     );
   }
 
-  ({String inputSchema, String? outputSchema}) _serializedToolSchemas(
-    McpToolInfo tool,
-  ) => (
+  ({String inputSchema, String? outputSchema, String? annotationsJson})
+  _serializedToolSchemas(McpToolInfo tool) => (
     inputSchema: jsonEncode(tool.inputSchema),
     outputSchema: tool.outputSchema == null
         ? null
         : jsonEncode(tool.outputSchema),
+    annotationsJson: switch (McpDiscoveryPolicy.supportedAnnotations(
+      tool.annotations,
+    )) {
+      final annotations? => jsonEncode(annotations),
+      _ => null,
+    },
   );
 
   bool _hasCurrentToolMetadata(
     ToolsTable existing,
     McpToolInfo current,
-    ({String inputSchema, String? outputSchema}) schemas,
+    ({String inputSchema, String? outputSchema, String? annotationsJson})
+    schemas,
   ) =>
       existing.description == current.description &&
+      existing.title == McpDiscoveryPolicy.displayTitle(current.title) &&
       existing.inputSchema == schemas.inputSchema &&
-      existing.outputSchema == schemas.outputSchema;
+      existing.outputSchema == schemas.outputSchema &&
+      existing.annotationsJson == schemas.annotationsJson;
 
   List<McpToolInfo> _toolsToAdd(
     List<ToolsTable> existingTools,

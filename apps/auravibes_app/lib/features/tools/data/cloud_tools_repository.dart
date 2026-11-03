@@ -175,8 +175,52 @@ mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
   }) async {
-    final _ = currentTools;
-    final _ = await discoverMcpServer(mcpServerId);
+    final currentById = {for (final tool in currentTools) tool.toolName: tool};
+    final updates = <WorkspacePatchOperation>[];
+    for (final resource in await _read(.tool)) {
+      final data = _data(resource);
+      if (data['mcpServerId'] != mcpServerId) continue;
+      final toolId = data['toolId'];
+      final current = toolId is String ? currentById[toolId] : null;
+      if (current == null) continue;
+
+      final title = McpDiscoveryPolicy.displayTitle(current.title);
+      final annotations = McpDiscoveryPolicy.supportedAnnotations(
+        current.annotations,
+      );
+      final annotationsJson = annotations == null
+          ? null
+          : jsonEncode(annotations);
+      final existingAnnotationsJson = data.containsKey('annotations')
+          ? jsonEncode(data['annotations'])
+          : null;
+      if (data['title'] == title &&
+          existingAnnotationsJson == annotationsJson) {
+        continue;
+      }
+
+      if (title == null) {
+        data.remove('title');
+      } else {
+        data['title'] = title;
+      }
+      if (annotationsJson == null) {
+        data.remove('annotations');
+      } else {
+        data['annotations'] = annotations;
+      }
+      updates.add(
+        WorkspacePatchOperation(
+          operation: .update,
+          resourceKind: resource.resourceKind,
+          resourceId: resource.resourceId,
+          data: jsonEncode(data),
+          fieldMask: const [],
+          expectedRevision: resource.revision,
+        ),
+      );
+    }
+    if (updates.isNotEmpty) await _patch(updates);
   }
 
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
@@ -1213,12 +1257,16 @@ _workspaceToolRequiredFields(
 ({
   String? config,
   String? description,
+  String? title,
+  String? annotationsJson,
   String? inputSchema,
   String? workspaceToolsGroupId,
 })
 _workspaceToolOptionalFields(Map<String, dynamic> data) => (
   config: data['config'] is String ? data['config'] as String : null,
   description: data['description'] as String?,
+  title: McpDiscoveryPolicy.displayTitle(data['title']),
+  annotationsJson: _annotationsJson(data['annotations']),
   inputSchema: _inputSchema(data['inputSchema']),
   workspaceToolsGroupId: data['toolGroupId'] as String?,
 );
@@ -1237,6 +1285,8 @@ WorkspaceToolEntity _createWorkspaceToolEntity(
   ({
     String? config,
     String? description,
+    String? title,
+    String? annotationsJson,
     String? inputSchema,
     String? workspaceToolsGroupId,
   })
@@ -1251,6 +1301,8 @@ WorkspaceToolEntity _createWorkspaceToolEntity(
   updatedAt: requiredFields.updatedAt,
   config: optionalFields.config,
   description: optionalFields.description,
+  title: optionalFields.title,
+  annotationsJson: optionalFields.annotationsJson,
   inputSchema: optionalFields.inputSchema,
   workspaceToolsGroupId: optionalFields.workspaceToolsGroupId,
 );
@@ -1260,6 +1312,11 @@ String? _inputSchema(Object? value) => switch (value) {
   null => null,
   final schema => jsonEncode(schema),
 };
+
+String? _annotationsJson(Object? value) {
+  final annotations = McpDiscoveryPolicy.supportedAnnotations(value);
+  return annotations == null ? null : jsonEncode(annotations);
+}
 
 McpServerEntity _toMcpServerEntity(
   String workspaceId,

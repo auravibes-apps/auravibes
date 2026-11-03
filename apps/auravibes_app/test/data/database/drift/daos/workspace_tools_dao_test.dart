@@ -336,21 +336,33 @@ void main() {
       expect(updated.permissions, equals(PermissionAccess.granted));
     });
 
-    test('updateToolMetadata updates description and schema', () async {
-      final created = await seedTool(toolId: 'metadata');
-      await fixture.database.workspaceToolsDao.updateToolMetadata(
-        id: created.id,
-        description: 'Updated description',
-        inputSchema: '{"type":"object"}',
-      );
+    test(
+      'updateToolMetadata stores display hints without changing access',
+      () async {
+        final created = await seedTool(toolId: 'metadata', isEnabled: true);
+        await fixture.database.workspaceToolsDao.setWorkspaceToolPermission(
+          created.id,
+          permission: PermissionAccess.granted,
+        );
+        await fixture.database.workspaceToolsDao.updateToolMetadata(
+          id: created.id,
+          description: 'Updated description',
+          inputSchema: '{"type":"object"}',
+          title: const Value('Read records'),
+          annotationsJson: const Value('{"readOnlyHint":true}'),
+        );
 
-      final updated = await fixture.database.workspaceToolsDao.getWorkspaceTool(
-        workspaceId,
-        created.id,
-      );
-      expect(updated?.description, equals('Updated description'));
-      expect(updated?.inputSchema, equals('{"type":"object"}'));
-    });
+        final updated = await fixture.database.workspaceToolsDao
+            .getWorkspaceTool(workspaceId, created.id);
+        expect(updated?.description, equals('Updated description'));
+        expect(updated?.inputSchema, equals('{"type":"object"}'));
+        expect(updated?.title, equals('Read records'));
+        expect(updated?.annotationsJson, equals('{"readOnlyHint":true}'));
+        expect(updated?.toolId, equals('metadata'));
+        expect(updated?.isEnabled, isTrue);
+        expect(updated?.permissions, equals(PermissionAccess.granted));
+      },
+    );
 
     test('updateToolMetadata throws when tool id is missing', () {
       expect(

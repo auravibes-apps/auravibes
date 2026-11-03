@@ -41,10 +41,7 @@ class McpServerUseCases(
         userId: userId,
         transaction: transaction,
       );
-      headers = _validatedHeaders(
-        request.httpHeadersJson,
-        request.bearerToken,
-      );
+      headers = _validatedHeaders(request.httpHeadersJson, request.bearerToken);
       final oauth = request.oauthJson == null
           ? null
           : McpOAuthCredentials.parse(request.oauthJson!);
@@ -258,6 +255,9 @@ class McpServerUseCases(
               'toolGroupId': groupId,
               'mcpServerId': serverId,
               'description': tool.description,
+              'title': ?tool.title,
+              if (tool.annotationsJson case final annotations?)
+                'annotations': jsonDecode(annotations),
               'inputSchema': jsonDecode(tool.inputSchemaJson),
               if (tool.outputSchemaJson case final schema?)
                 'outputSchema': jsonDecode(schema),

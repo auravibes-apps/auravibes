@@ -34,6 +34,8 @@ void main() {
         toolName: 'read file!',
         description: 'd',
         inputSchema: {},
+        title: 'Readable title',
+        annotations: {'destructiveHint': true},
       );
       final server = McpServerEntity(
         id: '42',
@@ -47,6 +49,8 @@ void main() {
       );
       final name = info.finalToolName(server);
       expect(name, 'mcp_42_my-server_read_file_');
+      expect(info.title, 'Readable title');
+      expect(info.annotations, {'destructiveHint': true});
     });
 
     test('finalToolName sanitizes special chars', () {

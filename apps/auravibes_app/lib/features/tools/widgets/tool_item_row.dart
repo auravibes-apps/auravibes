@@ -3,7 +3,9 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/tools/models/mcp_tool_display_metadata.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/mcp_tool_annotation_hints.dart';
 import 'package:auravibes_app/features/tools/widgets/connector_tool_member_access.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
@@ -238,7 +240,9 @@ class const _ToolItemHeader({required final _ToolItemBody body})
         _OptionalToolSelection(body: body),
         _ToolItemIcon(tool: body.tool, isEnabled: body.tool.isEnabled),
         const AuraSizedBox(width: .sm),
-        Expanded(child: _ToolItemDescription(tool: body.tool)),
+        Expanded(
+          child: _ToolItemDescription(tool: body.tool, isMcp: body.isMcp),
+        ),
         _ToolItemActions(body: body),
       ],
     );
@@ -306,14 +310,22 @@ class const _ToolIconContent({
   }
 }
 
-class const _ToolItemDescription({required final WorkspaceToolEntity tool})
-    extends StatelessWidget {
+class const _ToolItemDescription({
+  required final WorkspaceToolEntity tool,
+  required final bool isMcp,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final metadata = McpToolDisplayMetadata.fromWorkspaceTool(tool);
     return AuraColumn(
       children: [
-        AuraText(child: tool.getNameWidget()),
+        AuraText(
+          child: metadata.title == null
+              ? tool.getNameWidget()
+              : Text(metadata.title!),
+        ),
         _ToolDescriptionText(tool: tool),
+        if (isMcp) McpToolAnnotationHints(annotations: metadata.annotations),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,

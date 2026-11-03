@@ -8,6 +8,7 @@ abstract final class McpDiscoveryPolicy {
   static const int maxCursorBytes = 4096;
   static const int maxNameLength = 200;
   static const int maxDescriptionLength = 4000;
+  static const int maxTitleLength = 200;
   static const int maxSchemaBytes = 64 * 1024;
   static const int maxSchemaDepth = 16;
   static const int maxToolBytes = 2 * maxSchemaBytes + 16 * 1024;
@@ -26,17 +27,33 @@ abstract final class McpDiscoveryPolicy {
 
   static Map<String, Object?> validateTool(Object? raw) {
     if (raw is! Map) throw const FormatException('Invalid MCP tool.');
-    _validateJson(raw, 0, maxSchemaDepth + 2);
+    if (raw.keys.any((key) => key is! String)) {
+      throw const FormatException('Invalid MCP tool.');
+    }
+    final tool = <String, Object?>{
+      for (final entry in raw.entries) entry.key as String: entry.value,
+    };
+    final title = displayTitle(raw['title']);
+    if (title == null) {
+      tool.remove('title');
+    } else {
+      tool['title'] = title;
+    }
+    final annotations = supportedAnnotations(raw['annotations']);
+    if (annotations == null) {
+      tool.remove('annotations');
+    } else {
+      tool['annotations'] = annotations;
+    }
+    _validateJson(tool, 0, maxSchemaDepth + 2);
     final name = raw['name'];
     final description = raw['description'];
-    final title = raw['title'];
     if (name is! String ||
         name.isEmpty ||
         name.length > maxNameLength ||
         (description != null &&
             (description is! String ||
-                description.length > maxDescriptionLength)) ||
-        (title != null && (title is! String || title.length > maxNameLength))) {
+                description.length > maxDescriptionLength))) {
       throw const FormatException('Invalid MCP tool.');
     }
     if ((raw['supportsProgress'] != null && raw['supportsProgress'] is! bool) ||
@@ -47,10 +64,39 @@ abstract final class McpDiscoveryPolicy {
     }
     boundedSchema(raw['inputSchema'] ?? const <String, Object?>{});
     if (raw['outputSchema'] != null) boundedSchema(raw['outputSchema']);
-    if (utf8.encode(jsonEncode(raw)).length > maxToolBytes) {
+    if (utf8.encode(jsonEncode(tool)).length > maxToolBytes) {
       throw const FormatException('MCP tool metadata is too large.');
     }
-    return Map<String, Object?>.from(raw);
+
+    return tool;
+  }
+
+  /// Returns a bounded, safe-to-display server title, or null when invalid.
+  static String? displayTitle(Object? value) {
+    if (value is! String) return null;
+    final title = value.trim();
+    if (title.isEmpty ||
+        title.length > maxTitleLength ||
+        RegExp('[\\u0000-\\u001f\\u007f-\\u009f]').hasMatch(title)) {
+      return null;
+    }
+    return title;
+  }
+
+  /// Keeps only well-typed informational hints defined by MCP.
+  static Map<String, Object?>? supportedAnnotations(Object? value) {
+    if (value is! Map) return null;
+    const supported = [
+      'readOnlyHint',
+      'destructiveHint',
+      'idempotentHint',
+      'openWorldHint',
+    ];
+    final annotations = <String, Object?>{
+      for (final key in supported)
+        if (value[key] is bool) key: value[key],
+    };
+    return annotations.isEmpty ? null : Map.unmodifiable(annotations);
   }
 
   static void _validateJson(Object? value, int depth, int maxDepth) {
@@ -133,11 +179,16 @@ final class McpDiscoveredTool {
     required Map<String, Object?> inputSchema,
     Map<String, Object?>? outputSchema,
     this.description,
+    this.title,
+    Map<String, Object?>? annotations,
   }) : inputSchema = _freezeMap(inputSchema),
-       outputSchema = outputSchema == null ? null : _freezeMap(outputSchema);
+       outputSchema = outputSchema == null ? null : _freezeMap(outputSchema),
+       annotations = annotations == null ? null : _freezeMap(annotations);
 
   final String name;
   final String? description;
+  final String? title;
+  final Map<String, Object?>? annotations;
   final Map<String, Object?> inputSchema;
   final Map<String, Object?>? outputSchema;
 }
@@ -169,6 +220,10 @@ List<McpDiscoveredTool> parseMcpToolsList(
         return McpDiscoveredTool(
           name: name,
           description: description as String?,
+          title: McpDiscoveryPolicy.displayTitle(tool['title']),
+          annotations: McpDiscoveryPolicy.supportedAnnotations(
+            tool['annotations'],
+          ),
           inputSchema: Map<String, Object?>.from(schema),
           outputSchema: outputSchema is Map
               ? Map<String, Object?>.from(outputSchema)
