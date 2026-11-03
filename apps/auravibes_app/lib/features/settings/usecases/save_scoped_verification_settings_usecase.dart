@@ -61,7 +61,7 @@ class const SaveScopedVerificationSettingsUsecase({
 
   Future<void> _ensureLocalWorkspace(String workspaceId) async {
     final isLocal =
-        await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+        await WorkspaceVerificationReservationHelpers.isLocalWorkspace(
           repository.database,
           workspaceId,
         );

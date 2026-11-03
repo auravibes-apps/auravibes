@@ -18,7 +18,7 @@ class WorkspaceVerificationRepository {
   final String _sessionId;
 
   Future<ScopedVerificationSettings> getSettings(String workspaceId) async {
-    if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+    if (!await WorkspaceVerificationReservationHelpers.isLocalWorkspace(
       database,
       workspaceId,
     )) {
@@ -32,7 +32,7 @@ class WorkspaceVerificationRepository {
   }
 
   Stream<ScopedVerificationSettings> watchSettings(String workspaceId) async* {
-    if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+    if (!await WorkspaceVerificationReservationHelpers.isLocalWorkspace(
       database,
       workspaceId,
     )) {
@@ -116,7 +116,7 @@ Future<void> _saveWorkspaceSettingsInTransaction(
 Future<void> _requireLocalSettingsOwner(_SaveWorkspaceSettings request) async {
   final database = request.database;
   final workspaceId = request.workspaceId;
-  if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+  if (!await WorkspaceVerificationReservationHelpers.isLocalWorkspace(
     database,
     workspaceId,
   )) {

@@ -219,6 +219,7 @@ Future<ToolApprovalDecision> _editPermissionDecision(
   _RunnerPermissionRequest request,
 ) {
   final invocation = request.input.invocation;
+
   return request.dependencies.permission((
     conversationId: invocation.conversationId,
     workspaceId: request.workspaceId,
@@ -233,6 +234,7 @@ Future<ToolApprovalDecision> _runnerPermissionDecision(
 ) {
   final invocation = request.input.invocation;
   final runnerRequest = request.input.request;
+
   return request.dependencies.permission((
     conversationId: invocation.conversationId,
     workspaceId: request.workspaceId,
@@ -276,7 +278,9 @@ Future<ResolvedTool?> _resolveToolGroup(
 ) async {
   final groupId = row.workspaceToolsGroupId;
   if (groupId == null) return null;
-  final group = await _enabledToolGroup(_toolGroupRequest(row, request));
+  final group = await _enabledToolGroup(
+    _toolGroupRequest(row, request, groupId),
+  );
   if (group == null) return null;
   final serverId = request.settings.mcpServerId;
   final server = await _enabledMcpServer(
@@ -286,32 +290,30 @@ Future<ResolvedTool?> _resolveToolGroup(
   );
   if (server == null) return null;
 
-  return _resolvedMcpTool(row, serverId, server);
+  return _resolvedMcpTool(row, serverId);
 }
 
 _EnabledToolGroupRequest _toolGroupRequest(
   ToolsTable row,
   _ToolResolutionRequest request,
+  String groupId,
 ) => (
   database: request.database,
-  id: row.workspaceToolsGroupId!,
+  id: groupId,
   workspaceId: row.workspaceId,
   serverId: request.settings.mcpServerId,
 );
 
-ResolvedTool _resolvedMcpTool(
-  ToolsTable row,
-  String serverId,
-  McpServersTable server,
-) => ResolvedTool.mcp(
-  tableId: row.id,
-  toolIdentifier: row.toolId,
-  mcp: (
-    mcpServerId: serverId,
-    mcpSlug: serverId,
-    outputSchemaJson: row.outputSchema,
-  ),
-);
+ResolvedTool _resolvedMcpTool(ToolsTable row, String serverId) =>
+    ResolvedTool.mcp(
+      tableId: row.id,
+      toolIdentifier: row.toolId,
+      mcp: (
+        mcpServerId: serverId,
+        mcpSlug: serverId,
+        outputSchemaJson: row.outputSchema,
+      ),
+    );
 
 typedef _EnabledToolGroupRequest = ({
   AppDatabase database,

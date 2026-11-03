@@ -16,7 +16,7 @@ class const ScopedVerificationConfiguration(final AppDatabase database) {
     String workspaceId,
     ScopedVerificationSettings settings,
   ) async {
-    if (!await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+    if (!await WorkspaceVerificationReservationHelpers.isLocalWorkspace(
       database,
       workspaceId,
     )) {

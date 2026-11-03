@@ -160,14 +160,14 @@ Future<ScopedVerificationResult> _executeBoundedVerification(
 }
 
 class _ScopedVerificationRunnerCreationRace {
-  _ScopedVerificationRunnerCreationRace._({
+  new _({
     required this.input,
     required this.interrupted,
     required this.timer,
     required this.registration,
   });
 
-  factory _ScopedVerificationRunnerCreationRace.start(
+  static _ScopedVerificationRunnerCreationRace start(
     ScopedVerificationRunnerInput input,
     Duration remaining,
   ) {
@@ -176,7 +176,7 @@ class _ScopedVerificationRunnerCreationRace {
       if (!interrupted.isCompleted) interrupted.complete();
     }
 
-    return _ScopedVerificationRunnerCreationRace._(
+    return ._(
       input: input,
       interrupted: interrupted,
       timer: Timer(remaining, interrupt),
@@ -331,33 +331,22 @@ Future<Object> _runSelectionOrExplainFailure(
   _EligibleVerification eligible,
   _VerificationSelection selection,
 ) async {
-  final failure = _selectionFailure(eligible, selection);
-  if (failure != null) return failure;
+  if (selection.result case final ScopedVerificationResult result) {
+    return _feedback(eligible.request.result, result.outcome, result.reason);
+  }
+  final selections = selection.selections;
+  if (selections == null || eligible.context.identity.turnId == null) {
+    return _feedback(eligible.request.result, .incomplete, 'invalid_turn');
+  }
   final request = eligible.request;
-  final context = eligible.context;
 
   return await _runSelectedVerification((
     usecase: eligible.usecase,
     invocation: eligible.invocation,
     original: request.result,
-    context: context,
-    selections: selection.selections!,
+    context: eligible.context,
+    selections: selections,
   ));
-}
-
-Object? _selectionFailure(
-  _EligibleVerification eligible,
-  _VerificationSelection selection,
-) {
-  if (selection.result case final ScopedVerificationResult result) {
-    return _feedback(eligible.request.result, result.outcome, result.reason);
-  }
-  if (selection.selections == null ||
-      eligible.context.identity.turnId == null) {
-    return _feedback(eligible.request.result, .incomplete, 'invalid_turn');
-  }
-
-  return null;
 }
 
 ScopedVerificationResult _unavailableRunnerResult(

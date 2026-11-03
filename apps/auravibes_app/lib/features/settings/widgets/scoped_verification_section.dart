@@ -370,23 +370,20 @@ class const _VerificationCardBody({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    children: _verificationCardChildren(state, cloud, loadError, tools),
+    children: [
+      _VerificationCardHeader(state: state, cloud: cloud, loadError: loadError),
+      const _VerificationSubtitle(),
+      if (cloud) const TextLocale(LocaleKeys.verification_cloud_unavailable),
+      if (!cloud && (loadError || state._loaded))
+        _VerificationCardContent(
+          state: state,
+          loadError: loadError,
+          tools: tools,
+        ),
+    ],
     crossAxisAlignment: .stretch,
   );
 }
-
-List<Widget> _verificationCardChildren(
-  _ScopedVerificationSectionState state,
-  bool cloud,
-  bool loadError,
-  List<ScopedVerificationToolOption> tools,
-) => [
-  _VerificationCardHeader(state: state, cloud: cloud, loadError: loadError),
-  const _VerificationSubtitle(),
-  if (cloud) const TextLocale(LocaleKeys.verification_cloud_unavailable),
-  if (!cloud && (loadError || state._loaded))
-    _VerificationCardContent(state: state, loadError: loadError, tools: tools),
-];
 
 class const _VerificationSubtitle() extends StatelessWidget {
   @override
@@ -672,7 +669,10 @@ class const _VerificationRunnerDropdown({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: _verificationRunnerOptions(runners),
+    options: [
+      for (final tool in runners)
+        AuraDropdownOption(value: tool.id, child: Text(tool.label)),
+    ],
     value: _selectedVerificationRunner(runners, selectedId),
     onChanged: (id) => state._selectRunner(id, runners),
     label: const TextLocale(LocaleKeys.verification_runner),
@@ -680,13 +680,6 @@ class const _VerificationRunnerDropdown({
     semanticLabel: LocaleKeys.verification_runner.tr(),
   );
 }
-
-List<AuraDropdownOption<String>> _verificationRunnerOptions(
-  List<ScopedVerificationToolOption> runners,
-) => [
-  for (final tool in runners)
-    AuraDropdownOption(value: tool.id, child: Text(tool.label)),
-];
 
 String? _selectedVerificationRunner(
   List<ScopedVerificationToolOption> runners,
@@ -845,13 +838,13 @@ class const _VerificationEditTools({
 
 class const _VerificationEditToolsHeader() extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
+  Widget build(BuildContext context) => const AuraColumn(
     children: [
-      const AuraText(
+      AuraText(
         child: TextLocale(LocaleKeys.verification_edit_tools),
         style: .heading6,
       ),
-      const TextLocale(LocaleKeys.verification_edit_tools_hint),
+      TextLocale(LocaleKeys.verification_edit_tools_hint),
     ],
   );
 }

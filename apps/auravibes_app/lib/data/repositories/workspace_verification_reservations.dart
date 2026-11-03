@@ -38,7 +38,7 @@ typedef _ReservationWriteRequest = ({
 /// Used only inside the repository's SQLite transaction.
 class WorkspaceVerificationReservations {
   new(this.database, this.sessionId, this.getSettings)
-    : _recovery = _WorkspaceVerificationReservationRecovery(
+    : _recovery = _WorkspaceVerificationReservationRecovery.new(
         database,
         sessionId,
       );
@@ -65,7 +65,7 @@ class WorkspaceVerificationReservations {
     VerificationReservationRequest request,
   ) async {
     final supported =
-        await WorkspaceVerificationReservationHelpers.isLocalVerificationWorkspace(
+        await WorkspaceVerificationReservationHelpers.isLocalWorkspace(
           database,
           request.workspaceId,
         );
@@ -144,7 +144,7 @@ class WorkspaceVerificationReservations {
 }
 
 class _WorkspaceVerificationReservationRecovery {
-  _WorkspaceVerificationReservationRecovery(this.database, this.sessionId);
+  new(this.database, this.sessionId);
 
   final AppDatabase database;
   final String sessionId;
@@ -309,11 +309,11 @@ int _usedRepairAttempts(List<WorkspaceVerificationRunRow> rows) =>
     rows.where((row) => row.isRepair).length;
 
 bool _repairIsNeeded(List<WorkspaceVerificationRunRow> rows) {
-  final last = rows.lastOrNull;
-  if (last == null || last.resultJson == null) return false;
+  final resultJson = rows.lastOrNull?.resultJson;
+  if (resultJson == null) return false;
 
   return WorkspaceVerificationReservationHelpers.decodeVerificationResult(
-        last.resultJson!,
+        resultJson,
       ).outcome ==
       .fail;
 }
@@ -334,7 +334,7 @@ int _repairLimit(
 );
 
 abstract final class WorkspaceVerificationReservationHelpers {
-  static Future<bool> isLocalVerificationWorkspace(
+  static Future<bool> isLocalWorkspace(
     AppDatabase database,
     String workspaceId,
   ) async {
