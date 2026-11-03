@@ -1296,9 +1296,6 @@ extension _ChatInputDraftActions on _ChatInputActions {
 }
 
 extension _ChatInputAttachmentActions on _ChatInputActions {
-  bool _isCurrentDropContext(_ChatInputContext dropContext) =>
-      ref.context.mounted && hooks.dropContext.value == dropContext;
-
   Future<void> addPath(String path, {required String displayName}) async {
     try {
       final attachment = await _copyAttachment(path, displayName);
@@ -1307,6 +1304,64 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
       _showAttachmentError(error.localizationKey);
     }
   }
+
+  Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
+    if (!ref.context.mounted) {
+      await _discardDetachedAttachment(attachment);
+
+      return;
+    }
+
+    if (!_canAddAttachment(attachment)) return;
+    if (_alreadySelectedAsset(attachment)) return;
+
+    _draft.attachments.value = [..._draft.attachments.value, attachment];
+  }
+
+  Future<void> _discardDetachedAttachment(
+    MessageAttachmentToCreate attachment,
+  ) async {
+    if (attachment.assetId != null) return;
+    await _attachmentUsecase.deleteAttachment(attachment.localPath);
+  }
+
+  bool _alreadySelectedAsset(MessageAttachmentToCreate attachment) =>
+      attachment.assetId != null &&
+      _draft.attachments.value.any(
+        (value) => value.assetId == attachment.assetId,
+      );
+
+  bool _canAddAttachment(MessageAttachmentToCreate attachment) {
+    if (input.acceptDroppedFilesWhenDisabled ||
+        _supportsAttachment(attachment)) {
+      return true;
+    }
+
+    deleteUnsentAttachment(attachment);
+    _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
+    _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
+
+    return false;
+  }
+
+  void _showAttachmentError(String localizationKey) {
+    if (!ref.context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: ref.context,
+      content: TextLocale(localizationKey),
+      variant: .error,
+    );
+  }
+
+  void pickFiles() => unawaited(_pickFiles());
+
+  void pickImage(ImageSource source) => unawaited(_pickImage(source));
+}
+
+extension _ChatInputDroppedFileActions on _ChatInputActions {
+  bool _isCurrentDropContext(_ChatInputContext dropContext) =>
+      ref.context.mounted && hooks.dropContext.value == dropContext;
 
   Future<void> addDroppedFile(
     Uint8List bytes, {
@@ -1362,59 +1417,6 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
 
     await _discardDetachedAttachment(attachment);
   }
-
-  Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
-    if (!ref.context.mounted) {
-      await _discardDetachedAttachment(attachment);
-
-      return;
-    }
-
-    if (!_canAddAttachment(attachment)) return;
-    if (_alreadySelectedAsset(attachment)) return;
-
-    _draft.attachments.value = [..._draft.attachments.value, attachment];
-  }
-
-  Future<void> _discardDetachedAttachment(
-    MessageAttachmentToCreate attachment,
-  ) async {
-    if (attachment.assetId != null) return;
-    await _attachmentUsecase.deleteAttachment(attachment.localPath);
-  }
-
-  bool _alreadySelectedAsset(MessageAttachmentToCreate attachment) =>
-      attachment.assetId != null &&
-      _draft.attachments.value.any(
-        (value) => value.assetId == attachment.assetId,
-      );
-
-  bool _canAddAttachment(MessageAttachmentToCreate attachment) {
-    if (input.acceptDroppedFilesWhenDisabled ||
-        _supportsAttachment(attachment)) {
-      return true;
-    }
-
-    deleteUnsentAttachment(attachment);
-    _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
-    _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
-
-    return false;
-  }
-
-  void _showAttachmentError(String localizationKey) {
-    if (!ref.context.mounted) return;
-
-    final _ = AuraSnackBars.show(
-      context: ref.context,
-      content: TextLocale(localizationKey),
-      variant: .error,
-    );
-  }
-
-  void pickFiles() => unawaited(_pickFiles());
-
-  void pickImage(ImageSource source) => unawaited(_pickImage(source));
 }
 
 extension _ChatInputRecordingActions on _ChatInputActions {
