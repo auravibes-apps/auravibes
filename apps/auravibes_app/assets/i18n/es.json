@@ -635,6 +635,7 @@
       "form_submitted": "Respuestas del formulario enviadas",
       "remove_tag": "Quitar {tag}",
       "a2ui_unavailable": "No se pudo cargar esta interfaz.",
+      "a2ui_read_only": "Solo lectura",
       "copy_a2ui_diagnostic": "Copiar detalles del diagnóstico",
       "a2ui_diagnostic_copied": "Diagnóstico copiado",
       "copy_message": "Copiar mensaje",

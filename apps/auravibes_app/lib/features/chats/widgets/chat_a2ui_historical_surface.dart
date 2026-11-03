@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adap
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_warning.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:genui/genui.dart';
 import 'package:material_ui/material_ui.dart';
@@ -146,16 +147,22 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final id in ids)
-          AuraInteractionScope(
-            policy: const AuraInteractionPolicy.readOnly(),
-            child: TickerMode(
-              enabled: false,
-              child: Surface(
-                key: ValueKey(id),
-                surfaceContext: controller.contextFor(id),
-                actionDelegate: const ReadOnlyChatA2uiActionDelegate(),
+          AuraColumn(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _HistoricalA2uiReadOnlyStatus(),
+              AuraInteractionScope(
+                policy: const AuraInteractionPolicy.readOnly(),
+                child: TickerMode(
+                  enabled: false,
+                  child: Surface(
+                    key: ValueKey(id),
+                    surfaceContext: controller.contextFor(id),
+                    actionDelegate: const ReadOnlyChatA2uiActionDelegate(),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         if (_issues.isNotEmpty)
           ChatA2uiWarning(
@@ -174,6 +181,36 @@ class _ChatA2uiHistoricalSurfaceState extends State<ChatA2uiHistoricalSurface> {
     unawaited(_updates?.cancel());
     _controller?.dispose();
     super.dispose();
+  }
+}
+
+class const _HistoricalA2uiReadOnlyStatus() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = chatA2uiText(
+      context,
+      LocaleKeys.chats_screens_chat_conversation_a2ui_read_only,
+      'Read only',
+    );
+
+    return AuraBadge.text(
+      variant: AuraBadgeVariant.neutral,
+      size: AuraBadgeSize.small,
+      semanticLabel: label,
+      child: ExcludeSemantics(
+        child: AuraRow(
+          mainAxisSize: MainAxisSize.min,
+          spacing: AuraSpacing.xs,
+          children: [
+            const AuraIcon(
+              Icons.lock_outline,
+              size: AuraIconSize.extraSmall,
+            ),
+            Text(label),
+          ],
+        ),
+      ),
+    );
   }
 }
 

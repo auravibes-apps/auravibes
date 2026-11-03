@@ -635,6 +635,7 @@
       "form_submitted": "Form answers submitted",
       "remove_tag": "Remove {tag}",
       "a2ui_unavailable": "This UI could not be loaded.",
+      "a2ui_read_only": "Read only",
       "copy_a2ui_diagnostic": "Copy diagnostic details",
       "a2ui_diagnostic_copied": "Diagnostic copied",
       "copy_message": "Copy message",

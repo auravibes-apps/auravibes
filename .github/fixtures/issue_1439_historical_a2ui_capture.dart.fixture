@@ -1,0 +1,210 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:crypto/crypto.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+
+void main() {
+  testWidgets('issue 1439 historical A2UI read-only capture', (tester) async {
+    const outputPath = String.fromEnvironment('ISSUE1439_CAPTURE_DIR');
+    const sourceSha = String.fromEnvironment('ISSUE1439_CAPTURE_SHA');
+    const stage = String.fromEnvironment('ISSUE1439_CAPTURE_STAGE');
+    const flutterVersion = String.fromEnvironment('ISSUE1439_FLUTTER_VERSION');
+    expect(outputPath, isNotEmpty);
+    expect(sourceSha, matches(RegExp(r'^[0-9a-f]{40}$')));
+    expect(stage, anyOf('before', 'after'));
+    expect(flutterVersion, isNotEmpty);
+
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.platformDispatcher.textScaleFactorTestValue = 1;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+      tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+
+    final fonts = (await tester.runAsync(_loadCaptureFonts))!;
+    final payloads = [
+      jsonEncode({
+        'version': 'v0.9',
+        'createSurface': {
+          'surfaceId': 'quarterly-progress',
+          'catalogId': auraChatCatalogId,
+        },
+      }),
+      jsonEncode({
+        'version': 'v0.9',
+        'updateComponents': {
+          'surfaceId': 'quarterly-progress',
+          'components': [
+            {
+              'id': 'root',
+              'component': 'Column',
+              'children': ['title', 'description', 'progress', 'report'],
+            },
+            {
+              'id': 'title',
+              'component': 'Text',
+              'text': 'Quarterly progress',
+            },
+            {
+              'id': 'description',
+              'component': 'Text',
+              'text': 'Review the saved target and current progress.',
+            },
+            {
+              'id': 'progress',
+              'component': 'Slider',
+              'label': 'Completion',
+              'value': {'path': '/completion'},
+              'min': 0,
+              'max': 100,
+              'step': 1,
+              'precision': 0,
+            },
+            {'id': 'report', 'component': 'Button', 'label': 'Open report'},
+          ],
+        },
+      }),
+      jsonEncode({
+        'version': 'v0.9',
+        'updateDataModel': {
+          'surfaceId': 'quarterly-progress',
+          'path': '/completion',
+          'value': 68,
+        },
+      }),
+    ];
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+        child: AuraThemeScope(
+          theme: .light,
+          child: Builder(
+            builder: (context) => MaterialApp(
+              locale: context.locale,
+              supportedLocales: context.supportedLocales,
+              localizationsDelegates: context.localizationDelegates,
+              theme: ThemeData(),
+              home: Scaffold(
+                body: Center(
+                  child: SizedBox(
+                    width: 720,
+                    child: RepaintBoundary(
+                      key: const ValueKey('issue1439-capture'),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: ChatA2uiSurfaceHost.historical(
+                          messageId: 'historical-quarterly-progress',
+                          payloads: payloads,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quarterly progress'), findsOneWidget);
+    expect(find.text('Completion'), findsOneWidget);
+    expect(find.text('Open report'), findsOneWidget);
+    if (stage == 'before') {
+      expect(find.text('Read only'), findsNothing);
+    } else {
+      expect(find.text('Read only'), findsOneWidget);
+      expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Read only');
+    }
+
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(const ValueKey('issue1439-capture')),
+    );
+    await tester.runAsync(() async {
+      final output = Directory(outputPath);
+      await output.create(recursive: true);
+      final image = await boundary.toImage(pixelRatio: 1);
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      await File('${output.path}/$stage.png').writeAsBytes(
+        png!.buffer.asUint8List(),
+      );
+      await File('${output.path}/$stage.json').writeAsString(
+        const JsonEncoder.withIndent('  ').convert({
+          'repository': 'auravibes-apps/auravibes',
+          'sourceSha': sourceSha,
+          'stage': stage,
+          'fixture': '.github/fixtures/issue_1439_historical_a2ui_capture.dart.fixture',
+          'fixtureDescription':
+              'One historical progress surface with a saved slider value and disabled report button.',
+          'workflowRunId': Platform.environment['GITHUB_RUN_ID'],
+          'workflowRunAttempt': Platform.environment['GITHUB_RUN_ATTEMPT'],
+          'flutterVersion': flutterVersion,
+          'renderer': 'Flutter widget test renderer (Skia)',
+          'runnerOs': Platform.environment['RUNNER_OS'],
+          'viewport': [1200, 800],
+          'devicePixelRatio': 1,
+          'textScale': 1,
+          'locale': 'en',
+          'theme': 'Aura light',
+          'fonts': fonts,
+          'capture': 'RepaintBoundary.toImage at pixelRatio 1',
+          'limitations':
+              'This capture verifies Flutter widget rendering and does not represent native window chrome or an assistive technology session.',
+        }),
+      );
+    });
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, timeout: const Timeout(Duration(minutes: 2)));
+}
+
+Future<List<Map<String, String>>> _loadCaptureFonts() async {
+  final fonts = <Map<String, String>>[];
+  for (final (family, path) in const [
+    ('Inter', 'assets/fonts/Inter.ttf'),
+    ('MaterialIcons', 'fonts/MaterialIcons-Regular.otf'),
+  ]) {
+    final data = await rootBundle.load(path);
+    await (FontLoader(family)..addFont(Future.value(data))).load();
+    fonts.add({
+      'family': family,
+      'source': path,
+      'sha256': sha256
+          .convert(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes))
+          .toString(),
+    });
+  }
+  final flutterRoot = Platform.environment['FLUTTER_ROOT'];
+  expect(flutterRoot, isNotNull);
+  final roboto = await File(
+    '$flutterRoot/bin/cache/artifacts/material_fonts/Roboto-Regular.ttf',
+  ).readAsBytes();
+  await (FontLoader('Roboto')..addFont(Future.value(roboto.buffer.asByteData()))).load();
+  fonts.add({
+    'family': 'Roboto',
+    'source': 'Flutter SDK material fonts',
+    'sha256': sha256.convert(roboto).toString(),
+  });
+  return fonts;
+}

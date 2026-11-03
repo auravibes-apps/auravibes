@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_ad
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_historical_surface.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -406,6 +407,15 @@ void main() {
 
     expect(find.text('First'), findsOneWidget);
     expect(find.text('Second'), findsOneWidget);
+    expect(find.text('Read only'), findsNWidgets(2));
+    expect(
+      tester.getRect(find.text('Read only').at(0)).bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('First')).top),
+    );
+    expect(
+      tester.getRect(find.text('Read only').at(1)).bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('Second')).top),
+    );
 
     await tester.pumpWidget(
       AuraThemeScope(
@@ -430,6 +440,7 @@ void main() {
     expect(find.text('First'), findsNothing);
     expect(find.text('Second'), findsNothing);
     expect(find.text('Updated'), findsOneWidget);
+    expect(find.text('Read only'), findsOneWidget);
   });
 
   testWidgets('warns when a historical surface omitted root', (tester) async {
@@ -674,6 +685,7 @@ void main() {
     expect(find.text('20.00'), findsOneWidget);
     expect(find.text('0.00'), findsOneWidget);
     expect(find.text('100.00'), findsOneWidget);
+    expect(find.text('Read only'), findsNothing);
     expect(
       find.byKey(const ValueKey('a2ui_submit_assistant-1:main')),
       findsOneWidget,
@@ -746,9 +758,55 @@ void main() {
     expect(find.text('Score'), findsOneWidget);
     expect(find.text('75.00'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraSlider)).value, '75.0');
+    expect(find.text('Read only'), findsOneWidget);
+    expect(
+      tester.widget<Surface>(find.byType(Surface)).actionDelegate,
+      isA<ReadOnlyChatA2uiActionDelegate>(),
+    );
+
+    await tester.drag(find.byType(AuraSlider), const Offset(100, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('75.00'), findsOneWidget);
+    expect(tester.getSemantics(find.byType(AuraSlider)).value, '75.0');
   });
 
-  testWidgets('read-only slider formats a literal value for Spanish', (
+  testWidgets('read-only A2UI delegate consumes user actions', (tester) async {
+    final controller = SurfaceController(catalogs: auraChatCatalogs());
+    addTearDown(controller.dispose);
+    final submissions = <ChatMessage>[];
+    final subscription = controller.onSubmit.listen(submissions.add);
+    addTearDown(subscription.cancel);
+    late BuildContext context;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (buildContext) {
+            context = buildContext;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final handled = const ReadOnlyChatA2uiActionDelegate().handleEvent(
+      context,
+      UserActionEvent(
+        surfaceId: 'historical-surface',
+        name: 'submit',
+        sourceComponentId: 'submit-button',
+      ),
+      controller.contextFor('historical-surface'),
+      (_, _, _, _) => const SizedBox.shrink(),
+    );
+    await tester.pump();
+
+    expect(handled, isTrue);
+    expect(submissions, isEmpty);
+  });
+
+  testWidgets('read-only slider and status are localized for Spanish', (
     tester,
   ) async {
     final payloads = [
@@ -780,19 +838,27 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      AuraThemeScope(
-        theme: .light,
-        child: MaterialApp(
-          builder: _legacyMaterialBuilder,
-          theme: ThemeData(),
-          locale: const Locale('es'),
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          supportedLocales: const [Locale('en'), Locale('es')],
-          home: SizedBox(
-            width: 320,
-            child: ChatA2uiSurfaceHost.historical(
-              messageId: 'literal-slider',
-              payloads: payloads,
+      EasyLocalization(
+        supportedLocales: const [Locale('en'), Locale('es')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('es'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            locale: const Locale('es'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('en'), Locale('es')],
+            home: SizedBox(
+              width: 320,
+              child: ChatA2uiSurfaceHost.historical(
+                messageId: 'literal-slider',
+                payloads: payloads,
+              ),
             ),
           ),
         ),
@@ -803,6 +869,8 @@ void main() {
     expect(find.text('74,5'), findsOneWidget);
     expect(find.text('0,0'), findsOneWidget);
     expect(find.text('100,0'), findsOneWidget);
+    expect(find.text('Solo lectura'), findsOneWidget);
+    expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
   });
 
   for (final (locale, date) in [

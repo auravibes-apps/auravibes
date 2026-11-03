@@ -1,0 +1,126 @@
+name: Issue 1439 historical A2UI review
+
+on:
+  push:
+    branches: [codex/issue-1439-historical-a2ui]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-1439-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: historical A2UI baseline at 46065bc5
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      BASELINE_SHA: 46065bc5983bc9dc9100696aaa3c98ba66c7c56b
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Preserve the shared capture fixture
+        run: cp .github/fixtures/issue_1439_historical_a2ui_capture.dart.fixture "$RUNNER_TEMP/issue1439_capture_test.dart"
+      - name: Checkout the exact main baseline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.BASELINE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-workspace
+      - name: Record hosted Flutter version
+        id: flutter
+        working-directory: apps/auravibes_app
+        run: |
+          flutter --version --machine > "$RUNNER_TEMP/flutter-version.json"
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          from pathlib import Path
+
+          machine = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "flutter-version.json").read_text()
+          )
+          print(f"framework_version={machine['frameworkVersion']}")
+          PY
+      - name: Capture the historical surface before the status change
+        working-directory: apps/auravibes_app
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/issue1439-before-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/issue1439-before-config
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/issue1439-before"
+          cp "$RUNNER_TEMP/issue1439_capture_test.dart" test/widgets/issue1439_capture_test.dart
+          python3 ../../tool/validation_lease.py --label issue-1439-baseline-capture -- flutter test test/widgets/issue1439_capture_test.dart --no-pub --timeout=2m --dart-define=ISSUE1439_CAPTURE_DIR="$RUNNER_TEMP/issue1439-before" --dart-define=ISSUE1439_CAPTURE_SHA="$BASELINE_SHA" --dart-define=ISSUE1439_CAPTURE_STAGE=before --dart-define=ISSUE1439_FLUTTER_VERSION="${{ steps.flutter.outputs.framework_version }}" 2>&1 | tee "$RUNNER_TEMP/issue1439-before/capture.log"
+      - name: Upload baseline image and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1439-before-46065bc5
+          path: ${{ runner.temp }}/issue1439-before/
+          if-no-files-found: error
+          retention-days: 14
+
+  feature:
+    name: historical A2UI after at feature head
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-workspace
+      - name: Generate localized keys
+        run: python3 tool/validation_lease.py --label issue-1439-localization-generate -- dart run melos run generate:localization
+      - name: Format hosted Dart sources and export corrections
+        working-directory: apps/auravibes_app
+        run: |
+          python3 ../../tool/validation_lease.py --label issue-1439-format -- dart format lib/features/chats/widgets/chat_a2ui_historical_surface.dart test/features/chats/agent_adapters/aura_chat_catalog_adapter_test.dart
+          git diff -- lib/features/chats/widgets/chat_a2ui_historical_surface.dart test/features/chats/agent_adapters/aura_chat_catalog_adapter_test.dart > "$RUNNER_TEMP/issue1439-format.patch"
+          mkdir -p "$RUNNER_TEMP/issue1439-after"
+          cp "$RUNNER_TEMP/issue1439-format.patch" "$RUNNER_TEMP/issue1439-after/format.patch"
+      - name: Run focused widget behavior tests
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label issue-1439-widget-tests -- flutter test test/features/chats/agent_adapters/aura_chat_catalog_adapter_test.dart --no-pub --timeout=5m
+      - name: Record hosted Flutter version
+        id: flutter
+        working-directory: apps/auravibes_app
+        run: |
+          flutter --version --machine > "$RUNNER_TEMP/flutter-version.json"
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          from pathlib import Path
+
+          machine = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "flutter-version.json").read_text()
+          )
+          print(f"framework_version={machine['frameworkVersion']}")
+          PY
+      - name: Capture the historical surface after the status change
+        working-directory: apps/auravibes_app
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/issue1439-after-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/issue1439-after-config
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/issue1439-after"
+          cp ../../.github/fixtures/issue_1439_historical_a2ui_capture.dart.fixture test/widgets/issue1439_capture_test.dart
+          python3 ../../tool/validation_lease.py --label issue-1439-feature-capture -- flutter test test/widgets/issue1439_capture_test.dart --no-pub --timeout=2m --dart-define=ISSUE1439_CAPTURE_DIR="$RUNNER_TEMP/issue1439-after" --dart-define=ISSUE1439_CAPTURE_SHA="$GITHUB_SHA" --dart-define=ISSUE1439_CAPTURE_STAGE=after --dart-define=ISSUE1439_FLUTTER_VERSION="${{ steps.flutter.outputs.framework_version }}" 2>&1 | tee "$RUNNER_TEMP/issue1439-after/capture.log"
+      - name: Preserve generated localization keys in the evidence artifact
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/issue1439-after"
+          cp apps/auravibes_app/lib/i18n/locale_keys.dart "$RUNNER_TEMP/issue1439-after/locale_keys.dart"
+          cp "$RUNNER_TEMP/flutter-version.json" "$RUNNER_TEMP/issue1439-after/flutter-version.json" || true
+      - name: Upload feature image, provenance, and generated localization keys
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue1439-after-${{ github.sha }}
+          path: ${{ runner.temp }}/issue1439-after/
+          if-no-files-found: error
+          retention-days: 14
