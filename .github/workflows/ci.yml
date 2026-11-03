@@ -18,6 +18,17 @@ on:
         type: boolean
         required: false
         default: false
+      capture_chat_timeline_benchmark:
+        description: Capture opt-in chat timeline projection baseline or follow-up
+        type: boolean
+        required: false
+        default: false
+      capture_chat_timeline_benchmark_phase:
+        description: Label this chat timeline projection capture
+        type: choice
+        options: [baseline, follow-up]
+        required: false
+        default: baseline
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -591,6 +602,198 @@ jobs:
       - name: Resolve dependencies before validation fan-out
         if: ${{ steps.platforms.outputs.run_dependency_preflight == 'true' }}
         uses: ./.github/actions/setup-workspace
+
+  chat-timeline-projection-benchmark:
+    name: chat timeline projection benchmark capture
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.capture_chat_timeline_benchmark == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Capture and validate chat timeline benchmark
+        working-directory: apps/auravibes_app
+        shell: bash
+        env:
+          CAPTURE_DIRECTORY: ${{ runner.temp }}/chat-timeline-projection-benchmark
+          CAPTURE_PHASE: ${{ inputs.capture_chat_timeline_benchmark_phase }}
+          CAPTURE_REVISION: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$CAPTURE_DIRECTORY"
+          checked_out_revision="$(git rev-parse HEAD)"
+          test "$checked_out_revision" = "$CAPTURE_REVISION"
+          git rev-parse HEAD:apps/auravibes_app/lib/features/chats/models/resolved_chat_message.dart \
+            > "$CAPTURE_DIRECTORY/projection-source-blob.txt"
+          git rev-parse HEAD:apps/auravibes_app/test/features/chats/models/chat_timeline_projection_benchmark_test.dart \
+            > "$CAPTURE_DIRECTORY/benchmark-source-blob.txt"
+          uname -a > "$CAPTURE_DIRECTORY/runner.txt"
+          lscpu >> "$CAPTURE_DIRECTORY/runner.txt"
+          flutter --version --machine > "$CAPTURE_DIRECTORY/flutter-version.json"
+
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          keys = [
+              "GITHUB_SHA",
+              "GITHUB_REF",
+              "GITHUB_WORKFLOW_REF",
+              "GITHUB_EVENT_NAME",
+              "GITHUB_RUN_ID",
+              "GITHUB_RUN_ATTEMPT",
+              "RUNNER_OS",
+              "RUNNER_ARCH",
+          ]
+          output = Path(os.environ["CAPTURE_DIRECTORY"])
+          metadata = {key: os.environ.get(key) for key in keys}
+          metadata.update(
+              {
+                  "phase": os.environ["CAPTURE_PHASE"],
+                  "checkoutSha": os.environ["CAPTURE_REVISION"],
+                  "command": "flutter test test/features/chats/models/chat_timeline_projection_benchmark_test.dart --no-pub --reporter=expanded",
+                  "workingDirectory": "apps/auravibes_app",
+                  "warmupIterations": 2,
+                  "samplesPerCase": 15,
+                  "operationsPerSample": 8,
+                  "independentProcesses": 5,
+              }
+          )
+          (output / "environment.json").write_text(
+              json.dumps(metadata, indent=2) + "\n"
+          )
+          PY
+
+          correctness_status=0
+          flutter test test/features/chats/models/chat_timeline_projection_test.dart \
+            --no-pub --reporter=expanded \
+            > "$CAPTURE_DIRECTORY/correctness.log" 2>&1 || correctness_status=$?
+          cat "$CAPTURE_DIRECTORY/correctness.log"
+          printf '%s\n' "$correctness_status" > "$CAPTURE_DIRECTORY/correctness-status.txt"
+          combined_status="$correctness_status"
+
+          for process in 1 2 3 4 5; do
+            run_label="$CAPTURE_PHASE-$process"
+            status=0
+            AURAVIBES_CHAT_TIMELINE_BENCHMARK=1 \
+              AURAVIBES_CHAT_TIMELINE_BENCHMARK_REVISION="$CAPTURE_REVISION" \
+              AURAVIBES_CHAT_TIMELINE_BENCHMARK_PHASE="$CAPTURE_PHASE" \
+              AURAVIBES_CHAT_TIMELINE_BENCHMARK_RUN="$run_label" \
+              flutter test test/features/chats/models/chat_timeline_projection_benchmark_test.dart \
+              --no-pub --reporter=expanded \
+              > "$CAPTURE_DIRECTORY/$run_label.log" 2>&1 || status=$?
+            cat "$CAPTURE_DIRECTORY/$run_label.log"
+            printf '%s\n' "$status" > "$CAPTURE_DIRECTORY/$run_label-status.txt"
+            if [ "$status" -ne 0 ]; then
+              combined_status=1
+            fi
+          done
+
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          output = Path(os.environ["CAPTURE_DIRECTORY"])
+          phase = os.environ["CAPTURE_PHASE"]
+          revision = os.environ["CAPTURE_REVISION"]
+          expected = {
+              (size, scenario)
+              for size in [100, 1000, 5000]
+              for scenario in ["stableRebuild", "streamingTail"]
+          }
+          errors = []
+          correctness = output / "correctness-status.txt"
+          if not correctness.exists() or correctness.read_text().strip() != "0":
+              errors.append("Focused projection correctness tests did not pass")
+          if not (output / "environment.json").is_file():
+              errors.append("Missing environment provenance")
+          if not (output / "runner.txt").is_file():
+              errors.append("Missing hosted runner details")
+          if not (output / "flutter-version.json").is_file():
+              errors.append("Missing Flutter version")
+          source_blob = output / "projection-source-blob.txt"
+          benchmark_blob = output / "benchmark-source-blob.txt"
+          if not source_blob.exists() or not source_blob.read_text().strip():
+              errors.append("Missing projection source blob SHA")
+          if not benchmark_blob.exists() or not benchmark_blob.read_text().strip():
+              errors.append("Missing benchmark source blob SHA")
+
+          for process in range(1, 6):
+              run_label = f"{phase}-{process}"
+              status_file = output / f"{run_label}-status.txt"
+              if not status_file.exists() or status_file.read_text().strip() != "0":
+                  errors.append(f"{run_label}: benchmark test process failed")
+              log = output / f"{run_label}.log"
+              records = []
+              if log.exists():
+                  for line in log.read_text().splitlines():
+                      start = line.find('{"workload":"chat_timeline_projection"')
+                      if start >= 0:
+                          try:
+                              records.append(json.loads(line[start:]))
+                          except json.JSONDecodeError as error:
+                              errors.append(f"{run_label}: invalid JSON record: {error}")
+              jsonl = output / f"{run_label}.jsonl"
+              jsonl.write_text("".join(json.dumps(row) + "\n" for row in records))
+              cases = set()
+              for record in records:
+                  try:
+                      case = (record["messageCount"], record["scenario"])
+                      cases.add(case)
+                      if record["revision"] != revision:
+                          errors.append(f"{run_label}: record revision does not match checkout")
+                      if record["phase"] != phase or record["run"] != run_label:
+                          errors.append(f"{run_label}: record phase or process label mismatch")
+                      samples = record["samplesUs"]
+                      if record["sampleCount"] != 15 or len(samples) != 15:
+                          errors.append(f"{run_label}: expected fifteen measured samples")
+                      if record["warmupIterations"] != 2 or record["operationsPerSample"] != 8:
+                          errors.append(f"{run_label}: warm-up or batch count mismatch")
+                      if any(not isinstance(value, int) or value < 0 for value in samples):
+                          errors.append(f"{run_label}: invalid nonnegative timing sample")
+                      if record["projectedMessageCount"] != record["messageCount"]:
+                          errors.append(f"{run_label}: projection lost or added a message")
+                      if record["projectedItemCount"] <= 0:
+                          errors.append(f"{run_label}: projection returned no timeline items")
+                  except (KeyError, TypeError) as error:
+                      errors.append(f"{run_label}: incomplete record: {error}")
+              if cases != expected or len(records) != len(expected):
+                  errors.append(f"{run_label}: expected all six cases exactly once")
+
+          validation = {
+              "valid": not errors,
+              "errors": errors,
+              "phase": phase,
+              "revision": revision,
+              "expectedCases": len(expected),
+              "processes": 5,
+              "artifactUploadStatus": "verify_from_workflow_run",
+          }
+          (output / "validation.json").write_text(json.dumps(validation, indent=2) + "\n")
+          for error in errors:
+              print(error, file=sys.stderr)
+          if errors:
+              sys.exit(1)
+          PY
+
+          exit "$combined_status"
+
+      - name: Upload chat timeline benchmark artifact
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.capture_chat_timeline_benchmark == true }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: chat-timeline-projection-${{ inputs.capture_chat_timeline_benchmark_phase }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/chat-timeline-projection-benchmark
+          if-no-files-found: warn
+          retention-days: 30
 
   renovate-validation:
     name: validate Renovate configuration
