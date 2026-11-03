@@ -61,7 +61,7 @@ class _TestableAppState extends State<TestableApp> {
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
         if (!hasRouteSessionOverride)
-          routeSessionProvider.overrideWithValue(AsyncData(session)),
+          workspaceSessionForRouteProvider.overrideWith((_, _) => session),
         ...widget.overrides.cast(),
       ],
     );
