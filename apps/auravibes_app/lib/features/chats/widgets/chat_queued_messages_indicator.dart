@@ -262,23 +262,22 @@ class const _QueuedDraftActionsMenu({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPopupMenuButton(
-    icon: Icons.more_vert,
-    tooltip: _queuedItemActionsKey.tr(),
-    identifier: 'queued-prompt-$draftId-actions',
     items: [
       AuraPopupMenuItem(
         title: Text(_queuedMoveUpKey.tr()),
-        leading: const AuraIcon(Icons.arrow_upward, size: .small),
         onTap: canMoveUp ? () => onMoveUp(draftId) : null,
+        leading: const AuraIcon(Icons.arrow_upward, size: .small),
         identifier: 'queued-prompt-$draftId-move-up',
       ),
       AuraPopupMenuItem(
         title: Text(_queuedMoveDownKey.tr()),
-        leading: const AuraIcon(Icons.arrow_downward, size: .small),
         onTap: canMoveDown ? () => onMoveDown(draftId) : null,
+        leading: const AuraIcon(Icons.arrow_downward, size: .small),
         identifier: 'queued-prompt-$draftId-move-down',
       ),
     ],
+    identifier: 'queued-prompt-$draftId-actions',
+    tooltip: _queuedItemActionsKey.tr(),
   );
 }
 

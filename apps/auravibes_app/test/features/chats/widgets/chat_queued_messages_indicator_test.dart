@@ -1,4 +1,6 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'dart:ui' show Tristate;
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
@@ -6,7 +8,6 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -126,10 +127,10 @@ void main() {
   testWidgets('moves a queued row through its accessible actions', (
     tester,
   ) async {
-    ConversationQueuedDraft? first;
-    ConversationQueuedDraft? middle;
-    ConversationQueuedDraft? last;
-    ConversationQueuedDraft? other;
+    late final ConversationQueuedDraft first;
+    late final ConversationQueuedDraft middle;
+    late final ConversationQueuedDraft last;
+    late final ConversationQueuedDraft other;
     const attachment = MessageAttachmentToCreate(
       localPath: '/tmp/middle.pdf',
       fileName: 'middle.pdf',
@@ -143,7 +144,7 @@ void main() {
       attachments: [attachment],
     );
     ChatDraft? loadedDraft;
-    ProviderContainer? queueContainer;
+    final queueSnapshots = <Map<String, List<ConversationQueuedDraft>>>[];
 
     await pumpAndInit(
       tester,
@@ -151,10 +152,9 @@ void main() {
         queuedDrafts: const [],
         watchQueue: true,
         onContainer: (container) {
-          queueContainer = container;
           final subscription = container.listen(
             conversationSendQueueProvider,
-            (_, _) {},
+            (_, next) => queueSnapshots.add(next),
           );
           addTearDown(subscription.close);
           final notifier = container.read(
@@ -181,47 +181,47 @@ void main() {
       ),
     );
 
-    final queuedMiddle = middle!;
+    final queuedMiddle = middle;
     final rowActions = find.byKey(
       ValueKey('queued-prompt-${queuedMiddle.id}-actions'),
     );
     await tester.tap(rowActions);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Move up'), findsOneWidget);
     expect(find.text('Move down'), findsOneWidget);
     await tester.tap(
       find.byKey(ValueKey('queued-prompt-${queuedMiddle.id}-move-up')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       tester.getTopLeft(find.text('Middle')).dy,
       lessThan(tester.getTopLeft(find.text('First')).dy),
     );
     expect(
-      queueContainer!.read(conversationSendQueueProvider)['conv-1'],
+      queueSnapshots.last['conv-1'],
       [middle, first, last],
     );
-    expect(middle!.draft, same(middleContent));
-    expect(middle!.draft.attachments.single, same(attachment));
+    expect(middle.draft, same(middleContent));
+    expect(middle.draft.attachments.single, same(attachment));
     expect(
-      queueContainer!.read(conversationSendQueueProvider)['conv-2'],
+      queueSnapshots.last['conv-2'],
       [other],
     );
 
     await tester.tap(rowActions);
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(ValueKey('queued-prompt-${queuedMiddle.id}-move-down')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(
       tester.getTopLeft(find.text('First')).dy,
       lessThan(tester.getTopLeft(find.text('Middle')).dy),
     );
     expect(
-      queueContainer!.read(conversationSendQueueProvider)['conv-1'],
+      queueSnapshots.last['conv-1'],
       [first, middle, last],
     );
 
@@ -229,9 +229,9 @@ void main() {
     await tester.pump();
 
     expect(loadedDraft, same(middleContent));
-    expect(loadedDraft!.attachments.single, same(attachment));
+    expect(loadedDraft?.attachments.single, same(attachment));
     expect(
-      queueContainer!.read(conversationSendQueueProvider)['conv-1'],
+      queueSnapshots.last['conv-1'],
       [first, last],
     );
   });
@@ -239,9 +239,9 @@ void main() {
   testWidgets('disables move actions at the first and last boundaries', (
     tester,
   ) async {
-    ConversationQueuedDraft? first;
-    ConversationQueuedDraft? last;
-    ProviderContainer? queueContainer;
+    late final ConversationQueuedDraft first;
+    late final ConversationQueuedDraft last;
+    final queueSnapshots = <Map<String, List<ConversationQueuedDraft>>>[];
 
     await pumpAndInit(
       tester,
@@ -249,10 +249,9 @@ void main() {
         queuedDrafts: const [],
         watchQueue: true,
         onContainer: (container) {
-          queueContainer = container;
           final subscription = container.listen(
             conversationSendQueueProvider,
-            (_, _) {},
+            (_, next) => queueSnapshots.add(next),
           );
           addTearDown(subscription.close);
           final notifier = container.read(
@@ -270,45 +269,46 @@ void main() {
       ),
     );
 
-    final queuedFirst = first!;
+    final queuedFirst = first;
     await tester.tap(
       find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-actions')),
     );
-    await tester.pumpAndSettle();
-    final moveUpAtTop = tester.getSemantics(
-      find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-move-up')),
-    );
-    expect(moveUpAtTop.hasFlag(SemanticsFlag.isButton), isTrue);
-    expect(moveUpAtTop.hasFlag(SemanticsFlag.hasEnabledState), isTrue);
-    expect(moveUpAtTop.hasFlag(SemanticsFlag.isEnabled), isFalse);
+    final _ = await tester.pumpAndSettle();
+    final moveUpAtTop = tester
+        .getSemantics(
+          find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-move-up')),
+        )
+        .getSemanticsData();
+    expect(moveUpAtTop.flagsCollection.isButton, isTrue);
+    expect(moveUpAtTop.flagsCollection.isEnabled, Tristate.isFalse);
     await tester.tap(
       find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-move-up')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(
-      queueContainer!.read(conversationSendQueueProvider)['conv-1'],
+      queueSnapshots.last['conv-1'],
       [first, last],
     );
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
+    final _ = await tester.sendKeyEvent(.escape);
+    final _ = await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(ValueKey('queued-prompt-${last!.id}-actions')),
+      find.byKey(ValueKey('queued-prompt-${last.id}-actions')),
     );
-    await tester.pumpAndSettle();
-    final queuedLast = last!;
-    final moveDownAtBottom = tester.getSemantics(
-      find.byKey(ValueKey('queued-prompt-${queuedLast.id}-move-down')),
-    );
-    expect(moveDownAtBottom.hasFlag(SemanticsFlag.isButton), isTrue);
-    expect(moveDownAtBottom.hasFlag(SemanticsFlag.hasEnabledState), isTrue);
-    expect(moveDownAtBottom.hasFlag(SemanticsFlag.isEnabled), isFalse);
+    final _ = await tester.pumpAndSettle();
+    final moveDownAtBottom = tester
+        .getSemantics(
+          find.byKey(ValueKey('queued-prompt-${last.id}-move-down')),
+        )
+        .getSemanticsData();
+    expect(moveDownAtBottom.flagsCollection.isButton, isTrue);
+    expect(moveDownAtBottom.flagsCollection.isEnabled, Tristate.isFalse);
     await tester.tap(
-      find.byKey(ValueKey('queued-prompt-${queuedLast.id}-move-down')),
+      find.byKey(ValueKey('queued-prompt-${last.id}-move-down')),
     );
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     expect(
-      queueContainer!.read(conversationSendQueueProvider)['conv-1'],
+      queueSnapshots.last['conv-1'],
       [first, last],
     );
   });

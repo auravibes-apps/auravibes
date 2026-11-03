@@ -703,7 +703,7 @@ void main() {
           scale: 1,
           dark: false,
         );
-        await tester.tap(firstActions);
+        final _ = await tester.tap(firstActions);
         await tester.pumpAndSettle();
         await tester.tap(
           find.byKey(const ValueKey('queued-prompt-$firstId-move-down')),
@@ -1715,9 +1715,7 @@ String _fixtureDescription(String name) => switch (name) {
         'child chats; no models or cloud accounts',
 };
 
-class _CaptureQueuedDrafts extends ConversationSendQueue {
-  _CaptureQueuedDrafts(this.conversationId);
-
+class _CaptureQueuedDrafts(this.conversationId) extends ConversationSendQueue {
   final String conversationId;
 
   @override

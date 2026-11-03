@@ -1458,6 +1458,29 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
+      - name: Export hosted formatting and provider generation
+        env:
+          CAPTURE_ROOT: ${{ runner.temp }}/issue-1509
+        shell: bash
+        run: |
+          set -euo pipefail
+          formatted="$CAPTURE_ROOT/formatted"
+          generated="$CAPTURE_ROOT/generated"
+          mkdir -p "$formatted" "$generated"
+          dart format --line-length 80 \
+            apps/auravibes_app/lib/features/chats/widgets/chat_queued_messages_indicator.dart \
+            apps/auravibes_app/test/features/chats/widgets/chat_queued_messages_indicator_test.dart \
+            apps/auravibes_app/test/widgets/ux_validation_layout_test.dart
+          cp apps/auravibes_app/lib/features/chats/widgets/chat_queued_messages_indicator.dart \
+            "$formatted/chat_queued_messages_indicator.dart"
+          cp apps/auravibes_app/test/features/chats/widgets/chat_queued_messages_indicator_test.dart \
+            "$formatted/chat_queued_messages_indicator_test.dart"
+          cp apps/auravibes_app/test/widgets/ux_validation_layout_test.dart \
+            "$formatted/ux_validation_layout_test.dart"
+          melos run generate --no-select
+          cp apps/auravibes_app/lib/features/chats/notifiers/conversation_queued_draft.g.dart \
+            "$generated/conversation_queued_draft.g.dart"
+
       - name: Capture the exact base and PR renders
         shell: bash
         env:
@@ -1472,10 +1495,10 @@ jobs:
           capture_test="$RUNNER_TEMP/ux_validation_layout_test.dart"
           git show "$HEAD_SHA:$test_file" > "$capture_test"
 
-          git checkout --detach "$BASE_SHA"
+          git checkout --force --detach "$BASE_SHA"
           cp "$capture_test" "$test_file"
           cd apps/auravibes_app
-          fvm flutter test test/widgets/ux_validation_layout_test.dart \
+          flutter test test/widgets/ux_validation_layout_test.dart \
             --no-pub \
             --plain-name='production direct route ConversationRoute queued prompts reorder' \
             --dart-define="UX_CAPTURE_DIR=$CAPTURE_ROOT/before" \
@@ -1485,7 +1508,7 @@ jobs:
           git checkout --force --detach "$HEAD_SHA"
           cp "$capture_test" "$test_file"
           cd apps/auravibes_app
-          fvm flutter test test/widgets/ux_validation_layout_test.dart \
+          flutter test test/widgets/ux_validation_layout_test.dart \
             --no-pub \
             --plain-name='production direct route ConversationRoute queued prompts reorder' \
             --dart-define="UX_CAPTURE_DIR=$CAPTURE_ROOT/after" \
