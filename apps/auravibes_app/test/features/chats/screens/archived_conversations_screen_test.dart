@@ -133,9 +133,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Archivadas en este dispositivo'), findsOneWidget);
-    final context = tester.element(
-      find.byType(ArchivedConversationsScreen),
-    );
+    final context = tester.element(find.byType(ArchivedConversationsScreen));
     expect(
       find.text(
         LocaleKeys.chats_screens_archived_conversations_cloud_notice.tr(

@@ -625,32 +625,48 @@ class const _ChatListActiveEmptyState({required final String workspaceId})
 class const _ChatListArchivedEmptyState() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: .new(
-          minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
-        ),
-        child: const Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: .min,
-              children: [
-                AuraIcon(Icons.archive_outlined, size: .extraLarge),
-                SizedBox(height: 16),
-                AuraText(
-                  child: TextLocale(
-                    LocaleKeys.chats_screens_archived_conversations_empty,
-                  ),
-                  style: .heading3,
-                  textAlign: .center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    builder: (_, constraints) => _ChatListArchivedEmptyStateScrollView(
+      minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
     ),
+  );
+}
+
+class const _ChatListArchivedEmptyStateScrollView({required final double minHeight})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    child: ConstrainedBox(
+      constraints: .new(minHeight: minHeight),
+      child: const _ChatListArchivedEmptyStateCenter(),
+    ),
+  );
+}
+
+class const _ChatListArchivedEmptyStateCenter() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: _ChatListArchivedEmptyStateMessage(),
+    ),
+  );
+}
+
+class const _ChatListArchivedEmptyStateMessage() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Column(
+    mainAxisSize: .min,
+    children: [
+      AuraIcon(Icons.archive_outlined, size: .extraLarge),
+      SizedBox(height: 16),
+      AuraText(
+        child: TextLocale(
+          LocaleKeys.chats_screens_archived_conversations_empty,
+        ),
+        style: .heading3,
+        textAlign: .center,
+      ),
+    ],
   );
 }
 
