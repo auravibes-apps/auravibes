@@ -85,16 +85,10 @@ void main() {
         findsOneWidget,
       );
     } else if (captureStage == 'after') {
-      expect(
-        find.text(sizeLimitFailure.localizationKey.tr()),
-        findsOneWidget,
-      );
+      expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     } else {
       expect(find.byType(WorkspaceItemFailure), findsOneWidget);
-      expect(
-        find.text(sizeLimitFailure.localizationKey.tr()),
-        findsOneWidget,
-      );
+      expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     }
     expect(file.bytesRead, isFalse);
     expect(tester.takeException(), isNull);
