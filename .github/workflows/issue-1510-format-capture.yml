@@ -1,0 +1,39 @@
+name: Issue 1510 formatter capture
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - apps/auravibes_app/test/features/chats/widgets/chat_messages_widget_test.dart
+      - .github/workflows/issue-1510-format-capture.yml
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    if: ${{ github.event.pull_request.head.ref == 'codex/issue-1510-transcript-anchor' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Capture formatted chat test
+        shell: bash
+        run: |
+          output="$RUNNER_TEMP/issue-1510-format"
+          mkdir -p "$output"
+          dart format --line-length 80 --output=show \
+            apps/auravibes_app/test/features/chats/widgets/chat_messages_widget_test.dart \
+            > "$output/chat_messages_widget_test.dart"
+          test -s "$output/chat_messages_widget_test.dart"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1510-formatted-chat-test
+          path: ${{ runner.temp }}/issue-1510-format/chat_messages_widget_test.dart
+          if-no-files-found: error
+          retention-days: 1
