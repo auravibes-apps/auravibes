@@ -106,6 +106,7 @@ class const AnthropicRequestEncoder({
 
   Map<String, Object?>? _messageMetadata(Message message) {
     final metadata = message.metadata;
+
     return metadata == null ? null : Map<String, Object?>.of(metadata);
   }
 

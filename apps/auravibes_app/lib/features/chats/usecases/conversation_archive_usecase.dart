@@ -19,7 +19,6 @@ import 'package:auravibes_app/features/chats/services/local_chat_attachment_serv
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentContextMessage,
-        AgentContextProvenance,
         AgentTranscriptContextUpdate,
         foldAgentTranscriptContext;
 import 'package:uuid/v7.dart';
