@@ -34,9 +34,6 @@ abstract final class McpDiscoveryPolicy {
       for (final entry in raw.entries) entry.key as String: entry.value,
     };
     final rawTitle = raw['title'];
-    if (rawTitle is String && rawTitle.length > maxToolBytes) {
-      throw const FormatException('MCP tool metadata is too large.');
-    }
     final title = displayTitle(rawTitle);
     if (title == null) {
       tool.remove('title');
@@ -68,19 +65,28 @@ abstract final class McpDiscoveryPolicy {
     }
     boundedSchema(raw['inputSchema'] ?? const <String, Object?>{});
     if (raw['outputSchema'] != null) boundedSchema(raw['outputSchema']);
-    final toolWithoutDisplayMetadata = Map<String, Object?>.from(tool)
-      ..remove('title')
-      ..remove('annotations');
-    final displayMetadataBytes =
-        (rawTitle is String ? utf8.encode(jsonEncode(rawTitle)).length : 0) +
-        (annotations == null ? 0 : utf8.encode(jsonEncode(annotations)).length);
-    if (utf8.encode(jsonEncode(toolWithoutDisplayMetadata)).length +
-            displayMetadataBytes >
-        maxToolBytes) {
+    final byteLimitedTool = Map<String, Object?>.from(tool);
+    if (raw.containsKey('title')) byteLimitedTool['title'] = rawTitle;
+    if (raw.containsKey('annotations')) {
+      byteLimitedTool['annotations'] = raw['annotations'];
+    }
+    final encodedRawSize = _jsonByteLengthOrNull(byteLimitedTool);
+    final toolSize = encodedRawSize ?? utf8.encode(jsonEncode(tool)).length;
+    if (toolSize > maxToolBytes) {
       throw const FormatException('MCP tool metadata is too large.');
     }
 
     return tool;
+  }
+
+  static int? _jsonByteLengthOrNull(Object? value) {
+    try {
+      return utf8.encode(jsonEncode(value)).length;
+    } on Object {
+      // Invalid in-memory values are discarded as malformed display metadata.
+      // JSON received over MCP is always encodable and remains byte-bounded.
+      return null;
+    }
   }
 
   /// Returns a bounded, safe-to-display server title, or null when invalid.

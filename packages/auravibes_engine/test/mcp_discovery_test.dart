@@ -136,6 +136,22 @@ void main() {
     );
   });
 
+  test('enforces the tool byte limit before dropping unknown annotations', () {
+    expect(
+      () => parse({
+        'tools': [
+          {
+            'name': 'search_records',
+            'annotations': {
+              'unknownHint': 'x' * McpDiscoveryPolicy.maxToolBytes,
+            },
+          },
+        ],
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('validates tool count before materializing tools', () {
     var validatedSchemas = 0;
 

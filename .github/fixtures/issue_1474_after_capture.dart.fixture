@@ -13,13 +13,16 @@ import 'package:auravibes_app/features/tools/models/mcp_tool_display_metadata.da
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
-import '../helpers/test_app.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _workspaceId = 'workspace-1';
@@ -183,20 +186,45 @@ Future<void> _pumpCapture(
 }) async {
   final _ = await tester.runAsync(
     () => tester.pumpWidget(
-      TestableApp(
-        workspaceId: _workspaceId,
-        overrides: overrides,
-        child: RepaintBoundary(
-          key: ValueKey('issue1474-$name'),
-          child: SizedBox(
-            width: 560,
-            height: height,
-            child: ColoredBox(
-              color: const Color(0xFFFFFFFF),
-              child: Material(child: Center(child: child)),
+      EasyLocalization(
+        child: ProviderScope(
+          overrides: overrides.cast(),
+          child: Builder(
+            builder: (context) => MaterialApp(
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(fontFamily: 'Inter'),
+                  child: Material(
+                    child: RepaintBoundary(
+                      key: ValueKey('issue1474-$name'),
+                      child: SizedBox(
+                        width: 560,
+                        height: height,
+                        child: ColoredBox(
+                          color: const Color(0xFFFFFFFF),
+                          child: Center(child: child),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              locale: context.locale,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
+              supportedLocales: context.supportedLocales,
             ),
           ),
         ),
+        supportedLocales: const [Locale('en'), Locale('es')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     ),
   );
