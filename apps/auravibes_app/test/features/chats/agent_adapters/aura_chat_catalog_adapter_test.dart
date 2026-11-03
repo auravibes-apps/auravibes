@@ -852,7 +852,6 @@ void main() {
               messageId: 'literal-slider',
               payloads: payloads,
             ),
-            ),
           ),
         ),
       ),
