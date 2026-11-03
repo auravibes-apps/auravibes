@@ -128,22 +128,30 @@ void main() {
   testWidgets('captures chat composer desktop file drop states', (
     tester,
   ) async {
+    final previousDebugPrint = debugPrint;
+    final previousDebugDefaultTargetPlatformOverride =
+        debugDefaultTargetPlatformOverride;
+    final previousDebugDoublePrecision = debugDoublePrecision;
+    final previousDebugBrightnessOverride = debugBrightnessOverride;
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockStreamHandler(
-          const .new('flutter_file_drop/events'),
-          .inline(
-            onListen: (_, _) {},
-            onCancel: (_) {},
-          ),
-        );
 
     const size = Size(1280, 800);
-    final fixture = await UxValidationFixture.create();
-    final route = NewChatRoute(workspaceId: fixture.workspaceId).location;
+    UxValidationFixture? fixture;
     try {
-      final _ = await fixture.pump(tester, route, size: size);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockStreamHandler(
+            const .new('flutter_file_drop/events'),
+            .inline(
+              onListen: (_, _) {},
+              onCancel: (_) {},
+            ),
+          );
+      final currentFixture = await UxValidationFixture.create();
+      fixture = currentFixture;
+      final route = NewChatRoute(
+        workspaceId: currentFixture.workspaceId,
+      ).location;
+      final _ = await currentFixture.pump(tester, route, size: size);
 
       expect(find.byType(ChatInputWidget), findsOneWidget);
       expect(find.byType(DropTarget), findsOneWidget);
@@ -191,7 +199,17 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     } finally {
-      await fixture.close(tester);
+      try {
+        if (fixture case final currentFixture?) {
+          await currentFixture.close(tester);
+        }
+      } finally {
+        debugPrint = previousDebugPrint;
+        debugDefaultTargetPlatformOverride =
+            previousDebugDefaultTargetPlatformOverride;
+        debugDoublePrecision = previousDebugDoublePrecision;
+        debugBrightnessOverride = previousDebugBrightnessOverride;
+      }
     }
   });
 
