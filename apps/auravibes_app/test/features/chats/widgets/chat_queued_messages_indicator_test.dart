@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -36,7 +37,12 @@ void main() {
     void Function(ProviderContainer)? onContainer,
   }) {
     final container = ProviderContainer(
-      overrides: [conversationSelectedProvider.overrideWithValue('conv-1')],
+      overrides: [
+        conversationSelectedProvider.overrideWithValue('conv-1'),
+        localChatAttachmentUsecaseProvider.overrideWithValue(
+          _NoopLocalChatAttachmentUsecase(),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     onContainer?.call(container);
@@ -52,24 +58,26 @@ void main() {
                 child: Theme(
                   data: .new(),
                   child: Material(
-                    child: Consumer(
-                      builder: (context, ref, _) {
-                        final visibleDrafts = watchQueue
-                            ? ref.watch(
-                                conversationSendQueueProvider.select(
-                                  (queues) =>
-                                      queues['conv-1'] ??
-                                      const <ConversationQueuedDraft>[],
-                                ),
-                              )
-                            : queuedDrafts;
+                    child: Portal(
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final visibleDrafts = watchQueue
+                              ? ref.watch(
+                                  conversationSendQueueProvider.select(
+                                    (queues) =>
+                                        queues['conv-1'] ??
+                                        const <ConversationQueuedDraft>[],
+                                  ),
+                                )
+                              : queuedDrafts;
 
-                        return ChatQueuedMessagesIndicator(
-                          conversationId: 'conv-1',
-                          queuedDrafts: visibleDrafts,
-                          onEditDraft: onEditDraft,
-                        );
-                      },
+                          return ChatQueuedMessagesIndicator(
+                            conversationId: 'conv-1',
+                            queuedDrafts: visibleDrafts,
+                            onEditDraft: onEditDraft,
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -326,4 +334,12 @@ void main() {
     expect(queueWasPresentWhenLoaded, isTrue);
     expect(queueState, isEmpty);
   });
+}
+
+class _NoopLocalChatAttachmentUsecase implements LocalChatAttachmentUsecase {
+  @override
+  Future<void> deleteAttachment(String localPath) async {}
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
