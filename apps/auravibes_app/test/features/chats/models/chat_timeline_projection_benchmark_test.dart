@@ -37,9 +37,13 @@ void _measureProjection(int messageCount, _TimelineBenchmarkScenario scenario) {
   final updateSnapshots = scenario == .streamingTail
       ? _buildStreamingTailSnapshots(stableMessages)
       : [stableMessages];
+  final firstSnapshot = updateSnapshots.firstOrNull;
+  if (firstSnapshot == null) {
+    throw StateError('Timeline benchmark requires at least one snapshot.');
+  }
 
   final firstProjectionTimer = Stopwatch()..start();
-  final firstProjection = _project(updateSnapshots.firstOrNull!);
+  final firstProjection = _project(firstSnapshot);
   firstProjectionTimer.stop();
   final firstProjectionUs = firstProjectionTimer.elapsedMicroseconds;
 
@@ -123,7 +127,7 @@ ResolvedChatMessage _resolvedMessage(int index) {
   final hasA2ui = !isCompaction && !isToolActivity && index % 17 == 0;
   final isUser = !isCompaction && !isToolActivity && !hasA2ui && index % 4 == 0;
   final hasAttachment = !isCompaction && index % 29 == 0;
-  final createdAt = DateTime.utc(2026, 1).add(.new(seconds: index));
+  final createdAt = DateTime.utc(2026).add(.new(seconds: index));
   final id = 'message-$index';
   final toolCalls = isToolActivity
       ? [
