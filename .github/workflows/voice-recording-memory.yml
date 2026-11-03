@@ -63,6 +63,8 @@ jobs:
           probe=apps/auravibes_app/test/performance/voice_recording_memory_test.dart
           if ! dart format --line-length 80 --set-exit-if-changed "$probe"; then
             git diff --binary > "$EVIDENCE/hosted-format.patch"
+            cat "$EVIDENCE/hosted-format.patch"
+            dart analyze "$probe" --fatal-infos --fatal-warnings
             exit 1
           fi
           dart analyze "$probe" --fatal-infos --fatal-warnings
