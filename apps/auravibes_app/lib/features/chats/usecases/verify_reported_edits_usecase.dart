@@ -331,7 +331,11 @@ Future<Object> _runSelectionOrExplainFailure(
   _EligibleVerification eligible,
   _VerificationSelection selection,
 ) async => switch (_resolveVerificationSelection(eligible, selection)) {
-  _RejectedVerificationSelection(:final response) => response,
+  _RejectedVerificationSelection(:final outcome, :final reason) => _feedback(
+    eligible.request.result,
+    outcome,
+    reason,
+  ),
   _ReadyVerificationSelection(:final request) => await _runSelectedVerification(
     request,
   ),
@@ -342,9 +346,10 @@ sealed class _VerificationSelectionResolution {
 }
 
 class _RejectedVerificationSelection extends _VerificationSelectionResolution {
-  const new(this.response);
+  const new({required this.outcome, required this.reason});
 
-  final Object response;
+  final ScopedVerificationOutcome outcome;
+  final String reason;
 }
 
 class _ReadyVerificationSelection extends _VerificationSelectionResolution {
@@ -359,13 +364,15 @@ _VerificationSelectionResolution _resolveVerificationSelection(
 ) {
   if (selection.result case final ScopedVerificationResult result) {
     return _RejectedVerificationSelection(
-      _feedback(eligible.request.result, result.outcome, result.reason),
+      outcome: result.outcome,
+      reason: result.reason,
     );
   }
   final selections = selection.selections;
   if (selections == null || eligible.context.identity.turnId == null) {
     return _RejectedVerificationSelection(
-      _feedback(eligible.request.result, .incomplete, 'invalid_turn'),
+      outcome: .incomplete,
+      reason: 'invalid_turn',
     );
   }
   final request = eligible.request;
