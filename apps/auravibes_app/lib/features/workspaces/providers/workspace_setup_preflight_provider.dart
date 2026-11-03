@@ -164,13 +164,13 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel({
     return const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
   }
 
-  return _capture(() async {
+  return await _capture(() async {
     final selections = await ref.watch(
       modelSelectionStoreProvider(workspaceId).future,
     );
     final model = await selections.getById(selectedModelId);
 
-    return _modelSnapshot(ref, model, workspaceId);
+    return await _modelSnapshot(ref, model, workspaceId);
   });
 }
 
