@@ -7,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show ValueKey;
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/ux_validation_fixture.dart';
 
@@ -18,6 +19,7 @@ const _viewport = Size(1440, 1000);
 
 void main() {
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
   tearDownAll(UxValidationFixture.closeDatabase);
