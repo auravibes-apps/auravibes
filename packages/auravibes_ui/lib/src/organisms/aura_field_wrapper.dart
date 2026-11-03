@@ -181,18 +181,26 @@ class _AuraFieldWrapperInputData extends StatelessWidget {
     required AuraFieldWrapper field,
     required AuraColorScheme colors,
   }) : this(
-         child: AnimatedContainer(
-           decoration: _fieldInputDecoration(
-             _fieldBorderColor(field, colors),
-             _fieldBorderRadius(context),
+         child: CustomPaint(
+           foregroundPainter: _FieldStatusFocusPainter(
+             visible:
+                 field.isEnabled && field.isFocused && field.state != .normal,
+             color: colors.primary,
+             radius: _fieldBorderRadius(context).topLeft.x,
            ),
-           foregroundDecoration: _fieldEmphasisDecoration(
-             field,
-             colors,
-             _fieldBorderRadius(context),
+           child: AnimatedContainer(
+             decoration: _fieldInputDecoration(
+               _fieldBorderColor(field, colors),
+               _fieldBorderRadius(context),
+             ),
+             foregroundDecoration: _fieldEmphasisDecoration(
+               field,
+               colors,
+               _fieldBorderRadius(context),
+             ),
+             child: field.child,
+             duration: DesignDuration.normal,
            ),
-           child: field.child,
-           duration: DesignDuration.normal,
          ),
          color: colors.primary,
          decoration: _fieldSurfaceDecoration(
@@ -249,8 +257,7 @@ BoxDecoration _fieldEmphasisDecoration(
   AuraColorScheme colors,
   BorderRadius borderRadius,
 ) {
-  if (!field.isEnabled ||
-      (!field.isFocused && field.state != AuraFieldState.error)) {
+  if (!_fieldHasEmphasis(field)) {
     // Keep the decoration mounted so focus changes preserve the input state.
     return const BoxDecoration();
   }
@@ -263,6 +270,40 @@ BoxDecoration _fieldEmphasisDecoration(
     borderRadius: borderRadius,
   );
 }
+
+bool _fieldHasEmphasis(AuraFieldWrapper field) =>
+    field.isEnabled &&
+    (field.state == .error || (field.isFocused && field.state == .normal));
+
+class const _FieldStatusFocusPainter({
+  required final bool visible,
+  required final Color color,
+  required final double radius,
+}) extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!visible) return;
+    final rect = (Offset.zero & size).deflate(DesignBorderWidth.thick);
+    if (rect.isEmpty) return;
+    canvas.drawRRect(_fieldFocusShape(rect, radius), _fieldFocusPaint(color));
+  }
+
+  @override
+  bool shouldRepaint(_FieldStatusFocusPainter oldDelegate) =>
+      visible != oldDelegate.visible ||
+      color != oldDelegate.color ||
+      radius != oldDelegate.radius;
+}
+
+RRect _fieldFocusShape(Rect rect, double radius) => .fromRectAndRadius(
+  rect,
+  .circular((radius - DesignBorderWidth.thick).clamp(0, double.infinity)),
+);
+
+Paint _fieldFocusPaint(Color color) => Paint()
+  ..color = color
+  ..style = .stroke
+  ..strokeWidth = DesignBorderWidth.medium;
 
 BorderRadius _fieldBorderRadius(BuildContext context) => BorderRadius.all(
   .circular(AuraCornerRadiusScope.resolve(context, fallback: .xl)),

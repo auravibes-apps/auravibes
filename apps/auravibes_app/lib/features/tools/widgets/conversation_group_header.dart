@@ -101,9 +101,7 @@ class const _ConversationGroupTitle({
   Widget build(BuildContext context) => Expanded(
     child: AuraText(
       child: Text(
-        (groupWithTools.localizedDisplayNameKey?.tr()).orPlaceholder(
-          (groupWithTools.group?.name).orPlaceholder(),
-        ),
+        _conversationGroupName(groupWithTools),
         overflow: .ellipsis,
         maxLines: 2,
       ),
@@ -196,9 +194,18 @@ class const _ToggleAllTools({
       value: groupWithTools.areAllToolsEnabled,
       onChanged: onToggleAllTools,
       size: .sm,
+      semanticLabel: LocaleKeys.common_enable_all_tools_named.tr(
+        context: context,
+        args: [_conversationGroupName(groupWithTools)],
+      ),
     );
   }
 }
+
+String _conversationGroupName(ConversationToolsGroupWithTools groupWithTools) =>
+    (groupWithTools.localizedDisplayNameKey?.tr()).orPlaceholder(
+      (groupWithTools.group?.name).orPlaceholder(),
+    );
 
 /// Icon widget for the group.
 class const _GroupIcon({

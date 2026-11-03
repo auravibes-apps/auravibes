@@ -118,7 +118,7 @@ class AuraRadio<T> extends StatefulWidget {
     super.key,
     this.tint,
     this.disabled = false,
-    this.semanticLabel = 'Radio button',
+    this.semanticLabel,
   });
 
   /// The value represented by this radio button.

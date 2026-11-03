@@ -973,7 +973,14 @@ class const _SkillEnabledField({
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      AuraSwitch(value: value, onChanged: onChanged, disabled: disabled),
+      AuraSwitch(
+        value: value,
+        onChanged: onChanged,
+        disabled: disabled,
+        semanticLabel: LocaleKeys.skills_screen_enabled_label.tr(
+          context: context,
+        ),
+      ),
       const Expanded(
         child: AuraText(
           child: TextLocale(LocaleKeys.skills_screen_enabled_label),

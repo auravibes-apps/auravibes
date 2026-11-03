@@ -107,9 +107,9 @@ void main() {
 
   group('DesignInputSizes', () {
     test('has expected input size values', () {
-      expect(DesignInputSizes.heightSm, 32);
-      expect(DesignInputSizes.heightMd, 40);
-      expect(DesignInputSizes.heightLg, 48);
+      expect(DesignInputSizes.heightSm, 48);
+      expect(DesignInputSizes.heightMd, 56);
+      expect(DesignInputSizes.heightLg, 64);
     });
   });
 

@@ -25,7 +25,7 @@ class AuraTypingIndicator extends StatefulWidget {
     this.showContainer = true,
     this.animationDuration = const Duration(milliseconds: 600),
     this.manageAlignment = true,
-    this.semanticLabel = 'AI is typing',
+    this.semanticLabel,
   });
 
   /// The size of the typing indicator.
@@ -77,6 +77,22 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
   void dispose() {
     _animationController?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = _animationController;
+    if (controller == null) return;
+    final media = MediaQuery.maybeOf(context);
+    if (media?.disableAnimations == true ||
+        media?.accessibleNavigation == true) {
+      controller
+        ..stop()
+        ..value = 0.5;
+    } else if (!controller.isAnimating) {
+      final _ = controller.repeat();
+    }
   }
 
   @override

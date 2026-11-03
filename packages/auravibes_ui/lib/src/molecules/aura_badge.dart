@@ -59,7 +59,7 @@ class AuraBadge extends StatelessWidget {
          key: key,
          variant: variant,
          size: size,
-         semanticLabel: semanticLabel ?? '$count notifications',
+         semanticLabel: semanticLabel,
          child: _AuraBadgeText(
            child: Text(count > maxCount ? '$maxCount+' : count.toString()),
            style: size == AuraBadgeSize.small
@@ -78,7 +78,7 @@ class AuraBadge extends StatelessWidget {
          key: key,
          variant: variant,
          size: AuraBadgeSize.small,
-         semanticLabel: semanticLabel ?? 'notification indicator',
+         semanticLabel: semanticLabel,
        );
 
   /// The widget to display inside the badge.
@@ -142,8 +142,9 @@ class const _AuraBadgeSemantics({
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      label == null ? child : Semantics(child: child, label: label);
+  Widget build(BuildContext context) => label == null
+      ? child
+      : Semantics(child: child, excludeSemantics: true, label: label);
 }
 
 class _AuraBadgeSurface extends StatelessWidget {

@@ -168,8 +168,22 @@ void main() {
         expect(outline('focused')?.width, 2);
         expect(outline('error')?.color, theme.colors.error);
         expect(outline('error')?.width, 2);
-        expect(outline('success-focused')?.color, theme.colors.primary);
-        expect(outline('warning-focused')?.color, theme.colors.primary);
+        expect(outline('success-focused'), isNull);
+        expect(outline('warning-focused'), isNull);
+        expect(
+          (field('success-focused').decoration as BoxDecoration?)
+              ?.border
+              ?.top
+              .color,
+          theme.colors.success,
+        );
+        expect(
+          (field('warning-focused').decoration as BoxDecoration?)
+              ?.border
+              ?.top
+              .color,
+          theme.colors.warning,
+        );
         expect(outline('readonly')?.color, theme.colors.primary);
         expect(
           ColorContrast.wcagContrastRatio(

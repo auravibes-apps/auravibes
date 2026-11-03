@@ -708,11 +708,14 @@ class const _CompactionAutoCompactionRow({
   required final _CompactionSettingsSectionState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => AuraRow(
+  Widget build(BuildContext context) => AuraRow(
     children: [
       const Expanded(child: _compactionAutoCompactionDescription),
       AuraSwitch(
         value: state._autoEnabled,
+        semanticLabel: LocaleKeys.compaction_settings_auto_enabled.tr(
+          context: context,
+        ),
         onChanged: (value) =>
             state._updateState(() => state._autoEnabled = value),
       ),

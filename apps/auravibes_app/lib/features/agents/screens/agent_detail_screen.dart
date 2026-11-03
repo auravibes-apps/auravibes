@@ -1352,7 +1352,11 @@ class const _AgentEnabledRow({
     return Row(
       children: [
         const Expanded(child: _AgentEnabledDescription()),
-        AuraSwitch(value: value, onChanged: onChanged),
+        AuraSwitch(
+          value: value,
+          onChanged: onChanged,
+          semanticLabel: LocaleKeys.agents_enabled_label.tr(context: context),
+        ),
       ],
     );
   }
