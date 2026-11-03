@@ -342,9 +342,9 @@ class _ConversationLabelManagementDialogState
       if (mounted) {
         _showLabelError(
           context,
-          messageKey: error is ConversationLabelAlreadyExistsException
-              ? LocaleKeys.chats_screens_conversation_labels_duplicate_name
-              : LocaleKeys.chats_screens_conversation_labels_save_error,
+          message: error is ConversationLabelAlreadyExistsException
+              ? LocaleKeys.chats_screens_conversation_labels_duplicate_name.tr()
+              : LocaleKeys.chats_screens_conversation_labels_save_error.tr(),
         );
       }
       return false;
@@ -619,7 +619,12 @@ class _ConversationLabelAssignmentDialogState
       );
       if (mounted) Navigator.of(context).pop(_selected);
     } catch (_) {
-      if (mounted) _showLabelError(context);
+      if (mounted) {
+        _showLabelError(
+          context,
+          message: LocaleKeys.chats_screens_conversation_labels_save_error.tr(),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -628,10 +633,10 @@ class _ConversationLabelAssignmentDialogState
 
 void _showLabelError(
   BuildContext context, {
-  String messageKey = LocaleKeys.chats_screens_conversation_labels_save_error,
+  required String message,
 }) {
   final messenger = ScaffoldMessenger.maybeOf(context);
-  messenger?.showSnackBar(SnackBar(content: Text(messageKey.tr())));
+  messenger?.showSnackBar(SnackBar(content: Text(message)));
 }
 
 Widget conversationLabelBadges(List<ConversationLabelEntity> labels) =>
