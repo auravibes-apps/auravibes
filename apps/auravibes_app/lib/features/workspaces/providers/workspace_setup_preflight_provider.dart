@@ -190,10 +190,12 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModel(
   String? selectedModelId,
   _WorkspaceScope scope,
 ) async {
-  if (selectedModelId == null) return _available(null);
+  if (selectedModelId == null) {
+    return _available<WorkspaceSetupModelSnapshot?>(null);
+  }
   if (!scope.sourceAllowed) return _unavailable();
 
-  return await _capture(() async {
+  return await _capture<WorkspaceSetupModelSnapshot?>(() async {
     final selections = await ref.watch(
       modelSelectionStoreProvider(scope.workspaceId).future,
     );
