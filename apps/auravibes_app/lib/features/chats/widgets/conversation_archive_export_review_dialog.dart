@@ -105,9 +105,8 @@ class const _ConversationArchiveExportContinueAction({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FilledButton(
-    onPressed: () => Navigator.of(context).pop((
-      includeAttachments: includeAttachments,
-    )),
+    onPressed: () =>
+        Navigator.of(context).pop((includeAttachments: includeAttachments)),
     child: const TextLocale(_reviewContinueKey),
   );
 }
@@ -135,13 +134,11 @@ class const _ConversationArchiveExportReviewContent({
             children: [
               const TextLocale(_reviewDescriptionKey),
               SizedBox(height: theme.fromSpacing(.md)),
-              TextLocale(
-                switch (preview.attachmentCount) {
-                  0 => _reviewIncludedNoAttachmentsKey,
-                  _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
-                  _ => _reviewIncludedWithoutAttachmentsKey,
-                },
-              ),
+              TextLocale(switch (preview.attachmentCount) {
+                0 => _reviewIncludedNoAttachmentsKey,
+                _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
+                _ => _reviewIncludedWithoutAttachmentsKey,
+              }),
               if (preview.attachmentCount > 0) ...[
                 SizedBox(height: theme.fromSpacing(.sm)),
                 CheckboxListTile(
@@ -191,13 +188,11 @@ class const _ConversationArchiveExportReviewContent({
                   ),
                 ),
               SizedBox(height: theme.fromSpacing(.md)),
-              TextLocale(
-                switch (preview.attachmentCount) {
-                  0 => _reviewPrivacyNoAttachmentsKey,
-                  _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
-                  _ => _reviewPrivacyWithoutAttachmentsKey,
-                },
-              ),
+              TextLocale(switch (preview.attachmentCount) {
+                0 => _reviewPrivacyNoAttachmentsKey,
+                _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
+                _ => _reviewPrivacyWithoutAttachmentsKey,
+              }),
               SizedBox(height: theme.fromSpacing(.md)),
               TextLocale(_reviewDestinationKey, args: [fileName]),
             ],
@@ -244,9 +239,8 @@ class const _ConversationArchiveExportAttachmentRow({
                   TextLocale(
                     _reviewAttachmentSizeKey,
                     args: [
-                      MaterialLocalizations.of(
-                        context,
-                      ).formatDecimal(attachment.sizeBytes),
+                      MaterialLocalizations.of(context)
+                          .formatDecimal(attachment.sizeBytes),
                     ],
                   ),
                 ],

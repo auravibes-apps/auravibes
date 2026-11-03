@@ -1245,9 +1245,11 @@ void main() {
       expect(find.text('Type: text/plain'), findsOneWidget);
       expect(find.text('Size: 4 bytes'), findsOneWidget);
       expect(
-        tester.widget<CheckboxListTile>(
-          find.byKey(const ValueKey('archive-export-include-attachments')),
-        ).value,
+        tester
+            .widget<CheckboxListTile>(
+              find.byKey(const ValueKey('archive-export-include-attachments')),
+            )
+            .value,
         isTrue,
       );
       expect(
@@ -1268,9 +1270,11 @@ void main() {
       );
       await tester.pump();
       expect(
-        tester.widget<CheckboxListTile>(
-          find.byKey(const ValueKey('archive-export-include-attachments')),
-        ).value,
+        tester
+            .widget<CheckboxListTile>(
+              find.byKey(const ValueKey('archive-export-include-attachments')),
+            )
+            .value,
         isFalse,
       );
       fileService.saveResult = false;
@@ -1286,9 +1290,11 @@ void main() {
       await tester.tap(find.text('Export selected'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<CheckboxListTile>(
-          find.byKey(const ValueKey('archive-export-include-attachments')),
-        ).value,
+        tester
+            .widget<CheckboxListTile>(
+              find.byKey(const ValueKey('archive-export-include-attachments')),
+            )
+            .value,
         isTrue,
       );
       await tester.tap(find.text('Continue to save'));
@@ -1841,10 +1847,7 @@ class _RecordingArchiveFileService extends ConversationArchiveFileService {
 }
 
 class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
-  new(
-    ConversationArchiveUsecase delegate, {
-    required this.preview,
-  })
+  new(ConversationArchiveUsecase delegate, {required this.preview})
     : _delegate = delegate,
       super(
         conversationRepository: delegate.conversationRepository,

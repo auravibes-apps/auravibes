@@ -131,16 +131,15 @@ void main() {
     );
     final fixture = await UxValidationFixture.create();
     final createdAt = DateTime.utc(2026, 11, 3);
-    final conversation = await ConversationRepository(
-      fixture.database,
-    ).createConversation(
-      .new(
-        workspaceId: fixture.workspaceId,
-        title: 'Export review sample',
-        createdAt: createdAt,
-        updatedAt: createdAt,
-      ),
-    );
+    final conversation = await ConversationRepository(fixture.database)
+        .createConversation(
+          .new(
+            workspaceId: fixture.workspaceId,
+            title: 'Export review sample',
+            createdAt: createdAt,
+            updatedAt: createdAt,
+          ),
+        );
     final message = await fixture.database.messageDao.insertMessage(
       MessagesCompanion.insert(
         conversationId: conversation.id,

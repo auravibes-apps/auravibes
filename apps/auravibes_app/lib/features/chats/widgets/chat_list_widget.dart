@@ -979,8 +979,7 @@ extension on _ChatListBulkActionsState {
           .previewConversations(
             workspaceId: widget.workspaceId,
             conversationIds: [
-              for (final conversation in selectedConversations)
-                conversation.id,
+              for (final conversation in selectedConversations) conversation.id,
             ],
           );
       if (!mounted) return;

@@ -131,9 +131,7 @@ class const ConversationArchiveUsecase({
     required String conversationId,
     String? modelLabel,
     bool includeAttachments = true,
-  }) => _ConversationArchiveExporter(
-    this,
-  ).exportConversation(
+  }) => _ConversationArchiveExporter(this).exportConversation(
     conversationId: conversationId,
     modelLabel: modelLabel,
     includeAttachments: includeAttachments,
@@ -151,9 +149,9 @@ class const ConversationArchiveUsecase({
 
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
-  }) => _ConversationArchiveExporter(
-    this,
-  ).previewConversation(conversationId: conversationId);
+  }) =>
+      _ConversationArchiveExporter(this)
+          .previewConversation(conversationId: conversationId);
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,
@@ -245,9 +243,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     _validateConversationIds(conversationIds);
     final conversations = <ConversationEntity>[];
     for (final id in conversationIds) {
-      final conversation = await conversationRepository.getConversationById(
-        id,
-      );
+      final conversation = await conversationRepository.getConversationById(id);
       if (conversation == null || conversation.workspaceId != workspaceId) {
         throw const MalformedConversationArchiveException();
       }

@@ -1239,7 +1239,8 @@ Future<ConversationArchiveMessage> _archiveMessage(
         )
       : const <ConversationArchiveAttachment>[];
   // Keep attachment-only message position valid in v2 without attachment data.
-  final content = !includeAttachments &&
+  final content =
+      !includeAttachments &&
           message.content.trim().isEmpty &&
           message.attachments.isNotEmpty
       ? '[Attachment omitted]'

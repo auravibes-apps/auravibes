@@ -302,19 +302,16 @@ void main() {
         ),
       ];
 
-      final encoded = await ConversationArchiveCodec.exportConversation(
-        (
-          conversation: conversation,
-          messages: messages,
-          modelLabel: null,
-          agentContext: null,
-          readAttachmentBytes: (path) async {
-            readCount++;
-            fail('Excluded attachments must not read bytes from $path.');
-          },
-        ),
-        includeAttachments: false,
-      );
+      final encoded = await ConversationArchiveCodec.exportConversation((
+        conversation: conversation,
+        messages: messages,
+        modelLabel: null,
+        agentContext: null,
+        readAttachmentBytes: (path) async {
+          readCount++;
+          fail('Excluded attachments must not read bytes from $path.');
+        },
+      ), includeAttachments: false);
       final root = jsonDecode(encoded) as Map<String, dynamic>;
       final archivedMessages = root['messages'] as List<dynamic>;
 
@@ -418,9 +415,7 @@ void main() {
         readAttachmentBytes: (String _) async {
           readCount++;
 
-          return Uint8List(
-            ConversationArchiveCodec.maxAttachmentBytes + 1,
-          );
+          return Uint8List(ConversationArchiveCodec.maxAttachmentBytes + 1);
         },
       );
 
