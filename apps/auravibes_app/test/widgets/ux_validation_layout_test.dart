@@ -187,6 +187,8 @@ void main() {
 
     expect(find.text('Review your conversation archive'), findsOneWidget);
     if (!baselineCapture) {
+      await tester.ensureVisible(find.text('Size: 2,048 bytes'));
+      await fixture.settle(tester);
       expect(find.text('research-notes.txt'), findsOneWidget);
       expect(find.text('Type: text/plain'), findsOneWidget);
       expect(find.text('Size: 2,048 bytes'), findsOneWidget);
