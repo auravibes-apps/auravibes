@@ -18,6 +18,11 @@ class FilteredCloudConversationPageReader(
   int _skipped = 0;
   String? _cursor;
 
+  bool get _stopAfterFirstPage =>
+      _scope == ConversationListScope.active &&
+      _pagination.limit == null &&
+      _pagination.offset == 0;
+
   static Future<List<ConversationSummary>> readAllPages(
     CloudWorkspaceStateGateway gateway,
     CloudWorkspaceRef cloud,
@@ -47,11 +52,6 @@ class FilteredCloudConversationPageReader(
       if (!await _readNextPage()) return _conversations;
     }
   }
-
-  bool get _stopAfterFirstPage =>
-      _scope == ConversationListScope.active &&
-      _pagination.limit == null &&
-      _pagination.offset == 0;
 
   Future<bool> _readNextPage() async {
     final page = await _readCloudConversationPageAtCursor(
