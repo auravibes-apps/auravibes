@@ -342,9 +342,8 @@ class const _ConversationArchiveExportAttachmentDetails({
       TextLocale(
         _reviewAttachmentSizeKey,
         args: [
-          MaterialLocalizations.of(context).formatDecimal(
-            attachment.sizeBytes,
-          ),
+          MaterialLocalizations.of(context)
+              .formatDecimal(attachment.sizeBytes),
         ],
       ),
     ],
