@@ -120,9 +120,10 @@ jobs:
           main_worktree="$RUNNER_TEMP/issue-1446-main"
           mkdir -p "$evidence_directory/before"
           git fetch --no-tags origin main:refs/remotes/origin/main
-          git worktree add --detach "$main_worktree" refs/remotes/origin/main
-          printf '%s\n' "$(git -C "$main_worktree" rev-parse HEAD)" > "$evidence_directory/baseline-sha.txt"
-          test "$(git -C "$main_worktree" rev-parse HEAD)" = "$(git rev-parse refs/remotes/origin/main)"
+          baseline_sha="$(git merge-base HEAD refs/remotes/origin/main)"
+          git worktree add --detach "$main_worktree" "$baseline_sha"
+          printf '%s\n' "$baseline_sha" > "$evidence_directory/baseline-sha.txt"
+          test "$(git -C "$main_worktree" rev-parse HEAD)" = "$baseline_sha"
           cmp .fvmrc "$main_worktree/.fvmrc"
           mkdir -p "$main_worktree/.fvm"
           ln -sfn "$FLUTTER_ROOT" "$main_worktree/.fvm/flutter_sdk"
@@ -221,7 +222,7 @@ jobs:
       - name: Remove temporary baseline worktree
         if: always()
         run: |
-          if git worktree list --porcelain | rg -F "$RUNNER_TEMP/issue-1446-main" >/dev/null; then
+          if git worktree list --porcelain | grep -F "$RUNNER_TEMP/issue-1446-main" >/dev/null; then
             git worktree remove --force "$RUNNER_TEMP/issue-1446-main"
           fi
 

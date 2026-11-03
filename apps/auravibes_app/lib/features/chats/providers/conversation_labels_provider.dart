@@ -44,7 +44,7 @@ Stream<List<ConversationLabelEntity>> conversationLabelsStream(
       .watchLabelsByWorkspace(workspaceId);
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 ConversationLabelActions conversationLabelActions(Ref ref) =>
     ConversationLabelActions(ref);
 

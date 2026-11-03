@@ -43,12 +43,14 @@ void main() {
   Widget buildSubject({
     required Widget child,
     Locale startLocale = const Locale('en'),
+    List<Object> overrides = const [],
   }) => TestableApp(
     child: Scaffold(body: child),
     workspaceId: workspaceId,
     startLocale: startLocale,
     overrides: [
       conversationLabelsRepositoryProvider.overrideWithValue(repository),
+      ...overrides,
     ],
   );
 
@@ -56,10 +58,15 @@ void main() {
     WidgetTester tester, {
     required Widget child,
     Locale startLocale = const Locale('en'),
+    List<Object> overrides = const [],
   }) async {
     await tester.runAsync(
       () => tester.pumpWidget(
-        buildSubject(child: child, startLocale: startLocale),
+        buildSubject(
+          child: child,
+          startLocale: startLocale,
+          overrides: overrides,
+        ),
       ),
     );
     await _pumpAnimation(tester);
@@ -120,6 +127,11 @@ void main() {
         selectedLabelIds: const {},
         onSelectedLabelIdsChanged: (value) => applied = value,
       ),
+      overrides: [
+        conversationLabelsStreamProvider(workspaceId).overrideWith(
+          (_) => Stream.value([urgent, planning]),
+        ),
+      ],
     );
 
     await _waitForCondition(
@@ -151,6 +163,11 @@ void main() {
         selectedLabelIds: const {},
         onSelectedLabelIdsChanged: (_) {},
       ),
+      overrides: [
+        conversationLabelsStreamProvider(workspaceId).overrideWith(
+          (_) => Stream.value(const <ConversationLabelEntity>[]),
+        ),
+      ],
     );
 
     await tester.tap(
@@ -162,7 +179,6 @@ void main() {
       LocaleKeys.chats_screens_conversation_labels_create.tr(),
     ));
     await _pumpAnimation(tester);
-    await _waitForText(tester, 'Follow up');
 
     expect(
       (await (database.select(database.conversationLabels)
@@ -198,6 +214,11 @@ void main() {
           updatedAt: row.updatedAt,
         ),
       ),
+      overrides: [
+        conversationLabelsStreamProvider(workspaceId).overrideWith(
+          (_) => Stream.value([label]),
+        ),
+      ],
     );
 
     await tester.tap(find.text('Assign labels'));

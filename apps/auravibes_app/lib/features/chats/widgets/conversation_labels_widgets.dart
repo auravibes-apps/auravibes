@@ -646,29 +646,39 @@ void _showLabelError(
   );
 }
 
-Widget conversationLabelBadges(List<ConversationLabelEntity> labels) {
-  if (labels.isEmpty) return const SizedBox.shrink();
-  final labelNames = labels.map((label) => label.name).join(', ');
-  return Semantics(
-    key: const ValueKey('conversation-labels-semantics'),
-    container: true,
-    label:
-        '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr()}: '
-        '$labelNames',
-    child: ExcludeSemantics(
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 4,
-        children: [
-          for (final label in labels)
-            AuraBadge.text(
-              key: ValueKey('conversation-label-${label.id}'),
-              child: Text(label.name),
-              variant: .neutral,
-              size: .small,
-            ),
-        ],
+Widget conversationLabelBadges(List<ConversationLabelEntity> labels) =>
+    _ConversationLabelBadges(labels: labels);
+
+class const _ConversationLabelBadges({
+  required final List<ConversationLabelEntity> labels,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (labels.isEmpty) return const SizedBox.shrink();
+    final labelNames = labels.map((label) => label.name).join(', ');
+    return Semantics(
+      key: const ValueKey('conversation-labels-semantics'),
+      container: true,
+      label:
+          '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr(
+            context: context,
+          )}: '
+          '$labelNames',
+      child: ExcludeSemantics(
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            for (final label in labels)
+              AuraBadge.text(
+                key: ValueKey('conversation-label-${label.id}'),
+                child: Text(label.name),
+                variant: .neutral,
+                size: .small,
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
