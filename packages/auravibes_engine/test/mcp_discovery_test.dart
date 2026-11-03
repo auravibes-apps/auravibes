@@ -142,6 +142,7 @@ void main() {
         'tools': [
           {
             'name': 'search_records',
+            'title': Object(),
             'annotations': {
               'unknownHint': 'x' * McpDiscoveryPolicy.maxToolBytes,
             },

@@ -66,13 +66,14 @@ abstract final class McpDiscoveryPolicy {
     boundedSchema(raw['inputSchema'] ?? const <String, Object?>{});
     if (raw['outputSchema'] != null) boundedSchema(raw['outputSchema']);
     final byteLimitedTool = Map<String, Object?>.from(tool);
-    if (raw.containsKey('title')) byteLimitedTool['title'] = rawTitle;
-    if (raw.containsKey('annotations')) {
+    if (raw.containsKey('title') && _jsonByteLengthOrNull(rawTitle) != null) {
+      byteLimitedTool['title'] = rawTitle;
+    }
+    if (raw.containsKey('annotations') &&
+        _jsonByteLengthOrNull(raw['annotations']) != null) {
       byteLimitedTool['annotations'] = raw['annotations'];
     }
-    final encodedRawSize = _jsonByteLengthOrNull(byteLimitedTool);
-    final toolSize = encodedRawSize ?? utf8.encode(jsonEncode(tool)).length;
-    if (toolSize > maxToolBytes) {
+    if (utf8.encode(jsonEncode(byteLimitedTool)).length > maxToolBytes) {
       throw const FormatException('MCP tool metadata is too large.');
     }
 
