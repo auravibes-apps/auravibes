@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 final class ConversationArchiveExportPreview({
-  required List<ConversationArchiveExportPreviewConversation> conversations,
-}) : conversations = List.unmodifiable(conversations) {
-  final List<ConversationArchiveExportPreviewConversation> conversations;
+  required List<ConversationArchiveExportPreviewConversation> sourceConversations,
+}) {
+  final List<ConversationArchiveExportPreviewConversation> conversations =
+      List.unmodifiable(sourceConversations);
 
   int get attachmentCount => conversations.fold(
     0,
@@ -14,20 +15,16 @@ final class ConversationArchiveExportPreview({
 
 @immutable
 final class ConversationArchiveExportPreviewConversation({
-  required this.title,
-  required List<ConversationArchiveExportPreviewAttachment> attachments,
-}) : attachments = List.unmodifiable(attachments) {
-  final String title;
-  final List<ConversationArchiveExportPreviewAttachment> attachments;
+  required final String title,
+  required List<ConversationArchiveExportPreviewAttachment> sourceAttachments,
+}) {
+  final List<ConversationArchiveExportPreviewAttachment> attachments =
+      List.unmodifiable(sourceAttachments);
 }
 
 @immutable
 final class const ConversationArchiveExportPreviewAttachment({
-  required this.fileName,
-  required this.mimeType,
-  required this.sizeBytes,
-) {
-  final String fileName;
-  final String mimeType;
-  final int sizeBytes;
-}
+  required final String fileName,
+  required final String mimeType,
+  required final int sizeBytes,
+});

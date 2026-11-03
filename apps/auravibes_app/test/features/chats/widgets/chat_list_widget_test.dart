@@ -95,10 +95,10 @@ void main() {
     ) async {
       ({bool includeAttachments})? decision;
       final preview = ConversationArchiveExportPreview(
-        conversations: [
+        sourceConversations: [
           ConversationArchiveExportPreviewConversation(
             title: 'Investigation',
-            attachments: const [
+            sourceAttachments: const [
               ConversationArchiveExportPreviewAttachment(
                 fileName: 'informe.pdf',
                 mimeType: 'application/pdf',
@@ -109,10 +109,10 @@ void main() {
         ],
       );
       final emptyPreview = ConversationArchiveExportPreview(
-        conversations: [
+        sourceConversations: [
           ConversationArchiveExportPreviewConversation(
             title: 'Notas',
-            attachments: const [],
+            sourceAttachments: const [],
           ),
         ],
       );
@@ -1177,10 +1177,10 @@ void main() {
           toolsGroupsRepository: .new(database),
         ),
         preview: ConversationArchiveExportPreview(
-          conversations: [
+          sourceConversations: [
             ConversationArchiveExportPreviewConversation(
               title: 'Chat One',
-              attachments: const [
+              sourceAttachments: const [
                 ConversationArchiveExportPreviewAttachment(
                   fileName: 'research-notes.txt',
                   mimeType: 'text/plain',
@@ -1190,7 +1190,7 @@ void main() {
             ),
             ConversationArchiveExportPreviewConversation(
               title: 'Chat Two',
-              attachments: const [],
+              sourceAttachments: const [],
             ),
           ],
         ),

@@ -263,7 +263,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       previews.add(
         ConversationArchiveExportPreviewConversation(
           title: conversation.title,
-          attachments: [
+          sourceAttachments: [
             for (final message in _archiveVisibleMessages(transcript))
               for (final attachment in message.attachments)
                 ConversationArchiveExportPreviewAttachment(
@@ -276,7 +276,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       );
     }
 
-    return ConversationArchiveExportPreview(conversations: previews);
+    return ConversationArchiveExportPreview(sourceConversations: previews);
   }
 
   Future<ConversationArchive> _createWorkspaceArchive(
