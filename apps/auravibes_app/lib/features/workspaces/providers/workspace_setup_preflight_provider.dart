@@ -42,7 +42,7 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
 ) async {
   final scope = await _readWorkspaceScope(ref, workspaceId);
 
-  return _buildPreflight(ref, workspaceId, scope);
+  return await _buildPreflight(ref, workspaceId, scope);
 }
 
 Future<WorkspaceSetupPreflight> _buildPreflight(
