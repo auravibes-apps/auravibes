@@ -885,28 +885,22 @@ void main() {
 
     await tester.pumpWidget(
       EasyLocalization(
-        supportedLocales: const [Locale('en'), Locale('es')],
+        supportedLocales: const [Locale('es')],
         path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
+        fallbackLocale: const Locale('es'),
         startLocale: const Locale('es'),
         useOnlyLangCode: true,
-        useFallbackTranslations: true,
         child: AuraThemeScope(
           theme: .light,
-          child: Builder(
-            builder: (context) => MaterialApp(
-              builder: _legacyMaterialBuilder,
-              theme: ThemeData(),
-              locale: context.locale,
-              localizationsDelegates: [
-                ...GlobalMaterialLocalizations.delegates,
-                ...context.localizationDelegates,
-              ],
-              supportedLocales: context.supportedLocales,
-              home: ChatA2uiSurfaceHost.historical(
-                messageId: 'localized-status',
-                payloads: payloads,
-              ),
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            locale: const Locale('es'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('es')],
+            home: ChatA2uiSurfaceHost.historical(
+              messageId: 'localized-status',
+              payloads: payloads,
             ),
           ),
         ),
