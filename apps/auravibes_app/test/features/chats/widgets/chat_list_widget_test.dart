@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
@@ -1953,20 +1954,21 @@ class _StubConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    bool archivedOnly = false,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = defaultConversationListQueryOptions,
   }) {
-    queries.add((search: search, limit: limit, offset: offset));
+    queries.add((
+      search: options.search,
+      limit: options.limit,
+      offset: options.offset,
+    ));
     final cachedConversations = _cachedConversations;
     if (cachedConversations != null) {
       return Stream.value(
         _page(
           cachedConversations,
-          search: search,
-          limit: limit,
-          offset: offset,
+          search: options.search,
+          limit: options.limit,
+          offset: options.offset,
         ),
       );
     }
@@ -1974,7 +1976,12 @@ class _StubConversationRepository({
     return conversationsStream.map((conversations) {
       _cachedConversations = conversations;
 
-      return _page(conversations, search: search, limit: limit, offset: offset);
+      return _page(
+        conversations,
+        search: options.search,
+        limit: options.limit,
+        offset: options.offset,
+      );
     });
   }
 

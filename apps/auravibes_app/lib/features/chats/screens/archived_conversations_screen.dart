@@ -26,37 +26,32 @@ class const _ArchivedConversationsBody({required final String workspaceId})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCloud =
-        ref
-            .watch(workspaceSessionForRouteProvider(workspaceId))
-            .asData
-            ?.value
-            .cloud !=
-        null;
-
     return Column(
       children: [
-        if (isCloud)
-          Padding(
-            padding: const EdgeInsetsDirectional.only(
-              start: 16,
-              top: 16,
-              end: 16,
-            ),
-            child: AuraCallout(
-              title: LocaleKeys
-                  .chats_screens_archived_conversations_cloud_notice_title
-                  .tr(context: context),
-              description: LocaleKeys
-                  .chats_screens_archived_conversations_cloud_notice
-                  .tr(context: context),
-              icon: Icons.info_outline,
-            ),
-          ),
+        if (_isCloudWorkspace(ref)) _cloudArchiveNotice(context),
         Expanded(
           child: ChatListWidget(workspaceId: workspaceId, scope: .archived),
         ),
       ],
     );
   }
+
+  bool _isCloudWorkspace(WidgetRef ref) =>
+      ref
+          .watch(workspaceSessionForRouteProvider(workspaceId))
+          .asData
+          ?.value
+          .cloud !=
+      null;
+
+  Widget _cloudArchiveNotice(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(start: 16, top: 16, end: 16),
+    child: AuraCallout(
+      title: LocaleKeys.chats_screens_archived_conversations_cloud_notice_title
+          .tr(context: context),
+      description: LocaleKeys.chats_screens_archived_conversations_cloud_notice
+          .tr(context: context),
+      icon: Icons.info_outline,
+    ),
+  );
 }

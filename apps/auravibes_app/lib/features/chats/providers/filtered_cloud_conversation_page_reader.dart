@@ -27,24 +27,31 @@ class FilteredCloudConversationPageReader(
     if (_scope == .archived && _archivedIds.isEmpty) return [];
     if (_pagination.limit == 0) return [];
 
-    while (true) {
-      final page = await _readCloudConversationPageAtCursor(
-        _gateway,
-        _cloud,
-        _cursor,
-        search: _search,
-      );
-      final reachedLimit = _appendMatchingConversations(page.conversations);
-      final nextCursor = _nextCloudConversationCursor(
-        page.nextCursor,
-        _seenCursors,
-      );
-      if (reachedLimit || _stopAfterFirstPage || nextCursor == null) {
-        return _conversations;
-      }
-      _cursor = nextCursor;
-    }
+    while (await _readNextPage()) {}
+
+    return _conversations;
   }
+
+  Future<bool> _readNextPage() async {
+    final page = await _readCloudConversationPageAtCursor(
+      _gateway,
+      _cloud,
+      _cursor,
+      search: _search,
+    );
+    final reachedLimit = _appendMatchingConversations(page.conversations);
+    final nextCursor = _nextCloudConversationCursor(
+      page.nextCursor,
+      _seenCursors,
+    );
+    if (_shouldStopAfterPage(reachedLimit, nextCursor)) return false;
+    _cursor = nextCursor;
+
+    return true;
+  }
+
+  bool _shouldStopAfterPage(bool reachedLimit, String? nextCursor) =>
+      reachedLimit || _stopAfterFirstPage || nextCursor == null;
 
   static Future<List<ConversationSummary>> readAllPages(
     CloudWorkspaceStateGateway gateway,

@@ -296,18 +296,26 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _runApiAndCoreUpgrades(m, from);
+    await _runToolAndBookmarkUpgrades(m, from);
+    await _runWorkspaceUpgrades(m, from);
+    await _upgradeConversationArchiveStateSchema(m, from);
+  }
+
+  Future<void> _runApiAndCoreUpgrades(Migrator m, int from) async {
     await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
     await _upgradeModelSchemas(m);
+  }
+
+  Future<void> _runToolAndBookmarkUpgrades(Migrator m, int from) async {
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
-    await _runWorkspaceUpgrades(m, from);
-    await _upgradeConversationArchiveStateSchema(m, from);
   }
 
   Future<void> _upgradeConversationArchiveStateSchema(

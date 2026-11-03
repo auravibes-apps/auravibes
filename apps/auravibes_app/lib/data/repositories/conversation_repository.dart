@@ -8,6 +8,7 @@ import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:drift/drift.dart';
@@ -95,19 +96,10 @@ class ConversationRepository(
 }) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String search = '',
-    bool archivedOnly = false,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = defaultConversationListQueryOptions,
   }) {
     return _database.conversationDao
-        .watchConversationsByWorkspace(
-          workspaceId,
-          search: search,
-          archivedOnly: archivedOnly,
-          limit: limit,
-          offset: offset,
-        )
+        .watchConversationsByWorkspace(workspaceId, options: options)
         .map((rows) => rows.map(_mapToConversation).toList());
   }
 
@@ -594,7 +586,10 @@ extension on ConversationRepository {
         .watchConversationsByWorkspace(workspaceId)
         .first;
     final archived = await _database.conversationDao
-        .watchConversationsByWorkspace(workspaceId, archivedOnly: true)
+        .watchConversationsByWorkspace(
+          workspaceId,
+          options: (search: '', archivedOnly: true, limit: null, offset: 0),
+        )
         .first;
 
     return {

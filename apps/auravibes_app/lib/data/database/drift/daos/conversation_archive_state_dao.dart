@@ -26,24 +26,34 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
     required String workspaceId,
     required String conversationId,
     required bool isArchived,
-  }) async {
-    if (isArchived) {
-      final _ = await into(conversationArchiveStates).insertOnConflictUpdate(
-        ConversationArchiveStatesCompanion.insert(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          archivedAt: .new(.now().toUtc()),
-        ),
-      );
-    } else {
-      final _ =
-          await (delete(conversationArchiveStates)..where(
-                (row) =>
-                    row.workspaceId.equals(workspaceId) &
-                    row.conversationId.equals(conversationId),
-              ))
-              .go();
-    }
+  }) => isArchived
+      ? _archiveConversation(workspaceId, conversationId)
+      : _restoreConversation(workspaceId, conversationId);
+
+  Future<void> _archiveConversation(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    final _ = await into(conversationArchiveStates).insertOnConflictUpdate(
+      ConversationArchiveStatesCompanion.insert(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        archivedAt: .new(.now().toUtc()),
+      ),
+    );
+  }
+
+  Future<void> _restoreConversation(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    final _ =
+        await (delete(conversationArchiveStates)..where(
+              (row) =>
+                  row.workspaceId.equals(workspaceId) &
+                  row.conversationId.equals(conversationId),
+            ))
+            .go();
   }
 
   Future<void> clearConversationArchive({

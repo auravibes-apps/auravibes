@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
@@ -933,10 +934,7 @@ class _FakeConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    bool archivedOnly = false,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = defaultConversationListQueryOptions,
   }) => throw UnimplementedError();
 
   @override

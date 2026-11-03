@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -84,9 +85,7 @@ void main() {
         when(
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
-            search: any(named: 'search'),
-            limit: any(named: 'limit'),
-            offset: any(named: 'offset'),
+            options: defaultConversationListQueryOptions,
           ),
         ).thenAnswer((_) => controller.stream);
 
@@ -107,23 +106,22 @@ void main() {
         when(
           () => mockDao.watchConversationsByWorkspace(
             'ws-1',
-            search: any(named: 'search'),
-            limit: 5,
-            offset: any(named: 'offset'),
+            options: (search: '', archivedOnly: false, limit: 5, offset: 0),
           ),
         ).thenAnswer((_) => controller.stream);
 
         final _ = await repository
-            .watchConversationsByWorkspace('ws-1', limit: 5)
+            .watchConversationsByWorkspace(
+              'ws-1',
+              options: (search: '', archivedOnly: false, limit: 5, offset: 0),
+            )
             .first;
 
         expect(
           () => verify(
             () => mockDao.watchConversationsByWorkspace(
               'ws-1',
-              search: any(named: 'search'),
-              limit: 5,
-              offset: any(named: 'offset'),
+              options: (search: '', archivedOnly: false, limit: 5, offset: 0),
             ),
           ).called(1),
           returnsNormally,

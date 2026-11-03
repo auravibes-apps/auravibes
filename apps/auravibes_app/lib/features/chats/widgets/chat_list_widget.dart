@@ -304,12 +304,12 @@ _ChatListHookState _useChatListHookState(
     workspaceId,
     scope,
   ]);
-  final query = _useChatListQueryState(
-    ref,
-    workspaceId,
-    input.searchText,
-    scope,
-  );
+  final query = _useChatListQueryState((
+    ref: ref,
+    workspaceId: workspaceId,
+    searchText: input.searchText,
+    scope: scope,
+  ));
 
   return (
     input: input,
@@ -353,25 +353,32 @@ typedef _ChatListQueryState = ({
   AsyncValue<List<ConversationEntity>> chatListAsync,
 });
 
-_ChatListQueryState _useChatListQueryState(
+typedef _ChatListQueryRequest = ({
   WidgetRef ref,
   String workspaceId,
   ValueNotifier<String> searchText,
   ConversationListScope scope,
-) {
-  final normalizedSearch = searchText.value.trim();
+});
+
+typedef _ChatListPageRequest = ({
+  String workspaceId,
+  String search,
+  ConversationListScope scope,
+});
+
+_ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
+  final normalizedSearch = request.searchText.value.trim();
   final debouncedSearch = useDebounced(
     normalizedSearch,
     _conversationSearchDebounce,
   );
   final databaseSearch = debouncedSearch ?? '';
-  final chatListAsync = ref.watch(
-    conversationsStreamProvider(
-      workspaceId: workspaceId,
+  final chatListAsync = request.ref.watch(
+    _chatListPageProvider((
+      workspaceId: request.workspaceId,
       search: databaseSearch,
-      scope: scope,
-      pagination: (limit: _conversationPageSize + 1, offset: 0),
-    ),
+      scope: request.scope,
+    )),
   );
 
   return (
@@ -380,6 +387,15 @@ _ChatListQueryState _useChatListQueryState(
     chatListAsync: chatListAsync,
   );
 }
+
+ConversationsStreamProvider _chatListPageProvider(
+  _ChatListPageRequest request,
+) => conversationsStreamProvider(
+  workspaceId: request.workspaceId,
+  search: request.search,
+  scope: request.scope,
+  pagination: (limit: _conversationPageSize + 1, offset: 0),
+);
 
 _ChatListDataState _chatListDataState(_ChatListHookState hooks) {
   final chatListAsync = hooks.chatListAsync;
@@ -584,32 +600,36 @@ class const _ChatListEmptyState({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (scope) {
-    .active => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
-      ),
-    ),
-    .archived => const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            AuraIcon(Icons.archive_outlined, size: .extraLarge),
-            SizedBox(height: 16),
-            AuraText(
-              child: TextLocale(
-                LocaleKeys.chats_screens_archived_conversations_empty,
-              ),
-              style: .heading3,
-              textAlign: .center,
-            ),
-          ],
-        ),
-      ),
-    ),
+    .active => _activeEmptyState(),
+    .archived => _archivedEmptyState(),
   };
+
+  Widget _activeEmptyState() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
+    ),
+  );
+
+  Widget _archivedEmptyState() => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          AuraIcon(Icons.archive_outlined, size: .extraLarge),
+          SizedBox(height: 16),
+          AuraText(
+            child: TextLocale(
+              LocaleKeys.chats_screens_archived_conversations_empty,
+            ),
+            style: .heading3,
+            textAlign: .center,
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class const _ChatListEmptyStateColumn({required final String workspaceId})
@@ -734,34 +754,38 @@ extension on _ChatTileState {
   Future<void> _setArchivedState(BuildContext context) async {
     final isArchived = widget.scope == ConversationListScope.active;
     try {
-      await ref
-          .read(setConversationArchivedUsecaseProvider)
-          .call(
-            workspaceId: widget.chat.workspaceId,
-            conversationId: widget.chat.id,
-            isArchived: isArchived,
-          );
+      await _saveArchivedState(isArchived);
       if (!context.mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: isArchived
-            ? const TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_archived,
-              )
-            : const TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_restored,
-              ),
-      );
+      _showArchiveStateFeedback(context, isArchived);
     } on Object {
       if (!context.mounted) return;
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: const TextLocale(
-          LocaleKeys.chats_screens_chat_conversation_archive_state_error,
-        ),
-        variant: .error,
-      );
+      _showArchiveStateError(context);
     }
+  }
+
+  Future<void> _saveArchivedState(bool isArchived) => ref
+      .read(setConversationArchivedUsecaseProvider)
+      .call(
+        workspaceId: widget.chat.workspaceId,
+        conversationId: widget.chat.id,
+        isArchived: isArchived,
+      );
+
+  void _showArchiveStateFeedback(BuildContext context, bool isArchived) {
+    final content = isArchived
+        ? const TextLocale(LocaleKeys.chats_screens_chat_conversation_archived)
+        : const TextLocale(LocaleKeys.chats_screens_chat_conversation_restored);
+    final _ = AuraSnackBars.show(context: context, content: content);
+  }
+
+  void _showArchiveStateError(BuildContext context) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_archive_state_error,
+      ),
+      variant: .error,
+    );
   }
 
   Future<void> _handleFork(BuildContext context) =>
@@ -992,19 +1016,20 @@ class const _ChatListLoaded({required final _ChatListViewState state})
 class const _ChatListLoadedBody({required final _ChatListViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Column(
-    children: [
-      if (state.scope == ConversationListScope.active)
-        _ChatListBulkActions(
-          workspaceId: state.workspaceId,
-          selectedChats: state.selectedChats,
-          isBulkActionRunning: state.isBulkActionRunning,
-        ),
-      _ChatListSearchInput(state: state),
-      Expanded(child: _ChatListResults(state: state)),
-      if (state.hasMore && !state.isRefreshing && !state.hasError)
-        _ChatListLoadMore(state: state),
-    ],
+  Widget build(BuildContext _) => Column(children: _children());
+
+  List<Widget> _children() => [
+    if (state.scope == ConversationListScope.active) _bulkActions(),
+    _ChatListSearchInput(state: state),
+    Expanded(child: _ChatListResults(state: state)),
+    if (state.hasMore && !state.isRefreshing && !state.hasError)
+      _ChatListLoadMore(state: state),
+  ];
+
+  Widget _bulkActions() => _ChatListBulkActions(
+    workspaceId: state.workspaceId,
+    selectedChats: state.selectedChats,
+    isBulkActionRunning: state.isBulkActionRunning,
   );
 }
 

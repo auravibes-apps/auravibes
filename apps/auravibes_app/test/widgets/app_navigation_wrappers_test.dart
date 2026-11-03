@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
@@ -1016,10 +1017,7 @@ class _FakeConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    bool archivedOnly = false,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = defaultConversationListQueryOptions,
   }) {
     _processPendingRemovals();
 

@@ -293,10 +293,16 @@ void main() {
           ]),
         );
         final firstPage = await fixture.database.conversationDao
-            .watchConversationsByWorkspace(workspace.id, limit: 1)
+            .watchConversationsByWorkspace(
+              workspace.id,
+              options: (search: '', archivedOnly: false, limit: 1, offset: 0),
+            )
             .first;
         final secondPage = await fixture.database.conversationDao
-            .watchConversationsByWorkspace(workspace.id, limit: 1, offset: 1)
+            .watchConversationsByWorkspace(
+              workspace.id,
+              options: (search: '', archivedOnly: false, limit: 1, offset: 1),
+            )
             .first;
 
         expect(firstPage.single.id, pinnedRecent.id);
@@ -373,7 +379,10 @@ void main() {
         .insert(workspaceId: ws.id, title: 'B'),
       );
       final emitted = await fixture.database.conversationDao
-          .watchConversationsByWorkspace(ws.id, limit: 1)
+          .watchConversationsByWorkspace(
+            ws.id,
+            options: (search: '', archivedOnly: false, limit: 1, offset: 0),
+          )
           .first;
       expect(emitted.length, equals(1));
     });
@@ -393,14 +402,25 @@ void main() {
       );
 
       final allMatches = await fixture.database.conversationDao
-          .watchConversationsByWorkspace(ws.id, search: 'release')
+          .watchConversationsByWorkspace(
+            ws.id,
+            options: (
+              search: 'release',
+              archivedOnly: false,
+              limit: null,
+              offset: 0,
+            ),
+          )
           .first;
       final page = await fixture.database.conversationDao
           .watchConversationsByWorkspace(
             ws.id,
-            search: 'release',
-            limit: 1,
-            offset: 1,
+            options: (
+              search: 'release',
+              archivedOnly: false,
+              limit: 1,
+              offset: 1,
+            ),
           )
           .first;
 
@@ -472,21 +492,26 @@ void main() {
             .watchConversationsByWorkspace(workspace.id)
             .first;
         final archivedConversations = await fixture.database.conversationDao
-            .watchConversationsByWorkspace(workspace.id, archivedOnly: true)
+            .watchConversationsByWorkspace(
+              workspace.id,
+              options: (search: '', archivedOnly: true, limit: null, offset: 0),
+            )
             .first;
         final searchedArchive = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              search: 'project',
-              archivedOnly: true,
+              options: (
+                search: 'project',
+                archivedOnly: true,
+                limit: null,
+                offset: 0,
+              ),
             )
             .first;
         final archivePage = await fixture.database.conversationDao
             .watchConversationsByWorkspace(
               workspace.id,
-              archivedOnly: true,
-              limit: 1,
-              offset: 1,
+              options: (search: '', archivedOnly: true, limit: 1, offset: 1),
             )
             .first;
 
