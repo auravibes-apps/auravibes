@@ -288,7 +288,6 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModelSnapshot(
 
       return _modelSnapshot(ref, model, workspaceId);
     });
-}
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
   Ref ref,
