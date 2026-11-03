@@ -1,0 +1,132 @@
+name: Voice recording memory evidence
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/voice-recording-memory.yml
+      - apps/auravibes_app/test/performance/voice_recording_memory_test.dart
+      - apps/auravibes_app/lib/features/chats/services/local_chat_attachment_service_io.dart
+      - apps/auravibes_app/lib/services/pcm_wav_recording_file_service.dart
+      - tool/voice_recording_memory.py
+      - tool/voice_recording_memory_test.py
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: Immutable baseline commit SHA
+        default: f00fc7b9159cc35713db498ad319200a5ed4052e
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice-memory-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      BASELINE_SHA: ${{ inputs.baseline || 'f00fc7b9159cc35713db498ad319200a5ed4052e' }}
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EVIDENCE: ${{ runner.temp }}/voice-recording-memory
+    steps:
+      - name: Checkout immutable candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          persist-credentials: false
+
+      - name: Initialize partial evidence
+        run: |
+          mkdir -p "$EVIDENCE"
+          python3 - <<'PY'
+          import json, os, platform
+          from pathlib import Path
+          Path(os.environ['EVIDENCE'], 'requested.json').write_text(json.dumps({
+              'baseline_sha': os.environ['BASELINE_SHA'],
+              'candidate_sha': os.environ['CANDIDATE_SHA'],
+              'runner': platform.platform(),
+              'architecture': platform.machine(),
+              'run_id': os.environ['GITHUB_RUN_ID'],
+              'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+          }, indent=2))
+          PY
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Check probe formatting and analysis
+        run: |
+          probe=apps/auravibes_app/test/performance/voice_recording_memory_test.dart
+          if ! dart format --line-length 80 --set-exit-if-changed "$probe"; then
+            git diff --binary > "$EVIDENCE/hosted-format.patch"
+            exit 1
+          fi
+          dart analyze "$probe" --fatal-infos --fatal-warnings
+          python3 -m unittest discover -s tool -p voice_recording_memory_test.py -v
+
+      - name: Verify pinned recorder sources
+        run: |
+          flutter --version --machine > "$EVIDENCE/flutter-version.json"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          from urllib.parse import unquote, urlsplit
+          config_path = Path('.dart_tool/package_config.json').resolve()
+          config = json.loads(config_path.read_text())
+          sources = {}
+          requests = {
+              'record_platform_interface': ('2.1.0', 'lib/src/types/record_config.dart', 'this.sampleRate = 44100'),
+              'record_macos': ('2.1.1', 'macos/record_macos/Sources/record_macos/delegate/AudioStreamProcessor.swift', 'sampleRate: Double(config.sampleRate)'),
+          }
+          for package in config['packages']:
+              if package['name'] not in requests:
+                  continue
+              version, relative, expected = requests[package['name']]
+              uri = urlsplit(package['rootUri'])
+              root = Path(unquote(uri.path)) if uri.scheme == 'file' else config_path.parent / unquote(uri.path)
+              source = (root / relative).read_text()
+              assert expected in source, package['name']
+              assert f'version: {version}' in (root / 'pubspec.yaml').read_text(), package['name']
+              sources[package['name']] = {
+                  'version': version, 'file': relative,
+                  'sha256': hashlib.sha256(source.encode()).hexdigest(),
+                  'sample_rate_lines': [line.strip() for line in source.splitlines()
+                                        if 'sampleRate' in line or 'pcmFormatInt16' in line],
+              }
+          assert len(sources) == 2, sources
+          Path(os.environ['EVIDENCE'], 'recorder-sources.json').write_text(json.dumps(sources, indent=2))
+          PY
+
+      - name: Checkout immutable baseline on the same runner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.BASELINE_SHA }}
+          path: baseline
+          persist-credentials: false
+
+      - name: Prepare baseline with identical probe and toolchain
+        run: |
+          cmp .fvmrc baseline/.fvmrc
+          cmp pubspec.lock baseline/pubspec.lock
+          mkdir -p baseline/.fvm baseline/apps/auravibes_app/test/performance
+          ln -s "$FLUTTER_ROOT" baseline/.fvm/flutter_sdk
+          cp apps/auravibes_app/test/performance/voice_recording_memory_test.dart baseline/apps/auravibes_app/test/performance/
+          cd baseline
+          melos bootstrap
+
+      - name: Measure fresh workers and preserve per-case evidence
+        run: |
+          python3 tool/voice_recording_memory.py \
+            --baseline baseline --candidate . --output "$EVIDENCE"
+
+      - name: Upload complete or partial evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: voice-recording-memory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.EVIDENCE }}
+          if-no-files-found: error
+          retention-days: 30
