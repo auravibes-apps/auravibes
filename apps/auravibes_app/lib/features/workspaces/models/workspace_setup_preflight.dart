@@ -1,3 +1,11 @@
+class const WorkspaceSetupPreflight({
+  required final WorkspaceSetupPreflightOutcome outcome,
+  required final List<WorkspaceSetupPreflightCheck> checks,
+}) {
+  WorkspaceSetupPreflightCheck check(WorkspaceSetupPreflightCheckId id) =>
+      checks.firstWhere((check) => check.id == id);
+}
+
 enum WorkspaceSetupPreflightStatus { pass, warning, fail, unknown }
 
 enum WorkspaceSetupPreflightOutcome { ready, needsSetup, blocked, unverified }
@@ -21,10 +29,8 @@ class const WorkspaceSetupPreflightCheck({
   required final WorkspaceSetupPreflightStatus status,
   required final String messageKey,
   final WorkspaceSetupPreflightRecovery? recovery,
-  this.modelCapabilities,
-}) {
-  final WorkspaceSetupModelCapabilities? modelCapabilities;
-}
+  final WorkspaceSetupModelCapabilities? modelCapabilities,
+});
 
 class const WorkspaceSetupModelCapabilities({
   required final String modelName,
@@ -33,14 +39,6 @@ class const WorkspaceSetupModelCapabilities({
   required final bool supportsReasoning,
   required final bool supportsToolCalls,
 });
-
-class const WorkspaceSetupPreflight({
-  required final WorkspaceSetupPreflightOutcome outcome,
-  required final List<WorkspaceSetupPreflightCheck> checks,
-}) {
-  WorkspaceSetupPreflightCheck check(WorkspaceSetupPreflightCheckId id) =>
-      checks.firstWhere((check) => check.id == id);
-}
 
 class const WorkspaceSetupProviderSnapshot({
   required final String connectionId,

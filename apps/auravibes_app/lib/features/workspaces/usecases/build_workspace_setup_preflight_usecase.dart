@@ -21,13 +21,14 @@ class const BuildWorkspaceSetupPreflightUsecase() {
     required String appVersion,
     required WorkspaceSetupPreflightLabels labels,
   }) {
+    final outcomeLabel =
+        labels.outcomes[result.outcome] ?? result.outcome.name;
     final lines = <String>[
-      '${labels.overallLabel}: ${labels.outcomes[result.outcome] ?? result.outcome.name}',
+      '${labels.overallLabel}: $outcomeLabel',
       '${labels.generatedAt}: ${generatedAt.toUtc().toIso8601String()}',
       '${labels.appVersion}: $appVersion',
       for (final check in result.checks)
-        '${labels.checks[check.id] ?? check.id.name}: '
-            '${labels.statuses[check.status] ?? check.status.name}',
+        _checkSummary(check, labels),
     ];
 
     return lines.join('\n');
@@ -96,7 +97,7 @@ class const BuildWorkspaceSetupPreflightUsecase() {
       id: .selectedModel,
       status: .pass,
       messageKey: 'workspace_setup_preflight.model_metadata_available',
-      modelCapabilities: WorkspaceSetupModelCapabilities(
+      modelCapabilities: .new(
         modelName: modelName,
         inputModalities: model.inputModalities,
         outputModalities: model.outputModalities,
@@ -144,7 +145,8 @@ class const BuildWorkspaceSetupPreflightUsecase() {
           : const WorkspaceSetupPreflightCheck(
               id: .providerCredentials,
               status: .warning,
-              messageKey: 'workspace_setup_preflight.provider_credential_missing_optional',
+              messageKey:
+                  'workspace_setup_preflight.provider_credential_missing_optional',
               recovery: .reviewProvider,
             );
     }
@@ -280,4 +282,14 @@ class const BuildWorkspaceSetupPreflightUsecase() {
 
     return .ready;
   }
+}
+
+String _checkSummary(
+  WorkspaceSetupPreflightCheck check,
+  WorkspaceSetupPreflightLabels labels,
+) {
+  final checkLabel = labels.checks[check.id] ?? check.id.name;
+  final statusLabel = labels.statuses[check.status] ?? check.status.name;
+
+  return '$checkLabel: $statusLabel';
 }

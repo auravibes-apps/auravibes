@@ -19,6 +19,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'workspace_setup_preflight_provider.g.dart';
 
 @riverpod
+// ignore: prefer-match-file-name
 class WorkspaceSetupPreflightRefresh extends _$WorkspaceSetupPreflightRefresh {
   @override
   bool build(String workspaceId) => false;
@@ -56,7 +57,9 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   final cloudStorageRead =
       workspaceIsRemote && refreshRequested && session != null
       ? await _capture(() async {
-          await ref.watch(cloudWorkspaceConfigurationProvider(session).future);
+          final _ = await ref.watch(
+            cloudWorkspaceConfigurationProvider(session).future,
+          );
 
           return true;
         })
@@ -69,18 +72,21 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
         )
       : const _ReadResult<List<ModelConnectionEntity>>.unavailable();
   final selectedModelId = ref.watch(newChatProvider(workspaceId)).modelId;
-  final modelRead = selectedModelId == null
-      ? const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null)
-      : sourceAllowed
-      ? await _capture(() async {
-          final selections = await ref.watch(
-            modelSelectionStoreProvider(workspaceId).future,
-          );
-          final model = await selections.getById(selectedModelId);
+  late final _ReadResult<WorkspaceSetupModelSnapshot?> modelRead;
+  if (selectedModelId == null) {
+    modelRead = const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null);
+  } else if (sourceAllowed) {
+    modelRead = await _capture(() async {
+      final selections = await ref.watch(
+        modelSelectionStoreProvider(workspaceId).future,
+      );
+      final model = await selections.getById(selectedModelId);
 
-          return await _modelSnapshot(ref, model, workspaceId);
-        })
-      : const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
+      return await _modelSnapshot(ref, model, workspaceId);
+    });
+  } else {
+    modelRead = const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
+  }
   final mcpRead = sourceAllowed
       ? await _capture(() async {
           final connections = await ref.watch(
@@ -119,7 +125,7 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
       .toList();
 
   return const BuildWorkspaceSetupPreflightUsecase().call(
-    WorkspaceSetupPreflightSnapshot(
+    .new(
       storageAvailable: storageAvailable,
       selectedModelId: selectedModelId,
       selectedModelSourceAvailable: modelRead.available,
@@ -197,11 +203,8 @@ Future<_ReadResult<T>> _capture<T>(Future<T> Function() read) async {
   }
 }
 
-class const _ReadResult<T>({required this.available, this.value}) {
-  const _ReadResult.available(T? value) : this(available: true, value: value);
+class const _ReadResult<T>({required final bool available, final T? value}) {
+  const new available(T? value) : this(available: true, value: value);
 
-  const _ReadResult.unavailable() : this(available: false);
-
-  final bool available;
-  final T? value;
+  const new unavailable() : this(available: false);
 }

@@ -137,12 +137,10 @@ class const _WorkspaceSetupPreflightEntry({required final String workspaceId})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
-    style: .border,
     child: AuraColumn(
-      crossAxisAlignment: .start,
       children: [
-        AuraText(
-          child: const TextLocale('workspace_setup_preflight.entry_title'),
+        const AuraText(
+          child: TextLocale('workspace_setup_preflight.entry_title'),
           style: .heading6,
         ),
         const TextLocale('workspace_setup_preflight.entry_description'),
@@ -154,11 +152,13 @@ class const _WorkspaceSetupPreflightEntry({required final String workspaceId})
             ),
           ),
           child: const TextLocale('workspace_setup_preflight.open'),
-          variant: .ghost,
           key: const ValueKey('workspace_settings_setup_preflight'),
+          variant: .ghost,
         ),
       ],
+      crossAxisAlignment: .start,
     ),
+    style: .border,
   );
 }
 

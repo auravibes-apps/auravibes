@@ -25,13 +25,13 @@ void main() {
       id: 'B-only-connection',
       name: 'DO-NOT-LEAK-provider-name',
       modelId: 'provider-b',
-      createdAt: DateTime.utc(2026),
-      updatedAt: DateTime.utc(2026),
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
       workspaceId: 'B',
       hasKey: true,
       url: 'DO-NOT-LEAK-provider-url',
     );
-    final otherWorkspaceMcp = ServiceConnectionListItem(
+    const otherWorkspaceMcp = ServiceConnectionListItem(
       id: 'B-only-mcp',
       workspaceId: 'B',
       name: 'DO-NOT-LEAK-mcp-name',
@@ -40,11 +40,11 @@ void main() {
       keySuffix: null,
       mcpServerId: 'B-only-mcp',
       authenticationType: null,
-      displayStatus: ServiceConnectionDisplayStatus.connected,
+      displayStatus: .connected,
       expiresAt: null,
       lastRefreshedAt: null,
       lastAuthError: null,
-      metadataValues: const [],
+      metadataValues: [],
       canRefresh: false,
       canReconnect: false,
     );
@@ -55,8 +55,8 @@ void main() {
             id: 'A',
             name: 'Alpha',
             type: .local,
-            createdAt: DateTime.utc(2026),
-            updatedAt: DateTime.utc(2026),
+            createdAt: .utc(2026),
+            updatedAt: .utc(2026),
           ),
         ),
         workspaceSessionForRouteProvider('A')
@@ -77,12 +77,12 @@ void main() {
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
     expect(
       result
-          .check(WorkspaceSetupPreflightCheckId.providerCredentials)
+          .check(.providerCredentials)
           .messageKey,
       'workspace_setup_preflight.provider_not_configured',
     );
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.mcpConnections).messageKey,
+      result.check(.mcpConnections).messageKey,
       'workspace_setup_preflight.mcp_not_configured',
     );
   });
@@ -103,12 +103,12 @@ void main() {
           (_) async => WorkspaceEntity(
             id: 'A',
             name: 'Cloud workspace',
-            type: WorkspaceType.remote,
-            createdAt: DateTime.utc(2026),
-            updatedAt: DateTime.utc(2026),
+            type: .remote,
+            createdAt: .utc(2026),
+            updatedAt: .utc(2026),
             url: 'https://cloud.example',
-            cloudAccountId: 'account-a',
             cloudWorkspaceId: '1',
+            cloudAccountId: 'account-a',
           ),
         ),
         workspaceSessionForRouteProvider('A')
@@ -133,7 +133,7 @@ void main() {
 
     expect(cloudReadCount, 0);
     expect(
-      initial.check(WorkspaceSetupPreflightCheckId.storage).status,
+      initial.check(.storage).status,
       WorkspaceSetupPreflightStatus.unknown,
     );
 
@@ -146,7 +146,7 @@ void main() {
 
     expect(cloudReadCount, 1);
     expect(
-      refreshed.check(WorkspaceSetupPreflightCheckId.storage).status,
+      refreshed.check(.storage).status,
       WorkspaceSetupPreflightStatus.pass,
     );
   });
@@ -154,20 +154,20 @@ void main() {
   test('selected models from another workspace are rejected', () async {
     const selectionId = 'B-only-selection';
     final otherWorkspaceModel = WorkspaceModelSelectionWithConnectionEntity(
-      workspaceModelSelection: WorkspaceModelSelectionEntity(
+      workspaceModelSelection: .new(
         id: selectionId,
         modelId: 'model-b',
-        createdAt: DateTime.utc(2026),
-        updatedAt: DateTime.utc(2026),
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
         modelConnectionId: 'B-only-connection',
         modelName: 'DO-NOT-LEAK-model-name',
       ),
-      modelConnection: ModelConnectionEntity(
+      modelConnection: .new(
         id: 'B-only-connection',
         name: 'DO-NOT-LEAK-provider-name',
         modelId: 'provider-b',
-        createdAt: DateTime.utc(2026),
-        updatedAt: DateTime.utc(2026),
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
         workspaceId: 'B',
         hasKey: true,
         url: 'DO-NOT-LEAK-provider-url',
@@ -185,8 +185,8 @@ void main() {
             id: 'A',
             name: 'Alpha',
             type: .local,
-            createdAt: DateTime.utc(2026),
-            updatedAt: DateTime.utc(2026),
+            createdAt: .utc(2026),
+            updatedAt: .utc(2026),
           ),
         ),
         workspaceSessionForRouteProvider('A').overrideWith(
@@ -211,14 +211,14 @@ void main() {
       workspaceSetupPreflightProvider('A').future,
     );
 
-    final model = result.check(WorkspaceSetupPreflightCheckId.selectedModel);
+    final model = result.check(.selectedModel);
     expect(model.status, WorkspaceSetupPreflightStatus.fail);
     expect(model.modelCapabilities, isNull);
     expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
     expect(model.messageKey, 'workspace_setup_preflight.model_missing');
     expect(
       result
-          .check(WorkspaceSetupPreflightCheckId.providerCredentials)
+          .check(.providerCredentials)
           .messageKey,
       'workspace_setup_preflight.provider_for_model_missing',
     );
@@ -226,7 +226,7 @@ void main() {
 }
 
 class _SelectionStore implements ModelSelectionStore {
-  const _SelectionStore(this.selection);
+  const new(this.selection);
 
   final WorkspaceModelSelectionWithConnectionEntity selection;
 
@@ -239,7 +239,8 @@ class _SelectionStore implements ModelSelectionStore {
   Future<void> updateToolSamplingPolicy(
     String selectionId,
     ToolSamplingPolicy? policy,
-  ) async {}
+  ) =>
+      Future<void>.value();
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(

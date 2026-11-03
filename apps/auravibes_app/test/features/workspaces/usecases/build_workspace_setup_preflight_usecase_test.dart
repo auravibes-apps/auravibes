@@ -16,20 +16,20 @@ void main() {
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.providerCredentials).status,
-      WorkspaceSetupPreflightStatus.warning,
+      result.check(.providerCredentials).status,
+      .warning,
     );
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.providerCredentials).recovery,
-      WorkspaceSetupPreflightRecovery.addProvider,
+      result.check(.providerCredentials).recovery,
+      .addProvider,
     );
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.selectedModel).status,
-      WorkspaceSetupPreflightStatus.warning,
+      result.check(.selectedModel).status,
+      .warning,
     );
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.selectedModel).recovery,
-      WorkspaceSetupPreflightRecovery.chooseModel,
+      result.check(.selectedModel).recovery,
+      .chooseModel,
     );
   });
 
@@ -49,8 +49,8 @@ void main() {
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.selectedModel).recovery,
-      WorkspaceSetupPreflightRecovery.chooseModel,
+      result.check(.selectedModel).recovery,
+      .chooseModel,
     );
   });
 
@@ -65,14 +65,13 @@ void main() {
         ],
         selectedModelId: 'selection-a',
         selectedModel: _model(),
-        mcpConnections: const [],
       ),
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.ready);
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.mcpConnections).status,
-      WorkspaceSetupPreflightStatus.pass,
+      result.check(.mcpConnections).status,
+      .pass,
     );
   });
 
@@ -95,12 +94,12 @@ void main() {
     );
 
     expect(
-      unknown.check(WorkspaceSetupPreflightCheckId.storage).status,
-      WorkspaceSetupPreflightStatus.unknown,
+      unknown.check(.storage).status,
+      .unknown,
     );
     expect(
-      missing.check(WorkspaceSetupPreflightCheckId.storage).status,
-      WorkspaceSetupPreflightStatus.fail,
+      missing.check(.storage).status,
+      .fail,
     );
   });
 
@@ -122,8 +121,8 @@ void main() {
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.ready);
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.mcpConnections).status,
-      WorkspaceSetupPreflightStatus.unknown,
+      result.check(.mcpConnections).status,
+      .unknown,
     );
   });
 
@@ -141,9 +140,7 @@ void main() {
       ),
     );
 
-    final provider = result.check(
-      WorkspaceSetupPreflightCheckId.providerCredentials,
-    );
+    final provider = result.check(.providerCredentials);
     expect(provider.status, WorkspaceSetupPreflightStatus.warning);
     expect(
       provider.messageKey,
@@ -170,8 +167,8 @@ void main() {
 
       expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
       expect(
-        result.check(WorkspaceSetupPreflightCheckId.providerCredentials).status,
-        WorkspaceSetupPreflightStatus.fail,
+        result.check(.providerCredentials).status,
+        .fail,
       );
     },
   );
@@ -182,9 +179,9 @@ void main() {
       final unavailable = usecase(
         _snapshot(
           providers: null,
-          providerSourceAvailable: false,
           selectedModelId: 'selection-a',
           selectedModel: null,
+          providerSourceAvailable: false,
           selectedModelSourceAvailable: false,
         ),
       );
@@ -204,9 +201,9 @@ void main() {
       expect(unavailable.outcome, WorkspaceSetupPreflightOutcome.unverified);
       expect(
         unavailable
-            .check(WorkspaceSetupPreflightCheckId.providerCredentials)
+            .check(.providerCredentials)
             .status,
-        WorkspaceSetupPreflightStatus.unknown,
+        .unknown,
       );
       expect(
         missingMetadata.outcome,
@@ -214,9 +211,9 @@ void main() {
       );
       expect(
         missingMetadata
-            .check(WorkspaceSetupPreflightCheckId.selectedModel)
+            .check(.selectedModel)
             .status,
-        WorkspaceSetupPreflightStatus.unknown,
+        .unknown,
       );
     },
   );
@@ -235,8 +232,8 @@ void main() {
       ),
     );
 
-    final model = result.check(WorkspaceSetupPreflightCheckId.selectedModel);
-    expect(model.status, WorkspaceSetupPreflightStatus.unknown);
+    final model = result.check(.selectedModel);
+    expect(model.status, .unknown);
     expect(model.modelCapabilities, isNull);
   });
 
@@ -256,12 +253,12 @@ void main() {
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.selectedModel).status,
-      WorkspaceSetupPreflightStatus.fail,
+      result.check(.selectedModel).status,
+      .fail,
     );
     expect(
-      result.check(WorkspaceSetupPreflightCheckId.selectedModel).recovery,
-      WorkspaceSetupPreflightRecovery.chooseModel,
+      result.check(.selectedModel).recovery,
+      .chooseModel,
     );
   });
 
@@ -288,12 +285,12 @@ void main() {
     );
 
     expect(
-      failed.check(WorkspaceSetupPreflightCheckId.mcpConnections).status,
-      WorkspaceSetupPreflightStatus.warning,
+      failed.check(.mcpConnections).status,
+      .warning,
     );
     expect(
-      notTested.check(WorkspaceSetupPreflightCheckId.mcpConnections).status,
-      WorkspaceSetupPreflightStatus.unknown,
+      notTested.check(.mcpConnections).status,
+      .unknown,
     );
   });
 
@@ -320,7 +317,7 @@ void main() {
       );
       final summary = usecase.formatSupportSummary(
         result: result,
-        generatedAt: DateTime.utc(2026, 11, 3),
+        generatedAt: .utc(2026, 11, 3),
         appVersion: '1.2.3',
         labels: (
           overallLabel: 'Overall',

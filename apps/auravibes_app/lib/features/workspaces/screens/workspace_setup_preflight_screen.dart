@@ -5,8 +5,8 @@ import 'package:auravibes_app/features/models/providers/model_store_providers.da
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_setup_preflight.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_setup_preflight_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_setup_preflight_provider.dart';
 import 'package:auravibes_app/features/workspaces/usecases/build_workspace_setup_preflight_usecase.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_screen.dart';
@@ -29,9 +29,6 @@ class const WorkspaceSetupPreflightScreen({
     final result = ref.watch(workspaceSetupPreflightProvider(workspaceId));
 
     return AppScreen(
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale('workspace_setup_preflight.title'),
-      ),
       child: switch (result) {
         AsyncData(:final value) => _PreflightContent(
           workspaceId: workspaceId,
@@ -40,6 +37,9 @@ class const WorkspaceSetupPreflightScreen({
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => _PreflightUnavailable(workspaceId: workspaceId),
       },
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale('workspace_setup_preflight.title'),
+      ),
     );
   }
 }
@@ -57,10 +57,7 @@ class const _PreflightContent({
       padding: const EdgeInsets.all(16),
       children: [
         AuraCard(
-          style: .border,
-          tint: _outcomeTint(result.outcome),
           child: AuraColumn(
-            crossAxisAlignment: .start,
             children: [
               AuraText(
                 child: TextLocale(_outcomeKey(result.outcome)),
@@ -80,21 +77,24 @@ class const _PreflightContent({
                           ? 'workspace_setup_preflight.refresh_saved_cloud'
                           : 'workspace_setup_preflight.refresh_local',
                     ),
-                    variant: .ghost,
                     key: const ValueKey('workspace_setup_preflight_refresh'),
+                    variant: .ghost,
                   ),
                   AuraButton(
                     onPressed: () => _copySupportSummary(context, result),
                     child: const TextLocale(
                       'workspace_setup_preflight.copy_summary',
                     ),
-                    variant: .ghost,
                     key: const ValueKey('workspace_setup_preflight_copy'),
+                    variant: .ghost,
                   ),
                 ],
               ),
             ],
+            crossAxisAlignment: .start,
           ),
+          style: .border,
+          tint: _outcomeTint(result.outcome),
         ),
         for (final checkId in WorkspaceSetupPreflightCheckId.values)
           _PreflightCheckCard(
@@ -115,16 +115,8 @@ class const _PreflightCheckCard({
     final capabilities = check.modelCapabilities;
 
     return AuraCard(
-      style: .border,
-      tint: _statusTint(check.status),
       child: Semantics(
-        container: true,
-        explicitChildNodes: true,
-        label:
-            '${_checkTitle(check.id).tr(context: context)}. '
-            '${_localizedCheckMessage(context, check.messageKey)}',
         child: AuraColumn(
-          crossAxisAlignment: .start,
           children: [
             AuraText(
               child: TextLocale(_checkTitle(check.id)),
@@ -144,14 +136,22 @@ class const _PreflightCheckCard({
               AuraButton(
                 onPressed: () => _openRecovery(context, workspaceId, action),
                 child: TextLocale(_recoveryLabel(action)),
-                variant: .ghost,
                 key: ValueKey(
                   'workspace_setup_preflight_recovery_${check.id.name}',
                 ),
+                variant: .ghost,
               ),
           ],
+          crossAxisAlignment: .start,
         ),
+        container: true,
+        explicitChildNodes: true,
+        label:
+            '${_checkTitle(check.id).tr(context: context)}. '
+            '${_localizedCheckMessage(context, check.messageKey)}',
       ),
+      style: .border,
+      tint: _statusTint(check.status),
     );
   }
 }
@@ -161,7 +161,6 @@ class const _ModelCapabilitiesView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
-    crossAxisAlignment: .start,
     children: [
       AuraText(child: Text(capabilities.modelName), style: .bodySmall),
       TextLocale(
@@ -182,6 +181,7 @@ class const _ModelCapabilitiesView({
             : 'workspace_setup_preflight.model_reasoning_unsupported',
       ),
     ],
+    crossAxisAlignment: .start,
   );
 
   String _modalityLabel(BuildContext context, List<String> values) {
@@ -220,7 +220,6 @@ class const _PreflightUnavailable({required final String workspaceId})
   @override
   Widget build(BuildContext context, WidgetRef ref) => Center(
     child: AuraColumn(
-      crossAxisAlignment: .center,
       children: [
         const TextLocale('workspace_setup_preflight.unavailable'),
         AuraButton(
@@ -415,7 +414,7 @@ Future<void> _copySupportSummary(
         labels: labels,
       );
   try {
-    await Clipboard.setData(ClipboardData(text: summary));
+    await Clipboard.setData(.new(text: summary));
   } on Object {
     if (!context.mounted) return;
     final _ = AuraSnackBars.show(
@@ -423,6 +422,7 @@ Future<void> _copySupportSummary(
       content: const TextLocale('workspace_setup_preflight.summary_copy_error'),
       variant: .error,
     );
+
     return;
   }
   if (!context.mounted) return;
