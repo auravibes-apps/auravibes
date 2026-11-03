@@ -643,7 +643,11 @@ void main() {
       await tester.ensureVisible(advancedSetupButton);
       await tester.tap(advancedSetupButton);
       await f.settle(tester);
-      await tester.tap(find.byKey(const Key('intro_connect_existing_button')));
+      final connectExistingButton = find.byKey(
+        const Key('intro_connect_existing_button'),
+      );
+      await tester.ensureVisible(connectExistingButton);
+      await tester.tap(connectExistingButton);
       await f.settle(tester);
       await tester.tap(find.text('Session expired. Sign in again.'));
       await f.settle(tester);
