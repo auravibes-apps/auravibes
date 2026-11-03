@@ -113,7 +113,7 @@ Future<_WorkspaceScope> _readWorkspaceScope(
 Future<_ReadResult<WorkspaceEntity?>> _readWorkspace(
   Ref ref,
   String workspaceId,
-) => _capture(
+) => _capture<WorkspaceEntity?>(
   () => ref.watch(workspaceByIdProvider(workspaceId).future),
 );
 
@@ -280,13 +280,13 @@ Future<_ReadResult<WorkspaceSetupModelSnapshot?>> _readSelectedModelSnapshot(
   String selectedModelId,
   String workspaceId,
 ) =>
-    _capture(() async {
+    _capture<WorkspaceSetupModelSnapshot?>(() async {
       final selections = await ref.watch(
         modelSelectionStoreProvider(workspaceId).future,
       );
       final model = await selections.getById(selectedModelId);
 
-      return _modelSnapshot(ref, model, workspaceId);
+      return await _modelSnapshot(ref, model, workspaceId);
     });
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
