@@ -82,7 +82,6 @@ class const _ConversationArchiveExportReviewDialog({
 
     return StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        scrollable: true,
         title: const TextLocale(_reviewTitleKey),
         content: _ConversationArchiveExportReviewContent(
           fileName: fileName,
@@ -98,6 +97,7 @@ class const _ConversationArchiveExportReviewDialog({
             includeAttachments: includeAttachments,
           ),
         ],
+        scrollable: true,
       ),
     );
   }
