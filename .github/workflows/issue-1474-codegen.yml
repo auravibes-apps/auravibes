@@ -1,0 +1,51 @@
+name: Issue 1474 hosted code generation
+
+on:
+  push:
+    branches:
+      - codex/issue-1474-mcp-tool-metadata
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate checked-in artifacts
+    runs-on: ubuntu-26.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Generate Dart artifacts
+        run: python3 tool/validation_lease.py --label issue-1474-generate -- dart run melos run generate --no-select
+
+      - name: Generate localization keys
+        run: python3 tool/validation_lease.py --label issue-1474-localization -- dart run melos run generate:localization --no-select
+
+      - name: Generate Serverpod artifacts
+        run: python3 tool/validation_lease.py --label issue-1474-serverpod -- dart run melos run generate:serverpod
+
+      - name: Export generated app and package changes
+        run: |
+          set -euo pipefail
+          git add --intent-to-add apps packages
+          git diff --check -- apps packages
+          git diff --binary -- apps packages > "$RUNNER_TEMP/issue-1474-generated.patch"
+          git diff --name-status -- apps packages > "$RUNNER_TEMP/issue-1474-generated-files.txt"
+          cat "$RUNNER_TEMP/issue-1474-generated-files.txt"
+
+      - name: Upload generated patch
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1474-generated-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/issue-1474-generated.patch
+            ${{ runner.temp }}/issue-1474-generated-files.txt
+          if-no-files-found: warn
+          retention-days: 7
