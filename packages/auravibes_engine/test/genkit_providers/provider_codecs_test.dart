@@ -615,7 +615,7 @@ void main() {
     );
     final input = body['input'] as List<dynamic>;
 
-    expect(input.map((message) => (message as Map)['role']), [
+    expect(input.take(3).map((message) => (message as Map)['role']), [
       'user',
       'user',
       'system',

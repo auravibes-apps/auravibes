@@ -19,6 +19,13 @@ typedef _WireMessages = ({
   List<sdk.InputMessage> messages,
   List<String> leading,
 });
+typedef _UpdatesAfterMessageRequest = ({
+  List<Message> history,
+  int index,
+  List<Message> messages,
+  Map<String, ToolSpec> seen,
+  Set<AgentTranscriptContextEntry> applied,
+});
 
 class const AnthropicRequestEncoder({
   final bool supportsPromptCacheMarkers = false,
@@ -83,14 +90,6 @@ class const AnthropicRequestEncoder({
   void _appendWireMessage(Message message, _WireMessages wire) =>
       _appendSafeWireMessage(_safeMessage(message), wire);
 
-  Message _safeMessage(Message message) => _systemRoleIsAllowed(message)
-      ? message
-      : Message(
-          role: .user,
-          content: message.content,
-          metadata: message.metadata,
-        );
-
   void _appendSafeWireMessage(Message safeMessage, _WireMessages wire) {
     if (safeMessage.role != Role.system) {
       wire.messages.add(AnthropicMessageCodec.encode(safeMessage));
@@ -103,37 +102,66 @@ class const AnthropicRequestEncoder({
     }
   }
 
-  bool _systemRoleIsAllowed(Message message) =>
-      message.role != Role.system ||
-      AgentContextProvenance.fromMetadata(_messageMetadata(message))
-          .mayUseSystemRole;
-
-  Map<String, Object?>? _messageMetadata(Message message) {
-    final metadata = message.metadata;
-
-    return metadata == null ? null : Map<String, Object?>.of(metadata);
-  }
-
   bool _isLeading(Message message, List<sdk.InputMessage> messages) =>
       messages.isEmpty ||
-      (!supportsMidConversationSystemMessages && _changes(message).isEmpty);
+      (!supportsMidConversationSystemMessages &&
+          _changes(message, enabled: supportsToolDeltas).isEmpty);
 
   List<sdk.InputContentBlock> _systemBlocks(Message message) => [
     if (supportsMidConversationSystemMessages && _text(message).isNotEmpty)
       sdk.TextInputBlock(_text(message)),
-    ..._changes(message),
+    ..._changes(message, enabled: supportsToolDeltas),
   ];
-
-  List<sdk.InputContentBlock> _changes(Message message) {
-    if (!supportsToolDeltas) return const [];
-    final blocks = message.metadata?['anthropicToolChanges'];
-    if (blocks is! List<Map<String, dynamic>>) return const [];
-
-    return blocks.map(sdk.InputContentBlock.fromJson).toList();
-  }
 }
 
-extension on AnthropicRequestEncoder {
+Message _safeMessage(Message message) => _systemRoleIsAllowed(message)
+    ? message
+    : Message(
+        role: .user,
+        content: message.content,
+        metadata: message.metadata,
+      );
+
+bool _systemRoleIsAllowed(Message message) =>
+    message.role != Role.system ||
+    AgentContextProvenance.fromMetadata(_messageMetadata(message))
+        .mayUseSystemRole;
+
+Map<String, Object?>? _messageMetadata(Message message) {
+  final metadata = message.metadata;
+
+  return metadata == null ? null : Map<String, Object?>.of(metadata);
+}
+
+List<sdk.InputContentBlock> _changes(
+  Message message, {
+  required bool enabled,
+}) {
+  if (!enabled) return const [];
+  final blocks = message.metadata?['anthropicToolChanges'];
+  if (blocks is! List<Map<String, dynamic>>) return const [];
+
+  return blocks.map(sdk.InputContentBlock.fromJson).toList();
+}
+
+String _mergedUpdateText(Message previous, Message update) => [
+  _text(previous),
+  _text(update),
+].where((text) => text.isNotEmpty).join('\n');
+
+Map<String, Object?> _mergedUpdateMetadata(
+  Message previous,
+  Message update, {
+  required bool supportsToolDeltas,
+}) => AgentContextProvenance.fromMetadata(_messageMetadata(previous))
+    .withMetadata({
+      'anthropicToolChanges': [
+        ..._changes(previous, enabled: supportsToolDeltas),
+        ..._changes(update, enabled: supportsToolDeltas),
+      ].map((block) => block.toJson()).toList(),
+    });
+
+extension _AnthropicHistoryProjection on AnthropicRequestEncoder {
   _Projection _project(ModelRequest request) {
     if (entries.isEmpty ||
         (!supportsToolDeltas && !supportsMidConversationSystemMessages)) {
@@ -170,7 +198,7 @@ extension on AnthropicRequestEncoder {
   );
 }
 
-extension on AnthropicRequestEncoder {
+extension _AnthropicTranscriptHistory on AnthropicRequestEncoder {
   List<Message> _history(List<Message> messages) => messages
       .where(
         (message) =>
@@ -203,31 +231,28 @@ extension on AnthropicRequestEncoder {
     final applied = <AgentTranscriptContextEntry>{};
     for (var index = 0; index < history.length; index++) {
       messages.add(history[index]);
-      _appendUpdatesAfterMessage(history, index, messages, seen, applied);
+      _appendUpdatesAfterMessage((
+        history: history,
+        index: index,
+        messages: messages,
+        seen: seen,
+        applied: applied,
+      ));
     }
     _checkPositionCount(applied.length);
   }
 
-  void _appendUpdatesAfterMessage(
-    List<Message> history,
-    int index,
-    List<Message> messages,
-    Map<String, ToolSpec> seen,
-    Set<AgentTranscriptContextEntry> applied,
-  ) {
-    for (final entry in _entriesAfterMessage(history, index)) {
-      _appendEntryUpdates(entry, messages, seen);
-      final _ = applied.add(entry);
-    }
-  }
-
-  void _appendEntryUpdates(
-    AgentTranscriptContextEntry entry,
-    List<Message> messages,
-    Map<String, ToolSpec> seen,
-  ) {
-    for (final update in _updateMessages(entry.update, seen)) {
-      _appendUpdate(messages, update);
+  void _appendUpdatesAfterMessage(_UpdatesAfterMessageRequest request) {
+    for (final entry in _entriesAfterMessage(
+      request.history,
+      request.index,
+    )) {
+      _AnthropicUpdateProjection(this)._appendEntryUpdates(
+        entry,
+        request.messages,
+        request.seen,
+      );
+      final _ = request.applied.add(entry);
     }
   }
 
@@ -250,9 +275,24 @@ extension on AnthropicRequestEncoder {
 
     return entries.skip(1).where((entry) => entry.afterMessageId == id);
   }
+}
+
+extension _AnthropicUpdateProjection on AnthropicRequestEncoder {
+  void _appendEntryUpdates(
+    AgentTranscriptContextEntry entry,
+    List<Message> messages,
+    Map<String, ToolSpec> seen,
+  ) {
+    for (final update in _updateMessages(entry.update, seen)) {
+      _appendUpdate(messages, update);
+    }
+  }
 
   void _appendUpdate(List<Message> messages, Message update) {
-    if (_text(update).isEmpty && _changes(update).isEmpty) return;
+    if (_text(update).isEmpty &&
+        _changes(update, enabled: supportsToolDeltas).isEmpty) {
+      return;
+    }
     if (messages.last.role != Role.system ||
         !_sameProvenance(messages.last, update)) {
       messages.add(update);
@@ -265,21 +305,12 @@ extension on AnthropicRequestEncoder {
 
   Message _mergeUpdates(Message previous, Message update) => Message(
     role: .system,
-    content: [
-      TextPart(
-        text: [
-          _text(previous),
-          _text(update),
-        ].where((text) => text.isNotEmpty).join('\n'),
-      ),
-    ],
-    metadata: AgentContextProvenance.fromMetadata(_messageMetadata(previous))
-        .withMetadata({
-          'anthropicToolChanges': [
-            ..._changes(previous),
-            ..._changes(update),
-          ].map((block) => block.toJson()).toList(),
-        }),
+    content: [TextPart(text: _mergedUpdateText(previous, update))],
+    metadata: _mergedUpdateMetadata(
+      previous,
+      update,
+      supportsToolDeltas: supportsToolDeltas,
+    ),
   );
 
   List<Message> _updateMessages(

@@ -119,18 +119,13 @@ AgentTranscriptContextState _foldStoredContext(
 }
 
 AgentContextMessage _contextMessage(ChatMessage message) {
-  if (message.parts.isNotEmpty || !_hasSupportedContextRole(message)) {
-    throw const AgentTranscriptContextException('unsupported context message');
-  }
-  final kind = message.metadata['kind'];
-  final provenance = AgentContextProvenance.fromMetadata(
-    Map<String, Object?>.of(message.metadata),
-  );
+  _validateContextMessage(message);
+  final provenance = _contextProvenance(message);
 
   return AgentContextMessage(
     role: _contextRole(message, provenance),
     content: message.content,
-    kind: kind is String ? kind : null,
+    kind: _contextKind(message),
     provenance: provenance,
   );
 }
@@ -144,6 +139,23 @@ AgentContextMessageRole _contextRole(
   }
 
   return .skill;
+}
+
+void _validateContextMessage(ChatMessage message) {
+  if (message.parts.isNotEmpty || !_hasSupportedContextRole(message)) {
+    throw const AgentTranscriptContextException('unsupported context message');
+  }
+}
+
+AgentContextProvenance _contextProvenance(ChatMessage message) =>
+    AgentContextProvenance.fromMetadata(
+      Map<String, Object?>.of(message.metadata),
+    );
+
+String? _contextKind(ChatMessage message) {
+  final kind = message.metadata['kind'];
+
+  return kind is String ? kind : null;
 }
 
 bool _hasSupportedContextRole(ChatMessage message) =>

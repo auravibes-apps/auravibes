@@ -322,17 +322,15 @@ _createTitleStream(Genkit ai, _TitleRequest request) {
   return ai.generateStream<Object?, Object?>(
     model: factory.getModelReference(request.chatProvider),
     prompt: conversationTitlePrompt(request.firstMessage),
-    messages: [
-      Message(
-        role: .system,
-        content: [TextPart(text: conversationTitleSystemPrompt)],
-        metadata: AgentContextProvenance.applicationPrompt.withMetadata(
-          const {},
-        ),
-      ),
-    ],
+    messages: [_titleSystemMessage()],
   );
 }
+
+Message _titleSystemMessage() => Message(
+  role: .system,
+  content: [TextPart(text: conversationTitleSystemPrompt)],
+  metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
+);
 
 extension on ChatbotService {
   Stream<ChatResult<ChatMessage>> _streamA2uiMessage(
