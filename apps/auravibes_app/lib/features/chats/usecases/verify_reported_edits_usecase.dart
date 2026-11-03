@@ -370,7 +370,7 @@ _VerificationSelectionResolution _resolveVerificationSelection(
   }
   final selections = selection.selections;
   if (selections == null || eligible.context.identity.turnId == null) {
-    return _RejectedVerificationSelection(
+    return const _RejectedVerificationSelection(
       outcome: .incomplete,
       reason: 'invalid_turn',
     );
