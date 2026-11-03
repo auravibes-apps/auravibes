@@ -134,8 +134,8 @@ void main() {
     expect(
       find.text(
         'En los espacios en la nube, el archivo se guarda solo en esta app y '
-        'en este dispositivo. Los demás miembros y tus otros dispositivos '
-        'aún pueden ver esta conversación compartida.',
+        'en este dispositivo. Los dem\u00e1s miembros y tus otros dispositivos '
+        'a\u00fan pueden ver esta conversaci\u00f3n compartida.',
       ),
       findsOneWidget,
     );

@@ -627,7 +627,7 @@ class const _ChatListArchivedEmptyState() extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) => SingleChildScrollView(
       child: ConstrainedBox(
-        constraints: BoxConstraints(
+        constraints: .new(
           minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
         ),
         child: const Center(
