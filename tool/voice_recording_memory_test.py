@@ -58,6 +58,29 @@ class VoiceMemoryRunnerTest(unittest.TestCase):
         self.assertEqual(metrics["idle_relative_peak_rss_bytes"]["median"], 800)
         self.assertEqual(metrics["finalization_increment_rss_bytes"]["median"], 100)
 
+    def test_matrix_stops_after_first_failed_worker_and_saves_partial_results(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "apps/auravibes_app/lib/features/chats/services/local_chat_attachment_service_io.dart"
+            harness = root / "apps/auravibes_app/test/performance/voice_recording_memory_test.dart"
+            for file in (source, harness):
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_text("fixture")
+            (root / ".fvmrc").write_text('{"flutter":"3.47.9"}')
+            output = root / "evidence"
+            case = {"label": "baseline", "seconds": 5, "irregular": False,
+                    "status": "failed"}
+            arguments = ["probe", "--baseline", str(root), "--candidate", str(root),
+                         "--output", str(output)]
+            with patch.object(probe.sys, "argv", arguments), \
+                    patch.object(probe.subprocess, "check_output", return_value="a" * 40), \
+                    patch.object(probe, "run_case", return_value=case) as run:
+                code = probe.main()
+            self.assertEqual(code, 1)
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(json.loads((output / "results.json").read_text()), [case])
+            self.assertTrue((output / "summary.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

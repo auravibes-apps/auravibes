@@ -77,6 +77,8 @@ evidence, probe/service hashes, per-case commands and exit state, logs, raw JSON
 samples, results, and median/range summaries. Upload uses `if: always()`;
 timeouts and failed cases retain partial evidence. Capture takes about twenty
 minutes for the complete matrix, plus setup.
+The matrix stops at its first failed worker and saves its partial summary,
+so a runtime setup failure cannot consume the entire capture budget.
 Per-case phase results and the summary also appear in the job log as
 `VOICE_MEMORY_RESULT` and `VOICE_MEMORY_SUMMARY` records, so an artifact download
 failure does not hide the phase evidence.

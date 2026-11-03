@@ -120,10 +120,14 @@ def main():
                     records.append(run_case(checkout, output, label, seconds,
                                             repetition, False))
                     (output / "results.json").write_text(json.dumps(records, indent=2))
+                    if records[-1]["status"] != "passed":
+                        return 1
             for label, checkout in roots.items():
                 if seconds == 120:
                     records.append(run_case(checkout, output, label, seconds, 1, True))
                     (output / "results.json").write_text(json.dumps(records, indent=2))
+                    if records[-1]["status"] != "passed":
+                        return 1
     finally:
         summary = summarize(records)
         (output / "summary.json").write_text(json.dumps(summary, indent=2))
