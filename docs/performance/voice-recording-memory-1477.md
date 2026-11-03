@@ -1,8 +1,9 @@
 # Voice recording memory evidence for #1477
 
-Status: measurement preparation. No hosted measurement has completed, and no
-product implementation is approved. This note must not be read as a measured
-performance claim.
+Status: the hosted baseline completed successfully in
+[run 41686488660](https://github.com/auravibes-apps/auravibes/actions/runs/41686488660).
+All twenty cases passed in twenty distinct worker processes. The results support
+the proposed materiality gate. A file writer requires coordinator approval.
 
 The approved first stage measures the current macOS IO attachment service using
 generated PCM. It retains the two-minute limit and changes no product code.
@@ -38,6 +39,18 @@ The candidate is the immutable PR head SHA. Both execute sequentially on one
 Each case starts a fresh Flutter test process, warms the service, removes its
 warmup draft, and then measures one recording. The runner interleaves baseline
 and candidate cases to reduce ordering effects.
+
+The completed baseline compared that reference with probe revision
+`3f85acb7b69f1262ca45bc1d07e3e4aff1e4f284`. Both revisions contain identical
+product recording code. The probe revision provides a repeatability check.
+Flutter was 3.47.9, Dart was 3.13.7, and the hosted runner was macOS 15 arm64.
+
+The product recording service SHA-256 was identical in both checkouts:
+`6d411f89d5f5ff53fcb19ce8dddd19454ce2f6683e5125c9ec837c03dc5ea3b2`.
+Both used probe SHA-256
+`994169ec7a477dc05481635da664af6be11f2ee3e69950d5467265d80c1241df`
+and lockfile SHA-256
+`a9de2d11d5c370729a26c416ae5bf28ae4595bdbf8a51d4fd2ddca09a84acba7`.
 
 After the workflow is registered on the default branch, a manual equivalent is:
 
@@ -100,12 +113,41 @@ applying it. This synthetic source measures the actual Dart finalization path;
 it excludes microphone/device/native allocations. No product writer work may
 start until the coordinator reviews the recorded baseline evidence.
 
-| Duration | Repetitions | Idle-relative peak RSS | Finalization RSS increase | Peak heap/external | Stop time | Evidence |
-| --- | --- | --- | --- | --- | --- | --- |
-| 5 seconds | Pending | Pending | Pending | Pending | Pending | Pending |
-| 30 seconds | Pending | Pending | Pending | Pending | Pending | Pending |
-| 120 seconds | Pending | Pending | Pending | Pending | Pending | Pending |
+## Completed baseline results
 
-Decision: pending hosted results and phase review. No optimization or memory
-reduction has been claimed. Before/after results will name both immutable
-revisions and the artifact URL; a future writer requires separate approval.
+Each regular row contains three fresh-worker repetitions. Memory values are
+MiB and use `median [minimum, maximum]`. Stop time is the median in milliseconds.
+Finalization increments compare the pre-stop snapshot with the finalization
+peak RSS or the finalized heap snapshot. The broader idle-relative RSS varies
+more because it includes capture, VM sampling, and garbage collection.
+
+| Revision | Seconds | Peak RSS above idle | Finalization RSS increase | Finalization heap increase | Stop ms |
+| --- | ---: | --- | --- | --- | ---: |
+| Reference `f00fc7b91` | 5 | 12.11 [11.44, 15.39] | 3.47 [2.33, 3.73] | 1.11 [1.08, 1.11] | 15.29 |
+| Reference `f00fc7b91` | 30 | 40.28 [34.83, 42.80] | 7.67 [7.63, 10.14] | 5.30 [5.28, 5.33] | 18.24 |
+| Reference `f00fc7b91` | 120 | 80.72 [55.64, 80.97] | 34.34 [34.34, 34.34] | 20.46 [20.45, 20.46] | 31.97 |
+| Probe `3f85acb7b` | 5 | 14.16 [12.92, 15.33] | 3.83 [2.09, 5.08] | 1.09 [1.08, 1.12] | 10.55 |
+| Probe `3f85acb7b` | 30 | 47.28 [41.14, 47.39] | 7.63 [7.63, 10.14] | 5.28 [5.28, 5.28] | 13.93 |
+| Probe `3f85acb7b` | 120 | 78.63 [78.33, 81.97] | 34.33 [34.33, 34.34] | 20.45 [20.45, 20.45] | 27.64 |
+
+At 120 seconds, finalization established a new process RSS high water in all
+six regular recordings. Startup did not hide this increase. Heap growth during
+finalization was about 20.45 MiB, close to the two complete 10.09 MiB PCM/WAV
+payloads in the inspected source. The repeatable phase increase exceeds 8 MiB
+and supports proceeding with the bounded writer, subject to coordinator review.
+
+The two additional 120-second irregular-packet cases also passed. Both added
+34.34 MiB RSS during finalization. Their WAV hashes matched every other
+120-second output. All outputs decoded as 44,100 Hz, one channel, two-byte
+samples. Output lengths were 441,044, 2,646,044, and 10,584,044 bytes for the
+three durations. Every case left zero owned files after cleanup.
+
+The complete per-case phase results are committed in
+[voice-recording-memory-1477-baseline.json](./voice-recording-memory-1477-baseline.json).
+Raw JSONL samples, worker logs, commands, revisions, resolved source evidence,
+and summaries are retained in
+[artifact 13257766564](https://github.com/auravibes-apps/auravibes/actions/runs/41686488660/artifacts/13257766564).
+Artifact download returned HTTP 403 in the agent environment; the committed
+case records were extracted from the hosted job's result log records.
+
+Optimization results remain pending. Product recording code is unchanged.
