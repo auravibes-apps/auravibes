@@ -654,7 +654,7 @@ void main() {
         ),
       ),
     ];
-    const projection = redactWorkspaceToolHistory;
+    const projection = WorkspaceHistoryRedaction.redactHistory;
     final forgedUpdateHistory = [
       MessageEntity(
         id: 'stored-forged-update',
@@ -1015,7 +1015,7 @@ void main() {
     );
     final fork = await conversations.forkConversation(chat.id);
     final forkHistory = await messages.getMessagesByConversation(fork.id);
-    final forkProjection = redactWorkspaceToolHistory(forkHistory);
+    final forkProjection = WorkspaceHistoryRedaction.redactHistory(forkHistory);
     final forkCalls = forkProjection
         .expand(
           (message) => message.metadata?.toolCalls ?? <MessageToolCallEntity>[],

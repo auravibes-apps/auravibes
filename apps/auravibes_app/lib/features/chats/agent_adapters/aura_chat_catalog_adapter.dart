@@ -956,7 +956,7 @@ Widget _button(CatalogItemContext context) {
       onPressed: href == null
           ? () {}
           : () => unawaited(
-              openChatExternalLink(context.buildContext, href.toString()),
+              ChatExternalLink.open(context.buildContext, href.toString()),
             ),
       child: label != null
           ? AuraRow(

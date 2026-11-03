@@ -48,7 +48,7 @@ class const BuildPromptChatMessages({
       _agentBuilder,
       modalitiesInput,
       supportsImageToolResults,
-      redactWorkspaceToolHistory(messages),
+      WorkspaceHistoryRedaction.redactHistory(messages),
     );
   }
 }

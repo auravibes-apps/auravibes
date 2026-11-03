@@ -93,7 +93,7 @@ String? _mcpAppResourceUri(
 ) {
   final tool = _findMcpAppTool(connections, components);
 
-  return parseMcpAppToolMetadata(tool?.metadata).resourceUri;
+  return McpAppToolMetadata.parse(tool?.metadata).resourceUri;
 }
 
 McpToolInfo? _findMcpAppTool(
@@ -152,7 +152,7 @@ class _McpAppResourceLoaderState extends ConsumerState<_McpAppResourceLoader> {
           resourceUri: widget.viewData.resourceUri,
         );
 
-    return parseMcpAppResource(
+    return McpAppResourceCodec.parse(
       result,
       resourceUri: widget.viewData.resourceUri,
     );
@@ -407,7 +407,7 @@ void _handleMcpAppMainFrameError(
 
 InAppWebViewInitialData _mcpAppInitialData(_McpAppEmbeddedViewState state) =>
     .new(
-      data: buildMcpAppHostPage(
+      data: McpAppHostPage.build(
         html: state.widget.resource.html,
         csp: state.widget.resource.csp,
         isWeb: kIsWeb,
@@ -514,7 +514,9 @@ McpToolInfo _visibleMcpAppTool(
     toolName,
   );
   if (tool == null ||
-      !isMcpAppToolVisibleToApp(parseMcpAppToolMetadata(tool.metadata))) {
+      !McpAppToolMetadata.isVisibleToApp(
+        McpAppToolMetadata.parse(tool.metadata),
+      )) {
     throw StateError('MCP tool is unavailable to this app.');
   }
 
@@ -660,29 +662,33 @@ class const _McpAppToolApprovalMessage({
       SizedBox(
         height: 160,
         child: SingleChildScrollView(
-          child: SelectableText(formatMcpAppApprovalArguments(arguments)),
+          child: SelectableText(
+            McpAppToolResultFormatter.formatApprovalArguments(arguments),
+          ),
         ),
       ),
     ],
   );
 }
 
-/// Formats app-supplied arguments for the bounded approval preview.
-String formatMcpAppApprovalArguments(Map<String, dynamic> arguments) {
-  final runes = _mcpAppApprovalArgumentsEncoder
-      .convert(arguments)
-      .runes
-      .take(_maxMcpAppApprovalArgumentRunes + 1)
-      .toList(growable: false);
-  if (runes.length <= _maxMcpAppApprovalArgumentRunes) {
-    return String.fromCharCodes(runes);
+abstract final class McpAppToolResultFormatter {
+  /// Formats app-supplied arguments for the bounded approval preview.
+  static String formatApprovalArguments(Map<String, dynamic> arguments) {
+    final runes = _mcpAppApprovalArgumentsEncoder
+        .convert(arguments)
+        .runes
+        .take(_maxMcpAppApprovalArgumentRunes + 1)
+        .toList(growable: false);
+    if (runes.length <= _maxMcpAppApprovalArgumentRunes) {
+      return String.fromCharCodes(runes);
+    }
+
+    final preview = String.fromCharCodes(
+      runes.take(_maxMcpAppApprovalArgumentRunes),
+    );
+
+    return '$preview${String.fromCharCode(0x2026)}';
   }
-
-  final preview = String.fromCharCodes(
-    runes.take(_maxMcpAppApprovalArgumentRunes),
-  );
-
-  return '$preview${String.fromCharCode(0x2026)}';
 }
 
 Map<String, dynamic> _toolArguments(String raw) {

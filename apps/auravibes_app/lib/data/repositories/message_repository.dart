@@ -2060,7 +2060,7 @@ String? _sanitizeMetadataJson(String? raw) {
   if (raw == null) return null;
   final metadata = MessageMetadataEntity.fromJsonString(raw);
   if (metadata == null) return raw;
-  final sanitized = sanitizeWorkspaceToolMetadata(metadata);
+  final sanitized = WorkspaceToolResultSanitizer.sanitizeMetadata(metadata);
   if (const ListEquality<MessageToolCallEntity>().equals(
     sanitized.toolCalls,
     metadata.toolCalls,
@@ -2072,7 +2072,9 @@ String? _sanitizeMetadataJson(String? raw) {
 }
 
 MessageMetadataEntity? _sanitizeMetadata(MessageMetadataEntity? metadata) =>
-    metadata == null ? null : sanitizeWorkspaceToolMetadata(metadata);
+    metadata == null
+        ? null
+        : WorkspaceToolResultSanitizer.sanitizeMetadata(metadata);
 
 DateTime? _messageUpdatedAt(MessageToCreate message) =>
     message.updatedAt ?? message.createdAt;

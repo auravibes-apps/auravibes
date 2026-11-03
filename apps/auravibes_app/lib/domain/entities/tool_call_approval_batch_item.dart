@@ -64,7 +64,7 @@ class const ToolCallExecutionBatchUpdate({
   );
 
   MessageToolCallEntity applyTo(MessageToolCallEntity toolCall) =>
-      sanitizeWorkspaceToolResult(
+      WorkspaceToolResultSanitizer.sanitizeResult(
         toolCall.copyWith(
           resultStatus: resultStatus,
           responseRaw: responseRaw,

@@ -10,7 +10,7 @@ class LocalWorkspaceTrashRestorer(final LocalWorkspaceTrashStore store) {
   Future<WorkspaceTrashRestoration> restore(String id) async {
     await store.requireLocal();
     final batch = await store.batch(id);
-    final members = localTrashMembers(batch);
+    final members = LocalWorkspaceTrashReader.members(batch);
     final nodes = await store.nodes();
     await _restoreMembers(members, nodes);
     final unresolved = await _validate(members);

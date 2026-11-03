@@ -464,7 +464,7 @@ MessageToolCallEntity _toolCallWithResultStatus(
     resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
-  return sanitizeWorkspaceToolResult(
+  return WorkspaceToolResultSanitizer.sanitizeResult(
     _applyToolExecutionOutput(
       withStatus,
       update,

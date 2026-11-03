@@ -1,8 +1,10 @@
 import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime_api.dart';
 
-AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
-    const AgentLifecycleHookRuntimeStub();
+abstract final class AgentLifecycleHookRuntimeFactory {
+  static AgentLifecycleHookRuntime create() =>
+      const AgentLifecycleHookRuntimeStub();
+}
 
 class const AgentLifecycleHookRuntimeStub()
     implements AgentLifecycleHookRuntime {

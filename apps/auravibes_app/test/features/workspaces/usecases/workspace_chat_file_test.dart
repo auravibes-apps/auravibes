@@ -33,7 +33,7 @@ void main() {
   });
 
   test('current directory reads keep safe item metadata for the model', () {
-    final call = sanitizeWorkspaceToolResult(
+    final call = WorkspaceToolResultSanitizer.sanitizeResult(
       .new(
         id: 'directory-read',
         name: workspaceReadDirectoryToolName,
@@ -79,7 +79,7 @@ void main() {
   });
 
   test('folder reads keep safe child metadata but redact content', () {
-    final call = sanitizeWorkspaceToolResult(
+    final call = WorkspaceToolResultSanitizer.sanitizeResult(
       .new(
         id: 'folder-read',
         name: workspaceReadItemToolName,
@@ -114,7 +114,7 @@ void main() {
   });
 
   test('table reads retain schema but redact record values', () {
-    final call = sanitizeWorkspaceToolResult(
+    final call = WorkspaceToolResultSanitizer.sanitizeResult(
       .new(
         id: 'table-read',
         name: workspaceReadTableToolName,
@@ -213,7 +213,7 @@ void main() {
           'Hello',
         ),
       );
-      final storedCall = sanitizeWorkspaceToolResult(
+      final storedCall = WorkspaceToolResultSanitizer.sanitizeResult(
         .new(
           id: 'file-read',
           name: workspaceReadItemToolName,
@@ -224,7 +224,7 @@ void main() {
         ),
       );
       expect(jsonEncode(storedCall.toJson()), isNot(contains('Hello')));
-      final failedRead = sanitizeWorkspaceToolResult(
+      final failedRead = WorkspaceToolResultSanitizer.sanitizeResult(
         .new(
           id: 'unshared-read',
           name: workspaceReadItemToolName,
@@ -241,7 +241,7 @@ void main() {
         failedRead.responseRaw,
         isNot(contains('private provider details')),
       );
-      final folderCreation = sanitizeWorkspaceToolResult(
+      final folderCreation = WorkspaceToolResultSanitizer.sanitizeResult(
         .new(
           id: 'folder-create',
           name: workspaceCreateFolderToolName,
@@ -262,7 +262,7 @@ void main() {
         updatedAt: .new(2026),
         metadata: .new(toolCalls: [storedCall]),
       );
-      const projection = redactWorkspaceToolHistory;
+      const projection = WorkspaceHistoryRedaction.redactHistory;
       final authorized = projection([message]);
       expect(
         authorized.single.metadata?.toolCalls.single.responseRaw,

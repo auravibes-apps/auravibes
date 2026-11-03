@@ -907,7 +907,9 @@ extension on ConversationRepository {
     if (raw == null) return null;
     final metadata = MessageMetadataEntity.fromJsonString(raw);
     if (metadata == null) return raw;
-    final redacted = redactInheritedWorkspaceToolMetadata(metadata);
+    final redacted = WorkspaceToolResultSanitizer.redactInheritedMetadata(
+      metadata,
+    );
 
     return identical(redacted, metadata) ? raw : jsonEncode(redacted.toJson());
   }

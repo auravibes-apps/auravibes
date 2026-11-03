@@ -539,7 +539,7 @@ List<MessageToolCallEntity> _updatedToolCalls(
 MessageToolCallEntity _updatedToolCall(
   MessageToolCallEntity toolCall,
   _ToolCallPatchRequest request,
-) => sanitizeWorkspaceToolResult(
+) => WorkspaceToolResultSanitizer.sanitizeResult(
   _applyToolCallPatch(
     toolCall.copyWith(resultStatus: request.resultStatus),
     request,

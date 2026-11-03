@@ -14,8 +14,10 @@ typedef _Reinspection = ({
   AgentToolHookOutcome? failure,
 });
 
-AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
-    const AgentLifecycleHookRuntimeIo();
+abstract final class AgentLifecycleHookRuntimeFactory {
+  static AgentLifecycleHookRuntime create() =>
+      const AgentLifecycleHookRuntimeIo();
+}
 
 class const AgentLifecycleHookRuntimeIo() implements AgentLifecycleHookRuntime {
   @override
@@ -122,8 +124,10 @@ AgentLifecycleHookProcessRequest _processRequest(
 }
 
 bool _inputExceedsLimit(String input) =>
-    input.length > maxAgentLifecycleHookInputBytes ||
-    utf8.encode(input).length > maxAgentLifecycleHookInputBytes;
+    input.length >
+        AgentLifecycleHookRuntimeLimits.maxAgentLifecycleHookInputBytes ||
+    utf8.encode(input).length >
+        AgentLifecycleHookRuntimeLimits.maxAgentLifecycleHookInputBytes;
 
 bool _matchesInvocation(
   AgentLifecycleHookSourceSnapshot current,

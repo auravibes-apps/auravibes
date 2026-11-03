@@ -6,11 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('configuration accepts its exact byte limit and rejects one more', () {
     const minimal = '{"version":1,"hooks":[]}';
-    final bounded =
-        minimal + ' ' * (maxAgentLifecycleHookConfigBytes - minimal.length);
-    expect(parseAgentLifecycleHookConfig(bounded).hooks, isEmpty);
+    final bounded = minimal +
+        ' ' *
+            (AgentLifecycleHookConfig.maxAgentLifecycleHookConfigBytes -
+                minimal.length);
+    expect(AgentLifecycleHookConfig.parse(bounded).hooks, isEmpty);
     expect(
-      () => parseAgentLifecycleHookConfig('$bounded '),
+      () => AgentLifecycleHookConfig.parse('$bounded '),
       _configError('config_too_large'),
     );
   });
@@ -23,18 +25,23 @@ void main() {
       'hooks': <Object?>[],
       'sourceFiles': [accented * 16384],
     });
-    expect(oversizedConfig.length, lessThan(maxAgentLifecycleHookConfigBytes));
     expect(
-      () => parseAgentLifecycleHookConfig(oversizedConfig),
+      oversizedConfig.length,
+      lessThan(AgentLifecycleHookConfig.maxAgentLifecycleHookConfigBytes),
+    );
+    expect(
+      () => AgentLifecycleHookConfig.parse(oversizedConfig),
       _configError('config_too_large'),
     );
     final valid = _configWithHook(args: [emoji * 512]);
     expect(
-      parseAgentLifecycleHookConfig(valid).hooks.single.args.single,
+      AgentLifecycleHookConfig.parse(valid).hooks.single.args.single,
       emoji * 512,
     );
     expect(
-      () => parseAgentLifecycleHookConfig(_configWithHook(args: [emoji * 513])),
+      () => AgentLifecycleHookConfig.parse(
+        _configWithHook(args: [emoji * 513]),
+      ),
       _configError('invalid_hook_argument'),
     );
   });
@@ -59,14 +66,14 @@ void main() {
   for (final entry in invalidConfigs.entries) {
     test('rejects invalid configuration with ${entry.value}: ${entry.key}', () {
       expect(
-        () => parseAgentLifecycleHookConfig(entry.key),
+        () => AgentLifecycleHookConfig.parse(entry.key),
         _configError(entry.value),
       );
     });
   }
 
   test('parses one hook for each supported lifecycle event', () {
-    final config = parseAgentLifecycleHookConfig('''
+    final config = AgentLifecycleHookConfig.parse('''
       {
         "version": 1,
         "sourceFiles": ["hooks/policy.py"],
@@ -85,7 +92,7 @@ void main() {
 
   test('rejects duplicate events and unsupported fields', () {
     expect(
-      () => parseAgentLifecycleHookConfig('''
+      () => AgentLifecycleHookConfig.parse('''
         {"version":1,"hooks":[
           {"event":"beforeTool","command":"a","args":[]},
           {"event":"beforeTool","command":"b","args":[]}
@@ -100,7 +107,7 @@ void main() {
       ),
     );
     expect(
-      () => parseAgentLifecycleHookConfig(
+      () => AgentLifecycleHookConfig.parse(
         '{"version":1,"hooks":[],"shell":true}',
       ),
       throwsA(isA<AgentLifecycleHookConfigException>()),
@@ -109,15 +116,15 @@ void main() {
 
   test('rejects command and argument bounds', () {
     expect(
-      () => parseAgentLifecycleHookConfig('''
+      () => AgentLifecycleHookConfig.parse('''
         {"version":1,"hooks":[
-          {"event":"beforeTool","command":"a","args":["${'x' * (maxAgentLifecycleHookArgBytes + 1)}"]}
+          {"event":"beforeTool","command":"a","args":["${'x' * (AgentLifecycleHookConfig.maxAgentLifecycleHookArgBytes + 1)}"]}
         ]}
       '''),
       throwsA(isA<AgentLifecycleHookConfigException>()),
     );
     expect(
-      () => parseAgentLifecycleHookConfig('''
+      () => AgentLifecycleHookConfig.parse('''
         {"version":1,"hooks":[
           {"event":"beforeTurn","command":"a","args":[]}
         ]}

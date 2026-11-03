@@ -1838,7 +1838,7 @@ Widget _chatMarkdown({
     child: GptMarkdown(
       content,
       style: style,
-      onLinkTap: (url, _) => unawaited(openChatExternalLink(context, url)),
+      onLinkTap: (url, _) => unawaited(ChatExternalLink.open(context, url)),
     ),
   ),
 );
@@ -1990,7 +1990,7 @@ class const _AssistantActivityRun({
       });
     }
 
-    Future<void> collapseAfterRun() => runAfterMcpAppToolResultsTeardown(
+    Future<void> collapseAfterRun() => McpAppToolResultTeardown.runAfter(
       controllers: appControllersForToolIds(expansionState.expandedToolIds),
       action: () {
         if (!context.mounted) return;
@@ -2154,7 +2154,8 @@ class const _AssistantActivityRun({
                       isLive: current.isLive,
                       traceExpanded: current.traceExpanded,
                       expandedToolGroupIds: current.expandedToolGroupIds,
-                      expandedToolIds: updateActivityRunExpandedIds(
+                      expandedToolIds:
+                          ActivityRunExpansionNotifier.updateExpandedIds(
                         expandedIds: current.expandedToolIds,
                         id: toolCallId,
                         isExpanded: shouldExpandToolCall,
@@ -2175,7 +2176,7 @@ class const _AssistantActivityRun({
         final shouldExpandToolGroup = !renderedExpansionState
             .expandedToolGroupIds
             .contains(groupId);
-        Future<void> toggleToolGroup() => runAfterMcpAppToolResultsTeardown(
+        Future<void> toggleToolGroup() => McpAppToolResultTeardown.runAfter(
           controllers: shouldExpandToolGroup
               ? const <McpAppToolResultController?>[]
               : [
@@ -2192,7 +2193,8 @@ class const _AssistantActivityRun({
                 return (
                   isLive: current.isLive,
                   traceExpanded: current.traceExpanded,
-                  expandedToolGroupIds: updateActivityRunExpandedIds(
+                  expandedToolGroupIds:
+                      ActivityRunExpansionNotifier.updateExpandedIds(
                     expandedIds: current.expandedToolGroupIds,
                     id: groupId,
                     isExpanded: shouldExpandToolGroup,
@@ -2241,7 +2243,7 @@ class const _AssistantActivityRun({
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
     final shouldExpandTrace = !renderedExpansionState.traceExpanded;
-    Future<void> toggleTrace() => runAfterMcpAppToolResultsTeardown(
+    Future<void> toggleTrace() => McpAppToolResultTeardown.runAfter(
       controllers: shouldExpandTrace
           ? const <McpAppToolResultController?>[]
           : appControllersForToolIds(renderedExpansionState.expandedToolIds),
