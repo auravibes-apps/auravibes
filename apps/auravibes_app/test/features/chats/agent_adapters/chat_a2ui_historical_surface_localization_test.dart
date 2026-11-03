@@ -35,10 +35,16 @@ void main() {
             supportedLocales: context.supportedLocales,
             home: Builder(
               builder: (context) {
+                final directTranslation = LocaleKeys
+                    .chats_screens_chat_conversation_a2ui_read_only
+                    .tr(context: context);
                 final label = chatA2uiText(
                   context,
                   LocaleKeys.chats_screens_chat_conversation_a2ui_read_only,
                   'Read only',
+                );
+                debugPrint(
+                  'locale=${context.locale}, direct=$directTranslation, helper=$label',
                 );
                 return AuraThemeScope(
                   theme: .light,
