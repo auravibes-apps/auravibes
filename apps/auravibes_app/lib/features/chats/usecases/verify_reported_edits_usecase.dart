@@ -388,6 +388,7 @@ _ReadyVerificationSelection _readyVerificationSelection(
   List<ScopedVerificationSelection> selections,
 ) {
   final request = eligible.request;
+
   return _ReadyVerificationSelection((
     usecase: eligible.usecase,
     invocation: eligible.invocation,
