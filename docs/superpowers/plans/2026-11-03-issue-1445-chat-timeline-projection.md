@@ -1,12 +1,12 @@
 # Chat timeline projection performance plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement the approved plan task by task. This plan is still awaiting parent approval; do not edit production code before approval. Parent will arrange an independent code review after implementation. Do not create nested agents.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement the approved plan task by task. Parent approved Task 1 only; the hosted baseline showed no material isolated projection cost, and the parent approved the benchmark/evidence-only outcome. Task 2 was not approved or implemented; do not add a projection cache. Parent will arrange an independent code review after implementation. Do not create nested agents.
 
 **Goal:** Complete issue #1445 by measuring repeated derivation in the active chat timeline and optimizing only if the hosted baseline shows a material cost.
 
 **Architecture:** The current `ChatMessagesWidget` resolves the effective message list, calls `ChatTimelineProjection.buildChatTimelineItems`, builds assistant response progress, scans for the retryable user message, and finds the focused item during a widget build. Begin with an opt-in deterministic benchmark around the pure projection path, which is the largest cohesive derivation and already has focused correctness tests. Capture its pre-optimization measurements on hosted CI. If measurements do not show meaningful repeated-prefix cost for representative large transcripts, document the result and stop without adding a cache. If they do, introduce a per-conversation incremental projection cache that preserves the full pure projection as a correctness oracle and falls back to a full rebuild whenever inputs cannot be safely localized.
 
-**Tech stack:** Existing Flutter/Dart SDK, `flutter_test`, immutable `MessageEntity` and `ResolvedChatMessage` fixtures, `Stopwatch`, JSON output, and an opt-in GitHub Actions capture. No new package dependency.
+**Tech stack:** Existing Flutter/Dart SDK, `flutter_test`, immutable `MessageEntity` and `ResolvedChatMessage` fixtures, `Stopwatch`, JSON output, and a temporary opt-in GitHub Actions capture used for the baseline and removed from the final PR. No new package dependency.
 
 **Spec:** https://github.com/auravibes-apps/auravibes/issues/1445
 
@@ -67,13 +67,15 @@
 
 **Steps:**
 
-- [ ] Add the gated benchmark harness and verify its fixtures include all relevant timeline/activity categories without database or network setup.
-- [ ] Add the manual hosted-capture path and evidence validation. Keep it scoped to the benchmark capture input and follow existing artifact conventions.
-- [ ] Open/update a benchmark-only PR revision, wait for hosted required checks, then trigger and verify the baseline capture on that exact revision.
-- [ ] Review the baseline's raw samples and cost scaling with the parent. Do not proceed to a production optimization until the parent agrees the evidence shows material repeated-prefix cost.
-- [ ] If not material, record that conclusion and exact hosted evidence and stop here with no production code changes.
+- [x] Add the gated benchmark harness and verify its fixtures include relevant timeline/activity categories without database or network setup.
+- [x] Use a temporary manual hosted-capture path and evidence validation; remove the capture-only workflow changes from the final PR.
+- [x] Open the benchmark-only PR and trigger the baseline capture on exact commit 0aaddfce7a200ed1e09aead2eed5897766e717d8; required PR CI remains pending.
+- [x] Review the baseline raw samples and cost scaling with the parent; the parent approved no cache because the isolated projection cost was not material.
+- [x] Record the no-cache conclusion and exact hosted evidence with no production code changes.
 
 ## Task 2: Optimize only a measured stable-prefix bottleneck
+
+**Disposition:** Not performed. The hosted baseline did not establish a material isolated projection bottleneck, and the parent approved the benchmark/evidence-only outcome.
 
 **Files, only if the parent approves the baseline:**
 
@@ -113,16 +115,16 @@
 
 **Steps:**
 
-- [ ] Document exact baseline/follow-up commits, workflow-run/artifact links, Flutter/Dart versions, runner OS/architecture, workloads, warm-ups/sample count, medians/p95/raw ranges, and the fact that the microbenchmark does not measure total rendering or production device latency.
-- [ ] Summarize the optimization decision. Do not add performance thresholds without stable repeated evidence and parent review.
+- [x] Document the exact baseline commit, workflow-run/artifact link, Flutter/Dart version, runner OS, workloads, warm-ups/sample count, medians/p95/raw samples, and total-rendering limitation.
+- [x] Record the parent-approved no-cache decision and add no timing thresholds.
 - [ ] Review the final diff against `origin/main` for behavior scope, cache invalidation correctness, stale item references, unnecessary allocations, code complexity, and absence of unrelated transcript/provider changes.
 - [ ] Parent arranges an independent review. Address every finding and repeat the affected hosted tests/review until no actionable findings remain.
-- [ ] Create one Conventional Commit PR referencing `Closes #1445`, link baseline/follow-up evidence, describe scope and skipped local validation due to the user-authorized lease block, and attach it to the Codex task.
+- [x] Create PR #1790 referencing Closes #1445 with baseline evidence, scope, and the hosted-only validation note. Codex artifact attachment confirmation is pending.
 - [ ] Wait for hosted CI. Parent merges only after the exact current head is reviewed, all required checks are green, `mergeStateStatus` is `CLEAN`, the local review checkout matches that head, and no approval requirement remains.
 
 ## Verification commands
 
-Do not execute locally while the validation lease/setup is blocked. Hosted CI should run the focused projection correctness tests and regular PR gates. The opt-in performance capture is run separately through the manual workflow input:
+Do not execute locally while the validation lease/setup is blocked. Hosted CI should run the focused projection correctness tests and regular PR gates. The temporary manual capture workflow used for the baseline has been removed from the final PR; set the benchmark environment variable in a hosted job to run it again:
 
 ```bash
 # Hosted CI correctness coverage
@@ -142,7 +144,9 @@ The local validation lease blocker is the existing `.fvm/flutter_sdk` mismatch a
 - [x] Required preflight found no matching branch, worktree, or PR. It reported the existing pinned Flutter SDK symlink mismatch; no SDK/bootstrap/validation action was performed.
 - [x] Created dedicated clean worktree `/workspace/auravibes-agent-worktrees/issue-1445` on `codex/issue-1445-streaming-timeline` from `origin/main` at `23e8c5c31d9d15e9acf7799a364ae77a4014faf5`.
 - [x] No production source was edited and no local tests or analyzers were run during planning.
-- [x] Parent reviewed and approved the plan, with Task 1 only authorized. Task 2 remains explicitly gated on exact hosted baseline results and separate parent approval.
-- [x] Added the opt-in synthetic benchmark test and a manual GitHub Actions capture path; no production projection/cache code was changed.
+- [x] Parent reviewed and approved the plan, with Task 1 only authorized. The hosted baseline was reviewed; Task 2 was not approved because the isolated projection cost was not material.
+- [x] Added the opt-in synthetic benchmark test; its temporary manual capture workflow was removed before the final PR. No production projection/cache code was changed.
 - [x] `git diff --cached --check` passed. No Flutter/Dart tests or analyzers were run locally because the validation lease/setup is blocked and the user directed use of hosted CI.
-- [ ] Hosted correctness and baseline capture; raw records and interpretation pending parent review.
+- [x] Hosted baseline correctness and capture completed; raw evidence was recorded and parent approved no cache.
+- [x] Removed temporary capture-only workflow changes from the final PR.
+- [ ] Final hosted PR checks and parent review; the current PR head is tracked on #1790.
