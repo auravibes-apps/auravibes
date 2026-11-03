@@ -588,11 +588,17 @@ class const ChatMessagesWidget({
           bottom: 16,
           child: ListenableBuilder(
             listenable: controller,
-            builder: (context, child) =>
-                controller.hasClients &&
-                    controller.offset > _latestMessageScrollThreshold
-                ? child!
-                : const SizedBox.shrink(),
+            builder: (context, child) {
+              // A route transition can temporarily leave both transcript
+              // scrollables attached to this controller. `offset` asserts
+              // that there is exactly one client.
+              final positions = controller.positions;
+              final hasSingleClient = positions.length == 1;
+              return hasSingleClient &&
+                      positions.single.pixels > _latestMessageScrollThreshold
+                  ? child!
+                  : const SizedBox.shrink();
+            },
             child: AuraIconButton(
               key: const ValueKey('chat_jump_to_latest'),
               icon: Icons.keyboard_arrow_down_rounded,
