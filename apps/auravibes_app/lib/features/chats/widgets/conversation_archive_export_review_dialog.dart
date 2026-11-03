@@ -229,9 +229,7 @@ class const _ArchiveExportConversationList({
           args: [preview.conversations.length.toString()],
         ),
         for (final conversation in preview.conversations)
-          _ConversationArchiveExportConversationRow(
-            conversation: conversation,
-          ),
+          _ConversationArchiveExportConversationRow(conversation: conversation),
       ],
     );
   }
@@ -312,9 +310,7 @@ class const _ConversationArchiveExportAttachmentRow({
               child: const Icon(Icons.attach_file, size: 18),
             ),
             Expanded(
-              child: _ArchiveExportAttachmentDetails(
-                attachment: attachment,
-              ),
+              child: _ArchiveExportAttachmentDetails(attachment: attachment),
             ),
           ],
         ),
