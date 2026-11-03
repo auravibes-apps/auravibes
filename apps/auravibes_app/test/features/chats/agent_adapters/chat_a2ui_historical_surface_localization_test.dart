@@ -58,9 +58,11 @@ void main() {
               ],
               supportedLocales: context.supportedLocales,
               theme: ThemeData(),
-              home: ChatA2uiSurfaceHost.historical(
-                messageId: 'localized-status',
-                payloads: payloads,
+              home: SingleChildScrollView(
+                child: ChatA2uiSurfaceHost.historical(
+                  messageId: 'localized-status',
+                  payloads: payloads,
+                ),
               ),
             ),
           ),
