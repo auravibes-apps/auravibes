@@ -24,7 +24,9 @@ mixin _$WorkspaceToolEntity {
  DateTime get createdAt;/// Timestamp when this setting was last updated.
  DateTime get updatedAt;/// Tool configuration as JSON (optional).
  String? get config;/// Optional description of the tool (from MCP or user-defined).
- String? get description;/// JSON schema for input parameters (for MCP tools).
+ String? get description;/// Optional title supplied by an MCP server for display only.
+ String? get title;/// Bounded MCP informational annotations encoded as JSON.
+ String? get annotationsJson;/// JSON schema for input parameters (for MCP tools).
  String? get inputSchema;/// JSON schema for MCP tool results.
  String? get outputSchemaJson;/// Optional reference to the tools group this tool belongs to.
  String? get workspaceToolsGroupId;
@@ -39,20 +41,20 @@ $WorkspaceToolEntityCopyWith<WorkspaceToolEntity> get copyWith => _$WorkspaceToo
 @override
 bool operator ==(Object other) {
   final _this = this as WorkspaceToolEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToolEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.toolId, _this.toolId) || other.toolId == _this.toolId)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissionMode, _this.permissionMode) || other.permissionMode == _this.permissionMode)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.config, _this.config) || other.config == _this.config)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.inputSchema, _this.inputSchema) || other.inputSchema == _this.inputSchema)&&(identical(other.outputSchemaJson, _this.outputSchemaJson) || other.outputSchemaJson == _this.outputSchemaJson)&&(identical(other.workspaceToolsGroupId, _this.workspaceToolsGroupId) || other.workspaceToolsGroupId == _this.workspaceToolsGroupId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToolEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.toolId, _this.toolId) || other.toolId == _this.toolId)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissionMode, _this.permissionMode) || other.permissionMode == _this.permissionMode)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.config, _this.config) || other.config == _this.config)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.annotationsJson, _this.annotationsJson) || other.annotationsJson == _this.annotationsJson)&&(identical(other.inputSchema, _this.inputSchema) || other.inputSchema == _this.inputSchema)&&(identical(other.outputSchemaJson, _this.outputSchemaJson) || other.outputSchemaJson == _this.outputSchemaJson)&&(identical(other.workspaceToolsGroupId, _this.workspaceToolsGroupId) || other.workspaceToolsGroupId == _this.workspaceToolsGroupId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as WorkspaceToolEntity;
-  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.toolId,_this.isEnabled,_this.permissionMode,_this.createdAt,_this.updatedAt,_this.config,_this.description,_this.inputSchema,_this.outputSchemaJson,_this.workspaceToolsGroupId);
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.toolId,_this.isEnabled,_this.permissionMode,_this.createdAt,_this.updatedAt,_this.config,_this.description,_this.title,_this.annotationsJson,_this.inputSchema,_this.outputSchemaJson,_this.workspaceToolsGroupId);
 }
 
 @override
 String toString() {
   final _this = this as WorkspaceToolEntity;
-  return 'WorkspaceToolEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, toolId: ${_this.toolId}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, config: ${_this.config}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, outputSchemaJson: ${_this.outputSchemaJson}, workspaceToolsGroupId: ${_this.workspaceToolsGroupId})';
+  return 'WorkspaceToolEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, toolId: ${_this.toolId}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, config: ${_this.config}, description: ${_this.description}, title: ${_this.title}, annotationsJson: ${_this.annotationsJson}, inputSchema: ${_this.inputSchema}, outputSchemaJson: ${_this.outputSchemaJson}, workspaceToolsGroupId: ${_this.workspaceToolsGroupId})';
 }
 
 
@@ -63,7 +65,7 @@ abstract mixin class $WorkspaceToolEntityCopyWith<$Res>  {
   factory $WorkspaceToolEntityCopyWith(WorkspaceToolEntity value, $Res Function(WorkspaceToolEntity) _then) = _$WorkspaceToolEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String workspaceId, String toolId, bool isEnabled, ToolPermissionMode permissionMode, DateTime createdAt, DateTime updatedAt, String? config, String? description, String? inputSchema, String? outputSchemaJson, String? workspaceToolsGroupId
+ String id, String workspaceId, String toolId, bool isEnabled, ToolPermissionMode permissionMode, DateTime createdAt, DateTime updatedAt, String? config, String? description, String? title, String? annotationsJson, String? inputSchema, String? outputSchemaJson, String? workspaceToolsGroupId
 });
 
 
@@ -80,7 +82,7 @@ class _$WorkspaceToolEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceToolEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,Object? config = freezed,Object? description = freezed,Object? inputSchema = freezed,Object? outputSchemaJson = freezed,Object? workspaceToolsGroupId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,Object? config = freezed,Object? description = freezed,Object? title = freezed,Object? annotationsJson = freezed,Object? inputSchema = freezed,Object? outputSchemaJson = freezed,Object? workspaceToolsGroupId = freezed,}) {
   return _then(WorkspaceToolEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -91,6 +93,8 @@ as ToolPermissionMode,createdAt: null == createdAt ? _self.createdAt : createdAt
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,config: freezed == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String?,annotationsJson: freezed == annotationsJson ? _self.annotationsJson : annotationsJson // ignore: cast_nullable_to_non_nullable
 as String?,inputSchema: freezed == inputSchema ? _self.inputSchema : inputSchema // ignore: cast_nullable_to_non_nullable
 as String?,outputSchemaJson: freezed == outputSchemaJson ? _self.outputSchemaJson : outputSchemaJson // ignore: cast_nullable_to_non_nullable
 as String?,workspaceToolsGroupId: freezed == workspaceToolsGroupId ? _self.workspaceToolsGroupId : workspaceToolsGroupId // ignore: cast_nullable_to_non_nullable
@@ -179,10 +183,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String toolId,  bool isEnabled,  ToolPermissionMode permissionMode,  DateTime createdAt,  DateTime updatedAt,  String? config,  String? description,  String? inputSchema,  String? outputSchemaJson,  String? workspaceToolsGroupId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String toolId,  bool isEnabled,  ToolPermissionMode permissionMode,  DateTime createdAt,  DateTime updatedAt,  String? config,  String? description,  String? title,  String? annotationsJson,  String? inputSchema,  String? outputSchemaJson,  String? workspaceToolsGroupId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceToolEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.permissionMode,_that.createdAt,_that.updatedAt,_that.config,_that.description,_that.inputSchema,_that.outputSchemaJson,_that.workspaceToolsGroupId);case _:
+return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.permissionMode,_that.createdAt,_that.updatedAt,_that.config,_that.description,_that.title,_that.annotationsJson,_that.inputSchema,_that.outputSchemaJson,_that.workspaceToolsGroupId);case _:
   return orElse();
 
 }
@@ -200,10 +204,10 @@ return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.pe
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String toolId,  bool isEnabled,  ToolPermissionMode permissionMode,  DateTime createdAt,  DateTime updatedAt,  String? config,  String? description,  String? inputSchema,  String? outputSchemaJson,  String? workspaceToolsGroupId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String toolId,  bool isEnabled,  ToolPermissionMode permissionMode,  DateTime createdAt,  DateTime updatedAt,  String? config,  String? description,  String? title,  String? annotationsJson,  String? inputSchema,  String? outputSchemaJson,  String? workspaceToolsGroupId)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceToolEntity():
-return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.permissionMode,_that.createdAt,_that.updatedAt,_that.config,_that.description,_that.inputSchema,_that.outputSchemaJson,_that.workspaceToolsGroupId);case _:
+return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.permissionMode,_that.createdAt,_that.updatedAt,_that.config,_that.description,_that.title,_that.annotationsJson,_that.inputSchema,_that.outputSchemaJson,_that.workspaceToolsGroupId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -220,10 +224,10 @@ return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.pe
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String toolId,  bool isEnabled,  ToolPermissionMode permissionMode,  DateTime createdAt,  DateTime updatedAt,  String? config,  String? description,  String? inputSchema,  String? outputSchemaJson,  String? workspaceToolsGroupId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String toolId,  bool isEnabled,  ToolPermissionMode permissionMode,  DateTime createdAt,  DateTime updatedAt,  String? config,  String? description,  String? title,  String? annotationsJson,  String? inputSchema,  String? outputSchemaJson,  String? workspaceToolsGroupId)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceToolEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.permissionMode,_that.createdAt,_that.updatedAt,_that.config,_that.description,_that.inputSchema,_that.outputSchemaJson,_that.workspaceToolsGroupId);case _:
+return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.permissionMode,_that.createdAt,_that.updatedAt,_that.config,_that.description,_that.title,_that.annotationsJson,_that.inputSchema,_that.outputSchemaJson,_that.workspaceToolsGroupId);case _:
   return null;
 
 }
@@ -235,7 +239,7 @@ return $default(_that.id,_that.workspaceId,_that.toolId,_that.isEnabled,_that.pe
 
 
 class _WorkspaceToolEntity extends WorkspaceToolEntity {
-  const _WorkspaceToolEntity({required this.id, required this.workspaceId, required this.toolId, required this.isEnabled, required this.permissionMode, required this.createdAt, required this.updatedAt, this.config, this.description, this.inputSchema, this.outputSchemaJson, this.workspaceToolsGroupId}): super._();
+  const _WorkspaceToolEntity({required this.id, required this.workspaceId, required this.toolId, required this.isEnabled, required this.permissionMode, required this.createdAt, required this.updatedAt, this.config, this.description, this.title, this.annotationsJson, this.inputSchema, this.outputSchemaJson, this.workspaceToolsGroupId}): super._();
   
 
 /// Unique ID of this tool record in the database.
@@ -256,6 +260,10 @@ class _WorkspaceToolEntity extends WorkspaceToolEntity {
 @override final  String? config;
 /// Optional description of the tool (from MCP or user-defined).
 @override final  String? description;
+/// Optional title supplied by an MCP server for display only.
+@override final  String? title;
+/// Bounded MCP informational annotations encoded as JSON.
+@override final  String? annotationsJson;
 /// JSON schema for input parameters (for MCP tools).
 @override final  String? inputSchema;
 /// JSON schema for MCP tool results.
@@ -273,18 +281,18 @@ _$WorkspaceToolEntityCopyWith<_WorkspaceToolEntity> get copyWith => __$Workspace
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.config, config) || other.config == config)&&(identical(other.description, description) || other.description == description)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.outputSchemaJson, outputSchemaJson) || other.outputSchemaJson == outputSchemaJson)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.toolId, toolId) || other.toolId == toolId)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.config, config) || other.config == config)&&(identical(other.description, description) || other.description == description)&&(identical(other.title, title) || other.title == title)&&(identical(other.annotationsJson, annotationsJson) || other.annotationsJson == annotationsJson)&&(identical(other.inputSchema, inputSchema) || other.inputSchema == inputSchema)&&(identical(other.outputSchemaJson, outputSchemaJson) || other.outputSchemaJson == outputSchemaJson)&&(identical(other.workspaceToolsGroupId, workspaceToolsGroupId) || other.workspaceToolsGroupId == workspaceToolsGroupId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,workspaceId,toolId,isEnabled,permissionMode,createdAt,updatedAt,config,description,inputSchema,outputSchemaJson,workspaceToolsGroupId);
+    return Object.hash(runtimeType,id,workspaceId,toolId,isEnabled,permissionMode,createdAt,updatedAt,config,description,title,annotationsJson,inputSchema,outputSchemaJson,workspaceToolsGroupId);
 }
 
 @override
 String toString() {
-    return 'WorkspaceToolEntity(id: $id, workspaceId: $workspaceId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt, config: $config, description: $description, inputSchema: $inputSchema, outputSchemaJson: $outputSchemaJson, workspaceToolsGroupId: $workspaceToolsGroupId)';
+    return 'WorkspaceToolEntity(id: $id, workspaceId: $workspaceId, toolId: $toolId, isEnabled: $isEnabled, permissionMode: $permissionMode, createdAt: $createdAt, updatedAt: $updatedAt, config: $config, description: $description, title: $title, annotationsJson: $annotationsJson, inputSchema: $inputSchema, outputSchemaJson: $outputSchemaJson, workspaceToolsGroupId: $workspaceToolsGroupId)';
 }
 
 
@@ -295,7 +303,7 @@ abstract mixin class _$WorkspaceToolEntityCopyWith<$Res> implements $WorkspaceTo
   factory _$WorkspaceToolEntityCopyWith(_WorkspaceToolEntity value, $Res Function(_WorkspaceToolEntity) _then) = __$WorkspaceToolEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String workspaceId, String toolId, bool isEnabled, ToolPermissionMode permissionMode, DateTime createdAt, DateTime updatedAt, String? config, String? description, String? inputSchema, String? outputSchemaJson, String? workspaceToolsGroupId
+ String id, String workspaceId, String toolId, bool isEnabled, ToolPermissionMode permissionMode, DateTime createdAt, DateTime updatedAt, String? config, String? description, String? title, String? annotationsJson, String? inputSchema, String? outputSchemaJson, String? workspaceToolsGroupId
 });
 
 
@@ -312,7 +320,7 @@ class __$WorkspaceToolEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceToolEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,Object? config = freezed,Object? description = freezed,Object? inputSchema = freezed,Object? outputSchemaJson = freezed,Object? workspaceToolsGroupId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,Object? config = freezed,Object? description = freezed,Object? title = freezed,Object? annotationsJson = freezed,Object? inputSchema = freezed,Object? outputSchemaJson = freezed,Object? workspaceToolsGroupId = freezed,}) {
   return _then(_WorkspaceToolEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -323,6 +331,8 @@ as ToolPermissionMode,createdAt: null == createdAt ? _self.createdAt : createdAt
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,config: freezed == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String?,annotationsJson: freezed == annotationsJson ? _self.annotationsJson : annotationsJson // ignore: cast_nullable_to_non_nullable
 as String?,inputSchema: freezed == inputSchema ? _self.inputSchema : inputSchema // ignore: cast_nullable_to_non_nullable
 as String?,outputSchemaJson: freezed == outputSchemaJson ? _self.outputSchemaJson : outputSchemaJson // ignore: cast_nullable_to_non_nullable
 as String?,workspaceToolsGroupId: freezed == workspaceToolsGroupId ? _self.workspaceToolsGroupId : workspaceToolsGroupId // ignore: cast_nullable_to_non_nullable

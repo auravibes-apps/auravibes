@@ -11,6 +11,22 @@ abstract class LocaleKeys {
   static const menu_agents = 'menu.agents';
   static const menu_prompts = 'menu.prompts';
   static const menu_more = 'menu.more';
+  static const mcp_tool_annotations_read_only =
+      'mcp_tool_annotations.read_only';
+  static const mcp_tool_annotations_not_read_only =
+      'mcp_tool_annotations.not_read_only';
+  static const mcp_tool_annotations_may_change_data =
+      'mcp_tool_annotations.may_change_data';
+  static const mcp_tool_annotations_no_destructive_changes_reported =
+      'mcp_tool_annotations.no_destructive_changes_reported';
+  static const mcp_tool_annotations_repeat_may_be_safe =
+      'mcp_tool_annotations.repeat_may_be_safe';
+  static const mcp_tool_annotations_repeat_may_have_different_effects =
+      'mcp_tool_annotations.repeat_may_have_different_effects';
+  static const mcp_tool_annotations_may_access_external_services =
+      'mcp_tool_annotations.may_access_external_services';
+  static const mcp_tool_annotations_external_access_not_reported =
+      'mcp_tool_annotations.external_access_not_reported';
   static const navigation_drawer_toggle_tooltip =
       'navigation_drawer.toggle_tooltip';
   static const navigation_drawer_resize_handle_tooltip =

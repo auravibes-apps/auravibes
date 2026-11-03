@@ -17,6 +17,8 @@ abstract class DiscoveredMcpTool
   DiscoveredMcpTool._({
     required this.name,
     this.description,
+    this.title,
+    this.annotationsJson,
     required this.inputSchemaJson,
     this.outputSchemaJson,
   });
@@ -24,6 +26,8 @@ abstract class DiscoveredMcpTool
   factory DiscoveredMcpTool({
     required String name,
     String? description,
+    String? title,
+    String? annotationsJson,
     required String inputSchemaJson,
     String? outputSchemaJson,
   }) = _DiscoveredMcpToolImpl;
@@ -32,6 +36,8 @@ abstract class DiscoveredMcpTool
     return DiscoveredMcpTool(
       name: jsonSerialization['name'] as String,
       description: jsonSerialization['description'] as String?,
+      title: jsonSerialization['title'] as String?,
+      annotationsJson: jsonSerialization['annotationsJson'] as String?,
       inputSchemaJson: jsonSerialization['inputSchemaJson'] as String,
       outputSchemaJson: jsonSerialization['outputSchemaJson'] as String?,
     );
@@ -40,6 +46,10 @@ abstract class DiscoveredMcpTool
   String name;
 
   String? description;
+
+  String? title;
+
+  String? annotationsJson;
 
   String inputSchemaJson;
 
@@ -51,6 +61,8 @@ abstract class DiscoveredMcpTool
   DiscoveredMcpTool copyWith({
     String? name,
     String? description,
+    String? title,
+    String? annotationsJson,
     String? inputSchemaJson,
     String? outputSchemaJson,
   });
@@ -60,6 +72,8 @@ abstract class DiscoveredMcpTool
       '__className__': 'DiscoveredMcpTool',
       'name': name,
       if (description != null) 'description': description,
+      if (title != null) 'title': title,
+      if (annotationsJson != null) 'annotationsJson': annotationsJson,
       'inputSchemaJson': inputSchemaJson,
       if (outputSchemaJson != null) 'outputSchemaJson': outputSchemaJson,
     };
@@ -71,6 +85,8 @@ abstract class DiscoveredMcpTool
       '__className__': 'DiscoveredMcpTool',
       'name': name,
       if (description != null) 'description': description,
+      if (title != null) 'title': title,
+      if (annotationsJson != null) 'annotationsJson': annotationsJson,
       'inputSchemaJson': inputSchemaJson,
       if (outputSchemaJson != null) 'outputSchemaJson': outputSchemaJson,
     };
@@ -88,11 +104,15 @@ class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
   _DiscoveredMcpToolImpl({
     required String name,
     String? description,
+    String? title,
+    String? annotationsJson,
     required String inputSchemaJson,
     String? outputSchemaJson,
   }) : super._(
          name: name,
          description: description,
+         title: title,
+         annotationsJson: annotationsJson,
          inputSchemaJson: inputSchemaJson,
          outputSchemaJson: outputSchemaJson,
        );
@@ -104,12 +124,18 @@ class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
   DiscoveredMcpTool copyWith({
     String? name,
     Object? description = _Undefined,
+    Object? title = _Undefined,
+    Object? annotationsJson = _Undefined,
     String? inputSchemaJson,
     Object? outputSchemaJson = _Undefined,
   }) {
     return DiscoveredMcpTool(
       name: name ?? this.name,
       description: description is String? ? description : this.description,
+      title: title is String? ? title : this.title,
+      annotationsJson: annotationsJson is String?
+          ? annotationsJson
+          : this.annotationsJson,
       inputSchemaJson: inputSchemaJson ?? this.inputSchemaJson,
       outputSchemaJson: outputSchemaJson is String?
           ? outputSchemaJson

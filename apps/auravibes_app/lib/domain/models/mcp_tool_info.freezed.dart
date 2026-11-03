@@ -15,7 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$McpToolInfo {
 
- String get toolName; String get description; Map<String, dynamic> get inputSchema; Map<String, dynamic>? get outputSchema; bool? get supportsProgress; bool? get supportsCancellation; Map<String, dynamic>? get metadata;
+ String get toolName; String get description; Map<String, dynamic> get inputSchema;/// Untrusted display text; [toolName] remains the invocation identity.
+ String? get title;/// Informational server hints; never use them to authorize an action.
+ Map<String, dynamic>? get annotations; Map<String, dynamic>? get outputSchema; bool? get supportsProgress; bool? get supportsCancellation; Map<String, dynamic>? get metadata;
 /// Create a copy of McpToolInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +29,20 @@ $McpToolInfoCopyWith<McpToolInfo> get copyWith => _$McpToolInfoCopyWithImpl<McpT
 @override
 bool operator ==(Object other) {
   final _this = this as McpToolInfo;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpToolInfo&&(identical(other.toolName, _this.toolName) || other.toolName == _this.toolName)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.inputSchema, _this.inputSchema)&&const DeepCollectionEquality().equals(other.outputSchema, _this.outputSchema)&&(identical(other.supportsProgress, _this.supportsProgress) || other.supportsProgress == _this.supportsProgress)&&(identical(other.supportsCancellation, _this.supportsCancellation) || other.supportsCancellation == _this.supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpToolInfo&&(identical(other.toolName, _this.toolName) || other.toolName == _this.toolName)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.inputSchema, _this.inputSchema)&&(identical(other.title, _this.title) || other.title == _this.title)&&const DeepCollectionEquality().equals(other.annotations, _this.annotations)&&const DeepCollectionEquality().equals(other.outputSchema, _this.outputSchema)&&(identical(other.supportsProgress, _this.supportsProgress) || other.supportsProgress == _this.supportsProgress)&&(identical(other.supportsCancellation, _this.supportsCancellation) || other.supportsCancellation == _this.supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpToolInfo;
-  return Object.hash(runtimeType,_this.toolName,_this.description,const DeepCollectionEquality().hash(_this.inputSchema),const DeepCollectionEquality().hash(_this.outputSchema),_this.supportsProgress,_this.supportsCancellation,const DeepCollectionEquality().hash(_this.metadata));
+  return Object.hash(runtimeType,_this.toolName,_this.description,const DeepCollectionEquality().hash(_this.inputSchema),_this.title,const DeepCollectionEquality().hash(_this.annotations),const DeepCollectionEquality().hash(_this.outputSchema),_this.supportsProgress,_this.supportsCancellation,const DeepCollectionEquality().hash(_this.metadata));
 }
 
 @override
 String toString() {
   final _this = this as McpToolInfo;
-  return 'McpToolInfo(toolName: ${_this.toolName}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, outputSchema: ${_this.outputSchema}, supportsProgress: ${_this.supportsProgress}, supportsCancellation: ${_this.supportsCancellation}, metadata: ${_this.metadata})';
+  return 'McpToolInfo(toolName: ${_this.toolName}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, title: ${_this.title}, annotations: ${_this.annotations}, outputSchema: ${_this.outputSchema}, supportsProgress: ${_this.supportsProgress}, supportsCancellation: ${_this.supportsCancellation}, metadata: ${_this.metadata})';
 }
 
 
@@ -51,7 +53,7 @@ abstract mixin class $McpToolInfoCopyWith<$Res>  {
   factory $McpToolInfoCopyWith(McpToolInfo value, $Res Function(McpToolInfo) _then) = _$McpToolInfoCopyWithImpl;
 @useResult
 $Res call({
- String toolName, String description, Map<String, dynamic> inputSchema, Map<String, dynamic>? outputSchema, bool? supportsProgress, bool? supportsCancellation, Map<String, dynamic>? metadata
+ String toolName, String description, Map<String, dynamic> inputSchema, String? title, Map<String, dynamic>? annotations, Map<String, dynamic>? outputSchema, bool? supportsProgress, bool? supportsCancellation, Map<String, dynamic>? metadata
 });
 
 
@@ -68,12 +70,14 @@ class _$McpToolInfoCopyWithImpl<$Res>
 
 /// Create a copy of McpToolInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? toolName = null,Object? description = null,Object? inputSchema = null,Object? outputSchema = freezed,Object? supportsProgress = freezed,Object? supportsCancellation = freezed,Object? metadata = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? toolName = null,Object? description = null,Object? inputSchema = null,Object? title = freezed,Object? annotations = freezed,Object? outputSchema = freezed,Object? supportsProgress = freezed,Object? supportsCancellation = freezed,Object? metadata = freezed,}) {
   return _then(McpToolInfo(
 toolName: null == toolName ? _self.toolName : toolName // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,inputSchema: null == inputSchema ? _self.inputSchema : inputSchema // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,outputSchema: freezed == outputSchema ? _self.outputSchema : outputSchema // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String?,annotations: freezed == annotations ? _self.annotations : annotations // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,outputSchema: freezed == outputSchema ? _self.outputSchema : outputSchema // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,supportsProgress: freezed == supportsProgress ? _self.supportsProgress : supportsProgress // ignore: cast_nullable_to_non_nullable
 as bool?,supportsCancellation: freezed == supportsCancellation ? _self.supportsCancellation : supportsCancellation // ignore: cast_nullable_to_non_nullable
 as bool?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
@@ -162,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String toolName,  String description,  Map<String, dynamic> inputSchema,  Map<String, dynamic>? outputSchema,  bool? supportsProgress,  bool? supportsCancellation,  Map<String, dynamic>? metadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String toolName,  String description,  Map<String, dynamic> inputSchema,  String? title,  Map<String, dynamic>? annotations,  Map<String, dynamic>? outputSchema,  bool? supportsProgress,  bool? supportsCancellation,  Map<String, dynamic>? metadata)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpToolInfo() when $default != null:
-return $default(_that.toolName,_that.description,_that.inputSchema,_that.outputSchema,_that.supportsProgress,_that.supportsCancellation,_that.metadata);case _:
+return $default(_that.toolName,_that.description,_that.inputSchema,_that.title,_that.annotations,_that.outputSchema,_that.supportsProgress,_that.supportsCancellation,_that.metadata);case _:
   return orElse();
 
 }
@@ -183,10 +187,10 @@ return $default(_that.toolName,_that.description,_that.inputSchema,_that.outputS
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String toolName,  String description,  Map<String, dynamic> inputSchema,  Map<String, dynamic>? outputSchema,  bool? supportsProgress,  bool? supportsCancellation,  Map<String, dynamic>? metadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String toolName,  String description,  Map<String, dynamic> inputSchema,  String? title,  Map<String, dynamic>? annotations,  Map<String, dynamic>? outputSchema,  bool? supportsProgress,  bool? supportsCancellation,  Map<String, dynamic>? metadata)  $default,) {final _that = this;
 switch (_that) {
 case _McpToolInfo():
-return $default(_that.toolName,_that.description,_that.inputSchema,_that.outputSchema,_that.supportsProgress,_that.supportsCancellation,_that.metadata);case _:
+return $default(_that.toolName,_that.description,_that.inputSchema,_that.title,_that.annotations,_that.outputSchema,_that.supportsProgress,_that.supportsCancellation,_that.metadata);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +207,10 @@ return $default(_that.toolName,_that.description,_that.inputSchema,_that.outputS
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String toolName,  String description,  Map<String, dynamic> inputSchema,  Map<String, dynamic>? outputSchema,  bool? supportsProgress,  bool? supportsCancellation,  Map<String, dynamic>? metadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String toolName,  String description,  Map<String, dynamic> inputSchema,  String? title,  Map<String, dynamic>? annotations,  Map<String, dynamic>? outputSchema,  bool? supportsProgress,  bool? supportsCancellation,  Map<String, dynamic>? metadata)?  $default,) {final _that = this;
 switch (_that) {
 case _McpToolInfo() when $default != null:
-return $default(_that.toolName,_that.description,_that.inputSchema,_that.outputSchema,_that.supportsProgress,_that.supportsCancellation,_that.metadata);case _:
+return $default(_that.toolName,_that.description,_that.inputSchema,_that.title,_that.annotations,_that.outputSchema,_that.supportsProgress,_that.supportsCancellation,_that.metadata);case _:
   return null;
 
 }
@@ -218,7 +222,7 @@ return $default(_that.toolName,_that.description,_that.inputSchema,_that.outputS
 
 
 class _McpToolInfo extends McpToolInfo {
-  const _McpToolInfo({required this.toolName, required this.description, required  Map<String, dynamic> inputSchema,  Map<String, dynamic>? outputSchema, this.supportsProgress, this.supportsCancellation,  Map<String, dynamic>? metadata}): _inputSchema = inputSchema,_outputSchema = outputSchema,_metadata = metadata,super._();
+  const _McpToolInfo({required this.toolName, required this.description, required  Map<String, dynamic> inputSchema, this.title,  Map<String, dynamic>? annotations,  Map<String, dynamic>? outputSchema, this.supportsProgress, this.supportsCancellation,  Map<String, dynamic>? metadata}): _inputSchema = inputSchema,_annotations = annotations,_outputSchema = outputSchema,_metadata = metadata,super._();
   
 
 @override final  String toolName;
@@ -228,6 +232,19 @@ class _McpToolInfo extends McpToolInfo {
   if (_inputSchema is EqualUnmodifiableMapView) return _inputSchema;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_inputSchema);
+}
+
+/// Untrusted display text; [toolName] remains the invocation identity.
+@override final  String? title;
+/// Informational server hints; never use them to authorize an action.
+ final  Map<String, dynamic>? _annotations;
+/// Informational server hints; never use them to authorize an action.
+@override Map<String, dynamic>? get annotations {
+  final value = _annotations;
+  if (value == null) return null;
+  if (_annotations is EqualUnmodifiableMapView) return _annotations;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
 }
 
  final  Map<String, dynamic>? _outputSchema;
@@ -261,18 +278,18 @@ _$McpToolInfoCopyWith<_McpToolInfo> get copyWith => __$McpToolInfoCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpToolInfo&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.inputSchema, _inputSchema)&&const DeepCollectionEquality().equals(other.outputSchema, _outputSchema)&&(identical(other.supportsProgress, supportsProgress) || other.supportsProgress == supportsProgress)&&(identical(other.supportsCancellation, supportsCancellation) || other.supportsCancellation == supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, _metadata));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpToolInfo&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.inputSchema, _inputSchema)&&(identical(other.title, title) || other.title == title)&&const DeepCollectionEquality().equals(other.annotations, _annotations)&&const DeepCollectionEquality().equals(other.outputSchema, _outputSchema)&&(identical(other.supportsProgress, supportsProgress) || other.supportsProgress == supportsProgress)&&(identical(other.supportsCancellation, supportsCancellation) || other.supportsCancellation == supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, _metadata));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,toolName,description,const DeepCollectionEquality().hash(_inputSchema),const DeepCollectionEquality().hash(_outputSchema),supportsProgress,supportsCancellation,const DeepCollectionEquality().hash(_metadata));
+    return Object.hash(runtimeType,toolName,description,const DeepCollectionEquality().hash(_inputSchema),title,const DeepCollectionEquality().hash(_annotations),const DeepCollectionEquality().hash(_outputSchema),supportsProgress,supportsCancellation,const DeepCollectionEquality().hash(_metadata));
 }
 
 @override
 String toString() {
-    return 'McpToolInfo(toolName: $toolName, description: $description, inputSchema: $inputSchema, outputSchema: $outputSchema, supportsProgress: $supportsProgress, supportsCancellation: $supportsCancellation, metadata: $metadata)';
+    return 'McpToolInfo(toolName: $toolName, description: $description, inputSchema: $inputSchema, title: $title, annotations: $annotations, outputSchema: $outputSchema, supportsProgress: $supportsProgress, supportsCancellation: $supportsCancellation, metadata: $metadata)';
 }
 
 
@@ -283,7 +300,7 @@ abstract mixin class _$McpToolInfoCopyWith<$Res> implements $McpToolInfoCopyWith
   factory _$McpToolInfoCopyWith(_McpToolInfo value, $Res Function(_McpToolInfo) _then) = __$McpToolInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String toolName, String description, Map<String, dynamic> inputSchema, Map<String, dynamic>? outputSchema, bool? supportsProgress, bool? supportsCancellation, Map<String, dynamic>? metadata
+ String toolName, String description, Map<String, dynamic> inputSchema, String? title, Map<String, dynamic>? annotations, Map<String, dynamic>? outputSchema, bool? supportsProgress, bool? supportsCancellation, Map<String, dynamic>? metadata
 });
 
 
@@ -300,12 +317,14 @@ class __$McpToolInfoCopyWithImpl<$Res>
 
 /// Create a copy of McpToolInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? toolName = null,Object? description = null,Object? inputSchema = null,Object? outputSchema = freezed,Object? supportsProgress = freezed,Object? supportsCancellation = freezed,Object? metadata = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? toolName = null,Object? description = null,Object? inputSchema = null,Object? title = freezed,Object? annotations = freezed,Object? outputSchema = freezed,Object? supportsProgress = freezed,Object? supportsCancellation = freezed,Object? metadata = freezed,}) {
   return _then(_McpToolInfo(
 toolName: null == toolName ? _self.toolName : toolName // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,inputSchema: null == inputSchema ? _self._inputSchema : inputSchema // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,outputSchema: freezed == outputSchema ? _self._outputSchema : outputSchema // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as String?,annotations: freezed == annotations ? _self._annotations : annotations // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>?,outputSchema: freezed == outputSchema ? _self._outputSchema : outputSchema // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,supportsProgress: freezed == supportsProgress ? _self.supportsProgress : supportsProgress // ignore: cast_nullable_to_non_nullable
 as bool?,supportsCancellation: freezed == supportsCancellation ? _self.supportsCancellation : supportsCancellation // ignore: cast_nullable_to_non_nullable
 as bool?,metadata: freezed == metadata ? _self._metadata : metadata // ignore: cast_nullable_to_non_nullable

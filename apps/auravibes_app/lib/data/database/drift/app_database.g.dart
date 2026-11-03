@@ -7999,6 +7999,26 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _annotationsJsonMeta = const VerificationMeta(
+    'annotationsJson',
+  );
+  @override
+  late final GeneratedColumn<String> annotationsJson = GeneratedColumn<String>(
+    'annotations_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _configMeta = const VerificationMeta('config');
   @override
   late final GeneratedColumn<String> config = GeneratedColumn<String>(
@@ -8064,6 +8084,8 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     workspaceToolsGroupId,
     toolId,
     description,
+    title,
+    annotationsJson,
     config,
     inputSchema,
     outputSchema,
@@ -8134,6 +8156,21 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         ),
       );
     }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('annotations_json')) {
+      context.handle(
+        _annotationsJsonMeta,
+        annotationsJson.isAcceptableOrUnknown(
+          data['annotations_json']!,
+          _annotationsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('config')) {
       context.handle(
         _configMeta,
@@ -8201,6 +8238,14 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      annotationsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}annotations_json'],
+      ),
       config: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}config'],
@@ -8257,6 +8302,12 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
   /// Optional description of the tool (from MCP or user-defined).
   final String? description;
 
+  /// Optional untrusted MCP display title.
+  final String? title;
+
+  /// Bounded MCP display annotations as JSON.
+  final String? annotationsJson;
+
   /// Tool configuration as JSON (optional).
   final String? config;
 
@@ -8277,6 +8328,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     this.workspaceToolsGroupId,
     required this.toolId,
     this.description,
+    this.title,
+    this.annotationsJson,
     this.config,
     this.inputSchema,
     this.outputSchema,
@@ -8296,6 +8349,12 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     map['tool_id'] = Variable<String>(toolId);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    if (!nullToAbsent || annotationsJson != null) {
+      map['annotations_json'] = Variable<String>(annotationsJson);
     }
     if (!nullToAbsent || config != null) {
       map['config'] = Variable<String>(config);
@@ -8328,6 +8387,12 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      annotationsJson: annotationsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(annotationsJson),
       config: config == null && nullToAbsent
           ? const Value.absent()
           : Value(config),
@@ -8357,6 +8422,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       ),
       toolId: serializer.fromJson<String>(json['toolId']),
       description: serializer.fromJson<String?>(json['description']),
+      title: serializer.fromJson<String?>(json['title']),
+      annotationsJson: serializer.fromJson<String?>(json['annotationsJson']),
       config: serializer.fromJson<String?>(json['config']),
       inputSchema: serializer.fromJson<String?>(json['inputSchema']),
       outputSchema: serializer.fromJson<String?>(json['outputSchema']),
@@ -8379,6 +8446,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       ),
       'toolId': serializer.toJson<String>(toolId),
       'description': serializer.toJson<String?>(description),
+      'title': serializer.toJson<String?>(title),
+      'annotationsJson': serializer.toJson<String?>(annotationsJson),
       'config': serializer.toJson<String?>(config),
       'inputSchema': serializer.toJson<String?>(inputSchema),
       'outputSchema': serializer.toJson<String?>(outputSchema),
@@ -8397,6 +8466,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     Value<String?> workspaceToolsGroupId = const Value.absent(),
     String? toolId,
     Value<String?> description = const Value.absent(),
+    Value<String?> title = const Value.absent(),
+    Value<String?> annotationsJson = const Value.absent(),
     Value<String?> config = const Value.absent(),
     Value<String?> inputSchema = const Value.absent(),
     Value<String?> outputSchema = const Value.absent(),
@@ -8412,6 +8483,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
         : this.workspaceToolsGroupId,
     toolId: toolId ?? this.toolId,
     description: description.present ? description.value : this.description,
+    title: title.present ? title.value : this.title,
+    annotationsJson: annotationsJson.present
+        ? annotationsJson.value
+        : this.annotationsJson,
     config: config.present ? config.value : this.config,
     inputSchema: inputSchema.present ? inputSchema.value : this.inputSchema,
     outputSchema: outputSchema.present ? outputSchema.value : this.outputSchema,
@@ -8433,6 +8508,10 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      title: data.title.present ? data.title.value : this.title,
+      annotationsJson: data.annotationsJson.present
+          ? data.annotationsJson.value
+          : this.annotationsJson,
       config: data.config.present ? data.config.value : this.config,
       inputSchema: data.inputSchema.present
           ? data.inputSchema.value
@@ -8457,6 +8536,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
           ..write('toolId: $toolId, ')
           ..write('description: $description, ')
+          ..write('title: $title, ')
+          ..write('annotationsJson: $annotationsJson, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
           ..write('outputSchema: $outputSchema, ')
@@ -8475,6 +8556,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     workspaceToolsGroupId,
     toolId,
     description,
+    title,
+    annotationsJson,
     config,
     inputSchema,
     outputSchema,
@@ -8492,6 +8575,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           other.workspaceToolsGroupId == this.workspaceToolsGroupId &&
           other.toolId == this.toolId &&
           other.description == this.description &&
+          other.title == this.title &&
+          other.annotationsJson == this.annotationsJson &&
           other.config == this.config &&
           other.inputSchema == this.inputSchema &&
           other.outputSchema == this.outputSchema &&
@@ -8507,6 +8592,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
   final Value<String?> workspaceToolsGroupId;
   final Value<String> toolId;
   final Value<String?> description;
+  final Value<String?> title;
+  final Value<String?> annotationsJson;
   final Value<String?> config;
   final Value<String?> inputSchema;
   final Value<String?> outputSchema;
@@ -8521,6 +8608,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.workspaceToolsGroupId = const Value.absent(),
     this.toolId = const Value.absent(),
     this.description = const Value.absent(),
+    this.title = const Value.absent(),
+    this.annotationsJson = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
     this.outputSchema = const Value.absent(),
@@ -8536,6 +8625,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.workspaceToolsGroupId = const Value.absent(),
     required String toolId,
     this.description = const Value.absent(),
+    this.title = const Value.absent(),
+    this.annotationsJson = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
     this.outputSchema = const Value.absent(),
@@ -8552,6 +8643,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Expression<String>? workspaceToolsGroupId,
     Expression<String>? toolId,
     Expression<String>? description,
+    Expression<String>? title,
+    Expression<String>? annotationsJson,
     Expression<String>? config,
     Expression<String>? inputSchema,
     Expression<String>? outputSchema,
@@ -8568,6 +8661,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
         'workspace_tools_group_id': workspaceToolsGroupId,
       if (toolId != null) 'tool_id': toolId,
       if (description != null) 'description': description,
+      if (title != null) 'title': title,
+      if (annotationsJson != null) 'annotations_json': annotationsJson,
       if (config != null) 'config': config,
       if (inputSchema != null) 'input_schema': inputSchema,
       if (outputSchema != null) 'output_schema': outputSchema,
@@ -8585,6 +8680,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Value<String?>? workspaceToolsGroupId,
     Value<String>? toolId,
     Value<String?>? description,
+    Value<String?>? title,
+    Value<String?>? annotationsJson,
     Value<String?>? config,
     Value<String?>? inputSchema,
     Value<String?>? outputSchema,
@@ -8601,6 +8698,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           workspaceToolsGroupId ?? this.workspaceToolsGroupId,
       toolId: toolId ?? this.toolId,
       description: description ?? this.description,
+      title: title ?? this.title,
+      annotationsJson: annotationsJson ?? this.annotationsJson,
       config: config ?? this.config,
       inputSchema: inputSchema ?? this.inputSchema,
       outputSchema: outputSchema ?? this.outputSchema,
@@ -8636,6 +8735,12 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (annotationsJson.present) {
+      map['annotations_json'] = Variable<String>(annotationsJson.value);
+    }
     if (config.present) {
       map['config'] = Variable<String>(config.value);
     }
@@ -8669,6 +8774,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
           ..write('toolId: $toolId, ')
           ..write('description: $description, ')
+          ..write('title: $title, ')
+          ..write('annotationsJson: $annotationsJson, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
           ..write('outputSchema: $outputSchema, ')
@@ -35467,6 +35574,8 @@ typedef $$ToolsTableCreateCompanionBuilder = ToolsCompanion Function({
   Value<String?> workspaceToolsGroupId,
   required String toolId,
   Value<String?> description,
+  Value<String?> title,
+  Value<String?> annotationsJson,
   Value<String?> config,
   Value<String?> inputSchema,
   Value<String?> outputSchema,
@@ -35482,6 +35591,8 @@ typedef $$ToolsTableUpdateCompanionBuilder = ToolsCompanion Function({
   Value<String?> workspaceToolsGroupId,
   Value<String> toolId,
   Value<String?> description,
+  Value<String?> title,
+  Value<String?> annotationsJson,
   Value<String?> config,
   Value<String?> inputSchema,
   Value<String?> outputSchema,
@@ -35604,6 +35715,16 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get annotationsJson => $composableBuilder(
+    column: $table.annotationsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -35764,6 +35885,16 @@ class $$ToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get annotationsJson => $composableBuilder(
+    column: $table.annotationsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get config => $composableBuilder(
     column: $table.config,
     builder: (column) => ColumnOrderings(column),
@@ -35859,6 +35990,14 @@ class $$ToolsTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get annotationsJson => $composableBuilder(
+    column: $table.annotationsJson,
     builder: (column) => column,
   );
 
@@ -36022,6 +36161,8 @@ class $$ToolsTableTableManager
                 Value<String?> workspaceToolsGroupId = const Value.absent(),
                 Value<String> toolId = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> annotationsJson = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
                 Value<String?> outputSchema = const Value.absent(),
@@ -36036,6 +36177,8 @@ class $$ToolsTableTableManager
                 workspaceToolsGroupId: workspaceToolsGroupId,
                 toolId: toolId,
                 description: description,
+                title: title,
+                annotationsJson: annotationsJson,
                 config: config,
                 inputSchema: inputSchema,
                 outputSchema: outputSchema,
@@ -36052,6 +36195,8 @@ class $$ToolsTableTableManager
                 Value<String?> workspaceToolsGroupId = const Value.absent(),
                 required String toolId,
                 Value<String?> description = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> annotationsJson = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
                 Value<String?> outputSchema = const Value.absent(),
@@ -36066,6 +36211,8 @@ class $$ToolsTableTableManager
                 workspaceToolsGroupId: workspaceToolsGroupId,
                 toolId: toolId,
                 description: description,
+                title: title,
+                annotationsJson: annotationsJson,
                 config: config,
                 inputSchema: inputSchema,
                 outputSchema: outputSchema,

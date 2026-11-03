@@ -80,7 +80,7 @@ final class ToolDisplayNameProvider
   }
 }
 
-String _$toolDisplayNameHash() => r'a2d60f753622038ffd5b28a489439538de6577c5';
+String _$toolDisplayNameHash() => r'c6247722752bdbffcf6df17d0f9261585478eaa8';
 
 /// Provides a human-friendly display name for a tool composite ID.
 ///

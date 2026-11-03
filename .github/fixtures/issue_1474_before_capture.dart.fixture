@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _workspaceId = 'workspace-1';
 const _toolName = 'mcp_srv1_myserver_delete_record';
@@ -25,6 +26,7 @@ const _workToolName = 'mcp_srv1_myserver_search_records';
 
 void main() {
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await (FontLoader('Inter')
           ..addFont(rootBundle.load('assets/fonts/Inter.ttf')))
