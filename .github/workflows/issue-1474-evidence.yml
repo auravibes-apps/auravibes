@@ -52,6 +52,16 @@ jobs:
           cp "$RUNNER_TEMP/issue1474_capture_test.dart" test/widgets/issue1474_capture_test.dart
           python3 ../../tool/validation_lease.py --label issue-1474-evidence-before-capture -- flutter test test/widgets/issue1474_capture_test.dart --no-pub --timeout=2m --dart-define=ISSUE_1474_CAPTURE_DIR="$ISSUE_1474_CAPTURE_DIR" --dart-define=ISSUE_1474_CAPTURE_SHA="$ISSUE_1474_CAPTURE_SHA" --dart-define=ISSUE_1474_CAPTURE_LABEL="$ISSUE_1474_CAPTURE_LABEL" 2>&1 | tee "$ISSUE_1474_CAPTURE_DIR/capture.log"
 
+      - name: Export baseline PNGs in job log
+        if: always()
+        run: |
+          for image in "$RUNNER_TEMP/issue1474-before"/*.png; do
+            [ -f "$image" ] || continue
+            printf 'ISSUE1474_PNG_BEGIN %s\n' "$(basename "$image")"
+            base64 --wrap=0 "$image"
+            printf '\nISSUE1474_PNG_END\n'
+          done
+
       - name: Upload baseline images and provenance
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -101,6 +111,16 @@ jobs:
           mkdir -p "$ISSUE_1474_CAPTURE_DIR"
           cp "$RUNNER_TEMP/issue1474_capture_test.dart" test/widgets/issue1474_capture_test.dart
           python3 ../../tool/validation_lease.py --label issue-1474-evidence-after-capture -- flutter test test/widgets/issue1474_capture_test.dart --no-pub --timeout=2m --dart-define=ISSUE_1474_CAPTURE_DIR="$ISSUE_1474_CAPTURE_DIR" --dart-define=ISSUE_1474_CAPTURE_SHA="$ISSUE_1474_CAPTURE_SHA" --dart-define=ISSUE_1474_CAPTURE_LABEL="$ISSUE_1474_CAPTURE_LABEL" 2>&1 | tee "$ISSUE_1474_CAPTURE_DIR/capture.log"
+
+      - name: Export feature PNGs in job log
+        if: always()
+        run: |
+          for image in "$RUNNER_TEMP/issue1474-after"/*.png; do
+            [ -f "$image" ] || continue
+            printf 'ISSUE1474_PNG_BEGIN %s\n' "$(basename "$image")"
+            base64 --wrap=0 "$image"
+            printf '\nISSUE1474_PNG_END\n'
+          done
 
       - name: Upload feature images and provenance
         if: always()
