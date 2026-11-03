@@ -155,9 +155,7 @@ Future<_ReadResult<WorkspaceSession>> _readSession(
   );
 }
 
-_WorkspaceScope _workspaceScope(
-  _WorkspaceScopeInput input,
-) {
+_WorkspaceScope _workspaceScope(_WorkspaceScopeInput input) {
   final isRemote = input.workspace?.type == WorkspaceType.remote;
 
   return (

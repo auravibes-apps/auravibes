@@ -324,15 +324,13 @@ String _statusKey(WorkspaceSetupPreflightStatus status) => switch (status) {
   .unknown => 'workspace_setup_preflight.status.unknown',
 };
 
-String _localizedCheckMessage(
-  BuildContext context,
-  String key,
-) => (_localizedStorageMessage(key) ??
-        _localizedProviderMessage(key) ??
-        _localizedModelMessage(key) ??
-        _localizedMcpMessage(key) ??
-        LocaleKeys.workspace_setup_preflight_unavailable)
-    .tr(context: context);
+String _localizedCheckMessage(BuildContext context, String key) =>
+    (_localizedStorageMessage(key) ??
+            _localizedProviderMessage(key) ??
+            _localizedModelMessage(key) ??
+            _localizedMcpMessage(key) ??
+            LocaleKeys.workspace_setup_preflight_unavailable)
+        .tr(context: context);
 
 String? _localizedStorageMessage(String key) => switch (key) {
   'workspace_setup_preflight.storage_available' =>
