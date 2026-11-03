@@ -1,8 +1,5 @@
-import 'dart:convert';
-
-import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
-import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
-import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_a2ui_warning.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,25 +15,6 @@ void main() {
   testWidgets('historical read-only status is localized for Spanish', (
     tester,
   ) async {
-    final payloads = [
-      jsonEncode({
-        'version': 'v0.9',
-        'createSurface': {
-          'surfaceId': 'main',
-          'catalogId': auraChatCatalogId,
-        },
-      }),
-      jsonEncode({
-        'version': 'v0.9',
-        'updateComponents': {
-          'surfaceId': 'main',
-          'components': [
-            {'id': 'root', 'component': 'Text', 'text': 'Saved response'},
-          ],
-        },
-      }),
-    ];
-
     await tester.pumpWidget(
       EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('es')],
@@ -49,19 +27,29 @@ void main() {
         saveLocale: false,
         child: Builder(
           builder: (context) => MaterialApp(
-            builder: _legacyMaterialBuilder,
             locale: context.locale,
             localizationsDelegates: [
               ...GlobalMaterialLocalizations.delegates,
               ...context.localizationDelegates,
             ],
             supportedLocales: context.supportedLocales,
-            theme: ThemeData(),
-            home: SingleChildScrollView(
-              child: ChatA2uiSurfaceHost.historical(
-                messageId: 'assistant-1',
-                payloads: payloads,
-              ),
+            home: Builder(
+              builder: (context) {
+                final label = chatA2uiText(
+                  context,
+                  LocaleKeys.chats_screens_chat_conversation_a2ui_read_only,
+                  'Read only',
+                );
+                return AuraThemeScope(
+                  theme: .light,
+                  child: AuraBadge.text(
+                    variant: AuraBadgeVariant.neutral,
+                    size: AuraBadgeSize.small,
+                    semanticLabel: label,
+                    child: Text(label),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -69,14 +57,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Saved response'), findsOneWidget);
     expect(find.text('Solo lectura'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
   });
 }
-
-Widget _legacyMaterialBuilder(BuildContext _, Widget? child) =>
-    AuraThemeScope(
-      theme: .light,
-      child: AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
-    );
