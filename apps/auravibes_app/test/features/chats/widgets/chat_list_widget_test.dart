@@ -709,6 +709,7 @@ void main() {
           ],
         ),
       );
+      final _ = await tester.pumpAndSettle();
 
       final archivedContainer = tester
           .widget<UncontrolledProviderScope>(
