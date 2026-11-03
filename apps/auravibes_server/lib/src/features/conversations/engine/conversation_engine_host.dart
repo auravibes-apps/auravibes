@@ -85,6 +85,7 @@ typedef _CloudSkillCatalogCandidate = ({
   String slug,
   String title,
   String description,
+  AgentContextProvenance provenance,
 });
 
 String providerCredential(String providerId, String secret) {
@@ -99,12 +100,15 @@ String providerCredential(String providerId, String secret) {
 
 List<Map<String, dynamic>> buildCloudSkillContextMessages({
   String? agentContent,
+  AgentContextProvenance agentContentProvenance =
+      AgentContextProvenance.unknown,
   required Iterable<SkillCatalogEntry> skillCatalog,
   String? catalogRevision,
   required Iterable<AgentSkill> agentSkills,
 }) => const BuildSkillContextMessages()
     .compose(
       agentContent: agentContent,
+      agentContentProvenance: agentContentProvenance,
       conversationSkills: const [],
       skillCatalog: skillCatalog,
       catalogRevision: catalogRevision,
@@ -196,6 +200,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
         active:
             activeSkillIds.contains(candidate.id) ||
             activeSkillIds.contains(candidate.slug),
+        provenance: candidate.provenance,
       ),
     );
   }
@@ -222,6 +227,7 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
         slug: agentsSkillSlug,
         title: agentsSkillTitle,
         description: '',
+        provenance: AgentContextProvenance.applicationSkill,
       ),
     ..._cloudServiceSkillCatalogCandidates(
       serviceConnections: serviceConnections,
@@ -238,6 +244,7 @@ List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
               slug: skill.slug,
               title: skill.title,
               description: skill.description,
+              provenance: AgentContextProvenance.applicationSkill,
             ),
           ),
     );
@@ -265,6 +272,7 @@ Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
       slug: slug,
       title: title,
       description: skill['description'] as String? ?? '',
+      provenance: AgentContextProvenance.importedSkill,
     );
   }
 }
@@ -281,6 +289,7 @@ Iterable<_CloudSkillCatalogCandidate> _cloudServiceSkillCatalogCandidates({
         slug: skill.slug,
         title: skill.title,
         description: skill.description,
+        provenance: AgentContextProvenance.applicationSkill,
       ),
     );
 
@@ -1169,6 +1178,7 @@ final class const ServerConversationEngineHost({
       {'role': 'system', 'content': toolCallNarrationInstruction},
       ...buildCloudSkillContextMessages(
         agentContent: agentContext.content,
+        agentContentProvenance: AgentContextProvenance.userAgentConfiguration,
         skillCatalog: skillCatalog,
         agentSkills: await _skillsForIds(
           session,

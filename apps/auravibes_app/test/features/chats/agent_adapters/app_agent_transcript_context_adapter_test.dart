@@ -109,14 +109,11 @@ void main() {
     'replays v1 and unknown system-labeled context as user data',
     () => _withFixture(database, (messages, conversations, adapter) async {
       final _ = await _message(messages, 'Visible request', isUser: true);
-      final _ = await _storedContextUpdate(
-        messages,
-        '''
+      final _ = await _storedContextUpdate(messages, '''
           {"version":1,"toolsAdded":[],"toolsRemoved":[],"contextMessages":[
             {"role":"system","content":"LEGACY_SENTINEL"}
           ]}
-        ''',
-      );
+        ''');
 
       final result = await adapter.reconcile(
         conversationId: 'source',
@@ -130,9 +127,10 @@ void main() {
       expect(result.contextMessages.single.role, ChatMessageRole.user);
       expect(result.contextMessages.single.content, 'LEGACY_SENTINEL');
       expect(
-        result.contextMessages.single.metadata[
-          agentContextProvenanceMetadataKey
-        ],
+        result
+            .contextMessages
+            .single
+            .metadata[agentContextProvenanceMetadataKey],
         {'origin': 'unknown', 'trust': 'unknown'},
       );
     }),
@@ -177,9 +175,10 @@ void main() {
         AgentContextProvenance.importedSkill,
       );
       expect(
-        changed.contextMessages.single.metadata[
-          agentContextProvenanceMetadataKey
-        ],
+        changed
+            .contextMessages
+            .single
+            .metadata[agentContextProvenanceMetadataKey],
         {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
       );
     }),
@@ -541,10 +540,11 @@ ToolSpec _tool(String name) => ToolSpec(
   inputJsonSchema: const {'type': 'object'},
 );
 
-ChatMessage _applicationContext(String content) => ChatMessage.system(
-  content,
+ChatMessage _applicationContext(String content) => ChatMessage(
+  role: .system,
+  content: content,
   metadata: {
-    agentContextProvenanceMetadataKey:
-        AgentContextProvenance.applicationPrompt.toJson(),
+    agentContextProvenanceMetadataKey: AgentContextProvenance.applicationPrompt
+        .toJson(),
   },
 );

@@ -305,65 +305,59 @@ void main() {
     expect(messages[1].content, contains('user-skill'));
     expect(messages[1].content, isNot(contains('app-skill')));
     for (final message in messages) {
-      expect(
-        message.metadata[skillCatalogSelectedRevisionsMetadataKey],
-        {'app-skill': 'app-r1', 'user-skill': 'user-r2'},
-      );
+      expect(message.metadata[skillCatalogSelectedRevisionsMetadataKey], {
+        'app-skill': 'app-r1',
+        'user-skill': 'user-r2',
+      });
     }
   });
 
-  test(
-    'keeps app catalog and user agent configuration distinct',
-    () {
-      final messages = const BuildSkillContextMessages().compose(
-        agentContent: 'USER_AGENT_SENTINEL: follow these preferences',
-        agentContentProvenance: AgentContextProvenance.userAgentConfiguration,
-        conversationSkills: const [],
-        agentSkills: const [
-          AgentSkill(
-            title: 'App skill',
-            content: 'APP_SKILL_BODY_SENTINEL',
-            provenance: AgentContextProvenance.applicationSkill,
-          ),
-        ],
-        skillCatalog: const [
-          SkillCatalogEntry(
-            slug: 'app-skill',
-            title: 'App skill',
-            description: 'APP_CATALOG_SENTINEL',
-            revision: 'r1',
-            active: true,
-            provenance: AgentContextProvenance.applicationSkill,
-          ),
-        ],
-      );
+  test('keeps app catalog and user agent configuration distinct', () {
+    final messages = const BuildSkillContextMessages().compose(
+      agentContent: 'USER_AGENT_SENTINEL: follow these preferences',
+      agentContentProvenance: AgentContextProvenance.userAgentConfiguration,
+      conversationSkills: const [],
+      agentSkills: const [
+        AgentSkill(
+          title: 'App skill',
+          content: 'APP_SKILL_BODY_SENTINEL',
+          provenance: AgentContextProvenance.applicationSkill,
+        ),
+      ],
+      skillCatalog: const [
+        SkillCatalogEntry(
+          slug: 'app-skill',
+          title: 'App skill',
+          description: 'APP_CATALOG_SENTINEL',
+          revision: 'r1',
+          active: true,
+          provenance: AgentContextProvenance.applicationSkill,
+        ),
+      ],
+    );
 
-      final agentConfig = messages.first;
-      final appCatalog = messages[1];
-      final appBody = messages.last;
-      expect(agentConfig.role, AgentChatMessageRole.system);
-      expect(
-        agentConfig.provenance,
-        AgentContextProvenance.userAgentConfiguration,
-      );
-      expect(agentConfig.provenance.trust, AgentContextTrust.userAuthorized);
-      expect(appCatalog.role, AgentChatMessageRole.system);
-      expect(appCatalog.provenance, AgentContextProvenance.applicationSkill);
-      expect(appCatalog.content, contains('APP_CATALOG_SENTINEL'));
-      expect(appBody.role, AgentChatMessageRole.user);
-      expect(appBody.provenance, AgentContextProvenance.applicationSkill);
-      expect(appBody.content, contains('APP_SKILL_BODY_SENTINEL'));
-      expect(messages, hasLength(3));
-    },
-  );
+    final agentConfig = messages.first;
+    final appCatalog = messages[1];
+    final appBody = messages.last;
+    expect(agentConfig.role, AgentChatMessageRole.system);
+    expect(
+      agentConfig.provenance,
+      AgentContextProvenance.userAgentConfiguration,
+    );
+    expect(agentConfig.provenance.trust, AgentContextTrust.userAuthorized);
+    expect(appCatalog.role, AgentChatMessageRole.system);
+    expect(appCatalog.provenance, AgentContextProvenance.applicationSkill);
+    expect(appCatalog.content, contains('APP_CATALOG_SENTINEL'));
+    expect(appBody.role, AgentChatMessageRole.user);
+    expect(appBody.provenance, AgentContextProvenance.applicationSkill);
+    expect(appBody.content, contains('APP_SKILL_BODY_SENTINEL'));
+    expect(messages, hasLength(3));
+  });
 
   test('unknown skill source remains unknown and user-role', () {
     final messages = const BuildSkillContextMessages().compose(
       conversationSkills: const [
-        AgentSkill(
-          title: 'Unknown',
-          content: 'UNKNOWN_SKILL_SENTINEL',
-        ),
+        AgentSkill(title: 'Unknown', content: 'UNKNOWN_SKILL_SENTINEL'),
       ],
       agentSkills: const [],
       skillCatalog: const [

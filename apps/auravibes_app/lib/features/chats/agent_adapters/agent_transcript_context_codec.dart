@@ -105,17 +105,16 @@ Map<String, Object?> _encodeMessage(AgentContextMessage message) => {
 AgentTranscriptContextUpdate _decodeUpdate(
   Map<String, Object?> data, {
   required bool includeProvenance,
-}) =>
-    AgentTranscriptContextUpdate(
-      contextMessages: _decodeMessages(
-        data['contextMessages'],
-        includeProvenance: includeProvenance,
-      ),
-      toolsAdded: _decodeTools(data['toolsAdded']),
-      toolsRemoved: _decodeRemovedTools(data['toolsRemoved']),
-      toolOrder: _decodeToolOrder(data['toolOrder']),
-      approvalStates: _decodeApprovalStates(data['approvalStates']),
-    );
+}) => AgentTranscriptContextUpdate(
+  contextMessages: _decodeMessages(
+    data['contextMessages'],
+    includeProvenance: includeProvenance,
+  ),
+  toolsAdded: _decodeTools(data['toolsAdded']),
+  toolsRemoved: _decodeRemovedTools(data['toolsRemoved']),
+  toolOrder: _decodeToolOrder(data['toolOrder']),
+  approvalStates: _decodeApprovalStates(data['approvalStates']),
+);
 
 List<ToolSpec> _decodeTools(Object? value) => [
   for (final item in _requiredObjectList(value)) _decodeTool(item),

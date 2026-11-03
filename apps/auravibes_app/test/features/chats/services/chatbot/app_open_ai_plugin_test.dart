@@ -64,15 +64,16 @@ void main() {
       metadata: AgentContextProvenance.importedSkill.withMetadata(const {}),
     );
     await http.runWithClient(
-      () => Genkit(
-        plugins: [AppOpenAIPlugin(upstream: _upstream())],
-        isDevEnv: false,
-      ).generate<OpenAIChatOptions, Object?>(
-        model: modelRef<OpenAIChatOptions>('openai/contract-model'),
-        messages: [message],
-        config: OpenAIChatOptions(temperature: 0.25),
-        cancel: CancellationController().token,
-      ),
+      () =>
+          Genkit(
+            plugins: [AppOpenAIPlugin(upstream: _upstream())],
+            isDevEnv: false,
+          ).generate<OpenAIChatOptions, Object?>(
+            model: modelRef<OpenAIChatOptions>('openai/contract-model'),
+            messages: [message],
+            config: OpenAIChatOptions(temperature: 0.25),
+            cancel: CancellationController().token,
+          ),
       () => client,
     );
 

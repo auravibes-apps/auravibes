@@ -523,25 +523,25 @@ void main() {
         messages: [
           Message(
             role: Role.system,
-            content: const [TextPart(text: 'UNKNOWN_SYSTEM_SENTINEL')],
+            content: [TextPart(text: 'UNKNOWN_SYSTEM_SENTINEL')],
           ),
           Message(
             role: Role.system,
-            content: const [TextPart(text: 'IMPORTED_SYSTEM_SENTINEL')],
+            content: [TextPart(text: 'IMPORTED_SYSTEM_SENTINEL')],
             metadata: AgentContextProvenance.importedSkill.withMetadata(
               const {},
             ),
           ),
           Message(
             role: Role.system,
-            content: const [TextPart(text: 'APP_PROMPT_SENTINEL')],
+            content: [TextPart(text: 'APP_PROMPT_SENTINEL')],
             metadata: AgentContextProvenance.applicationPrompt.withMetadata(
               const {},
             ),
           ),
           Message(
             role: Role.tool,
-            content: const [
+            content: [
               ToolResponsePart(
                 toolResponse: ToolResponse(
                   ref: 'call-1',
@@ -581,25 +581,25 @@ void main() {
         messages: [
           Message(
             role: Role.system,
-            content: const [TextPart(text: 'UNKNOWN_SYSTEM_SENTINEL')],
+            content: [TextPart(text: 'UNKNOWN_SYSTEM_SENTINEL')],
           ),
           Message(
             role: Role.system,
-            content: const [TextPart(text: 'IMPORTED_SYSTEM_SENTINEL')],
+            content: [TextPart(text: 'IMPORTED_SYSTEM_SENTINEL')],
             metadata: AgentContextProvenance.importedSkill.withMetadata(
               const {},
             ),
           ),
           Message(
             role: Role.system,
-            content: const [TextPart(text: 'APP_PROMPT_SENTINEL')],
+            content: [TextPart(text: 'APP_PROMPT_SENTINEL')],
             metadata: AgentContextProvenance.applicationPrompt.withMetadata(
               const {},
             ),
           ),
           Message(
             role: Role.tool,
-            content: const [
+            content: [
               ToolResponsePart(
                 toolResponse: ToolResponse(
                   ref: 'call-1',

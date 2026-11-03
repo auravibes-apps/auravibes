@@ -28,7 +28,8 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    hide BuildPromptChatMessages;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:mocktail/mocktail.dart';
@@ -900,13 +901,12 @@ void main() {
         expect(captured[toolCallIndex].role, ChatMessageRole.model);
         expect(captured[toolCallIndex].toolCalls, hasLength(1));
         expect(captured[toolResultIndex].role, ChatMessageRole.tool);
+        expect(captured[0].metadata[agentContextProvenanceMetadataKey], {
+          'origin': 'applicationPrompt',
+          'trust': 'appControlled',
+        });
         expect(
-          captured[0].metadata[agentContextProvenanceMetadataKey],
-          {'origin': 'applicationPrompt', 'trust': 'appControlled'},
-        );
-        expect(
-          captured[toolResultIndex]
-              .metadata[agentContextProvenanceMetadataKey],
+          captured[toolResultIndex].metadata[agentContextProvenanceMetadataKey],
           {'origin': 'toolResult', 'trust': 'externalUntrusted'},
         );
         expect(

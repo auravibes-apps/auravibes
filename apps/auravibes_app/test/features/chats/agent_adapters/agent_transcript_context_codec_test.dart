@@ -71,13 +71,10 @@ void main() {
         final decoded = AgentTranscriptContextCodec.decodeUpdate(
           jsonEncode(encoded),
         );
-        expect(
-          decoded.contextMessages?.map((message) => message.provenance),
-          [
-            AgentContextProvenance.applicationPrompt,
-            AgentContextProvenance.importedSkill,
-          ],
-        );
+        expect(decoded.contextMessages?.map((message) => message.provenance), [
+          AgentContextProvenance.applicationPrompt,
+          AgentContextProvenance.importedSkill,
+        ]);
       },
     );
 

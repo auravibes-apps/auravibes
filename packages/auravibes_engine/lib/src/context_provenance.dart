@@ -67,10 +67,7 @@ class const AgentContextProvenance({
       (origin == AgentContextOrigin.userAgentConfiguration &&
           trust == AgentContextTrust.userAuthorized);
 
-  Map<String, String> toJson() => {
-    'origin': origin.name,
-    'trust': trust.name,
-  };
+  Map<String, String> toJson() => {'origin': origin.name, 'trust': trust.name};
 
   /// Replaces any existing provenance metadata with this typed value.
   Map<String, Object?> withMetadata(Map<String, Object?> metadata) => {
@@ -78,9 +75,8 @@ class const AgentContextProvenance({
     agentContextProvenanceMetadataKey: toJson(),
   };
 
-  static AgentContextProvenance fromMetadata(
-    Map<String, Object?>? metadata,
-  ) => fromJson(metadata?[agentContextProvenanceMetadataKey]);
+  static AgentContextProvenance fromMetadata(Map<String, Object?>? metadata) =>
+      fromJson(metadata?[agentContextProvenanceMetadataKey]);
 
   static AgentContextProvenance fromJson(Object? value) {
     if (value is! Map ||

@@ -64,13 +64,10 @@ void main() {
     final snapshot = snapshotAgentTranscriptContext(folded);
     final replayed = foldAgentTranscriptContext([snapshot]);
 
-    expect(
-      replayed.contextMessages.map((message) => message.provenance),
-      [
-        AgentContextProvenance.applicationPrompt,
-        AgentContextProvenance.importedSkill,
-      ],
-    );
+    expect(replayed.contextMessages.map((message) => message.provenance), [
+      AgentContextProvenance.applicationPrompt,
+      AgentContextProvenance.importedSkill,
+    ]);
   });
 
   test('provenance-only change produces a context update', () {

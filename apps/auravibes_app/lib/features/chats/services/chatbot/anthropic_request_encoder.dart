@@ -248,16 +248,17 @@ extension on AnthropicRequestEncoder {
         ].where((text) => text.isNotEmpty).join('\n'),
       ),
     ],
-    metadata: AgentContextProvenance.fromMetadata(
-      previous.metadata == null
-          ? null
-          : Map<String, Object?>.of(previous.metadata!),
-    ).withMetadata({
-      'anthropicToolChanges': [
-        ..._changes(previous),
-        ..._changes(update),
-      ].map((block) => block.toJson()).toList(),
-    }),
+    metadata:
+        AgentContextProvenance.fromMetadata(
+          previous.metadata == null
+              ? null
+              : Map<String, Object?>.of(previous.metadata!),
+        ).withMetadata({
+          'anthropicToolChanges': [
+            ..._changes(previous),
+            ..._changes(update),
+          ].map((block) => block.toJson()).toList(),
+        }),
   );
 
   List<Message> _updateMessages(
@@ -268,7 +269,8 @@ extension on AnthropicRequestEncoder {
     _checkDefinitions(update.toolsAdded, seen);
     final messages = <Message>[
       if (supportsMidConversationSystemMessages)
-        for (final context in update.contextMessages ?? const [])
+        for (final context
+            in update.contextMessages ?? const <AgentContextMessage>[])
           _contextMessage(context),
     ];
     final changes = supportsToolDeltas

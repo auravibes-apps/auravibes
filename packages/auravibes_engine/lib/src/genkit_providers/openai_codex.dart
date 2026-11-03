@@ -131,13 +131,14 @@ List<Map<String, dynamic>> _messageToInput(Message message) {
   }
 
   final role = switch (message.role) {
-    Role.system => AgentContextProvenance.fromMetadata(
-          message.metadata == null
-              ? null
-              : Map<String, Object?>.of(message.metadata!),
-        ).mayUseSystemRole
-        ? 'system'
-        : 'user',
+    Role.system =>
+      AgentContextProvenance.fromMetadata(
+            message.metadata == null
+                ? null
+                : Map<String, Object?>.of(message.metadata!),
+          ).mayUseSystemRole
+          ? 'system'
+          : 'user',
     Role.model => 'assistant',
     _ => message.role.value,
   };

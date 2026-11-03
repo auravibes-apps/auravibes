@@ -128,8 +128,7 @@ AgentContextMessage _contextMessage(ChatMessage message) {
   );
 
   return AgentContextMessage(
-    role: message.role == ChatMessageRole.system &&
-            provenance.mayUseSystemRole
+    role: message.role == ChatMessageRole.system && provenance.mayUseSystemRole
         ? .system
         : .skill,
     content: message.content,
@@ -145,7 +144,8 @@ bool _hasSupportedContextRole(ChatMessage message) =>
             message.metadata['kind'] == skillCatalogMetadataKind));
 
 ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
-  role: message.role == AgentContextMessageRole.system &&
+  role:
+      message.role == AgentContextMessageRole.system &&
           message.provenance.mayUseSystemRole
       ? .system
       : .user,

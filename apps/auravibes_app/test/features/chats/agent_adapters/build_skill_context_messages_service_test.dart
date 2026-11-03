@@ -190,8 +190,7 @@ void main() {
         ]);
         expect(
           messages.map(
-            (message) =>
-                message.metadata[agentContextProvenanceMetadataKey],
+            (message) => message.metadata[agentContextProvenanceMetadataKey],
           ),
           [
             {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
@@ -399,42 +398,42 @@ void main() {
         expect(messages, hasLength(5));
         expect(messages.firstOrNull?.content, 'Agent prompt');
         expect(messages.first.role, ChatMessageRole.system);
-        expect(
-          messages.first.metadata[agentContextProvenanceMetadataKey],
-          {'origin': 'userAgentConfiguration', 'trust': 'userAuthorized'},
-        );
+        expect(messages.first.metadata[agentContextProvenanceMetadataKey], {
+          'origin': 'userAgentConfiguration',
+          'trust': 'userAuthorized',
+        });
         expect(messages[1].role, ChatMessageRole.system);
         expect(messages[1].metadata['kind'], skillCatalogMetadataKind);
-        expect(
-          messages[1].metadata[agentContextProvenanceMetadataKey],
-          {'origin': 'applicationSkill', 'trust': 'appControlled'},
-        );
+        expect(messages[1].metadata[agentContextProvenanceMetadataKey], {
+          'origin': 'applicationSkill',
+          'trust': 'appControlled',
+        });
         expect(messages[1].content, contains('"slug":"app_skill"'));
-        expect(
-          messages[1].metadata[skillCatalogSelectedRevisionsMetadataKey],
-          {'app_skill': 'r2', 'skill_one': 'r1'},
-        );
+        expect(messages[1].metadata[skillCatalogSelectedRevisionsMetadataKey], {
+          'app_skill': 'r2',
+          'skill_one': 'r1',
+        });
         expect(messages[2].role, ChatMessageRole.user);
-        expect(
-          messages[2].metadata[agentContextProvenanceMetadataKey],
-          {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
-        );
+        expect(messages[2].metadata[agentContextProvenanceMetadataKey], {
+          'origin': 'importedSkill',
+          'trust': 'externalUntrusted',
+        });
         expect(messages[2].content, contains('"slug":"skill_one"'));
-        expect(
-          messages[2].metadata[skillCatalogSelectedRevisionsMetadataKey],
-          {'app_skill': 'r2', 'skill_one': 'r1'},
-        );
+        expect(messages[2].metadata[skillCatalogSelectedRevisionsMetadataKey], {
+          'app_skill': 'r2',
+          'skill_one': 'r1',
+        });
         expect(messages[2].content, isNot(contains('Loaded content')));
         expect(messages[3].content, contains('Agent duplicate content'));
-        expect(
-          messages[3].metadata[agentContextProvenanceMetadataKey],
-          {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
-        );
+        expect(messages[3].metadata[agentContextProvenanceMetadataKey], {
+          'origin': 'importedSkill',
+          'trust': 'externalUntrusted',
+        });
         expect(messages[4].role, ChatMessageRole.user);
-        expect(
-          messages[4].metadata[agentContextProvenanceMetadataKey],
-          {'origin': 'applicationSkill', 'trust': 'appControlled'},
-        );
+        expect(messages[4].metadata[agentContextProvenanceMetadataKey], {
+          'origin': 'applicationSkill',
+          'trust': 'appControlled',
+        });
         expect(messages[4].content, contains('App content'));
       },
     );

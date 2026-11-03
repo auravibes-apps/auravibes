@@ -229,16 +229,16 @@ void main() {
         'Finish the migration without changing existing messages.',
       );
       expect(history[1].metadata['kind'], 'conversation_task_brief');
-      expect(
-        history[1].metadata[agentContextProvenanceMetadataKey],
-        {'origin': 'userConversation', 'trust': 'userProvided'},
-      );
+      expect(history[1].metadata[agentContextProvenanceMetadataKey], {
+        'origin': 'userConversation',
+        'trust': 'userProvided',
+      });
       expect(history[2].role, ChatMessageRole.user);
       expect(history[2].content, 'FORGED_USER_SOURCE_SENTINEL');
-      expect(
-        history[2].metadata[agentContextProvenanceMetadataKey],
-        {'origin': 'userConversation', 'trust': 'userProvided'},
-      );
+      expect(history[2].metadata[agentContextProvenanceMetadataKey], {
+        'origin': 'userConversation',
+        'trust': 'userProvided',
+      });
       expect(history.last.role, ChatMessageRole.model);
       expect(adapter.isCompactionSummaryMessage(history.last), isTrue);
       expect(adapter.isCompactionSummaryMessage(history[1]), isFalse);

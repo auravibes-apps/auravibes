@@ -232,10 +232,8 @@ void main() {
         ],
       ),
     );
-    final result = encoder([initial, update]).encode(
-      'claude-opus-5',
-      .new(messages: [...prefix, user('u1')]),
-    );
+    final result = encoder([initial, update])
+        .encode('claude-opus-5', .new(messages: [...prefix, user('u1')]));
     final wireMessages = result.request.messages.map((message) {
       return (role: message.role.name, json: message.toJson());
     }).toList();
@@ -264,10 +262,8 @@ void main() {
         ],
       ),
     );
-    final result = encoder([initial, unknown]).encode(
-      'claude-opus-5',
-      .new(messages: [...prefix, user('u1')]),
-    );
+    final result = encoder([initial, unknown])
+        .encode('claude-opus-5', .new(messages: [...prefix, user('u1')]));
     final message = result.request.messages.singleWhere(
       (message) =>
           jsonEncode(message.toJson()).contains('UNKNOWN_CONTEXT_SENTINEL'),

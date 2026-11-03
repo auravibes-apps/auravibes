@@ -142,10 +142,10 @@ void main() {
       (message) => message.role == AgentChatMessageRole.tool,
     );
     expect(toolMessages, hasLength(2));
-    expect(
-      toolMessages.map((message) => message.provenance),
-      [AgentContextProvenance.toolResult, AgentContextProvenance.unknown],
-    );
+    expect(toolMessages.map((message) => message.provenance), [
+      AgentContextProvenance.toolResult,
+      AgentContextProvenance.unknown,
+    ]);
     expect(
       toolMessages.map((message) => message.parts.single.toolResponse?.output),
       ['external sentinel', 'unknown sentinel'],

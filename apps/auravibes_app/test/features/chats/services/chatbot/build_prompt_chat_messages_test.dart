@@ -355,15 +355,15 @@ void main() {
       );
       final summaryMessage = messages.last;
 
-      expect(
-        userMessage.metadata[engine.agentContextProvenanceMetadataKey],
-        {'origin': 'userConversation', 'trust': 'userProvided'},
-      );
+      expect(userMessage.metadata[engine.agentContextProvenanceMetadataKey], {
+        'origin': 'userConversation',
+        'trust': 'userProvided',
+      });
       expect(toolMessage.role.name, 'tool');
-      expect(
-        toolMessage.metadata[engine.agentContextProvenanceMetadataKey],
-        {'origin': 'toolResult', 'trust': 'externalUntrusted'},
-      );
+      expect(toolMessage.metadata[engine.agentContextProvenanceMetadataKey], {
+        'origin': 'toolResult',
+        'trust': 'externalUntrusted',
+      });
       expect(
         toolMessage.metadata[engine.agentContextProvenanceMetadataKey]
             .toString(),

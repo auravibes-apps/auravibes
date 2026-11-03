@@ -157,17 +157,14 @@ void main() {
         ),
       );
 
-      await service
-          .sendMessage(_makeConfig(), [
-            ChatMessage.system('UNKNOWN_SYSTEM_SENTINEL'),
-            ChatMessage.system(
-              'IMPORTED_SYSTEM_SENTINEL',
-              metadata: AgentContextProvenance.importedSkill.withMetadata(
-                const {},
-              ),
-            ),
-          ])
-          .toList();
+      await service.sendMessage(_makeConfig(), [
+        ChatMessage.system('UNKNOWN_SYSTEM_SENTINEL'),
+        ChatMessage(
+          role: .system,
+          content: 'IMPORTED_SYSTEM_SENTINEL',
+          metadata: AgentContextProvenance.importedSkill.withMetadata(const {}),
+        ),
+      ]).toList();
 
       expect(capturedRequest!.messages.map((message) => message.role.value), [
         'system',
@@ -198,16 +195,15 @@ void main() {
         ),
       );
 
-      await service
-          .sendMessage(_makeConfig(), [
-            ChatMessage.system(
-              'APP_PROMPT_SENTINEL',
-              metadata: AgentContextProvenance.applicationPrompt.withMetadata(
-                const {},
-              ),
-            ),
-          ])
-          .toList();
+      await service.sendMessage(_makeConfig(), [
+        ChatMessage(
+          role: .system,
+          content: 'APP_PROMPT_SENTINEL',
+          metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+            const {},
+          ),
+        ),
+      ]).toList();
 
       expect(capturedRequest!.messages.map((message) => message.role.value), [
         'system',
