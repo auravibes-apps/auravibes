@@ -33,25 +33,24 @@ class const BuildWorkspaceSetupPreflightUsecase() {
     return lines.join('\n');
   }
 
-  WorkspaceSetupPreflightCheck _storageCheck(bool? available) => switch (
-    available
-  ) {
-    true => const WorkspaceSetupPreflightCheck(
-      id: .storage,
-      status: .pass,
-      messageKey: 'workspace_setup_preflight.storage_available',
-    ),
-    false => const WorkspaceSetupPreflightCheck(
-      id: .storage,
-      status: .fail,
-      messageKey: 'workspace_setup_preflight.storage_unavailable',
-    ),
-    null => const WorkspaceSetupPreflightCheck(
-      id: .storage,
-      status: .unknown,
-      messageKey: 'workspace_setup_preflight.storage_unverified',
-    ),
-  };
+  WorkspaceSetupPreflightCheck _storageCheck(bool? available) =>
+      switch (available) {
+        true => const WorkspaceSetupPreflightCheck(
+          id: .storage,
+          status: .pass,
+          messageKey: 'workspace_setup_preflight.storage_available',
+        ),
+        false => const WorkspaceSetupPreflightCheck(
+          id: .storage,
+          status: .fail,
+          messageKey: 'workspace_setup_preflight.storage_unavailable',
+        ),
+        null => const WorkspaceSetupPreflightCheck(
+          id: .storage,
+          status: .unknown,
+          messageKey: 'workspace_setup_preflight.storage_unverified',
+        ),
+      };
 
   WorkspaceSetupPreflightCheck _modelCheck(
     WorkspaceSetupPreflightSnapshot snapshot,
@@ -167,7 +166,9 @@ class const BuildWorkspaceSetupPreflightUsecase() {
       );
     }
     final selectedProvider = providers
-        .where((provider) => provider.connectionId == model.providerConnectionId)
+        .where(
+          (provider) => provider.connectionId == model.providerConnectionId,
+        )
         .firstOrNull;
     if (selectedProvider == null) {
       return const WorkspaceSetupPreflightCheck(
@@ -181,7 +182,8 @@ class const BuildWorkspaceSetupPreflightUsecase() {
       return const WorkspaceSetupPreflightCheck(
         id: .providerCredentials,
         status: .fail,
-        messageKey: 'workspace_setup_preflight.provider_credential_missing_required',
+        messageKey:
+            'workspace_setup_preflight.provider_credential_missing_required',
         recovery: .reviewProvider,
       );
     }
@@ -236,7 +238,9 @@ class const BuildWorkspaceSetupPreflightUsecase() {
         recovery: .openConnections,
       );
     }
-    if (connections.any((connection) => connection.lastTestStatus != 'success')) {
+    if (connections.any(
+      (connection) => connection.lastTestStatus != 'success',
+    )) {
       return const WorkspaceSetupPreflightCheck(
         id: .mcpConnections,
         status: .warning,
@@ -260,7 +264,8 @@ class const BuildWorkspaceSetupPreflightUsecase() {
       return .blocked;
     }
     if (snapshot.selectedModelId == null ||
-        (snapshot.providerSourceAvailable && snapshot.providers?.isEmpty == true)) {
+        (snapshot.providerSourceAvailable &&
+            snapshot.providers?.isEmpty == true)) {
       return .needsSetup;
     }
     final requiredChecks = checks
@@ -275,5 +280,4 @@ class const BuildWorkspaceSetupPreflightUsecase() {
 
     return .ready;
   }
-
 }

@@ -66,7 +66,9 @@ class const _PreflightContent({
                 child: TextLocale(_outcomeKey(result.outcome)),
                 style: .heading6,
               ),
-              const TextLocale('workspace_setup_preflight.saved_configuration_only'),
+              const TextLocale(
+                'workspace_setup_preflight.saved_configuration_only',
+              ),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -118,12 +120,16 @@ class const _PreflightCheckCard({
       child: Semantics(
         container: true,
         explicitChildNodes: true,
-        label: '${_checkTitle(check.id).tr(context: context)}. '
+        label:
+            '${_checkTitle(check.id).tr(context: context)}. '
             '${_localizedCheckMessage(context, check.messageKey)}',
         child: AuraColumn(
           crossAxisAlignment: .start,
           children: [
-            AuraText(child: TextLocale(_checkTitle(check.id)), style: .heading6),
+            AuraText(
+              child: TextLocale(_checkTitle(check.id)),
+              style: .heading6,
+            ),
             Row(
               children: [
                 Icon(_statusIcon(check.status), size: 18),
@@ -139,7 +145,9 @@ class const _PreflightCheckCard({
                 onPressed: () => _openRecovery(context, workspaceId, action),
                 child: TextLocale(_recoveryLabel(action)),
                 variant: .ghost,
-                key: ValueKey('workspace_setup_preflight_recovery_${check.id.name}'),
+                key: ValueKey(
+                  'workspace_setup_preflight_recovery_${check.id.name}',
+                ),
               ),
           ],
         ),
@@ -207,9 +215,8 @@ class const _ModelCapabilitiesView({
   }
 }
 
-class const _PreflightUnavailable({
-  required final String workspaceId,
-}) extends ConsumerWidget {
+class const _PreflightUnavailable({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Center(
     child: AuraColumn(
@@ -239,9 +246,10 @@ String _statusKey(WorkspaceSetupPreflightStatus status) => switch (status) {
   .unknown => 'workspace_setup_preflight.status.unknown',
 };
 
-String _localizedCheckMessage(BuildContext context, String key) => switch (
-  key
-) {
+String _localizedCheckMessage(
+  BuildContext context,
+  String key,
+) => switch (key) {
   'workspace_setup_preflight.storage_available' =>
     'workspace_setup_preflight.storage_available'.tr(context: context),
   'workspace_setup_preflight.storage_unavailable' =>
@@ -261,9 +269,7 @@ String _localizedCheckMessage(BuildContext context, String key) => switch (
       context: context,
     ),
   'workspace_setup_preflight.provider_for_model_missing' =>
-    'workspace_setup_preflight.provider_for_model_missing'.tr(
-      context: context,
-    ),
+    'workspace_setup_preflight.provider_for_model_missing'.tr(context: context),
   'workspace_setup_preflight.provider_saved' =>
     'workspace_setup_preflight.provider_saved'.tr(context: context),
   'workspace_setup_preflight.model_not_selected' =>
@@ -273,13 +279,9 @@ String _localizedCheckMessage(BuildContext context, String key) => switch (
   'workspace_setup_preflight.model_missing' =>
     'workspace_setup_preflight.model_missing'.tr(context: context),
   'workspace_setup_preflight.model_metadata_unavailable' =>
-    'workspace_setup_preflight.model_metadata_unavailable'.tr(
-      context: context,
-    ),
+    'workspace_setup_preflight.model_metadata_unavailable'.tr(context: context),
   'workspace_setup_preflight.model_metadata_available' =>
-    'workspace_setup_preflight.model_metadata_available'.tr(
-      context: context,
-    ),
+    'workspace_setup_preflight.model_metadata_available'.tr(context: context),
   'workspace_setup_preflight.mcp_unverified' =>
     'workspace_setup_preflight.mcp_unverified'.tr(context: context),
   'workspace_setup_preflight.mcp_not_configured' =>
@@ -302,12 +304,13 @@ String _outcomeKey(WorkspaceSetupPreflightOutcome outcome) => switch (outcome) {
   .unverified => 'workspace_setup_preflight.outcome.unverified',
 };
 
-String _recoveryLabel(WorkspaceSetupPreflightRecovery action) => switch (action) {
-  .addProvider => 'workspace_setup_preflight.recovery.add_provider',
-  .reviewProvider => 'workspace_setup_preflight.recovery.review_provider',
-  .chooseModel => 'workspace_setup_preflight.recovery.choose_model',
-  .openConnections => 'workspace_setup_preflight.recovery.open_connections',
-};
+String _recoveryLabel(WorkspaceSetupPreflightRecovery action) =>
+    switch (action) {
+      .addProvider => 'workspace_setup_preflight.recovery.add_provider',
+      .reviewProvider => 'workspace_setup_preflight.recovery.review_provider',
+      .chooseModel => 'workspace_setup_preflight.recovery.choose_model',
+      .openConnections => 'workspace_setup_preflight.recovery.open_connections',
+    };
 
 AuraTint? _statusTint(WorkspaceSetupPreflightStatus status) => switch (status) {
   .pass => .success,
@@ -316,12 +319,13 @@ AuraTint? _statusTint(WorkspaceSetupPreflightStatus status) => switch (status) {
   .unknown => .info,
 };
 
-AuraTint? _outcomeTint(WorkspaceSetupPreflightOutcome outcome) => switch (outcome) {
-  .ready => .success,
-  .needsSetup => .warning,
-  .blocked => .error,
-  .unverified => .info,
-};
+AuraTint? _outcomeTint(WorkspaceSetupPreflightOutcome outcome) =>
+    switch (outcome) {
+      .ready => .success,
+      .needsSetup => .warning,
+      .blocked => .error,
+      .unverified => .info,
+    };
 
 IconData _statusIcon(WorkspaceSetupPreflightStatus status) => switch (status) {
   .pass => Icons.check_circle_outline,
@@ -359,7 +363,9 @@ void _openRecovery(
       view: 'providers',
     ).location,
     .chooseModel => NewChatRoute(workspaceId: workspaceId).location,
-    .openConnections => ServiceConnectionsRoute(workspaceId: workspaceId).location,
+    .openConnections => ServiceConnectionsRoute(
+      workspaceId: workspaceId,
+    ).location,
   };
   unawaited(FeatureDestinations.push<void>(context, destination));
 }
@@ -369,7 +375,9 @@ Future<void> _copySupportSummary(
   WorkspaceSetupPreflight result,
 ) async {
   final labels = (
-    overallLabel: 'workspace_setup_preflight.summary.overall'.tr(context: context),
+    overallLabel: 'workspace_setup_preflight.summary.overall'.tr(
+      context: context,
+    ),
     outcomes: {
       for (final outcome in WorkspaceSetupPreflightOutcome.values)
         outcome: _outcomeKey(outcome).tr(context: context),

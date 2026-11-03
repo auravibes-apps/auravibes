@@ -50,29 +50,29 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceByIdProvider('A').overrideWith((_) async =>
-            WorkspaceEntity(
-              id: 'A',
-              name: 'Alpha',
-              type: .local,
-              createdAt: DateTime.utc(2026),
-              updatedAt: DateTime.utc(2026),
-            )),
-        workspaceSessionForRouteProvider('A').overrideWith(
-          (_) async => session,
+        workspaceByIdProvider('A').overrideWith(
+          (_) async => WorkspaceEntity(
+            id: 'A',
+            name: 'Alpha',
+            type: .local,
+            createdAt: DateTime.utc(2026),
+            updatedAt: DateTime.utc(2026),
+          ),
         ),
-        chatModelConnectionsProvider('A').overrideWith(
-          (_) => Stream.value([otherWorkspaceConnection]),
-        ),
-        serviceConnectionsProvider(
-          'A',
-        ).overrideWith((_) => Stream.value([otherWorkspaceMcp])),
+        workspaceSessionForRouteProvider('A')
+            .overrideWith((_) async => session),
+        chatModelConnectionsProvider('A')
+            .overrideWith((_) => Stream.value([otherWorkspaceConnection])),
+        serviceConnectionsProvider('A')
+            .overrideWith((_) => Stream.value([otherWorkspaceMcp])),
       ],
       retry: (_, _) => null,
     );
     addTearDown(container.dispose);
 
-    final result = await container.read(workspaceSetupPreflightProvider('A').future);
+    final result = await container.read(
+      workspaceSetupPreflightProvider('A').future,
+    );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
     expect(
@@ -111,28 +111,25 @@ void main() {
             cloudWorkspaceId: '1',
           ),
         ),
-        workspaceSessionForRouteProvider('A').overrideWith(
-          (_) async => session,
-        ),
-        cloudWorkspaceConfigurationProvider(session).overrideWith(
-          (_) {
-            cloudReadCount++;
+        workspaceSessionForRouteProvider('A')
+            .overrideWith((_) async => session),
+        cloudWorkspaceConfigurationProvider(session).overrideWith((_) {
+          cloudReadCount++;
 
-            return Stream.value(const []);
-          },
-        ),
-        chatModelConnectionsProvider('A').overrideWith(
-          (_) => Stream.value(const []),
-        ),
-        serviceConnectionsProvider('A').overrideWith(
-          (_) => Stream.value(const []),
-        ),
+          return Stream.value(const []);
+        }),
+        chatModelConnectionsProvider('A')
+            .overrideWith((_) => Stream.value(const [])),
+        serviceConnectionsProvider('A')
+            .overrideWith((_) => Stream.value(const [])),
       ],
       retry: (_, _) => null,
     );
     addTearDown(container.dispose);
 
-    final initial = await container.read(workspaceSetupPreflightProvider('A').future);
+    final initial = await container.read(
+      workspaceSetupPreflightProvider('A').future,
+    );
 
     expect(cloudReadCount, 0);
     expect(
@@ -193,39 +190,36 @@ void main() {
           ),
         ),
         workspaceSessionForRouteProvider('A').overrideWith(
-          (_) async => const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'A'),
-          ),
+          (_) async =>
+              const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'A')),
         ),
-        newChatProvider('A').overrideWithValue(
-          const NewChatState(modelId: selectionId),
-        ),
-        modelSelectionStoreProvider('A').overrideWith(
-          (_) async => _SelectionStore(otherWorkspaceModel),
-        ),
+        newChatProvider('A')
+            .overrideWithValue(const NewChatState(modelId: selectionId)),
+        modelSelectionStoreProvider('A')
+            .overrideWith((_) async => _SelectionStore(otherWorkspaceModel)),
         chatModelConnectionsProvider('A').overrideWith(
           (_) => Stream.value([otherWorkspaceModel.modelConnection]),
         ),
-        serviceConnectionsProvider('A').overrideWith(
-          (_) => Stream.value(const []),
-        ),
+        serviceConnectionsProvider('A')
+            .overrideWith((_) => Stream.value(const [])),
       ],
       retry: (_, _) => null,
     );
     addTearDown(container.dispose);
 
-    final result = await container.read(workspaceSetupPreflightProvider('A').future);
+    final result = await container.read(
+      workspaceSetupPreflightProvider('A').future,
+    );
 
     final model = result.check(WorkspaceSetupPreflightCheckId.selectedModel);
     expect(model.status, WorkspaceSetupPreflightStatus.fail);
     expect(model.modelCapabilities, isNull);
     expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
+    expect(model.messageKey, 'workspace_setup_preflight.model_missing');
     expect(
-      model.messageKey,
-      'workspace_setup_preflight.model_missing',
-    );
-    expect(
-      result.check(WorkspaceSetupPreflightCheckId.providerCredentials).messageKey,
+      result
+          .check(WorkspaceSetupPreflightCheckId.providerCredentials)
+          .messageKey,
       'workspace_setup_preflight.provider_for_model_missing',
     );
   });
@@ -237,8 +231,9 @@ class _SelectionStore implements ModelSelectionStore {
   final WorkspaceModelSelectionWithConnectionEntity selection;
 
   @override
-  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) async =>
-      id == selection.workspaceModelSelection.id ? selection : null;
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(
+    String id,
+  ) async => id == selection.workspaceModelSelection.id ? selection : null;
 
   @override
   Future<void> updateToolSamplingPolicy(
@@ -249,10 +244,9 @@ class _SelectionStore implements ModelSelectionStore {
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
-  ) =>
-      Stream.value(
-        selection.modelConnection.workspaceId == workspaceId
-            ? [selection]
-            : const [],
-      );
+  ) => Stream.value(
+    selection.modelConnection.workspaceId == workspaceId
+        ? [selection]
+        : const [],
+  );
 }

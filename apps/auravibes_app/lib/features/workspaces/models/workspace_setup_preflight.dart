@@ -1,11 +1,6 @@
 enum WorkspaceSetupPreflightStatus { pass, warning, fail, unknown }
 
-enum WorkspaceSetupPreflightOutcome {
-  ready,
-  needsSetup,
-  blocked,
-  unverified,
-}
+enum WorkspaceSetupPreflightOutcome { ready, needsSetup, blocked, unverified }
 
 enum WorkspaceSetupPreflightCheckId {
   storage,

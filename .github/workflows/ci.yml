@@ -1628,13 +1628,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Generate hosted formatting output for preflight files
+      - name: Generate hosted analyzer and formatting output for preflight files
         working-directory: apps/auravibes_app
         env:
-          FORMAT_OUTPUT_DIRECTORY: ${{ runner.temp }}/issue-1457-formatted
+          FORMAT_OUTPUT_DIRECTORY: ${{ runner.temp }}/issue-1457-analyzer-formatted
         run: |
           set -euo pipefail
           files=(
+            lib/features/settings/screens/workspace_settings_screen.dart
             lib/features/workspaces/models/workspace_setup_preflight.dart
             lib/features/workspaces/providers/workspace_setup_preflight_provider.dart
             lib/features/workspaces/screens/workspace_setup_preflight_screen.dart
@@ -1642,16 +1643,19 @@ jobs:
             test/features/workspaces/providers/workspace_setup_preflight_provider_test.dart
             test/features/workspaces/usecases/build_workspace_setup_preflight_usecase_test.dart
           )
+          for file in "${files[@]}"; do
+            dart fix --apply "$file"
+          done
           dart format --line-length 80 "${files[@]}"
           for file in "${files[@]}"; do
             install -D "$file" "$FORMAT_OUTPUT_DIRECTORY/$file"
           done
 
-      - name: Upload hosted preflight formatting output
+      - name: Upload hosted preflight analyzer and formatting output
         if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: issue-1457-formatted-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/issue-1457-formatted
+          name: issue-1457-analyzer-formatted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/issue-1457-analyzer-formatted
           if-no-files-found: error
           retention-days: 7

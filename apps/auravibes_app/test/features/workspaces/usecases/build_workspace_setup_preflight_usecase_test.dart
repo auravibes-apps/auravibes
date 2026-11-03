@@ -20,9 +20,7 @@ void main() {
       WorkspaceSetupPreflightStatus.warning,
     );
     expect(
-      result
-          .check(WorkspaceSetupPreflightCheckId.providerCredentials)
-          .recovery,
+      result.check(WorkspaceSetupPreflightCheckId.providerCredentials).recovery,
       WorkspaceSetupPreflightRecovery.addProvider,
     );
     expect(
@@ -154,61 +152,74 @@ void main() {
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
   });
 
-  test('missing saved credential fails when the selected model requires it', () {
-    final result = usecase(
-      _snapshot(
-        providers: const [
-          WorkspaceSetupProviderSnapshot(
-            connectionId: 'provider-a',
-            hasCredential: false,
-          ),
-        ],
-        selectedModelId: 'selection-a',
-        selectedModel: _model(),
-      ),
-    );
+  test(
+    'missing saved credential fails when the selected model requires it',
+    () {
+      final result = usecase(
+        _snapshot(
+          providers: const [
+            WorkspaceSetupProviderSnapshot(
+              connectionId: 'provider-a',
+              hasCredential: false,
+            ),
+          ],
+          selectedModelId: 'selection-a',
+          selectedModel: _model(),
+        ),
+      );
 
-    expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
-    expect(
-      result.check(WorkspaceSetupPreflightCheckId.providerCredentials).status,
-      WorkspaceSetupPreflightStatus.fail,
-    );
-  });
+      expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
+      expect(
+        result.check(WorkspaceSetupPreflightCheckId.providerCredentials).status,
+        WorkspaceSetupPreflightStatus.fail,
+      );
+    },
+  );
 
-  test('unknown source and missing selected model metadata stay unverified', () {
-    final unavailable = usecase(
-      _snapshot(
-        providers: null,
-        providerSourceAvailable: false,
-        selectedModelId: 'selection-a',
-        selectedModel: null,
-        selectedModelSourceAvailable: false,
-      ),
-    );
-    final missingMetadata = usecase(
-      _snapshot(
-        providers: const [
-          WorkspaceSetupProviderSnapshot(
-            connectionId: 'provider-a',
-            hasCredential: true,
-          ),
-        ],
-        selectedModelId: 'selection-a',
-        selectedModel: _model(capabilityMetadataAvailable: false),
-      ),
-    );
+  test(
+    'unknown source and missing selected model metadata stay unverified',
+    () {
+      final unavailable = usecase(
+        _snapshot(
+          providers: null,
+          providerSourceAvailable: false,
+          selectedModelId: 'selection-a',
+          selectedModel: null,
+          selectedModelSourceAvailable: false,
+        ),
+      );
+      final missingMetadata = usecase(
+        _snapshot(
+          providers: const [
+            WorkspaceSetupProviderSnapshot(
+              connectionId: 'provider-a',
+              hasCredential: true,
+            ),
+          ],
+          selectedModelId: 'selection-a',
+          selectedModel: _model(capabilityMetadataAvailable: false),
+        ),
+      );
 
-    expect(unavailable.outcome, WorkspaceSetupPreflightOutcome.unverified);
-    expect(
-      unavailable.check(WorkspaceSetupPreflightCheckId.providerCredentials).status,
-      WorkspaceSetupPreflightStatus.unknown,
-    );
-    expect(missingMetadata.outcome, WorkspaceSetupPreflightOutcome.unverified);
-    expect(
-      missingMetadata.check(WorkspaceSetupPreflightCheckId.selectedModel).status,
-      WorkspaceSetupPreflightStatus.unknown,
-    );
-  });
+      expect(unavailable.outcome, WorkspaceSetupPreflightOutcome.unverified);
+      expect(
+        unavailable
+            .check(WorkspaceSetupPreflightCheckId.providerCredentials)
+            .status,
+        WorkspaceSetupPreflightStatus.unknown,
+      );
+      expect(
+        missingMetadata.outcome,
+        WorkspaceSetupPreflightOutcome.unverified,
+      );
+      expect(
+        missingMetadata
+            .check(WorkspaceSetupPreflightCheckId.selectedModel)
+            .status,
+        WorkspaceSetupPreflightStatus.unknown,
+      );
+    },
+  );
 
   test('saved model name without capability metadata stays unknown', () {
     final result = usecase(
@@ -261,10 +272,7 @@ void main() {
         selectedModelId: null,
         selectedModel: null,
         mcpConnections: const [
-          WorkspaceSetupMcpSnapshot(
-            isEnabled: true,
-            lastTestStatus: 'network',
-          ),
+          WorkspaceSetupMcpSnapshot(isEnabled: true, lastTestStatus: 'network'),
         ],
       ),
     );
@@ -289,60 +297,63 @@ void main() {
     );
   });
 
-  test('support summary contains only allowlisted labels and safe metadata', () {
-    final result = usecase(
-      _snapshot(
-        providers: const [
-          WorkspaceSetupProviderSnapshot(
-            connectionId: 'SECRET-provider-name',
-            hasCredential: true,
-          ),
-        ],
-        selectedModelId: 'PROMPT-selection-id',
-        selectedModel: _model(modelName: 'TRANSCRIPT-model-name'),
-        mcpConnections: const [
-          WorkspaceSetupMcpSnapshot(
-            isEnabled: true,
-            lastTestStatus: 'success',
-          ),
-        ],
-      ),
-    );
-    final summary = usecase.formatSupportSummary(
-      result: result,
-      generatedAt: DateTime.utc(2026, 11, 3),
-      appVersion: '1.2.3',
-      labels: (
-        overallLabel: 'Overall',
-        outcomes: const {
-          WorkspaceSetupPreflightOutcome.ready: 'Ready',
-          WorkspaceSetupPreflightOutcome.needsSetup: 'Needs setup',
-          WorkspaceSetupPreflightOutcome.blocked: 'Blocked',
-          WorkspaceSetupPreflightOutcome.unverified: 'Unverified',
-        },
-        checks: const {
-          WorkspaceSetupPreflightCheckId.storage: 'Storage',
-          WorkspaceSetupPreflightCheckId.providerCredentials: 'Provider',
-          WorkspaceSetupPreflightCheckId.selectedModel: 'Model',
-          WorkspaceSetupPreflightCheckId.mcpConnections: 'MCP',
-        },
-        statuses: const {
-          WorkspaceSetupPreflightStatus.pass: 'Pass',
-          WorkspaceSetupPreflightStatus.warning: 'Warning',
-          WorkspaceSetupPreflightStatus.fail: 'Fail',
-          WorkspaceSetupPreflightStatus.unknown: 'Unknown',
-        },
-        generatedAt: 'Generated at',
-        appVersion: 'App version',
-      ),
-    );
+  test(
+    'support summary contains only allowlisted labels and safe metadata',
+    () {
+      final result = usecase(
+        _snapshot(
+          providers: const [
+            WorkspaceSetupProviderSnapshot(
+              connectionId: 'SECRET-provider-name',
+              hasCredential: true,
+            ),
+          ],
+          selectedModelId: 'PROMPT-selection-id',
+          selectedModel: _model(modelName: 'TRANSCRIPT-model-name'),
+          mcpConnections: const [
+            WorkspaceSetupMcpSnapshot(
+              isEnabled: true,
+              lastTestStatus: 'success',
+            ),
+          ],
+        ),
+      );
+      final summary = usecase.formatSupportSummary(
+        result: result,
+        generatedAt: DateTime.utc(2026, 11, 3),
+        appVersion: '1.2.3',
+        labels: (
+          overallLabel: 'Overall',
+          outcomes: const {
+            WorkspaceSetupPreflightOutcome.ready: 'Ready',
+            WorkspaceSetupPreflightOutcome.needsSetup: 'Needs setup',
+            WorkspaceSetupPreflightOutcome.blocked: 'Blocked',
+            WorkspaceSetupPreflightOutcome.unverified: 'Unverified',
+          },
+          checks: const {
+            WorkspaceSetupPreflightCheckId.storage: 'Storage',
+            WorkspaceSetupPreflightCheckId.providerCredentials: 'Provider',
+            WorkspaceSetupPreflightCheckId.selectedModel: 'Model',
+            WorkspaceSetupPreflightCheckId.mcpConnections: 'MCP',
+          },
+          statuses: const {
+            WorkspaceSetupPreflightStatus.pass: 'Pass',
+            WorkspaceSetupPreflightStatus.warning: 'Warning',
+            WorkspaceSetupPreflightStatus.fail: 'Fail',
+            WorkspaceSetupPreflightStatus.unknown: 'Unknown',
+          },
+          generatedAt: 'Generated at',
+          appVersion: 'App version',
+        ),
+      );
 
-    expect(summary, contains('Overall: Ready'));
-    expect(summary, contains('App version: 1.2.3'));
-    expect(summary, isNot(contains('SECRET')));
-    expect(summary, isNot(contains('PROMPT')));
-    expect(summary, isNot(contains('TRANSCRIPT')));
-  });
+      expect(summary, contains('Overall: Ready'));
+      expect(summary, contains('App version: 1.2.3'));
+      expect(summary, isNot(contains('SECRET')));
+      expect(summary, isNot(contains('PROMPT')));
+      expect(summary, isNot(contains('TRANSCRIPT')));
+    },
+  );
 }
 
 WorkspaceSetupPreflightSnapshot _snapshot({
@@ -368,15 +379,13 @@ WorkspaceSetupPreflightSnapshot _snapshot({
 WorkspaceSetupModelSnapshot _model({
   String? modelName = 'Model',
   bool? capabilityMetadataAvailable,
-}) =>
-    WorkspaceSetupModelSnapshot(
-      selectionId: 'selection-a',
-      providerConnectionId: 'provider-a',
-      modelName: modelName,
-      capabilityMetadataAvailable:
-          capabilityMetadataAvailable ?? modelName != null,
-      inputModalities: const ['text'],
-      outputModalities: const ['text'],
-      supportsReasoning: false,
-      supportsToolCalls: true,
-    );
+}) => WorkspaceSetupModelSnapshot(
+  selectionId: 'selection-a',
+  providerConnectionId: 'provider-a',
+  modelName: modelName,
+  capabilityMetadataAvailable: capabilityMetadataAvailable ?? modelName != null,
+  inputModalities: const ['text'],
+  outputModalities: const ['text'],
+  supportsReasoning: false,
+  supportsToolCalls: true,
+);

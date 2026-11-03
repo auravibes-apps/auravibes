@@ -53,16 +53,16 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   final workspaceIsRemote = workspace?.type == WorkspaceType.remote;
   final remoteRefreshReady = !workspaceIsRemote || refreshRequested;
   final session = workspaceSessionRead.value;
-  final cloudStorageRead = workspaceIsRemote && refreshRequested && session != null
+  final cloudStorageRead =
+      workspaceIsRemote && refreshRequested && session != null
       ? await _capture(() async {
           await ref.watch(cloudWorkspaceConfigurationProvider(session).future);
 
           return true;
         })
       : const _ReadResult<bool>.unavailable();
-  final sourceAllowed = workspace != null &&
-      workspaceSessionRead.available &&
-      remoteRefreshReady;
+  final sourceAllowed =
+      workspace != null && workspaceSessionRead.available && remoteRefreshReady;
   final providerRead = sourceAllowed
       ? await _capture(
           () => ref.watch(chatModelConnectionsProvider(workspaceId).future),
@@ -72,16 +72,14 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   final modelRead = selectedModelId == null
       ? const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null)
       : sourceAllowed
-      ? await _capture(
-          () async {
-            final selections = await ref.watch(
-              modelSelectionStoreProvider(workspaceId).future,
-            );
-            final model = await selections.getById(selectedModelId);
+      ? await _capture(() async {
+          final selections = await ref.watch(
+            modelSelectionStoreProvider(workspaceId).future,
+          );
+          final model = await selections.getById(selectedModelId);
 
-            return await _modelSnapshot(ref, model, workspaceId);
-          },
-        )
+          return await _modelSnapshot(ref, model, workspaceId);
+        })
       : const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
   final mcpRead = sourceAllowed
       ? await _capture(() async {
@@ -93,17 +91,17 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
             for (final connection in connections)
               if (connection.workspaceId == workspaceId &&
                   connection.kind == ServiceConnectionListItemKind.mcpServer)
-              WorkspaceSetupMcpSnapshot(
-                isEnabled: connection.isEnabled,
-                lastTestStatus: connection.lastTestSummary?.status,
-                connectionNeedsAttention: switch (connection.displayStatus) {
-                  ServiceConnectionDisplayStatus.needsReauth ||
-                  ServiceConnectionDisplayStatus.expired ||
-                  ServiceConnectionDisplayStatus.expiringSoon ||
-                  ServiceConnectionDisplayStatus.failed => true,
-                  _ => false,
-                },
-              ),
+                WorkspaceSetupMcpSnapshot(
+                  isEnabled: connection.isEnabled,
+                  lastTestStatus: connection.lastTestSummary?.status,
+                  connectionNeedsAttention: switch (connection.displayStatus) {
+                    ServiceConnectionDisplayStatus.needsReauth ||
+                    ServiceConnectionDisplayStatus.expired ||
+                    ServiceConnectionDisplayStatus.expiringSoon ||
+                    ServiceConnectionDisplayStatus.failed => true,
+                    _ => false,
+                  },
+                ),
           ];
         })
       : const _ReadResult<List<WorkspaceSetupMcpSnapshot>>.unavailable();
@@ -167,9 +165,8 @@ Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(
     return null;
   }
   final selection = model.workspaceModelSelection;
-  final catalogProviderId = ModelProviderOAuthProfiles.isCodexProvider(
-    model.modelConnection.modelId,
-  )
+  final catalogProviderId =
+      ModelProviderOAuthProfiles.isCodexProvider(model.modelConnection.modelId)
       ? 'openai'
       : model.modelsProvider.id;
   final catalogModel = await ref.watch(
