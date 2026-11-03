@@ -1129,19 +1129,15 @@ AgentTranscriptContextUpdate _archiveContextUpdateForImport(
 
 List<AgentContextMessage>? _archiveContextMessagesForImport(
   List<AgentContextMessage>? messages,
-) =>
-    messages
-        ?.map(_archiveContextMessageForImport)
-        .toList(growable: false);
+) => messages?.map(_archiveContextMessageForImport).toList(growable: false);
 
 AgentContextMessage _archiveContextMessageForImport(
   AgentContextMessage message,
-) =>
-    AgentContextMessage(
-      role: message.role,
-      content: message.content,
-      kind: message.kind,
-    );
+) => AgentContextMessage(
+  role: message.role,
+  content: message.content,
+  kind: message.kind,
+);
 
 typedef _SelectionRestore = ({
   ConversationArchiveToolSelection selection,

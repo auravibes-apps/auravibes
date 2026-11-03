@@ -138,8 +138,7 @@ AgentContextMessage _contextMessage(ChatMessage message) {
 AgentContextMessageRole _contextRole(
   ChatMessage message,
   AgentContextProvenance provenance,
-) =>
-    message.role == ChatMessageRole.system && provenance.mayUseSystemRole
+) => message.role == ChatMessageRole.system && provenance.mayUseSystemRole
     ? .system
     : .skill;
 
@@ -155,8 +154,8 @@ ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
   metadata: _chatMessageMetadata(message),
 );
 
-ChatMessageRole _chatMessageRole(AgentContextMessage message) =>
-    message.role == AgentContextMessageRole.system &&
+ChatMessageRole _chatMessageRole(AgentContextMessage message) => message.role ==
+    AgentContextMessageRole.system &&
         message.provenance.mayUseSystemRole
     ? .system
     : .user;

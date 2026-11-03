@@ -511,8 +511,8 @@ extension on ChatbotService {
 
   Role _trustedGenkitRole(ChatMessage message) =>
       AgentContextProvenance.fromMetadata(
-            Map<String, Object?>.of(message.metadata),
-          ).mayUseSystemRole
+        Map<String, Object?>.of(message.metadata),
+      ).mayUseSystemRole
       ? Role.system
       : Role.user;
 
