@@ -15,6 +15,9 @@ void main() {
   testWidgets('historical read-only status is localized for Spanish', (
     tester,
   ) async {
+    String? directTranslation;
+    String? directTranslationError;
+
     await tester.pumpWidget(
       EasyLocalization(
         supportedLocales: const [Locale('en'), Locale('es')],
@@ -35,16 +38,17 @@ void main() {
             supportedLocales: context.supportedLocales,
             home: Builder(
               builder: (context) {
-                final directTranslation = LocaleKeys
-                    .chats_screens_chat_conversation_a2ui_read_only
-                    .tr(context: context);
+                try {
+                  directTranslation = LocaleKeys
+                      .chats_screens_chat_conversation_a2ui_read_only
+                      .tr(context: context);
+                } on Object catch (error) {
+                  directTranslationError = '$error';
+                }
                 final label = chatA2uiText(
                   context,
                   LocaleKeys.chats_screens_chat_conversation_a2ui_read_only,
                   'Read only',
-                );
-                debugPrint(
-                  'locale=${context.locale}, direct=$directTranslation, helper=$label',
                 );
                 return AuraThemeScope(
                   theme: .light,
@@ -63,15 +67,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final localizationContext = tester.element(
-      find.byType(AuraBadge),
-    );
-    expect(
-      LocaleKeys.chats_screens_chat_conversation_a2ui_read_only.tr(
-        context: localizationContext,
-      ),
-      'Solo lectura',
-    );
+    expect(directTranslationError, isNull, reason: directTranslationError);
+    expect(directTranslation, 'Solo lectura');
     expect(find.text('Solo lectura'), findsOneWidget);
     expect(tester.getSemantics(find.byType(AuraBadge)).label, 'Solo lectura');
   });
