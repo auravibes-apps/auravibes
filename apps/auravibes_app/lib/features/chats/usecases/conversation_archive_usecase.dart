@@ -258,25 +258,22 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   ) async {
     final previews = <ConversationArchivePreviewConversation>[];
     for (final conversation in conversations) {
-      final transcript = await messageRepository
-          .getTranscriptMessagesByConversation(conversation.id);
-      previews.add(
-        ConversationArchivePreviewConversation(
-          title: conversation.title,
-          sourceAttachments: [
-            for (final message in _archiveVisibleMessages(transcript))
-              for (final attachment in message.attachments)
-                ConversationArchivePreviewAttachment(
-                  fileName: _previewAttachmentName(attachment),
-                  mimeType: attachment.mimeType,
-                  sizeBytes: attachment.sizeBytes,
-                ),
-          ],
-        ),
-      );
+      previews.add(await _previewConversation(conversation));
     }
 
     return ConversationArchiveExportPreview(sourceConversations: previews);
+  }
+
+  Future<ConversationArchivePreviewConversation> _previewConversation(
+    ConversationEntity conversation,
+  ) async {
+    final transcript = await messageRepository
+        .getTranscriptMessagesByConversation(conversation.id);
+
+    return ConversationArchivePreviewConversation(
+      title: conversation.title,
+      sourceAttachments: _previewAttachments(transcript),
+    );
   }
 
   Future<ConversationArchive> _createWorkspaceArchive(
@@ -370,6 +367,18 @@ String _previewAttachmentName(MessageAttachmentEntity attachment) {
 
   return p.posix.basename(name.replaceAll(r'\', '/'));
 }
+
+List<ConversationArchivePreviewAttachment> _previewAttachments(
+  List<MessageEntity> transcript,
+) => [
+  for (final message in _archiveVisibleMessages(transcript))
+    for (final attachment in message.attachments)
+      ConversationArchivePreviewAttachment(
+        fileName: _previewAttachmentName(attachment),
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      ),
+];
 
 _ArchivedContextUpdates _archiveTranscriptContext(
   List<MessageEntity> transcript,

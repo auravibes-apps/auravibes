@@ -1231,27 +1231,34 @@ Future<ConversationArchiveMessage> _archiveMessage(
   final toolCallIds = _archiveToolCallIds(
     message.metadata?.toolCalls ?? const [],
   );
-  final attachments = includeAttachments
-      ? await _archiveMessageAttachments(
-          message.attachments,
-          readAttachmentBytes,
-          toolCallIds,
-        )
-      : const <ConversationArchiveAttachment>[];
-  // Keep attachment-only message position valid in v2 without attachment data.
-  final content =
-      !includeAttachments &&
-          message.content.trim().isEmpty &&
-          message.attachments.isNotEmpty
-      ? '[Attachment omitted]'
-      : message.content;
+  final attachments = await _archiveMessageAttachmentsIfIncluded(
+    message,
+    readAttachmentBytes,
+    toolCallIds,
+    includeAttachments,
+  );
 
   return _archiveMessageTranscript(
     message,
     messageIndexes,
     attachments,
+    content: _archiveMessageContent(message, includeAttachments),
+  );
+}
+
+Future<List<ConversationArchiveAttachment>>
+_archiveMessageAttachmentsIfIncluded(
+  MessageEntity message,
+  Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  Map<String, String> toolCallIds,
+  bool includeAttachments,
+) async {
+  if (!includeAttachments) return const [];
+
+  return _archiveMessageAttachments(
+    message.attachments,
+    readAttachmentBytes,
     toolCallIds,
-    content: content,
   );
 }
 
@@ -1277,18 +1284,37 @@ Future<List<ConversationArchiveAttachment>> _archiveMessageAttachments(
 ConversationArchiveMessage _archiveMessageTranscript(
   MessageEntity message,
   Map<String, int> messageIndexes,
-  List<ConversationArchiveAttachment> attachments,
-  Map<String, String> toolCallIds, {
+  List<ConversationArchiveAttachment> attachments, {
   required String content,
-}) => ConversationArchiveMessage(
-  content: content,
-  messageType: message.messageType,
-  isUser: message.isUser,
-  status: message.status,
-  createdAt: message.createdAt,
-  metadata: _archiveMetadata(message.metadata, messageIndexes, toolCallIds),
-  attachments: attachments,
-);
+}) {
+  final toolCallIds = _archiveToolCallIds(
+    message.metadata?.toolCalls ?? const [],
+  );
+
+  return ConversationArchiveMessage(
+    content: content,
+    messageType: message.messageType,
+    isUser: message.isUser,
+    status: message.status,
+    createdAt: message.createdAt,
+    metadata: _archiveMetadata(message.metadata, messageIndexes, toolCallIds),
+    attachments: attachments,
+  );
+}
+
+String _archiveMessageContent(
+  MessageEntity message,
+  bool includeAttachments,
+) {
+  // Keep attachment-only message position valid in v2 without attachment data.
+  if (includeAttachments ||
+      message.content.trim().isNotEmpty ||
+      message.attachments.isEmpty) {
+    return message.content;
+  }
+
+  return '[Attachment omitted]';
+}
 
 ConversationArchiveMetadata _archiveMetadata(
   MessageMetadataEntity? source,

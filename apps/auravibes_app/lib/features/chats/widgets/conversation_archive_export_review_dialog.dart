@@ -75,32 +75,39 @@ abstract final class ConversationArchiveExportReviewDialog {
 class const _ConversationArchiveExportReviewDialog({
   required final String fileName,
   required final ConversationArchiveExportPreview preview,
-}) extends StatelessWidget {
+}) extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    var includeAttachments = true;
+  State<_ConversationArchiveExportReviewDialog> createState() =>
+      _ConversationArchiveExportReviewDialogState();
+}
 
-    return StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: const TextLocale(_reviewTitleKey),
-        content: _ConversationArchiveExportReviewContent(
-          fileName: fileName,
-          preview: preview,
-          includeAttachments: includeAttachments,
-          onIncludeAttachmentsChanged: (value) {
-            setState(() => includeAttachments = value);
-          },
-        ),
-        actions: [
-          const _ConversationArchiveExportCancelAction(),
-          _ConversationArchiveExportContinueAction(
-            includeAttachments: includeAttachments,
-          ),
-        ],
-        scrollable: true,
-      ),
-    );
-  }
+class _ConversationArchiveExportReviewDialogState
+    extends State<_ConversationArchiveExportReviewDialog> {
+  var _includeAttachments = true;
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const TextLocale(_reviewTitleKey),
+    content: _buildContent(),
+    actions: _buildActions(),
+    scrollable: true,
+  );
+
+  Widget _buildContent() => _ConversationArchiveExportReviewContent(
+    fileName: widget.fileName,
+    preview: widget.preview,
+    includeAttachments: _includeAttachments,
+    onIncludeAttachmentsChanged: (value) {
+      setState(() => _includeAttachments = value);
+    },
+  );
+
+  List<Widget> _buildActions() => [
+    const _ConversationArchiveExportCancelAction(),
+    _ConversationArchiveExportContinueAction(
+      includeAttachments: _includeAttachments,
+    ),
+  ];
 }
 
 class const _ConversationArchiveExportCancelAction() extends StatelessWidget {
@@ -130,8 +137,6 @@ class const _ConversationArchiveExportReviewContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-
     return SizedBox(
       width: 480,
       child: Column(
@@ -143,9 +148,9 @@ class const _ConversationArchiveExportReviewContent({
             includeAttachments: includeAttachments,
             onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
           ),
-          SizedBox(height: theme.fromSpacing(.sm)),
+          const AuraSizedBox(height: .sm),
           _ArchiveExportConversationList(preview: preview),
-          SizedBox(height: theme.fromSpacing(.md)),
+          const AuraSizedBox(height: .md),
           _ArchiveExportReviewDisclosure(
             fileName: fileName,
             preview: preview,
@@ -164,34 +169,60 @@ class const _ConversationArchiveExportReviewSummary({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .start,
       children: [
         const TextLocale(_reviewDescriptionKey),
-        SizedBox(height: theme.fromSpacing(.md)),
-        TextLocale(switch (preview.attachmentCount) {
-          0 => _reviewIncludedNoAttachmentsKey,
-          _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
-          _ => _reviewIncludedWithoutAttachmentsKey,
-        }),
-        if (preview.attachmentCount > 0) ...[
-          SizedBox(height: theme.fromSpacing(.sm)),
-          _ArchiveExportAttachmentToggle(
+        const AuraSizedBox(height: .md),
+        _ArchiveExportReviewIncludedText(
+          attachmentCount: preview.attachmentCount,
+          includeAttachments: includeAttachments,
+        ),
+        if (preview.attachmentCount > 0)
+          _ArchiveExportReviewAttachmentSummary(
+            preview: preview,
             includeAttachments: includeAttachments,
-            onChanged: onIncludeAttachmentsChanged,
+            onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
           ),
-          SizedBox(height: theme.fromSpacing(.sm)),
-          TextLocale(
-            _reviewAttachmentSectionKey,
-            args: [preview.attachmentCount.toString()],
-          ),
-        ],
       ],
     );
   }
+}
+
+class const _ArchiveExportReviewIncludedText({
+  required final int attachmentCount,
+  required final bool includeAttachments,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextLocale(switch (attachmentCount) {
+    0 => _reviewIncludedNoAttachmentsKey,
+    _ when includeAttachments => _reviewIncludedWithAttachmentsKey,
+    _ => _reviewIncludedWithoutAttachmentsKey,
+  });
+}
+
+class const _ArchiveExportReviewAttachmentSummary({
+  required final ConversationArchiveExportPreview preview,
+  required final bool includeAttachments,
+  required final ValueChanged<bool> onIncludeAttachmentsChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      const AuraSizedBox(height: .sm),
+      _ArchiveExportAttachmentToggle(
+        includeAttachments: includeAttachments,
+        onChanged: onIncludeAttachmentsChanged,
+      ),
+      const AuraSizedBox(height: .sm),
+      TextLocale(
+        _reviewAttachmentSectionKey,
+        args: [preview.attachmentCount.toString()],
+      ),
+    ],
+  );
 }
 
 class const _ArchiveExportAttachmentToggle({
@@ -217,13 +248,11 @@ class const _ArchiveExportConversationList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .start,
       children: [
-        SizedBox(height: theme.fromSpacing(.md)),
+        const AuraSizedBox(height: .md),
         TextLocale(
           _reviewConversationSectionKey,
           args: [preview.conversations.length.toString()],
@@ -240,26 +269,47 @@ class const _ConversationArchiveExportConversationRow({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-
     return Padding(
-      padding: EdgeInsets.only(top: theme.fromSpacing(.sm)),
-      child: Column(
-        crossAxisAlignment: .start,
-        children: [
-          Text(
-            conversation.title,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          if (conversation.attachments.isEmpty)
-            Padding(
-              padding: EdgeInsets.only(top: theme.fromSpacing(.xs)),
-              child: const TextLocale(_reviewNoAttachmentsKey),
-            ),
-          for (final attachment in conversation.attachments)
-            _ConversationArchiveExportAttachmentRow(attachment: attachment),
-        ],
+      padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.sm)),
+      child: _ArchiveExportConversationRowContent(conversation: conversation),
+    );
+  }
+}
+
+class const _ArchiveExportConversationRowContent({
+  required final ConversationArchivePreviewConversation conversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      Text(
+        conversation.title,
+        style: Theme.of(context).textTheme.titleSmall,
       ),
+      _ArchiveExportConversationAttachments(conversation: conversation),
+    ],
+  );
+}
+
+class const _ArchiveExportConversationAttachments({
+  required final ConversationArchivePreviewConversation conversation,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final attachments = conversation.attachments;
+    if (attachments.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+        child: const TextLocale(_reviewNoAttachmentsKey),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final attachment in attachments)
+          _ConversationArchiveExportAttachmentRow(attachment: attachment),
+      ],
     );
   }
 }
@@ -271,8 +321,6 @@ class const _ArchiveExportReviewDisclosure({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .start,
@@ -282,7 +330,7 @@ class const _ArchiveExportReviewDisclosure({
           _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
           _ => _reviewPrivacyWithoutAttachmentsKey,
         }),
-        SizedBox(height: theme.fromSpacing(.sm)),
+        const AuraSizedBox(height: .sm),
         TextLocale(_reviewDestinationKey, args: [fileName]),
       ],
     );
@@ -293,31 +341,32 @@ class const _ConversationArchiveExportAttachmentRow({
   required final ConversationArchivePreviewAttachment attachment,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final theme = context.auraTheme;
-
-    return Semantics(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: theme.fromSpacing(.xs)),
-        child: Row(
-          crossAxisAlignment: .start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(
-                top: theme.fromSpacing(.xs),
-                right: theme.fromSpacing(.sm),
-              ),
-              child: const Icon(Icons.attach_file, size: 18),
-            ),
-            Expanded(
-              child: _ArchiveExportAttachmentDetails(attachment: attachment),
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    child: Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: context.auraTheme.fromSpacing(.xs),
       ),
-      container: true,
-    );
-  }
+      child: AuraRow(
+        crossAxisAlignment: .start,
+        spacing: .sm,
+        children: [
+          const _ArchiveExportAttachmentIcon(),
+          Expanded(
+            child: _ArchiveExportAttachmentDetails(attachment: attachment),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class const _ArchiveExportAttachmentIcon() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+    child: const Icon(Icons.attach_file, size: 18),
+  );
 }
 
 class const _ArchiveExportAttachmentDetails({

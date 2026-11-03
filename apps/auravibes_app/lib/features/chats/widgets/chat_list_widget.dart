@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive_export_preview.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
@@ -674,26 +675,39 @@ extension on _ChatTileState {
 
   Future<void> _exportConversationArchive(BuildContext context) async {
     try {
-      final archiveUsecase = ref.read(conversationArchiveUsecaseProvider);
-      final preview = await archiveUsecase.previewConversation(
-        conversationId: widget.chat.id,
-      );
-      if (!context.mounted) return;
-      final decision = await ConversationArchiveExportReviewDialog.show(
-        context,
-        fileName: 'conversation.auravibes.json',
-        preview: preview,
-      );
-      if (decision == null || !context.mounted) return;
-
-      final saved = await _saveConversationArchive(
-        includeAttachments: decision.includeAttachments,
-      );
-      if (!saved || !context.mounted) return;
-      ConversationArchiveFeedback.showExported(context);
+      await _previewAndExportConversationArchive(context);
     } on Object catch (error, stackTrace) {
       _reportArchiveExportError(context, error, stackTrace);
     }
+  }
+
+  Future<void> _previewAndExportConversationArchive(
+    BuildContext context,
+  ) async {
+    final preview = await ref
+        .read(conversationArchiveUsecaseProvider)
+        .previewConversation(conversationId: widget.chat.id);
+    if (!context.mounted) return;
+
+    final decision = await ConversationArchiveExportReviewDialog.show(
+      context,
+      fileName: 'conversation.auravibes.json',
+      preview: preview,
+    );
+    await _saveReviewedConversationArchive(context, decision);
+  }
+
+  Future<void> _saveReviewedConversationArchive(
+    BuildContext context,
+    ({bool includeAttachments})? decision,
+  ) async {
+    if (decision == null || !context.mounted) return;
+    final saved = await _saveConversationArchive(
+      includeAttachments: decision.includeAttachments,
+    );
+    if (!saved || !context.mounted) return;
+
+    ConversationArchiveFeedback.showExported(context);
   }
 
   Future<bool> _saveConversationArchive({
@@ -973,31 +987,51 @@ extension on _ChatListBulkActionsState {
     if (_isWorking) return;
     final selectedConversations = selected.toList(growable: false);
     try {
-      final preview = await ref
-          .read(conversationArchiveUsecaseProvider)
-          .previewConversations(
-            workspaceId: widget.workspaceId,
-            conversationIds: [
-              for (final conversation in selectedConversations) conversation.id,
-            ],
-          );
-      if (!mounted) return;
-      final decision = await ConversationArchiveExportReviewDialog.show(
-        context,
-        fileName: 'conversations.auravibes.json',
-        preview: preview,
-      );
-      if (decision == null || !mounted) return;
-
-      await _withWorking(
-        () => _exportSelectedArchive(
-          selectedConversations,
-          includeAttachments: decision.includeAttachments,
-        ),
-      );
+      await _previewAndReviewSelectedArchive(selectedConversations);
     } on Object catch (error, stackTrace) {
       _reportSelectedArchiveError(error, stackTrace);
     }
+  }
+
+  Future<void> _previewAndReviewSelectedArchive(
+    List<ConversationEntity> selected,
+  ) async {
+    final preview = await _previewSelectedArchive(selected);
+    if (!mounted) return;
+
+    final decision = await _reviewSelectedArchive(preview);
+    await _exportReviewedSelection(selected, decision);
+  }
+
+  Future<ConversationArchiveExportPreview> _previewSelectedArchive(
+    List<ConversationEntity> selected,
+  ) => ref
+      .read(conversationArchiveUsecaseProvider)
+      .previewConversations(
+        workspaceId: widget.workspaceId,
+        conversationIds: [for (final conversation in selected) conversation.id],
+      );
+
+  Future<({bool includeAttachments})?> _reviewSelectedArchive(
+    ConversationArchiveExportPreview preview,
+  ) => ConversationArchiveExportReviewDialog.show(
+    context,
+    fileName: 'conversations.auravibes.json',
+    preview: preview,
+  );
+
+  Future<void> _exportReviewedSelection(
+    List<ConversationEntity> selected,
+    ({bool includeAttachments})? decision,
+  ) async {
+    if (decision == null || !mounted) return;
+
+    await _withWorking(
+      () => _exportSelectedArchive(
+        selected,
+        includeAttachments: decision.includeAttachments,
+      ),
+    );
   }
 
   Future<void> _exportSelectedArchive(
